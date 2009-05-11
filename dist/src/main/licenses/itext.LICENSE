@@ -1,0 +1,24 @@
+From http://www.lowagie.com/iText/download.html
+
+iText: a Free Java-PDF library by Bruno Lowagie and Paulo Soares
+
+License Agreement
+
+iText is published under 2 different licenses: MPL and LGPL.
+
+If you are a new user of iText, MPL is recommended (without the LGPL). 
+MPL is less strict than LGPL. Please read the MPL license agreement 
+[http://www.lowagie.com/iText/MPL-1.1.txt] before downloading and/or 
+using iText.
+
+LGPL is maintained for backward compatibility only. If you choose the 
+LGPL, you need to mention the MPL as an alternative license. Please 
+read the LGPL license agreement [http://www.lowagie.com/iText/lgpl.txt]
+for more info.
+
+This library is free and I want it to stay free: you can use it 
+without paying a fee; you don't need to register anywhere. Only keep 
+in mind that agreeing with the license is crucial to protect the 
+software, its developers and its users. This library is distributed 
+in the hope that it will be useful, but WITHOUT any warranty. If you 
+don't like free software, don't (ab)use it!

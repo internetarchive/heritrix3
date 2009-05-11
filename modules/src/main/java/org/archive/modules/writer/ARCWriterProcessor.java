@@ -1,0 +1,270 @@
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.archive.modules.writer;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.archive.io.ReplayInputStream;
+import org.archive.io.WriterPoolMember;
+import org.archive.io.WriterPoolSettings;
+import org.archive.io.arc.ARCWriter;
+import org.archive.io.arc.ARCWriterPool;
+import org.archive.modules.ProcessResult;
+import org.archive.modules.ProcessorURI;
+import org.archive.util.ArchiveUtils;
+
+/**
+ * Processor module for writing the results of successful fetches (and
+ * perhaps someday, certain kinds of network failures) to the Internet Archive
+ * ARC file format.
+ *
+ * Assumption is that there is only one of these ARCWriterProcessors per
+ * Heritrix instance.
+ *
+ * @author Parker Thompson
+ */
+public class ARCWriterProcessor extends WriterPoolProcessor {
+
+    final static private String TEMPLATE = readTemplate();
+    
+    private static final long serialVersionUID = 3L;
+
+    private static final Logger logger = 
+        Logger.getLogger(ARCWriterProcessor.class.getName());
+
+    /**
+     * Default path list.
+     */
+    private static final String [] DEFAULT_PATH = {"arcs"};
+
+    /**
+     * Where to save files. Supply absolute or relative path. If relative, files
+     * will be written relative to the order.disk-path setting. If more than one
+     * path specified, we'll round-robin dropping files to each. This setting is
+     * safe to change midcrawl (You can remove and add new dirs as the crawler
+     * progresses).
+     */
+    List<String> storePaths;
+    {
+        storePaths = new ArrayList<String>();
+        storePaths.add("arcs");
+    }
+    public List<String> getStorePaths() {
+        return storePaths;
+    }
+    public void setStorePaths(List<String> paths) {
+        this.storePaths = paths; 
+    }
+
+    private transient List<String> cachedMetadata;
+
+    
+    /**
+     * @param name Name of this writer.
+     */
+    public ARCWriterProcessor() {
+    }
+    
+    protected String [] getDefaultPath() {
+    	return DEFAULT_PATH;
+	}
+
+    @Override
+    protected void setupPool(AtomicInteger serialNo) {
+        WriterPoolSettings wps = getWriterPoolSettings();
+        setPool(new ARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWait()));
+    }
+
+
+    /**
+     * Writes a ProcessorURI and its associated data to store file.
+     *
+     * Currently this method understands the following uri types: dns, http, 
+     * and https.
+     *
+     * @param curi ProcessorURI to process.
+     */
+    protected ProcessResult innerProcessResult(ProcessorURI puri) {
+        ProcessorURI curi = (ProcessorURI)puri;
+        
+        long recordLength = getRecordedSize(curi);
+        
+        ReplayInputStream ris = null;
+        try {
+            if (shouldWrite(curi)) {
+                ris = curi.getRecorder().getRecordedInput()
+                        .getReplayInputStream();
+                return write(curi, recordLength, ris, getHostAddress(curi));
+            } else {
+                logger.info("does not write " + curi.toString());
+            }
+         } catch (IOException e) {
+            curi.getNonFatalFailures().add(e);
+            logger.log(Level.SEVERE, "Failed write of Record: " +
+                curi.toString(), e);
+        } finally {
+            IOUtils.closeQuietly(ris);
+        }
+        return ProcessResult.PROCEED;
+    }
+    
+    protected ProcessResult write(ProcessorURI curi, long recordLength, 
+            InputStream in, String ip)
+    throws IOException {
+        WriterPoolMember writer = getPool().borrowFile();
+        long position = writer.getPosition();
+        // See if we need to open a new file because we've exceeed maxBytes.
+        // Call to checkFileSize will open new file if we're at maximum for
+        // current file.
+        writer.checkSize();
+        if (writer.getPosition() != position) {
+            // We just closed the file because it was larger than maxBytes.
+            // Add to the totalBytesWritten the size of the first record
+            // in the file, if any.
+            setTotalBytesWritten(getTotalBytesWritten() +
+            	(writer.getPosition() - position));
+            position = writer.getPosition();
+        }
+        
+        ARCWriter w = (ARCWriter)writer;
+        try {
+            if (in instanceof ReplayInputStream) {
+                w.write(curi.toString(), curi.getContentType(),
+                    ip, curi.getFetchBeginTime(),
+                    recordLength, (ReplayInputStream)in);
+            } else {
+                w.write(curi.toString(), curi.getContentType(),
+                    ip, curi.getFetchBeginTime(),
+                    recordLength, in);
+            }
+        } catch (IOException e) {
+            // Invalidate this file (It gets a '.invalid' suffix).
+            getPool().invalidateFile(writer);
+            // Set the writer to null otherwise the pool accounting
+            // of how many active writers gets skewed if we subsequently
+            // do a returnWriter call on this object in the finally block.
+            writer = null;
+            throw e;
+        } finally {
+            if (writer != null) {
+            	setTotalBytesWritten(getTotalBytesWritten() +
+            	     (writer.getPosition() - position));
+                getPool().returnFile(writer);
+            }
+        }
+        return checkBytesWritten();
+    }
+
+    protected List<String> getMetadata() {
+        if (TEMPLATE == null) {
+            return null;
+        }
+        
+        if (cachedMetadata != null) {
+            return cachedMetadata;
+        }
+                
+        String meta = TEMPLATE;
+        meta = replace(meta, "${VERSION}", ArchiveUtils.VERSION);
+        meta = replace(meta, "${HOST}", getHostName());
+        meta = replace(meta, "${IP}", getHostAddress());
+        
+        if (meta != null) {
+            meta = replace(meta, "${JOB_NAME}", getMetadataProvider().getJobName());
+            meta = replace(meta, "${DESCRIPTION}", getMetadataProvider().getDescription());
+            meta = replace(meta, "${OPERATOR}", getMetadataProvider().getOperator());
+            // TODO: fix this to match job-start-date (from UI or operator setting)
+            // in the meantime, don't include a slightly-off date
+            // meta = replace(meta, "${DATE}", GMT());
+            meta = replace(meta, "${USER_AGENT}", getMetadataProvider().getUserAgent());
+            meta = replace(meta, "${FROM}", getMetadataProvider().getOperatorFrom());
+            meta = replace(meta, "${ROBOTS}", getMetadataProvider().getRobotsPolicyName());
+        }
+
+        this.cachedMetadata = Collections.singletonList(meta);
+        return this.cachedMetadata;
+        // ${VERSION}
+        // ${HOST}
+        // ${IP}
+        // ${JOB_NAME}
+        // ${DESCRIPTION}
+        // ${OPERATOR}
+        // ${DATE}
+        // ${USER_AGENT}
+        // ${FROM}
+        // ${ROBOTS}
+
+    }
+
+    private static String replace(String meta, String find, String replace) {
+        replace = StringUtils.defaultString(replace);
+        replace = StringEscapeUtils.escapeXml(replace);
+        return meta.replace(find, replace);
+    }
+    
+    private static String getHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            logger.log(Level.SEVERE, "Could not get local host name.", e);
+            return "localhost";
+        }
+    }
+    
+    
+    private static String getHostAddress() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            logger.log(Level.SEVERE, "Could not get local host address.", e);
+            return "localhost";
+        }        
+    }
+
+
+    private static String readTemplate() {
+        InputStream input = ARCWriterProcessor.class.getResourceAsStream(
+                "arc_metadata_template.xml");
+        if (input == null) {
+            logger.severe("No metadata template.");
+            return null;
+        }
+        try {
+            return IOUtils.toString(input);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(input);
+        }
+    }
+
+}

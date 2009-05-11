@@ -1,0 +1,62 @@
+directory-description:
+The directory that paths are relative to.
+
+
+server-cache-description:
+The server cache used to resolve IP addresses.
+
+
+path-description:
+Where to save files. Supply absolute or relative path. If relative, files 
+will be written relative to the directory setting. If more than one 
+path specified, we'll round-robin dropping files to each. This setting is 
+safe to change midcrawl (You can remove and add new dirs as the crawler 
+progresses). 
+
+
+compress-description:
+Compress files when writing to disk. 
+
+
+max-size-bytes-description:
+Max size of each file. 
+
+
+pool-max-active-description:
+Maximum active files in pool. This setting cannot be varied over the life 
+of a crawl. 
+
+
+pool-max-wait-description:
+Maximum time to wait on pool element (milliseconds). This setting cannot 
+be varied over the life of a crawl. 
+
+
+prefix-description:
+File prefix. The text supplied here will be used as a prefix naming 
+writer files. For example if the prefix is 'IAH', then file names will 
+look like IAH-20040808101010-0001-HOSTNAME.arc.gz ...if writing ARCs (The 
+prefix will be separated from the date by a hyphen). 
+
+
+suffix-description:
+Suffix to tag onto files. If value is '${HOSTNAME}', will use hostname 
+for suffix. If empty, no suffix will be added. 
+
+
+total-bytes-to-write-description:
+Total file bytes to write to disk. Once the size of all files on disk has 
+exceeded this limit, this processor will stop the crawler. A value of 
+zero means no upper limit. 
+
+
+metadata-provider-description:
+The source of metadata for written ARC files. Should be the crawl controller
+in a Heritrix crawl.
+
+
+skip-identical-digests-description:
+Whether to skip the writing of a record when URI history information is
+available and indicates the prior fetch had an identical content digest.
+Default is false.
+

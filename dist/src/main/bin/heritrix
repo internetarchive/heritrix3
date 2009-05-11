@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+##
+## This script launches the heritrix crawler.
+##
+## Optional environment variables
+##
+## JAVA_HOME        Point at a JDK install to use.
+## 
+## HERITRIX_HOME    Pointer to your heritrix install.  If not present, we 
+##                  make an educated guess based of position relative to this
+##                  script.
+##
+## HERITRIX_OUT     Pathname to the Heritrix log file written when run in
+##                  daemon mode.
+##                  Default setting is $HERITRIX_HOME/heritrix_out.log
+##
+## JAVA_OPTS        Java runtime options.  Default setting is '-Xmx256m'.
+##
+## FOREGROUND       Set to any value -- e.g. 'true' -- if you want to run 
+##                  heritrix in foreground (Used by build system when it runs
+##                  selftest to see if completed successfully or not).
+##
+
+# Resolve links - $0 may be a softlink
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$PRG"`
+
+# Read local heritrix properties if any.
+if [ -f $HOME/.heritrixrc ]
+then 
+  . $HOME/.heritrixrc
+fi
+
+# Set HERITRIX_HOME.
+if [ -z "$HERITRIX_HOME" ]
+then
+    HERITRIX_HOME=`cd "$PRGDIR/.." ; pwd`
+fi
+
+cd $HERITRIX_HOME
+
+# Find JAVA_HOME.
+if [ -z "$JAVA_HOME" ]
+then
+  JAVA=`which java`
+  if [ -z "$JAVA" ] 
+  then
+    echo "Cannot find JAVA. Please set JAVA_HOME or your PATH."
+    exit 1
+  fi
+  JAVA_BINDIR=`dirname $JAVA`
+  JAVA_HOME=$JAVA_BINDIR/..
+fi
+
+if [ -z "$JAVACMD" ] 
+then 
+   # It may be defined in env - including flags!!
+   # See '[ 1482761 ] BDB Adler32 gc-lock OOME risk' for why we include the
+   # 'je.disable.java.adler32'.
+   JAVACMD="$JAVA_HOME/bin/java -Dje.disable.java.adler32=true"
+fi
+
+# Ignore previous classpath.  Build one that contains heritrix jar and content
+# of the lib directory into the variable CP.
+for jar in `ls $HERITRIX_HOME/lib/*.jar`
+do
+    CP=${CP}:${jar}
+done
+
+# cygwin path translation
+if expr `uname` : 'CYGWIN*' > /dev/null; then
+    CP=`cygpath -p -w "$CP"`
+    HERITRIX_HOME=`cygpath -p -w "$HERITRIX_HOME"`
+fi
+
+# Make sure of java opts.
+if [ -z "$JAVA_OPTS" ]
+then
+  JAVA_OPTS=" -Xmx256m"
+fi
+
+# Main heritrix class.
+if [ -z "$CLASS_MAIN" ]
+then
+  CLASS_MAIN='org.archive.crawler.Heritrix'
+fi
+
+# A bit of a hack to ensure that if the user puts -h/--help on the
+# command line run CLASS_MAIN in the foreground so the output will go
+# to the terminal.
+for i in "$@"
+do
+    if [ "$i" == "-h" ] || [ "$i" == "--help" ]
+    then
+        FOREGROUND="true"
+        break
+    fi
+done
+
+# heritrix_dmesg.log contains startup output from the crawler main class. 
+# As soon as content appears in this log, this shell script prints the 
+# successful (or failed) startup content and moves off waiting on heritrix
+# startup. This technique is done so we can show on the console startup 
+# messages emitted by java subsequent to the redirect of stdout and stderr.
+startMessage="${HERITRIX_HOME}/heritrix_dmesg.log"
+
+# Remove any file that may have been left over from previous starts.
+if [ -f $startMessage ]
+then
+    rm -f $startmessage
+fi
+# Run heritrix as daemon.  Redirect stdout and stderr to a file.
+# Print start message with date, java version, java opts, ulimit, and uname.
+if [ -z "$HERITRIX_OUT" ]
+then
+  HERITRIX_OUT=${HERITRIX_HOME}/heritrix_out.log
+fi
+stdouterrlog=${HERITRIX_OUT}
+echo "`date` Starting heritrix" >> $stdouterrlog
+uname -a >> $stdouterrlog 2>&1
+${JAVACMD} ${JAVA_OPTS} -version >> $stdouterrlog 2>&1
+echo "JAVA_OPTS=${JAVA_OPTS}" >> $stdouterrlog
+ulimit -a >> $stdouterrlog 2>&1
+
+# If FOREGROUND is set, run heritrix in foreground.
+if [ -n "$FOREGROUND" ]
+then
+    CLASSPATH=${CP} $JAVACMD -Dheritrix.home=${HERITRIX_HOME} \
+        -Djava.protocol.handler.pkgs=org.archive.net \
+        -Dheritrix.out=${HERITRIX_OUT} ${JAVA_OPTS} ${JMX_OPTS} \
+        $CLASS_MAIN $@
+else
+    CLASSPATH=${CP} nohup $JAVACMD -Dheritrix.home=${HERITRIX_HOME} \
+        -Djava.protocol.handler.pkgs=org.archive.net \
+        -Dheritrix.out=${HERITRIX_OUT} ${JAVA_OPTS} ${JMX_OPTS} \
+        $CLASS_MAIN $@ >> ${stdouterrlog} 2>&1 &
+    HERITRIX_PID=$!
+
+    # Wait for content in the heritrix_dmesg.log file.
+    echo -n "`date` Starting heritrix"
+    while true 
+    do
+        sleep 1
+        if [ -s $startMessage ]
+        then
+            echo
+            cat $startMessage
+            rm -f $startMessage
+            break
+        fi
+        kill -0 $HERITRIX_PID > /dev/null 2>&1
+        if [ $? -eq 0 ]
+        then
+            echo $HERITRIX_PID > heritrix.pid
+        else
+            echo
+            echo "ERROR: JVM terminated without running Heritrix."
+            echo "This could be due to invalid JAVA_OPTS or JMX_PORT, etc."
+            echo "See heritrix_out.log for more details."
+            echo "Here are its last three lines: "
+            echo
+            tail -3 $stdouterrlog
+            break
+        fi
+        echo -n '.'
+    done
+fi

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+##
+## This script runs the org.archive.crawler.extractor.ExtractorHTMLTest main.
+##
+## Optional environment variables
+##
+## JAVA_HOME        Point at a JDK install to use.
+## 
+## HERITRIX_HOME    Pointer to your heritrix install.  If not present, we 
+##                  make an educated guess based of position relative to this
+##                  script.
+##
+## JAVA_OPTS        Java runtime options.
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$PRG"`
+
+# Set HERITRIX_HOME.
+if [ -z "$HERITRIX_HOME" ]
+then
+    HERITRIX_HOME=`cd "$PRGDIR/.." ; pwd`
+fi
+
+FOREGROUND='true', \
+CLASS_MAIN='org.archive.crawler.extractor.ExtractorHTMLTest' \
+    $HERITRIX_HOME/bin/heritrix $@

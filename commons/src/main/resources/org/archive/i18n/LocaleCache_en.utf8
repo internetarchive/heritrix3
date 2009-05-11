@@ -1,0 +1,9 @@
+# LocaleCache.en.utf8 -- data for LocaleCache in English
+
+hello:
+Hello, world!
+
+multiline:
+Most modern calendars mar the sweet simplicity of our lives by reminding us
+that each day that passes is the anniversary of some perfectly uninteresting
+event.

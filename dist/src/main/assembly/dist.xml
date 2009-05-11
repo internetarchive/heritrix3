@@ -1,0 +1,51 @@
+<assembly>
+   <id>dist</id>
+   <formats>
+      <format>tar.gz</format>
+      <format>zip</format>
+   </formats>
+   <includeBaseDirectory>true</includeBaseDirectory>
+         <dependencySets>
+            <dependencySet>
+              <outputDirectory>/lib</outputDirectory>
+            </dependencySet>
+         </dependencySets>
+
+   <fileSets>
+    <fileSet>
+     <directory>.</directory>
+     <outputDirectory>/</outputDirectory>
+     <includes>
+      <include>README.txt</include>
+      <include>LICENSE.txt</include>
+      <include>HOWTO-Launch-Heritrix.txt</include>
+     </includes>
+    </fileSet>
+    <fileSet>
+     <directory>src/main/licenses</directory>
+     <outputDirectory>/lib</outputDirectory>
+    </fileSet>
+    <fileSet>
+     <directory>target/site</directory>
+     <outputDirectory>/docs</outputDirectory>
+    </fileSet>
+    <fileSet>
+     <directory>src/main/bin</directory>
+     <outputDirectory>/bin</outputDirectory>
+     <fileMode>0755</fileMode>
+   </fileSet>
+    <fileSet>
+     <directory>src/main/extras</directory>
+     <outputDirectory>/extras</outputDirectory>
+   </fileSet>
+   <fileSet>
+     <directory>src/main/conf</directory>
+     <outputDirectory>/conf</outputDirectory>
+   </fileSet>
+   <fileSet>
+     <directory>src/main/conf/jobs</directory>
+     <outputDirectory>/jobs</outputDirectory>
+   </fileSet>
+
+  </fileSets>
+</assembly>

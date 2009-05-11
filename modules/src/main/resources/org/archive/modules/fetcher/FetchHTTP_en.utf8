@@ -1,0 +1,136 @@
+description:
+HTTP Fetcher.
+
+
+accept-headers-description:
+Accept Headers to include in each request. Each must be the complete 
+header, e.g., 'Accept-Language: en'. 
+
+
+cookie-storage-description:
+Mechanism used to store cookies, if any.
+
+
+default-encoding-description:
+The character encoding to use for files that do not have one specified in 
+the HTTP response headers. Default: ISO-8859-1. 
+
+
+fetch-bandwidth-description:
+The maximum KB/sec to use when fetching data from a server. The default 
+of 0 means no maximum. 
+
+
+http-proxy-host-description:
+Proxy host IP (set only if needed). 
+
+
+http-proxy-port-description:
+Proxy port (set only if needed). 
+
+
+ignore-cookies-description:
+Disable cookie handling. 
+
+
+load-cookies-from-file-description:
+File to preload cookies from. 
+
+
+http-bind-address-description:
+Local IP address or hostname to use when making connections (binding 
+sockets). When not specified, uses default local address(es). 
+
+
+max-length-bytes-description:
+Maximum length in bytes to fetch. Fetch is truncated at this length. A 
+value of 0 means no limit. 
+
+
+midfetch-rules-description:
+DecideRules applied after receipt of HTTP response headers but before we 
+start to download the body. If any filter returns FALSE, the fetch is 
+aborted. Prerequisites such as robots.txt by-pass filtering (i.e. they 
+cannot be midfetch aborted. 
+
+
+save-cookies-from-file-description:
+When crawl finishes save cookies to this file. 
+
+
+send-connection-close-description:
+Send 'Connection: close' header with every request. 
+
+
+send-range-description:
+Send 'Range' header when a limit max-length-bytes on document size. 
+\n
+Be polite to the HTTP servers and send the 'Range' header, stating that 
+you are only interested in the first n bytes. Only pertinent if 
+max-length-bytes > 0. Sending the 'Range' header results in a 
+'206 Partial Content' status response, which is better than just cutting 
+the response mid-download. On rare occasion, sending 'Range' will 
+generate '416 Request Range Not Satisfiable' response. 
+
+
+send-referer-description:
+Send 'Referer' header with every request. 
+\n
+The 'Referer' header contans the location the crawler came from, the page 
+the current URI was discovered in. The 'Referer' usually is logged on the 
+remote server and can be of assistance to webmasters trying to figure how 
+a crawler got to a particular area on a site. 
+
+
+digest-content-description:
+Whether or not to perform an on-the-fly digest hash of retrieved
+content-bodies.
+ 
+
+digest-algorithm-description:
+Which algorithm (for example MD5 or SHA-1) to use to perform an
+on-the-fly digest hash of retrieved content-bodies.
+
+
+sotimeout-ms-description:
+If a socket is unresponsive for this number of milliseconds, give up on that 
+connects/read. (This does not necessarily give up on the fetch immediately; 
+connects are subject to retries and reads will be retried until timeout-seconds
+have elapsed. Set to zero for no socket timeout. (This is 
+not recommended: a socket operation could hang indefinitely.)
+
+
+timeout-seconds-description:
+If the fetch is not completed in this number of seconds, even if it is making 
+progress, give up. The URI will be annotated as timeTrunc. Set to zero for no 
+timeout. (This is not recommended: threads could wait indefinitely for the 
+fetch to end.)
+
+trust-level-description:
+SSL certificate trust level. Range is from the default 'open' (trust all 
+certs including expired, selfsigned, and those for which we do not have a 
+CA) through 'loose' (trust all valid certificates including selfsigned), 
+'normal' (all valid certificates not including selfsigned) to 'strict' 
+(Cert is valid and DN must match servername). 
+
+
+credential-store-description:
+Module used to store credentials.
+
+
+server-cache-description:
+Module used to cache server information, such as DNS results.
+
+
+send-if-modified-since-description:
+Send 'If-Modified-Since' header, if previous 'Last-Modified' fetch history 
+information is available in URI history.
+
+
+send-if-none-match-description:
+Send 'If-None-Match' header, if previous 'Etag' fetch history information
+is available in URI history.
+
+
+user-agent-provider-description:
+Provides the user-agent and from header.

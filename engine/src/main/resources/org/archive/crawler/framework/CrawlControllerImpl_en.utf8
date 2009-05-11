@@ -1,0 +1,104 @@
+description:
+The CrawlController.  Used to stop, start, pause, resume and checkpoint crawls.
+
+
+logger-module-description:
+The logger module to use for the crawl.
+
+
+statistics-tracker-description:
+Statistics tracking modules.  Any number of specialized statistics 
+trackers that monitor a crawl and write logs, reports and/or provide 
+information to the user interface. 
+
+
+loggers-description:
+Statistics tracking modules.  Any number of specialized statistics 
+trackers that monitor a crawl and write logs, reports and/or provide 
+information to the user interface. 
+
+
+uri-canonicalization-rules-description:
+Ordered list of url canonicalization rules.  Rules are applied in the 
+order listed from top to bottom. 
+
+
+frontier-description:
+The frontier to use for the crawl. 
+
+
+server-cache-description:
+Regex for acceptable from address. 
+
+
+sheet-manager-description:
+The sheet manager used to configure the crawl controlled by this controller.
+
+
+order-description:
+The crawl order used to configure this controller.
+
+
+credential-store-description:
+The credential store.
+
+
+scope-description:
+The scope.
+
+
+frontier-description:
+The frontier.
+
+
+processors-description:
+The chain of processors that will handle each URI in the crawl.
+
+bdb-description:
+The BDB module.
+
+
+scratch-dir-description:
+The directory where temporary files will be written.
+
+
+checkpoints-dir-description:
+The directory where checkpoints will be stored.
+
+
+checkpointer-period-description:
+Number of hours to wait between automatic checkpoints.  If less than zero, no
+automatic checkpoints will be performed.
+
+
+max-bytes-download-description:
+Maximum number of bytes to download. Once this number is exceeded the crawler 
+will stop. A value of zero means no upper limit.
+
+max-document-download-description:
+Maximum number of documents to download. Once this number is exceeded the 
+crawler will stop. A value of zero means no upper limit.
+
+max-time-sec-description:
+Maximum amount of time to crawl (in seconds). Once this much time has elapsed 
+the crawler will stop. A value of zero means no upper limit.
+        
+max-toe-threads-description:
+Maximum number of threads processing URIs at the same time.
+
+pause-at-finish-description:
+If true, then pause, rather than end the crawl, when the crawl appears 
+finished (having exhausted all eligible URIs or reached other configured
+limits).  Default is false. 
+
+pause-at-start-description:
+If true, then pause at the start of the crawl, before processing any URIs. 
+Default is false. 
+
+recorder-out-buffer-bytes-description:
+Size in bytes of in-memory buffer to record outbound traffic. One such buffer 
+is reserved for every ToeThread.
+
+recorder-in-buffer-bytes-description:
+Size in bytes of in-memory buffer to record inbound traffic. One such buffer 
+is reserved for every ToeThread.

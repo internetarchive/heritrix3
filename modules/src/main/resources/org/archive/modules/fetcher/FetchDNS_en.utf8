@@ -1,0 +1,22 @@
+description:
+DNS Fetcher. Handles DNS lookups.
+
+
+accept-non-dns-resolves-description:
+If a DNS lookup fails, whether or not to fallback to InetAddress 
+resolution, which may use local 'hosts' files or other mechanisms. 
+
+
+server-cache-description:
+Used to do DNS lookups. 
+
+
+digest-content-description:
+Whether or not to perform an on-the-fly digest hash of retrieved
+content-bodies.
+
+ 
+digest-algorithm-description:
+Which algorithm (for example MD5 or SHA-1) to use to perform an
+on-the-fly digest hash of retrieved content-bodies.
+

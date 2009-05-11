@@ -1,0 +1,31 @@
+<html>
+<head>
+    <title>Simple Javascript Extraction Self Test</title>
+
+    <script type="text/javascript">
+        <!--
+        function showPage(){
+            window.open ("jscriptOpenWindow.html", "", "jscript popup window");
+        }
+
+        function showPageArg(page){
+            window.open(page,"","link as argument passed to function");
+        }
+         -->
+    </script>
+</head>
+<body>
+    <h1>Simple Javascript Extraction Self Test</h1>
+    <p>This page is meant to test the ability of the parser to get links
+    out of javascript.</p>
+
+<p>Links:
+<ul>
+<li><a href="javascript:showPage()" >javascript pop-up window test</a></li>
+<li><a href="javascript:showPageArg('jscriptOpenWindowArg.html')">javascript
+    pop-up opened by function(page)</a></li>
+</ul>
+</p>
+
+</body>
+</html>

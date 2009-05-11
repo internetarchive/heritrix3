@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.archive.crawler.selftest package</title>
+</head>
+<body>Provides the client-side aspect of the heritrix integration self test. 
+    <p>The <i>selftest</i> webapp is the repository for the serverside of the 
+    intergration test.</p> <p>The integration self test is run from the command 
+    line. Invocation makes the crawler go up against itself trawling the 
+    <i>selftest</i> webapp. When done, the product -- arc and log files -- are 
+    analyzed by code herein to verify test pass or fail.</p> <p>The integration 
+    self test is the aggregation of multiple individual tests each testing a 
+    particular crawler aspect. For example, the <i>Robots</i> test validates 
+    the crawler's parse of <i>robots.txt</i>. Each test comprises a directory 
+    under the <i>selftest</i> webapp named for the test into which we put the 
+    server pages that express the scenario to test, and a class from this 
+    package named for test webapp directory w/ a <code>SelfTest</code> suffix. 
+    The selftest class verifies test success. Each selftest class subclasses 
+    <code>org.archive.crawler.selftest.SelfTestCase</code> which is itself 
+    a subclass of <code>org.junit.TestCase</code>). All tests need to be 
+    registered with the {@link org.archive.crawler.selftest.AllSelfTestCases} 
+    class and must live in the org.archive.crawler.selftest package. The class
+    {@link org.archive.crawler.selftest.SelfTestCrawlJobHandler} 
+    manages the running of selftest.</p> 
+    <p>Run one test only by passing its name as the option value to the 
+    selftest argument.</p>
+    <p>The first crop of self tests are 
+    derived from tests developed by Parker Thompson &lt; pt at archive dot org 
+    &gt;. See <a 
+    href="http://cvs.sourceforge.net/viewcvs.py/archive-crawler/Tests/">Tests</a>. 
+    These tests in turn look to have been derived from <a 
+    href="http://www.searchtools.com/test/">Testing Search Indexing 
+    Systems1</a>. </p> <h3>Adding a Self Test</h3> <p>TODO</p> <h2>Related 
+    Documentation</h2> <p>TODO</p> </body>
+</html>

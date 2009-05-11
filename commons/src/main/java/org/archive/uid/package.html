@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.archive.uid package</title>
+</head>
+<body>
+A unique ID generator.
+Default is {@link org.archive.uid.UUIDGenerator}.  
+To use another ID Generator, set the System Property
+<code>org.archive.uid.GeneratorFactory.generator</code> to point
+at an alternate implementation of {@link org.archive.uid.Generator}.
+
+<h2>TODO</h2>
+<ul>
+    <li>MIME boundaries have upper-bound of 70 characters total including
+    'blank line' (<code>CRLFCRLF</code>) and two leading hyphens. Add to
+    {@link org.archive.uid.Generator} 
+    interface an upper-bound on generated ID length.</li>
+<li>Add example of an <i>actionable</i> uid generator:
+e.g. <code>http://archive.org/UID-SCHEME/ID</code>
+where scheme might be <code>UUID</code> and an ID might be
+<code>f9472055-fbb6-4810-90e8-68fd39e145a6;type=metadata</code> or,
+using <a href="http://ark.cdlib.org/arkcdl.pdf">ARK</a>: 
+<code>http://archive.org/ark:/13030/f9472055-fbb6-4810-90e8-68fd39e145a6;type=metadata</code>.
+</li>
+</ul>
+</body>
+</html>

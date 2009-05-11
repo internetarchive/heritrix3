@@ -1,0 +1,43 @@
+balance-replenish-amount-description:
+amount to replenish budget on each activation (duty cycle) 
+
+
+cost-policy-description:
+cost assignment policy to use. 
+
+queue-precedence-policy-description:
+queue precedence policy to use (assigns integer precedence values to 
+URI queues; lower numbers are of higher precedence)
+
+precedence-floor-description:
+URI queues with a precedence value equal or greater than this number
+will not be consulted for URIs to crawl 
+
+uri-precedence-policy-description:
+URI precedence assignment policy to use (assigns integer precedence values
+to individual URIs; lower numbers are higher precedence)
+
+error-penalty-amount-description:
+whether to hold queues INACTIVE until needed for throughput 
+
+
+hold-queues-description:
+whether to hold queues INACTIVE until needed for throughput 
+
+
+queue-total-budget-description:
+total expenditure to allow a queue before 'retiring' it 
+
+
+snooze-long-ms-description:
+When a snooze target for a queue is longer than this amount, the queue
+will be "long snoozed" instead of "short snoozed".  A "long snoozed"
+queue may be swapped to disk because it's not needed soon.  
+
+
+target-ready-backlog-description:
+target size of ready queues backlog 
+
+
+uri-uniq-filter-description:
+The UriUniqFilter to use.

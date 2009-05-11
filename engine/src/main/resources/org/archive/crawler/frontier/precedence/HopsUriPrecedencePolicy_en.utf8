@@ -1,0 +1,9 @@
+description:
+UriPrecedencePolicy which assigns URIs a precedence equal to the number
+of hops in its hops-path-from-seed (either all hops or just navlink ('L')
+hops.
+
+navlinks-only-description:
+whether to count only navlinks ('L'), or all hops 
+
+

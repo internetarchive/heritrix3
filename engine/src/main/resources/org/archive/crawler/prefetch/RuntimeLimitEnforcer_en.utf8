@@ -1,0 +1,41 @@
+description:
+A processor that halts further progress once a fixed 
+amount of time has elapsed since the start of a crawl. 
+It is possible to configure this processor per host, but 
+it should be noted that Heritrix does not track runtime 
+per host seperately. Especially when using facilities 
+like the BdbFrontier's hold-queues, the actual amount of 
+time spent crawling a host may have little relevance to 
+total elapsed time. Note however that using overrides 
+and/or refinements only makes sense when using the 
+'Block URIs' end operation. The pause and terminate 
+operations have global impact once encountered.
+
+end-operation-description:
+The action that the processor takes once the runtime has elapsed. 
+<p> 
+Operation: Pause job - Pauses the crawl. A change (increase) to the 
+runtime duration will make it pausible to resume the crawl. Attempts to 
+resume the crawl without modifying the run time will cause it to be 
+immediately paused again. 
+<p> 
+Operation: Terminate job - Terminates the job. Equivalent to using the 
+max-time setting on the CrawlController. 
+<p> 
+Operation: Block URIs - Blocks each URI with an -5002 (blocked by custom 
+processor) fetch status code. This will cause all the URIs queued to wind 
+up in the crawl.log. 
+
+
+runtime-seconds-description:
+The amount of time, in seconds, that the crawl will be allowed to run 
+before this processor performs it's 'end operation.' 
+
+
+controller-description:
+The CrawlController used to stop or pause crawls if runtime limits are 
+detected.
+
+
+statistics-tracker-description:
+The StatisticsTracker used to determine how long the crawl is running.

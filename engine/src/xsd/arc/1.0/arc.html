@@ -1,0 +1,1762 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml">
+   <head>
+      <title>Internet Archive ARC file metadata XML Schema</title>
+      <meta http-equiv="Content-Type" content="text/xml; charset=iso-8859-1"/>
+      <style type="text/css">
+	  /* General */
+	  body, p, li, span, th, td, div {
+		  font-family: Arial, sans-serif;
+		  font-size: 10pt;
+	  }
+	  body {
+		  color:black;
+		  background-color:white;
+	  }
+	  ul {
+		  margin-left: 1.5em;
+		  margin-bottom: 0em;
+	  }
+	  hr {
+		  color: black;
+	  }
+	  table {
+		  margin-top: 10px;
+		  margin-bottom: 10px;
+		  margin-left: 2px;
+		  margin-right: 2px;
+	  }
+	  table td, table th {
+		  padding-top: 3px;
+		  padding-bottom: 3px;
+		  padding-left: 10px;
+		  padding-right: 10px;
+		  vertical-align: top;
+	  }
+	  table th {
+		  font-weight:bold;
+		  text-align:left;
+	  }
+	  table.hierarchy, table.sample, table.schemaComponent {
+		  background-color: white;
+	  }
+	  table.properties, table.hierarchy, table.sample, table.schemaComponent {
+		  width: 90%;
+	  }
+
+
+	  /* For box containing whether to display in printing mode 
+			or viewing mode */
+	  #printerControls {
+		  white-space: nowrap;
+		  font-weight: bold;
+		  color: #996633; /* orange-brown */
+		  position: absolute;
+		  left: 60%;
+		  top: 7em;
+	  }
+
+
+	  /* For box containing collapse and expand all boxes */
+	  #globalControls {
+		  border: 2px solid #aaaaaa;
+		  padding: 1em;
+		  position: absolute;
+		  left: 60%;
+		  top: 9em;
+	  }
+
+
+	  /* Control buttons to make 'div' boxes appear and disappear */
+	  .boxControl {
+		  width: 1.4em;
+		  height: 1.4em;
+		  text-align: center;
+		  vertical-align: middle;
+		  font-size: 11pt;
+	  }
+
+
+	  /* Legend table */
+	  #legend table {
+		  margin-top: 2em;
+	  }
+	  .legendhint {
+		  color: #888888; /* light gray */
+		  width: 90%;
+		  margin-left: 1em;
+	  }
+
+	  /* Namespaces table */
+	  table.namespaces th, table.namespaces td {
+		  background-color: #eeeeee;
+	  }
+
+	  /* Hierarchy table */
+	  table.hierarchy {
+		  border: 2px solid #aaaaaa; /* gray */
+	  }
+	  table.hierarchy th {
+		  font-weight:normal;
+		  font-style:italic;
+		  width: 20%;
+	  }
+	  table.hierarchy th, table.hierarchy td {
+		  padding: 5px;
+	  }
+
+
+	  /* Properties table */
+	  table.properties th {
+		  width: 30%;
+		  background-color:#FF7777; /* pink */
+	  }
+	  table.properties th, table.properties th a {
+		  color: black;
+	  }
+	  table.properties td {
+		  background-color:#eeeeee; /* gray */
+	  }
+
+
+	  /* XML Instance Representation table */
+	  table.sample td div.box {
+		  border: 2px dashed black;
+		  padding: 5px;
+	  }
+		  /* Normal elements and attributes */
+	  table.sample td, table.sample td a {
+		  color: black;
+	  }
+		  /* Group Headers */
+	  table.sample td .group, table.sample td .group a {
+		  color: #999999; /* light gray */
+	  }
+		  /* Type Information */
+	  table.sample td .type, table.sample td .type a {
+		  color: #999999; /* light gray */
+	  }
+		  /* Occurrence Information */
+	  table.sample td .occurs, table.sample td .occurs a {
+		  color: #999999; /* light gray */
+	  }
+		  /* Fixed values */
+	  table.sample td .fixed {
+		  color:#006633; /* green */
+		  font-weight: bold;
+	  }
+		  /* Simple type constraints */
+	  table.sample td .constraint, table.sample td .constraint a {
+		  color: #999999; /* light gray */
+	  }
+		  /* Elements and attributes inherited from base type */
+	  table.sample td .inherited, table.sample td .inherited a {
+		  color: #666666; /* dark gray */
+	  }
+		  /* Elements and attributes added to or changed from base type */
+	  table.sample td .newFields {
+		  font-weight:bold;
+	  }
+		  /* Other type of information */
+	  table.sample td .other, table.sample td .other a {
+		  color:#336699; /* blue */
+		  font-style: italic;
+	  }
+		  /* Link to open up window displaying documentation */
+	  table.sample td a.documentation {
+		  text-decoration:none;
+		  padding-left: 3px;
+		  padding-right: 3px;
+		  padding-top: 0px;
+		  padding-bottom: 0px;
+		  font-weight: bold;
+		  font-size: 11pt;
+		  background-color: #FFFFDD;
+		  color: #006699;
+	  }
+		  /* Invert colors of documentation link when mouse hovers 
+				over it */
+	  table.sample td a.documentation:hover {
+		  color: #FFFFDD;
+		  background-color: #006699;
+	  }
+
+
+	  /* Schema Component Representation table */
+	  table.schemaComponent td div.box {
+		  padding: 5px;
+		  border: 2px black solid;
+	  }
+		  /* Syntax characters */
+	  table.schemaComponent td {
+		  color:#0000ff; /* blue */
+	  }
+		  /* Element and attribute tags */
+	  table.schemaComponent td .scTag {
+		  color:#AA3333; /* maroon */
+	  }
+		  /* Element and attribute content */
+	  table.schemaComponent td .scContent, table.schemaComponent td .scContent a {
+		  color:black;
+		  font-weight:bold;
+	  }
+
+
+	  /* Title */
+	  h1 {
+		  font-family: Arial, sans-serif;
+		  font-size: 18pt;
+		  letter-spacing: 2px;
+		  border-bottom: 1px #cccccc solid;
+		  padding-top: 5px;
+		  padding-bottom: 5px;
+		  width: 75%;
+	  }
+
+
+	  /* Section Headers */
+	  h2 {
+		  font-family: Arial, sans-serif;
+		  font-size: 14pt;
+		  letter-spacing: 1px;
+	  }
+	  h3, h3 a, .name, .header, .headername {
+		  font-family: Arial, sans-serif;
+		  font-size: 12pt;
+		  font-weight: bold;
+		  color: black;
+	  }
+	  .name, .headername {
+		  color:#FF9933; /* orange */
+	  }
+
+
+	  /* Target Namespace */
+	  .targetNS {
+		  color: red;
+		  font-weight:bold;
+	  }
+
+
+	  /* Glossary Terms */
+	  .glossaryTerm {
+		  color:#003366; /* blue */
+		  font-weight:bold;
+	  }
+
+
+	  /* XML code */
+	  code, table.schemaComponent td, table.schemaComponent td span, table.schemaComponent td div, table.sample td, table.sample td span, table.sample td div {
+		  font-family: Courier New, sans-serif;
+		  font-size: 10pt;
+	  }
+</style>
+      <script type="text/javascript">
+<!--
+/* IDs of XML Instance Representation boxes */
+var xiBoxes = new Array('element_robots_xibox', 'element_http-header-from_xibox', 'element_http-header-user-agent_xibox', 'element_software_xibox', 'element_hostname_xibox', 'element_ip_xibox', 'element_operator_xibox', 'element_arcmetadata_xibox');
+/* IDs of Schema Component Representation boxes */
+var scBoxes = new Array('schema_scbox', 'element_robots_scbox', 'element_http-header-from_scbox', 'element_http-header-user-agent_scbox', 'element_software_scbox', 'element_hostname_scbox', 'element_ip_scbox', 'element_operator_scbox', 'element_arcmetadata_scbox');
+
+/**
+ * Can get the ID of the button controlling
+ * a collapseable box by concatenating
+ * this string onto the ID of the box itself.
+ */
+var B_SFIX = "_button";
+
+/**
+ * Counter of documentation windows
+ * Used to give each window a unique name
+ */
+var windowCount = 0;
+
+/**
+ * Returns an element in the current HTML document.
+ * 
+ * @param elementID Identifier of HTML element
+ * @return					HTML element object
+ */
+function getElementObject(elementID) {
+	 var elemObj = null;
+	 if (document.getElementById) {
+		  elemObj = document.getElementById(elementID);
+	 }
+	 return elemObj;
+}				 
+
+/**
+ * Closes a collapseable box.
+ * 
+ * @param boxObj		 Collapseable box
+ * @param buttonObj Button controlling box
+ */
+function closeBox(boxObj, buttonObj) {
+  if (boxObj == null || buttonObj == null) {
+	  // Box or button not found
+  } else {
+	  // Change 'display' CSS property of box
+	  boxObj.style.display="none";
+
+	  // Change text of button 
+	  if (boxObj.style.display=="none") {
+		  buttonObj.value=" + ";
+	  }
+  }
+}
+
+/**
+ * Opens a collapseable box.
+ * 
+ * @param boxObj		 Collapseable box
+ * @param buttonObj Button controlling box
+ */
+function openBox(boxObj, buttonObj) {
+  if (boxObj == null || buttonObj == null) {
+	  // Box or button not found
+  } else {
+	  // Change 'display' CSS property of box
+	  boxObj.style.display="block";
+
+	  // Change text of button
+	  if (boxObj.style.display=="block") {
+		  buttonObj.value=" - ";
+	  }
+  }
+}
+
+/**
+ * Sets the state of a collapseable box.
+ * 
+ * @param boxID Identifier of box
+ * @param open If true, box is "opened",
+ * 				Otherwise, box is "closed".
+ */
+function setState(boxID, open) {
+  var boxObj = getElementObject(boxID);
+  var buttonObj = getElementObject(boxID+B_SFIX);
+  if (boxObj == null || buttonObj == null) {
+	  // Box or button not found
+  } else if (open) {
+	  openBox(boxObj, buttonObj);
+	  // Make button visible
+	  buttonObj.style.display="inline";
+  } else {
+	  closeBox(boxObj, buttonObj);
+	  // Make button visible
+	  buttonObj.style.display="inline";
+  }
+}
+
+/**
+ * Switches the state of a collapseable box, e.g.
+ * if it's opened, it'll be closed, and vice versa.
+ * 
+ * @param boxID Identifier of box
+ */
+function switchState(boxID) {
+  var boxObj = getElementObject(boxID);
+  var buttonObj = getElementObject(boxID+B_SFIX);
+  if (boxObj == null || buttonObj == null) {
+	  // Box or button not found
+  } else if (boxObj.style.display=="none") {
+	  // Box is closed, so open it
+	  openBox(boxObj, buttonObj);
+  } else if (boxObj.style.display=="block") {
+	  // Box is opened, so close it
+	  closeBox(boxObj, buttonObj);
+  }
+}
+
+/**
+ * Closes all boxes in a given list.
+ * 
+ * @param boxList Array of box IDs
+ */
+function collapseAll(boxList) {
+  var idx;
+  for (idx = 0; idx < boxList.length; idx++) {
+	  var boxObj = getElementObject(boxList[idx]);
+	  var buttonObj = getElementObject(boxList[idx]+B_SFIX);
+	  closeBox(boxObj, buttonObj);
+  }
+}
+
+/**
+ * Open all boxes in a given list.
+ * 
+ * @param boxList Array of box IDs
+ */
+function expandAll(boxList) {
+  var idx;
+  for (idx = 0; idx	  < boxList.length; idx++) {
+	  var boxObj = getElementObject(boxList[idx]);
+	  var buttonObj = getElementObject(boxList[idx]+B_SFIX);
+	  openBox(boxObj, buttonObj);
+  }
+}
+
+/**
+ * Makes all the control buttons of boxes appear.
+ * 
+ * @param boxList Array of box IDs
+ */
+function viewControlButtons(boxList) {
+	 var idx;
+	 for (idx = 0; idx < boxList.length; idx++) {
+		  buttonObj = getElementObject(boxList[idx]+B_SFIX);
+		  if (buttonObj != null) {
+				buttonObj.style.display = "inline";
+		  }
+	 }
+}
+
+/**
+ * Makes all the control buttons of boxes disappear.
+ * 
+ * @param boxList Array of box IDs
+ */
+function hideControlButtons(boxList) {
+	 var idx;
+	 for (idx = 0; idx < boxList.length; idx++) {
+		  buttonObj = getElementObject(boxList[idx]+B_SFIX);
+		  if (buttonObj != null) {
+				buttonObj.style.display = "none";
+		  }
+	 }
+}
+
+/**
+ * Sets the page for either printing mode
+ * or viewing mode. In printing mode, the page
+ * is made to be more readable when printing it out.
+ * In viewing mode, the page is more browsable.
+ *
+ * @param isPrinterVersion If true, display in
+ * 										  printing mode; otherwise, 
+ * 										  in viewing mode
+ */
+function displayMode(isPrinterVersion) {
+	 var obj;
+	 if (isPrinterVersion) {
+		  // Hide global control buttons
+		  obj = getElementObject("globalControls");
+		  if (obj != null) {
+				obj.style.display = "none";
+		  }
+		  // Hide Legend
+		  obj = getElementObject("legend");
+		  if (obj != null) {
+				obj.style.display = "none";
+		  }
+		  obj = getElementObject("legendTOC");
+		  if (obj != null) {
+				obj.style.display = "none";
+		  }
+		  // Hide Glossary
+		  obj = getElementObject("glossary");
+		  if (obj != null) {
+				obj.style.display = "none";
+		  }
+		  obj = getElementObject("glossaryTOC");
+		  if (obj != null) {
+				obj.style.display = "none";
+		  }
+
+		  // Expand all XML Instance Representation tables
+		  expandAll(xiBoxes);
+		  // Expand all Schema Component Representation tables
+		  expandAll(scBoxes);
+
+		  // Hide Control buttons
+		  hideControlButtons(xiBoxes);
+		  hideControlButtons(scBoxes);
+	 } else {
+		  // View global control buttons
+		  obj = getElementObject("globalControls");
+		  if (obj != null) {
+				obj.style.display = "block";
+		  }
+		  // View Legend
+		  obj = getElementObject("legend");
+		  if (obj != null) {
+				obj.style.display = "block";
+		  }
+		  obj = getElementObject("legendTOC");
+		  if (obj != null) {
+				obj.style.display = "block";
+		  }
+		  // View Glossary
+		  obj = getElementObject("glossary");
+		  if (obj != null) {
+				obj.style.display = "block";
+		  }
+		  obj = getElementObject("glossaryTOC");
+		  if (obj != null) {
+				obj.style.display = "block";
+		  }
+
+		  // Expand all XML Instance Representation tables
+		  expandAll(xiBoxes);
+		  // Collapse all Schema Component Representation tables
+		  collapseAll(scBoxes);
+
+		  // View Control buttons
+		  viewControlButtons(xiBoxes);
+		  viewControlButtons(scBoxes);
+	 }
+}
+
+/**
+ * Opens up a window displaying the documentation
+ * of a schema component in the XML Instance
+ * Representation table.
+ * 
+ * @param compDesc		Description of schema component 
+ * @param compName		Name of schema component 
+ * @param docTextArray Array containing the paragraphs 
+ * 								  of the new document
+ */
+function viewDocumentation(compDesc, compName, docTextArray) {
+  var width = 400;
+  var height = 200;
+  var locX = 100;
+  var locY = 200;
+
+  /* Generate content */
+  var actualText = "<html>";
+  actualText += "<head><title>";
+  actualText += compDesc;
+  if (compName != '') {
+	  actualText += ": " + compName;
+  }
+  actualText += "</title></head>";
+  actualText += "<body bgcolor=\"#FFFFEE\">";
+  // Title
+  actualText += "<p style=\"font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; letter-spacing:1px;\">";
+  actualText += compDesc;
+  if (compName != '') {
+	  actualText += ": <span style=\"color:#006699\">" + compName + "</span>";
+  }
+  actualText += "</p>";
+  // Documentation
+  var idx;
+  for (idx = 0; idx < docTextArray.length; idx++) {
+	  actualText += "<p style=\"font-family: Arial, sans-serif; font-size: 10pt;\">" + docTextArray[idx] + "</p>";
+  }
+  // Link to close window
+  actualText += "<a href=\"javascript:void(0)\" onclick=\"window.close();\" style=\"font-family: Arial, sans-serif; font-size: 8pt;\">Close</a>";
+  actualText += "</body></html>";
+
+  /* Display window */
+  windowCount++;
+  var docWindow = window.open("", "documentation"+windowCount, "toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable,alwaysRaised,dependent,titlebar=no,width="+width+",height="+height+",screenX="+locX+",left="+locX+",screenY="+locY+",top="+locY);
+  docWindow.document.write(actualText);
+}
+
+// -->
+</script>
+   </head>
+   <body>
+      <h1>
+         <a name="top">Internet Archive ARC file metadata XML Schema</a>
+      </h1>
+      <div id="printerControls" style="display:none;">
+         <input type="checkbox" onclick="displayMode(this.checked)"/>Printer-friendly Version</div>
+      <script type="text/javascript">
+<!--
+
+  var pc = getElementObject("printerControls");
+  if (pc != null) {
+	  pc.style.display="block";
+  }
+				
+// -->
+</script>
+      <div id="globalControls" style="display:none">
+         <p>
+            <strong>XML Instance Representation:</strong>
+            <br/>
+            <span style="margin-left: 1em; white-space: nowrap">[ <a href="javascript:void(0)" onclick="expandAll(xiBoxes)">Expand All</a> | <a href="javascript:void(0)" onclick="collapseAll(xiBoxes)">Collapse All</a> ]</span>
+         </p>
+         <p>
+            <strong>Schema Component Representation:</strong>
+            <br/>
+            <span style="margin-left: 1em; white-space: nowrap">[ <a href="javascript:void(0)" onclick="expandAll(scBoxes)">Expand All</a> | <a href="javascript:void(0)" onclick="collapseAll(scBoxes)">Collapse All</a> ]</span>
+         </p>
+      </div>
+      <script type="text/javascript">
+<!--
+
+  var gc = getElementObject("globalControls");
+  if (gc != null) {
+	  gc.style.display="block";
+  }
+				
+// -->
+</script>
+      <h2>Table of Contents</h2>
+      <ul>
+         <li>
+            <a href="#SchemaProperties">Schema Document Properties</a>
+         </li>
+         <li>
+            <a href="#SchemaDeclarations">Global Declarations</a>
+            <ul>
+               <li>
+                  <a href="#element_arcmetadata">Element: <strong>arcmetadata</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_hostname">Element: <strong>hostname</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_http-header-from">Element: <strong>http-header-from</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_http-header-user-agent">Element: <strong>http-header-user-agent</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_ip">Element: <strong>ip</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_operator">Element: <strong>operator</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_robots">Element: <strong>robots</strong>
+                  </a>
+               </li>
+               <li>
+                  <a href="#element_software">Element: <strong>software</strong>
+                  </a>
+               </li>
+            </ul>
+         </li>
+      </ul>
+      <ul id="legendTOC" style="margin-top: 0em">
+         <li>
+            <a href="#Legend">Legend</a>
+         </li>
+      </ul>
+      <ul id="glossaryTOC" style="margin-top: 0em">
+         <li>
+            <a href="#Glossary">Glossary</a>
+         </li>
+      </ul>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h2>
+         <a name="SchemaProperties">Schema Document Properties</a>
+      </h2>
+      <table class="properties">
+         <tr>
+            <th>
+               <a title="Look up 'Target Namespace' in glossary" href="#term_TargetNS">Target Namespace</a>
+            </th>
+            <td>
+               <span class="targetNS">http://archive.org/arc/1.0/</span>
+            </td>
+         </tr>
+         <tr>
+            <th>Element and Attribute Namespaces</th>
+            <td>
+               <ul>
+                  <li>Global element and attribute declarations belong to this schema's target namespace.</li>
+                  <li>By default, local element declarations belong to this schema's target namespace.</li>
+                  <li>By default, local attribute declarations have no namespace.</li>
+               </ul>
+            </td>
+         </tr>
+         <tr>
+            <th>Schema Composition</th>
+            <td>
+               <ul>
+                  <li>This schema imports schema(s) from the following namespace(s):<ul>
+                        <li>
+                           <em>http://www.w3.org/XML/1998/namespace</em> (at http://www.w3.org/2001/03/xml.xsd)</li>
+                        <li>
+                           <em>http://purl.org/dc/elements/1.1/</em> (at http://dublincore.org/schemas/xmls/qdc/2003/04/02/dc.xsd)</li>
+                        <li>
+                           <em>http://purl.org/dc/terms/</em> (at http://dublincore.org/schemas/xmls/qdc/2003/04/02/dcterms.xsd)</li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td>
+            Internet Archive ARC file Dublin Core element refinements. 
+            
+            XML Schema for http://archive.org/arc/1.0/ namespace.
+            
+            This schema adds Dublin Core element refinements for Internet
+            Achive ARC file metadata. It also adds new elements
+            that subclass the 'dc:any' type and the 'dc:metadata'
+            element container. 
+            
+            $Id$
+        
+        </td>
+         </tr>
+      </table>
+      <h3>Declared Namespaces</h3>
+      <table class="namespaces">
+         <tr>
+            <th>Prefix</th>
+            <th>Namespace</th>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_">Default namespace</a>
+            </td>
+            <td>
+               <span class="targetNS">http://archive.org/arc/1.0/</span>
+            </td>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_xml">xml</a>
+            </td>
+            <td>http://www.w3.org/XML/1998/namespace</td>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_arc">arc</a>
+            </td>
+            <td>
+               <span class="targetNS">http://archive.org/arc/1.0/</span>
+            </td>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_xs">xs</a>
+            </td>
+            <td>http://www.w3.org/2001/XMLSchema</td>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_dc">dc</a>
+            </td>
+            <td>http://purl.org/dc/elements/1.1/</td>
+         </tr>
+         <tr>
+            <td>
+               <a name="ns_dcterms">dcterms</a>
+            </td>
+            <td>http://purl.org/dc/terms/</td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="schema_scbox_button" class="boxControl" onclick="switchState('schema_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="schema_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:schema</span> 
+                     <span class="scTag">targetNamespace</span>="<span class="scContent">http://archive.org/arc/1.0/</span>" <span class="scTag">elementFormDefault</span>="<span class="scContent">qualified</span>" <span class="scTag">attributeFormDefault</span>="<span class="scContent">unqualified</span>"&gt;<div style="margin-left: 1.5em">&lt;<span class="scTag">xs:import</span> 
+                        <span class="scTag">namespace</span>="<span class="scContent">http://www.w3.org/XML/1998/namespace</span>" <span class="scTag">schemaLocation</span>="<span class="scContent">http://www.w3.org/2001/03/xml.xsd</span>"/&gt;</div>
+                     <div style="margin-left: 1.5em">&lt;<span class="scTag">xs:import</span> 
+                        <span class="scTag">namespace</span>="<span class="scContent">http://purl.org/dc/elements/1.1/</span>" <span class="scTag">schemaLocation</span>="<span class="scContent">http://dublincore.org/schemas/xmls/qdc/2003/04/02/dc.xsd</span>"/&gt;</div>
+                     <div style="margin-left: 1.5em">&lt;<span class="scTag">xs:import</span> 
+                        <span class="scTag">namespace</span>="<span class="scContent">http://purl.org/dc/terms/</span>" <span class="scTag">schemaLocation</span>="<span class="scContent">http://dublincore.org/schemas/xmls/qdc/2003/04/02/dcterms.xsd</span>"/&gt;</div>
+                     <div class="scContent" style="margin-left: 1.5em">...</div>&lt;/<span class="scTag">xs:schema</span>&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('schema_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h2>
+         <a name="SchemaDeclarations">Global Declarations</a>
+      </h2>
+      <h3>Element: <a name="element_arcmetadata" class="name">arcmetadata</a>
+      </h3>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>arcmetadata</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>
+               <span class="type">
+                  <a href="#ns_dcterms" title="Find out namespace of 'dcterms' prefix">dcterms</a>:<a title="&#34;elementOrRefinementContainer&#34; type definition could not be found." href="javascript:void(0)" onclick="alert('&#34;elementOrRefinementContainer&#34; type definition could not be found.');">elementOrRefinementContainer</a>
+               </span>
+            </td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> Root container for ARC metadata.
+                Can hold any 'dc:any' element. (All ARC elements are subclasses of
+                the 'dc:any' type). </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_arcmetadata_xibox_button" class="boxControl" onclick="switchState('element_arcmetadata_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_arcmetadata_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;arcmetadata&gt; <span class="type">
+                        <a href="#ns_dcterms" title="Find out namespace of 'dcterms' prefix">dcterms</a>:<a title="&#34;elementOrRefinementContainer&#34; type definition could not be found." href="javascript:void(0)" onclick="alert('&#34;elementOrRefinementContainer&#34; type definition could not be found.');">elementOrRefinementContainer</a>
+                     </span> &lt;/arcmetadata&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_arcmetadata_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_arcmetadata_scbox_button" class="boxControl" onclick="switchState('element_arcmetadata_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_arcmetadata_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">arcmetadata</span>" <span class="scTag">type</span>="<span class="scContent">
+                        <span class="type">
+                           <a href="#ns_dcterms" title="Find out namespace of 'dcterms' prefix">dcterms</a>:<a title="&#34;elementOrRefinementContainer&#34; type definition could not be found." href="javascript:void(0)" onclick="alert('&#34;elementOrRefinementContainer&#34; type definition could not be found.');">elementOrRefinementContainer</a>
+                        </span>
+                     </span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_arcmetadata_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_hostname" class="name">hostname</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;creator&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;creator&#34; element declaration could not be found.');">creator</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>hostname</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> Element-refinement for 'dc:creator'.
+                The hostname of the machine that created this resource. Example
+                'debord.archive.org'. </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_hostname_xibox_button" class="boxControl" onclick="switchState('element_hostname_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_hostname_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;hostname&gt; ... &lt;/hostname&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_hostname_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_hostname_scbox_button" class="boxControl" onclick="switchState('element_hostname_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_hostname_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">hostname</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:creator</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_hostname_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_http-header-from" class="name">http-header-from</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;any&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;any&#34; element declaration could not be found.');">any</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>http-header-from</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td>The HTTP 'From' header sent by the
+                crawler along with each request. Example:
+                'webmaster@localhost.localdomain'. Note that this value will be
+                removed from metadata when ARC files record the request sent
+                (Currently the response only is recorded in ARCs). </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_http-header-from_xibox_button" class="boxControl" onclick="switchState('element_http-header-from_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_http-header-from_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;http-header-from&gt; ... &lt;/http-header-from&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_http-header-from_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_http-header-from_scbox_button" class="boxControl" onclick="switchState('element_http-header-from_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_http-header-from_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">http-header-from</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:any</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_http-header-from_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_http-header-user-agent" class="name">http-header-user-agent</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;any&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;any&#34; element declaration could not be found.');">any</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>http-header-user-agent</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> The HTTP 'user-agent' header sent
+                by the crawler along with each request. Example:
+                'os-heritrix/0.7.0 (+http://crawler.archive.org)'. Note that
+                this value will be removed from metadata when ARC files record
+                the request sent (Currently the response only is recorded in
+                ARCs). </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_http-header-user-agent_xibox_button" class="boxControl" onclick="switchState('element_http-header-user-agent_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_http-header-user-agent_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;http-header-user-agent&gt; ... &lt;/http-header-user-agent&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_http-header-user-agent_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_http-header-user-agent_scbox_button" class="boxControl" onclick="switchState('element_http-header-user-agent_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_http-header-user-agent_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">http-header-user-agent</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:any</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_http-header-user-agent_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_ip" class="name">ip</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;creator&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;creator&#34; element declaration could not be found.');">creator</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>ip</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> Element-refinement for 'dc:creator'.
+                The IP address of the machine that created this resource.
+                Example '123.1.2.3'. </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_ip_xibox_button" class="boxControl" onclick="switchState('element_ip_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_ip_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;ip&gt; ... &lt;/ip&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_ip_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_ip_scbox_button" class="boxControl" onclick="switchState('element_ip_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_ip_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">ip</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:creator</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_ip_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_operator" class="name">operator</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;creator&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;creator&#34; element declaration could not be found.');">creator</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>operator</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> Element-refinement for 'dc:creator'.
+                Contact name and information for the operator who created this resource.
+                Example: 'stack at archive dot org'. </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_operator_xibox_button" class="boxControl" onclick="switchState('element_operator_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_operator_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;operator&gt; ... &lt;/operator&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_operator_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_operator_scbox_button" class="boxControl" onclick="switchState('element_operator_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_operator_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">operator</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:creator</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_operator_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_robots" class="name">robots</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;coverage&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;coverage&#34; element declaration could not be found.');">coverage</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>robots</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td>
+                Element-refinement for 'dc:coverage'.
+                The robots policy followed by the
+                crawler harvesting this resource.  Example: 'classic'.
+            </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_robots_xibox_button" class="boxControl" onclick="switchState('element_robots_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_robots_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;robots&gt; ... &lt;/robots&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_robots_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_robots_scbox_button" class="boxControl" onclick="switchState('element_robots_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_robots_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">robots</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:coverage</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_robots_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <h3>Element: <a name="element_software" class="name">software</a>
+      </h3>
+      <table class="hierarchy">
+         <tr>
+            <td>
+               <ul>
+                  <li>
+                     <em>This element can be used wherever the following element is referenced:</em>
+                     <ul>
+                        <li>
+                           <a href="#ns_dc" title="Find out namespace of 'dc' prefix">dc</a>:<a title="&#34;creator&#34; element declaration could not be found." href="javascript:void(0)" onclick="alert('&#34;creator&#34; element declaration could not be found.');">creator</a>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+      <table class="properties">
+         <tr>
+            <th>Name</th>
+            <td>software</td>
+         </tr>
+         <tr>
+            <th>Type</th>
+            <td>anyType</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Nillable' in glossary" href="#term_Nillable">Nillable</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>
+               <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+            </th>
+            <td>no</td>
+         </tr>
+         <tr>
+            <th>Documentation</th>
+            <td> Element-refinement for 'dc:creator'.
+                The software and software version used creating this resource.
+                Example: 'heritrix 0.7.1 http://crawler.archive.org'. </td>
+         </tr>
+      </table>
+      <table class="sample">
+         <tr>
+            <th>
+               <input type="button" id="element_software_xibox_button" class="boxControl" onclick="switchState('element_software_xibox'); return false;" style="display: none"/> XML Instance Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_software_xibox" class="box">
+                  <div style="margin-left: 0em">&lt;software&gt; ... &lt;/software&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_software_xibox', true);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <table class="schemaComponent">
+         <tr>
+            <th>
+               <input type="button" id="element_software_scbox_button" class="boxControl" onclick="switchState('element_software_scbox'); return false;" style="display: none"/> Schema Component Representation</th>
+         </tr>
+         <tr>
+            <td>
+               <div id="element_software_scbox" class="box">
+                  <div style="margin-left: 0em">&lt;<span class="scTag">xs:element</span> 
+                     <span class="scTag">name</span>="<span class="scContent">software</span>" <span class="scTag">substitutionGroup</span>="<span class="scContent">dc:creator</span>"/&gt;</div>
+               </div>
+               <script type="text/javascript">
+<!--
+setState('element_software_scbox', false);
+// -->
+</script>
+            </td>
+         </tr>
+      </table>
+      <div style="text-align:right">
+         <a href="#top">top</a>
+      </div>
+      <hr/>
+      <div id="legend">
+         <h2>
+            <a name="Legend">Legend</a>
+         </h2>
+         <table style="padding:0px">
+            <tr>
+               <td>
+                  <span class="header">Complex Type:</span>
+               </td>
+               <td>
+                  <span class="headername">AusAddress</span>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <span class="legendhint" style="margin-left: 0em; white-space: nowrap">Schema Component Type</span>
+               </td>
+               <td>
+                  <span class="legendhint" style="margin-left: 0em; white-space: nowrap">Schema Component Name</span>
+               </td>
+            </tr>
+         </table>
+         <table class="hierarchy">
+            <tr>
+               <th>Super-types:</th>
+               <td>
+                  <span class="type" style="color: #0000FF; text-decoration:underline;">Address</span> &lt; <span class="current">AusAddress</span> (by extension)</td>
+            </tr>
+            <tr>
+               <th>Sub-types:</th>
+               <td>
+                  <ul>
+                     <li>
+                        <span class="type" style="color: #0000FF; text-decoration:underline;">QLDAddress</span> (by restriction)</li>
+                  </ul>
+               </td>
+            </tr>
+         </table>
+         <div class="legendhint">If this schema component is a type definition, its type hierarchy is shown in a gray-bordered box.</div>
+         <table class="properties">
+            <tr>
+               <th>Name</th>
+               <td>AusAddress</td>
+            </tr>
+            <tr>
+               <th>
+                  <a title="Look up 'Abstract' in glossary" href="#term_Abstract">Abstract</a>
+               </th>
+               <td>no</td>
+            </tr>
+         </table>
+         <div class="legendhint">The table above displays the properties of this schema component.</div>
+         <table class="sample">
+            <tr>
+               <th>XML Instance Representation</th>
+            </tr>
+            <tr>
+               <td>
+                  <div class="box">
+                     <span style="margin-left: 0em">&lt;...</span>
+                     <span class="newFields">
+                        <span> country="<span class="fixed">Australia</span>"</span>
+                     </span>&gt; <br/>
+                     <span style="margin-left: 1.5em" class="inherited">&lt;unitNo&gt; <span class="type">string</span> &lt;/unitNo&gt; <span class="occurs">[0..1]</span>
+                     </span>
+                     <br/>
+                     <span style="margin-left: 1.5em" class="inherited">&lt;houseNo&gt; <span class="type">string</span> &lt;/houseNo&gt; <span class="occurs">[1]</span>
+                     </span>
+                     <br/>
+                     <span style="margin-left: 1.5em" class="inherited">&lt;street&gt; <span class="type">string</span> &lt;/street&gt; <span class="occurs">[1]</span>
+                     </span>
+                     <br/>
+                     <span class="group" style="margin-left: 1.5em">Start <a title="Look up 'Choice' in glossary" href="#term_Choice">Choice</a>
+                        <span class="occurs">[1]</span>
+                     </span>
+                     <br/>
+                     <span style="margin-left: 3em" class="inherited">&lt;city&gt; <span class="type">string</span> &lt;/city&gt; <span class="occurs">[1]</span>
+                     </span>
+                     <br/>
+                     <span style="margin-left: 3em" class="inherited">&lt;town&gt; <span class="type">string</span> &lt;/town&gt; <span class="occurs">[1]</span>
+                     </span>
+                     <br/>
+                     <span class="group" style="margin-left: 1.5em">End Choice</span>
+                     <br/>
+                     <span class="newFields">
+                        <span style="margin-left: 1.5em">&lt;state&gt; <span class="type" style="text-decoration:underline;">AusStates</span> &lt;/state&gt; <span class="occurs">[1]</span>
+                        </span>
+                        <br/>
+                        <span style="margin-left: 1.5em">&lt;postcode&gt; <span class="constraint">string &lt;&lt;<em>pattern</em> = [1-9][0-9]{3}&gt;&gt;</span> &lt;/postcode&gt; <span class="occurs">[1]</span>
+                           <a href="javascript:void(0)" title="View Documentation" class="documentation" onclick="docArray = new Array('Post code must be a four-digit number.'); viewDocumentation('Element', 'postcode', docArray);">?</a>
+                        </span>
+                        <br/>
+                     </span>
+                     <span style="margin-left: 0em">&lt;/...&gt;</span>
+                     <br/>
+                  </div>
+               </td>
+            </tr>
+         </table>
+         <div class="legendhint">
+            <p>The XML Instance Representation table above shows the schema component's content as an XML instance.</p>
+            <ul>
+               <li>The minimum and maximum occurrence of elements and attributes are provided in square brackets, e.g. [0..1].</li>
+               <li>Model group information are shown in gray, e.g. Start Choice ... End Choice.</li>
+               <li>For type derivations, the elements and attributes that have been added to or changed from the base type's content are shown in <span style="font-weight: bold">bold</span>.</li>
+               <li>If an element/attribute has a fixed value, the fixed value is shown in green, e.g. country="Australia".</li>
+               <li>Otherwise, the type of the element/attribute is displayed.<ul>
+                     <li>If the element/attribute's type is in the schema, a link is provided to it.</li>
+                     <li>For local simple type definitions, the constraints are displayed in angle brackets, e.g. &lt;&lt;<em>pattern</em> = [1-9][0-9]{3}&gt;&gt;.</li>
+                  </ul>
+               </li>
+               <li>If a local element/attribute has documentation, it will be displayed in a window that pops up when the question mark inside the attribute or next to the element is clicked, e.g. &lt;postcode&gt;.</li>
+            </ul>
+         </div>
+         <table class="schemaComponent">
+            <tr>
+               <th>Schema Component Representation</th>
+            </tr>
+            <tr>
+               <td>
+                  <div class="box">
+                     <span style="margin-left: 0em">&lt;<span class="scTag">complexType</span>
+                        <span class="scTag">name</span>="<span class="scContent">AusAddress</span>"&gt;</span>
+                     <br/>
+                     <span style="margin-left: 1.5em">&lt;<span class="scTag">complexContent</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 3em">&lt;<span class="scTag">extension</span>
+                        <span class="scTag">base</span>="<span class="scContent">
+                           <span class="type" style="text-decoration:underline;">Address</span>
+                        </span>"&gt;</span>
+                     <br/>
+                     <span style="margin-left: 4.5em">&lt;<span class="scTag">sequence</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 6em">&lt;<span class="scTag">element</span>
+                        <span class="scTag">name</span>="<span class="scContent">state</span>" <span class="scTag">type</span>="<span class="scContent">
+                           <span class="type" style="text-decoration:underline;">AusStates</span>
+                        </span>"/&gt;</span>
+                     <br/>
+                     <span style="margin-left: 6em">&lt;<span class="scTag">element</span>
+                        <span class="scTag">name</span>="<span class="scContent">postcode</span>"&gt;</span>
+                     <br/>
+                     <span style="margin-left: 7.5em">&lt;<span class="scTag">simpleType</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 9em">&lt;<span class="scTag">restriction</span>
+                        <span class="scTag">base</span>="<span class="scContent">
+                           <span class="type">string</span>
+                        </span>"&gt;</span>
+                     <br/>
+                     <span style="margin-left: 10.5em">&lt;<span class="scTag">pattern</span>
+                        <span class="scTag">value</span>="<span class="scContent">[1-9][0-9]{3}</span>"/&gt;</span>
+                     <br/>
+                     <span style="margin-left: 9em">&lt;/<span class="scTag">restriction</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 7.5em">&lt;/<span class="scTag">simpleType</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 6em">&lt;/<span class="scTag">element</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 4.5em">&lt;/<span class="scTag">sequence</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 4.5em">&lt;<span class="scTag">attribute</span>
+                        <span class="scTag">name</span>="<span class="scContent">country</span>" <span class="scTag">type</span>="<span class="scContent">
+                           <span class="type">string</span>
+                        </span>" <span class="scTag">fixed</span>="<span class="scContent">Australia</span>"/&gt;</span>
+                     <br/>
+                     <span style="margin-left: 3em">&lt;/<span class="scTag">extension</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 1.5em">&lt;/<span class="scTag">complexContent</span>&gt;</span>
+                     <br/>
+                     <span style="margin-left: 0em">&lt;/<span class="scTag">complexType</span>&gt;</span>
+                     <br/>
+                  </div>
+               </td>
+            </tr>
+         </table>
+         <div class="legendhint">The Schema Component Representation table above displays the underlying XML representation of the schema component. (Annotations are not shown.)</div>
+         <div style="text-align:right">
+            <a href="#top">top</a>
+         </div>
+         <hr/>
+      </div>
+      <div id="glossary">
+         <h2>
+            <a name="Glossary">Glossary</a>
+         </h2>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Abstract">Abstract</a> 
+            </span>(Applies to complex type definitions and element declarations). An abstract element or complex type cannot used to validate an element instance. If there is a reference to an abstract element, only element declarations that can substitute the abstract element can be used to validate the instance. For references to abstract type definitions, only derived types can be used.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_All">All Model Group</a> 
+            </span>Child elements can be provided <em>in any order</em> in instances. See: <a title="http://www.w3.org/TR/xmlschema-1/#element-all" href="http://www.w3.org/TR/xmlschema-1/#element-all">http://www.w3.org/TR/xmlschema-1/#element-all</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Choice">Choice Model Group</a> 
+            </span>
+            <em>Only one</em> from the list of child elements and model groups can be provided in instances. See: <a title="http://www.w3.org/TR/xmlschema-1/#element-choice" href="http://www.w3.org/TR/xmlschema-1/#element-choice">http://www.w3.org/TR/xmlschema-1/#element-choice</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_CollapseWS">Collapse Whitespace Policy</a> 
+            </span>Replace tab, line feed, and carriage return characters with space character (Unicode character 32). Then, collapse contiguous sequences of space characters into single space character, and remove leading and trailing space characters.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_ElemBlock">Disallowed Substitutions</a> 
+            </span>(Applies to element declarations). If <em>substitution</em> is specified, then <a title="Look up 'substitution group' in glossary" href="#term_SubGroup">substitution group</a> members cannot be used in place of the given element declaration to validate element instances. If <em>derivation methods</em>, e.g. extension, restriction, are specified, then the given element declaration will not validate element instances that have types derived from the element declaration's type using the specified derivation methods. Normally, element instances can override their declaration's type by specifying an <code>xsi:type</code> attribute.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Key">Key Constraint</a> 
+            </span>Like <a title="Look up 'Uniqueness Constraint' in glossary" href="#term_Unique">Uniqueness Constraint</a>, but additionally requires that the specified value(s) must be provided. See: <a title="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions" href="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions">http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_KeyRef">Key Reference Constraint</a> 
+            </span>Ensures that the specified value(s) must match value(s) from a <a title="Look up 'Key Constraint' in glossary" href="#term_Key">Key Constraint</a> or <a title="Look up 'Uniqueness Constraint' in glossary" href="#term_Unique">Uniqueness Constraint</a>. See: <a title="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions" href="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions">http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_ModelGroup">Model Group</a> 
+            </span>Groups together element content, specifying the order in which the element content can occur and the number of times the group of element content may be repeated. See: <a title="http://www.w3.org/TR/xmlschema-1/#Model_Groups" href="http://www.w3.org/TR/xmlschema-1/#Model_Groups">http://www.w3.org/TR/xmlschema-1/#Model_Groups</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Nillable">Nillable</a> 
+            </span>(Applies to element declarations). If an element declaration is nillable, instances can use the <code>xsi:nil</code> attribute. The <code>xsi:nil</code> attribute is the boolean attribute, <em>nil</em>, from the <em>http://www.w3.org/2001/XMLSchema-instance</em> namespace. If an element instance has an <code>xsi:nil</code> attribute set to true, it can be left empty, even though its element declaration may have required content.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Notation">Notation</a> 
+            </span>A notation is used to identify the format of a piece of data. Values of elements and attributes that are of type, NOTATION, must come from the names of declared notations. See: <a title="http://www.w3.org/TR/xmlschema-1/#cNotation_Declarations" href="http://www.w3.org/TR/xmlschema-1/#cNotation_Declarations">http://www.w3.org/TR/xmlschema-1/#cNotation_Declarations</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_PreserveWS">Preserve Whitespace Policy</a> 
+            </span>Preserve whitespaces exactly as they appear in instances.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_TypeFinal">Prohibited Derivations</a> 
+            </span>(Applies to type definitions). Derivation methods that cannot be used to create sub-types from a given type definition.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_TypeBlock">Prohibited Substitutions</a> 
+            </span>(Applies to complex type definitions). Prevents sub-types that have been derived using the specified derivation methods from validating element instances in place of the given type definition.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_ReplaceWS">Replace Whitespace Policy</a> 
+            </span>Replace tab, line feed, and carriage return characters with space character (Unicode character 32).</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Sequence">Sequence Model Group</a> 
+            </span>Child elements and model groups must be provided <em>in the specified order</em> in instances. See: <a title="http://www.w3.org/TR/xmlschema-1/#element-sequence" href="http://www.w3.org/TR/xmlschema-1/#element-sequence">http://www.w3.org/TR/xmlschema-1/#element-sequence</a>.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_SubGroup">Substitution Group</a> 
+            </span>Elements that are <em>members</em> of a substitution group can be used wherever the <em>head</em> element of the substitution group is referenced.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_ElemFinal">Substitution Group Exclusions</a> 
+            </span>(Applies to element declarations). Prohibits element declarations from nominating themselves as being able to substitute a given element declaration, if they have types that are derived from the original element's type using the specified derivation methods.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_TargetNS">Target Namespace</a> 
+            </span>The target namespace identifies the namespace that components in this schema belongs to. If no target namespace is provided, then the schema components do not belong to any namespace.</p>
+         <p>
+            <span class="glossaryTerm">
+               <a name="term_Unique">Uniqueness Constraint</a> 
+            </span>Ensures uniqueness of an element/attribute value, or a combination of values, within a specified scope. See: <a title="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions" href="http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions">http://www.w3.org/TR/xmlschema-1/#cIdentity-constraint_Definitions</a>.</p>
+         <div style="text-align:right">
+            <a href="#top">top</a>
+         </div>
+         <hr/>
+      </div>
+      <p style="font-size: 8pt;">Generated by <a href="http://titanium.dstc.edu.au/xml/xs3p">xs3p</a>. Last modified: <script type="text/javascript">
+<!--
+document.write(document.lastModified);
+// -->
+</script>
+      </p>
+   </body>
+</html>

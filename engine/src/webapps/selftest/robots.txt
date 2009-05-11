@@ -1,0 +1,4 @@
+# This robots.txt is used by the RobotsExclusion heritrix integration self test.
+User-agent: heritrix_selftest(+http://localhost.localdomain)
+Disallow: /RobotsExclusion/excluded.html
+Disallow: /RobotsExclusion/excluded/

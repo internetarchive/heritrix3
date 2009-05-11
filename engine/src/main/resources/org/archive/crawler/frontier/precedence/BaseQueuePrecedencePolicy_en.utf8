@@ -1,0 +1,9 @@
+description:
+A QueuePrecedencePolicy that sets a uri-queue's precedence to a configured
+single value. This value may vary for some queues (as in override 
+settings sheets) or be changed by an operator mid-crawl (subject to limits 
+on when such changes are noted in a uri-queues lifecycle).
+
+base-precedence-description:
+Integer value precedence to assign; default is 1.
+

@@ -1,0 +1,8 @@
+enabled-description:
+Whether or not this Processor is enabled.
+
+decide-rules-description:
+Sequence of decide rules that determines whether this processor is run for
+a URI or not.  Only rules that generate ACCEPT or REJECT results are 
+considered; rules that generate PASS results are ignored.  If the last
+considered rule is REJECT, then the URI will not be processed.

@@ -1,0 +1,2 @@
+description:
+HTTP extractor. Extracts URIs from HTTP response headers.

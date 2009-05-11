@@ -1,0 +1,6 @@
+description:
+A UriPrecedencePolicy which sets a URI's precedence to its 'cost' -- which
+simulates the in-queue sorting order in Heritrix 1.x, where cost 
+contributed the same bits to the queue-insert-key that precedence now does.
+
+

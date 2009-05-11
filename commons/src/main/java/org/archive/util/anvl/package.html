@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.archive.util.anvl package</title>
+</head>
+<body>
+Parsers and Writers for the (expired) Internet-Draft <a 
+href="http://www.cdlib.org/inside/diglib/ark/anvlspec.pdf">A Name-Value
+Language (ANVL)</a>.  Use {@link org.archive.util.anvl.ANVLRecord} 
+to create new instances of ANVL Records and for parsing.
+
+<h2>Implementation Details</h2>
+<p>The ANVL Internet-Draft of 14 February, 2005 is inspecific as to the
+definition of 'blank line' and 'newline'.  This parser implementation
+assumes <code>CRNL</code>.
+</p>
+<p>Says "An element consists of a label, a colon, and an optional value".
+Should that be: "An element consists of a label and an optional value, or a
+comment."</p>
+
+<p>Specification is unclear regards CR or NL in <i>label</i> or 
+<i>comment</i> (This implementation disallows CR or NL in labels but lets
+them pass in comments).</p>
+
+<p>A grammar would help.  Here is RFC822:
+<pre>
+     field       =  field-name ":" [ field-body ] CRLF
+     
+     field-name  =  1*&lt;any CHAR, excluding CTLs, SPACE, and ":"&gt;
+     
+     field-body  =  field-body-contents
+                    [CRLF LWSP-char field-body]
+     
+     field-body-contents =
+                   &lt;the ASCII characters making up the field-body, as
+                    defined in the following sections, and consisting
+                    of combinations of atom, quoted-string, and
+                    specials tokens, or else consisting of texts&gt;
+</pre>
+</p>
+</body>
+</html>

@@ -1,0 +1,38 @@
+description:
+FTP Fetcher.
+
+
+extract-from-dirs-description:
+Set to true to extract further URIs from FTP directories. Default is 
+true. 
+
+
+extract-parent-description:
+Set to true to extract the parent URI from all FTP URIs. Default is true. 
+
+
+fetch-bandwidth-description:
+The maximum KB/sec to use when fetching data from a server. The default 
+of 0 means no maximum. 
+
+
+max-length-bytes-description:
+Maximum length in bytes to fetch. Fetch is truncated at this length. A 
+value of 0 means no limit. 
+
+
+password-description:
+The password to send to FTP servers. By convention, anonymous users send 
+their email address in this field. 
+
+
+timeout-seconds-description:
+If the fetch is not completed in this number of seconds, give up (and 
+retry later). 
+
+
+username-description:
+The username to send to FTP servers. By convention, the default value of 
+"anonymous" is used for publicly available FTP sites. 
+
+

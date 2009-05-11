@@ -1,0 +1,13 @@
+disk
+jobs
+target
+.checkstyle
+heritrix_dmesg.log
+heritrix_out.log
+profiles
+jsp-compiled
+doc
+heapdump.*
+javacore.*
+hs_err_pid*
+libsrc

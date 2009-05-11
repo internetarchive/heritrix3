@@ -1,0 +1,8 @@
+description:
+FetchHistoryProcessor. Maintain a history of fetch information inside the 
+CrawlURI's attributes.
+
+history-length-description:
+Number of previous fetch entries to retain in the URI history. The current 
+fetch becomes a history entry at this Processor step, so the smallest useful 
+value is '2' (including the current fetch). Default is '2'.

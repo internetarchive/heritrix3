@@ -1,0 +1,19 @@
+description:
+LowDiskPause processor.
+
+
+monitor-mounts-description:
+List of filessystem mounts whose 'available' space should be monitored 
+via 'df' (if available). 
+
+
+pause-threshold-kb-description:
+When available space on any monitored mounts falls below this threshold, 
+the crawl will be paused. 
+
+
+recheck-threshold-description:
+Available space via 'df' is rechecked after every increment of this much 
+content (uncompressed) is observed. 
+
+

@@ -1,0 +1,35 @@
+Apache POI
+Copyright 2001-2007 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+
+Unit testing support is provided by JUnit, under the 
+Common Public License Version 1.0: 
+	http://www.opensource.org/licenses/cpl.php
+See http://www.junit.org/
+
+A single data file of the POI component HDGF is based on VSDump,
+ and is under the GNU General Public Licence version 3 (GPL v3):
+	http://gplv3.fsf.org/
+Since this is a data file, and has no compiled version (the original
+ file is distributed in both source and binary versions), there should
+ be little difference in licencing requirements compared to the ASL.
+See http://www.gnome.ru/projects/vsdump_en.html
+
+
+Office Open XML experimental support:
+ XML Beans - http://xmlbeans.apache.org/
+   Apache Licence Version 2.0 - http://www.apache.org/licenses/LICENSE-2.0
+ DOM4J - http://www.dom4j.org/
+   BSD Licence - http://www.dom4j.org/license.html
+ Jaxen - http://jaxen.org/
+   Apache Style Licence - http://jaxen.org/license.html
+ OpenXml4J - http://www.openxml4j.org/
+   BSD Licence or Apache Licence Version 2.0 - 
+      http://www.openxml4j.org/Licensing/Default.html
+ Office Open XML ECMA Specification -
+     http://www.ecma-international.org/publications/standards/Ecma-376.htm
+   Microsoft Open Specification Promise (OSP) - 
+     http://www.microsoft.com/interop/osp/

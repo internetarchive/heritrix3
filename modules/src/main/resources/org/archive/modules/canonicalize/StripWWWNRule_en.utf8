@@ -1,0 +1,12 @@
+description:
+Strip any 'www[0-9]*' found.  Use this rule to equate 
+'http://www.archive.org/index.html' and 'http://www0001.archive.org/index.html' 
+with 'http://archive.org/index.html'.  The resulting canonicalization
+returns 'http://archive.org/index.html'.  It removes any www's or wwwNNN's 
+found, where 'N' is one or more numerics, EXCEPT on URIs that have no 
+path/query component.  Top-level 'slash page' URIs are left unstripped: we 
+prefer crawling redundant top pages to missing an entire site only available 
+from either the www-full or www-less hostname, but not both.  Operates on http 
+and https schemes only.  Use StripWWWRule to strip a lone 'www' only (This rule 
+is a more general version of StripWWWRule).
+

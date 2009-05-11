@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:context="http://www.springframework.org/schema/context"
+	     xmlns:aop="http://www.springframework.org/schema/aop"
+	     xmlns:tx="http://www.springframework.org/schema/tx"
+	     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+ 
+ <context:annotation-config/>
+
+ <!-- by importing working defaults, only customizations need to appear in this file -->
+ <import resource="defaults.xml"/>
+
+ <bean id="simpleOverrides" class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+  <property name="properties">
+   <value>
+
+metadata.operatorContactUrl=ENTER_AN_URL_WITH_CONTACT_INFO_HERE_FOR_WEBMASTERS_AFFECTED_BY_YOUR_CRAWL
+metadata.description=basic crawl
+metadata.jobName=basic
+
+   </value>
+  </property>
+ </bean>
+
+ <bean id="longerOverrides" class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+  <property name="properties">
+   <props>
+    <prop key="seeds.textSource.value">
+
+# URLS HERE
+http://example.example/example
+
+    </prop>
+   </props>
+  </property>
+ </bean>
+
+ <!-- 
+   for further customization, options include...
+   (1) targetting existing properties, as above, with either a simple Properties-format
+   (2) providing alternate <bean> definitions reusing the same id as in the defaults file;
+       the later definition (here) will win
+   TODO: examples? 
+  -->
+
+</beans>

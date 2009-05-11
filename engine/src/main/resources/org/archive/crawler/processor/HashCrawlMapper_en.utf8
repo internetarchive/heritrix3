@@ -1,0 +1,24 @@
+description:
+HashCrawlMapper. Maps URIs to a numerically named crawler by hashing the URI's 
+(possibly transfored) classKey to one of the specified number of buckets.
+
+
+crawler-count-description:
+Number of crawlers among which to split up the URIs. Their names are 
+assumed to be 0..N-1. 
+
+
+reduce-prefix-regex-description:
+A regex pattern to apply to the classKey, using the first match as the 
+mapping key. If empty (the default), use the full classKey. 
+
+
+use-publicsuffixes-regex-description:
+Whether to use a built-in regular expression, built from
+the 'public suffix' list at publicsuffix.org, for
+reducing classKeys to mapping keys. If true, the default,
+then the reduce-prefix-pattern setting is ignored.
+
+
+frontier-description:
+The frontier.

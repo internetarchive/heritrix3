@@ -1,0 +1,5 @@
+description:
+A QueuePrecedencePolicy that sets a uri-queue's precedence to that of the
+highest URI currently enqueued within itself, added to the configured 
+base-precedence. (It does this by maintaining a count of the included 
+URIs at each URI-precedence, updated on each URI add or remove.)

@@ -1,0 +1,48 @@
+description:
+Evaluates how long to wait before fetching a URI again. Typically, this 
+processor should be in the post processing chain. It will pass if another wait 
+evaluator has already processed the CrawlURI.
+
+changed-factor-description:
+The factor by which a URIs wait time is decreased when a revisit reveals 
+a changed document. A value of 1 will leave it unchanged, a value of two 
+will half it etc. 
+
+
+default-wait-interval-seconds-description:
+Fixed wait time for 'unknown' change status. I.e. wait time for URIs 
+whose content change detection is not available. 
+
+
+initial-wait-interval-seconds-description:
+The initial wait time between revisits. Will then be updated according to 
+crawler experiance. I.e. shorter wait, visit more often, if document has 
+changed between visits, and vica versa. 
+
+
+max-wait-interval-seconds-description:
+The maximum settable wait time between revisits. Once a URIs wait time 
+reaches this value, it will not grow further, regardless of subsequent 
+visits that discover no changes. Note that this does not ensure that the 
+URI does not wait any longer, since the crawler might be 'behind,' 
+forcing a URI to wait until other URIs, scheduled for earlier are 
+completed. 
+
+
+min-wait-interval-seconds-description:
+The minum settable wait time between revisits. Once a URIs wait time 
+reaches this value, it will not be shortened further, regardlesss of 
+subsequent visits that discover changes. 
+
+
+unchanged-factor-description:
+The factor by which a URIs wait time is increased when a revisit reveals 
+an unchanged document. A value of 1 will leave it unchanged, a value of 2 
+will double it etc. 
+
+
+use-overdue-time-description:
+Indicates if the amount of time the URI was overdue should be added to 
+the wait time before the new wait time is calculated. 
+
+

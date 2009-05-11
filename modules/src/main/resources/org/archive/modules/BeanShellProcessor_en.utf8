@@ -1,0 +1,22 @@
+description:
+BeanShellProcessor. Runs the BeanShell script source (supplied directly or via 
+a file path) against the current URI. Source should define a script method 
+'process(curi)' which will be passed the current CrawlURI.  The script may also 
+access this BeanShellProcessor via the 'self' variable and the CrawlController 
+via the 'controller' variable.
+
+
+isolate-threads-description:
+Whether each ToeThread should get its own independent script context, or 
+they should share synchronized access to one context. Default is true, 
+meaning each threads gets its own isolated context. 
+
+
+script-file-description:
+BeanShell script file.
+
+
+manager-description:
+The SheetManager used to configure this crawl.  Can be used to look up any 
+other module based on its settings path.  The value you specify here will be
+made available to the BeanShell script as the variable "manager".

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns="http://archive.org/arc/1.0/"
+    targetNamespace="http://archive.org/arc/1.0/"
+    xmlns:arc="http://archive.org/arc/1.0/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:dcterms="http://purl.org/dc/terms/" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:annotation>
+        <xs:documentation xml:lang="en">
+            Internet Archive ARC file Dublin Core element refinements. 
+            
+            XML Schema for http://archive.org/arc/1.0/ namespace.
+            
+            This schema adds Dublin Core element refinements for Internet
+            Achive ARC file metadata. It also adds new elements
+            that subclass the 'dc:any' type and the 'dc:metadata'
+            element container. 
+            
+            $Id$
+        
+        </xs:documentation>
+    </xs:annotation>
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace"
+        schemaLocation="http://www.w3.org/2001/03/xml.xsd"/>
+    <xs:import namespace="http://purl.org/dc/elements/1.1/"
+        schemaLocation="http://dublincore.org/schemas/xmls/qdc/2003/04/02/dc.xsd"/>
+    <xs:import namespace="http://purl.org/dc/terms/"
+        schemaLocation="http://dublincore.org/schemas/xmls/qdc/2003/04/02/dcterms.xsd"/>
+    <xs:element name="robots" substitutionGroup="dc:coverage">
+        <xs:annotation>
+            <xs:documentation xml:lang="en">
+                Element-refinement for 'dc:coverage'.
+                The robots policy followed by the
+                crawler harvesting this resource.  Example: 'classic'.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="http-header-from" substitutionGroup="dc:any">
+        <xs:annotation>
+            <xs:documentation xml:lang="en">The HTTP 'From' header sent by the
+                crawler along with each request. Example:
+                'webmaster@localhost.localdomain'. Note that this value will be
+                removed from metadata when ARC files record the request sent
+                (Currently the response only is recorded in ARCs). </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="http-header-user-agent" substitutionGroup="dc:any">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> The HTTP 'user-agent' header sent
+                by the crawler along with each request. Example:
+                'os-heritrix/0.7.0 (+http://crawler.archive.org)'. Note that
+                this value will be removed from metadata when ARC files record
+                the request sent (Currently the response only is recorded in
+                ARCs). </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="software" substitutionGroup="dc:creator">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> Element-refinement for 'dc:creator'.
+                The software and software version used creating this resource.
+                Example: 'heritrix 0.7.1 http://crawler.archive.org'. </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="hostname" substitutionGroup="dc:creator">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> Element-refinement for 'dc:creator'.
+                The hostname of the machine that created this resource. Example
+                'debord.archive.org'. </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="ip" substitutionGroup="dc:creator">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> Element-refinement for 'dc:creator'.
+                The IP address of the machine that created this resource.
+                Example '123.1.2.3'. </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="operator" substitutionGroup="dc:creator">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> Element-refinement for 'dc:creator'.
+                Contact name and information for the operator who created this resource.
+                Example: 'stack at archive dot org'. </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="arcmetadata" type="dcterms:elementOrRefinementContainer">
+        <xs:annotation>
+            <xs:documentation xml:lang="en"> Root container for ARC metadata.
+                Can hold any 'dc:any' element. (All ARC elements are subclasses of
+                the 'dc:any' type). </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

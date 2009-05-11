@@ -1,0 +1,83 @@
+description:
+AdaptiveRevisitFrontier. EXPERIMENTAL Frontier that will repeatedly visit all 
+encountered URIs. Wait time between visits is configurable and is determined 
+by seperate Processor(s). See WaitEvaluators. See documentation for ARFrontier 
+limitations.
+
+
+bdb-description:
+The bdb module to use for the frontier.
+
+
+controller-description:
+The crawl controller.
+
+
+seeds-description:
+The seeds module used to prepare the seeds for crawling.
+
+
+uri-uniq-filter-description:
+The UriUniqFilter implementation used to determine if a URI has already been
+fetched.
+
+
+delay-factor-description:
+How many multiples of last fetch elapsed time to wait before recontacting 
+same server 
+
+
+force-queue-assignment-description:
+Queue assignment to force on CrawlURIs. Intended to be used 
+via overrides 
+
+
+host-valence-description:
+Maximum simultaneous requests in process to a host (queue) 
+
+
+max-delay-ms-description:
+Never wait more than this long, regardless of multiple 
+
+
+max-retries-description:
+Maximum times to emit a CrawlURI without final disposition 
+
+
+min-delay-ms-description:
+Always wait this long after one completion before recontacting 
+same server, regardless of multiple 
+
+
+preference-embed-hops-description:
+Number of hops of embeds (ERX) to bump to front of host queue 
+
+
+queue-ignore-www-description:
+Should the queue assignment ignore www in hostnames, effectively 
+stripping them away. 
+
+
+retry-delay-description:
+For retryable problems, seconds to wait before a retry 
+
+
+use-uri-uniq-filter-description:
+Should the Frontier use a seperate 'already included' datastructure 
+or rely on the queues'. 
+
+
+dir-description:
+The directory used by the frontier.
+
+
+logger-module-description:
+The logger module used during the crawl.
+
+
+server-cache-description:
+The server cache used during the crawl.
+
+
+uri-canonicalization-rules-description:
+The canonicalization rules used during the crawl.

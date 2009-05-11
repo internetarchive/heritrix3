@@ -1,0 +1,12 @@
+description:
+PDF extractor. Link extraction on PDF documents.
+
+
+max-size-to-parse-description:
+The maximum size of PDF files to consider.  PDFs larger than this 
+maximum will not be searched for links. 
+
+
+temp-dir-provider-description:
+Module that provides the directory location where temporary PDF copies are 
+written.

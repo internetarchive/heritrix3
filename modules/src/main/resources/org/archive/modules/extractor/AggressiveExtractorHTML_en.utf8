@@ -1,0 +1,6 @@
+description:
+Aggressive HTML extractor. Subclasses ExtractorHTML so does all that it does, 
+except in regard to javascript blocks.  Here it first processes as JS as its 
+parent does, but then it reruns through the JS treating it as HTML (May cause 
+many false positives). It finishes by applying heuristics against script code 
+looking for possible URIs.

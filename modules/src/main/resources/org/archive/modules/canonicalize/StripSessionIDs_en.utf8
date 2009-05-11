@@ -1,0 +1,7 @@
+description:
+Strip known session IDs.  Use this rule to remove all of a set of known session 
+IDs.  For example, this rule will strip JSESSIONID and its value from
+'http://archive.org/index.html?JSESSIONID=DDDSSE233232333355FFSXXXXDSDSDS'.  
+The resulting canonicalization returns 'http://archive.org/index.html'.
+This rule strips JSESSIONID, ASPSESSIONID, PHPSESSID, and 'sid' session ids.
+

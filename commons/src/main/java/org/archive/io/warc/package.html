@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.archive.io.warc package</title>
+</head>
+<body>
+Experimental WARC Writer and Readers.  Code and specification subject to change
+with no guarantees of backward compatibility: i.e. newer readers
+may not be able to parse WARCs written with older writers. This package
+contains prototyping code for revision 0.12 of the WARC specification.
+See <a href="https://archive-access.svn.sourceforge.net/svnroot/archive-access/branches/gjm_warc_0_12/warc/warc_file_format.html">latest revision</a>
+for current state (Version 0.10 code and its documentation has been moved into the
+<a href="v10/package.html">v10</a> subpackage).
+
+
+<h2>Implementation Notes</h2>
+<h3>Tools</h3>
+<p>Initial implementations of <code>Arc2Warc</code> and <code>Warc2Arc</code>
+tools can be found in the package above this one, at
+{@link org.archive.io.Arc2Warc} and {@link org.archive.io.Warc2Arc}
+respectively.  Pass <code>--help</code> to learn how to use each tool.
+</p>
+
+<h2>TODO</h2>
+<ul>
+<li>Is MIME-Version header needed?  MIME Parsers seem fine without (python email
+lib and java mail).</li>
+<li>Should we write out a Content-Transfer-Encoding
+header (Currently we do not). Need section in spec. explicit about our
+interpretation of MIME and deviations (e.g. content-transfer-encoding should
+be assumed binary in case of WARCs, multipart is not disallowed but not
+encouraged, etc.)</li>
+<li>Minor: Do WARC-Version: 0.12 like MIME-Version: 1.0 rather than 
+WARC/0.12 for lead in to an ARCRecord?</li>
+</ul>
+
+</body>
+</html>

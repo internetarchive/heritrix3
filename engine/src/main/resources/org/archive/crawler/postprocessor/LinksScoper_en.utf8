@@ -1,0 +1,25 @@
+description:
+LinksScoper. Rules on which extracted links are within configured scope.
+
+preference-depth-hops-description:
+Number of hops (of any sort) from a seed up to which a URI has higher 
+priority scheduling than any remaining seed. For example, if set to 1 
+items one hop (link, embed, redirect, etc.) away from a seed will be 
+scheduled with HIGH priority. If set to -1, no preferencing will occur, 
+and a breadth-first search with seeds processed before discovered links 
+will proceed. If set to zero, a purely depth-first search will proceed, 
+with all discovered links processed before remaining seeds. Seed 
+redirects are treated as one hop from a seed. 
+
+
+log-rejects-rules-description:
+DecideRules applied to URIs that have been rejected by normal scoping. 
+If the rules return ACCEPT, the URI is logged (if the logging level is 
+INFO). Depends on override-logger being enabled. 
+
+
+seed-redirects-new-seeds-description:
+If enabled, any URL found because a seed redirected to it (original seed 
+returned 301 or 302), will also be treated as a seed. 
+
+

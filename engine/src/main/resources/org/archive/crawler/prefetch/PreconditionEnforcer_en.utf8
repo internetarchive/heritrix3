@@ -1,0 +1,35 @@
+description:
+Precondition enforcer.
+
+user-agent-provider-description:
+Provides the user-agent string used to check if a remote site's robots.txt
+allows us to crawl.
+
+
+calculate-robots-only-description:
+Whether to only calculate the robots status of an URI, without actually 
+applying any exclusions found. If true, exlcuded URIs will only be 
+annotated in the crawl.log, but still fetched. Default is false. 
+
+
+ip-validity-duration-seconds-description:
+The minimum interval for which a dns-record will be considered valid (in 
+seconds). If the record's DNS TTL is larger, that will be used instead. 
+
+
+robots-validity-duration-seconds-description:
+The time in seconds that fetched robots.txt information is considered to 
+be valid. If the value is set to '0', then the robots.txt information 
+will never expire. 
+
+
+credential-store-description:
+The credential store used during the crawl.
+
+
+logger-module-description:
+The logger module used during the crawl.
+
+
+server-cache-description:
+The server cache to use during the crawl.

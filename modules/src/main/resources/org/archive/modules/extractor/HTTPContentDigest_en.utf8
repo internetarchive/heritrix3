@@ -1,0 +1,35 @@
+description:
+Calculate custom - stripped - content digests. 
+A processor for calculating custom HTTP content digests 
+in place of the default (if any) computed by the HTTP 
+fetcher processors. 
+This processor enables you to specify a regular expression 
+called strip-reg-expr. Any segment of a document (text 
+only, binary files will be skipped) that matches this 
+regular expression will be rewritten with the blank 
+character (character 32 in the ANSI character set) FOR THE 
+PURPOSE OF THE DIGEST, this has no effect on the document 
+for subsequent processing or archiving. You can also 
+specify a maximum length for documents being evaluated by 
+this processor. Documents exceeding that length will be 
+ignored. 
+To further discriminate by file type or URL, you should use 
+the override and refinement options (the processor can be 
+disabled by default and only enabled as needed in overrides 
+and refinements. 
+It is generally recommended that this recalculation only be 
+performed when absolutely needed (because of stripping data 
+that changes automatically each time the URL is fetched) as 
+this is an expensive operation.
+
+
+max-size-bytes-description:
+Maximum file size for - longer files will be ignored. -1 = unlimited 
+
+
+strip-reg-expr-description:
+A regular expression that matches those portions of downloaded documents 
+that need to be ignored when calculating the content digest. Segments 
+matching this expression will be rewritten with the blank character for 
+the content digest. 
+

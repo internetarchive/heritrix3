@@ -1,0 +1,30 @@
+description:
+Experimental WARCWriter processor (Version 0.17).
+
+
+path-description:
+Where to save files. Supply absolute or relative path. If relative, files 
+will be written relative to the order.disk-path setting. If more than one 
+path specified, we'll round-robin dropping files to each. This setting is 
+safe to change midcrawl (You can remove and add new dirs as the crawler 
+progresses). 
+
+
+write-metadata-description:
+Whether to write 'metadata' type records. Default is true. 
+
+
+write-requests-description:
+Whether to write 'request' type records. Default is true. 
+
+
+write-revisit-for-identical-digests-description:
+Whether to write 'revisit' type records when a URI's history indicates 
+the previous fetch had an identical content digest. Default is true. 
+
+
+write-revisit-for-not-modified-description:
+Whether to write 'revisit' type records when a 304-Not Modified response 
+is received. Default is true. 
+
+

@@ -1,0 +1,16 @@
+From http://jerichohtml.sourceforge.net/doc/index.html
+
+Jericho HTML Parser
+
+Jericho HTML Parser is a simple but powerful java library allowing 
+analysis and manipulation of parts of an HTML document, including 
+some common server-side tags, while reproducing verbatim any 
+unrecognised or invalid HTML. It also provides high-level HTML form 
+manipulation functions.
+
+It is an open source library released under both the Eclipse Public 
+License (EPL) [http://www.eclipse.org/legal/epl-v10.html] and GNU 
+Lesser General Public License (LGPL) 
+[http://www.gnu.org/copyleft/lesser.html]. You are therefore free to 
+use it in commercial applications subject to the terms detailed in 
+either one of these licence documents. 

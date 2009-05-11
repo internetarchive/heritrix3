@@ -1,0 +1,5 @@
+description:
+Strip any extra slashes, '/', found in the path.  Use this rule to equate 
+'http://www.archive.org//A//B/index.html' and 
+'http://www.archive.org/A/B/index.html'.
+

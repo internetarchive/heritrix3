@@ -1,0 +1,19 @@
+directory-description:
+The directory where the seed file will be found.
+
+
+controller-description:
+The crawl controller that owns this scope.
+
+
+seedsfile-description:
+File from which to extract seeds.  Relative to the directory module.
+
+
+reread-seeds-on-config-description:
+Whether to reread the seeds specification, whether it has changed or not,
+every time any configuration change occurs. If true, seeds are reread
+even when (for example) new domain overrides are set. Rereading the seeds
+can take a long time with large seed lists.
+
+

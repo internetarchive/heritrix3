@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:context="http://www.springframework.org/schema/context"
+	     xmlns:aop="http://www.springframework.org/schema/aop"
+	     xmlns:tx="http://www.springframework.org/schema/tx"
+	     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+ 
+ <context:annotation-config/>
+
+ <!-- Crawl metadata, including identification of crawler/operator -->
+ <bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
+  <property name="description" value="basic crawl"/>
+  <property name="jobName" value="basic"/>
+  <property name="operatorContactUrl" value="USE_AN_URL_WITH_CONTACT_INFO_HERE_FOR_WEBMASTERS_AFFECTED_BY_YOUR_CRAWL"/>
+ </bean>
+ 
+ <!-- Seeds: crawl starting points -->
+ <bean id="seeds" class="org.archive.modules.seeds.TextSeedModule">
+  <property name="textSource">
+   <bean class="org.archive.spring.ConfigString">
+    <property name="value" value="# OVERRIDE_THIS_WITH_SEEDS"/>
+   </bean>
+  </property>
+ </bean>
+ 
+ <!-- Policy to use when deciding to honor robots.txt and similar -->
+ <bean name="robotsHonoringPolicy" class="org.archive.modules.net.RobotsHonoringPolicy">
+ </bean>
+ 
+ <!-- Scope: what discovered URIs to crawl -->
+ <bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
+  <property name="rules">
+   <list>
+    <bean class="org.archive.modules.deciderules.RejectDecideRule">
+    </bean>
+    <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule" autowire="byName">
+    </bean>
+    <bean class="org.archive.modules.deciderules.TooManyHopsDecideRule">
+    </bean>
+    <bean class="org.archive.modules.deciderules.TransclusionDecideRule">
+    </bean>
+    <bean class="org.archive.modules.deciderules.PathologicalPathDecideRule">
+    </bean>
+    <bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
+    </bean>
+    <bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
+    </bean>
+   </list>
+  </property>
+ </bean>
+ 
+ <!-- Processors as named beans; assembled into ProcessorChain later --> 
+ <bean id="preselector" class="org.archive.crawler.prefetch.Preselector">
+ </bean>
+ <bean id="preconditionEnforcer" class="org.archive.crawler.prefetch.PreconditionEnforcer">
+ </bean>
+ <bean id="fetchDns" class="org.archive.modules.fetcher.FetchDNS">
+ </bean>
+ <bean id="fetchHttp" class="org.archive.modules.fetcher.FetchHTTP">
+     <property name="cookieStorage">
+      <bean class="org.archive.modules.fetcher.BdbCookieStorage">
+      </bean>
+     </property>
+ </bean>
+ <bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
+ </bean>
+ <bean id="extractorHtml" class="org.archive.modules.extractor.ExtractorHTML">
+ </bean>
+ <bean id="extractorCss" class="org.archive.modules.extractor.ExtractorCSS">
+ </bean> 
+ <bean id="extractorJs" class="org.archive.modules.extractor.ExtractorJS">
+ </bean>
+ <bean id="extractorSwf" class="org.archive.modules.extractor.ExtractorSWF">
+ </bean>    
+ <bean id="arcWriterProcessor" class="org.archive.modules.writer.ARCWriterProcessor">
+ </bean>
+ <bean id="crawlStateUpdater" class="org.archive.crawler.postprocessor.CrawlStateUpdater">
+ </bean>
+ <bean id="linksScoper" class="org.archive.crawler.postprocessor.LinksScoper">
+ </bean>
+ <bean id="frontierScheduler" class="org.archive.crawler.postprocessor.FrontierScheduler">
+ </bean>
+    
+ <bean id="processors" class="org.archive.modules.ProcessorChain">
+  <property name="processors">
+   <list>
+    <ref bean="preselector"/>
+    <ref bean="preconditionEnforcer"/>
+    <ref bean="fetchDns"/>
+    <ref bean="fetchHttp"/>
+    <ref bean="extractorHttp"/>
+    <ref bean="extractorHtml"/>
+    <ref bean="extractorCss"/>
+    <ref bean="extractorJs"/>
+    <ref bean="extractorSwf"/>
+    <ref bean="arcWriterProcessor"/>
+    <ref bean="crawlStateUpdater"/>
+    <ref bean="linksScoper"/>
+    <ref bean="frontierScheduler"/>
+   </list>
+  </property>
+ </bean>
+ 
+ <!-- http or form login credentials -->
+ <bean id="credentialStore" 
+   class="org.archive.modules.credential.CredentialStore">
+ </bean>
+ 
+ <!-- policy for URI canonicalizationl a default set of rules will 
+      be used if none are specified (see source code)-->
+ <bean id="uriCanonicalizationPolicy" 
+   class="org.archive.modules.canonicalize.RulesCanonicalizationPolicy">
+ </bean>
+ 
+ <bean id="frontier" 
+   class="org.archive.crawler.frontier.BdbFrontier" autowire="byName">
+ </bean>
+ 
+ <bean id="uriUniqFilter" 
+   class="org.archive.crawler.util.BdbUriUniqFilter" autowire="byName">
+ </bean>
+ 
+ <bean id="crawlController" 
+   class="org.archive.crawler.framework.CrawlController" autowire="byName">
+ </bean>
+ 
+ <bean id="configPathConfigurer" 
+   class="org.archive.spring.ConfigPathConfigurer">
+ </bean>
+ 
+ <!-- IT WILL BE VERY RARE TO REPLACE OR CONFIGURE THE BELOW BEANS -->
+
+ <!-- standard stats/reporting collector -->
+ <bean id="statisticsTracker" 
+   class="org.archive.crawler.reporting.StatisticsTracker" autowire="byName">
+ </bean>
+ 
+ <!-- Shared logging facility -->
+ <bean id="loggerModule" 
+   class="org.archive.crawler.reporting.CrawlerLoggerModule">
+ </bean>
+ 
+ <!-- manager of sheets of contextual overlays; autowired to include
+      any SheetForSurtPrefix or SheetForDecideRuled beans -->
+ <bean id="sheetOverlaysManager" 
+   class="org.archive.crawler.spring.SheetOverlaysManager" autowire="byType">
+ </bean>
+
+ <!--  shared BDB manager -->
+ <bean id="bdb" class="org.archive.bdb.BdbModule">
+ </bean>
+ 
+ <!-- cookie storage for FetchHTTP -->
+ <bean id="cookieStorage" class="org.archive.modules.fetcher.BdbCookieStorage">
+ </bean>
+ 
+ <!-- shared cache of server/host info -->
+ <bean id="serverCache" class="org.archive.modules.net.BdbServerCache">
+ </bean>
+ 
+</beans>

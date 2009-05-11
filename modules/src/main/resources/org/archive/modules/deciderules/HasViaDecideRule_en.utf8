@@ -1,0 +1,4 @@
+description:
+HasViaDecideRule. Applies the configured decision to URIs 
+that have a 'via' URI. Generally, only seeds or other URIs
+directly imported into the crawl lack 'via' values. 

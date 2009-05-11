@@ -1,0 +1,10 @@
+description:
+Fixup the question mark that leads off the query string. 
+This rule returns 'http://www.archive.org/index.html' if passed
+'http://www.archive.org/index.html?'.  It will also strip '?&'
+if '?&' is all that comprises the query string.  Also strips
+extraneous leading '&': Returns 'http://archive.org/index.html?x=y
+if passed 'http://archive.org/index.html?&x=y.
+Will also strip '&' if last thing in query string.
+Operates on all schemes.  This is a good rule to run toward the
+end of canonicalization processing.

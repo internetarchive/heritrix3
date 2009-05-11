@@ -1,0 +1,9 @@
+# LocaleCache.en_US.utf8 -- test data for LocaleCache in faux Canadian english
+
+hello:
+Hello world, eh?
+
+multiline:
+Most modern calendars mar the sweet simplicity of our lives by reminding us
+that each day that passes is the anniversary of some perfectly uninteresting
+event, eh?

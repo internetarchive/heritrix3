@@ -1,0 +1,15 @@
+logger-module-description:
+The module to use to set up the override logger if override-logger is true.
+
+override-logger-description:
+If enabled, override default logger for this class (Default logger writes
+the console). Override logger will instead send all logging to a file
+named for this class in the job log directory. Set the logging level and
+other characteristics of the override logger such as rotation size,
+suffix pattern, etc. in heritrix.properties. This attribute is only
+checked once, on startup of a job.
+
+
+scope-description:
+The decide rule used to determine whether or not URIs are in the scope of 
+the crawl.

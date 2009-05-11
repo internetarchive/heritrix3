@@ -1,0 +1,33 @@
+<html>
+<head>
+<title>Form Tag Extraction Self Test</title>
+
+
+</head>
+<body>
+<h1>Form Tag Extraction Self Test</h1>
+<p>This page tests the ability of the parser to get links out of form tag
+<i>value</i> attributes.</p>
+
+<form name="QuickIndex">
+  <blockquote>
+    <p><select name="select"
+          onChange="if(options[selectedIndex].value)
+          window.location.href=
+          (options[selectedIndex].value)">
+	 <option value="">---Select One---</option>
+	 <option value="optiontag.html">option tag parsing</option>
+      </select>
+    </p>
+  </blockquote>
+
+<!-- The following input tag is just a quick hack to see if heritrix actually
+parses these correctly.  This tag doesn't work unless you submit something
+using with an action (action="somescript") and the server does the redirect.
+-->
+
+    <input type="hidden" name="url" value="inputtag.html">
+</form>
+
+</body>
+</html>

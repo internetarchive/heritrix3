@@ -1,0 +1,11 @@
+description:
+FrontierScheduler. 'Schedule' with the Frontier any CandidateURIs carried by 
+the passed CrawlURI. Run a Scoper before this processor so links that are not
+in-scope get bumped from the list of links (And so those in scope get promoted 
+from Link to CandidateURI).
+
+
+frontier-description:
+The frontier to use. 
+
+

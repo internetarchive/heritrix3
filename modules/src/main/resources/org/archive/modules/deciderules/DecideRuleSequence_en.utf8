@@ -1,0 +1,6 @@
+description:
+DecideRuleSequence. Multiple DecideRules applied in order with last non-PASS 
+the resulting 'decision'.
+
+rules-description:
+The list of rules.

@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<parent>
+  <groupId>org.archive</groupId>
+  <artifactId>heritrix</artifactId>
+  <version>3.0.0-SNAPSHOT</version>
+</parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.archive.heritrix</groupId>
+  <artifactId>engine</artifactId>
+  <packaging>jar</packaging>
+  <name>Heritrix: 'engine' subproject</name>
+    <pluginRepositories>
+    <pluginRepository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>agilejava</id>
+      <name>agilejava.com</name>
+      <url>http://www.agilejava.com/maven</url>
+      <layout>default</layout>
+    </pluginRepository>
+    </pluginRepositories>
+
+    <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>internetarchive</id>
+      <name>Internet Archive Maven Repository</name>
+      <url>http://builds.archive.org:8080/maven2</url>
+      <layout>default</layout>
+    </repository>
+
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>agilejava</id>
+      <name>agilejava.com</name>
+      <url>http://www.agilejava.com/maven</url>
+      <layout>default</layout>
+    </repository>
+    
+    <repository>  
+      <id>maven-restlet</id>  
+      <name>Public online Restlet repository</name>  
+      <url>http://maven.restlet.org</url>  
+    </repository>  
+  </repositories>
+  
+  <dependencies>
+        <dependency>
+             <groupId>org.archive.heritrix</groupId>
+             <artifactId>modules</artifactId>
+             <version>${project.version}</version>
+             <scope>compile</scope>
+        </dependency>
+        <dependency>
+              <groupId>org.mortbay.jetty</groupId>
+              <artifactId>jetty</artifactId>
+              <version>6.1.14</version>
+              <scope>compile</scope>
+        </dependency>
+        <dependency>
+              <groupId>org.mortbay.jetty</groupId>
+              <artifactId>jetty-util</artifactId>
+              <version>6.1.14</version>
+              <scope>compile</scope>
+        </dependency>     
+        <dependency>
+              <groupId>org.mortbay.jetty</groupId>
+              <artifactId>jetty-sslengine</artifactId>
+              <version>6.1.14</version>
+              <scope>compile</scope>
+        </dependency>     
+        <dependency>
+              <groupId>tomcat</groupId>
+              <artifactId>servlet</artifactId>
+              <version>4.1.34</version>
+              <scope>compile</scope>
+        </dependency>
+        <dependency>  
+          <groupId>org.restlet</groupId>  
+          <artifactId>org.restlet</artifactId>  
+          <version>1.1.2</version>  
+        </dependency>  
+        <dependency>  
+          <groupId>com.noelios.restlet</groupId>  
+          <artifactId>com.noelios.restlet</artifactId>  
+          <version>1.1.2</version>  
+        </dependency>  
+        <dependency>  
+          <groupId>com.noelios.restlet</groupId>  
+          <artifactId>com.noelios.restlet.ext.jetty</artifactId>  
+          <version>1.1.2</version>  
+        </dependency>
+        <dependency>  
+          <groupId>joda-time</groupId>  
+          <artifactId>joda-time</artifactId>  
+          <version>1.6</version>  
+        </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+    
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/TestAll.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

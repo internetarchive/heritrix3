@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<arcmetadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:arc="http://archive.org/arc/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://archive.org/arc/1.0/" xsi:schemaLocation="http://archive.org/arc/1.0/ http://www.archive.org/arc/1.0/arc.xsd">
+<arc:software>Heritrix ${VERSION} http://crawler.archive.org</arc:software>
+<arc:hostname>${HOST}</arc:hostname>
+<arc:ip>${IP}</arc:ip>
+<dcterms:isPartOf>${JOB_NAME}</dcterms:isPartOf>
+<dc:description>${DESCRIPTION}</dc:description>
+<arc:operator>${OPERATOR}</arc:operator>
+<arc:http-header-user-agent>${USER_AGENT}</arc:http-header-user-agent>
+<arc:http-header-from>${FROM}</arc:http-header-from>
+<arc:robots>${ROBOTS}</arc:robots>
+<dc:format>ARC file version 1.1</dc:format>
+<dcterms:conformsTo xsi:type="dcterms:URI">http://www.archive.org/web/researcher/ArcFileFormat.php</dcterms:conformsTo>
+</arcmetadata>

@@ -1,0 +1,10 @@
+description:
+Uses the target IPs as basis for queue-assignment,
+distributing them over a fixed number of sub-queues.
+Contributed to Heritrix by Christian Kohlschütter. 
+
+server-cache-description:
+Crawler's global ServerCache instance; used to lookup host IP. 
+Should be left auto-filled.  
+
+

@@ -1,0 +1,36 @@
+<classpath>
+  <classpathentry kind="src" path="src/main/java"/>
+  <classpathentry kind="src" path="src/main/resources" excluding="**/*.java"/>
+  <classpathentry kind="src" path="src/test/java" output="target/test-classes"/>
+  <classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+  <classpathentry kind="var" path="M2_REPO/org/dnsjava/dnsjava/1.6.2/dnsjava-1.6.2.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/beanshell/bsh/2.0b4/bsh-2.0b4.jar"/>
+  <classpathentry kind="var" path="M2_REPO/jetty/jetty/6.0.2/jetty-6.0.2.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/sleepycat/je/3.2.13/je-3.2.13.jar"/>
+  <classpathentry kind="var" path="M2_REPO/poi/poi/2.5.1-final-20040804/poi-2.5.1-final-20040804.jar" sourcepath="M2_REPO/poi/poi/2.5.1-final-20040804/poi-2.5.1-final-20040804-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.0/commons-cli-1.0.jar" sourcepath="M2_REPO/commons-cli/commons-cli/1.0/commons-cli-1.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/net/htmlparser/jericho/jericho-html/2.3/jericho-html-2.3.jar" sourcepath="M2_REPO/net/htmlparser/jericho/jericho-html/2.3/jericho-html-2.3-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/gnu/inet/libidn/0.6.5/libidn-0.6.5.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-lang/commons-lang/2.1/commons-lang-2.1.jar" sourcepath="M2_REPO/commons-lang/commons-lang/2.1/commons-lang-2.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/lowagie/itext/1.3/itext-1.3.jar" sourcepath="M2_REPO/com/lowagie/itext/1.3/itext-1.3-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/anotherbigidea/javaswf/CVS-SNAPSHOT-1/javaswf-CVS-SNAPSHOT-1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/it/unimi/dsi/mg4j/1.0.1/mg4j-1.0.1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.3/commons-codec-1.3.jar" sourcepath="M2_REPO/commons-codec/commons-codec/1.3/commons-codec-1.3-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/oro/oro/2.0.8/oro-2.0.8.jar" sourcepath="M2_REPO/oro/oro/2.0.8/oro-2.0.8-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/archive/crawler/commons/2.0.0-SNAPSHOT/commons-2.0.0-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/fastutil/fastutil/5.0.7/fastutil-5.0.7.jar">
+    <attributes>
+      <attribute value="jar:file://Users/pjack/.m2/repository/fastutil/fastutil/5.0.7/fastutil-5.0.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/net/java/dev/jets3t/jets3t/0.5.0/jets3t-0.5.0.jar"/>
+  <classpathentry kind="var" path="M2_REPO/jetty/jetty-util/6.0.2/jetty-util-6.0.2.jar"/>
+  <classpathentry kind="var" path="M2_REPO/tomcat/servlet/4.1.34/servlet-4.1.34.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/archive/crawler/modules/2.0.0-SNAPSHOT/modules-2.0.0-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-net/commons-net/1.4.1/commons-net-1.4.1.jar" sourcepath="M2_REPO/commons-net/commons-net/1.4.1/commons-net-1.4.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/poi/poi-scratchpad/2.5.1-final-20040804/poi-scratchpad-2.5.1-final-20040804.jar"/>
+</classpath>

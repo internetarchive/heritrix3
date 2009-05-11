@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arcmetadata xmlns="http://archive.org/arc/1.0/"
+    xmlns:arc="http://archive.org/arc/1.0/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:dcterms="http://purl.org/dc/terms/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://archive.org/arc/1.0/ arc.xsd">
+    <dc:publisher>Internet Archive</dc:publisher>
+    <dc:description>Election 2004 May Crawl</dc:description>
+    <dc:title>E04May-20040519021415-00023-debord.arc.gz</dc:title>
+    <dcterms:created xsi:type="dcterms:W3CDTF">2004-04-29T23:50:02
+        </dcterms:created>
+     <dcterms:isPartOf>E04May</dcterms:isPartOf>
+    <dcterms:audience>Library of Congress</dcterms:audience>
+    <arc:hostname>crawl04.archive.org</arc:hostname>
+    <arc:ip>123.1.2.3</arc:ip>
+    <arc:operator>stack at archive dot org</arc:operator>
+    <arc:software>Heritrix 0.7.1 http://crawler.archive.org</arc:software>
+    <arc:robots>classic</arc:robots>
+    <arc:http-header-from>stack@crawler.archive.org</arc:http-header-from>
+    <arc:http-header-user-agent>os-heritrix/0.7.1
+        (+http://crawler.archive.org) </arc:http-header-user-agent>
+    <!--Boilerplate-->
+    <dc:format>ARC file version 1.1</dc:format>
+    <dcterms:conformsTo 
+        xsi:type="dcterms:URI">http://www.archive.org/web/researcher/ArcFileFormat.php
+        </dcterms:conformsTo>
+</arcmetadata>

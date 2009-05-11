@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<body>
+    <h1>Introduction to Heritrix.</h1>
+    <p>
+        Heritrix is designed to be easily extensible via 3rd party modules. 
+        
+    <h2>Architecture</h2>
+    <p>
+        The software is divided into several packages of varying importance.
+        The relationship between them will be covered in some greater depth
+        after their introductions.
+    <p>
+        The root package (this) contains the executable class
+        {@link org.archive.crawler.Heritrix Heritrix}.
+        That class will load the crawler, parsing command line arguments.
+        If a WUI is to be launched it will launch it. It can also start
+        jobs (with or without the WUI) that are specified in command line
+        options.
+        
+    <h3>framework</h3>
+    <p>
+        {@link org.archive.crawler.framework org.archive.crawler.framework}
+    <p>
+        The <tt>framework</tt> package contains most of the core classes
+        for running a crawl. It also contains a number of Interfaces for
+        extensible items, the implementatations of whom can be found in
+        other classes.
+    <p>
+        Heritrix is in effect divided into two types of classes.
+        <ol>
+            <li> <em>Core classes</em> - these can often be configured but not 
+                 replaced.
+            <li> <em>Pluggable classes</em> - these must implment a given interface 
+                 or extend a specific class but 3rd parties can introduce their own
+                 implementations.
+        </ol>
+        The framework thus contains a selection of the core classes and a number
+        of the Interfaces and base classes for the pluggable classes.
+
+    <h3>datamodel</h3>
+    <p>
+        {@link org.archive.crawler.datamodel org.archive.crawler.datamodel}
+    <p>
+        Contains various classes that make up the crawlers data structure. Including 
+        such essentials as the CandidateURI and CrawlURI classes that wrap the 
+        discovered URIs for processing.
+
+    <h3>admin</h3>
+    <p>
+        {@link org.archive.crawler.admin org.archive.crawler.admin}
+    <p>
+        The <tt>admin</tt> package contains classes that are used by the Web UI.
+        This includes some core classes and a specific implementation of the 
+        <tt>Statistics Tracking</tt> interface found in the <tt>framework</tt>
+        package that is designed to provide the UI with information about 
+        ongoing crawls.
+
+    <h2>Pluggable modules</h2>
+    <p>
+        The following is a listing of the types of pluggable modules found in 
+        Heritrix with brief explanations of each and linking to their respective
+        API documentation.
+    
+    <h3>Frontier</h3>
+    <p>
+        A <tt>Frontier</tt> maintains the internal state of a crawl while it is
+        in progress. What URIs have been discovered, which should be crawled next,
+        etc.
+    <p>
+        Needless to say this is one of the most important modules in any crawl and
+        the provided implementation should generally be appropriate unless a very
+        different strategy for ordering URIs for crawling is desired.
+    <p>
+        {@link org.archive.crawler.framework.Frontier Frontier} is the interface
+        that all <tt>Frontiers</tt> must implement.<br>
+        {@link org.archive.crawler.frontier org.archive.crawler.frontier} package 
+        contains the provided implementation of a <tt>Frontier</tt> along with it's
+        supporting classes.
+    
+    <h3>Processor</h3>
+<img src="doc-files/processing_steps.png" 
+    alt="Processing Steps" style="width: 198px; height: 470px;" 
+    align="right" />
+    <p>
+        When a URI is crawled, a {@link org.archive.crawler.framework.ToeThread
+        ToeThread} will execute a series of <tt>processors</tt> on it.
+    <p>
+        The processors are split into 5 distinct chains that are exectued in sequence:
+       
+                       <ol>
+            <li>Pre-fetch processing chain
+            <li>Fetch processing chain
+            <li>Extractor processing chain
+            <li>Write/Index processing chain
+            <li>Post-processing chain
+        </ol>
+        Each of these chains contain any number of <tt>processors</tt>. The processors
+        all inherit from a generic {@link org.archive.crawler.framework.Processor
+        Processor}. While the processors are divided into the five categories above that
+        is strictly a high level configuration and any processor can be in any chain
+        (although doing link extraction before fetching a document is clearly of no
+        use).
+    <p>
+        Numerous processors are provided with Heritrix in the following packages:<br>
+        {@link org.archive.crawler.prefetch org.archive.crawler.prefetch} package
+        contains processors run before the URI is fetched from the Internet.<br>
+        {@link org.archive.crawler.fetcher org.archive.crawler.fetcher} package
+        contains processors that fetch URI from the Internet. Typically each
+        processor handles a different protocol.<br>
+        {@link org.archive.crawler.extractor org.archive.crawler.extractor} package
+        contains processors that perform link extractions on various document types.<br>
+        {@link org.archive.crawler.writer org.archive.crawler.writer} package contains
+        a processor that writes an ARC file with the fetched document.<br>
+        {@link org.archive.crawler.postprocessor org.archive.crawler.postprocessor}
+        package contain processors that do wrapup on the processing, reporting links
+        back to the Frontier etc.
+
+    <h3>Filter</h3>
+    
+    <h3>Scope</h3>
+    <p>
+        Scopes are special filters that are applied to the crawl as a whole to
+        define it's <i>scope</i>. Any given crawl will employ exactly one scope
+        object to define what URIs are considered 'within scope'.
+    <p>
+        Several implementations covering the most commonly
+        desired scopes are provided (broad, domain, host etc.). However custom
+        implementations can be made of these to define any arbitrary scope.
+        It should be noted though that usually any type of limitations to the scope
+        of a crawl can be more easily achived using one of the existing scopes and
+        modifing it with appropriate filters.
+    <p>
+        {@link org.archive.crawler.framework.CrawlScope CrawlScope} - Base class for
+        scopes.<br>
+        {@link org.archive.crawler.scope org.archive.crawler.scope} package. Contains 
+        provided scopes.
+        
+    <h3>Statistics Tracking</h3>
+    <p>
+        Any number of statistics tracking modules can be added to a crawl to gather
+        run time information about it's progress.
+    <p>
+        These modules can both interrogate the <tt>Frontier</tt> for what sparse
+        date it exposes but they can also subscribe to 
+        {@link org.archive.crawler.event.CrawlURIDispositionListener Crawled URI
+        Disposition} events to monitor the completion of each URI that is processed.
+    <p>
+        An interface for {@link org.archive.crawler.framework.StatisticsTracking
+        statistics tracking} is provided as well as a partial implementation 
+        ({@link org.archive.crawler.framework.AbstractTracker AbstractTracker}) 
+        that does much of the work common to most statistics tracking modules.
+    <p>
+        Furthermore the <tt>admin</tt> package implements a statistics tracking
+        module ({@link org.archive.crawler.admin.StatisticsTracker StatisticsTracker})
+        that generates a log of the crawlers progress as well as providing information
+        that the UI uses. It also compiles end-of-crawl reports that contain all of the
+        information it has gathered in the course of the crawl.<br>
+        It is highly recommended that it always be used when running crawls via the UI.
+        
+</body>
+</html>

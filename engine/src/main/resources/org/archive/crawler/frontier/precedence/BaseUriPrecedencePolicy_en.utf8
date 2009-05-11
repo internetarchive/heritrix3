@@ -1,0 +1,10 @@
+description:
+A UriPrecedencePolicy which sets a URI's precedence to a configured single
+value. This value may vary for some URIs (as in override settings sheets) 
+or be changed by an operator mid-crawl (but a URI is only assigned a 
+precedence at its initial frontier enqueuing). 
+ 
+base-precedence-description:
+constant precedence to assign; default is 1 
+
+

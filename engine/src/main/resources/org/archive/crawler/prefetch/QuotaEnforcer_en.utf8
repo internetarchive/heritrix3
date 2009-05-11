@@ -1,0 +1,77 @@
+description:
+QuotaEnforcer.
+
+force-retire-description:
+Whether an over-quota situation should result in the containing queue 
+being force-retired (if the Frontier supports this). Note that if your 
+queues combine URIs that are different with regard to the quota category, 
+the retirement may hold back URIs not in the same quota category. Default 
+is false. 
+
+
+group-max-all-kb-description:
+Maximum amount of response content (incl. error responses) in KB to 
+collect from one group. Default is -1, meaning no limit. 
+
+
+group-max-fetch-responses-description:
+Maximum number of fetch responses (incl. error responses) to collect from 
+one group. Default is -1, meaning no limit. 
+
+
+group-max-fetch-successes-description:
+Maximum number of fetch successes (e.g. 200 responses) to collect from 
+one group. Default is -1, meaning no limit. 
+
+
+group-max-success-kb-description:
+Maximum amount of fetch success content (e.g. 200 responses) in KB to 
+collect from one group. Default is -1, meaning no limit. 
+
+
+host-max-all-kb-description:
+Maximum amount of response content (incl. error responses) in KB to 
+collect from one host. Default is -1, meaning no limit. 
+
+
+host-max-fetch-responses-description:
+Maximum number of fetch responses (incl. error responses) to collect from 
+one host. Default is -1, meaning no limit. 
+
+
+host-max-fetch-successes-description:
+Maximum number of fetch successes (e.g. 200 responses) to collect from 
+one host. Default is -1, meaning no limit. 
+
+
+host-max-success-kb-description:
+Maximum amount of fetch success content (e.g. 200 responses) in KB to 
+collect from one host. Default is -1, meaning no limit. 
+
+
+server-max-all-kb-description:
+Maximum amount of response content (incl. error responses) in KB to 
+collect from one server. Default is -1, meaning no limit. 
+
+
+server-max-fetch-responses-description:
+Maximum number of fetch responses (incl. error responses) to collect from 
+one server. Default is -1, meaning no limit. 
+
+
+server-max-fetch-successes-description:
+Maximum number of fetch successes (e.g. 200 responses) to collect from 
+one server. Default is -1, meaning no limit. 
+
+
+server-max-success-kb-description:
+Maximum amount of fetch success content (e.g. 200 responses) in KB to 
+collect from one server. Default is -1, meaning no limit. 
+
+
+server-cache-description:
+The server cached used to store information about servers and hosts.
+
+
+frontier-description:
+The frontier for the crawl.

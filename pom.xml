@@ -1,0 +1,359 @@
+<?xml version="1.0"?>
+<!--
+    POM reference: http://maven.apache.org/pom.html
+
+    List of the better articles on maven:
+
+    http://www.javaworld.com/javaworld/jw-05-2006/jw-0529-maven.html
+    http://www.javaworld.com/javaworld/jw-02-2006/jw-0227-maven_p.html
+
+    URLs on converting from 1.0 to 2.0 maven (not much good generally):
+
+    http://wiki.osafoundation.org/bin/view/Journal/Maven2Upgrade
+    http://maven.apache.org/guides/mini/guide-m1-m2.html
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.archive</groupId>
+  <!--This project is parent to all under 'projects' subdirectory-->
+  <artifactId>heritrix</artifactId>
+  <version>3.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Heritrix 3</name>
+  <description>
+Heritrix is the Internet Archive's open-source, extensible, web-scale,
+  archival-quality web crawler project.
+  </description>
+  <url>http://crawler.archive.org</url>
+  <inceptionYear>2003</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>GNU LESSER GENERAL PUBLIC LICENSE</name>
+            <url>http://www.gnu.org/licenses/lgpl.txt</url>
+            <distribution>repo</distribution>
+       </license>
+    </licenses>
+  <organization>
+    <name>Internet Archive</name>
+    <url>http://www.archive.org/</url>
+  </organization>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://webteam.archive.org/jira</url>
+  </issueManagement>
+  <ciManagement>
+    <system>continuum</system>
+    <url>http://builds.archive.org:8081/continuum/</url>
+  </ciManagement>
+    <mailingLists>
+        <mailingList>  
+            <name>Crawler Discussion List</name>
+            <subscribe>
+            archive-crawler-subscribe@yahoogroups.com
+            </subscribe>
+            <unsubscribe>
+            archive-crawler-unsubscribe@yahoogroups.com
+            </unsubscribe>
+            <archive>
+            http://groups.yahoo.com/group/archive-crawler/
+            </archive>
+        </mailingList>  
+        <mailingList>  
+            <name>Crawler Commits</name>
+            <subscribe>
+            http://lists.sourceforge.net/lists/listinfo/archive-crawler-cvs
+            </subscribe>
+            <unsubscribe>
+            http://lists.sourceforge.net/lists/listinfo/archive-crawler-cvs
+            </unsubscribe>
+            <archive>http://sourceforge.net/mailarchive/forum.php?forum=archive-crawler-cvs
+            </archive>
+        </mailingList>  
+    </mailingLists>
+
+    <pluginRepositories>
+    <pluginRepository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>archive</id>
+      <name>archive.org</name>
+      <url>http://builds.archive.org:8080/maven2</url>
+      <layout>default</layout>
+    </pluginRepository>
+    </pluginRepositories>
+
+    <scm>
+       <connection>
+       scm:svn:https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix2
+       </connection>
+       <url>
+       https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix2
+       </url>
+    </scm>
+
+    <prerequisites>
+        <maven>2.0.9</maven>
+    </prerequisites>
+
+    <dependencyManagement>
+       <dependencies>
+          <dependency>
+             <groupId>org.archive.heritrix</groupId>
+             <artifactId>commons</artifactId>
+             <version>${project.version}</version>
+          </dependency>
+          <dependency>
+             <groupId>org.archive.heritrix</groupId>
+             <artifactId>modules</artifactId>
+             <version>${project.version}</version>
+          </dependency>
+          <dependency>
+             <groupId>org.archive.heritrix</groupId>
+             <artifactId>engine</artifactId>
+             <version>${project.version}</version>
+          </dependency>
+       </dependencies>
+    </dependencyManagement>
+
+  <modules>
+    <module>commons</module>
+    <module>modules</module>
+    <module>engine</module>
+    <module>dist</module>
+  </modules>
+
+
+    <distributionManagement>
+        <repository>
+            <id>repository</id>
+            <name>Repository</name>
+            <!--Pass as command-line system property to maven-->
+            <url>${repository.url}</url>
+        </repository>
+        <site>
+            <id>website</id>
+            <name>Website</name>
+            <!--Pass as command-line system property to maven-->
+            <url>${website.url}/projects/${pom.artifactId}</url>
+        </site>
+    </distributionManagement>
+
+  <developers>
+    <developer>
+        <name>Gordon Mohr</name>
+        <id>gojomo</id>
+        <email>gojomo at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Michele Kimpton</name>
+        <id>michele</id>
+        <email>michele at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Igor Ranitovic</name>
+        <id>ia_igor</id>
+        <email>igor at archive dot org</email>
+        <organization>Internet Archive</organization>
+        <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>John Erik Halse</name>
+        <id>johnerik</id>
+        <email>johnh at archive dot org</email>
+        <organization>National Library of Norway</organization>
+        <url>http://www.nb.no</url>
+         <timezone>-1</timezone>
+    </developer>
+    <developer>
+        <name>Kristinn Sigurdsson</name>
+        <id>kristinn_sig</id>
+        <email>kris at archive dot org</email>
+        <organization>National and University Library of Iceland</organization>
+        <url>http://www.bok.hi.is/</url>
+         <timezone>-0</timezone>
+    </developer>
+    <developer>
+        <name>Raymie Stata</name>
+        <id>rstata</id>
+        <email>rstata at archive dot org</email>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Michael Stack</name>
+        <id>stack-sf</id>
+        <email>stack at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Dan Avery</name>
+        <id>danavery</id>
+        <email>davery at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Karl Thiessen</name>
+        <id>karl</id>
+        <email>karl at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+    <developer>
+        <name>Paul Jack</name>
+        <id>paul_jack</id>
+        <email>pjack at archive dot org</email>
+         <organization>Internet Archive</organization>
+         <url>http://www.archive.org</url>
+         <timezone>-8</timezone>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+        <name>James Casey</name>
+        <email>me at jamesc dot net</email>
+        <url>http://www.jamesc.net</url>
+    </contributor>
+    <contributor>
+        <name>Parker Thompson</name>
+        <email>parkert at archive dot org</email>
+         <organization>Internet Archive</organization>
+    </contributor>
+    <contributor>
+        <name>Judy Ma</name>
+        <email>jma at archive dot org</email>
+         <organization>Internet Archive</organization>
+    </contributor>
+    <contributor>
+        <name>Soren Vejrup Carlsen</name>
+        <email>svc at kb dot dk</email>
+         <organization>The Royal Library</organization>
+    </contributor>
+    <contributor>
+        <name>Tom Emerson</name>
+        <email>tree at basistech dot com</email>
+         <organization>Basis Technology</organization>
+    </contributor>
+    <contributor>
+        <name>Andy Boyko</name>
+        <email>aboy at loc dot gov</email>
+         <organization>Library of Congress</organization>
+    </contributor>
+    <contributor>
+        <name>Mark Williamson</name>
+        <email>junklight at sourceforge dot net</email>
+         <organization>British Library</organization>
+    </contributor>
+    <contributor>
+        <name>Oskar Grenholm</name>
+        <email>oskar dot grenholm  at kb dot se</email>
+         <organization>Swedish Royal Library</organization>
+    </contributor>
+    <contributor>
+        <name>Howard Lee Gayle</name>
+        <email />
+         <organization />
+    </contributor>
+    <contributor>
+        <name>Ansi Zhousp</name>
+        <email>zhousp at gmail dot com</email>
+         <organization />
+    </contributor>
+    <contributor>
+        <name>Dave Skinner</name>
+        <email>dave at solid dot net</email>
+         <organization>Solid.net Consulting</organization>
+    </contributor>
+    <contributor>
+        <name>Christian Kohlsch&#xFC;tter</name>
+        <email>kohlschuetter@l3s.de</email>
+         <organization>L3S Research Center</organization>
+    </contributor>
+    <contributor>
+        <name>Mike Schwartz</name>
+        <email>schwartz at CodeOnTheRoad dot com</email>
+         <organization />
+    </contributor>
+    <contributor>
+        <name>Rob Eger</name>
+        <email>reger at aptas dot com</email>
+         <organization>Aptas</organization>
+    </contributor>
+    <contributor>
+        <name>Shifra Raffel</name>
+        <email>Shifra dot Raffel at ucop dot edu</email>
+         <organization>California Digital Library</organization>
+    </contributor>
+    <contributor>
+        <name>Nicolas Baly</name>
+        <email>nicolas dot baly at epfl dot ch</email>
+         <organization />
+    </contributor>
+  </contributors>
+
+
+  <reporting>
+    <outputDirectory>target/site</outputDirectory>
+    <plugins>
+<!--      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>dependencies</report>
+              <report>project-team</report>
+              <report>mailing-list</report>
+              <report>cim</report>
+              <report>issue-tracking</report>
+              <report>license</report>
+              <report>scm</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin> -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <source>
+                ${basedir}/src/java
+            </source>
+            <overview>
+                ${basedir}/src/site/overview.html
+            </overview>
+            <aggregate>
+                true
+            </aggregate>
+            <links>
+              <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
+            </links>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
+</project>

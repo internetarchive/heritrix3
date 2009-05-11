@@ -1,0 +1,12 @@
+description:
+SupplementaryLinksScoper. Use to do supplementary processing of in-scope links.
+Will run each link through configured filters.  Must be run after LinkScoper 
+and before FrontierScheduler. Optionally logs rejected links (Enable 
+override-logger-enabled and set logger level at INFO or above).
+
+
+link-rules-description:
+DecideRules which if their final decision on a link is REJECT, cause the
+link to be ruled out-of-scope, even if it had previously been accepted
+by the main scope.
+

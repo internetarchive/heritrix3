@@ -1,0 +1,109 @@
+rules-description:
+The list of canonicalization rules to apply to URIs before making decisions
+about them.
+
+
+manager-description:
+The sheet manager used to configure this BdbFrontier.  It will also be used
+to look up context-specific settings for discovered URIs.
+
+
+seeds-description:
+The seeds module used to prepare the seeds for crawling.
+
+
+logger-module-description:
+The logger module of the crawl; used to log various error conditions.
+
+
+delay-factor-description:
+How many multiples of last fetch elapsed time to wait before recontacting 
+same server. 
+
+
+force-queue-assignment-description:
+queue assignment to force onto CrawlURIs; intended to be overridden 
+
+
+respect-crawl-delay-description:
+Whether to respect a 'Crawl-Delay' (in seconds) given in a site's
+robots.txt; default is true
+
+max-delay-ms-description:
+never wait more than this long, regardless of multiple 
+
+
+max-per-host-bandwidth-usage-kb-sec-description:
+maximum per-host bandwidth usage 
+
+
+max-retries-description:
+maximum times to emit a CrawlURI without final disposition 
+
+outbound-queue-capacity-description:
+Capacity of the outbound queue carrying eligible URIs from the frontier
+thread to the worker ToeThreads.
+
+inbound-queue-multiple-description:
+Capacity of the inbound queue carrying updates to the frontier thread from
+other threads, as a multiple of the outbound queue capacity. 
+
+min-delay-ms-description:
+always wait this long after one completion before recontacting same 
+server, regardless of multiple 
+
+
+preference-embed-hops-description:
+number of hops of embeds (ERX) to bump to front of host queue 
+
+
+queue-assignment-policy-description:
+Defines how to assign URIs to queues. Can assign by host, by ip, and into 
+one of a fixed set of buckets (1k). 
+
+
+recovery-log-enabled-description:
+Recover log on or off attribute. 
+
+
+retry-delay-seconds-description:
+for retryable problems, seconds to wait before a retry 
+
+
+source-tag-seeds-description:
+Whether to tag seeds with their own URI as a heritable 'source' String, 
+which will be carried-forward to all URIs discovered on paths originating 
+from that seed. When present, such source tags appear in the 
+second-to-last crawl.log field. 
+
+
+total-bandwidth-usage-kb-sec-description:
+maximum overall bandwidth usage 
+
+
+controller-description:
+The crawl controller using this Frontier.
+
+
+queue-assignment-policy-description:
+The queue assignment policy to use.
+
+
+recovery-dir-description:
+The directory that the ignored seeds report and the recovery log will live in.
+
+
+scratch-dir-description:
+The directory where temporary files will be written.
+
+scope-description:
+The decide rule used to determine whether or not URIs are in the scope of 
+the crawl. Here in the frontier, it is only applied to bulk URI imports, 
+not usual discoveries. This value should be shared with the other Scoper
+processors for consistency. 
+
+server-cache-description:
+The server cache to use for the frontier. 
+
+user-agent-provider-description:
+The UserAgentProvider to use for the frontier. 

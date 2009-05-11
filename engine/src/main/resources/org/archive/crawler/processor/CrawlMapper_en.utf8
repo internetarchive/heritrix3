@@ -1,0 +1,27 @@
+check-outlinks-description:
+Whether to apply the mapping to discovered outlinks, for example after 
+extraction has occurred. 
+
+
+check-uri-description:
+Whether to apply the mapping to a URI being processed itself, for example 
+early in processing (while its status is still 'unattempted'). 
+
+
+diversion-dir-description:
+Directory to write diversion logs. 
+
+
+local-name-description:
+Name of local crawler node; mappings to this name result in normal 
+processing (no diversion). 
+
+
+rotation-digits-description:
+Number of timestamp digits to use as prefix of log names (grouping all 
+diversions from that period in a single log). Default is 10 (hourly log 
+rotation). 
+
+
+outlink-decide-rules-description:
+Decide rules to determine if an outlink is subject to mapping.

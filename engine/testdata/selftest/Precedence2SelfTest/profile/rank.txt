@@ -1,0 +1,10 @@
+http://127.0.0.1:7777/seed.html 1
+http://127.0.0.1:7777/one/a.html 1
+http://127.0.0.1:7777/one/b.html 1
+http://127.0.0.1:7777/one/c.html 1
+http://127.0.0.1:7777/five/a.html 5
+http://127.0.0.1:7777/five/b.html 5
+http://127.0.0.1:7777/five/c.html 5
+http://127.0.0.1:7777/ten/a.html 10
+http://127.0.0.1:7777/ten/b.html 10
+http://127.0.0.1:7777/ten/c.html 10

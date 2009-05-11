@@ -1,0 +1,19 @@
+<assembly>
+   <id>src</id>
+   <formats>
+      <format>tar.gz</format>
+      <format>zip</format>
+   </formats>
+   <includeBaseDirectory>true</includeBaseDirectory>
+
+   <fileSets>
+    <fileSet>
+      <directory>..</directory>
+      <outputDirectory>/project</outputDirectory>
+      <excludes>
+        <exclude>**/target/**</exclude>
+      </excludes>
+	</fileSet>
+  </fileSets>
+
+</assembly>

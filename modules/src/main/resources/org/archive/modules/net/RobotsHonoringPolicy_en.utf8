@@ -1,0 +1,30 @@
+description:
+Robots honoring policy.
+
+
+user-agents-description:
+Alternate user-agent values to consider using for the 'most-favored-set' 
+policy. 
+
+
+custom-robots-description:
+Custom robots to use if policy type is 'custom'. Compose as if an actual 
+robots.txt file. 
+
+
+masquerade-description:
+Should we masquerade as another user agent when obeying the rules 
+declared for it. Only relevant if the policy type is 'most-favored' or 
+'most-favored-set'. 
+
+
+type-description:
+Policy type. The 'classic' policy simply obeys all robots.txt rules for 
+the configured user-agent. The 'ignore' policy ignores all robots rules. 
+The 'custom' policy allows you to specify a policy, in robots.txt format, 
+as a setting. The 'most-favored' policy will crawl an URL if the 
+robots.txt allows any user-agent to crawl it. The 'most-favored-set' 
+policy requires you to supply an list of alternate user-agents, and for 
+every page, if any agent of the set is allowed, the page will be crawled. 
+
+

@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<!--
+
+ @(#)package.html
+ 
+ $Id$
+ 
+ Created on Apr 4, 2005
+
+ Copyright (C) 2005 Internet Archive.
+
+ This file is part of the Heritrix web crawler (crawler.archive.org).
+
+ Heritrix is free software; you can redistribute it and/or modify
+ it under the terms of the GNU Lesser Public License as published by
+ the Free Software Foundation; either version 2.1 of the License, or
+ any later version.
+
+ Heritrix is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser Public License for more details.
+
+ You should have received a copy of the GNU Lesser Public License
+ along with Heritrix; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+-->
+</head>
+<body bgcolor="white">
+Provides classes for a simple decision rules framework.
+
+<p>Each 'step' in a decision rule set which can
+affect an objects ultimate fate is called a <code>DecideRule</code>.
+Each DecideRule renders a decision (possibly neutral) on the
+passed objects fate.</p>
+
+<p>Possible decisions are:
+<ul>
+  <li>ACCEPT means the object is ruled-in for further processing</li>
+  <li>REJECT means the object is ruled-out for further processing</li>
+  <li>PASS means this particular DecideRule has no opinion</li>
+</ul>
+</p>
+
+<p>As previously outlined, each DecideRule is applied in turn;
+the last one to express a non-PASS preference wins.</p>
+
+<p>For example, if the rules are:
+<ul><li>AcceptDecideRule -- ACCEPTs all (establishing a default)</li>
+<li>TooManyHopsDecideRule(max-hops=3) -- REJECTS all with
+      hopsPath.length()>3, PASSes otherwise</li>
+<li>PrerequisiteAcceptDecideRule -- ACCEPTs any with 'P' as
+      last hop, PASSes otherwise (this allows 'LLL's which
+      need a 'LLLP' prerequisite a chance to complete)</li>
+</ul>
+Then, you have a crawl that will go 3 hops (of any type)
+from the seeds, with a special affordance to get prerequisites
+ of 3-hop items (which may be 4 "hops" out)</p>
+   
+<p>To allow this style of decision processing to be plugged into the
+   existing Filter and Scope slots:
+<ul><li>There's a DecidingFilter which takes an (ordered) map of
+     DecideRules</li>
+<li>There's a DecidingScope which takes the same</li>
+</ul>
+</p>
+
+<p>See <a href="http://crawler.archive.org/cgi-bin/wiki.pl?NewScopingModel">NewScopingModel</a>
+for background.</p>
+</body>
+</html>

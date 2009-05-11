@@ -1,0 +1,6 @@
+description:
+Strip any 'userinfo' found.  Use this rule to equate 
+'http://stack:psswrd@archive.org/index.htm' and 'http://archive.org/index.htm'. 
+The resulting canonicalization returns 'http://archive.org/index.htm'.  Removes
+any userinfo found.  Operates on http/https/ftp/ftps schemes only.
+

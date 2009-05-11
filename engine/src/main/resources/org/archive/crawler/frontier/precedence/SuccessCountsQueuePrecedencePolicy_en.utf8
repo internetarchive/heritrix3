@@ -1,0 +1,17 @@
+description:
+A QueuePrecedencePolicy that sets a uri-queue's precedence to a configured
+base value, then lowers its precedence with each tier of successful URIs
+completed. Any number of comma-separated tier sizes may be provided, with 
+the last value assumed to repeat indefinitely. For example, with a 
+'base-precedence' value of 2, and 'increment-counts' of "100,1000", the
+queue will have a precedence of 2 until 100 URIs are successfully fetched, 
+then a precedence of 3 for the next 1000 URIs successfully fetched, then 
+continue to drop one precedence rank for each 1000 URIs successfully 
+fetched.
+
+base-precedence-description:
+Integer value precedence to assign initially; default is 1.
+
+increment-counts-description:
+comma-separated list of success-count intervals at which precedence is 
+bumped to the next lower level

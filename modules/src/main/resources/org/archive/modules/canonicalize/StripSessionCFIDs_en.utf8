@@ -1,0 +1,6 @@
+description:
+Strip ColdFusion session IDs.  Use this rule to remove sessionids that look 
+like the following: CFID=12412453&CFTOKEN=15501799 or 
+CFID=3304324&CFTOKEN=57491900&jsessionid=a63098d96360$B0$D9$A using the 
+following case-insensitive regex: 
+^(.+)(?:cfid=[^&]+&cftoken=[^&]+(?:jsession=[^&]+)?)(?:&(.*))?

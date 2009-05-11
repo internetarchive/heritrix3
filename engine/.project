@@ -1,0 +1,14 @@
+<projectDescription>
+  <name>heritrix</name>
+  <comment>Heritrix is the Internet Archive&apos;s open-source, extensible, web-scale,
+  archival-quality web crawler project.</comment>
+  <projects/>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+  </natures>
+</projectDescription>

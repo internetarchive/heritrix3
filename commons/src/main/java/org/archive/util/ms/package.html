@@ -1,0 +1,114 @@
+<html>
+<body>
+Memory-efficient reading of .doc files.  To extract the text from a .doc
+file, use {@link org.archive.util.ms.Doc#getText(SeekInputStream)}.  That's
+basically the whole API.  The other classes are necessary to make that
+method work, and you can probably ignore them.  
+
+<h2>Implementation/Format Details</h2>
+
+<p>These APIs differ from the POI API provided by Apache in that POI wants to 
+load complete documents into memory.  Though POI does provide an "event-driven" 
+API that is memory efficient, that API cannot be used to scan text across block 
+or piece boundaries.
+
+<p>This package provides a stream-based API for extracting the text of
+a .doc file.  At this time, the package does not provide a way to extract 
+style attributes, embedded images, subdocuments, change tracking information,
+and so on.
+
+<p>There are two layers of abstraction between the contents of a .doc
+file and reality.  The first layer is the <i>Block File System</i>, and
+the second layer is the <i>piece table</i>.
+
+<h3>The Block File System</h3>
+
+<p>All .doc files are secretly file systems, like a .iso file, but insane.
+A good overview of how this file system is arranged inside the file is
+available at <a href="http://jakarta.apache.org/poi/poifs/fileformat.html">
+the Jarkarta POIFS</a> system.
+
+<p>Subfiles and directories in a block file system are represented via the
+{@link org.archive.util.ms.Entry} interface.  The root directory can be
+obtained via the {@link org.archive.util.ms.BlockFileSystem#getRoot()}
+method.  From there, the child entries can be discovered.
+
+<p>The file system divides its subfiles into 512-byte blocks.  Those blocks
+are not necessarily stored in a linear order; blocks from different subfiles
+may be interspersed with each other.  The 
+{@link org.archive.util.ms.Entry#open()} method returns an input stream that
+provides a continuous view of a subfile's contents.  It does so by moving 
+the file pointer of the .doc file behind the scenes.
+
+<p>It's important to keep in mind that any given read on a stream produced
+by a BlockFileSystem may involve:
+
+<ol>
+<li>Moving the file pointer to the start of the file to look up the main
+block allocation table.</li>
+<li>Navigation the file pointer through various allocation structures located
+throughout the file.</li>
+<li>Finally repositioning the file pointer at the start of the next block
+to be read.</li>
+</ol>
+
+<p>So, this package lowers memory consumption at the expense of greater IO
+activity.  A future version of this package will use internal caches to 
+minimize IO activity, providing tunable trade-offs between memory and IO.
+
+<h3>The Piece Table</h3>
+
+<p>The second layer of abstraction between you and the contents of a .doc file 
+is the piece table.  Some .doc files are produced using a "fast-save" feature
+that only writes recent changes to the end of the file.  In this case, the
+text of the document may be fragmented within the document stream itself.
+Note that this fragmentation is in addition to the block fragmentation
+described above.
+
+<p>A .doc file contains several subfiles within its filesystem.  The two 
+that are important for extracting text are named <code>WordDocument</code>
+and <code>0Table</code>.  The <code>WordDocument</code> subfile contains the 
+text of the document.  The <code>0Table</code> subfile contains supporting
+information, including the piece table.
+
+<p>The piece table is a simple map from logical character position to actual
+subfile stream position.  Additionally, each piece table entry describes whether
+or not the piece stores text using 16-bit Unicode, or using 8-bit ANSI
+codes.  One .doc file can contain both Unicode and ANSI text.  A consequence
+of this is that <i>every</i> .doc file has a piece table, even those that
+were not "fast-saved".
+
+<p>The reader returned by 
+{@link org.achive.util.ms.Doc#getText(SeekInputStream)} consults the piece
+table to determine where in the WordDocument subfile the next piece of text
+is located.  It also uses the piece table to determine how bytes should be
+converted to Unicode characters.
+
+<p>Note, however, that any read from such a reader may involve:
+
+<ol>
+<li>Moving the file pointer to the piece table.</li>
+<li>Searching the piece table index for the next piece, which may
+involve moving the file pointer many times.</li>
+<li>Moving the file pointer to that piece's description in the piece table.</li>
+<li>Moving the file pointer to the start of the piece indicated by the
+description.</li>
+</ol>
+
+Since the "file pointer" in this context is the file pointer of the 
+<i>subfile</i>, each move described above may additionally involve:
+
+<ol>
+<li>Moving the file pointer to the piece table.</li>
+<li>Searching the piece table index for the next piece, which may
+involve moving the file pointer many times.</li>
+<li>Moving the file pointer to that piece's description in the piece table.</li>
+<li>Moving the file pointer to the start of the piece indicated by the
+description.</li>
+</ol>
+
+A future implementation will provide an intelligent cache of the piece table,
+which will hopefully reduce the IO activity required.
+
+</body>
+</html>

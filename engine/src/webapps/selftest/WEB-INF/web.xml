@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/j2ee/dtds/web-app_2_3.dtd">
+
+<web-app>
+    <display-name>Selftest</display-name>
+    <description>Suite of tests for a web crawler.</description>
+    <!--[INSERT JSP COMPILE SERVLET WEB FRAGMENT HERE]-->
+    <security-constraint>
+        <display-name>Basic auth constraint.</display-name>
+       <web-resource-collection>
+          <web-resource-name>Selftest Basic Auth Test</web-resource-name>
+          <url-pattern>/Auth/basic/*</url-pattern>
+       </web-resource-collection>
+       <auth-constraint>
+          <role-name>selftest</role-name>
+       </auth-constraint>
+    </security-constraint>
+
+    <!--Looks like only one of these per web.xml according to DTD-->
+    <login-config>
+       <auth-method>BASIC</auth-method>
+       <realm-name>selftest</realm-name>
+    </login-config>
+
+    <security-role>
+        <description>Role used to get into the area protected by BASIC auth.
+            </description>
+        <role-name>selftest</role-name>
+    </security-role>
+
+</web-app>

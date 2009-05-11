@@ -1,0 +1,4 @@
+description:
+HopsPathMatchesRegExpDecideRule. Applies the configured decision to URIs 
+whose hops-path (string with L E R X P etc) matches the supplied regular 
+expression.

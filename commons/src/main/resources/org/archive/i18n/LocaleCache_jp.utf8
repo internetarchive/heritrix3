@@ -1,0 +1,9 @@
+# LocaleCache_jp.utf8 -- test data for LocaleCache in Japanese
+# (Translation provided by google; it's probably not accurate.)
+
+hello:
+こんにちは、世界!
+
+multiline:
+ほとんどの現代カレンダーは私達にそれ毎日思い出させることによって私達の生命の甘い簡易性を傷つけるパスが
+完全に退屈なでき事の記念日であること。

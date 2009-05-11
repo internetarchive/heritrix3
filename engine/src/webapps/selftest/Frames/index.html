@@ -1,0 +1,27 @@
+<html>
+<head>
+    <title>Frames Self Test</title>
+    <meta 
+        http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+     <meta name="description" content="Frame test for the crawler." />
+</head>
+
+<frameset rows="114,390" cols="*">
+    <frame src="topframe.html" name="Top" scrolling="NO"
+        frameborder="NO">
+    <frameset cols="309,386" rows="*"> 
+        <frame src="leftframe.html" name="Left" scrolling="NO"
+            frameborder="NO">
+        <frame src="rightframe.html" name="Right" scrolling="YES"
+            frameborder="YES">
+    </frameset>
+</frameset>
+<noframes>
+    <body>
+        <p>This content will be seen if your browser/crawler/whatever is
+        unable to recognize frames.
+        <a href="noframe.html">No frames</a>.
+        </p>
+    </body>
+</noframes>
+</html>

@@ -1,0 +1,63 @@
+description:
+HTML extractor. Extracts links from HTML documents.
+
+
+robots-honoring-policy-description:
+The robots honoring policy to use when considering a robots META tag.
+
+
+treat-frames-as-embed-links-description:
+If true, FRAME/IFRAME SRC-links are treated as embedded resources (like
+IMG, 'E' hop-type), otherwise they are treated as navigational links.
+Default is true.
+
+
+ignore-form-action-urls-description:
+If true, URIs appearing as the ACTION attribute in HTML FORMs are
+ignored. Default is false.
+
+
+extract-only-form-gets-description:
+If true, only ACTION URIs with a METHOD of GET (explicit or implied)
+are extracted. Default is true.
+
+
+extract-value-attributes-description:
+If true, strings that look like URIs found in element VALUE attributes 
+(which are sometimes used as URIs by in-page Javascript or server-side 
+redirects) will be extracted. This typically finds both
+valid and invalid URIs, and attempts to fetch the invalid URIs sometimes
+generate webmaster concerns over odd crawler behavior. Default is true.
+
+
+ignore-unexpected-html-description:
+If true, URIs which end in typical non-HTML extensions (such as .gif)
+will not be scanned as if it were HTML. Default is true.
+
+
+extract-javascript-description:
+If true, in-page Javascript is scanned for strings that appear likely to
+be URIs. This typically finds both valid and invalid URIs, and attempts
+to fetch the invalid URIs sometimes generates webmaster concerns over
+odd crawler behavior. Default is true.
+
+
+max-attr-name-length-description:
+Maximum length in characters of HTML attribute names.  No extraction will be 
+attempted against HTML attributes with names that exceed this length.  This 
+setting prevents out-of-memory conditions when malformed or malicious HTML 
+pages are encountered.
+
+
+max-attr-val-length-description:
+Maximum length in characters of HTML attribute value.  No extraction will be 
+attempted against HTML attributes with values that exceed this length.  This 
+setting prevents out-of-memory conditions when malformed or malicious HTML 
+pages are encountered.
+
+
+max-element-length-description:
+Maximum length in characters of HTML tags.  No extraction will be attempted 
+against HTML tags that exceed this length.  This setting prevents out-of-memory
+conditions when malformed or malicious HTML pages are encountered.
+

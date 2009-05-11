@@ -1,0 +1,19 @@
+description:
+Implied URI Extractor. Finds URIs implied by other URIs according to 
+regex/replacement patterns. Should appear after most other extractors.
+
+
+build-pattern-description:
+Replacement pattern to build 'implied' URI, using captured groups of 
+trigger expression. 
+
+
+trigger-regexp-description:
+Triggering regular expression. When a discovered URI matches this 
+pattern, the 'implied' URI will be built. The capturing groups of this 
+expression are available for the build replacement pattern. 
+
+
+remove-trigger-uris-description:
+If true, all URIs that match trigger regular expression are removed from
+the list of extracted URIs.  Default is false.

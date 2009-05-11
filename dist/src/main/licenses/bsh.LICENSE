@@ -1,0 +1,34 @@
+From http://www.beanshell.org/license.html
+
+Dual Licensing: Sun Public License / Gnu Lesser Public License
+
+BeanShell is dual licensed under both the SPL and LGPL. You may use and 
+develop BeanShell under either license.
+
+Please see the Sun Public License 
+[http://www.sun.com/developers/spl.html] for details.
+
+About the LGPL
+
+Note: the LGPL has become the "Lesser Gnu Public License" and BeanShell 
+has adopted the new version...
+
+A quick note about the LGPL:
+
+The LGPL is less restrictive than the ordinary GNU Public License in 
+that it does not force you to distribute your own applications under 
+the terms of the GPL. It primarily requires that you include a notice 
+that you are using the software in your documentation and provide 
+access to the original source code. It also essentially requires that 
+if you modify or extend BeanShell itself that you make those changes 
+available separately, under the terms of either the LGPL or the GPL. 
+I would ask that you accomodate this by simply sending me your bug 
+fixes and improvement to allow me to incorporate them into the general 
+BeanShell release. Please see the LGPL 
+[http://www.gnu.org/copyleft/lesser.html] for the details.
+
+If you have a more precise, brief explanation please let me know! 
+Thanks! - Pat
+
+Please also feel free to contact me: (Pat Niemeyer pat@pat.net) about 
+other licensing arrangements.

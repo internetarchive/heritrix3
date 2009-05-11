@@ -1,0 +1,7 @@
+log-file-description:
+Filename to which to log URI persistence information. Default is 
+'logs/persistlog.txtser.gz'.
+
+description:
+PersistLogProcessor. Logs CrawlURI attributes from latest fetch for 
+consultation by a later recrawl.

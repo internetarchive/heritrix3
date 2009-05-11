@@ -1,0 +1,25 @@
+<assembly>
+   <id>dist</id>
+   <formats>
+      <format>dir</format>
+   </formats>
+   <includeBaseDirectory>true</includeBaseDirectory>
+   <dependencySets>
+    <dependencySet>
+     <outputDirectory>/lib</outputDirectory>
+    </dependencySet>
+   </dependencySets>
+   <fileSets>
+    <fileSet>
+     <directory>target</directory>
+     <outputDirectory>/</outputDirectory>
+     <includes>
+      <include>heritrix-*.jar</include>
+     </includes>
+    </fileSet>
+    <fileSet>
+     <directory>target/site</directory>
+     <outputDirectory>/docs</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>

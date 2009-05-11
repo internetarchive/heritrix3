@@ -1,0 +1,302 @@
+-------------------------------------------------------------------------------
+$Id$
+-------------------------------------------------------------------------------
+
+                        HOWTO: Launch Heritrix
+
+0.0 Contents
+1.0 Introduction
+  1.1 Foreground vs. Background
+2.0 HOWTO: Start Heritrix with Web UI and Crawl Engine
+  2.1 Troubleshooting
+3.0 HOWTO: Start Heritrix with Crawl Engine only
+4.0 HOWTO: Start Heritrix with Web UI only
+5.0 HOWTO: Shutdown Heritrix
+  5.1 Web UI
+  5.2 Command-line: Foreground
+  5.3 Command-line: Background
+
+===============================================================================
+1.0 Introduction
+===============================================================================
+
+The most up-to-date version of this document can be found at:
+
+  http://webteam.archive.org/confluence/display/Heritrix/HOWTO+Launch+Heritrix
+
+The purpose of this HOWTO is to help Heritrix users launch Heritrix in
+the desired mode with the desired features enabled.
+
+Heritrix can be run in the foreground as a regular application with
+log messages, errors and other output going to the terminal; or it can
+be run in the background with output going to a log file.
+
+In addition, Heritrix can be run with different combinations of
+high-level features turned on or off.  For example:
+
+  Web UI + Crawl Engine
+
+    This is suitable for a single-machine scenario where the user
+    wishes to use the Web UI to configure a crawl and then run the
+    crawl job, all on the same machine.
+
+  Crawl Engine only
+
+    In situation, a user wishes to run just the crawl engine, but
+    without the Web UI.  This is common in larger and more advanced
+    crawls where a crawl job is split up among multiple engines
+    running on multiple machines.
+
+    In this scenario, the crawl engines are typically controlled via
+    the JMX interface, or from a remote Web UI running on a different
+    machine.
+
+  Web UI only
+
+    The Web UI can be used to connect to remote crawl engines, running
+    on different machines.  In this case, the user starts up Heritrix
+    with just he Web UI and no crawl engine running locally, then in
+    the Web UI, connects to remote crawl engines and controls them
+    remotely.
+
+The following sections are aimed at helping users launch Heritrix for
+these common scenarios.
+
+1.1 Foreground vs. Background
+-----------------------------
+There are two Heritrix launcher scripts in the './bin' directory:
+
+  heritrix
+  foreground_heritrix
+
+These scripts are essentially the same, except that
+'foreground_heritrix' launches Heritrix in the foreground and
+'heritrix' launches Heritrix in the background.  Otherwise, they
+are the same.
+
+Since Heritrix is typically intended to be a long-running server, by
+default it is launched in the background and its output is sent to
+"heritrix_out.log".  This way, after Heritrix is launched, the user
+can logout of the terminal session and Heritrix will remain running
+with the output captured to the log.
+
+However, some users may wish to launch Heritrix in the foreground,
+allowing the output to go to the terminal.  This is easily achieved
+by either
+
+ o using 'foreground_heritrix' rather than 'heritrix', with
+   the same command-line options
+
+ o set the environment variable 'FOREGROUND' to a non-empty value,
+   then launch with 'heritrix' as normal.
+
+We recommend running Heritrix in the background.  All of the examples
+and tutorials below launch Heritrix is in the background.
+
+===============================================================================
+2.0 HOWTO: Start Heritrix with Web UI and Crawl Engine
+===============================================================================
+
+  $ ./bin/heritrix -a admin
+
+This will startup Heritrix with the Crawl Engine and the Web UI
+both enabled.  The
+
+   -a admin
+
+command-line argument sets the Web UI's password to "admin".
+
+Upon successful launch of Heritrix, you should see something like the
+following on your terminal
+
+  heritrix-2.0.0 $ ./bin/heritrix -a admin
+  WARNING: $HERITRIX_HOME/conf/jmxremote.password not found.
+  WARNING: Disabling remote JMX.
+  Tue Feb  5 10:47:00 PST 2008 Starting heritrix....
+  No JNDI context.
+  Engine registered at org.archive.crawler:instance=11985823,jmxport=-1,name=Engine,type=org.archive.crawler.framework.Engine,host=localhost
+  Web UI listening on localhost:8080.
+
+Once control is returned to your terminal, Heritrix will be running in
+the background and all logging and error messages are sent to
+  
+  ./heritrix_out.log
+
+Now that Heritrix is up and running, you can visit
+
+  http://localhost:8080/
+
+in your browser to login to the Heritrix Web UI using the "admin"
+password you specified on the command line.
+
+Also, there is a thorough step-by-step tutorial using the Web UI to
+configure and run a sample crawl on the Heritrix wiki
+
+  http://webteam.archive.org/confluence/display/Heritrix/2.0+Tutorial
+
+2.1 Troubleshooting
+-------------------
+The most common errors that occur when launching Heritrix with the Web
+UI enabled are:
+
+  o Forgetting the -a [password] command-line argument
+
+    If this it omitted, then Heritrix will be launched without the Web
+    UI enabled.  You won't be able to access it via the browser.
+
+    The simplest solution is to kill Heritrix and re-launch with the
+    "-a" argument.
+
+  o Launching more than one instance of Heritrix
+
+    Once Heritrix is launched with the Web UI enabled, it will listen
+    on port 8080 (or another port if given -p).  Only one application
+    at a time can listen on a port.
+
+    If you launch a second Heritrix with the Web UI and the same port,
+    you will see an error message at start-up like
+
+      java.net.BindException: Address already in use
+         [stack trace]
+
+    See section 5.0 for instructions on how to shutdown Heritrix.
+
+
+===============================================================================
+3.0 HOWTO: Start Heritrix with Crawl Engine only
+===============================================================================
+
+If Heritrix is launched without the Web UI, then the JMX interface
+must be properly configured in order for the crawler engine to be
+controlled remotely.
+
+The easiest way to do this is to copy and edit the JMX password
+template file.  In addition, as required by JMX, the password file
+must be readable only by the owner.  For example,
+
+  heritrix-2.0.0 $ cd conf
+  conf $ cp jmxremote.password.template jmxremote.password
+  conf $ chmod 600 jmxremote.password
+  conf $ cd ..
+
+then edit "jmxremote.password" in your favorite editor and edit
+the lines:
+
+  #monitorRole [password goes here]
+  #controlRole [password goes here]
+
+by removing the "#" character at the start of each and setting the
+passwords to your liking, such as:
+
+  monitorRole  somePassword
+  controlRole  someOtherPassword
+
+Then launch Heritrix with the "-n" option to disable the Web UI.
+
+  heritrix-2.0.0 $ ./bin/heritrix -n
+  Tue Feb  5 12:53:29 PST 2008 Starting heritrix
+  No JNDI context.
+  Engine registered at org.archive.crawler:instance=28290629,jmxport=8849,name=Engine,type=org.archive.crawler.framework.Engine,host=localhost
+  Not running web UI.
+
+Once control is returned to your terminal, Heritrix will be running in
+the background and all logging and error messages are sent to
+  
+    ./heritrix_out.log
+
+Now that the crawl engine is running and the JMX interface is enabled,
+you can connect to it via a JMX client such as 'jconsole' or from a
+remote Heritrix Web UI running on another machine.
+
+3.1 Troubleshooting
+-------------------
+The most common problems with running Heritrix with the JMX interface
+enabled are
+
+ o The conf/jmxremote.password file doesn't exist.
+
+   You'll see a Heritrix startup message like the following:
+
+     WARNING: $HERITRIX_HOME/conf/jmxremote.password not found.
+
+   Copy the jmxremote.password.template file to jmxremote.password and
+   edit it as described above.
+
+ o The conf/jmxremote.password file doesn't have the proper permissions.
+
+    You'll see a Heritrix startup message like the following:
+
+      Error: Password file read access must be restricted: conf/jmxremote.password
+
+    Change the permissions on the file so that it can only be read by
+    the owner.
+
+
+===============================================================================
+4.0 HOWTO: Start Heritrix with Web UI only
+===============================================================================
+
+To launch Heritrix with the Web UI only, use the same command-line
+argument to enable the Web UI as described in 2.0, and add "-u" to
+disable the crawl engine.  For example,
+
+  $ ./bin/heritrix -a admin -u
+  WARNING: $HERITRIX_HOME/conf/jmxremote.password not found.
+  WARNING: Disabling remote JMX.
+  Tue Feb  5 12:26:52 PST 2008 Starting heritrix..
+  Not running crawl engine.
+  Web UI listening on localhost:8080.
+
+Notice in the startup message that the crawl engine is not running.
+
+Once control is returned to your terminal, Heritrix will be running in
+the background and all logging and error messages are sent to
+  
+  ./heritrix_out.log
+
+You can login to the Web UI at
+
+  http://localhost:8080/
+
+and then connect to remote crawl engines via the Web UI.
+
+
+===============================================================================
+5.0 HOWTO: Shutdown Heritrix
+===============================================================================
+
+Depending on how Heritrix is launched it can be shutdown in various
+ways.
+
+5.1 Web UI
+----------
+The Web UI can be shutdown via the Web UI itself.  From the Web UI
+home page, look for the link "Terminate the Web UI..." near the bottom
+of the page.  This will shutdown the Web UI and the Java Virtual
+Machine (JVM) in which it runs.
+
+This means that if Heritrix is started with both the crawl engine and
+Web UI in a single JVM, then the entire JVM is shutdown, including the
+Web UI and the crawl engine.
+
+If, however, the Web UI was launched by itself and was used to connect
+to remote crawl engines, only the Web UI will be shutdown.  The remote
+crawl engines are unaffected.
+
+5.2 Command-line: Foreground
+----------------------------
+If Heritrix is started in the foreground, then it can be terminated by
+pressing [Ctrl]-C in the terminal window, thus sending the Java
+application a termination signal.
+
+5.3 Command-line: Background
+----------------------------
+If Heritrix is started in the background (as is the default), then it
+can be easily terminated with the 'kill' command.  The process ID for
+Heritrix is stored in the file "heritrix.pid" when Heritrix is
+successfully launched in the background.  For example
+
+  $ cat heritrix.pid
+  24593
+  $ kill 24593
+

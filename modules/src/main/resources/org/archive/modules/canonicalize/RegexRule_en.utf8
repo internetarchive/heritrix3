@@ -1,0 +1,15 @@
+description:
+General regex rule.  Specify a matching regex and a format string used 
+outputting result if a match was found.  If problem compiling regex or 
+interpreting format, problem is logged, and this rule does nothing.  See User 
+Manual for example usage.
+
+
+format-description:
+The format string to use when a match is found. 
+
+
+regex-description:
+The regular expression to use to match. 
+
+

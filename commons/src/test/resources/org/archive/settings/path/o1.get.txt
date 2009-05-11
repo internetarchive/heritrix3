@@ -1,0 +1,12 @@
+o1,global|root=map, java.lang.Object
+o1|root:first:ten=string, three plus seven
+o1|root:second=object, org.archive.settings.path.Foo
+o1,global|root:bar:list=list, org.archive.settings.path.Foo
+o1|root:bar:list:3=object, org.archive.settings.path.Foo
+o1|root:bar:list:4=object, org.archive.settings.path.Foo
+o1,global|root:bar:map=map, org.archive.settings.path.Foo
+o1|root:bar:map:b=object, org.archive.settings.path.Baz
+o1|root:bar:map:d=object, org.archive.settings.path.Foo
+o1,global|root:bar:slist=list, java.lang.String
+o1|root:bar:slist:3=string, three
+o1|root:bar:slist:4=string, four

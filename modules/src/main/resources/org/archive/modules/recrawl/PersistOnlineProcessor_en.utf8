@@ -1,0 +1,5 @@
+bdb-description:
+The BDB environment used to store/load crawl history.
+
+historydb-name-description:
+The name of the database used to store/load crawl history.
