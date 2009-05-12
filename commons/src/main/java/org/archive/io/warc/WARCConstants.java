@@ -26,9 +26,8 @@ import org.archive.io.ArchiveFileConstants;
 
 /**
  * WARC Constants used by WARC readers and writers.
- * Below constants are used by version 0.10 and 0.12 of WARC Reader/Writer.
- * @author stack
- * @version $Revision$ $Date$
+ * 
+ * @contributor stack
  */
 public interface WARCConstants extends ArchiveFileConstants {
     /**
@@ -45,10 +44,8 @@ public interface WARCConstants extends ArchiveFileConstants {
     
     /**
      * Hard-coded version for WARC files made with this code.
-     * Setting to 0.10 because differs from 0.9 spec.  See accompanying
-     * package documentation.
      */
-	public static final String WARC_VERSION = "0.17";
+	public static final String WARC_VERSION = "0.18";
     
     /**
      * Assumed maximum size of a Header Line.

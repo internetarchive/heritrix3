@@ -41,15 +41,15 @@ import org.archive.util.anvl.Element;
 
 
 /**
- * <b>Experimental</b> WARC implementation.
+ * WARC implementation.
  *
  * <p>Assumption is that the caller is managing access to this
- * ExperimentalWARCWriter ensuring only one thread accessing this WARC instance
+ * WARCWriter ensuring only one thread accessing this WARC instance
  * at any one time.
  * 
  * <p>While being written, WARCs have a '.open' suffix appended.
  *
- * @author stack
+ * @contributor stack
  * @version $Revision: 4604 $ $Date: 2006-09-05 22:38:18 -0700 (Tue, 05 Sep 2006) $
  */
 public class WARCWriter extends WriterPoolMember
