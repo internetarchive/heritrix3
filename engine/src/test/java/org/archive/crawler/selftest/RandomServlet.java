@@ -50,7 +50,7 @@ public class RandomServlet extends HttpServlet {
     
     private int maxPort = 7010;
 
-    private String host = "localhost";
+    private String host = "127.0.0.1";
     
     private String pathRoot = "random";
 

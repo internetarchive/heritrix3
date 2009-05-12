@@ -62,7 +62,7 @@ public class UserAgentSelfTest extends SelfTestBase {
         Server server = new Server();
         
         SocketConnector sc = new SocketConnector();
-        sc.setHost("localhost");
+        sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();

@@ -178,7 +178,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
     protected void startHttpServer() throws Exception {
         Server server = new Server();
         SocketConnector sc = new SocketConnector();
-        sc.setHost("localhost");
+        sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
