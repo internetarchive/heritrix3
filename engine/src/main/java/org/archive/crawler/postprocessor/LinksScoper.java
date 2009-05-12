@@ -254,17 +254,8 @@ public class LinksScoper extends Scoper implements PostProcessor {
     
     private boolean considerAsSeed(final CrawlURI curi, final Link wref,
             final boolean redirectsNewSeeds) {
-        // Check if this is a seed with a 301 or 302.
-        if (curi.isSeed()
-                && (curi.getFetchStatus() == 301 ||
-                    curi.getFetchStatus() == 302)
-                && wref.getHopType() == Hop.REFER) {
-            // Check if redirects from seeds should be treated as seeds.
-            if (redirectsNewSeeds) {
-                return true;
-            }
-        }
-        return false;
+        return redirectsNewSeeds && curi.isSeed()
+                && wref.getHopType() == Hop.REFER;
     }
     
     /**
