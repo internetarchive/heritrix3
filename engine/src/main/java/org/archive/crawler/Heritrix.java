@@ -113,9 +113,10 @@ public class Heritrix {
     private static final String STARTLOG = "heritrix_dmesg.log";
 
     
-    private static void usage(PrintStream out) {
+    private static void usage(PrintStream out, String[] args) {
         HelpFormatter hf = new HelpFormatter();
         hf.printHelp("Heritrix", options());
+        out.print("Your arguments were: "+args);
     }
     
     
@@ -161,12 +162,12 @@ public class Heritrix {
         try {
             cl = clp.parse(options(), args);
         } catch (ParseException e) {
-            usage(out);
+            usage(out, args);
             return null;
         }
         
         if (cl.getArgList().size() != 0) {
-            usage(out);
+            usage(out, args);
             return null;
         }
 
@@ -215,7 +216,7 @@ public class Heritrix {
         if (cl == null) return;
 
         if (cl.hasOption('h')) {
-          usage(startupOut);
+          usage(startupOut, args);
           return ;
         }
         
