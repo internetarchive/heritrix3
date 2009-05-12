@@ -205,6 +205,40 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     }
     
     /**
+     * Test that relative URIs with late colons aren't misinterpreted
+     * as absolute URIs with long, illegal scheme components. 
+     * 
+     * See http://webteam.archive.org/jira/browse/HER-1268
+     * 
+     * @throws URIException
+     */
+    public void testBadRelativeLinks() throws URIException {
+        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
+                .getInstance("http://www.example.com"), null);
+        CharSequence cs = "<a href=\"example.html;jsessionid=deadbeef:deadbeed?parameter=this:value\"/>"
+                + "<a href=\"example.html?parameter=this:value\"/>";
+        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+        extractor.extract(curi, cs);
+
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((Link) object)
+                        .getDestination()
+                        .toString()
+                        .indexOf(
+                                "/example.html;jsessionid=deadbeef:deadbeed?parameter=this:value") >= 0;
+            }
+        }));
+
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((Link) object).getDestination().toString().indexOf(
+                        "/example.html?parameter=this:value") >= 0;
+            }
+        }));
+    }
+    
+    /**
      * Test if scheme is maintained by speculative hops onto exact 
      * same host
      * 

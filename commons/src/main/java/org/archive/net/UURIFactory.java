@@ -123,15 +123,16 @@ public class UURIFactory extends URI {
      * </pre>
      *
      * -- 
-     * <p>Below differs from the rfc regex in that it has java escaping of
-     * regex characters and we allow a URI made of a fragment only (Added extra
+     * <p>Below differs from the rfc regex in that... 
+     * (1) it has java escaping of regex characters 
+     * (2) we allow a URI made of a fragment only (Added extra
      * group so indexing is off by one after scheme).
+     * (3) scheme is limited to legal scheme characters 
      */
     final public static Pattern RFC2396REGEX = Pattern.compile(
-        "^(([^:/?#]+):)?((//([^/?#]*))?([^?#]*)(\\?([^#]*))?)?(#(.*))?");
-    //    12            34  5          6       7   8          9 A
-    //              2 1             54        6          87 3      A9
-    // 1: scheme
+        "^(([a-zA-Z][a-zA-Z\\+\\-\\.]*):)?((//([^/?#]*))?([^?#]*)(\\?([^#]*))?)?(#(.*))?");
+    //    12                             34  5          6       7   8          9 A
+    //                                2 1             54        6          87 3      A9    // 1: scheme
     // 2: scheme:
     // 3: //authority/path
     // 4: //authority

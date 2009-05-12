@@ -217,6 +217,8 @@ public class LaxURI extends URI {
     /**
      * IA OVERRIDDEN IN LaxURI TO INCLUDE FIX FOR 
      * http://issues.apache.org/jira/browse/HTTPCLIENT-588
+     * AND
+     * http://webteam.archive.org/jira/browse/HER-1268
      * 
      * In order to avoid any possilbity of conflict with non-ASCII characters,
      * Parse a URI reference as a <code>String</code> with the character
@@ -321,10 +323,12 @@ public class LaxURI extends URI {
             char[] target = tmp.substring(0, at).toLowerCase().toCharArray();
             if (validate(target, scheme)) {
                 _scheme = target;
+                from = ++at;
             } else {
-                throw new URIException("incorrect scheme");
+                // IA CHANGE:
+                // do nothing; allow interpretation as URI with 
+                // later colon in other syntactical component
             }
-            from = ++at;
         }
 
         /*

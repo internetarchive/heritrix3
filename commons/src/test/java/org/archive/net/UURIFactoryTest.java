@@ -779,6 +779,25 @@ public class UURIFactoryTest extends TestCase {
     }
     
     /**
+     * Ensure that relative URIs with colons in late positions 
+     * aren't mistakenly interpreted as absolute URIs with long, 
+     * illegal schemes. 
+     * 
+     * @throws URIException
+     */
+    public void testLateColon() throws URIException {
+        UURI base = UURIFactory.getInstance("http://www.example.com/path/page");
+        UURI uuri1 = UURIFactory.getInstance(base,"example.html;jsessionid=deadbeef:deadbeed?parameter=this:value");
+        assertEquals("derelativize lateColon",
+                uuri1.getURI(),
+                "http://www.example.com/path/example.html;jsessionid=deadbeef:deadbeed?parameter=this:value");
+        UURI uuri2 = UURIFactory.getInstance(base,"example.html?parameter=this:value");
+        assertEquals("derelativize lateColon",
+                uuri2.getURI(),
+                "http://www.example.com/path/example.html?parameter=this:value");
+    }
+    
+    /**
      * Ensure that stray trailing '%' characters do not prevent
      * UURI instances from being created, and are reasonably 
      * escaped when encountered. 
