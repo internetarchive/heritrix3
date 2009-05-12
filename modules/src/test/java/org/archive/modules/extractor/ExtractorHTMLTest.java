@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.DefaultProcessorURI;
 import org.archive.net.UURI;
@@ -200,5 +202,64 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 puri.getData().get(ExtractorHTML.A_META_ROBOTS));
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
         assertTrue("link extracted despite meta robots",links.length==0);
+    }
+    
+    /**
+     * Test if scheme is maintained by speculative hops onto exact 
+     * same host
+     * 
+     * [HER-1524] speculativeFixup in ExtractorJS should maintain URL scheme
+     */
+    public void testSpeculativeLinkExtraction() throws URIException {
+        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
+                .getInstance("https://www.example.com"), null);
+        CharSequence cs = 
+            "<script type=\"text/javascript\">_parameter=\"www.anotherexample.com\";"
+                + "_anotherparameter=\"www.example.com/index.html\""
+                + ";</script>";
+        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+        extractor.extract(curi, cs);
+
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                System.err.println("comparing: "
+                        + ((Link) object).getDestination().toString()
+                        + " and https://www.anotherexample.com/");
+                return ((Link) object).getDestination().toString().equals(
+                        "http://www.anotherexample.com/");
+            }
+        }));
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((Link) object).getDestination().toString().equals(
+                        "https://www.example.com/index.html");
+            }
+        }));
+    }
+    
+    /**
+     * test to see if embedded <SCRIPT/> which writes script TYPE
+     * creates any outlinks, e.g. "type='text/javascript'". 
+     * 
+     * [HER-1526] SCRIPT writing script TYPE common trigger of bogus links 
+     *   (eg. 'text/javascript')
+     *   
+     * @throws URIException
+     */
+    public void testScriptTagWritingScriptType() throws URIException {
+        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
+                .getInstance("http://www.example.com/en/fiche/dossier/322/"), null);
+        CharSequence cs = 
+            "<script type=\"text/javascript\">"
+            + "var gaJsHost = ((\"https:\" == document.location.protocol) "
+            + "? \"https://ssl.\" : \"http://www.\");"
+            + "document.write(unescape(\"%3Cscript src='\" + gaJsHost + "
+            + "\"google-analytics.com/ga.js' "
+            + "type='text/javascript'%3E%3C/script%3E\"));"
+            + "</script>";
+        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+        extractor.extract(curi, cs);
+        assertTrue("outlinks should be empty",curi.getOutLinks().isEmpty());
+                
     }
 }

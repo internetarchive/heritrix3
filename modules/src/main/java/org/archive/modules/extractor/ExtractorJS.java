@@ -1,35 +1,34 @@
-/* Copyright (C) 2003 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * Created on Nov 17, 2003
- *
- * To change the template for this generated file go to
- * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.modules.extractor;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.ProcessorURI;
+import org.archive.net.LaxURLCodec;
 import org.archive.net.UURI;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
@@ -73,6 +72,22 @@ public class ExtractorJS extends ContentExtractor {
     protected long numberOfCURIsHandled = 0;
     protected static long numberOfLinksExtracted = 0;
 
+    // strings that STRING_URI_DETECTOR picks up as URIs,
+    // which are known to be problematic, and NOT to be 
+    // added to outLinks
+    protected final static String[] STRING_URI_DETECTOR_EXCEPTIONS = {
+        "text/javascript"
+        };
+    
+    // URIs known to produce false-positives with the current JS extractor.
+    // e.g. currently (2.0.3) the JS extractor produces 13 false-positive 
+    // URIs from http://www.google-analytics.com/urchin.js and only 2 
+    // good URIs, which are merely one pixel images.
+    // TODO: remove this blacklist when JS extractor is improved 
+    protected final static String[] EXTRACTOR_URI_EXCEPTIONS = {
+        "http://www.google-analytics.com/urchin.js"
+        };
+    
     /**
      * @param name
      */
@@ -81,6 +96,14 @@ public class ExtractorJS extends ContentExtractor {
 
     
     protected boolean shouldExtract(ProcessorURI uri) {
+        
+        // special-cases, for when we know our current JS extractor does poorly.
+        // TODO: remove this test when JS extractor is improved 
+        for (String s: EXTRACTOR_URI_EXCEPTIONS) {
+            if (uri.toString().equals(s))
+                return false;
+        }
+        
         String contentType = uri.getContentType();
         if ((contentType == null)) {
             return false;
@@ -163,7 +186,12 @@ public class ExtractorJS extends ContentExtractor {
                 TextUtils.getMatcher(STRING_URI_DETECTOR, subsequence);
             if(uri.matches()) {
                 String string = uri.group();
-                string = TextUtils.replaceAll(ESCAPED_AMP, string, AMP);
+                // protect against adding outlinks for known problematic matches
+                if (isUriMatchException(string,cs)) {
+                    TextUtils.recycleMatcher(uri);
+                    continue;
+                }
+                string = speculativeFixup(string, curi);
                 foundLinks++;
                 try {
                     int max = ext.getExtractorParameters().getMaxOutlinks();
@@ -185,6 +213,70 @@ public class ExtractorJS extends ContentExtractor {
         }
         TextUtils.recycleMatcher(strings);
         return foundLinks;
+    }
+    
+    /**
+     * checks to see if URI match is a special case 
+     * @param string matched by <code>STRING_URI_DETECTOR</code>
+     * @param cs 
+     * @return true if string is one of <code>STRING_URI_EXCEPTIONS</code>
+     */
+    private static boolean isUriMatchException(String string,CharSequence cs) {
+        for (String s : STRING_URI_DETECTOR_EXCEPTIONS) {
+            if (s.equals(string)) 
+                return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Perform additional fixup of likely-URI Strings
+     * 
+     * @param string detected candidate String
+     * @return String changed/decoded to increase liklihood it is a 
+     * meaningful non-404 URI
+     */
+    public static String speculativeFixup(String string, ProcessorURI puri) {
+        String retVal = string;
+        
+        // unescape ampersands
+        retVal = TextUtils.replaceAll(ESCAPED_AMP, retVal, AMP);
+        
+        // uri-decode if begins with encoded 'http(s)?%3A'
+        Matcher m = TextUtils.getMatcher("(?i)^https?%3A.*",retVal); 
+        if(m.matches()) {
+            try {
+                retVal = LaxURLCodec.DEFAULT.decode(retVal);
+            } catch (DecoderException e) {
+                LOGGER.log(Level.INFO,"unable to decode",e);
+            }
+        }
+        TextUtils.recycleMatcher(m);
+        
+        // TODO: more URI-decoding if there are %-encoded parts?
+        
+        // detect scheme-less intended-absolute-URI
+        // intent: "opens with what looks like a dotted-domain, and 
+        // last segment is a top-level-domain (eg "com", "org", etc)" 
+        m = TextUtils.getMatcher(
+                "^[^\\./:\\s%]+\\.[^/:\\s%]+\\.([^\\./:\\s%]+)(/.*|)$", 
+                retVal);
+        if(m.matches()) {
+            String schemePlus = "http://";       
+            // if on exact same host preserve scheme (eg https)
+            try {
+                if (retVal.startsWith(puri.getUURI().getHost())) {
+                    schemePlus = puri.getUURI().getScheme() + "://";
+                }
+            } catch (URIException e) {
+                // error retrieving source host - ignore it
+            }
+            retVal = schemePlus + retVal; 
+        }
+        TextUtils.recycleMatcher(m);
+        
+        return retVal; 
     }
 
     /* (non-Javadoc)
