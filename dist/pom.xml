@@ -9,7 +9,7 @@
   <groupId>org.archive.heritrix</groupId>
   <artifactId>heritrix</artifactId>
   <packaging>pom</packaging>
-  <name>Heritrix (for distribution)</name>
+  <name>Heritrix 3 (distribution bundles)</name>
     <pluginRepositories>
     <pluginRepository>
       <releases>

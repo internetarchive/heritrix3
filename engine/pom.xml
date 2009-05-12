@@ -9,7 +9,7 @@
   <groupId>org.archive.heritrix</groupId>
   <artifactId>engine</artifactId>
   <packaging>jar</packaging>
-  <name>Heritrix: 'engine' subproject</name>
+  <name>Heritrix 3: 'engine' subproject</name>
     <pluginRepositories>
     <pluginRepository>
       <releases>

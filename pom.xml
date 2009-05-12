@@ -96,10 +96,10 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale,
 
     <scm>
        <connection>
-       scm:svn:https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix2
+       scm:svn:https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix3
        </connection>
        <url>
-       https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix2
+       https://archive-crawler.svn.sourceforge.net/svnroot/archive-crawler/trunk/heritrix3
        </url>
     </scm>
 

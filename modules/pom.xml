@@ -10,7 +10,7 @@
   <groupId>org.archive.heritrix</groupId>
   <artifactId>modules</artifactId>
   <packaging>jar</packaging>
-  <name>Heritrix: 'modules' subproject (reusable components)</name>
+  <name>Heritrix 3: 'modules' subproject (reusable components)</name>
   <description>
 
 This project contains some of the configurable modules used within the

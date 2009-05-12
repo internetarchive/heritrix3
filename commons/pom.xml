@@ -10,7 +10,7 @@
   <groupId>org.archive.heritrix</groupId>
   <artifactId>commons</artifactId>
   <packaging>jar</packaging>
-  <name>Heritrix: 'commons' subproject (utility classes)</name>
+  <name>Heritrix 3: 'commons' subproject (utility classes)</name>
   <description>
     The Archive Commons Code Libraries project contains general Java utility
     libraries, as used by the Heritrix crawler and other projects. 
