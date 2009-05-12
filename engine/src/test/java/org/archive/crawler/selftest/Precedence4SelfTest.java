@@ -59,7 +59,6 @@ public class Precedence4SelfTest extends Precedence1SelfTest {
             IOUtils.closeQuietly(br);
         }
         
-        //assertEquals("dns:localhost", crawled.get(0));
         assertEquals("http://127.0.0.1:7777/robots.txt", crawled.get(0));
         assertEquals("http://127.0.0.1:7777/five/a.html", crawled.get(1));
         assertEquals("http://127.0.0.1:7777/five/b.html", crawled.get(crawled.size() - 1));

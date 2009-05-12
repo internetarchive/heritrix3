@@ -121,7 +121,6 @@ public class Precedence3SelfTest extends SelfTestBase {
         
         System.out.println(crawled);
       
-//        assertEquals("dns:localhost", crawled.get(0));
         assertEquals("http://127.0.0.1:7777/robots.txt", crawled.get(0));
         assertEquals("http://127.0.0.1:7777/H.html", crawled.get(1));
 
