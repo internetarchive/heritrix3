@@ -774,7 +774,12 @@ public class UURIFactory extends URI {
                 }
                 uriAuthority = m.group(1) + no;
                 // Now makesure the number is legit.
-                int portNo = Integer.parseInt(no);
+                int portNo = 0;
+                try {
+                    portNo = Integer.parseInt(no);
+                } catch (NumberFormatException nfe) {
+                    // just catch and leave portNo at illegal 0
+                }
                 if (portNo <= 0 || portNo > 65535) {
                     throw new URIException("Port out of bounds: " +
                         uriAuthority);
