@@ -118,7 +118,6 @@ import org.springframework.context.Lifecycle;
  */
 public class FetchHTTP extends Processor implements Lifecycle {
     private static final long serialVersionUID = 1L;
-
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
     /**
@@ -443,6 +442,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public void setHttpBindAddress(String address) {
         this.httpBindAddress = address;
     }
+    public static final String HTTP_BIND_ADDRESS = "httpBindAddress";
 
     /**
      * Used to store credentials.
@@ -959,7 +959,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * settings, in given HostConfiguration
      */
     private void configureBindAddress(ProcessorURI curi, HostConfiguration config) {
-        String addressString = (String) getAttributeEither(curi, "httpBindAddress");
+        String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
         configureBindAddress(addressString,config);
     }
 
@@ -1311,9 +1311,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         
     }
-
-
-
 
     protected void configureHttp() {
         int soTimeout = getSoTimeoutMs();
