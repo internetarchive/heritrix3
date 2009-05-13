@@ -90,8 +90,6 @@ import org.archive.util.anvl.ANVLRecord;
  * @contributor stack
  */
 public class WARCWriterProcessor extends WriterPoolProcessor {
-
-
     private static final long serialVersionUID = 6182850087635847443L;
 
     private static final Logger logger = 
@@ -401,6 +399,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
                 ris.close();
             }
         }
+        curi.getAnnotations().add("warcRevisit:digest");
         return baseid;
     }
     
@@ -432,6 +431,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
                 ris.close();
             }
         }
+        curi.getAnnotations().add("warcRevisit:notModified");
         return baseid;
     }
     
