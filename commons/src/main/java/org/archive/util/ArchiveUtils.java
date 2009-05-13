@@ -28,11 +28,14 @@ import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -842,5 +845,55 @@ public class ArchiveUtils {
         return version.trim() + "-" + timestamp.trim();
     }
 
+    public static Set<String> TLDS;
+    
+    static {
+        TLDS = new HashSet<String>();
+        // from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+        // # Version 2008071601, Last Updated Thu Jul 17 08:07:01 2008 UTC
+        String[] tldsArray = { "AC", "AD", "AE", "AERO", "AF", "AG", "AI",
+                "AL", "AM", "AN", "AO", "AQ", "AR", "ARPA", "AS", "ASIA", "AT",
+                "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE", "BF", "BG",
+                "BH", "BI", "BIZ", "BJ", "BM", "BN", "BO", "BR", "BS", "BT",
+                "BV", "BW", "BY", "BZ", "CA", "CAT", "CC", "CD", "CF", "CG",
+                "CH", "CI", "CK", "CL", "CM", "CN", "CO", "COM", "COOP", "CR",
+                "CU", "CV", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM", "DO",
+                "DZ", "EC", "EDU", "EE", "EG", "ER", "ES", "ET", "EU", "FI",
+                "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF",
+                "GG", "GH", "GI", "GL", "GM", "GN", "GOV", "GP", "GQ", "GR",
+                "GS", "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT",
+                "HU", "ID", "IE", "IL", "IM", "IN", "INFO", "INT", "IO", "IQ",
+                "IR", "IS", "IT", "JE", "JM", "JO", "JOBS", "JP", "KE", "KG",
+                "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ", "LA",
+                "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY",
+                "MA", "MC", "MD", "ME", "MG", "MH", "MIL", "MK", "ML", "MM",
+                "MN", "MO", "MOBI", "MP", "MQ", "MR", "MS", "MT", "MU",
+                "MUSEUM", "MV", "MW", "MX", "MY", "MZ", "NA", "NAME", "NC",
+                "NE", "NET", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU",
+                "NZ", "OM", "ORG", "PA", "PE", "PF", "PG", "PH", "PK", "PL",
+                "PM", "PN", "PR", "PRO", "PS", "PT", "PW", "PY", "QA", "RE",
+                "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG",
+                "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "ST",
+                "SU", "SV", "SY", "SZ", "TC", "TD", "TEL", "TF", "TG", "TH",
+                "TJ", "TK", "TL", "TM", "TN", "TO", "TP", "TR", "TRAVEL", "TT",
+                "TV", "TW", "TZ", "UA", "UG", "UK", "US", "UY", "UZ", "VA",
+                "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "XN--0ZWM56D",
+                "XN--11B5BS3A9AJ6G", "XN--80AKHBYKNJ4F", "XN--9T4B11YI5A",
+                "XN--DEBA0AD", "XN--G6W251D", "XN--HGBK6AJ7F53BBA",
+                "XN--HLCJ6AYA9ESC7A", "XN--JXALPDLP", "XN--KGBECHTV",
+                "XN--ZCKZAH", "YE", "YT", "YU", "ZA", "ZM", "ZW" };
+        TLDS.addAll(Arrays.asList(tldsArray));
+    }
+    /**
+     * Return whether the given string represents a known 
+     * top-level-domain (like "com", "org", etc.) per IANA
+     * as of 2008071601. 
+     * 
+     * @param dom candidate string
+     * @return boolean true if recognized as TLD
+     */
+    public static boolean isTld(String dom) {
+        return TLDS.contains(dom.toUpperCase());
+    }
 }
 

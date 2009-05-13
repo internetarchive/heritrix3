@@ -30,6 +30,7 @@ import org.archive.io.ReplayCharSequence;
 import org.archive.modules.ProcessorURI;
 import org.archive.net.LaxURLCodec;
 import org.archive.net.UURI;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 
@@ -263,16 +264,18 @@ public class ExtractorJS extends ContentExtractor {
                 "^[^\\./:\\s%]+\\.[^/:\\s%]+\\.([^\\./:\\s%]+)(/.*|)$", 
                 retVal);
         if(m.matches()) {
-            String schemePlus = "http://";       
-            // if on exact same host preserve scheme (eg https)
-            try {
-                if (retVal.startsWith(puri.getUURI().getHost())) {
-                    schemePlus = puri.getUURI().getScheme() + "://";
+            if(ArchiveUtils.isTld(m.group(1))) { 
+                String schemePlus = "http://";       
+                // if on exact same host preserve scheme (eg https)
+                try {
+                    if (retVal.startsWith(puri.getUURI().getHost())) {
+                        schemePlus = puri.getUURI().getScheme() + "://";
+                    }
+                } catch (URIException e) {
+                    // error retrieving source host - ignore it
                 }
-            } catch (URIException e) {
-                // error retrieving source host - ignore it
+                retVal = schemePlus + retVal; 
             }
-            retVal = schemePlus + retVal; 
         }
         TextUtils.recycleMatcher(m);
         
