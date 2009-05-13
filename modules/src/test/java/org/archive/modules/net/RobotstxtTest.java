@@ -105,4 +105,32 @@ public class RobotstxtTest extends TestCase {
         // with crawl-delay 
         assertEquals(r.getDirectivesFor("Mozilla delaybot 99.9").getCrawlDelay(),20f);
     }
+
+    Robotstxt htmlMarkupRobots() throws IOException {
+        BufferedReader reader = new BufferedReader(
+            new StringReader(
+                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\"><HTML>\n"
+                +"<HEAD>\n"
+                +"<TITLE>/robots.txt</TITLE>\n"
+                +"<HEAD>\n"
+                +"<BODY>\n"
+                +"User-agent: *<BR>\n"
+                +"Disallow: /<BR>\n"
+                +"Crawl-Delay: 30<BR>\n"
+                +"\n"
+                +"</BODY>\n"
+                +"</HTML>\n"
+            ));
+        return new Robotstxt(reader); 
+    }
+    
+    /**
+     * Test handling of a robots.txt with extraneous HTML markup
+     * @throws IOException
+     */
+    public void testHtmlMarkupRobots() throws IOException {
+        Robotstxt r = htmlMarkupRobots();
+        assertFalse(r.getDirectivesFor("anybot").allows("/index.html"));
+        assertEquals(30f,r.getDirectivesFor("anybot").getCrawlDelay());
+    }
 }

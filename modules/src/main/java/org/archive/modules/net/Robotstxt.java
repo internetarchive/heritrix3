@@ -68,6 +68,8 @@ public class Robotstxt implements Serializable {
                 reader.close();
                 reader = null;
             } else {
+                // remove any html markup
+                read = read.replaceAll("<[^>]+>","");
                 int commentIndex = read.indexOf("#");
                 if (commentIndex > -1) {
                     // Strip trailing comment
@@ -112,8 +114,13 @@ public class Robotstxt implements Serializable {
                     // yet understand it, as sufficient to end a 
                     // grouping of User-Agent lines
                     hasDirectivesYet = true;
-                    current.setCrawlDelay(
-                            Float.parseFloat(read.substring(12).trim()));
+                    String val = read.substring(12).trim();
+                    val = val.split("[^\\d\\.]+")[0];
+                    try {
+                        current.setCrawlDelay(Float.parseFloat(val));
+                    } catch (NumberFormatException nfe) {
+                        // ignore
+                    }
                     continue;
                 }
                 if (read.matches("(?i)Allow:.*")) {
