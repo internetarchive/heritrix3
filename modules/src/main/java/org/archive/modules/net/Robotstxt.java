@@ -113,7 +113,7 @@ public class Robotstxt implements Serializable {
                     // grouping of User-Agent lines
                     hasDirectivesYet = true;
                     current.setCrawlDelay(
-                            Integer.parseInt(read.substring(12).trim()));
+                            Float.parseFloat(read.substring(12).trim()));
                     continue;
                 }
                 if (read.matches("(?i)Allow:.*")) {

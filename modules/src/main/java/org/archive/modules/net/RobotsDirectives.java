@@ -37,7 +37,7 @@ public class RobotsDirectives implements Serializable {
     
     PrefixSet disallows = new PrefixSet();
     PrefixSet allows = new PrefixSet();
-    int crawlDelay = -1; 
+    float crawlDelay = -1; 
 
     public boolean allows(String path) {
         if(disallows.containsPrefixOf(path)) {
@@ -59,11 +59,11 @@ public class RobotsDirectives implements Serializable {
         allows.add(path);
     }
 
-    public void setCrawlDelay(int i) {
+    public void setCrawlDelay(float i) {
         crawlDelay=i;
     }
 
-    public int getCrawlDelay() {
+    public float getCrawlDelay() {
         return crawlDelay;
     }
 }

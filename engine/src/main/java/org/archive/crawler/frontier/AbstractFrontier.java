@@ -222,13 +222,13 @@ public abstract class AbstractFrontier
      * robots.txt
      */
     {
-        setRespectCrawlDelay(true);
+        setRespectCrawlDelayUpToSeconds(300);
     }
-    public boolean getRespectCrawlDelay() {
-        return (Boolean) kp.get("respectCrawlDelay");
+    public int getRespectCrawlDelayUpToSeconds() {
+        return (Integer) kp.get("respectCrawlDelayUpToSeconds");
     }
-    public void setRespectCrawlDelay(boolean respect) {
-        kp.put("respectCrawlDelay",respect);
+    public void setRespectCrawlDelayUpToSeconds(int respect) {
+        kp.put("respectCrawlDelayUpToSeconds",respect);
     }
 
     /** never wait more than this long, regardless of multiple */
@@ -1156,7 +1156,9 @@ public abstract class AbstractFrontier
                 durationToWait = maxDelay;
             }
             
-            if (getRespectCrawlDelay()) {
+            long respectThreshold = getRespectCrawlDelayUpToSeconds() * 1000;
+            if (durationToWait<respectThreshold) {
+                // may need to extend wait
                 CrawlServer s = ServerCacheUtil.getServerFor(
                         getServerCache(),curi.getUURI());
                 UserAgentProvider uap = getUserAgentProvider();
@@ -1166,7 +1168,11 @@ public abstract class AbstractFrontier
                 }
                 RobotsExclusionPolicy rep = s.getRobots();
                 if (rep != null) {
-                    long crawlDelay = 1000 * s.getRobots().getCrawlDelay(ua);
+                    long crawlDelay = (long)(1000 * s.getRobots().getCrawlDelay(ua));
+                    crawlDelay = 
+                        (crawlDelay > respectThreshold) 
+                            ? respectThreshold 
+                            : crawlDelay;
                     if (crawlDelay > durationToWait) {
                         // wait at least the directive crawl-delay
                         durationToWait = crawlDelay;

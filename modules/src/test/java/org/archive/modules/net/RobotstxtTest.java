@@ -101,8 +101,8 @@ public class RobotstxtTest extends TestCase {
         assertTrue(r.getDirectivesFor("Mozilla anonbot 99.9").allows("/path"));
         assertFalse(r.getDirectivesFor("Mozilla anonbot 99.9").allows("/cgi-bin/foo.pl"));
         // no crawl-delay
-        assertEquals(r.getDirectivesFor("Mozilla denybot 99.9").getCrawlDelay(),-1);
+        assertEquals(r.getDirectivesFor("Mozilla denybot 99.9").getCrawlDelay(),-1f);
         // with crawl-delay 
-        assertEquals(r.getDirectivesFor("Mozilla delaybot 99.9").getCrawlDelay(),20);
+        assertEquals(r.getDirectivesFor("Mozilla delaybot 99.9").getCrawlDelay(),20f);
     }
 }
