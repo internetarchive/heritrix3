@@ -88,10 +88,13 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
         timestamp_interval = 10000;
     } 
 
-
-    public synchronized void added(CrawlURI curi) {
+    public void added(CrawlURI curi) {
+        writeLongUriLine(F_ADD, curi);
+    }
+    
+    public synchronized void writeLongUriLine(String tag, CrawlURI curi) {
         accumulatingBuffer.length(0);
-        this.accumulatingBuffer.append(F_ADD).
+        this.accumulatingBuffer.append(tag).
             append(curi.toString()).
             append(" "). 
             append(curi.getPathFromSeed()).
@@ -101,15 +104,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
     }
 
     public void finishedSuccess(CrawlURI curi) {
-        finishedSuccess(curi.toString());
-    }
-    
-    public void finishedSuccess(UURI uuri) {
-        finishedSuccess(uuri.toString());
-    }
-    
-    protected void finishedSuccess(String uuri) {
-        writeLine(F_SUCCESS, uuri);
+        writeLongUriLine(F_SUCCESS, curi);
     }
 
     public void emitted(CrawlURI curi) {
@@ -118,19 +113,11 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
     }
 
     public void finishedFailure(CrawlURI curi) {
-        finishedFailure(curi.toString());
+        writeLongUriLine(F_FAILURE,curi);
     }
     
     public void finishedDisregard(CrawlURI curi) {
         writeLine(F_DISREGARD, curi.toString());
-    }
-    
-    public void finishedFailure(UURI uuri) {
-        finishedFailure(uuri.toString());
-    }
-    
-    public void finishedFailure(String u) {
-        writeLine(F_FAILURE, u);
     }
 
     public void rescheduled(CrawlURI curi) {
@@ -234,7 +221,8 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
                         }
                         frontier.considerIncluded(u);
                         if (newJournal != null) {
-                            newJournal.writeLine(lineType, u.toString());
+                            // write same line as read
+                            newJournal.writeLine(read);
                         }
                     } catch (URIException e) {
                         e.printStackTrace();
