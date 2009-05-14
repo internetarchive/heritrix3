@@ -158,6 +158,57 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         assertEquals("Strings don't match",result,fileContent);
     }
     
+    private String toHexString(String str)
+    {
+        if (str != null) {
+            StringBuilder buf = new StringBuilder("{ ");
+            buf.append(Integer.toString(str.charAt(0), 16));
+            for (int i = 1; i < str.length(); i++) {
+                buf.append(", ");
+                buf.append(Integer.toString(str.charAt(i), 16));
+            }
+            buf.append(" }");
+            return buf.toString();
+        }
+        else 
+            return "null";
+    }
+     
+    public void testSingleByteEncodings() throws IOException {
+        byte[] bytes = {
+            (byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0x64,
+            (byte) 0x7d, (byte) 0x7e, (byte) 0x7f, (byte) 0x80,
+            (byte) 0x81, (byte) 0x82, (byte) 0x83, (byte) 0x84,
+            (byte) 0xfc, (byte) 0xfd, (byte) 0xfe, (byte) 0xff };
+
+        String latin1String = new String(bytes, "latin1");
+        RecordingOutputStream ros = writeTestStream(
+                bytes, 1, "testSingleByteEncodings-latin1.txt", 0);
+        ReplayCharSequence rcs = ros.getReplayCharSequence("latin1");
+        String result = rcs.toString();
+        logger.info("latin1[0] " + toHexString(latin1String));
+        logger.info("latin1[1] " + toHexString(result));
+        assertEquals("latin1 strings don't match", result, latin1String);
+        
+        String w1252String = new String(bytes, "windows-1252");
+        ros = writeTestStream(
+                bytes, 1, "testSingleByteEncodings-windows-1252.txt", 0);
+        rcs = ros.getReplayCharSequence("windows-1252");
+        result = rcs.toString();
+        logger.info("windows-1252[0] " + toHexString(w1252String));
+        logger.info("windows-1252[1] " + toHexString(result));
+        assertEquals("windows-1252 strings don't match", result, w1252String);
+
+        String asciiString = new String(bytes, "ascii");
+        ros = writeTestStream(
+                bytes, 1, "testSingleByteEncodings-ascii.txt", 0);
+        rcs = ros.getReplayCharSequence("ascii");
+        result = rcs.toString();
+        logger.info("ascii[0] " + toHexString(asciiString));
+        logger.info("ascii[1] " + toHexString(result));
+        assertEquals("ascii strings don't match", result, asciiString);
+    }
+    
     public void testReplayCharSequenceByteToStringOverflow() throws IOException {
         String fileContent = "Some file content. ";
         byte [] buffer = fileContent.getBytes();
