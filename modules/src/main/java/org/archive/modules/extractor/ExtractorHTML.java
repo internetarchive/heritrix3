@@ -800,13 +800,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 return true;
             }
         } else if ("refresh".equalsIgnoreCase(httpEquiv) && content != null) {
-            String refreshUri = content.substring(content.indexOf("=") + 1);
-            try {
-                int max = getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToBase(curi, max, refreshUri, 
-                        HTMLLinkContext.META, Hop.REFER);
-            } catch (URIException e) {
-                logUriError(e, curi.getUURI(), refreshUri);
+            int urlIndex = content.indexOf("=") + 1;
+            if(urlIndex>0) {
+                String refreshUri = content.substring(urlIndex);
+                try {
+                    int max = getExtractorParameters().getMaxOutlinks();
+                    Link.addRelativeToBase(curi, max, refreshUri, 
+                            HTMLLinkContext.META, Hop.REFER);
+                } catch (URIException e) {
+                    logUriError(e, curi.getUURI(), refreshUri);
+                }
             }
         }
         return false;
