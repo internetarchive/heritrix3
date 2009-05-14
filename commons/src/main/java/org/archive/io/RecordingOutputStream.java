@@ -528,7 +528,7 @@ public class RecordingOutputStream extends OutputStream {
         if(maxBytesPerChar<=1) {
             // single
             // TODO: take into account single-byte encoding may be non-default
-            return new ByteReplayCharSequence(
+            return new Latin1ByteReplayCharSequence(
                     this.buffer, 
                     this.size, 
                     startOffset,
@@ -537,7 +537,7 @@ public class RecordingOutputStream extends OutputStream {
             // multibyte 
             if(this.size <= this.buffer.length) {
                 // raw data is all in memory; do in memory
-                return new MultiByteReplayCharSequence(
+                return new GenericReplayCharSequence(
                         this.buffer, 
                         this.size, 
                         startOffset,
@@ -546,7 +546,7 @@ public class RecordingOutputStream extends OutputStream {
             } else {
                 // raw data overflows to disk; use temp file
                 ReplayInputStream ris = getReplayInputStream(startOffset);
-                ReplayCharSequence rcs = new MultiByteReplayCharSequence(
+                ReplayCharSequence rcs = new GenericReplayCharSequence(
                         ris, 
                         this.backingFilename,
                         characterEncoding);

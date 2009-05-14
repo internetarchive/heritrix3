@@ -64,10 +64,10 @@ import org.archive.util.DevUtils;
  * @author Gordon Mohr
  * @version $Revision$, $Date$
  */
-class ByteReplayCharSequence implements ReplayCharSequence {
+class Latin1ByteReplayCharSequence implements ReplayCharSequence {
 
     protected static Logger logger =
-        Logger.getLogger(ByteReplayCharSequence.class.getName());
+        Logger.getLogger(Latin1ByteReplayCharSequence.class.getName());
 
     /**
      * Buffer that holds the first bit of content.
@@ -148,7 +148,7 @@ class ByteReplayCharSequence implements ReplayCharSequence {
      *
      * @throws IOException
      */
-    public ByteReplayCharSequence(byte[] buffer, long size,
+    public Latin1ByteReplayCharSequence(byte[] buffer, long size,
             long responseBodyStart, String backingFilename)
         throws IOException {
 
