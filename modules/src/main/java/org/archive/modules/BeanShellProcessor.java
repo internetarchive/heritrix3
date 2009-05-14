@@ -110,7 +110,7 @@ public class BeanShellProcessor extends Processor {
     }
     
     @Override
-    protected synchronized void innerProcess(ProcessorURI curi) {
+    protected void innerProcess(ProcessorURI curi) {
         // depending on previous configuration, interpreter may 
         // be local to this thread or shared
         Interpreter interpreter = getInterpreter(); 
@@ -131,7 +131,7 @@ public class BeanShellProcessor extends Processor {
      * to this thread. 
      * @return Interpreter to use
      */
-    protected Interpreter getInterpreter() {
+    protected synchronized Interpreter getInterpreter() {
         if(sharedInterpreter==null 
            && getIsolateThreads()) {
             // initialize
