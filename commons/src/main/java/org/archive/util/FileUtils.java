@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.FileChannel;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -609,4 +610,52 @@ public class FileUtils {
     public static LongRange pagedLines(File file, long position, int signedDesiredLongCount, List<String> lines) throws IOException {
         return pagedLines(file, position, signedDesiredLongCount, lines, 0);
     }
+    
+    /**
+     * Delete the file now -- but in the event of failure, keep trying
+     * in the future. 
+     * 
+     * VERY IMPORTANT: Do not use with any file whose name/path may be 
+     * reused, because the lagged delete could then wind up deleting the
+     * newer file. Essentially, only to be used with uniquely-named temp
+     * files. 
+     * 
+     * Necessary because some platforms (looking at you, 
+     * JVM-on-Windows) will have deletes fail because of things like 
+     * file-mapped buffers remaining, and there's no explicit way to 
+     * unmap a buffer. (See 6-year-old Sun-stumping Java bug
+     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4724038 )
+     * We just have to wait and retry. 
+     * 
+     * (Why not just File.deleteOnExit? There could be an arbitrary, 
+     * unbounded number of files in such a situation, that are only 
+     * deletable a few seconds or minutes after our first attempt.
+     * Waiting for JVM exist could mean disk exhaustion. It's also
+     * unclear if the native FS class implementations of deleteOnExit
+     * use RAM per pending file.)
+     * 
+     * @param fileToDelete
+     */
+    public static synchronized void deleteSoonerOrLater(File fileToDelete) {
+        pendingDeletes.add(fileToDelete);
+        // if things are getting out of hand, force gc/finalization
+        if(pendingDeletes.size()>50) {
+            LOGGER.warning(">50 pending Files to delete; forcing gc/finalization");
+            System.gc();
+            System.runFinalization();
+        }
+        // try all pendingDeletes
+        Iterator<File> iter = pendingDeletes.listIterator();
+        while(iter.hasNext()) {
+            File pending = iter.next(); 
+            if(pending.delete()) {
+                iter.remove();
+            }
+        }
+        // if things are still out of hand, complain loudly
+        if(pendingDeletes.size()>50) {
+            LOGGER.severe(">50 pending Files to delete even after gc/finalization");
+        }
+    }
+    static LinkedList<File> pendingDeletes = new LinkedList<File>(); 
 }
