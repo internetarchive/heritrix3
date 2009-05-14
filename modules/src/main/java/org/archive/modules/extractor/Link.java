@@ -132,7 +132,7 @@ public class Link implements Serializable {
 
     public static void addRelativeToBase(ProcessorURI uri, int max, 
             String newUri, LinkContext context, Hop hop) throws URIException {
-        UURI dest = UURIFactory.getInstance(uri.getUURI(), newUri);
+        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
         add2(uri, max, dest, context, hop);
     }
 
