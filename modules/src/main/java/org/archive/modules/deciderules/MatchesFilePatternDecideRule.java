@@ -41,16 +41,16 @@ public class MatchesFilePatternDecideRule extends MatchesRegExpDecideRule {
 
     public static enum Preset { 
         
-        
-        ALL(".*(?i)(\\.(bmp|gif|jpe?g|png|tiff?|mid|mp2|mp3|mp4|wav|avi|mov" + 
-                "|mpeg|ram|rm|smil|wmv|doc|pdf|ppt|swf))$"),
-                
-        IMAGES(".*(?i)(\\.(bmp|gif|jpe?g|png|tiff?))$"), 
+        ALL(".*(?i)(\\.(bmp|gif|jpe?g|png|svg|tiff?|aac|aiff?|m3u|m4a|midi?" +
+                "|mp2|mp3|mp4|mpa|ogg|ra|ram|wav|wma|asf|asx|avi|flv|mov|mp4" + 
+                "|mpeg|mpg|qt|ram|rm|smil|wmv|doc|pdf|ppt|swf))$"),
+                    
+        IMAGES(".*(?i)(\\.(bmp|gif|jpe?g|png|svg|tiff?))$"),
 
-        AUDIO(".*(?i)(\\.(mid|mp2|mp3|mp4|wav))$"),
+        AUDIO(".*(?i)(\\.(aac|aiff?|m3u|m4a|midi?|mp2|mp3|mp4|mpa|ogg|ra|ram|wav|wma))$"),
         
-        VIDEO(".*(?i)(\\.(avi|mov|mpeg|ram|rm|smil|wmv))$"), 
-
+        VIDEO(".*(?i)(\\.(asf|asx|avi|flv|mov|mp4|mpeg|mpg|qt|ram|rm|smil|wmv))$"),
+            
         MISC(".*(?i)(\\.(doc|pdf|ppt|swf))$"), 
 
         CUSTOM(null);
@@ -64,7 +64,6 @@ public class MatchesFilePatternDecideRule extends MatchesRegExpDecideRule {
                 pattern = Pattern.compile(regexp);
             }
         }
-        
         
         public Pattern getPattern() {
             return pattern;
