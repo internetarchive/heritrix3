@@ -39,9 +39,9 @@ import java.util.logging.Logger;
  * buffer and overflow backing file) that can handle streams of multibyte
  * characters.
  *
- * If possible, use {@link Latin1ByteReplayCharSequence}.  It performs better even
- * for the single byte case (Decoding is an expensive process).
- *
+ * For better performance on ISO-8859-1 text, use 
+ * {@link Latin1ByteReplayCharSequence}.
+ * 
  * <p>Call close on this class when done so can clean up resources.
  *
  * <p>Implementation currently works by checking to see if content to read

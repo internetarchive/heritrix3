@@ -33,7 +33,9 @@ import org.archive.util.DevUtils;
  * Provides a (Replay)CharSequence view on recorded stream bytes (a prefix
  * buffer and overflow backing file).
  *
- * Treats the byte stream as 8-bit.
+ * Assumes the byte stream is ISO-8859-1 text, taking advantage of the fact 
+ * that each byte in the stream corresponds to a single unicode character with
+ * the same numerical value as the byte. 
  *
  * <p>Uses a wraparound rolling buffer of the last windowSize bytes read
  * from disk in memory; as long as the 'random access' of a CharSequence
