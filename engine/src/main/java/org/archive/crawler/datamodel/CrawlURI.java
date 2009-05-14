@@ -900,7 +900,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     	
     	if (containsDataKey(A_HERITABLE_KEYS)) {
     	    @SuppressWarnings("unchecked")
-            List<String> heritable = (List<String>)getData().get(A_HERITABLE_KEYS);
+            HashSet<String> heritable = (HashSet<String>)getData().get(A_HERITABLE_KEYS);
             retain.addAll(heritable);
     	}
     	
@@ -1560,9 +1560,10 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
      */
     public void makeHeritable(String key) {
         @SuppressWarnings("unchecked")
-        List<String> heritableKeys = (List<String>)data.get(A_HERITABLE_KEYS);
+        HashSet<String> heritableKeys = (HashSet<String>)data.get(A_HERITABLE_KEYS);
         if (heritableKeys == null) {
-            heritableKeys = new ArrayList<String>();
+            heritableKeys = new HashSet<String>();
+            heritableKeys.add(A_HERITABLE_KEYS);
             data.put(A_HERITABLE_KEYS, heritableKeys);
         }
         heritableKeys.add(key);
@@ -1576,7 +1577,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
      */
     public void makeNonHeritable(String key) {
         @SuppressWarnings("unchecked")
-        List<String> heritableKeys = (List<String>)data.get(A_HERITABLE_KEYS);
+        HashSet heritableKeys = (HashSet)data.get(A_HERITABLE_KEYS);
         if(heritableKeys == null) {
             return;
         }
@@ -1669,7 +1670,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     protected void inheritFrom(CrawlURI ancestor) {
         Map<String,Object> adata = ancestor.getData();
         @SuppressWarnings("unchecked")
-        List<String> heritableKeys = (List<String>)adata.get(A_HERITABLE_KEYS);
+        HashSet<String> heritableKeys = (HashSet<String>)adata.get(A_HERITABLE_KEYS);
         Map<String,Object> thisData = getData();
         if (heritableKeys != null) {
             for (String key: heritableKeys) {
