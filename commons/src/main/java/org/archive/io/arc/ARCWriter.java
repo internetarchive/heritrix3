@@ -471,9 +471,9 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
     protected String validateMetaLine(String metaLineStr)
     throws IOException {
         if (metaLineStr.length() > MAX_METADATA_LINE_LENGTH) {
-        	throw new IOException("Metadata line length is " +
-                metaLineStr.length() + " which is > than maximum " +
-                MAX_METADATA_LINE_LENGTH);
+            throw new IOException("Metadata line too long ("
+                + metaLineStr.length() + ">" + MAX_METADATA_LINE_LENGTH 
+                + "): " + metaLineStr);
         }
      	Matcher m = METADATA_LINE_PATTERN.matcher(metaLineStr);
         if (!m.matches()) {
