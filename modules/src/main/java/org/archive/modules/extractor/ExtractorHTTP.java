@@ -73,7 +73,7 @@ public class ExtractorHTTP extends Extractor {
         // TODO: consider possibility of multiple headers
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), loc.getValue());
-            LinkContext lc = new HTMLLinkContext(loc.getName()); // FIXME
+            LinkContext lc = new HTMLLinkContext(loc.getName()+":"); 
             Link link = new Link(curi.getUURI(), dest, lc, Hop.REFER);
             curi.getOutLinks().add(link);
             numberOfLinksExtracted++;
