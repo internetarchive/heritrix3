@@ -590,14 +590,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
         
         String mime = uri.getContentType().toLowerCase();
-        if (mime.startsWith("text/html")) {
-            return true;
-        }
-        if (mime.startsWith("application/xhtml")) {
-            return true;
-        }
-        
-        return false;
+        return mime.startsWith("text/html")
+                || mime.startsWith("application/xhtml")
+                || mime.startsWith("text/vnd.wap.wml")
+                || mime.startsWith("application/vnd.wap.wml")
+                || mime.startsWith("application/vnd.wap.xhtml");
     }
     
     
