@@ -273,7 +273,7 @@ implements ARCConstants {
      * Uncompressed arc file reader.
      * @author stack
      */
-    private class UncompressedARCReader extends ARCReader {
+    public class UncompressedARCReader extends ARCReader {
         /**
          * Constructor.
          * @param f Uncompressed arcfile to read.
@@ -318,7 +318,7 @@ implements ARCConstants {
      * 
      * @author stack
      */
-    private class CompressedARCReader extends ARCReader {
+    public class CompressedARCReader extends ARCReader {
 
         /**
          * Constructor.
