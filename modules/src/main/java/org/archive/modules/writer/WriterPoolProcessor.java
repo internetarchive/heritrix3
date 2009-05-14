@@ -64,10 +64,8 @@ import org.springframework.context.Lifecycle;
 public abstract class WriterPoolProcessor extends Processor 
 implements Lifecycle {
     
-    
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
-
 
     /**
      * Compress files when "writing to disk.
@@ -431,14 +429,14 @@ implements Lifecycle {
         result.setPrefix(getPrefix());
         
         String sfx = getSuffix();
-        if (sfx.trim().equals(WriterPoolMember.HOSTNAME_VARIABLE)) {
-            String str = "localhost.localdomain";
+        sfx = sfx.trim();
+        if (sfx.contains(WriterPoolMember.HOSTNAME_VARIABLE)) {            String str = "localhost.localdomain";
             try {
                 str = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException ue) {
                 logger.severe("Failed getHostAddress for this host: " + ue);
             }
-            sfx = str;
+            sfx = sfx.replace(WriterPoolMember.HOSTNAME_VARIABLE, str);
         }
         
         result.setSuffix(sfx);
