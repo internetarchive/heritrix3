@@ -47,6 +47,9 @@ import org.archive.io.warc.WARCConstants;
 import org.archive.io.warc.WARCWriter;
 import org.archive.util.FileUtils;
 import org.archive.util.anvl.ANVLRecord;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.ISODateTimeFormat;
 
 
 /**
@@ -134,23 +137,31 @@ public class Arc2Warc {
 	   }
    }
    
-   protected void write(final WARCWriter writer,
-		   final ARCRecord r)
+   protected void write(final WARCWriter writer, final ARCRecord r)
    throws IOException {
-	   ANVLRecord ar = new ANVLRecord();
-	   String ip = (String)r.getHeader().
-	       getHeaderValue((ARCConstants.IP_HEADER_FIELD_KEY));
-	   if (ip != null && ip.length() > 0) {
-		   ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
-	   }
-	   // If contentBody > 0, assume http headers.  Make the mimetype
-	   // be application/http.  Otherwise, give it ARC mimetype.
-	   writer.writeResourceRecord(r.getHeader().getUrl(),
-	       r.getHeader().getDate(),
-	       (r.getHeader().getContentBegin() > 0)?
-	    	   WARCConstants.HTTP_RESPONSE_MIMETYPE:
-	    	   r.getHeader().getMimetype(),
-	    	   ar, r, r.getHeader().getLength());
+
+       // convert ARC date to WARC-Date format
+       String arcDateString = r.getHeader().getDate();
+       String warcDateString = DateTimeFormat.forPattern("yyyyMMddHHmmss")
+       .withZone(DateTimeZone.UTC)
+       .parseDateTime(arcDateString)
+       .toString(ISODateTimeFormat.dateTimeNoMillis());
+
+       // If contentBody > 0, assume http headers.  Make the mimetype
+       // be application/http.  Otherwise, give it ARC mimetype.
+       String warcMimeTypeString = (r.getHeader().getContentBegin() > 0) ? 
+               WARCConstants.HTTP_RESPONSE_MIMETYPE : 
+                   r.getHeader().getMimetype();
+
+       ANVLRecord ar = new ANVLRecord();
+       String ip = (String)r.getHeader().
+       getHeaderValue((ARCConstants.IP_HEADER_FIELD_KEY));
+       if (ip != null && ip.length() > 0) {
+           ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
+       }
+
+       writer.writeResourceRecord(r.getHeader().getUrl(), warcDateString,
+               warcMimeTypeString, ar, r, r.getHeader().getLength());
    }
 
    /**
