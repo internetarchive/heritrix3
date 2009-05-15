@@ -46,14 +46,14 @@ public class BadURIsStopPageParsingSelfTest extends SelfTestBase
     final private static Set<String> EXPECTED = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList(new String[] {
             "index.html", "goodone.html", "goodthree.html", "one.html", 
-            "two.html", "three.html", "robots.txt", "goodtwo.html",
+            "two.html", "three.html", "robots.txt",
             "cata;pgs-new.html", "www.loc.gov/rr/european/egw/polishex.html"
     })));
     
     @Override
     protected void verify() throws Exception {
         Set<String> files = filesInArcs();
-        assertTrue(EXPECTED.equals(files));
+        assertEquals("URIs retrieved mismatch expected",EXPECTED,files);
     }
 
 
