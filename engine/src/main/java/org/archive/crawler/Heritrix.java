@@ -319,8 +319,8 @@ public class Heritrix {
             Guard guard = new RateLimitGuard(null,
                     ChallengeScheme.HTTP_DIGEST, "Authentication Required");
             guard.getSecrets().put(authLogin, authPassword.toCharArray());
-            guard.setNext(new EngineApplication(engine));
             component.getDefaultHost().attach(guard);
+            guard.setNext(new EngineApplication(engine));
             component.start();
             startupOut.println("engine listening at port "+port);
             startupOut.println("operator login is '"+authLogin
