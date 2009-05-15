@@ -42,7 +42,8 @@ import com.sleepycat.je.DatabaseException;
  *
  * @param <E>
  */
-public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  implements Serializable {
+public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  
+implements Serializable {
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
         Logger.getLogger(StoredQueue.class.getName());
@@ -51,7 +52,8 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  imple
     transient Database queueDb; // Database
     AtomicLong tailIndex; // next spot for insert
     AtomicLong headIndex; // next spot for read
- 
+    transient E peekItem = null;
+    
     /**
      * Create a StoredQueue backed by the given Database. 
      * 
@@ -112,10 +114,14 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  imple
     @SuppressWarnings("unchecked")
     public E peek() {
         synchronized (headIndex) {
+            if(peekItem != null) {
+                return peekItem;
+            }
             E head = null;
             while(head == null && headIndex.get() < tailIndex.get()) {
                 head = (E) queueMap.get(headIndex.get());
                 if(head != null) {
+                    peekItem = head;
                     return head;
                 }
                 // ERROR; should never be null with headIndex < tailIndex
@@ -133,7 +139,9 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  imple
         synchronized (headIndex) {
             E head = peek();
             if(head!=null) {
-                return (E) queueMap.remove(headIndex.getAndIncrement());
+                queueMap.remove(headIndex.getAndIncrement());
+                peekItem = null;
+                return head;
             } else {
                 return null;
             }

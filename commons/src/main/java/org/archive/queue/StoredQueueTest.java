@@ -130,6 +130,13 @@ public class StoredQueueTest extends TmpDirTestCase {
             // do nothing
         }
     }
+    
+    public void testIdentity() {
+        fill(queue,10);
+        String peek1 = queue.peek();
+        String peek2 = queue.peek();
+        assertTrue("peeks of same item note identical object",peek1==peek2);
+    }
 
     public void xestTimingsAgainstLinkedBlockingQueue() {
         tryTimings(50000);
