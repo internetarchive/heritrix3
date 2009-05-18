@@ -35,6 +35,7 @@ import org.archive.modules.fetcher.FetchStats;
 import org.archive.net.UURI;
 import org.archive.util.MultiReporter;
 import org.json.JSONException;
+import org.springframework.context.Lifecycle;
 
 
 /**
@@ -105,7 +106,7 @@ import org.json.JSONException;
  * @see org.archive.crawler.framework.ToeThread
  * @see org.archive.crawler.settings.ModuleType
  */
-public interface Frontier extends MultiReporter {
+public interface Frontier extends Lifecycle, MultiReporter {
 
     /**
      * Get the next URI that should be processed. If no URI becomes availible

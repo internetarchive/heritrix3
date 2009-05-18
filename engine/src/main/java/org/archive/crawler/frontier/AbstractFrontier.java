@@ -91,7 +91,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.Lifecycle;
 
 /**
  * Shared facilities for Frontier implementations.
@@ -101,7 +100,6 @@ import org.springframework.context.Lifecycle;
 public abstract class AbstractFrontier 
     implements Frontier, 
                Serializable, 
-               Lifecycle, // InitializingBean, 
                SeedListener, 
                HasKeyedProperties,
                ExtractorParameters {
