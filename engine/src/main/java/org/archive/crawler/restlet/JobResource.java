@@ -31,6 +31,8 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.crawler.reporting.Report;
+import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
@@ -97,10 +99,17 @@ public class JobResource extends Resource {
         pw.print(cj.getLaunchCount() + " launches");
         if(cj.getLastLaunch()!=null) {
             long ago = System.currentTimeMillis() - cj.getLastLaunch().getMillis();
-            pw.println(", last "+ArchiveUtils.formatMillisecondsToConventional(ago, 2)+" ago)");
+            pw.println(", last "+ArchiveUtils.formatMillisecondsToConventional(ago, 2)+" ago");
         }
         pw.println(")</h1>");
         
+        if(cj.isProfile()) {
+            pw.print(
+                "<p>As a <i>profile</i>, this job may be built for " +
+                "testing purposes but not launched. Use the 'copy job to' " +
+                "functionality at bottom to copy this profile to a " +
+                "launchable job.</p>");
+        }
         
         // button controls
         pw.println("<form method='POST'>");
@@ -213,7 +222,7 @@ public class JobResource extends Resource {
             pw.println("<br/><b>Alerts</b><br>&nbsp;&nbsp;");
             pw.println(cj.getAlertCount()==0 ? "<i>none</i>" : cj.getAlertCount()); 
             if(cj.getAlertCount()>0) {
-                pw.println("<a href='jobdir"
+                pw.println("<a href='jobdir/"
                         +cj.jobDirRelativePath(
                                 cj.getCrawlController().getLoggerModule().getAlertsLogPath().getFile())
                         +"?format=paged&pos=-1&lines=-128'>tail alert log...</a>");
@@ -228,10 +237,10 @@ public class JobResource extends Resource {
             pw.println("<br/><b>Elapsed</b><br/>&nbsp;&nbsp;");
             pw.println(cj.elapsedReport());
             
-            pw.println("<br/><b>Threads</b><br/>&nbsp;&nbsp;");
+            pw.println("<br/><a href='report/ToeThreadsReport'><b>Threads</b></a><br/>&nbsp;&nbsp;");
             pw.println(cj.threadReport());
     
-            pw.println("<br/><b>Frontier</b><br/>&nbsp;&nbsp;");
+            pw.println("<br/><a href='report/FrontierSummaryReport'><b>Frontier</b></a><br/>&nbsp;&nbsp;");
             pw.println(cj.frontierReport());
             
             pw.println("<br/><b>Memory</b><br/>&nbsp;&nbsp;");
@@ -240,7 +249,7 @@ public class JobResource extends Resource {
             if(cj.isRunning() || (cj.isContainerOk() && !cj.isLaunchable())) {
                 // show crawl log for running or finished crawls
                 pw.println("<h3>Crawl Log");
-                pw.println("(<a href='jobdir"
+                pw.println("(<a href='jobdir/"
                         +cj.jobDirRelativePath(
                                 cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile())
                         +"?format=paged&pos=-1&lines=-128&reverse=y'><i>more</i></a>)");
@@ -264,6 +273,15 @@ public class JobResource extends Resource {
                 pw.println("</pre>");
             }
             
+        }
+        
+        if(cj.isContainerOk()) {
+            pw.println("<h2>Reports</h2>");
+            for(Class<Report> reportClass : StatisticsTracker.LIVE_REPORTS) {
+                String className = reportClass.getSimpleName();
+                String shortName = className.substring(0,className.length()-"Report".length());
+                pw.println("<a href='report/"+className+"'>"+shortName+"</a>");
+            }
         }
         
         pw.println("<h2>Files</h2>");
@@ -305,11 +323,11 @@ public class JobResource extends Resource {
             pw.println(f);
             return;
         }
-        pw.println("<a href='jobdir" 
+        pw.println("<a href='jobdir/" 
                 + jobDirRelative + "'>" 
                 + f +"</a>");
         if(EDIT_FILTER.accept(f)) {
-            pw.println("[<a href='jobdir" 
+            pw.println("[<a href='jobdir/" 
                     + jobDirRelative 
                     +  "?format=textedit'>edit</a>]<br/>");
         }

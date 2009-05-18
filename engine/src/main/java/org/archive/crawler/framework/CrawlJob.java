@@ -576,7 +576,11 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
             String filePath = f.getCanonicalPath();
             String jobPath = getJobDir().getCanonicalPath();
             if(filePath.startsWith(jobPath)) {
-                return filePath.substring(jobPath.length()).replace(File.separatorChar, '/');
+                String jobRelative = filePath.substring(jobPath.length()).replace(File.separatorChar, '/');
+                if(jobRelative.startsWith("/")) {
+                    jobRelative = jobRelative.substring(1); 
+                }
+                return jobRelative;
             }
         } catch (IOException e) {
             getJobLogger().log(Level.WARNING,"bad file: "+f);

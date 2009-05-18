@@ -80,7 +80,8 @@ public class EngineApplication extends Application {
         jobdir.setEditFilter(JobResource.EDIT_FILTER);
         router.attach("/engine/job/{job}/jobdir",jobdir);
         router.attach("/engine/job/{job}",JobResource.class);
-        
+        router.attach("/engine/job/{job}/report/{reportClass}",ReportGenResource.class);
+
         return router;
     }
 
