@@ -26,6 +26,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -147,7 +148,7 @@ public class StatisticsTracker
         this.bdb = bdb;
     }
 
-    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,".");
+    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,"reports");
     public ConfigPath getReportsDir() {
         return reportsDir;
     }
@@ -184,14 +185,52 @@ public class StatisticsTracker
         Logger.getLogger(StatisticsTracker.class.getName());
 
     /**
-     * All report types, for iteration dump at end
+     * All report types, for selection by name
      */
     @SuppressWarnings("unchecked")
-    public static final Class[] REPORTS = {
-        HostsReport.class, MimetypesReport.class, 
-        ResponseCodeReport.class, SeedsReport.class, 
-        CrawlSummaryReport.class, ProcessorsReport.class,
-        FrontierReport.class, SourceTagsReport.class};
+    public static final Class[] ALL_REPORTS = {
+        CrawlSummaryReport.class,
+        SeedsReport.class, 
+        HostsReport.class, 
+        SourceTagsReport.class,
+        MimetypesReport.class, 
+        ResponseCodeReport.class, 
+        ProcessorsReport.class,
+        FrontierSummaryReport.class, 
+        FrontierNonemptyReport.class, 
+        ToeThreadsReport.class,
+    };
+    
+    /**
+     * Live report types, for iteration dump at end
+     */
+    @SuppressWarnings("unchecked")
+    public static final Class[] LIVE_REPORTS = {
+        CrawlSummaryReport.class,
+        SeedsReport.class, 
+        HostsReport.class, 
+        SourceTagsReport.class,
+        MimetypesReport.class, 
+        ResponseCodeReport.class, 
+        ProcessorsReport.class,
+        FrontierSummaryReport.class, 
+        ToeThreadsReport.class,
+    };
+    /**
+     * End-of-crawl report types, for iteration dump at end
+     */
+    @SuppressWarnings("unchecked")
+    public static final Class[] END_REPORTS = {
+        CrawlSummaryReport.class,
+        SeedsReport.class, 
+        HostsReport.class, 
+        SourceTagsReport.class,
+        MimetypesReport.class, 
+        ResponseCodeReport.class, 
+        ProcessorsReport.class,
+        FrontierSummaryReport.class, 
+        ToeThreadsReport.class,
+    };
     
     /**
      * The interval between writing progress information to log.
@@ -245,6 +284,7 @@ public class StatisticsTracker
     /** tally sizes novel, verified (same hash), vouched (not-modified) */ 
     CrawledBytesHistotable crawledBytes = new CrawledBytesHistotable();
     
+    // TODO: fortify these against key explosion with bigmaps like other tallies
     /** Keep track of the file types we see (mime type -> count) */
     protected Hashtable<String,LongWrapper> mimeTypeDistribution
      = new Hashtable<String,LongWrapper>();
@@ -261,13 +301,13 @@ public class StatisticsTracker
      * be trivially synchronized with the Collections wrapper. Thus
      * their synchronized access is enforced by this class.
      */
-    protected Map<String,LongWrapper> hostsDistribution = null;
-    protected Map<String,LongWrapper> hostsBytes = null;
-    protected Map<String,Long> hostsLastFinished = null;
+    protected Map<String,LongWrapper> hostsDistribution = Collections.emptyMap(); // temp dummy
+    protected Map<String,LongWrapper> hostsBytes = Collections.emptyMap(); // temp dummy
+    protected Map<String,Long> hostsLastFinished = Collections.emptyMap(); // temp dummy
 
     /** Keep track of URL counts per host per seed */
     protected  
-    Map<String,HashMap<String,LongWrapper>> sourceHostDistribution = null;
+    Map<String,HashMap<String,LongWrapper>> sourceHostDistribution = Collections.emptyMap(); // temp dummy;
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -277,7 +317,7 @@ public class StatisticsTracker
     /**
      * Record of seeds' latest actions.
      */
-    protected Map<String,SeedRecord> processedSeedsRecords;
+    protected Map<String,SeedRecord> processedSeedsRecords = Collections.emptyMap();
     long seedsTotal = -1; 
     long seedsCrawled = -1;
     
@@ -292,6 +332,7 @@ public class StatisticsTracker
     public void stop() {
         isRunning = false;
         executor.shutdownNow();
+        dumpReports();
     }
     
     public void start() {
@@ -393,7 +434,8 @@ public class StatisticsTracker
     }
     
     public CrawlStatSnapshot getLastSnapshot() {
-        return snapshots.peek();
+        CrawlStatSnapshot snap = snapshots.peek();
+        return snap == null ? getSnapshot() : snap;
     }
 
     public long getCrawlElapsedTime() {
@@ -458,11 +500,6 @@ public class StatisticsTracker
         crawlEndTime = System.currentTimeMillis();
         progressStatisticsEvent();
         logNote("CRAWL ENDED - " + sExitMessage);
-    }
-    
-    
-    public void finalTasks() {
-        dumpReports();     
     }
 
     /**
@@ -784,7 +821,7 @@ public class StatisticsTracker
             SeedRecord sr = (SeedRecord) processedSeedsRecords.get(seed);
             if(sr==null) {
                 sr = new SeedRecord(seed,"Seed has not been processed");
-                processedSeedsRecords.put(seed,sr);
+//                processedSeedsRecords.put(seed,sr);
             }
             sortedSet.add(sr);
         }
@@ -815,7 +852,16 @@ public class StatisticsTracker
         }
     }
 
-    protected void writeReportFile(Class<Report> reportClass) {
+    public File writeReportFile(String reportName) {
+        for(Class<Report> reportClass : ALL_REPORTS) {
+            if(reportClass.getSimpleName().equals(reportName)) {
+             return writeReportFile(reportClass);
+            }
+        }
+        return null; 
+    }
+    
+    protected File writeReportFile(Class<Report> reportClass) {
         Report r;
         try {
             r = reportClass.newInstance();
@@ -824,6 +870,15 @@ public class StatisticsTracker
         }
         r.setStats(this);
         File f = new File(getReportsDir().getFile(), r.getFilename());
+        
+        if(f.exists() && !controller.isRunning() && controller.hasStarted()) {
+            // controller already started and stopped and file exists
+            // so, don't overwrite
+            logger.info("reusing report: " + f.getAbsolutePath());
+            return f;
+        }
+        
+        f.getParentFile().mkdirs();
         try {
             PrintWriter bw = new PrintWriter(new FileWriter(f));
             r.write(bw);
@@ -835,6 +890,7 @@ public class StatisticsTracker
                 " at the end of crawl.", e);
         }
         logger.info("wrote report: " + f.getAbsolutePath());
+        return f; 
     }
     
     protected void addToManifest(String absolutePath, char manifest_report_file, boolean b) {
@@ -850,7 +906,7 @@ public class StatisticsTracker
         // order to the manifest set.
         //controller.addOrderToManifest();
         
-        for(Class<Report> reportClass : REPORTS) {
+        for(Class<Report> reportClass : END_REPORTS) {
             writeReportFile(reportClass);
         }
     }
@@ -926,6 +982,10 @@ public class StatisticsTracker
     public void tallySeeds() {
         seedsTotal = 0; 
         seedsCrawled = 0; 
+        if(processedSeedsRecords==null) {
+            // nothing to tally
+            return; 
+        }
         for (Iterator<String> i = getSeedsIterator();i.hasNext();) {
             SeedRecord sr = processedSeedsRecords.get(i.next());
             seedsTotal++;
