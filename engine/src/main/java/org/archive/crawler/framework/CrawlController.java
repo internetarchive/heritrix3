@@ -244,7 +244,7 @@ implements Serializable,
     /**
      * Crawl exit status.
      */
-    private transient CrawlStatus sExit;
+    private transient CrawlStatus sExit = CrawlStatus.CREATED;
 
     public static enum State {
         NASCENT, RUNNING, PAUSED, PAUSING, CHECKPOINTING, 
@@ -593,6 +593,9 @@ implements Serializable,
     }
 
     public String getToeThreadReport() {
+        if(toePool==null) {
+            return "no ToeThreads";
+        }
         StringWriter sw = new StringWriter();
         toePool.reportTo(new PrintWriter(sw));
         return sw.toString();
