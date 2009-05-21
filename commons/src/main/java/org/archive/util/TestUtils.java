@@ -22,6 +22,7 @@ package org.archive.util;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.SoftReference;
@@ -127,5 +128,27 @@ public class TestUtils {
             }
         }
     }
+    
+    /*
+     * create a tmp dir for testing; copied nearly verbatim from TmpDirTestCase
+     */
+    public static File tmpDir() throws IOException {
+        String tmpDirStr = System.getProperty(TmpDirTestCase.TEST_TMP_SYSTEM_PROPERTY_NAME);
+        tmpDirStr = (tmpDirStr == null)? TmpDirTestCase.DEFAULT_TEST_TMP_DIR: tmpDirStr;
+        File tmpDir = new File(tmpDirStr);
+        if (!tmpDir.exists())
+        {
+            tmpDir.mkdirs();
+        }
+
+        if (!tmpDir.canWrite())
+        {
+            throw new IOException(tmpDir.getAbsolutePath() +
+                 " is unwriteable.");
+        }
+        tmpDir.deleteOnExit();
+        return tmpDir;
+    }
+
 
 }
