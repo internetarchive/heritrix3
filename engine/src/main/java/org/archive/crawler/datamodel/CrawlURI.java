@@ -176,15 +176,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     // Once a link extractor has finished processing this curi this will be
     // set as true
     transient private boolean linkExtractorFinished = false;
-
-    /**
-     * Protection against outlink overflow.
-     * Change value by setting alternate maximum in heritrix.properties.
-     */
-    public static final int MAX_OUTLINKS = Integer.
-        parseInt(System.getProperty(CrawlURI.class.getName() + ".maxOutLinks",
-            "6000"));
-    
+   
     transient private int discardedOutlinks = 0; 
     
 ////////////////////////////////////////////////////////////////////
@@ -1758,7 +1750,6 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
         return overlayNames != null;
     }
     
-    @SuppressWarnings("unchecked")
     public LinkedList<String> getOverlayNames() {
         if(overlayNames == null) {
             overlayNames = new LinkedList<String>(); 
