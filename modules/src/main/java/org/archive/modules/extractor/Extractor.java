@@ -62,11 +62,14 @@ public abstract class Extractor extends Processor {
         this.loggerModule = loggerModule;
     }
     
+    {
+    	setExtractorParameters(DEFAULT_PARAMETERS);
+    }
     transient ExtractorParameters extractorParameters;
     public ExtractorParameters getExtractorParameters() {
         return extractorParameters;
     }
-    @Autowired
+    @Autowired(required=false)
     public void setExtractorParameters(ExtractorParameters helper) {
         this.extractorParameters = helper; 
     }

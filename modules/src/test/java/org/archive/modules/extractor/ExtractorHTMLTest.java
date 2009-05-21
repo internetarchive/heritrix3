@@ -77,7 +77,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         ExtractorHTML result = new ExtractorHTML();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();   
         result.setLoggerModule(ulm);
-        result.setExtractorParameters(Extractor.DEFAULT_PARAMETERS);
         result.afterPropertiesSet();
         return result;
     }

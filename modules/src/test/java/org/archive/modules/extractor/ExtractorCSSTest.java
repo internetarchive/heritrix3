@@ -67,7 +67,6 @@ public class ExtractorCSSTest extends StringExtractorTestBase {
         ExtractorCSS result = new ExtractorCSS();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();
         result.setLoggerModule(ulm);
-        result.setExtractorParameters(Extractor.DEFAULT_PARAMETERS);
         return result;    
     }
  

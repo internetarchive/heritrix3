@@ -42,7 +42,6 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
         JerichoExtractorHTML result = new JerichoExtractorHTML();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();
         result.setLoggerModule(ulm);
-        result.setExtractorParameters(Extractor.DEFAULT_PARAMETERS);
         result.afterPropertiesSet();
         return result;
     }
