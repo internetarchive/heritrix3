@@ -96,11 +96,15 @@ implements ProcessorURI {
     private boolean forceFetch;
     
     
-    public DefaultProcessorURI(UURI uuri, LinkContext context) {
+    public DefaultProcessorURI(UURI uuri, UURI via, LinkContext context) {
         this.uuri = uuri;
+        this.via = via;
         this.viaContext = context;
     }
     
+    public DefaultProcessorURI(UURI uuri, LinkContext context) {
+        this(uuri, null, context);
+    }    
     
     public void addUriError(URIException e, String uri) {
         uriErrors.add(new ExceptionHolder(e, uri));
