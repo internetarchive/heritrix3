@@ -23,10 +23,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
 public class ANVLRecordTest extends TestCase {
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
     public void testAdd() throws Exception {
         ANVLRecord am = new ANVLRecord();
         am.add(new Element(new Label("entry")));
@@ -42,9 +45,9 @@ public class ANVLRecordTest extends TestCase {
                 new Value("The Yeoman of \r        the guard")));
         am.add(new Element(new Label("when/created"),
             new Value("1888")));
-        System.out.println(am.toString());
+        logger.fine(am.toString());
         Map<String,String> m = am.asMap();
-        System.out.println(m.toString());
+        logger.fine(m.toString());
     }
     
     public void testEmptyRecord() throws Exception {
@@ -71,16 +74,16 @@ public class ANVLRecordTest extends TestCase {
                 "\r\nx:\r\n  # z\r\n\r\n";
         ANVLRecord r = ANVLRecord.load(new ByteArrayInputStream(
                 record.getBytes("ISO-8859-1")));
-        System.out.println(r);
+        logger.fine(r.toString());
         assertEquals(r.get(0).toString(), "a: b");
         record = "   a: b\r\n\r\nsdfsdsdfds";
         r = ANVLRecord.load(new ByteArrayInputStream(
             record.getBytes("ISO-8859-1")));
-        System.out.println(r);
+        logger.fine(r.toString());
         record = "x:\r\n  # z\r\ny:\r\n\r\n";
         r = ANVLRecord.load(new ByteArrayInputStream(
             record.getBytes("ISO-8859-1")));
-        System.out.println(r);
+        logger.fine(r.toString());
         assertEquals(r.get(0).toString(), "x:");
     }
     
@@ -93,7 +96,7 @@ public class ANVLRecordTest extends TestCase {
     		"when/created:\t 1888\r\n\r\n";
         ANVLRecord r = ANVLRecord.load(new ByteArrayInputStream(
         		sample.getBytes("ISO-8859-1")));
-        System.out.println(r);
+        logger.fine(r.toString());
     }
     
     public void testPoundLabel()
@@ -104,7 +107,7 @@ public class ANVLRecordTest extends TestCase {
     		"\t\tthe Guard\r\n" +
     		"when/created:\t 1888\r\n\r\n";
         ANVLRecord r = ANVLRecord.load(sample);
-        System.out.println(r);
+        logger.fine(r.toString());
     }
     
     public void testNewlineLabel()

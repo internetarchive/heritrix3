@@ -186,8 +186,8 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 bytes, 1, "testSingleByteEncodings-latin1.txt", 0);
         ReplayCharSequence rcs = ros.getReplayCharSequence("latin1");
         String result = rcs.toString();
-        logger.info("latin1[0] " + toHexString(latin1String));
-        logger.info("latin1[1] " + toHexString(result));
+        logger.fine("latin1[0] " + toHexString(latin1String));
+        logger.fine("latin1[1] " + toHexString(result));
         assertEquals("latin1 strings don't match", result, latin1String);
         
         String w1252String = new String(bytes, "windows-1252");
@@ -195,8 +195,8 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 bytes, 1, "testSingleByteEncodings-windows-1252.txt", 0);
         rcs = ros.getReplayCharSequence("windows-1252");
         result = rcs.toString();
-        logger.info("windows-1252[0] " + toHexString(w1252String));
-        logger.info("windows-1252[1] " + toHexString(result));
+        logger.fine("windows-1252[0] " + toHexString(w1252String));
+        logger.fine("windows-1252[1] " + toHexString(result));
         assertEquals("windows-1252 strings don't match", result, w1252String);
 
         String asciiString = new String(bytes, "ascii");
@@ -204,8 +204,8 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 bytes, 1, "testSingleByteEncodings-ascii.txt", 0);
         rcs = ros.getReplayCharSequence("ascii");
         result = rcs.toString();
-        logger.info("ascii[0] " + toHexString(asciiString));
-        logger.info("ascii[1] " + toHexString(result));
+        logger.fine("ascii[0] " + toHexString(asciiString));
+        logger.fine("ascii[1] " + toHexString(result));
         assertEquals("ascii strings don't match", result, asciiString);
     }
     

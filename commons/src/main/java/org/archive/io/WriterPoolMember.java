@@ -227,7 +227,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         this.f = file;
         this.fos = new FileOutputStream(this.f);
         this.out = new FastBufferedOutputStream(this.fos);
-        logger.info("Opened " + this.f.getAbsolutePath());
+        logger.fine("Opened " + this.f.getAbsolutePath());
         return this.f.getName();
     }
     
@@ -492,7 +492,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
                 this.f = f;
             }
             
-            logger.info("Closed " + this.f.getAbsolutePath() +
+            logger.fine("Closed " + this.f.getAbsolutePath() +
                     ", size " + this.f.length());
         }
     }

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -53,6 +54,9 @@ import org.springframework.validation.Validator;
  * @contributor gojomo
  */
 public class PathSharingContext extends FileSystemXmlApplicationContext {
+    private static Logger LOGGER =
+        Logger.getLogger(PathSharingContext.class.getName());
+
 
     public PathSharingContext(String configLocation) throws BeansException {
         super(configLocation);
@@ -204,13 +208,11 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
                 allErrors.put(name,errors);
             }
         }
-        System.err.println("===errors===");
         for(String name : allErrors.keySet()) {
             for(Object obj : allErrors.get(name).getAllErrors()) {
-                System.err.println(name+": "+obj);
+                LOGGER.fine("validation error for '"+name+"': "+obj);
             }
         }
-        System.err.println("============");
     }
 
     public HashMap<String,Errors> getAllErrors() {

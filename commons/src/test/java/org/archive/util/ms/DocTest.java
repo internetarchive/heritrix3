@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.logging.Logger;
 
 import org.apache.poi.hdf.extractor.WordDocument;
 
@@ -39,6 +40,7 @@ import junit.framework.TestCase;
 
 
 public class DocTest extends TestCase {
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     
     final private static File TEST_DIR;
@@ -63,7 +65,7 @@ public class DocTest extends TestCase {
                 }
             } finally {
                 long duration = System.currentTimeMillis() - start;
-                System.out.println("Duration in milliseconds: " + duration);
+                logger.fine("Duration in milliseconds: " + duration);
             }
         }
         if (errors > 0) {
@@ -73,7 +75,7 @@ public class DocTest extends TestCase {
 
     
     private int runDoc(File doc) throws IOException {
-        System.out.println("===== Now processing " + doc.getName());
+        logger.fine("===== Now processing " + doc.getName());
         String name = doc.getName();
         int p = name.lastIndexOf('.');
         String expectedName = name.substring(0, p) + ".txt";
@@ -136,7 +138,7 @@ public class DocTest extends TestCase {
                 go = false;
                 if ((ch >= 0) || (expectedCh >= 0)) {
                     errors++;
-                    System.out.println("File lengths differ.");
+                    logger.fine("File lengths differ.");
                 }
             }
             if (ch != expectedCh) {
@@ -155,7 +157,7 @@ public class DocTest extends TestCase {
         msg.append(expected).append(" (").append(toChar(expected));
         msg.append(") but got ").append(actual).append(" (");
         msg.append(toChar(actual)).append(").");
-        System.out.println(msg);
+        logger.fine(msg.toString());
     }
 
 
