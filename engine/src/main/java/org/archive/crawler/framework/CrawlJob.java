@@ -104,9 +104,6 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
     }
     
     public PathSharingContext getJobContext() {
-        if(ac==null) {
-            instantiateContainer();
-        }
         return ac; 
     }
 

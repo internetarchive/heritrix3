@@ -83,7 +83,7 @@ public class BdbCookieStorage extends AbstractCookieStorage {
 
     @SuppressWarnings("unchecked")
     public SortedMap<String, Cookie> getCookiesMap() {
-        assert cookies != null : "cookie map not set up";
+//        assert cookies != null : "cookie map not set up";
         return cookies;
     }
 

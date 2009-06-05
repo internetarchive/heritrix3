@@ -262,8 +262,12 @@ implements Lifecycle, Serializable {
     }
     
     public synchronized long getCacheMisses() throws DatabaseException {
+        if(alreadySeen==null) {
+            return 0;
+        }
         long cacheMiss = this.alreadySeen.getEnvironment().
             getStats(null).getNCacheMiss();
+        // FIXME: get shouldn't define intervals (should be idempotent)
         this.lastCacheMissDiff = cacheMiss - this.lastCacheMiss;
         this.lastCacheMiss = cacheMiss;
         return this.lastCacheMiss;

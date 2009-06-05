@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.archive.crawler.framework.Engine;
 import org.restlet.Application;
 import org.restlet.Directory;
+import org.restlet.Redirector;
 import org.restlet.Restlet;
 import org.restlet.Router;
 import org.restlet.data.MediaType;
@@ -48,7 +49,8 @@ public class EngineApplication extends Application {
 
      public synchronized Restlet createRoot() {
         Router router = new Router(getContext());
- 
+
+        router.attach("/",new Redirector(null,"/engine",Redirector.MODE_CLIENT_TEMPORARY));
         router.attach("/engine",EngineResource.class)
             .setMatchingMode(Template.MODE_EQUALS);
         router.attach("/engine/",EngineResource.class)
@@ -81,6 +83,9 @@ public class EngineApplication extends Application {
         router.attach("/engine/job/{job}/jobdir",jobdir);
         router.attach("/engine/job/{job}",JobResource.class);
         router.attach("/engine/job/{job}/report/{reportClass}",ReportGenResource.class);
+        router.attach("/engine/job/{job}/beans",BeanBrowseResource.class);
+        router.attach("/engine/job/{job}/beans/{beanPath}",BeanBrowseResource.class);
+        router.attach("/engine/job/{job}/script",ScriptResource.class);
 
         return router;
     }

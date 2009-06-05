@@ -298,12 +298,23 @@ public class JobResource extends Resource {
                 printLinkedIfInJobDirectory(pw, cp.getFile());
                 pw.println("</dd>");
             }
+            pw.println("</dl>");
+
         }
-        pw.println("</dl>");
-        pw.println("<hr/>");
+        
+        pw.println("<h2>Advanced</h2>");
+        pw.println("<h3><a href='script'>Scripting console</a></h3>");
+
+        if(!cj.isContainerOk()) {
+            pw.println("<i>build the job to browse bean instances</i>");
+        } else {
+            pw.println("<h3><a href='beans'>Browse beans</a></h3>");
+        }
+
+        pw.println("<h2>Copy</h2>");
         pw.println(
             "<form method='POST'>Copy job to <input name='copyTo'/>" +
-            "<input type='submit'/>" +
+            "<input value='copy' type='submit'/>" +
             "<input id='asProfile' type='checkbox' name='asProfile'/>" +
             "<label for='asProfile'>as profile</label></form>");
         pw.println("<hr/>");

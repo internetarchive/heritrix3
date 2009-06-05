@@ -418,6 +418,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public void setCookieStorage(CookieStorage storage) {
         this.cookieStorage = storage; 
     }
+    public CookieStorage getCookieStorage() {
+        return this.cookieStorage;
+    }
 
     /**
      * Disable cookie handling.

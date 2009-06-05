@@ -39,4 +39,7 @@ public class LongWrapper implements Serializable {
     public LongWrapper(long initial){
         this.longValue = initial;
     }
+    public long getLongValue() {
+        return longValue;
+    }
 }

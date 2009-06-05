@@ -1571,8 +1571,8 @@ ApplicationContextAware {
      */
     public boolean isEmpty() {
         return queuedUriCount.get() == 0 
-            && uriUniqFilter.pending() == 0 
-            && inbound.isEmpty();
+            && (uriUniqFilter == null || uriUniqFilter.pending() == 0)
+            && (inbound == null || inbound.isEmpty());
     }
 
     /* (non-Javadoc)

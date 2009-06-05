@@ -21,14 +21,11 @@ package org.archive.crawler.restlet;
 
 import java.io.File;
 
-import org.archive.crawler.framework.CrawlJob;
-import org.archive.crawler.framework.Engine;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.Representation;
-import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
@@ -39,17 +36,12 @@ import org.restlet.resource.Variant;
  * 
  * @contributor gojomo
  */
-public class ReportGenResource extends Resource {
-    CrawlJob cj; 
+public class ReportGenResource extends JobRelatedResource {
     String reportClass;
     
     public ReportGenResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
-        cj = getEngine().getJob((String)req.getAttributes().get("job"));
-        if(cj==null) {
-            throw new ResourceException(404);
-        }
         reportClass = (String)req.getAttributes().get("reportClass");
     }
 
@@ -69,9 +61,5 @@ public class ReportGenResource extends Resource {
                     "Report dumped to "+f.getAbsolutePath()
                     +" (outside job directory)");
         }
-    }
-    
-    protected Engine getEngine() {
-        return ((EngineApplication)getApplication()).getEngine();
     }
 }
