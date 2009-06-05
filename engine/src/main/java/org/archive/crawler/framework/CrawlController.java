@@ -605,16 +605,6 @@ implements Serializable,
         return (toePool == null) ? "" : ArchiveUtils.singleLineReport(toePool);
     }
 
-    public String getFrontierReport() {
-        StringWriter sw = new StringWriter();
-        try {
-            getFrontier().reportTo(new PrintWriter(sw));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return sw.toString();
-    }
 
     public String getFrontierReportShort() {
         return ArchiveUtils.singleLineReport(getFrontier());

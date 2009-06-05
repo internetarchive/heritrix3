@@ -35,8 +35,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.util.IoUtils;
-
 
 /**
  * An output stream that records all writes to wrapped output
