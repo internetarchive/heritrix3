@@ -48,8 +48,13 @@ be used in applications other than Heritrix, however.
         <dependency>
               <groupId>org.beanshell</groupId>
               <artifactId>bsh</artifactId>
-              <version>2.0b4</version>
+              <version>2.0b5</version>
               <scope>compile</scope>
+        </dependency>
+        <dependency>  
+          <groupId>org.codehaus.groovy</groupId>  
+          <artifactId>groovy-all</artifactId>  
+          <version>1.6.3</version>  
         </dependency>
   </dependencies>
   <build>
