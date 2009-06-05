@@ -19,13 +19,17 @@
  
 package org.archive.crawler.spring;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.logging.Logger;
 
-import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections.MapUtils;
 import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.spring.OverlayMapsSource;
 import org.archive.spring.Sheet;
@@ -34,7 +38,6 @@ import org.archive.util.SurtPrefixSet;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -48,56 +51,95 @@ import org.springframework.context.event.ContextRefreshedEvent;
  */
 @SuppressWarnings("unchecked")
 public class SheetOverlaysManager implements 
-BeanFactoryAware, InitializingBean, OverlayMapsSource, ApplicationListener {
+BeanFactoryAware, OverlayMapsSource, ApplicationListener {
+    private static final Logger logger = Logger.getLogger(SheetOverlaysManager.class.getName());
+    
 
     BeanFactory beanFactory; 
-    /** all Sheets applied by SURT-prefix */
-    List<SheetForSurtPrefixes> surtSheets = ListUtils.EMPTY_LIST;
-    /** all Sheets applied by DecideRule evaluation */ 
-    List<SheetForDecideRuled> ruleSheets = ListUtils.EMPTY_LIST; 
+    /** all SheetAssociations by DecideRule evaluation */ 
+    SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
+        new TreeSet<DecideRuledSheetAssociation>();
     TreeMap<String,List<String>> sheetNamesBySurt = new TreeMap<String,List<String>>(); 
+    
+    /** all sheets by (bean)name*/
+    Map<String,Sheet> sheetsByName = MapUtils.EMPTY_MAP;
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
+    
+    /**
+     * Collect all Sheets, by beanName. 
+     * @param map
+     */
+    @Autowired(required=false)
+    public void setSheetsByName(Map<String,Sheet> map) {
+        this.sheetsByName = map;
+    }
+    /**
+     * Sheets, by name; starts with all autowired Sheets but others
+     * may be added by other means (mid-crawl reconfiguration). 
+     * @return map of Sheets by their String name
+     */
+    public Map<String,Sheet> getSheetsByName() {
+        return this.sheetsByName;
+    }
 
     /**
-     * Collect all rule-based Sheets. Typically autowired from the set
-     * of all SheetForDecideRuled instances. 
+     * Collect all rule-based SheetAssociations. Typically autowired 
+     * from the set of all DecideRuledSheetAssociation instances. 
      * @param ruleSheets
      */
     @SuppressWarnings("unchecked")
     @Autowired(required=false)
-    public void setRuleSheets(List<SheetForDecideRuled> ruleSheets) {
-        this.ruleSheets = ruleSheets;
+    public void addRuleAssociations(Set<DecideRuledSheetAssociation> associations) {
         // always keep sorted by order
-        Collections.sort(this.ruleSheets); 
+        this.ruleAssociations.clear();
+        this.ruleAssociations.addAll(associations);
+    }
+    
+    public void addRuleAssociation(DecideRuledSheetAssociation assoc) {
+        this.ruleAssociations.add(assoc); 
     }
 
     /**
-     * Collect all SURT-based Sheets. Typically autowired from the set
-     * of all SheetForSurtPrefixes instances. 
+     * Collect all SURT-based SheetAssociations. Typically autowired 
+     * from the set of all SurtPrefixesSheetAssociation instances
+     * declared in the initial configuration. 
      * @param surtSheets
      */
     @Autowired(required=false)
-    public void setSurtSheets(List<SheetForSurtPrefixes> surtSheets) {
-        this.surtSheets = surtSheets;
+    public void addSurtAssociations(List<SurtPrefixesSheetAssociation> associations) {
+        for(SurtPrefixesSheetAssociation association : associations) {
+            addSurtsAssociation(association);
+        }
+    }
+    
+    public void addSurtAssociation(String prefix, String sheetName) {
+        List<String> sheetNames = sheetNamesBySurt.get(prefix);
+        if(sheetNames == null) {
+            sheetNames = new LinkedList<String>();
+        }
+        sheetNames.add(sheetName); 
+        sheetNamesBySurt.put(prefix, sheetNames); 
+    }
+    
+    public boolean removeSurtAssociation(String prefix, String sheetName) {
+        List<String> sheetNames = sheetNamesBySurt.get(prefix);
+        if(sheetNames == null) {
+            // no such association
+            return false; 
+        }
+        return sheetNames.remove(sheetName); 
     }
 
     /** 
-     * After all Sheets collected, build the mapping from SURT prefixes
-     * to individual Sheet names.
-     * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+     * Add an individual surtsAssociation to the sheetNamesBySurt map.
      */
-    public void afterPropertiesSet() throws Exception {
-        for(SheetForSurtPrefixes s : surtSheets) {
-            for(String prefix : s.getSurtPrefixes()) {
-                List<String> sheetNames = sheetNamesBySurt.get(prefix);
-                if(sheetNames == null) {
-                    sheetNames = new LinkedList<String>();
-                }
-                sheetNames.add(s.getBeanName()); 
-                sheetNamesBySurt.put(prefix, sheetNames); 
+    public void addSurtsAssociation(SurtPrefixesSheetAssociation assoc) {
+        for(String prefix : assoc.getSurtPrefixes()) {
+            for(String s : assoc.getTargetSheetNames()) {
+                addSurtAssociation(prefix, s);
             }
         }
     }
@@ -120,9 +162,9 @@ BeanFactoryAware, InitializingBean, OverlayMapsSource, ApplicationListener {
             }
         }
         // apply deciderule-based overlays
-        for(SheetForDecideRuled sheet : ruleSheets) {
-            if(sheet.getRules().accepts(curi)) {
-                curi.getOverlayNames().addFirst(sheet.getBeanName());
+        for(DecideRuledSheetAssociation assoc : ruleAssociations) {
+            if(assoc.getRules().accepts(curi)) {
+                curi.getOverlayNames().addAll(assoc.getTargetSheetNames());
             }
         }
         // even if no overlays set, let creation of empty list signal
@@ -136,12 +178,11 @@ BeanFactoryAware, InitializingBean, OverlayMapsSource, ApplicationListener {
      * @see org.archive.spring.OverlayMapsSource#getOverlayMap(java.lang.String)
      */
     public Map<String, Object> getOverlayMap(String name) {
-        Sheet sheet = (Sheet) beanFactory.getBean(name, Sheet.class);
-        return sheet.getMap();
+        return sheetsByName.get(name).getMap();
     }
 
     /** 
-     * Ensure all sheets are 'primed' after the entire ApplicationContext
+     * Ensure all sheets are 'primed' after the entire ApplicatiotnContext
      * is assembled. This ensures target HasKeyedProperties beans know
      * any long paths by which their properties are addressed, and 
      * handles (by either PropertyEditor-conversion or a fast-failure)
@@ -151,12 +192,50 @@ BeanFactoryAware, InitializingBean, OverlayMapsSource, ApplicationListener {
      */
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ContextRefreshedEvent) {
-            for(Sheet s: surtSheets) {
-                s.prime(); 
+            for(Sheet s: sheetsByName.values()) {
+                s.prime(); // exception if Sheet can't target overridable properties
             }
-            for(Sheet s: ruleSheets) {
-                s.prime(); 
+            // log warning for any sheets named but not present
+            HashSet<String> allSheetNames = new HashSet<String>();
+            for(DecideRuledSheetAssociation assoc : ruleAssociations) {
+                allSheetNames.addAll(assoc.getTargetSheetNames());
+            }
+            for(List<String> names : sheetNamesBySurt.values()) {
+                allSheetNames.addAll(names);
+            }
+            for(String name : allSheetNames) {
+                if(!sheetsByName.containsKey(name)) {
+                    logger.warning("sheet '"+name+"' referenced but absent");
+                }
             }
         }
+    }
+    
+    /**
+     * Create a new Sheet of the given name. Provided for convenience of
+     * creating Sheet instances after the container has been built. 
+     * 
+     * To have effect as an overlay, the returned Sheet must be:
+     * 
+     * (1) filled with overlay entries, where the key is a full bean-path 
+     * and the value the alternate overlay value; 
+     * (2) primed via the prime() method, which will throw an exception
+     * if the target bean-path does not address a compatible overlayable
+     * value;
+     * (3) added back to the SheetOverlayManager's sheetsByName map;
+     * (4) associated to some URIs, by the addSurtAssociation or 
+     * addRuledAssociation methods
+     * 
+     * @param name Sheet name to create; must be unique
+     * @return created Sheet
+     */
+    public Sheet createSheet(String name) {
+        if(sheetsByName.containsKey(name)) {
+            throw new IllegalArgumentException("sheet '"+name+"' already exists"); 
+        }
+        Sheet sheet = new Sheet(); 
+        sheet.setBeanFactory(beanFactory);
+        sheet.setName(name); 
+        return sheet; 
     }
 }

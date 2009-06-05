@@ -20,16 +20,17 @@
 package org.archive.crawler.spring;
 
 import org.archive.modules.deciderules.DecideRule;
-import org.archive.spring.Sheet;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.Ordered;
 
 /**
- * Sheet applied on the basis of DecideRules. 
+ * SheetAssociation applied on the basis of DecideRules. If the
+ * final ruling is ACCEPT, the named sheets will be overlaid. 
  * 
  * @contributor gojomo
  */
-public class SheetForDecideRuled extends Sheet implements Ordered, Comparable<SheetForDecideRuled> {
+public class DecideRuledSheetAssociation extends SheetAssociation 
+implements Ordered, Comparable<DecideRuledSheetAssociation> {
     DecideRule rules;
     int order = 0; 
     
@@ -49,7 +50,7 @@ public class SheetForDecideRuled extends Sheet implements Ordered, Comparable<Sh
     }
 
     // compare on the basis of Ordered value
-    public int compareTo(SheetForDecideRuled o) {
+    public int compareTo(DecideRuledSheetAssociation o) {
         return order - ((Ordered)o).getOrder();
     }
 }

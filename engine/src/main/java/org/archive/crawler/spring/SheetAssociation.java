@@ -16,27 +16,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 package org.archive.crawler.spring;
 
 import java.util.List;
 
-import org.archive.spring.Sheet;
-import org.springframework.beans.factory.annotation.Required;
-
 /**
- * Sheet applied on the basis of a matching SURT prefix. 
+ * Represents target Sheets that should be associated with 
+ * some grouping of URIs. 
+ * 
+ * Subclasses specify the kind of association (as by SURT prefix 
+ * matching, or arbitrary decide-rules).
  * 
  * @contributor gojomo
  */
-public class SheetForSurtPrefixes extends Sheet {
-    List<String> surtPrefixes;
-
-    public List<String> getSurtPrefixes() {
-        return surtPrefixes;
+public abstract class SheetAssociation {
+    List<String> targetSheetNames;
+    public List<String> getTargetSheetNames() {
+        return targetSheetNames;
     }
-    @Required
-    public void setSurtPrefixes(List<String> surtPrefixes) {
-        this.surtPrefixes = surtPrefixes;
+    public void setTargetSheetNames(List<String> targetSheets) {
+        this.targetSheetNames = targetSheets;
     }
 }

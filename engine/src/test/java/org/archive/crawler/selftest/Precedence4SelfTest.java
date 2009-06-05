@@ -83,24 +83,38 @@ public class Precedence4SelfTest extends Precedence1SelfTest {
         // add sheets which overlay alternate precedence values for two
         // specific URIs
         String sheets = 
-            "<bean id='loPri' class='org.archive.crawler.spring.SheetForSurtPrefixes'>\n" +
+            "<bean class='org.archive.crawler.spring.SurtPrefixesSheetAssociation'>\n" +
             " <property name='surtPrefixes'>\n" +
             "  <list>\n" +
             "   <value>http://(127.0.0.1:7777)/five/b.html</value>\n" +
             "  </list>\n" +
             " </property>\n" +
+            " <property name='targetSheetNames'>\n" +
+            "  <list>\n" +
+            "   <value>loPri</value>\n" +
+            "  </list>\n" +
+            " </property>\n" +
+            "</bean>\n" +
+            "<bean id='loPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
             "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='10'/>\n" +
             "  </map>\n" +
             " </property>\n" +
             "</bean>\n" +
-            "<bean id='hiPri' class='org.archive.crawler.spring.SheetForSurtPrefixes'>\n" +
+            "<bean class='org.archive.crawler.spring.SurtPrefixesSheetAssociation'>\n" +
             " <property name='surtPrefixes'>\n" +
             "  <list>\n" +
             "   <value>http://(127.0.0.1:7777)/five/a.html</value>\n" +
             "  </list>\n" +
             " </property>\n" +
+            " <property name='targetSheetNames'>\n" +
+            "  <list>\n" +
+            "   <value>hiPri</value>\n" +
+            "  </list>\n" +
+            " </property>\n" +
+            "</bean>\n" +
+            "<bean id='hiPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
             "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='1'/>\n" +

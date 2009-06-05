@@ -35,13 +35,27 @@ import org.springframework.beans.factory.annotation.Required;
  * that should apply in some contexts. The target is specified as an
  * arbitrarily-long property-path, a string describing how to access 
  * the property starting from a beanName in a BeanFactory. 
+ * 
+ * Once a Sheet has all its mappings, and all beans that could be
+ * affected by its mappings have been instantiated, the sheet must 
+ * be 'primed' with respect to the bean factory. This step lets
+ * every target of the overlay values know the full bean-path(s) 
+ * that it should check for overlays. (Otherwise, beans -- especially
+ * unnamed inner beans -- may not know the full-paths that lead to
+ * their properties.) Also, this step catches in advance type 
+ * mismatches, or attempts to overlay non-overlayable properties. 
  *
- * Subclasses implement specific indicators of when an override applies.
  */
-public abstract class Sheet implements BeanFactoryAware, BeanNameAware {
+public class Sheet implements BeanFactoryAware, BeanNameAware {
     private static final long serialVersionUID = 9129011082185864377L;
     
-    String beanName; 
+    /**
+     * unique name of this Sheet; if Sheet has a beanName from original
+     * configuration, that is always the name -- but the name might 
+     * also be another string, in the case of Sheets added after 
+     * initial container wiring
+     */
+    String name; 
     BeanFactory beanFactory; 
     /** map of full property-paths (from BeanFactory to individual 
      * property) and their changed value when this Sheet of overrides
@@ -53,10 +67,13 @@ public abstract class Sheet implements BeanFactoryAware, BeanNameAware {
         this.beanFactory = beanFactory;
     }
     public void setBeanName(String name) {
-        this.beanName = name; 
+        this.name = name; 
     }
-    public String getBeanName() {
-        return beanName; 
+    public void setName(String name) {
+        this.name = name; 
+    }
+    public String getName() {
+        return name; 
     }
 
     /**
