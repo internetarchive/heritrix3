@@ -36,6 +36,7 @@ import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
+import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -65,7 +66,7 @@ public class JobResource extends Resource {
         super(ctx, req, res);
         setModifiable(true);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
-        cj = getEngine().getJob((String)req.getAttributes().get("job"));
+        cj = getEngine().getJob(TextUtils.urlUnescape((String)req.getAttributes().get("job")));
         if(cj==null) {
             throw new ResourceException(404);
         }

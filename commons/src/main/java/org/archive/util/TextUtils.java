@@ -24,7 +24,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -250,5 +253,39 @@ public class TextUtils {
         }
         e.printStackTrace(new PrintWriter(sw));
         return sw.toString();
+    }
+    
+    /**
+     * Exception- and warning-free URL-escaping utility method.
+     * 
+     * @param s String to escape
+     * @return URL-escaped string
+     */
+    @SuppressWarnings("deprecation")
+    public static String urlEscape(String s) {
+        try {
+            return URLEncoder.encode(s,"UTF8");
+        } catch (UnsupportedEncodingException e) {
+            // should be impossible; all JVMs must support UTF8
+            // but have a fallback just in case
+            return URLEncoder.encode(s); 
+        }
+    }
+
+    /**
+     * Exception- and warning-free URL-unescaping utility method.
+     * 
+     * @param s String do unescape
+     * @return URL-unescaped String
+     */
+    @SuppressWarnings("deprecation")
+    public static String urlUnescape(String s) {
+        try {
+            return URLDecoder.decode(s, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+            // should be impossible; all JVMs must support UTF8
+            // but have a fallback just in case
+            return URLDecoder.decode(s);
+        }
     }
 }

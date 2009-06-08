@@ -61,10 +61,6 @@
  <bean id="fetchDns" class="org.archive.modules.fetcher.FetchDNS">
  </bean>
  <bean id="fetchHttp" class="org.archive.modules.fetcher.FetchHTTP">
-     <property name="cookieStorage">
-      <bean class="org.archive.modules.fetcher.BdbCookieStorage">
-      </bean>
-     </property>
  </bean>
  <bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
  </bean>

@@ -53,6 +53,7 @@ import org.archive.spring.ConfigPath;
 import org.archive.spring.ConfigPathConfigurer;
 import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.TextUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -126,6 +127,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            jobLogger.setLevel(Level.INFO);
         }
         return jobLogger;
     }
@@ -188,7 +190,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
         if(isRunning()) {
             pw.println("ACTIVE; "+getCrawlController().getState()+":");
         }
-        pw.println("<a href='"+uriPrefix+getShortName()+"'>"+getShortName()+"</a>");
+        pw.println("<a href='"+uriPrefix+TextUtils.urlEscape(getShortName())+"'>"+getShortName()+"</a>");
         if(isProfile()) {
             pw.println("(profile)");
         }
