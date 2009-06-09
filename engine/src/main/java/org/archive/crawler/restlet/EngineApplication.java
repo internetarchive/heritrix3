@@ -22,6 +22,7 @@ package org.archive.crawler.restlet;
 import java.io.IOException;
 
 import org.archive.crawler.framework.Engine;
+import org.archive.util.TextUtils;
 import org.restlet.Application;
 import org.restlet.Directory;
 import org.restlet.Redirector;
@@ -70,9 +71,10 @@ public class EngineApplication extends Application {
                     Reference determineRootRef(Request request) {
                         try {
                             return new Reference(
-                                    EngineApplication.this.getEngine()
-                                    .getJob((String)request.getAttributes().get("job"))
-                                    .getJobDir().getCanonicalFile().toURI().toString());
+                                EngineApplication.this.getEngine()
+                                .getJob(TextUtils.urlUnescape(
+                                    (String)request.getAttributes().get("job")))
+                                .getJobDir().getCanonicalFile().toURI().toString());
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
