@@ -989,7 +989,7 @@ public class StatisticsTracker
         for (Iterator<String> i = getSeedsIterator();i.hasNext();) {
             SeedRecord sr = processedSeedsRecords.get(i.next());
             seedsTotal++;
-            if((sr.getStatusCode() > 0)) {
+            if(sr!=null &&(sr.getStatusCode() > 0)) {
                 seedsCrawled++;
             }
         }

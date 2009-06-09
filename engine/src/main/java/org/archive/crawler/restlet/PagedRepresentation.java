@@ -130,7 +130,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         loadLines();
         
         PrintWriter pw = new PrintWriter(writer); 
-        pw.println(file);
+        pw.println("<b>Paged view:</b> "+file);
         emitControls(pw); 
         
         pw.println("<pre>");
@@ -198,7 +198,7 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("</td>");
             
             pw.println("<td style='text-align:right'>");
-            pw.println("<a href='"+getControlUri(position,lineCount,false)+"'>normal</a>");
+            pw.println("<a href='"+getControlUri(position,lineCount,false)+"'>forward</a>");
             pw.println("| <b>reversed</b>"); 
         } else {
             pw.print("<td style='text-align:left'>");
@@ -224,7 +224,7 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("'>end &raquo;</a>");
             pw.println("</td>");
             
-            pw.println("<td style='text-align:right'><b>normal</b>"); 
+            pw.println("<td style='text-align:right'><b>forward</b>"); 
             pw.println("| <a href='"+getControlUri(position,lineCount,true)+"'>reversed</a>"); 
         }
                 

@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.spring.PathSharingContext;
+import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -128,9 +129,10 @@ public class BeanBrowseResource extends JobRelatedResource {
     
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
-        
-        
-        pw.println("<h1>Crawl beans in built job <i>"+cj.getShortName()+"</i></h1>");
+        pw.println("<head><title>Crawl beans in "+cj.getShortName()+"</title></head>");
+        pw.println("<h1>Crawl beans in built job <i><a href='/engine/job/"
+                +TextUtils.urlEscape(cj.getShortName())
+                +"'>"+cj.getShortName()+"</a></i></h1>");
         pw.println("Enter a bean path of the form <i>beanName</i>, <i>beanName.property</i>, <i>beanName.property[indexOrKey]</i>, etc.");
         pw.println("<form method='POST'><input type='text' name='beanPath' style='width:400px' value='"+beanPath+"'/>");
         pw.println("<input type='submit' value='view'/></form>");

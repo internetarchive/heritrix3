@@ -19,6 +19,7 @@
 
 package org.archive.crawler.restlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -79,6 +80,12 @@ public class EngineResource extends Resource {
     protected void writeHtml(Writer writer) {
         Engine engine = getEngine();
         String engineTitle = "Heritrix Engine "+engine.getHeritrixVersion();
+        File jobsDir = engine.getJobsDir();
+        try {
+            jobsDir = jobsDir.getCanonicalFile();
+        } catch (IOException ioe) {
+            // live with the noncanonical file
+        }
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
@@ -91,21 +98,28 @@ public class EngineResource extends Resource {
         
         pw.println("<b>Memory: </b>");
         pw.println(engine.heapReport());
-        
-        pw.println("<h2>Browse <a href='jobsdir'>Jobs Directory</a></h2>");
+        pw.println("<br/><br/>");
+        pw.println("<b>Jobs Directory</b>: <a href='jobsdir'>"+jobsDir.getAbsolutePath()+"</a></h2>");
         
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
         jobs.addAll(engine.getJobConfigs().values());
          
-        pw.println("<form method=\'POST\'><h2>Job Configs ("+jobs.size()+")");
+        pw.println("<form method=\'POST\'><h2>Job Directories ("+jobs.size()+")");
         pw.println("<input style='width:6em' type='submit' name='action' value='rescan'>");
         pw.println("</h2></form>");
         Collections.sort(jobs);
+        pw.println("<ul>");
         for(CrawlJob cj: jobs) {
             pw.println("<li>");
             cj.writeHtmlTo(pw,"job/");
             pw.println("</li>");
         }
+        pw.println("</ul>");
+        pw.println(
+            "To create a new job, use the 'copy' functionality on " +
+            "an existing job's detail page, or create a new job " +
+            "directory outside this interface and use the 'rescan' " +
+            "button.");
         pw.println("</body>");
         pw.flush();
     }

@@ -32,6 +32,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -122,7 +123,11 @@ public class ScriptResource extends JobRelatedResource {
 
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
-        pw.println("<h1>Execute script for job <i>"+cj.getShortName()+"</i></h1>");
+        pw.println("<head><title>Script in "+cj.getShortName()+"</title></head>");
+        pw.println("<h1>Execute script for job <i><a href='/engine/job/"
+                    +TextUtils.urlEscape(cj.getShortName())
+                    +"'>"+cj.getShortName()+"</a></i></h1>");
+
         // output of previous script, if any
 
         if(ex!=null) {
