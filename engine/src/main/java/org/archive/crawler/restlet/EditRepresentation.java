@@ -63,7 +63,8 @@ public class EditRepresentation extends CharacterRepresentation {
         PrintWriter pw = new PrintWriter(writer); 
         Flash.renderFlashesHTML(pw, dirResource.getRequest());
         pw.println("<form method='POST'>");
-        pw.println("<input type='submit' value='update contents'/>");
+        // TODO: enable button on after changes made
+        pw.println("<input type='submit' value='save changes'/>");
         pw.println(fileRepresentation.getFile());
         Reference viewRef = dirResource.getRequest().getOriginalRef().clone(); 
         viewRef.setQuery(null);

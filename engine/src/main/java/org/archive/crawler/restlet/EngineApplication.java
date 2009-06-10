@@ -20,6 +20,8 @@
 package org.archive.crawler.restlet;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
@@ -31,6 +33,11 @@ import org.restlet.Router;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
+import org.restlet.data.Response;
+import org.restlet.data.Status;
+import org.restlet.resource.Representation;
+import org.restlet.resource.StringRepresentation;
+import org.restlet.service.StatusService;
 import org.restlet.util.Template;
 
 /**
@@ -46,6 +53,7 @@ public class EngineApplication extends Application {
         this.engine = engine;
         getMetadataService().addExtension("log", MediaType.TEXT_PLAIN );
         getMetadataService().addExtension("cxml", MediaType.APPLICATION_XML );
+        setStatusService(new EngineStatusService());
     }
 
      public synchronized Restlet createRoot() {
@@ -95,4 +103,32 @@ public class EngineApplication extends Application {
     public Engine getEngine() {
         return engine;
     }  
+    
+    /**
+     * Customize Restlet error to include back button and full stack.
+     */
+    protected class EngineStatusService extends StatusService {
+
+        @Override
+        public Representation getRepresentation(Status status, Request request, Response response) {
+            StringWriter st = new StringWriter();
+            PrintWriter pw = new PrintWriter(st);
+            pw.append("<h1>An error occured</h1>\n");
+            pw.append(
+                "You may be able to recover and try something " +
+                "else by going <a href='javascript:history.back();void(0);'>" +
+                "back</a>.\n");
+            if(status.getThrowable()!=null) {
+                pw.append("<h2>Cause: "+
+                    status.getThrowable().toString()+"</h2>\n");
+                pw.append("<pre>");
+                status.getThrowable().printStackTrace(pw);
+                pw.append("</pre>");
+            }
+            pw.flush();
+            return new StringRepresentation(st.toString(),MediaType.TEXT_HTML);
+        }
+
+    }
+
 }

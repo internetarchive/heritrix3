@@ -188,6 +188,17 @@ public class Heritrix {
     
     public void instanceMain(String[] args)
     throws Exception {
+        
+        // ensure using java 1.6+ before hitting a later cryptic error
+        String version = System.getProperty("java.version");
+        float floatVersion = Float.valueOf(version.substring(0,version.indexOf('.',2)));
+        if(floatVersion<1.6) {
+            System.err.println("Heritrix (as of version 3) requires Java 1.6 or higher.");
+            System.err.println("You attempted to launch with: "+version);
+            System.err.println("Please try again with a later Java.");
+            System.exit(1);
+        }
+        
         // Set some system properties early.
         // Can't use class names here without loading them.
         String ignoredSchemes = "org.archive.net.UURIFactory.ignored-schemes";
