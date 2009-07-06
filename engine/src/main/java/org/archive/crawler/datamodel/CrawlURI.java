@@ -79,7 +79,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.credential.CredentialAvatar;
-import org.archive.modules.credential.Rfc2617Credential;
+import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.Link;
@@ -983,7 +983,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
 	    if (avatars != null && avatars.size() > 0) {
 	        for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
 	            if (((CredentialAvatar)i.next()).
-	                match(Rfc2617Credential.class)) {
+	                match(HttpAuthenticationCredential.class)) {
 	                result = true;
 	                break;
 	            }

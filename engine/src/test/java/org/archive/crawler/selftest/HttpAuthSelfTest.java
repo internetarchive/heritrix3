@@ -111,7 +111,7 @@ public class HttpAuthSelfTest
             "  <property name=\"credentials\">\n" + 
             "   <map>\n" + 
             "    <entry key=\"test\">\n" + 
-            "     <bean class=\"org.archive.modules.credential.Rfc2617Credential\">\n" + 
+            "     <bean class=\"org.archive.modules.credential.HttpAuthenticationCredential\">\n" + 
             "      <property name=\"domain\" value=\"127.0.0.1:7777\"/>\n" + 
             "      <property name=\"realm\" value=\"Hyrule\"/>\n" + 
             "      <property name=\"login\" value=\"Mr. Happy Pants\"/>\n" + 

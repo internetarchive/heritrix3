@@ -32,7 +32,7 @@ import org.archive.state.ModuleTestBase;
  * @author pjack
  *
  */
-public class Rfc2617CredentialTest extends ModuleTestBase {
+public class HttpAuthenticationCredentialTest extends ModuleTestBase {
 
     //TODO: add tests
     

@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.credential.CredentialAvatar;
-import org.archive.modules.credential.Rfc2617Credential;
+import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;
@@ -207,7 +207,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
         boolean result = false;
         int statusCode = puri.getFetchStatus();
         if (statusCode == HttpStatus.SC_UNAUTHORIZED &&
-            hasRfc2617CredentialAvatar(puri)) {
+            hasHttpAuthenticationCredentialAvatar(puri)) {
             result = false;
         } else {
             result = (statusCode > 0);
@@ -226,12 +226,12 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     
 
     /**
-     * @return True if we have an rfc2617 payload.
+     * @return True if we have an HttpAuthentication (rfc2617) payload.
      */
-    public static boolean hasRfc2617CredentialAvatar(ProcessorURI puri) {
+    public static boolean hasHttpAuthenticationCredentialAvatar(ProcessorURI puri) {
         Set<CredentialAvatar> avatars = puri.getCredentialAvatars();
         for (CredentialAvatar ca: avatars) {
-            if (ca.match(Rfc2617Credential.class)) {
+            if (ca.match(HttpAuthenticationCredential.class)) {
                 return true;
             }
         }

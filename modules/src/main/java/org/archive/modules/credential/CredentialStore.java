@@ -89,7 +89,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
     // Initialize the credentialType data member.
     static {
         // Array of all known credential types.
-        Class<?> [] tmp = {HtmlFormCredential.class, Rfc2617Credential.class};
+        Class<?> [] tmp = {HtmlFormCredential.class, HttpAuthenticationCredential.class};
         credentialTypes = Collections.unmodifiableList(Arrays.asList(tmp));
     }
 

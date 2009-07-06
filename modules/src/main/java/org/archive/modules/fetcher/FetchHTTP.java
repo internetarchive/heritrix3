@@ -94,7 +94,7 @@ import org.archive.modules.ProcessorURI;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.CredentialStore;
-import org.archive.modules.credential.Rfc2617Credential;
+import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;
@@ -1120,8 +1120,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         // any of them for this realm? If so, then the credential failed
         // if we got a 401 and it should be let die a natural 401 death.
         Set<Credential> curiRfc2617Credentials = getCredentials(curi,
-                Rfc2617Credential.class);
-        Rfc2617Credential extant = Rfc2617Credential.getByRealm(
+                HttpAuthenticationCredential.class);
+        HttpAuthenticationCredential extant = HttpAuthenticationCredential.getByRealm(
                 curiRfc2617Credentials, realm, curi);
         if (extant != null) {
             // Then, already tried this credential. Remove ANY rfc2617
@@ -1141,12 +1141,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
             String serverKey = getServerKey(curi);
             CrawlServer server = serverCache.getServerFor(serverKey);
             Set<Credential> storeRfc2617Credentials = getCredentialStore().subset(curi,
-                    Rfc2617Credential.class, server.getName());
+                    HttpAuthenticationCredential.class, server.getName());
             if (storeRfc2617Credentials == null
                     || storeRfc2617Credentials.size() <= 0) {
                 logger.info("No rfc2617 credentials for " + curi);
             } else {
-                Rfc2617Credential found = Rfc2617Credential.getByRealm(
+                HttpAuthenticationCredential found = HttpAuthenticationCredential.getByRealm(
                         storeRfc2617Credentials, realm, curi);
                 if (found == null) {
                     logger.info("No rfc2617 credentials for realm " + realm

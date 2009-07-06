@@ -31,16 +31,18 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.archive.modules.ProcessorURI;
 
 /**
- * A Basic/Digest auth RFC2617 credential.
+ * A Basic/Digest HTTP Authentication (RFC2617) credential.
  *
+ * (Previously named "Rfc2617Credential".)
+ * 
  * @author stack
  * @version $Revision$, $Date$
  */
-public class Rfc2617Credential extends Credential {
+public class HttpAuthenticationCredential extends Credential {
     private static final long serialVersionUID = 3L;
 
     private static Logger logger =
-        Logger.getLogger(Rfc2617Credential.class.getName());
+        Logger.getLogger(HttpAuthenticationCredential.class.getName());
 
 
     /** Basic/Digest Auth realm. */
@@ -73,7 +75,7 @@ public class Rfc2617Credential extends Credential {
     /**
      * Constructor.
      */
-    public Rfc2617Credential() {
+    public HttpAuthenticationCredential() {
     }
 
     public boolean isPrerequisite(ProcessorURI curi) {
@@ -158,16 +160,16 @@ public class Rfc2617Credential extends Credential {
      * credential w/ passed realm name, and there shouldn't be, we return first
      * found.
      */
-    public static Rfc2617Credential getByRealm(Set<Credential> rfc2617Credentials,
+    public static HttpAuthenticationCredential getByRealm(Set<Credential> rfc2617Credentials,
             String realm, ProcessorURI context) {
 
-        Rfc2617Credential result = null;
+        HttpAuthenticationCredential result = null;
         if (rfc2617Credentials == null || rfc2617Credentials.size() <= 0) {
             return result;
         }
         if (rfc2617Credentials != null && rfc2617Credentials.size() > 0) {
             for (Iterator<Credential> i = rfc2617Credentials.iterator(); i.hasNext();) {
-                Rfc2617Credential c = (Rfc2617Credential)i.next();
+                HttpAuthenticationCredential c = (HttpAuthenticationCredential)i.next();
                     if (c.getRealm().equals(realm)) {
                         result = c;
                         break;
