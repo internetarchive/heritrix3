@@ -26,11 +26,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,9 +36,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +60,6 @@ import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.LongWrapper;
 import org.archive.util.MimetypeUtils;
 import org.archive.util.PaddingStringBuffer;
 import org.springframework.beans.BeansException;
@@ -286,28 +285,29 @@ public class StatisticsTracker
     
     // TODO: fortify these against key explosion with bigmaps like other tallies
     /** Keep track of the file types we see (mime type -> count) */
-    protected Hashtable<String,LongWrapper> mimeTypeDistribution
-     = new Hashtable<String,LongWrapper>();
-    protected Hashtable<String,LongWrapper> mimeTypeBytes
-     = new Hashtable<String,LongWrapper>();
+    protected ConcurrentMap<String,AtomicLong> mimeTypeDistribution
+     = new ConcurrentHashMap<String,AtomicLong>();
+    protected ConcurrentMap<String,AtomicLong> mimeTypeBytes
+     = new ConcurrentHashMap<String,AtomicLong>();
     
     /** Keep track of fetch status codes */
-    protected Hashtable<String,LongWrapper> statusCodeDistribution
-     = new Hashtable<String,LongWrapper>();
+    protected ConcurrentMap<String,AtomicLong> statusCodeDistribution
+     = new ConcurrentHashMap<String,AtomicLong>();
     
     /** Keep track of hosts. 
      * 
-     * Each of these Maps are individually unsynchronized, and cannot 
-     * be trivially synchronized with the Collections wrapper. Thus
-     * their synchronized access is enforced by this class.
      */
-    protected Map<String,LongWrapper> hostsDistribution = Collections.emptyMap(); // temp dummy
-    protected Map<String,LongWrapper> hostsBytes = Collections.emptyMap(); // temp dummy
-    protected Map<String,Long> hostsLastFinished = Collections.emptyMap(); // temp dummy
+    protected ConcurrentMap<String,AtomicLong> hostsDistribution = 
+        new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
+    protected ConcurrentMap<String,AtomicLong> hostsBytes = 
+        new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
+    protected ConcurrentMap<String,Long> hostsLastFinished = 
+        new ConcurrentHashMap<String, Long>(); // temp dummy
 
     /** Keep track of URL counts per host per seed */
     protected  
-    Map<String,HashMap<String,LongWrapper>> sourceHostDistribution = Collections.emptyMap(); // temp dummy;
+    ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> sourceHostDistribution = 
+        new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); // temp dummy;
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -317,7 +317,8 @@ public class StatisticsTracker
     /**
      * Record of seeds' latest actions.
      */
-    protected Map<String,SeedRecord> processedSeedsRecords = Collections.emptyMap();
+    protected ConcurrentMap<String,SeedRecord> processedSeedsRecords = 
+        new ConcurrentHashMap<String, SeedRecord>();
     long seedsTotal = -1; 
     long seedsCrawled = -1;
     
@@ -339,11 +340,11 @@ public class StatisticsTracker
         isRunning = true;
         try {
             this.sourceHostDistribution = bdb.getBigMap("sourceHostDistribution",
-            	    false, String.class, HashMap.class);
+            	    false, String.class, ConcurrentMap.class);
             this.hostsDistribution = bdb.getBigMap("hostsDistribution",
-                false, String.class, LongWrapper.class);
+                false, String.class, AtomicLong.class);
             this.hostsBytes = bdb.getBigMap("hostsBytes", false, String.class,
-                LongWrapper.class);
+                AtomicLong.class);
             this.hostsLastFinished = bdb.getBigMap("hostsLastFinished",
                 false, String.class, Long.class);
             this.processedSeedsRecords = bdb.getBigMap("processedSeedsRecords",
@@ -517,10 +518,10 @@ public class StatisticsTracker
      *  encountered mime types.  Key/value pairs represent
      *  mime type -> count.
      * <p>
-     * <b>Note:</b> All the values are wrapped with a {@link LongWrapper LongWrapper}
+     * <b>Note:</b> All the values are wrapped with a {@link AtomicLong AtomicLong}
      * @return mimeTypeDistribution
      */
-    public Hashtable<String,LongWrapper> getFileDistribution() {
+    public ConcurrentMap<String,AtomicLong> getFileDistribution() {
         return mimeTypeDistribution;
     }
 
@@ -529,16 +530,12 @@ public class StatisticsTracker
      * Increment a counter for a key in a given HashMap. Used for various
      * aggregate data.
      * 
-     * As this is used to change Maps which depend on StatisticsTracker
-     * for their synchronization, this method should only be invoked
-     * from a a block synchronized on 'this'. 
-     *
-     * @param map The HashMap
+     * @param map The Map or ConcurrentMap
      * @param key The key for the counter to be incremented, if it does not
      *               exist it will be added (set to 1).  If null it will
      *            increment the counter "unknown".
      */
-    protected static void incrementMapCount(Map<String,LongWrapper> map, 
+    protected static void incrementMapCount(ConcurrentMap<String,AtomicLong> map, 
             String key) {
     	incrementMapCount(map,key,1);
     }
@@ -547,9 +544,6 @@ public class StatisticsTracker
      * Increment a counter for a key in a given HashMap by an arbitrary amount.
      * Used for various aggregate data. The increment amount can be negative.
      *
-     * As this is used to change Maps which depend on StatisticsTracker
-     * for their synchronization, this method should only be invoked
-     * from a a block synchronized on 'this'. 
      *
      * @param map
      *            The HashMap
@@ -560,29 +554,25 @@ public class StatisticsTracker
      * @param increment
      *            The amount to increment counter related to the <code>key</code>.
      */
-    protected static void incrementMapCount(Map<String,LongWrapper> map, 
+    protected static void incrementMapCount(ConcurrentMap<String,AtomicLong> map, 
             String key, long increment) {
         if (key == null) {
             key = "unknown";
         }
-        Object o = map.get(key);
-        if (o == null) {
-            // Considered normal
-            map.put(key, new LongWrapper(increment));
-        } else if (o instanceof LongWrapper) {
-            LongWrapper lw = (LongWrapper)o;
-            lw.longValue += increment;
-        } else {
-            // Abnormal
-            logger.severe("Resetting " + key + ": Expected LongWrapper but got " 
-                    + o.getClass().getName());
-            map.put(key, new LongWrapper(increment));
-        }
+        AtomicLong lw = (AtomicLong)map.get(key);
+        if(lw == null) {
+            lw = new AtomicLong();
+            AtomicLong prevVal = map.putIfAbsent(key, lw);
+            if(prevVal != null) {
+                lw = prevVal;
+            }
+        } 
+        lw.addAndGet(increment);
     }
 
     /**
      * Sort the entries of the given HashMap in descending order by their
-     * values, which must be longs wrapped with <code>LongWrapper</code>.
+     * values, which must be longs wrapped with <code>AtomicLong</code>.
      * <p>
      * Elements are sorted by value from largest to smallest. Equal values are
      * sorted in an arbitrary, but consistent manner by their keys. Only items
@@ -591,19 +581,17 @@ public class StatisticsTracker
      * If the passed-in map requires access to be synchronized, the caller
      * should ensure this synchronization. 
      * 
-     * @param mapOfLongWrapperValues
-     *            Assumes values are wrapped with LongWrapper.
+     * @param mapOfAtomicLongValues
+     *            Assumes values are wrapped with AtomicLong.
      * @return a sorted set containing the same elements as the map.
      */
-    public TreeMap<String,LongWrapper> getReverseSortedCopy(
-            final Map<String,LongWrapper> mapOfLongWrapperValues) {
-        TreeMap<String,LongWrapper> sortedMap = 
-          new TreeMap<String,LongWrapper>(new Comparator<String>() {
+    public TreeMap<String,AtomicLong> getReverseSortedCopy(
+            final Map<String,AtomicLong> mapOfAtomicLongValues) {
+        TreeMap<String,AtomicLong> sortedMap = 
+          new TreeMap<String,AtomicLong>(new Comparator<String>() {
             public int compare(String e1, String e2) {
-                long firstVal = mapOfLongWrapperValues.get(e1).
-                    longValue;
-                long secondVal = mapOfLongWrapperValues.get(e2).
-                    longValue;
+                long firstVal = mapOfAtomicLongValues.get(e1).get();
+                long secondVal = mapOfAtomicLongValues.get(e2).get();
                 if (firstVal < secondVal) {
                     return 1;
                 }
@@ -615,13 +603,13 @@ public class StatisticsTracker
             }
         });
         try {
-            sortedMap.putAll(mapOfLongWrapperValues);
+            sortedMap.putAll(mapOfAtomicLongValues);
         } catch (UnsupportedOperationException e) {
-            Iterator<String> i = mapOfLongWrapperValues.keySet().iterator();
+            Iterator<String> i = mapOfAtomicLongValues.keySet().iterator();
             for (;i.hasNext();) {
                 // Ok. Try doing it the slow way then.
                 String key = i.next();
-                sortedMap.put(key, mapOfLongWrapperValues.get(key));
+                sortedMap.put(key, mapOfAtomicLongValues.get(key));
             }
         }
         return sortedMap;
@@ -633,11 +621,11 @@ public class StatisticsTracker
      * val represents (string)code -&gt; (integer)count.
      * 
      * <b>Note: </b> All the values are wrapped with a
-     * {@link LongWrapper LongWrapper}
+     * {@link AtomicLong AtomicLong}
      * 
      * @return statusCodeDistribution
      */
-    public Hashtable<String,LongWrapper> getStatusCodeDistribution() {
+    public ConcurrentMap<String,AtomicLong> getStatusCodeDistribution() {
         return statusCodeDistribution;
     }
     
@@ -651,10 +639,7 @@ public class StatisticsTracker
      * -1 will be returned. 
      */
     public long getHostLastFinished(String host){
-        Long l = null;
-        synchronized(hostsLastFinished){
-            l = (Long)hostsLastFinished.get(host);
-        }
+        Long l = (Long)hostsLastFinished.get(host);
         return (l != null)? l.longValue(): -1;
     }
 
@@ -664,9 +649,7 @@ public class StatisticsTracker
      * @return the accumulated number of bytes downloaded from a given host
      */
     public long getBytesPerHost(String host){
-        synchronized(hostsBytes){
-            return getReportValue(hostsBytes, host);
-        }
+        return getReportValue(hostsBytes, host);
     }
 
     /**
@@ -733,32 +716,32 @@ public class StatisticsTracker
          
     protected void saveSourceStats(String source, String hostname) {
         synchronized(sourceHostDistribution) {
-            HashMap<String,LongWrapper> hostUriCount = 
+            ConcurrentMap<String,AtomicLong> hostUriCount = 
                 sourceHostDistribution.get(source);
             if (hostUriCount == null) {
-                hostUriCount = new HashMap<String,LongWrapper>();
-                sourceHostDistribution.put(source, hostUriCount);
+                hostUriCount = new ConcurrentHashMap<String,AtomicLong>();
+                ConcurrentMap<String,AtomicLong> prevVal = 
+                    sourceHostDistribution.putIfAbsent(source, hostUriCount);
+                if(prevVal != null) {
+                    hostUriCount = prevVal;
+                }
             }
             incrementMapCount(hostUriCount, hostname);
         }
     }
     
     protected void saveHostStats(String hostname, long size) {
-        synchronized(hostsDistribution){
-            incrementMapCount(hostsDistribution, hostname);
-            hostsDistributionTop.update(
-                    hostname, getReportValue(hostsDistribution, hostname)); 
-        }
-        synchronized(hostsBytes){
-            incrementMapCount(hostsBytes, hostname, size);
-            hostsBytesTop.update(hostname, 
-                    getReportValue(hostsBytes, hostname));
-        }
-        synchronized(hostsLastFinished){
-            long time = new Long(System.currentTimeMillis());
-            hostsLastFinished.put(hostname, time);
-            hostsLastFinishedTop.update(hostname, time);
-        }
+        incrementMapCount(hostsDistribution, hostname);
+        hostsDistributionTop.update(
+                hostname, getReportValue(hostsDistribution, hostname)); 
+
+        incrementMapCount(hostsBytes, hostname, size);
+        hostsBytesTop.update(hostname, 
+                getReportValue(hostsBytes, hostname));
+        
+        long time = new Long(System.currentTimeMillis());
+        hostsLastFinished.put(hostname, time);
+        hostsLastFinishedTop.update(hostname, time);
     }
 
     public void crawledURINeedRetry(CrawlURI curi) {
@@ -821,7 +804,7 @@ public class StatisticsTracker
             SeedRecord sr = (SeedRecord) processedSeedsRecords.get(seed);
             if(sr==null) {
                 sr = new SeedRecord(seed,"Seed has not been processed");
-//                processedSeedsRecords.put(seed,sr);
+                // no need to retain synthesized record
             }
             sortedSet.add(sr);
         }
@@ -834,8 +817,8 @@ public class StatisticsTracker
      * 
      * @return SortedMap of hosts distribution
      */
-    public SortedMap<String,LongWrapper> getReverseSortedHostCounts(
-            Map<String,LongWrapper> hostCounts) {
+    public SortedMap<String,AtomicLong> getReverseSortedHostCounts(
+            Map<String,AtomicLong> hostCounts) {
         synchronized(hostCounts){
             return getReverseSortedCopy(hostCounts);
         }
@@ -846,7 +829,7 @@ public class StatisticsTracker
      * (largest first) order. 
      * @return SortedMap of hosts distribution
      */
-    public SortedMap<String,LongWrapper> getReverseSortedHostsDistribution() {
+    public SortedMap<String,AtomicLong> getReverseSortedHostsDistribution() {
         synchronized(hostsDistribution){
             return getReverseSortedCopy(hostsDistribution);
         }
@@ -916,7 +899,7 @@ public class StatisticsTracker
         logNote("CRAWL CHECKPOINTING TO " + cpDir.toString());
     }
   
-    private long getReportValue(Map<String,LongWrapper> map, String key) {
+    private long getReportValue(Map<String,AtomicLong> map, String key) {
         if (key == null) {
             return -1;
         }
@@ -924,11 +907,11 @@ public class StatisticsTracker
         if (o == null) {
             return -2;
         }
-        if (!(o instanceof LongWrapper)) {
-            throw new IllegalStateException("Expected LongWrapper but got " 
+        if (!(o instanceof AtomicLong)) {
+            throw new IllegalStateException("Expected AtomicLong but got " 
                     + o.getClass() + " for " + key);
         }
-        return ((LongWrapper)o).longValue;
+        return ((AtomicLong)o).get();
     }
     
     public void onApplicationEvent(ApplicationEvent event) {

@@ -117,7 +117,28 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
     public String toString() {
         return "CrawlServer("+server+")";
     }
+    @Override
+    public int hashCode() {
+        return this.server != null ? this.server.hashCode() : 0;
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CrawlServer other = (CrawlServer) obj;
+        if (this.server != other.server   // identity compare
+                && (this.server == null 
+                    || !this.server.equals(other.server))) {
+            return false;
+        }
+        return true;
+    }
+    
     /** Update the robots exclusion policy.
      *
      * @param curi the crawl URI containing the fetched robots.txt

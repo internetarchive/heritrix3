@@ -1,32 +1,28 @@
-/* ServerCache
- * 
- * Created on Nov 19, 2004
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * Copyright (C) 2004 Internet Archive.
- * 
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- * 
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- * 
- * Heritrix is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.modules.fetcher;
 
 import java.io.Closeable;
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.logging.Level;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
@@ -43,10 +39,7 @@ import org.archive.net.UURI;
  * @version $Date$, $Revision$
  */
 public class DefaultServerCache implements ServerCache, Closeable, Serializable {
-
-
     private static final long serialVersionUID = 1L;
-
 
     private static Logger logger =
         Logger.getLogger(DefaultServerCache.class.getName());
@@ -56,25 +49,27 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * hostname[:port] -> CrawlServer.
      * Set in the initialization.
      */
-    protected Map<String,CrawlServer> servers = null;
+    protected ConcurrentMap<String,CrawlServer> servers = null;
     
     /**
      * hostname -> CrawlHost.
      * Set in the initialization.
      */
-    protected Map<String,CrawlHost> hosts = null;
+    protected ConcurrentMap<String,CrawlHost> hosts = null;
     
     /**
      * Constructor.
      */
     public DefaultServerCache() {
-        this(new Hashtable<String,CrawlServer>(), new Hashtable<String,CrawlHost>());
+        this(
+            new ConcurrentHashMap<String,CrawlServer>(), 
+            new ConcurrentHashMap<String,CrawlHost>());
     }
     
     
     
-    public DefaultServerCache(Map<String,CrawlServer> servers, 
-            Map<String,CrawlHost> hosts) {
+    public DefaultServerCache(ConcurrentMap<String,CrawlServer> servers, 
+            ConcurrentMap<String,CrawlHost> hosts) {
         this.servers = servers;
         this.hosts = hosts;
     }
@@ -85,21 +80,14 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * @return CrawlServer instance that matches the passed server name.
      */
     public synchronized CrawlServer getServerFor(String serverKey) {
-        CrawlServer cserver = (CrawlServer)this.servers.get(serverKey);
-        return (cserver != null)? cserver: createServerFor(serverKey);
-    }
-    
-    protected CrawlServer createServerFor(String s) {
-        CrawlServer cserver = (CrawlServer)this.servers.get(s);
-        if (cserver != null) {
-            return cserver;
-        }
-        // Ensure key is private object
-        String skey = new String(s);
-        cserver = new CrawlServer(skey);
-        servers.put(skey,cserver);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Created server " + s);
+        CrawlServer cserver = servers.get(serverKey);
+        if(cserver==null) {
+            String skey = new String(serverKey); // ensure private minimal key
+            cserver = new CrawlServer(skey);
+            CrawlServer prevVal = servers.putIfAbsent(skey, cserver);
+            if(prevVal!=null) {
+                cserver = prevVal;
+            }
         }
         return cserver;
     }
@@ -137,23 +125,14 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
         if (hostname == null || hostname.length() == 0) {
             return null;
         }
-        CrawlHost host = (CrawlHost)this.hosts.get(hostname);
-        return (host != null)? host: createHostFor(hostname);
-    }
-    
-    protected CrawlHost createHostFor(String hostname) {
-        if (hostname == null || hostname.length() == 0) {
-            return null;
-        }
-        CrawlHost host = (CrawlHost)this.hosts.get(hostname);
-        if (host != null) {
-            return host;
-        }
-        String hkey = new String(hostname); 
-        host = new CrawlHost(hkey);
-        this.hosts.put(hkey, host);
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Created host " + hostname);
+        CrawlHost host = hosts.get(hostname);
+        if(host == null) {
+            String hkey = new String(hostname); // ensure private minimal key
+            host = new CrawlHost(hkey); 
+            CrawlHost prevVal = hosts.putIfAbsent(hkey, host);
+            if(prevVal!=null) {
+                host = prevVal; 
+            }
         }
         return host;
     }

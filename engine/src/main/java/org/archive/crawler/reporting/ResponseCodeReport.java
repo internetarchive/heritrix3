@@ -21,8 +21,7 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.TreeMap;
-
-import org.archive.util.LongWrapper;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The "Response Codes Report", tallies by response/disposition code.
@@ -36,13 +35,13 @@ public class ResponseCodeReport extends Report {
         // header
         writer.print("[rescode] [#urls]\n");
         
-        TreeMap<String,LongWrapper> scd = 
+        TreeMap<String,AtomicLong> scd = 
             stats.getReverseSortedCopy(stats.getStatusCodeDistribution());
         for (Iterator<String> i = scd.keySet().iterator(); i.hasNext();) {
             Object key = i.next();
             writer.print((String)key);
             writer.print(" ");
-            writer.print(Long.toString(((LongWrapper)scd.get(key)).longValue));
+            writer.print(Long.toString(((AtomicLong)scd.get(key)).get()));
             writer.print("\n");
         }
     }

@@ -43,7 +43,7 @@ public class TopNSet implements Serializable {
         set = new HashMap<String, Long>(size);
     }
     
-    public void update(String key, long value){
+    public synchronized void update(String key, long value){
         if(set.containsKey(key)) {
             // Update the value of an existing key
             set.put(key,value); 

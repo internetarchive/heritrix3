@@ -35,13 +35,13 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -216,7 +216,7 @@ ApplicationContextAware {
 
     /** All known queues.
      */
-    protected Map<String,WorkQueue> allQueues = null; 
+    protected ConcurrentMap<String,WorkQueue> allQueues = null; 
     // of classKey -> ClassKeyQueue
 
     /**
@@ -287,8 +287,8 @@ ApplicationContextAware {
                 && getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
                 && getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
                     MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY) {
-            this.allQueues = Collections.synchronizedMap(
-                    new HashMap<String,WorkQueue>());
+            this.allQueues = 
+                new ConcurrentHashMap<String,WorkQueue>(701, .9f, 100);
         } else {
             this.initAllQueues();
         }

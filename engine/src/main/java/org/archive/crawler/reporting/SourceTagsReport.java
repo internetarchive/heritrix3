@@ -22,8 +22,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
-
-import org.archive.util.LongWrapper;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The "Source Report", tallies of source tags (usually seeds) by host.
@@ -39,20 +38,20 @@ public class SourceTagsReport extends Report {
         // for each source
         for (Iterator<String> i = stats.sourceHostDistribution.keySet().iterator(); i.hasNext();) {
             String sourceKey = i.next();
-            Map<String,LongWrapper> hostCounts = 
-                (Map<String,LongWrapper>)stats.sourceHostDistribution.get(sourceKey);
+            Map<String,AtomicLong> hostCounts = 
+                (Map<String,AtomicLong>)stats.sourceHostDistribution.get(sourceKey);
             // sort hosts by #urls
-            SortedMap<String,LongWrapper> sortedHostCounts = 
+            SortedMap<String,AtomicLong> sortedHostCounts = 
                 stats.getReverseSortedHostCounts(hostCounts);
             // for each host
             for (Iterator<String> j = sortedHostCounts.keySet().iterator(); j.hasNext();) {
                 Object hostKey = j.next();
-                LongWrapper hostCount = (LongWrapper) hostCounts.get(hostKey);
+                AtomicLong hostCount = (AtomicLong) hostCounts.get(hostKey);
                 writer.print(sourceKey.toString());
                 writer.print(" ");
                 writer.print(hostKey.toString());
                 writer.print(" ");
-                writer.print(hostCount.longValue);
+                writer.print(hostCount.get());
                 writer.print("\n");
             }
         }

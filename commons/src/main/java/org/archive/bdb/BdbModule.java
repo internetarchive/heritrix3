@@ -28,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -207,6 +209,19 @@ Serializable, Closeable {
         this.checkpointCopyLogs = checkpointCopyLogs;
     }
     
+    /**
+     * Expected number of concurrent threads; used to tune nLockTables
+     * according to JE FAQ
+     * http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
+     */
+    int expectedConcurrency = 25;
+    public int getExpectedConcurrency() {
+        return expectedConcurrency;
+    }
+    public void setExpectedConcurrency(int expectedConcurrency) {
+        this.expectedConcurrency = expectedConcurrency;
+    }
+    
     private transient EnhancedEnvironment bdbEnvironment;
         
     private transient StoredClassCatalog classCatalog;
@@ -255,6 +270,14 @@ Serializable, Closeable {
         config.setLockTimeout(5000000);        
         config.setCachePercent(cachePercent);
         config.setSharedCache(sharedCache);
+        
+        // we take the advice literally from...
+        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
+        long nLockTables = expectedConcurrency-1;
+        while(!BigInteger.valueOf(nLockTables).isProbablePrime(Integer.MAX_VALUE)) {
+            nLockTables--;
+        }
+        config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
         
         f.mkdirs();
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
@@ -329,7 +352,7 @@ Serializable, Closeable {
     }
 
 
-    public <K,V> Map<K,V> getBigMap(String dbName, boolean recycle,
+    public <K,V> ConcurrentMap<K,V> getBigMap(String dbName, boolean recycle,
             Class<? super K> key, Class<? super V> value) 
     throws DatabaseException {
         @SuppressWarnings("unchecked")
@@ -359,7 +382,7 @@ Serializable, Closeable {
     }
     
 
-    
+    // TODO:FIXME: restore functionality
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) 
     throws IOException, ClassNotFoundException {
@@ -374,8 +397,10 @@ Serializable, Closeable {
             for (CachedBdbMap map: bigMaps.values()) {
                 map.initialize(
                         this.bdbEnvironment, 
-                        map.getKeyClass(), 
-                        map.getValueClass(), 
+                        null,
+                        null,
+//                        map.getKeyClass(), 
+//                        map.getValueClass(), 
                         this.classCatalog);
             }
             for (DatabasePlusConfig dpc: databases.values()) {

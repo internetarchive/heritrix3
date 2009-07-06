@@ -22,8 +22,7 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.TreeMap;
-
-import org.archive.util.LongWrapper;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The "Mimetypes Report", tallies by MIME type.
@@ -36,11 +35,11 @@ public class MimetypesReport extends Report {
     public void write(PrintWriter writer) {
         // header
         writer.print("[#urls] [#bytes] [mime-types]\n");
-        TreeMap<String,LongWrapper> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
+        TreeMap<String,AtomicLong> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
         for (Iterator<String> i = fd.keySet().iterator(); i.hasNext();) {
             Object key = i.next();
             // Key is mime type.
-            writer.print(Long.toString(((LongWrapper)fd.get(key)).longValue));
+            writer.print(Long.toString(((AtomicLong)fd.get(key)).get()));
             writer.print(" ");
             writer.print(Long.toString(stats.getBytesPerFileType((String)key)));
             writer.print(" ");

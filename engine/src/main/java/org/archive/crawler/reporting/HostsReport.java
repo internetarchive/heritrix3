@@ -22,10 +22,10 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.SortedMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.collections.Closure;
 import org.archive.modules.net.CrawlHost;
-import org.archive.util.LongWrapper;
 
 /**
  * The "Hosts Report", tallies by host.
@@ -38,16 +38,16 @@ public class HostsReport extends Report {
     public void write(final PrintWriter writer) {
         // TODO: use CrawlHosts for all stats; only perform sorting on 
         // manageable number of hosts
-        SortedMap<String,LongWrapper> hd = stats.getReverseSortedHostsDistribution();
+        SortedMap<String,AtomicLong> hd = stats.getReverseSortedHostsDistribution();
         // header
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining]\n");
         for (Iterator<String> i = hd.keySet().iterator(); i.hasNext();) {
             // Key is 'host'.
             String key = (String) i.next();
             CrawlHost host = stats.serverCache.getHostFor(key);
-            LongWrapper val = (LongWrapper)hd.get(key);
+            AtomicLong val = (AtomicLong)hd.get(key);
             writeReportLine(writer,
-                    ((val==null)?"-":val.longValue),
+                    ((val==null)?"-":val.get()),
                     stats.getBytesPerHost(key),
                     key,
                     host.getSubstats().getRobotsDenials(),
