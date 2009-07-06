@@ -113,49 +113,49 @@ public class JobResource extends Resource {
         }
         
         // button controls
-        pw.println("<form method='POST'>");
+        pw.println("<div style='white-space:nowrap'><form method='POST'>");
         // PREP, LAUNCH
-        pw.print("<input style='width:6em' type='submit' name='action' value='build' ");
+        pw.print("<input type='submit' name='action' value='build' ");
         pw.print(cj.isContainerValidated()?"disabled='disabled' title='build job'":"");
         pw.println("/>");
-        pw.print("<input style='width:6em' type='submit' name='action' value='launch'");
+        pw.print("<input type='submit' name='action' value='launch'");
         if(cj.isProfile()) {
             pw.print("disabled='disabled' title='profiles cannot be launched'");
         }
         if(!cj.isLaunchable()) {
             pw.print("disabled='disabled' title='launched OK'");
         }
-        pw.println("/> - ");
+        pw.println("/>&nbsp;&nbsp;&nbsp;");
         
         // PAUSE, UNPAUSE, CHECKPOINT
-        pw.println("<input  style=\'width:6em\'");
+        pw.println("<input ");
         if(!cj.isPausable()) {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='pause'/>");
-        pw.println("<input style=\'width:6em\'");
+        pw.println("<input ");
         if(!cj.isUnpausable()) {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='unpause'/>");
-        pw.println("<input style='width:6em'");
+        pw.println("<input ");
         if(true /*!cj.isUnpausable()*/) { // TODO: not yet implemented
             pw.println(" disabled ");
         }
-        pw.println(" type='submit' name='action' value='checkpoint'/> - ");
+        pw.println(" type='submit' name='action' value='checkpoint'/>&nbsp;&nbsp;&nbsp;");
 
         
         // TERMINATE, RESET
-        pw.println("<input style='width:6em' ");
+        pw.println("<input ");
         if(!cj.isRunning()) {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='terminate'/>");
-        pw.println("<input style='width:6em' type='submit' name='action' value='discard' ");
+        pw.println("<input type='submit' name='action' value='discard' ");
         pw.print(cj.isContainerOk()?"":"disabled='disabled' title='no instance'");
         pw.println("/><br/>");
 
-        pw.println("</form>");
+        pw.println("</form></div>");
         
         // configuration 
         pw.println("configuration: ");
