@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,56 +31,31 @@ import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.text.NumberFormat;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.util.FileUtils;
+import org.archive.util.DevUtils;
 
 /**
- * Provides a (Replay)CharSequence view on recorded streams (a prefix
- * buffer and overflow backing file) that can handle streams of multibyte
- * characters.
+ * (Replay)CharSequence view on recorded streams.
  *
- * For better performance on ISO-8859-1 text, use 
- * {@link Latin1ByteReplayCharSequence}.
- * 
- * <p>Call close on this class when done so can clean up resources.
+ * For small streams, use {@link InMemoryReplayCharSequence}.
  *
- * <p>Implementation currently works by checking to see if content to read
- * all fits the in-memory buffer.  If so, we decode into a CharBuffer and
- * keep this around for CharSequence operations.  This CharBuffer is
- * discarded on close.
- *
- * <p>If content length is greater than in-memory buffer, we decode the
- * buffer plus backing file into a new file named for the backing file w/
- * a suffix of the encoding we write the file as. We then run w/ a
- * memory-mapped CharBuffer against this file to implement CharSequence.
- * Reasons for this implemenation are that CharSequence wants to return the
- * length of the CharSequence.
- *
- * <p>Obvious optimizations would keep around decodings whether the
- * in-memory decoded buffer or the file of decodings written to disk but the
- * general usage pattern processing URIs is that the decoding is used by one
- * processor only.  Also of note, files usually fit into the in-memory
- * buffer.
- *
- * <p>We might also be able to keep up 3 windows that moved across the file
- * decoding a window at a time trying to keep one of the buffers just in
- * front of the regex processing returning it a length that would be only
- * the length of current position to end of current block or else the length
- * could be got by multipling the backing files length by the decoders'
- * estimate of average character size.  This would save us writing out the
- * decoded file.  We'd have to do the latter for files that are
- * > Integer.MAX_VALUE.
+ * <p>Call {@link close()} on this class when done to clean up resources.
  *
  * @author stack
+ * @author nlevitt
  * @version $Revision$, $Date$
  */
 public class GenericReplayCharSequence implements ReplayCharSequence {
 
-    protected static Logger logger =
-        Logger.getLogger(GenericReplayCharSequence.class.getName());
-    
+    protected static Logger logger = Logger
+            .getLogger(GenericReplayCharSequence.class.getName());
+
     /**
      * Name of the encoding we use writing out concatenated decoded prefix
      * buffer and decoded backing file.
@@ -92,12 +68,47 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
      */
     private static final String WRITE_ENCODING = "UTF-16BE";
 
+    private static final long MAP_MAX_BYTES = 64 * 1024 * 1024; // 64M
+    
     /**
-     * CharBuffer of decoded content.
-     *
-     * Content of this buffer is unicode.
+     * When the memory map moves away from the beginning of the file 
+     * (to the "right") in order to reach a certain index, it will
+     * map up to this many bytes preceding (to the left of) the target character. 
+     * Consequently it will map up to 
+     * <code>MAP_MAX_BYTES - MAP_TARGET_LEFT_PADDING</code>
+     * bytes to the right of the target.
      */
-    private CharBuffer content = null;
+    private static final long MAP_TARGET_LEFT_PADDING_BYTES = (long) (MAP_MAX_BYTES * 0.2);
+
+    /**
+     * Total length of character stream to replay minus the HTTP headers
+     * if present. 
+     * 
+     * If the backing file is larger than <code>Integer.MAX_VALUE</code> (i.e. 2gb),
+     * only the first <code>Integer.MAX_VALUE</code> characters are available through this API. 
+     * We're overriding <code>java.lang.CharSequence</code> so that we can use 
+     * <code>java.util.regex</code> directly on the data, and the <code>CharSequence</code> 
+     * API uses <code>int</code> for the length and index.
+     */
+    protected int length;
+    
+    /**
+     * Byte offset into the file where the memory mapped portion begins.
+     */
+    private long mapByteOffset;
+
+    // XXX do we need to keep the input stream around?
+    private FileInputStream backingFileIn = null;
+
+    private FileChannel backingFileChannel = null;
+
+    private long bytesPerChar;
+
+    private ByteBuffer mappedBuffer = null;
+
+    private CharsetDecoder decoder = null;
+
+    private ByteBuffer tempBuf = null;
 
     /**
      * File that has decoded content.
@@ -106,9 +117,15 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
      */
     private File decodedFile = null;
 
+    /*
+     * This portion of the CharSequence precedes what's in the backing file. In
+     * cases where we decodeToFile(), this is always empty, because we decode
+     * the entire input stream. 
+     */ 
+    private CharBuffer prefixBuffer = null;
 
     /**
-     * Constructor for all in-memory operation.
+     * Constructor.
      *
      * @param buffer In-memory buffer of recordings prefix.  We read from
      * here first and will only go to the backing file if <code>size</code>
@@ -116,225 +133,257 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
      * @param size Total size of stream to replay in bytes.  Used to find
      * EOS. This is total length of content including HTTP headers if
      * present.
-     * @param responseBodyStart Where the response body starts in bytes.
-     * Used to skip over the HTTP headers if present.
+     * @param contentReplayInputStream inputStream of content
+     * @param charsetName Encoding to use reading the passed prefix
+     * buffer and backing file.  For now, should be java canonical name for the
+     * encoding. Must not be null.
      * @param backingFilename Path to backing file with content in excess of
      * whats in <code>buffer</code>.
-     * @param encoding Encoding to use reading the passed prefix buffer and
-     * backing file.  For now, should be java canonical name for the
-     * encoding. (If null is passed, we will default to
-     * ByteReplayCharSequence).
-     *
-     * @throws IOException
-     */
-    public GenericReplayCharSequence(byte[] buffer, long size,
-            long responseBodyStart, String encoding)
-        throws IOException {
-        super();
-        this.content = decodeInMemory(buffer, size, responseBodyStart, 
-                encoding);
-     }
-
-    /**
-     * Constructor for overflow-to-disk-file operation.
-     *
-     * @param contentReplayInputStream inputStream of content
-     * @param backingFilename hint for name of temp file
-     * @param characterEncoding Encoding to use reading the stream.
-     * For now, should be java canonical name for the
-     * encoding. 
      *
      * @throws IOException
      */
     public GenericReplayCharSequence(
-            ReplayInputStream contentReplayInputStream,
-            String backingFilename,
-            String characterEncoding)
-        throws IOException {
+            ReplayInputStream contentReplayInputStream, String backingFilename,
+            String charsetName) throws IOException {
         super();
-        this.content = decodeToFile(contentReplayInputStream, 
-                backingFilename, characterEncoding);
+        logger.info("new GenericReplayCharSequence() characterEncoding="
+                + charsetName + " backingFilename=" + backingFilename);
+        
+        Charset charset = Charset.forName(charsetName);
+        if (charset.newEncoder().maxBytesPerChar() == 1.0) {
+            logger.info("charset=" + charsetName
+                    + ": supports random access, using backing file directly");
+            this.bytesPerChar = 1;
+            this.backingFileIn = new FileInputStream(backingFilename);
+            this.decoder = charset.newDecoder();
+            this.prefixBuffer = this.decoder.decode(
+                    ByteBuffer.wrap(contentReplayInputStream.getBuffer()));
+        } else {
+            logger.info("charset=" + charsetName
+                            + ": may not support random access, decoding to separate file");
+
+            // decodes only up to Integer.MAX_VALUE characters
+            decodeToFile(contentReplayInputStream, backingFilename, charsetName);
+
+            this.bytesPerChar = 2;
+            this.backingFileIn = new FileInputStream(decodedFile);
+            this.decoder = Charset.forName(WRITE_ENCODING).newDecoder();
+            this.prefixBuffer = CharBuffer.wrap("");
+        }
+
+        this.tempBuf = ByteBuffer.wrap(new byte[(int) this.bytesPerChar]);
+        this.backingFileChannel = backingFileIn.getChannel();
+        
+        // we only support the first Integer.MAX_VALUE characters
+        long wouldBeLength = prefixBuffer.limit() + backingFileChannel.size() / bytesPerChar;
+        if (wouldBeLength <= Integer.MAX_VALUE) {
+            this.length = (int) wouldBeLength;
+        } else {
+            logger.warning("input stream is longer than Integer.MAX_VALUE="
+                    + NumberFormat.getInstance().format(Integer.MAX_VALUE)
+                    + " characters -- only first "
+                    + NumberFormat.getInstance().format(Integer.MAX_VALUE)
+                    + " are accessible through this GenericReplayCharSequence");
+            this.length = Integer.MAX_VALUE;
+        }
+
+        this.mapByteOffset = 0;
+        updateMemoryMappedBuffer();
+    }
+
+    private void updateMemoryMappedBuffer() {
+        long fileLength = (long) this.length() - (long) prefixBuffer.limit(); // in characters
+        long mapSize = Math.min(fileLength * bytesPerChar - mapByteOffset, MAP_MAX_BYTES);
+        logger.fine("updateMemoryMappedBuffer: mapOffset="
+                + NumberFormat.getInstance().format(mapByteOffset)
+                + " mapSize=" + NumberFormat.getInstance().format(mapSize));
+        try {
+            System.gc();
+            System.runFinalization();
+            // TODO: Confirm the READ_ONLY works. I recall it not working.
+            // The buffers seem to always say that the buffer is writable.
+            mappedBuffer = backingFileChannel.map(
+                    FileChannel.MapMode.READ_ONLY, mapByteOffset, mapSize)
+                    .asReadOnlyBuffer();
+        } catch (IOException e) {
+            // TODO convert this to a runtime error?
+            DevUtils.logger.log(Level.SEVERE,
+                    " backingFileChannel.map() mapByteOffset=" + mapByteOffset
+                            + " mapSize=" + mapSize + "\n" + "decodedFile="
+                            + decodedFile + " length=" + length + "\n"
+                            + DevUtils.extraInfo(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     /**
-     * Decode passed buffer and backing file into a CharBuffer.
-     *
-     * This method writes a new file made of the decoded concatenation of
-     * the in-memory prefix buffer and the backing file.  Returns a
-     * charSequence view onto this new file.
-     *
-     * @param buffer In-memory buffer of recordings prefix.  We read from
-     * here first and will only go to the backing file if <code>size</code>
-     * requested is greater than <code>buffer.length</code>.
-     * @param size Total size of stream to replay in bytes.  Used to find
-     * EOS. This is total length of content including HTTP headers if
-     * present.
-     * @param responseBodyStart Where the response body starts in bytes.
-     * Used to skip over the HTTP headers if present.
-     * @param backingFilename Path to backing file with content in excess of
-     * whats in <code>buffer</code>.
-     * @param encoding Encoding to use reading the passed prefix buffer and
-     * backing file.  For now, should be java canonical name for the
-     * encoding. (If null is passed, we will default to
-     * ByteReplayCharSequence).
-     *
-     * @return A CharBuffer view on decodings of the contents of passed
-     * buffer.
+     * Converts the first <code>Integer.MAX_VALUE</code> characters from the
+     * file <code>backingFilename</code> from encoding <code>encoding</code> to
+     * encoding <code>WRITE_ENCODING</code> and saves as
+     * <code>this.decodedFile</code>, which is named <code>backingFilename
+     * + "." + WRITE_ENCODING</code>.
+     * 
      * @throws IOException
      */
-    private CharBuffer decodeToFile(ReplayInputStream inStream, 
-            String backingFilename, String encoding)
-        throws IOException {
+    private void decodeToFile(ReplayInputStream inStream,
+            String backingFilename, String encoding) throws IOException {
 
-        CharBuffer charBuffer = null;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                inStream, encoding));
 
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(inStream,encoding));
-        
-        File backingFile = new File(backingFilename);
-        this.decodedFile = File.createTempFile(
-                backingFile.getName(), WRITE_ENCODING, backingFile.getParentFile());
+        this.decodedFile = new File(backingFilename + "." + WRITE_ENCODING);
+
+        logger.info("decodeToFile: backingFilename=" + backingFilename
+                + " encoding=" + encoding + " decodedFile=" + decodedFile);
+
         FileOutputStream fos;
-        fos = new FileOutputStream(this.decodedFile);
-        
-        BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(
-                        fos, 
-                        WRITE_ENCODING)); 
+        try {
+            fos = new FileOutputStream(this.decodedFile);
+        } catch (FileNotFoundException e) {
+            // Windows workaround attempt
+            System.gc();
+            System.runFinalization();
+            this.decodedFile = new File(decodedFile.getAbsolutePath()+".win");
+            logger.info("Windows 'file with a user-mapped section open' "
+                    + "workaround gc/finalization/name-extension performed.");
+            // try again
+            fos = new FileOutputStream(this.decodedFile);
+        }
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos,
+                WRITE_ENCODING));
 
         int c;
-        while((c = reader.read())>=0) {
+        long count = 0;
+        while ((c = reader.read()) >= 0 && count < Integer.MAX_VALUE) {
             writer.write(c);
+            count++;
+            if (count % 100000000 == 0) {
+                logger.fine("wrote " + count + " characters so far...");
+            }
         }
         writer.close();
-        
-        charBuffer = getReadOnlyMemoryMappedBuffer(this.decodedFile).
-            asCharBuffer();
 
-        return charBuffer;
+        logger.info("decodeToFile: wrote " + count + " characters to "
+                + decodedFile);
     }
 
     /**
-     * Decode passed buffer into a CharBuffer.
-     *
-     * This method decodes a memory buffer returning a memory buffer.
-     *
-     * @param buffer In-memory buffer of recordings prefix.  We read from
-     * here first and will only go to the backing file if <code>size</code>
-     * requested is greater than <code>buffer.length</code>.
-     * @param size Total size of stream to replay in bytes.  Used to find
-     * EOS. This is total length of content including HTTP headers if
-     * present.
-     * @param responseBodyStart Where the response body starts in bytes.
-     * Used to skip over the HTTP headers if present.
-     * @param encoding Encoding to use reading the passed prefix buffer and
-     * backing file.  For now, should be java canonical name for the
-     * encoding. (If null is passed, we will default to
-     * ByteReplayCharSequence).
-     *
-     * @return A CharBuffer view on decodings of the contents of passed
-     * buffer.
+     * Get character at passed absolute position.
+     * @param index Index into content 
+     * @return Character at offset <code>index</code>.
      */
-    private CharBuffer decodeInMemory(byte[] buffer, long size,
-            long responseBodyStart, String encoding)
-    {
-        ByteBuffer bb = ByteBuffer.wrap(buffer);
-        // Move past the HTTP header if present.
-        bb.position((int)responseBodyStart);
-        // Set the end-of-buffer to be end-of-content.
-        bb.limit((int)size);
-        return (Charset.forName(encoding)).decode(bb).asReadOnlyBuffer();
-    }
+    public char charAt(int index) {
+        if (index < 0 || index >= this.length()) {
+            throw new IndexOutOfBoundsException("index=" + index
+                    + " - should be between 0 and length()=" + this.length());
+        }
 
-    /**
-     * Create read-only memory-mapped buffer onto passed file.
-     *
-     * @param file File to get memory-mapped buffer on.
-     * @return Read-only memory-mapped ByteBuffer view on to passed file.
-     * @throws IOException
-     */
-    private ByteBuffer getReadOnlyMemoryMappedBuffer(File file)
-        throws IOException {
+        // is it in the buffer
+        if (index < prefixBuffer.limit()) {
+            return prefixBuffer.get(index);
+        }
 
-        ByteBuffer bb = null;
-        FileInputStream in = null;
-        FileChannel c = null;
-        assert file.exists(): "No file " + file.getAbsolutePath();
+        // otherwise we gotta get it from disk via memory map
+        long fileIndex = (long) index - (long) prefixBuffer.limit();
+        long fileLength = (long) this.length() - (long) prefixBuffer.limit(); // in characters
+        if (fileIndex * bytesPerChar < mapByteOffset
+                || fileIndex * bytesPerChar - mapByteOffset >= mappedBuffer.limit()) {
+            // fault
+            /*
+             * mapByteOffset is bounded by 0 and file size +/- size of the map,
+             * and starts as close to <code>fileIndex -
+             * MAP_TARGET_LEFT_PADDING_BYTES</code> as it can while also not
+             * being smaller than it needs to be.
+             */
+            mapByteOffset = Math.max(0, fileIndex * bytesPerChar - MAP_TARGET_LEFT_PADDING_BYTES);
+            mapByteOffset = Math.min(mapByteOffset, fileLength * bytesPerChar - MAP_MAX_BYTES);
+            updateMemoryMappedBuffer();
+        }
+
+        // CharsetDecoder always decodes up to the end of the ByteBuffer, so we
+        // create a new ByteBuffer with only the bytes we're interested in.
+        mappedBuffer.position((int) (fileIndex * bytesPerChar - mapByteOffset));
+        mappedBuffer.get(tempBuf.array());
+        tempBuf.position(0); // decoder starts at this position
 
         try {
-            in = new FileInputStream(file);
-            c = in.getChannel();
-            // TODO: Confirm the READ_ONLY works.  I recall it not working.
-            // The buffers seem to always say that the buffer is writeable.
-            bb = c.map(FileChannel.MapMode.READ_ONLY, 0, c.size()).
-                asReadOnlyBuffer();
+            CharBuffer cbuf = decoder.decode(tempBuf);
+            return cbuf.get();
+        } catch (CharacterCodingException e) {
+            logger.warning("unable to get character at index=" + index + " (fileIndex=" + fileIndex + "): " + e);
+            // U+FFFD REPLACEMENT CHARACTER --
+            // "used to replace an incoming character whose value is unknown or unrepresentable in Unicode"
+            return (char) 0xfffd;
         }
-
-        finally {
-            if (c != null && c.isOpen()) {
-                c.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-        }
-
-        return bb;
-    }
-
-    private void deleteFile(File fileToDelete) {
-        deleteFile(fileToDelete, null);        
-    }
-
-    private void deleteFile(File fileToDelete, final Exception e) {
-        if (e != null) {
-            // Log why the delete to help with debug of java.io.FileNotFoundException:
-            // ....tt53http.ris.UTF-16BE.
-            logger.severe("Deleting " + fileToDelete + " because of "
-                + e.toString());
-        }
-        if (fileToDelete != null && fileToDelete.exists()) {
-            FileUtils.deleteSoonerOrLater(fileToDelete);
-        }
-    }
-
-    public void close()
-    {
-        this.content = null;
-        deleteFile(this.decodedFile);
-        // clear decodedFile -- so that double-close (as in 
-        // finalize()) won't delete a later instance with same name
-        // see bug [ 1218961 ] "failed get of replay" in ExtractorHTML... usu: UTF-16BE
-        this.decodedFile = null;
-    }
-
-    protected void finalize() throws Throwable
-    {
-        super.finalize();
-        // Maybe TODO: eliminate close here, requiring explicit close instead
-        close();
-    }
-
-    public int length()
-    {
-        return this.content.limit();
-    }
-
-    public char charAt(int index)
-    {
-        return this.content.get(index);
     }
 
     public CharSequence subSequence(int start, int end) {
         return new CharSubSequence(this, start, end);
     }
-    
-    public String toString() {
-        StringBuffer sb = new StringBuffer(length());
-        // could use StringBuffer.append(CharSequence) if willing to do 1.5 & up
-        for (int i = 0;i<length();i++) {
-            sb.append(charAt(i)); 
+
+    private void deleteFile(File fileToDelete) {
+        deleteFile(fileToDelete, null);
+    }
+
+    private void deleteFile(File fileToDelete, final Exception e) {
+        if (e != null) {
+            // Log why the delete to help with debug of
+            // java.io.FileNotFoundException:
+            // ....tt53http.ris.UTF-16BE.
+            logger.severe("Deleting " + fileToDelete + " because of "
+                    + e.toString());
         }
+        if (fileToDelete != null && fileToDelete.exists()) {
+            logger.info("deleting file: " + fileToDelete);
+            fileToDelete.delete();
+        }
+    }
+
+    public void close() throws IOException {
+        logger.info("closing");
+
+        if (this.backingFileChannel != null && this.backingFileChannel.isOpen()) {
+            this.backingFileChannel.close();
+        }
+        if (backingFileIn != null) {
+            backingFileIn.close();
+        }
+
+        deleteFile(this.decodedFile);
+
+        // clear decodedFile -- so that double-close (as in finalize()) won't
+        // delete a later instance with same name see bug [ 1218961 ]
+        // "failed get of replay" in ExtractorHTML... usu: UTF-16BE
+        this.decodedFile = null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#finalize()
+     */
+    protected void finalize() throws Throwable {
+        super.finalize();
+        logger.info("finalizing");
+        close();
+    }
+
+    /**
+     * Convenience method for getting a substring.
+     * 
+     * @deprecated please use subSequence() and then toString() directly
+     */
+    public String substring(int offset, int len) {
+        return subSequence(offset, offset + len).toString();
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder(this.length());
+        sb.append(this);
         return sb.toString();
+    }
+
+    public int length() {
+        return length;
     }
 }

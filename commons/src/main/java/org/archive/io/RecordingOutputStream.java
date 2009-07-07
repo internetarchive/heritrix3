@@ -1,27 +1,22 @@
-/* ReplayableOutputStream
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Sep 23, 2003
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2003 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.io;
 
 import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
@@ -513,9 +508,7 @@ public class RecordingOutputStream extends OutputStream {
     throws IOException {
         return getReplayCharSequence(characterEncoding, this.contentBeginMark);
     }
-    
-    private static final String canonicalLatin1 = Charset.forName("iso8859-1").name();
-    
+
     /**
      * @param characterEncoding Encoding of recorded stream.
      * @return A ReplayCharSequence  Will return null if an IOException.  Call
@@ -524,39 +517,27 @@ public class RecordingOutputStream extends OutputStream {
      */
     public ReplayCharSequence getReplayCharSequence(String characterEncoding, 
             long startOffset) throws IOException {
-        if (characterEncoding == null) {
+        if (characterEncoding == null)
             characterEncoding = Charset.defaultCharset().name();
-        }
-        // TODO: handled transfer-encoding: chunked content-bodies properly
-        if (canonicalLatin1.equals(Charset.forName(characterEncoding).name())) {
-            return new Latin1ByteReplayCharSequence(
+        logger.fine("this.size=" + this.size + " this.buffer.length=" + this.buffer.length);
+        if (this.size <= this.buffer.length) {
+            logger.fine("using InMemoryReplayCharSequence");
+            // raw data is all in memory; do in memory
+            return new InMemoryReplayCharSequence(
                     this.buffer, 
                     this.size, 
                     startOffset,
-                    this.backingFilename);
-        } else {
-            // multibyte 
-            if(this.size <= this.buffer.length) {
-                // raw data is all in memory; do in memory
-                return new GenericReplayCharSequence(
-                        this.buffer, 
-                        this.size, 
-                        startOffset,
-                        characterEncoding);
-                
-            } else {
-                // raw data overflows to disk; use temp file
-                ReplayInputStream ris = getReplayInputStream(startOffset);
-                ReplayCharSequence rcs = new GenericReplayCharSequence(
-                        ris, 
-                        this.backingFilename,
-                        characterEncoding);
-                ris.close(); 
-                return rcs;
-            }
-            
+                    characterEncoding);
         }
-        
+        else {
+            logger.fine("using GenericReplayCharSequence");
+            // raw data overflows to disk; use temp file
+            ReplayInputStream ris = getReplayInputStream(startOffset);
+            return new GenericReplayCharSequence(
+                    ris,
+                    this.backingFilename,
+                    characterEncoding);
+        }
     }
 
     public long getResponseContentLength() {
@@ -624,3 +605,4 @@ public class RecordingOutputStream extends OutputStream {
         return maxLength - position; 
     }
 }
+

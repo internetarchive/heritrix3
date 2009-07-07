@@ -20,7 +20,9 @@
 package org.archive.io;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.Date;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import org.archive.util.FileUtils;
@@ -210,14 +212,24 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
     }
     
     public void testReplayCharSequenceByteToStringOverflow() throws IOException {
-        String fileContent = "Some file content. ";
+        String fileContent = "Some file content. "; // ascii
         byte [] buffer = fileContent.getBytes();
         RecordingOutputStream ros = writeTestStream(
                 buffer,1,
-                "testReplayCharSequenceByteToString.txt",1);
+                "testReplayCharSequenceByteToStringOverflow.txt",1);
         String expectedContent = fileContent+fileContent;
-        ReplayCharSequence rcs = ros.getReplayCharSequence();
-        String result = rcs.toString();
+        
+        // The string is ascii which is a subset of both these encodings. Use
+        // both encodings because they exercise different code paths. UTF-8 is
+        // decoded to UTF-16 while windows-1252 is memory mapped directly. See
+        // GenericReplayCharSequence
+        ReplayCharSequence rcsUtf8 = ros.getReplayCharSequence("UTF-8");
+        ReplayCharSequence rcs1252 = ros.getReplayCharSequence("windows-1252");
+
+        String result = rcsUtf8.toString();
+        assertEquals("Strings don't match", expectedContent, result);
+
+        result = rcs1252.toString();
         assertEquals("Strings don't match", expectedContent, result);
     }
     
@@ -241,6 +253,67 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
             rcs.close();
             System.gc();
             System.runFinalization();
+        }
+    }
+    
+    public void xestHugeReplayCharSequence() throws IOException {
+        String fileContent = "01234567890123456789";
+        String characterEncoding = "ascii";
+        byte[] buffer = fileContent.getBytes(characterEncoding);
+
+        long reps = (long) Integer.MAX_VALUE / (long) buffer.length + 1000000l;
+
+        logger.info("writing " + (reps * buffer.length)
+                + " bytes to testHugeReplayCharSequence.txt");
+        RecordingOutputStream ros = writeTestStream(buffer, 0,
+                "testHugeReplayCharSequence.txt", reps);
+        ReplayCharSequence rcs = ros.getReplayCharSequence(characterEncoding);
+
+        if (reps * fileContent.length() > (long) Integer.MAX_VALUE) {
+            assertTrue("ReplayCharSequence has wrong length (length()="
+                    + rcs.length() + ") (should be " + Integer.MAX_VALUE + ")",
+                    rcs.length() == Integer.MAX_VALUE);
+        } else {
+            assertEquals("ReplayCharSequence has wrong length (length()="
+                    + rcs.length() + ") (should be "
+                    + (reps * fileContent.length()) + ")", (long) rcs.length(),
+                    reps * (long) fileContent.length());
+        }
+
+        // boundary cases or something
+        for (int index : new int[] { 0, rcs.length() / 4, rcs.length() / 2,
+                rcs.length() - 1, rcs.length() / 4 }) {
+            // logger.info("testing char at index=" +
+            // NumberFormat.getInstance().format(index));
+            assertEquals("Characters don't match (index="
+                    + NumberFormat.getInstance().format(index) + ")",
+                    fileContent.charAt(index % fileContent.length()), rcs
+                            .charAt(index));
+        }
+
+        // check that out of bounds indices throw exception
+        for (int n : new int[] { -1, Integer.MIN_VALUE, rcs.length() + 1 }) {
+            try {
+                String message = "rcs.charAt(" + n + ")=" + rcs.charAt(n)
+                        + " ?!? -- expected IndexOutOfBoundsException";
+                logger.severe(message);
+                fail(message);
+            } catch (IndexOutOfBoundsException e) {
+                logger.info("got expected exception: " + e);
+            }
+        }
+
+        // check some characters at random spots & kinda stress test the
+        // system's memory mapping facility
+        Random rand = new Random(0); // seed so we get the same ones each time
+        for (int i = 0; i < 5000; i++) {
+            int index = rand.nextInt(rcs.length());
+            // logger.info(i + ". testing char at index=" +
+            // NumberFormat.getInstance().format(index));
+            assertEquals("Characters don't match (index="
+                    + NumberFormat.getInstance().format(index) + ")",
+                    fileContent.charAt(index % fileContent.length()), rcs
+                            .charAt(index));
         }
     }
     
@@ -290,13 +363,14 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
      * @throws IOException
      */
     private RecordingOutputStream writeTestStream(byte[] content, 
-            int memReps, String baseName, int fileReps) throws IOException {
+            int memReps, String baseName, long fileReps) throws IOException {
         String backingFilename = FileUtils.maybeRelative(getTmpDir(),baseName).getAbsolutePath();
         RecordingOutputStream ros = new RecordingOutputStream(
                 content.length * memReps,
                 backingFilename);
         ros.open();
-        for(int i = 0; i < (memReps+fileReps); i++) {
+        ros.markContentBegin();
+        for(long i = 0; i < (memReps+fileReps); i++) {
             // fill buffer (repeat MULTIPLIER times) and 
             // overflow to disk (also MULTIPLIER times)
             ros.write(content);
