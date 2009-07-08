@@ -289,7 +289,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
             String fn = f.getName();
             if (fn.endsWith(".open")) {
                 throw new IllegalStateException(
-                        "Arc file not closed at end of crawl: " + f.getName());
+                        "Arc file not closed at end of crawl: " + f.getAbsolutePath());
             }
         }
     }
