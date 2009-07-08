@@ -1,26 +1,20 @@
-/* PublicSuffixesTest.java
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id: BloomFilter32bitSplit.java 5197 2007-06-06 01:31:46Z gojomo $
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Jun 13, 2007
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2007 Internet Archive
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package org.archive.net;
@@ -68,13 +62,13 @@ public class PublicSuffixesTest extends TestCase {
     public void testIPV4() {
         assertEquals("unexpected reduction", 
                 "1.2.3.4",
-                PublicSuffixes.reduceSurtToTopmostAssigned("1.2.3.4"));
+                PublicSuffixes.reduceSurtToAssignmentLevel("1.2.3.4"));
     }
     
     public void testIPV6() {
         assertEquals("unexpected reduction", 
                 "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
-                PublicSuffixes.reduceSurtToTopmostAssigned(
+                PublicSuffixes.reduceSurtToAssignmentLevel(
                         "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]"));
     }
     
