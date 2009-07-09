@@ -96,9 +96,9 @@ public class ConfigPath implements Serializable {
     } 
     
     public File getFile() {
-        return (base == null)
-                        ? new File(path) 
-                        : new File(base.getFile(), path);
+        return (base == null || path.startsWith("/"))
+                    ? new File(path) 
+                    : new File(base.getFile(), path);
     }
     
     public ConfigPath merge(ConfigPath previous) {
