@@ -21,19 +21,25 @@ benefit of future researchers and generations.
 
 The most up-to-date information about Heritrix is on the project wiki:
 
- http://webteam.archive.org/confluence/display/Heritrix/2.0.0
+ http://webarchive.jira.com/wiki/display/Heritrix
  
 3.0 Getting Started Tips
 
 The shell script 'heritrix' in the 'bin' directory is usually 
 sufficient to launch Heritrix. You must use the '-a' launch flag to set 
-an authentication password on the web user interface. You must use the 
+an authentication password on the web user interface. You may use the 
 '-b' launch flag if you want the web user interface to accept non-local 
 connections. 
 
-The bundled job profiles are good starting points for designing your 
-own crawl configurations. However, they each require several changes 
-before they will work for crawling:
+Upon launch, information for contacting the operator UI via a web 
+browser will be displayed to the console. (Note: this will be an 
+'https' URL, and will use a generated-when-first-needed self-signed 
+certificate. You will likely need to tell your web browser to accept
+this certificate after encountering a warning page.)
+
+The bundled job profile is a good starting point for designing your 
+own crawl configurations. However, a bundled profile requires several 
+changes before it will work for crawling:
 
 - You must configure an 'operator-contact-url' on the job's global 
   settings sheet. This URL will be added to the 'User-Agent' included 
@@ -45,22 +51,17 @@ before they will work for crawling:
 
 4.0 License
 
-Heritrix is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or any
-later version.
-                                                                                
-Heritrix is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser Public License for more details.
-                                                                                
-You should have received a copy of the GNU Lesser Public License
-along with Heritrix (See LICENSE.txt); if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307  USA
-                                                                                
-Heritrix includes a variety of other open source libraries under the
-terms of their respective licenses. Please consult those individual
-licenses to learn whether the libraries are usable and redistributable 
-in contexts other than the Heritrix distribution.
+Heritrix is free software based on the contributions and sponsorship
+of many individuals and organizations, as stewarded and licensed by 
+the Internet Archive. 
+
+Starting with Heritrix version 3, and except where otherwise noted
+with respect to individual files or third-party libraries, Heritrix 
+is licensed under the terms of the Apache License, Version 2.0:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+                                                  
+Heritrix includes a variety of other free and open source libraries 
+under the terms of their respective licenses. Please consult those 
+individual licenses to learn whether the libraries are usable and 
+redistributable in contexts other than the Heritrix distribution.
