@@ -397,26 +397,21 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
         // logging/alerting
         alertThreadGroup = new AlertThreadGroup(getShortName());
         alertThreadGroup.addLogger(getJobLogger());
-        Thread launcher = new Thread(alertThreadGroup, getShortName()) {
+        Thread launcher = new Thread(alertThreadGroup, getShortName()+" launchthread") {
             public void run() {
                 startContext();
+                getCrawlController().requestCrawlStart();
             }
         };
+        getJobLogger().log(Level.INFO,"Job launched");
+        scanJobLog();
         launcher.start();
-        
+        // look busy (and give startContext/crawlStart a chance)
         try {
-            launcher.join();
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
             // do nothing
         }
-        
-        if(ac==null) {
-            // unlaunchable
-            return; 
-        }
-        getCrawlController().requestCrawlStart();
-        getJobLogger().log(Level.INFO,"Job launched");
-        scanJobLog();
     }
     
     /**
