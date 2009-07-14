@@ -62,11 +62,6 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         Logger.getLogger(ARCWriterProcessor.class.getName());
 
     /**
-     * Default path list.
-     */
-    private static final String [] DEFAULT_PATH = {"arcs"};
-
-    /**
      * Where to save files. Supply absolute or relative path. If relative, files
      * will be written relative to the order.disk-path setting. If more than one
      * path specified, we'll round-robin dropping files to each. This setting is
@@ -93,10 +88,6 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
      */
     public ARCWriterProcessor() {
     }
-    
-    protected String [] getDefaultPath() {
-    	return DEFAULT_PATH;
-	}
 
     @Override
     protected void setupPool(AtomicInteger serialNo) {

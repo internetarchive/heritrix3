@@ -402,7 +402,9 @@ implements Lifecycle {
         List<String> list = getStorePaths();
         ArrayList<File> results = new ArrayList<File>();
         for (String path: list) {
-            File f = new File(getDirectory().getFile(), path);
+            File f = new File(
+                    path.startsWith("/") ? null : getDirectory().getFile(), 
+                    path);
             if (!f.exists()) {
                 try {
                     f.mkdirs();
