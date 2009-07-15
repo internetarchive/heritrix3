@@ -1,41 +1,33 @@
-/* HTTPContentDigest
- * 
- * $Id$
- * 
- * Created on 5.1.2005
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * Copyright (C) 2005 Kristinn Sigur?sson
- * 
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- * 
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- * 
- * Heritrix is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.extractor;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;
-import org.archive.util.TextUtils;
+import org.archive.util.ArchiveUtils;
 
 /**
  * A processor for calculating custum HTTP content digests in place of the 
@@ -128,64 +120,42 @@ public class HTTPContentDigest extends Processor {
         
         // Get a replay of the document character seq.
         ReplayCharSequence cs = null;
-        
         try {
            cs = curi.getRecorder().getReplayCharSequence();
+           // Create a MessageDigest 
+           MessageDigest digest = null;
+           try {
+               digest = MessageDigest.getInstance(SHA1);
+           } catch (NoSuchAlgorithmException e1) {
+               e1.printStackTrace();
+               return;
+           }
+
+           digest.reset();
+
+           String s = null;
+
+           if (regexpr != null) {
+               s = cs.toString();
+           } else {
+               // Process the document
+               Matcher m = regexpr.matcher(cs);
+               s = m.replaceAll(" ");
+           }
+           digest.update(s.getBytes());
+           // Get the new digest value
+           byte[] newDigestValue = digest.digest();
+           // Save new digest value
+           curi.setContentDigest(SHA1, newDigestValue);
+           
         } catch (Exception e) {
             curi.getNonFatalFailures().add(e);
             logger.warning("Failed get of replay char sequence " +
                 curi.toString() + " " + e.getMessage() + " " +
                 Thread.currentThread().getName());
             return; // Can't proceed if this happens.
-        }
-        
-        // Create a MessageDigest 
-        MessageDigest digest = null;
-        
-        // We have a ReplayCharSequence open.  Wrap all in finally so we
-        // for sure close it before we leave.
-        try {
-            try {
-                digest = MessageDigest.getInstance(SHA1);
-            } catch (NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
-                return;
-            }
-
-            digest.reset();
-
-            String s = null;
-
-            if (regexpr != null) {
-                s = cs.toString();
-            } else {
-                // Process the document
-                Matcher m = regexpr.matcher(cs);
-                s = m.replaceAll(" ");
-            }
-            digest.update(s.getBytes());
-
-            // Get the new digest value
-            byte[] newDigestValue = digest.digest();
-
-            // Log if needed.
-//            if (logger.isLoggable(Level.FINEST)) {
-//                logger.finest("Recalculated content digest for "
-//                        + curi.toString() + " old: "
-//                        + Base32.encode((byte[]) curi.getContentDigest())
-//                        + ", new: " + Base32.encode(newDigestValue));
-//            }
-            // Save new digest value
-            curi.setContentDigest(SHA1, newDigestValue);
         } finally {
-            if (cs != null) {
-                try {
-                    cs.close();
-                } catch (IOException ioe) {
-                    logger.warning(TextUtils.exceptionToString(
-                            "Failed close of ReplayCharSequence.", ioe));
-                }
-            }
+            ArchiveUtils.closeQuietly(cs);
         }
     }
 }

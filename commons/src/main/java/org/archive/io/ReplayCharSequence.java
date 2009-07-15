@@ -22,6 +22,7 @@
  */
 package org.archive.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 
@@ -34,7 +35,7 @@ import java.io.IOException;
  * @author stack
  * @version $Revision$, $Date$
  */
-public interface ReplayCharSequence extends CharSequence {
+public interface ReplayCharSequence extends CharSequence, Closeable {
 
     /**
      * Call this method when done so implementation has chance to clean up

@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.ProcessorURI;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 
 /**
@@ -93,29 +94,15 @@ public class ExtractorXML extends ContentExtractor {
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
-        } catch (IOException e) {
-            logger.severe("Failed getting ReplayCharSequence: " + e.getMessage());
-        }
-        if (cs == null) {
-            logger.severe("Failed getting ReplayCharSequence: " +
-                curi.toString());
-            return false;
-        }
-        try {
             this.linksExtracted.addAndGet(processXml(this, curi, cs));
-
             // Set flag to indicate that link extraction is completed.
             return true;
+        } catch (IOException e) {
+            logger.severe("Failed getting ReplayCharSequence: " + e.getMessage());
         } finally {
-            if (cs != null) {
-                try {
-                    cs.close();
-                } catch (IOException ioe) {
-                    logger.warning(TextUtils.exceptionToString(
-                            "Failed close of ReplayCharSequence.", ioe));
-                }
-            }
+            ArchiveUtils.closeQuietly(cs);
         }
+        return false; 
     }
 
     public static long processXml(Extractor ext, 

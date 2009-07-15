@@ -64,6 +64,7 @@ import java.util.logging.Logger;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
@@ -323,16 +324,14 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             final ANVLRecord namedFields) 
     throws IOException {
         final URI uid = qualifyRecordID(baseid, TYPE, REQUEST);
-        ReplayInputStream ris =
-            curi.getRecorder().getRecordedOutput().getReplayInputStream();
+        ReplayInputStream 
+            ris = curi.getRecorder().getRecordedOutput().getReplayInputStream();
         try {
             w.writeRequestRecord(curi.toString(), timestamp, mimetype, uid,
                 namedFields, ris,
                 curi.getRecorder().getRecordedOutput().getSize());
         } finally {
-            if (ris != null) {
-                ris.close();
-            }
+            IOUtils.closeQuietly(ris);
         }
         return uid;
     }
@@ -349,9 +348,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
                 namedFields, ris,
                 curi.getRecorder().getRecordedInput().getSize());
         } finally {
-            if (ris != null) {
-                ris.close();
-            }
+            IOUtils.closeQuietly(ris);
         }
         return baseid;
     }
@@ -361,16 +358,13 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             final URI baseid, final ProcessorURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
-        ReplayInputStream ris =
-            curi.getRecorder().getRecordedInput().getReplayInputStream();
+        ReplayInputStream ris = curi.getRecorder().getRecordedInput().getReplayInputStream();
         try {
             w.writeResourceRecord(curi.toString(), timestamp, mimetype, baseid,
                 namedFields, ris,
                 curi.getRecorder().getRecordedInput().getSize());
         } finally {
-            if (ris != null) {
-                ris.close();
-            }
+            IOUtils.closeQuietly(ris);
         }
         return baseid;
     }
@@ -395,9 +389,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             w.writeRevisitRecord(curi.toString(), timestamp, mimetype, baseid,
                 namedFields, ris, revisedLength);
         } finally {
-            if (ris != null) {
-                ris.close();
-            }
+            IOUtils.closeQuietly(ris);
         }
         curi.getAnnotations().add("warcRevisit:digest");
         return baseid;
@@ -427,9 +419,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             w.writeRevisitRecord(curi.toString(), timestamp, null, baseid,
                 namedFields, ris, 0);
         } finally {
-            if (ris !=  null) {
-                ris.close();
-            }
+            IOUtils.closeQuietly(ris);
         }
         curi.getAnnotations().add("warcRevisit:notModified");
         return baseid;

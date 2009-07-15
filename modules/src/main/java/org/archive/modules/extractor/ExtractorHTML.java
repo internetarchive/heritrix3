@@ -34,6 +34,7 @@ import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -600,41 +601,21 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     
     public boolean innerExtract(ProcessorURI curi) {
         this.numberOfCURIsHandled++;
-
         ReplayCharSequence cs = null;
-        
         try {
            cs = curi.getRecorder().getReplayCharSequence();
+           // Extract all links from the charsequence
+           extract(curi, cs);
+           // Set flag to indicate that link extraction is completed.
+           return true;
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
-            //addLocalizedError(e,
-            //    "Failed get of replay char sequence " + curi.toString() +
-            //        " " + e.getMessage());
             logger.log(Level.SEVERE,"Failed get of replay char sequence in " +
                 Thread.currentThread().getName(), e);
-        }
-        
-        if (cs == null) {
-            return false;
-        }
-
-        // We have a ReplayCharSequence open.  Wrap all in finally so we
-        // for sure close it before we leave.
-        try {
-            // Extract all links from the charsequence
-            extract(curi, cs);
-            // Set flag to indicate that link extraction is completed.
-            return true;
         } finally {
-            if (cs != null) {
-                try {
-                    cs.close();
-                } catch (IOException ioe) {
-                    logger.warning(TextUtils.exceptionToString(
-                        "Failed close of ReplayCharSequence.", ioe));
-                }
-            }
+            ArchiveUtils.closeQuietly(cs);
         }
+        return false;
     }
 
     /**

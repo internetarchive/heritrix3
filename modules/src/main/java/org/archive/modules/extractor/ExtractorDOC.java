@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.io.IOUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.SeekReader;
 import org.archive.io.SeekReaderCharSequence;
@@ -96,11 +97,7 @@ public class ExtractorDOC extends ContentExtractor {
             curi.getNonFatalFailures().add(e);
             return false;
         } finally {
-            try {
-                documentStream.close();
-            } catch (IOException ignored) {
-
-            }
+            IOUtils.closeQuietly(documentStream);
         }
 
         CharSequence cs = new SeekReaderCharSequence(docReader, 0);

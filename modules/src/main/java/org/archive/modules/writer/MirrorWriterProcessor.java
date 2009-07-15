@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 
 import javax.management.AttributeNotFoundException;
 
+import org.apache.commons.io.IOUtils;
 import org.archive.io.RecordingInputStream;
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.Processor;
@@ -725,14 +726,17 @@ public class MirrorWriterProcessor extends Processor {
     */
     private void writeToPath(RecordingInputStream recis, File dest)
         throws IOException {
-        ReplayInputStream replayis = recis.getContentReplayInputStream();
         File tf = new File (dest.getPath() + "N");
-        FileOutputStream fos = new FileOutputStream(tf);
+        ReplayInputStream replayis = null;
+        FileOutputStream fos = null;
         try {
+            replayis = recis.getContentReplayInputStream();
+            fos = new FileOutputStream(tf);
+
             replayis.readFullyTo(fos);
         } finally {
-            fos.close();
-            replayis.close();
+            IOUtils.closeQuietly(replayis);
+            IOUtils.closeQuietly(fos);
         }
         if (!tf.renameTo(dest)) {
             throw new IOException("Can not rename " + tf.getAbsolutePath()

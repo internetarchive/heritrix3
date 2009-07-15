@@ -139,21 +139,9 @@ public class ExtractorJS extends ContentExtractor {
     @Override
     protected boolean innerExtract(ProcessorURI curi) {
         this.numberOfCURIsHandled++;
-
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
-        } catch (IOException e) {
-            curi.getNonFatalFailures().add(e);
-        }
-
-        if (cs == null) {
-            LOGGER.warning("Failed getting ReplayCharSequence: " +
-                curi.toString());
-            return false;
-        }
-
-        try {
             try {
                 numberOfLinksExtracted += considerStrings(this, curi, cs, 
                         true);
@@ -162,17 +150,12 @@ public class ExtractorJS extends ContentExtractor {
             }
             // Set flag to indicate that link extraction is completed.
             return true;
+        } catch (IOException e) {
+            curi.getNonFatalFailures().add(e);
         } finally {
-            // Done w/ the ReplayCharSequence. Close it.
-            if (cs != null) {
-                try {
-                    cs.close();
-                } catch (IOException ioe) {
-                    LOGGER.warning(TextUtils.exceptionToString(
-                        "Failed close of ReplayCharSequence.", ioe));
-                }
-            }
+            ArchiveUtils.closeQuietly(cs);
         }
+        return false;
     }
 
     public static long considerStrings(Extractor ext, 

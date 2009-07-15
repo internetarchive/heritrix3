@@ -20,6 +20,7 @@
 package org.archive.util;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -894,6 +895,16 @@ public class ArchiveUtils {
      */
     public static boolean isTld(String dom) {
         return TLDS.contains(dom.toUpperCase());
+    }
+    
+    public static void closeQuietly(Closeable input) {
+        try {
+            if (input != null) {
+                input.close();
+            }
+        } catch (IOException ioe) {
+            // ignore
+        }
     }
 }
 
