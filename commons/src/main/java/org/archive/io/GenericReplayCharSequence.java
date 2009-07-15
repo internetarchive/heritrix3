@@ -148,8 +148,14 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         super();
         logger.info("new GenericReplayCharSequence() characterEncoding="
                 + charsetName + " backingFilename=" + backingFilename);
-        
-        Charset charset = Charset.forName(charsetName);
+        Charset charset;
+        try {
+            charset = Charset.forName(charsetName);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING,"charset problem: "+charsetName,e);
+            // TODO: better detection or default
+            charset = Charset.forName("UTF-8");
+        }
         if (charset.newEncoder().maxBytesPerChar() == 1.0) {
             logger.info("charset=" + charsetName
                     + ": supports random access, using backing file directly");

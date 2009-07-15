@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class InMemoryReplayCharSequence implements ReplayCharSequence {
@@ -84,7 +85,15 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
         bb.position((int) responseBodyStart);
         // Set the end-of-buffer to be end-of-content.
         bb.limit((int) size);
-        return (Charset.forName(encoding)).decode(bb).asReadOnlyBuffer();
+        Charset charset;
+        try {
+            charset = Charset.forName(encoding);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING,"charset problem: "+encoding,e);
+            // TODO: better detection or default
+            charset = Charset.forName("UTF-8");
+        }
+        return charset.decode(bb).asReadOnlyBuffer();
     }
 
     public void close() {
