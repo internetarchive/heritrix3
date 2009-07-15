@@ -517,8 +517,9 @@ public class RecordingOutputStream extends OutputStream {
      */
     public ReplayCharSequence getReplayCharSequence(String characterEncoding, 
             long startOffset) throws IOException {
-        if (characterEncoding == null)
-            characterEncoding = Charset.defaultCharset().name();
+        if (characterEncoding == null) {
+            characterEncoding = "UTF-8";
+        }
         logger.fine("this.size=" + this.size + " this.buffer.length=" + this.buffer.length);
         if (this.size <= this.buffer.length) {
             logger.fine("using InMemoryReplayCharSequence");
@@ -533,10 +534,12 @@ public class RecordingOutputStream extends OutputStream {
             logger.fine("using GenericReplayCharSequence");
             // raw data overflows to disk; use temp file
             ReplayInputStream ris = getReplayInputStream(startOffset);
-            return new GenericReplayCharSequence(
+            ReplayCharSequence rcs =  new GenericReplayCharSequence(
                     ris,
                     this.backingFilename,
                     characterEncoding);
+            ris.close();
+            return rcs;
         }
     }
 
