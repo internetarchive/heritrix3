@@ -37,6 +37,7 @@ import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * A processor which runs a JSR-223 script on the CrawlURI. 
@@ -58,7 +59,8 @@ import org.springframework.context.ApplicationContext;
  * @author gojomo
  * @version $Date$, $Revision$
  */
-public class ScriptedProcessor extends Processor implements InitializingBean {
+public class ScriptedProcessor extends Processor 
+implements ApplicationContextAware, InitializingBean {
 
     private static final long serialVersionUID = 3L;
 
