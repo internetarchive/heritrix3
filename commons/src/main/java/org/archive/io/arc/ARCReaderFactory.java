@@ -256,15 +256,16 @@ implements ARCConstants {
         // First check length. ARC_GZIP_EXTRA_FIELD includes length
         // so subtract two and start compare to ARC_GZIP_EXTRA_FIELD
         // at +2.
-        if (fextra != null &&
-                ARC_GZIP_EXTRA_FIELD.length - 2 == fextra.length) {
-            compressedARCFile = true;
-            for (int i = 0; i < fextra.length; i++) {
-                if (fextra[i] != ARC_GZIP_EXTRA_FIELD[i + 2]) {
-                    compressedARCFile = false;
-                    break;
-                }
-            }
+        // some Alexa ARC files gzip extra fields have changed slightly 
+        // after the first two bytes, so we'll just look for the 'LX' 
+        // extension for valid IA ARC files.
+        if (fextra != null) {
+        	if (fextra.length >= ARC_GZIP_EXTRA_FIELD.length - 2) {
+        		if (fextra[0] == ARC_GZIP_EXTRA_FIELD[2] && 
+        				fextra[1] == ARC_GZIP_EXTRA_FIELD[3]) {
+        			compressedARCFile = true;
+        		}
+        	}
         }
         return compressedARCFile;
     }

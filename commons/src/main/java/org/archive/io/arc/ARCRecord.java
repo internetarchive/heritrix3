@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.Header;
@@ -91,6 +92,42 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
      */
     private final List<String> headerFieldNameKeys =
         Arrays.asList(this.headerFieldNameKeysArray);
+
+    /**
+     * Http header bytes read while trying to read http header
+     */
+    public long httpHeaderBytesRead = -1;
+    
+    /**
+     * record length from metadata line
+     */
+    public long recordDeclaredLength;
+    
+    /**
+     * null if source was not compressed
+     */
+    public long compressedBytes; 
+    
+    /**
+     * actual payload data (not including trailing newline), 
+     * should match record-declared-length 
+     */
+    public long uncompressedBytes;
+
+    /**
+     * content-length header, iff HTTP and present, null otherwise 
+     */
+    public long httpPayloadDeclaredLength;
+
+    /**
+     * actual http payload length, should match http-payload-declared-length 
+     */
+    public long httpPayloadActualLength;
+    
+    /**
+     * errors encountered reading record
+     */
+    public List<ArcRecordErrors> errors = new ArrayList<ArcRecordErrors>();
     
     /**
      * Constructor.
@@ -500,13 +537,19 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
     
     /**
          * Read http header if present. Technique borrowed from HttpClient HttpParse
-         * class.
+         * class. set errors when found.
          * 
          * @return ByteArrayInputStream with the http header in it or null if no
          *         http header.
          * @throws IOException
          */
     private InputStream readHttpHeader() throws IOException {
+    	
+    	// this can be helpful when simply iterating over records, 
+    	// looking for problems.
+        Logger logger = Logger.getLogger(this.getClass().getName());
+    	ArchiveRecordHeader h = this.getHeader();
+    	
         // If judged a record that doesn't have an http header, return
         // immediately.
         String url = getHeader().getUrl();
@@ -536,10 +579,16 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
                 // exception.
                 throw new DeletedARCRecordIOException(statusLine);
             } else {
-                throw new RecoverableIOException("Failed parse of http status line.");
+            	this.errors.add(ArcRecordErrors.HTTP_STATUS_LINE_INVALID);
             }
         }
-        this.httpStatus = new StatusLine(statusLine);
+
+        try {
+        	this.httpStatus = new StatusLine(statusLine);
+        } catch(IOException e) {
+        	logger.warning(e.getMessage() + " at offset: " + h.getOffset());
+        	this.errors.add(ArcRecordErrors.HTTP_STATUS_LINE_EXCEPTION);
+        }
         
         // Save off all bytes read.  Keep them as bytes rather than
         // convert to strings so we don't have to worry about encodings
@@ -555,8 +604,18 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
             lineBytes = HttpParser.readRawLine(getIn());
             eolCharCount = getEolCharsCount(lineBytes);
             if (eolCharCount <= 0) {
-                throw new IOException("Failed reading http headers: " +
-                    ((lineBytes != null)? new String(lineBytes): null));
+            	if (getIn().available() == 0) {
+            		httpHeaderBytesRead += statusBytes.length;
+                	logger.warning("HTTP header truncated at offset: " + h.getOffset());
+            		this.errors.add(ArcRecordErrors.HTTP_HEADER_TRUNCATED);
+            		this.setEor(true);
+            		break;
+            	} else {
+            		throw new IOException("Failed reading http headers: " +
+            				((lineBytes != null)? new String(lineBytes): null));
+            	}
+            } else {
+            	httpHeaderBytesRead += lineBytes.length;
             }
             // Save the bytes read.
             baos.write(lineBytes);
@@ -633,7 +692,21 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
     public Header [] getHttpHeaders() {
         return this.httpHeaders;
     }
-
+    
+    /**
+     * @return ArcRecordErrors encountered when reading 
+     */
+    public List<ArcRecordErrors> getErrors() {
+    	return this.errors;
+    }
+    
+    /**
+     * @return true if ARC record errors found 
+     */
+    public boolean hasErrors() {
+    	return !this.errors.isEmpty();
+    }
+    
     /**
      * @return Next character in this ARCRecord's content else -1 if at end of
      * this record.
