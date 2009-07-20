@@ -19,6 +19,7 @@
  
 package org.archive.crawler.spring;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,7 +30,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import org.apache.commons.collections.MapUtils;
 import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.spring.OverlayMapsSource;
 import org.archive.spring.Sheet;
@@ -62,7 +62,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     TreeMap<String,List<String>> sheetNamesBySurt = new TreeMap<String,List<String>>(); 
     
     /** all sheets by (bean)name*/
-    Map<String,Sheet> sheetsByName = MapUtils.EMPTY_MAP;
+    Map<String,Sheet> sheetsByName = new HashMap<String, Sheet>();
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
@@ -85,6 +85,23 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         return this.sheetsByName;
     }
 
+    /**
+     * All DecideRuledSheetAssociations, in Ordered order
+     *  
+     * @return set of DecideRuledSheetAssociation
+     */
+    public SortedSet<DecideRuledSheetAssociation> getRuleAssociations() {
+        return this.ruleAssociations;
+    }
+    
+    /**
+     * Sheet names, by the SURT prefix to which they should be applied.
+     * 
+     * @return map of Sheet names by their configured SURT
+     */
+    public TreeMap<String,List<String>> getSheetsNamesBySurt() {
+        return this.sheetNamesBySurt;
+    }
     /**
      * Collect all rule-based SheetAssociations. Typically autowired 
      * from the set of all DecideRuledSheetAssociation instances. 
