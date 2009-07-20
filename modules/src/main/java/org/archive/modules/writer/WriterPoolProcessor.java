@@ -68,9 +68,10 @@ implements Lifecycle {
         Logger.getLogger(WriterPoolProcessor.class.getName());
 
     /**
-     * Compress files when "writing to disk.
+     * Whether to gzip-compress files when writing to disk; 
+     * by default true, meaning do-compress. 
      */
-    boolean compress = false; 
+    boolean compress = true; 
     public boolean getCompress() {
         return compress;
     }
