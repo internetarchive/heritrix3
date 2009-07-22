@@ -63,6 +63,7 @@ public class ScriptResource extends JobRelatedResource {
     }
     String script = "";
     Exception ex = null;
+    int linesExecuted = 0; 
     String rawOutput = ""; 
     String htmlOutput = "";
     String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
@@ -95,6 +96,7 @@ public class ScriptResource extends JobRelatedResource {
         eng.put("scriptResource", this);
         try {
             eng.eval(script);
+            linesExecuted = script.split("\r?\n").length;
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
@@ -105,6 +107,7 @@ public class ScriptResource extends JobRelatedResource {
             htmlOut.flush();
             htmlOutput = htmlString.toString();
         }
+        //TODO: log script, results somewhere; job log INFO? 
         
         getResponse().setEntity(represent());
     }
@@ -129,7 +132,9 @@ public class ScriptResource extends JobRelatedResource {
                     +"'>"+cj.getShortName()+"</a></i></h1>");
 
         // output of previous script, if any
-
+        if(linesExecuted>0) {
+            pw.println("<span class='success'>"+linesExecuted+" lines executed</span>");
+        }
         if(ex!=null) {
             pw.println("<pre style='color:red; height:150px; overflow:auto'>");
             ex.printStackTrace(pw);
