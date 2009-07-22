@@ -107,7 +107,7 @@ implements ReadSource,
      * @return true if successful, false if add failed for any reason
      */
     @Override
-    public boolean addSeed(final ProcessorURI curi) {
+    public synchronized boolean addSeed(final ProcessorURI curi) {
         if(!(textSource instanceof WriteTarget)) {
             // TODO: do something else to log seed update
             logger.warning("nowhere to log added seed: "+curi);
