@@ -72,7 +72,9 @@ public class EngineResource extends Resource {
         String action = form.getFirstValue("action");
         if("rescan".equals(action)) {
             getEngine().findJobConfigs(); 
-        } 
+        } else if ("add".equals(action)) {
+            getEngine().considerAsJobDirectory(new File(form.getFirstValue("addpath")));
+        }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
     }
@@ -105,7 +107,7 @@ public class EngineResource extends Resource {
         jobs.addAll(engine.getJobConfigs().values());
          
         pw.println("<form method=\'POST\'><h2>Job Directories ("+jobs.size()+")");
-        pw.println("<input style='width:6em' type='submit' name='action' value='rescan'>");
+        pw.println("<input type='submit' name='action' value='rescan'>");
         pw.println("</h2></form>");
         Collections.sort(jobs);
         pw.println("<ul>");
@@ -117,9 +119,16 @@ public class EngineResource extends Resource {
         pw.println("</ul>");
         pw.println(
             "To create a new job, use the 'copy' functionality on " +
-            "an existing job's detail page, or create a new job " +
-            "directory outside this interface and use the 'rescan' " +
-            "button.");
+            "an existing job's detail page. Or, create a new job " +
+            "directory manually the main jobs directory and use the " +
+            "'rescan' button above. Or, supply a full path to another " +
+            "valid job directory at the engine machine below.<br/><br/>");
+        
+        pw.println("<form method=\'POST\'>");
+        pw.println("Add job directory: <input size='50' name='addpath'/>");
+        pw.println("<input type='submit' name='action' value='add'>");
+        pw.println("</form>");
+
         pw.println("</body>");
         pw.flush();
     }

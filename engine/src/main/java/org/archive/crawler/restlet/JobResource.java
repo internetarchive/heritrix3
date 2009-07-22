@@ -151,7 +151,7 @@ public class JobResource extends Resource {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='terminate'/>");
-        pw.println("<input type='submit' name='action' value='discard' ");
+        pw.println("<input type='submit' name='action' value='teardown' ");
         pw.print(cj.isContainerOk()?"":"disabled='disabled' title='no instance'");
         pw.println("/><br/>");
 
@@ -332,7 +332,20 @@ public class JobResource extends Resource {
     protected void printLinkedIfInJobDirectory(PrintWriter pw, File f) {
         String jobDirRelative = cj.jobDirRelativePath(f);
         if(jobDirRelative==null) {
-            pw.println(f);
+            /// print via anypath
+            String fullPath = f.getAbsolutePath();
+            fullPath = fullPath.replace(File.separatorChar, '/');
+            pw.println("<a href='../../anypath/" 
+                    + fullPath + "'>" 
+                    + f +"</a>");
+            if(EDIT_FILTER.accept(f)) {
+                pw.println("[<a href='../../anypath/" 
+                        + fullPath 
+                        +  "?format=textedit'>edit</a>]<br/>");
+            }
+            
+            
+            //pw.println(f);
             return;
         }
         pw.println("<a href='jobdir/" 
@@ -367,7 +380,7 @@ public class JobResource extends Resource {
             cj.instantiateContainer();
         } else if("build".equals(action)||"validate".equals(action)) {
             cj.validateConfiguration();
-        } else if("discard".equals(action)) {
+        } else if("teardown".equals(action)) {
             cj.reset(); 
         } else if("pause".equals(action)) {
             cj.getCrawlController().requestCrawlPause();

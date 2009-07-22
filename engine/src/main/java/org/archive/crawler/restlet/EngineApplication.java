@@ -72,6 +72,21 @@ public class EngineApplication extends Application {
         router.attach("/engine/jobsdir",alljobsdir);
         
         
+        EnhDirectory anypath = new EnhDirectory(
+                getContext(),
+                engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {
+                    @Override
+                    Reference determineRootRef(Request request) {
+                        String ref = "file:/";
+                        System.out.println(ref);
+                        return new Reference(ref);
+                    }};
+        anypath.setListingAllowed(true);
+        anypath.setModifiable(true);
+        anypath.setEditFilter(JobResource.EDIT_FILTER);
+        
+        router.attach("/engine/anypath/",anypath);
+        
         EnhDirectory jobdir = new EnhDirectory(
                 getContext(),
                 engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {

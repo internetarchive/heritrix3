@@ -83,20 +83,26 @@ public class Engine {
             public boolean accept(File pathname) {
                 return pathname.isDirectory();
             }})) {
-            for (File cxml : dir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".cxml");
-                }})) {
-                try {
-                    CrawlJob cj = new CrawlJob(cxml);
-                    if(!jobConfigs.containsKey(cj.getShortName())) {
-                        jobConfigs.put(cj.getShortName(),cj);
-                    }
-                } catch (IllegalArgumentException iae) {
-                    LOGGER.log(Level.WARNING,"bad cxml: "+cxml,iae);
+            considerAsJobDirectory(dir);
+        }
+    }
+
+    public boolean considerAsJobDirectory(File dir) {
+        for (File cxml : dir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".cxml");
+            }})) {
+            try {
+                CrawlJob cj = new CrawlJob(cxml);
+                if(!jobConfigs.containsKey(cj.getShortName())) {
+                    jobConfigs.put(cj.getShortName(),cj);
+                    return true;
                 }
+            } catch (IllegalArgumentException iae) {
+                LOGGER.log(Level.WARNING,"bad cxml: "+cxml,iae);
             }
         }
+        return false; 
     }
     
     public Map<String,CrawlJob> getJobConfigs() {
