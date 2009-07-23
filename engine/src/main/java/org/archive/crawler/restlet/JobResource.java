@@ -104,6 +104,8 @@ public class JobResource extends Resource {
         }
         pw.println(")</h1>");
         
+        Flash.renderFlashesHTML(pw, getRequest());
+        
         if(cj.isProfile()) {
             pw.print(
                 "<p>As a <i>profile</i>, this job may be built for " +
@@ -381,7 +383,9 @@ public class JobResource extends Resource {
         } else if("build".equals(action)||"validate".equals(action)) {
             cj.validateConfiguration();
         } else if("teardown".equals(action)) {
-            cj.reset(); 
+            if(!cj.teardown()) {
+                Flash.addFlash(getResponse(), "waiting for job to finish", Flash.Kind.NACK);
+            }
         } else if("pause".equals(action)) {
             cj.getCrawlController().requestCrawlPause();
         } else if("unpause".equals(action)) {

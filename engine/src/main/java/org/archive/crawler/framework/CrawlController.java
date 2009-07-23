@@ -477,6 +477,10 @@ implements Serializable,
         return state == State.RUNNING;
     }
 
+    public boolean isFinished() {
+        return state == State.FINISHED;
+    }
+    
     /**
      * Resume crawl from paused state
      */

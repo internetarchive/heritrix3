@@ -482,20 +482,32 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
      * Ensure a fresh start for any configuration changes or relaunches,
      * by stopping and discarding an existing ApplicationContext.
      */
-    public void reset() {
+    public boolean teardown() {
         if(ac!=null) {
             CrawlController cc = getCrawlController();
             if(cc!=null) {
                 cc.requestCrawlStop();
                 // TODO: wait for stop?
-            }
-            if(ac.isRunning()) {
-                ac.stop(); 
+                // wait up to 3 seconds for stop
+                for(int i = 0; i < 10; i++) {
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        // do nothing
+                    }
+                    if(cc.isFinished()) {
+                        break;
+                    }
+                }
+                if(!cc.isFinished()) {
+                    return false; 
+                }
             }
             ac = null;
         }
         xmlOkAt = new DateTime(0); 
         getJobLogger().log(Level.INFO,"Job instance discarded");
+        return true; 
     }
 
     /**
