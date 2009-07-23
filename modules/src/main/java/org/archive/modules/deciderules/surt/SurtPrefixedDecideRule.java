@@ -269,7 +269,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
         if(deduceFromSeeds) {
             if(seeds instanceof ReadSource) {
                 // scan text
-                fr = ((ReadSource)seeds).getReader();
+                fr = ((ReadSource)seeds).obtainReader();
                 newSurtPrefixes.importFromMixed(fr, deduceFromSeeds);
                 IOUtils.closeQuietly(fr);
             }  else {

@@ -13,7 +13,7 @@ public class ConfigString implements ReadSource {
     public void setValue(String value) {
         this.value = value;
     }
-    public Reader getReader() {
+    public Reader obtainReader() {
         return new StringReader(value);
     }
 }

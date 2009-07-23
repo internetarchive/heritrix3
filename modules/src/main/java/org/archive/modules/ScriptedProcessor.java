@@ -182,7 +182,7 @@ implements ApplicationContextAware, InitializingBean {
         
         Reader reader = null;
         try {
-            reader = getScriptSource().getReader();
+            reader = getScriptSource().obtainReader();
             interpreter.eval(reader);
         } catch (ScriptException e) {
             logger.log(Level.SEVERE,"script problem",e);

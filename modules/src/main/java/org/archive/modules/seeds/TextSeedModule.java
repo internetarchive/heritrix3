@@ -90,7 +90,7 @@ implements ReadSource,
      */
     @Override
     public Iterator<UURI> seedsIterator(Writer ignoredItemWriter) {
-        BufferedReader br = new BufferedReader(textSource.getReader());
+        BufferedReader br = new BufferedReader(textSource.obtainReader());
         return new SeedFileIterator(br,ignoredItemWriter);
     }
     
@@ -113,7 +113,7 @@ implements ReadSource,
             logger.warning("nowhere to log added seed: "+curi);
         } else {
             try {
-                Writer fw = ((WriteTarget)textSource).getWriter(true);
+                Writer fw = ((WriteTarget)textSource).obtainWriter(true);
                 // Write to new (last) line the URL.
                 fw.write("\n");
                 fw.write("# Heritrix added seed " +
@@ -165,7 +165,7 @@ implements ReadSource,
 //        
 //    }
 
-    public Reader getReader() {
-        return textSource.getReader();
+    public Reader obtainReader() {
+        return textSource.obtainReader();
     }
 }

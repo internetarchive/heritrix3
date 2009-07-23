@@ -41,7 +41,7 @@ public class ConfigFile extends ConfigPath implements ReadSource, WriteTarget {
         super(name, path);
     }
 
-    public Reader getReader() {
+    public Reader obtainReader() {
         try {
             if(!getFile().exists()) {
                 getFile().createNewFile();
@@ -52,11 +52,11 @@ public class ConfigFile extends ConfigPath implements ReadSource, WriteTarget {
         }
     }
 
-    public Writer getWriter() {
-        return getWriter(false); 
+    public Writer obtainWriter() {
+        return obtainWriter(false); 
     }
     
-    public Writer getWriter(boolean append) {
+    public Writer obtainWriter(boolean append) {
         try {
             return new FileWriter(getFile(), append);
         } catch (IOException e) {

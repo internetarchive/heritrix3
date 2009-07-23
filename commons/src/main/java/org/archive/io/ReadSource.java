@@ -21,6 +21,17 @@ package org.archive.io;
 
 import java.io.Reader;
 
+/**
+ * Interface for objects that can provide a Reader view of their 
+ * contents.  
+ * 
+ */
 public interface ReadSource {
-    Reader getReader();
+    /**
+     * Obtain a Reader. Not named 'getReader' so that it is not
+     * considered a simple costless read-only property by 
+     * bean-convention introspection tools.
+     * @return a Reader on this object
+     */
+    Reader obtainReader();
 }
