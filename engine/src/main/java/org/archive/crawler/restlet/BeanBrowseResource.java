@@ -47,8 +47,8 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 
 /**
- * Restlet Resource which generates fresh reports and then redirects
- * requests to the report in the filesystem. 
+ * Restlet Resource which allows browsing the constructed beans in
+ * a hierarchical fashion. 
  * 
  * @contributor gojomo
  */
