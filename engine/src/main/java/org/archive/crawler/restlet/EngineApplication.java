@@ -78,7 +78,6 @@ public class EngineApplication extends Application {
                     @Override
                     Reference determineRootRef(Request request) {
                         String ref = "file:/";
-                        System.out.println(ref);
                         return new Reference(ref);
                     }};
         anypath.setListingAllowed(true);

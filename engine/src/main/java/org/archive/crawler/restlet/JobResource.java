@@ -161,10 +161,10 @@ public class JobResource extends Resource {
         
         // configuration 
         pw.println("configuration: ");
-        printLinkedIfInJobDirectory(pw, cj.getPrimaryConfig());
+        printLinked(pw, cj.getPrimaryConfig());
         for(File f : cj.getImportedConfigs(cj.getPrimaryConfig())) {
             pw.println("imported: ");
-            printLinkedIfInJobDirectory(pw,f);
+            printLinked(pw,f);
         }
         
 //        if(cj.isXmlOk()) {
@@ -225,10 +225,11 @@ public class JobResource extends Resource {
             pw.println("<br/><b>Alerts</b><br>&nbsp;&nbsp;");
             pw.println(cj.getAlertCount()==0 ? "<i>none</i>" : cj.getAlertCount()); 
             if(cj.getAlertCount()>0) {
-                pw.println("<a href='jobdir/"
-                        +cj.jobDirRelativePath(
-                                cj.getCrawlController().getLoggerModule().getAlertsLogPath().getFile())
-                        +"?format=paged&pos=-1&lines=-128'>tail alert log...</a>");
+                printLinkedFile(
+                        pw, 
+                        cj.getCrawlController().getLoggerModule().getAlertsLogPath().getFile(), 
+                        "tail alert log...",
+                        "?format=paged&pos=-1&lines=-128");
             }
             
             pw.println("<br/><b>Rates</b><br/>&nbsp;&nbsp;");
@@ -252,10 +253,11 @@ public class JobResource extends Resource {
             if(cj.isRunning() || (cj.isContainerOk() && !cj.isLaunchable())) {
                 // show crawl log for running or finished crawls
                 pw.println("<h3>Crawl Log");
-                pw.println("(<a href='jobdir/"
-                        +cj.jobDirRelativePath(
-                                cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile())
-                        +"?format=paged&pos=-1&lines=-128&reverse=y'><i>more</i></a>)");
+                printLinkedFile(
+                        pw,
+                        cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile(),
+                        "<i>more</i>",
+                        "format=paged&pos=-1&lines=-128&reverse=y");
                 pw.println("</h3>");
                 pw.println("<pre style='overflow:auto'>");
                 try {
@@ -298,7 +300,7 @@ public class JobResource extends Resource {
             for(ConfigPath cp : cj.getConfigPaths().values()) {
                 pw.println("<dt>"+cp.getName()+"</dt>");
                 pw.println("<dd>");
-                printLinkedIfInJobDirectory(pw, cp.getFile());
+                printLinked(pw, cp.getFile());
                 pw.println("</dd>");
             }
             pw.println("</dl>");
@@ -325,39 +327,45 @@ public class JobResource extends Resource {
     }
 
     /**
-     * Print the given File path, but only provide view/edit link if
-     * path is within job directory.
+     * Print a link to the given File
      * 
      * @param pw PrintWriter
      * @param f File
      */
-    protected void printLinkedIfInJobDirectory(PrintWriter pw, File f) {
-        String jobDirRelative = cj.jobDirRelativePath(f);
-        if(jobDirRelative==null) {
-            /// print via anypath
-            String fullPath = f.getAbsolutePath();
-            fullPath = fullPath.replace(File.separatorChar, '/');
-            pw.println("<a href='../../anypath/" 
-                    + fullPath + "'>" 
-                    + f +"</a>");
-            if(EDIT_FILTER.accept(f)) {
-                pw.println("[<a href='../../anypath/" 
-                        + fullPath 
-                        +  "?format=textedit'>edit</a>]<br/>");
-            }
-            
-            
-            //pw.println(f);
-            return;
-        }
-        pw.println("<a href='jobdir/" 
-                + jobDirRelative + "'>" 
-                + f +"</a>");
+    protected void printLinked(PrintWriter pw, File f) { 
+        printLinkedFile(pw,f,f.toString(),null);
+    }
+    
+    /**
+     * Print a link to the given File, using the given link text
+     * 
+     * @param pw PrintWriter
+     * @param f File
+     */
+    protected void printLinkedFile(PrintWriter pw, File f, String linktext, String queryString) {      
+        String relativePath = getHrefPath(f);
+        pw.println("<a href='" 
+                + relativePath 
+                + ((queryString==null) ? "" : "?" + queryString)
+                + "'>" 
+                + linktext +"</a>");
         if(EDIT_FILTER.accept(f)) {
-            pw.println("[<a href='jobdir/" 
-                    + jobDirRelative 
+            pw.println("[<a href='" 
+                    + relativePath 
                     +  "?format=textedit'>edit</a>]<br/>");
         }
+    }
+
+    protected String getHrefPath(File f) {
+        String jobDirRelative = cj.jobDirRelativePath(f);
+        if(jobDirRelative!=null) {
+            return "jobdir/"+jobDirRelative;
+        }
+        // TODO: delegate this to EngineApplication, or make
+        // conditional on whether /anypath/ service is present?
+        String fullPath = f.getAbsolutePath();
+        fullPath = fullPath.replace(File.separatorChar, '/');
+        return "../../anypath/"+fullPath;
     }
 
     protected Engine getEngine() {
