@@ -161,10 +161,10 @@ public class JobResource extends Resource {
         
         // configuration 
         pw.println("configuration: ");
-        printLinked(pw, cj.getPrimaryConfig());
+        printLinkedFile(pw, cj.getPrimaryConfig());
         for(File f : cj.getImportedConfigs(cj.getPrimaryConfig())) {
             pw.println("imported: ");
-            printLinked(pw,f);
+            printLinkedFile(pw,f);
         }
         
 //        if(cj.isXmlOk()) {
@@ -301,7 +301,7 @@ public class JobResource extends Resource {
                 ConfigPath cp = cj.getConfigPaths().get(cppp);
                 pw.println("<dt>"+cppp+": "+cp.getName()+"</dt>");
                 pw.println("<dd>");
-                printLinked(pw, cp.getFile());
+                printLinkedFile(pw, cp.getFile());
                 pw.println("</dd>");
             }
             pw.println("</dl>");
@@ -333,7 +333,7 @@ public class JobResource extends Resource {
      * @param pw PrintWriter
      * @param f File
      */
-    protected void printLinked(PrintWriter pw, File f) { 
+    protected void printLinkedFile(PrintWriter pw, File f) { 
         printLinkedFile(pw,f,f.toString(),null);
     }
     
