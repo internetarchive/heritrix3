@@ -69,10 +69,11 @@ public class ConfigPathConfigurer
                     if(cp.getBase()==null) {
                         cp.setBase(path);
                     }
+                    String propPath = beanName+"."+d.getName();
                     if(StringUtils.isEmpty(cp.getName())) {
-                        cp.setName(beanName+"."+d.getName());
+                        cp.setName(propPath);
                     }
-                    remember(cp);
+                    remember(propPath, cp);
                 }
             }
         }
@@ -118,8 +119,8 @@ public class ConfigPathConfigurer
 
     // REMEMBERED PATHS
     Map<String,ConfigPath> paths = new HashMap<String,ConfigPath>();
-    protected void remember(ConfigPath cp) {
-        paths.put(cp.getName(), cp);
+    protected void remember(String key, ConfigPath cp) {
+        paths.put(key, cp);
     }
     public Map<String,ConfigPath> getPaths() {
         return paths; 

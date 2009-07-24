@@ -297,8 +297,9 @@ public class JobResource extends Resource {
             pw.println("<i>build the job to discover referenced paths</i>");
         } else {
             pw.println("<dl>");
-            for(ConfigPath cp : cj.getConfigPaths().values()) {
-                pw.println("<dt>"+cp.getName()+"</dt>");
+            for(String cppp : cj.getConfigPaths().keySet()) {
+                ConfigPath cp = cj.getConfigPaths().get(cppp);
+                pw.println("<dt>"+cppp+": "+cp.getName()+"</dt>");
                 pw.println("<dd>");
                 printLinked(pw, cp.getFile());
                 pw.println("</dd>");

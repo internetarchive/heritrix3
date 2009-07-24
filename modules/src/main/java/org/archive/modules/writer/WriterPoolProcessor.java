@@ -203,7 +203,7 @@ implements Lifecycle {
         this.serverCache = serverCache;
     }
 
-    protected ConfigPath directory = new ConfigPath("writer sbudirectory", ".");
+    protected ConfigPath directory = new ConfigPath("writer subdirectory", ".");
     public ConfigPath getDirectory() {
         return directory;
     }
