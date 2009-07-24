@@ -424,7 +424,11 @@ implements Serializable,
      * @param message 
      */
     public synchronized void requestCrawlStop(CrawlStatus message) {
-        if (state == State.STOPPING || state == State.FINISHED || state == State.NASCENT) {
+        if (state == State.NASCENT) {
+            this.sExit = message;
+            this.state = State.FINISHED;
+        }
+        if (state == State.STOPPING || state == State.FINISHED ) {
             return;
         }
         if (message == null) {
