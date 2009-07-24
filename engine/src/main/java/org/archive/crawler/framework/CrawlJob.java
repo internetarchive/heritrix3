@@ -55,6 +55,7 @@ import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 import org.joda.time.DateTime;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -566,7 +567,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
         }
         ConfigPathConfigurer cpc = 
             (ConfigPathConfigurer)ac.getBean("configPathConfigurer");
-        return cpc.getPaths();        
+        return cpc.getAllConfigPaths();        
     }
 
     /**
@@ -721,6 +722,33 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
 
     public void terminate() {
         getCrawlController().requestCrawlStop();
+    }
+
+    /**
+     * Utility method for getting a bean or any other object addressable
+     * with a 'bean path' -- a property-path string (with dots and 
+     * []indexes) starting with a bean name.
+     * 
+     * TODO: move elsewhere? on the appContext? a util class?
+     * 
+     * @param beanPath String 'property-path' with bean name as first segment
+     * @return Object targeted by beanPath, or null if nont
+     */
+    public Object getBeanpathTarget(String beanPath) {
+        try {
+            int i = beanPath.indexOf(".");
+            String beanName = i<0?beanPath:beanPath.substring(0,i);
+            Object namedBean = ac.getBean(beanName);
+            if (i<0) {
+                return namedBean;
+            } else {
+                BeanWrapperImpl bwrap = new BeanWrapperImpl(namedBean);
+                String propPath = beanPath.substring(i+1);
+                return bwrap.getPropertyValue(propPath);
+            }       
+        } catch (BeansException e) {
+            return null;
+        }
     }
     
 }//EOC

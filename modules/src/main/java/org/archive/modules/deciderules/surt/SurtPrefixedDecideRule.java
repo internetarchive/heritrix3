@@ -35,7 +35,7 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
-import org.archive.spring.ConfigPath;
+import org.archive.spring.ConfigFile;
 import org.archive.util.SurtPrefixSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -69,14 +69,16 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
      * Source file from which to infer SURT prefixes. Any URLs in file will be
      * converted to the implied SURT prefix, and literal SURT prefixes may be
      * listed on lines beginning with a '+' character.
+     * TODO: consider changing to ReadSource, analogous to TextSeedModule, 
+     * allowing inline specification? 
      */
-    protected ConfigPath surtsSourceFile = 
-        new ConfigPath("surtsSourceFile","");
-    public ConfigPath getSurtsSourceFile() {
+    protected ConfigFile surtsSourceFile = 
+        new ConfigFile("surtsSourceFile","");
+    public ConfigFile getSurtsSourceFile() {
         return surtsSourceFile;
     }
-    public void setSurtsSourceFile(ConfigPath surtsSourceFile) {
-        this.surtsSourceFile = surtsSourceFile;
+    public void setSurtsSourceFile(ConfigFile cp) {
+        this.surtsSourceFile.merge(cp);
     }
 
     /**
@@ -94,13 +96,13 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
     /**
      * Dump file to save SURT prefixes actually used: Useful debugging SURTs.
      */
-    protected ConfigPath surtsDumpFile = 
-        new ConfigPath("surtsDumpFile","");
-    public ConfigPath getSurtsDumpFile() {
+    protected ConfigFile surtsDumpFile = 
+        new ConfigFile("surtsDumpFile","");
+    public ConfigFile getSurtsDumpFile() {
         return surtsDumpFile;
     }
-    public void setSurtsDumpFile(ConfigPath surtsDumpFile) {
-        this.surtsDumpFile = surtsDumpFile;
+    public void setSurtsDumpFile(ConfigFile cp) {
+        this.surtsDumpFile.merge(cp);
     }
     
 

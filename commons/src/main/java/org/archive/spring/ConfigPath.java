@@ -101,12 +101,20 @@ public class ConfigPath implements Serializable {
                     : new File(base.getFile(), path);
     }
     
-    public ConfigPath merge(ConfigPath previous) {
-        if(name==null) {
-            setName(previous.getName()); 
+    /**
+     * To maintain ConfigPath's 'base' and object-identity, this merge
+     * should be used to updated ConfigPath properties in other beans, 
+     * rather than discarding the old value. 
+     * 
+     * @param newvals ConfigPath to merge into this one
+     * @return this
+     */
+    public ConfigPath merge(ConfigPath newvals) {
+        if(newvals.name!=null) {
+            setName(newvals.getName()); 
         }
-        if(path==null) {
-            setPath(previous.getPath()); 
+        if(newvals.path!=null) {
+            setPath(newvals.getPath()); 
         }
         return this; 
     }

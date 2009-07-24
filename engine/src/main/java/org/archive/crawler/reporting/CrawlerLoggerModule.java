@@ -66,8 +66,8 @@ public class CrawlerLoggerModule
     public ConfigPath getPath() {
         return path;
     }
-    public void setPath(ConfigPath path) {
-        this.path = path.merge(this.path);
+    public void setPath(ConfigPath cp) {
+        this.path.merge(cp);
     }
     
     // manifest support
@@ -95,7 +95,7 @@ public class CrawlerLoggerModule
         return crawlLogPath;
     }
     public void setCrawlLogPath(ConfigPath cp) {
-        this.crawlLogPath = cp.merge(this.crawlLogPath);
+        this.crawlLogPath.merge(cp);
     }
     
     protected ConfigPath alertsLogPath = 
@@ -104,7 +104,7 @@ public class CrawlerLoggerModule
         return alertsLogPath;
     }
     public void setAlertsLogPath(ConfigPath cp) {
-        this.alertsLogPath = cp.merge(this.alertsLogPath);
+        this.alertsLogPath.merge(cp);
     }
     
     protected ConfigPath progressLogPath = 
@@ -113,7 +113,7 @@ public class CrawlerLoggerModule
         return progressLogPath;
     }
     public void setProgressLogPath(ConfigPath cp) {
-        this.progressLogPath = cp.merge(this.progressLogPath);
+        this.progressLogPath.merge(cp);
     }
     
     protected ConfigPath uriErrorsLogPath = 
@@ -122,7 +122,7 @@ public class CrawlerLoggerModule
         return uriErrorsLogPath;
     }
     public void setUriErrorsLogPath(ConfigPath cp) {
-        this.uriErrorsLogPath = cp.merge(this.uriErrorsLogPath);
+        this.uriErrorsLogPath.merge(cp);
     }
     
     protected ConfigPath runtimeErrorsLogPath = 
@@ -131,7 +131,7 @@ public class CrawlerLoggerModule
         return runtimeErrorsLogPath;
     }
     public void setRuntimeErrorsLogPath(ConfigPath cp) {
-        this.runtimeErrorsLogPath = cp.merge(this.runtimeErrorsLogPath);
+        this.runtimeErrorsLogPath.merge(cp);
     }
     
     protected ConfigPath nonfatalErrorsLogPath = 
@@ -140,7 +140,7 @@ public class CrawlerLoggerModule
         return nonfatalErrorsLogPath;
     }
     public void setNonfatalErrorsLogPath(ConfigPath cp) {
-        this.nonfatalErrorsLogPath = cp.merge(this.nonfatalErrorsLogPath);
+        this.nonfatalErrorsLogPath.merge(cp);
     }
     
     /** suffix to use on active logs */

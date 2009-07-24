@@ -25,55 +25,93 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
-import org.archive.io.ReadSource;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.core.Ordered;
 
 /**
  * Bean to fixup all configuration-relative ConfigPath instances, and
  * maintain an inventory of referenced paths. 
  * 
+ * For each bean, at BeanPostProcessor time, the bean is remembered for
+ * later fixup. Then, at ApplicationListener ContextRefreshedEvent time, 
+ * fixup occurs at the latest possible time. This allows other intervening 
+ * Spring post-processors -- most notably, PropertyOverrideConfigurer -- to 
+ * replace values before fixup, and fixup will still affect the right
+ * final values. 
+ * 
  * @contributor gojomo
  */
 public class ConfigPathConfigurer 
-    implements BeanPostProcessor, ApplicationContextAware {
+implements 
+    BeanPostProcessor, 
+    ApplicationListener,
+    ApplicationContextAware, 
+    Ordered {
+    Map<String,Object> allBeans = new HashMap<String,Object>();
     
     //// BEANPOSTPROCESSOR IMPLEMENTATION
     /**
-     * Fix all beans with ConfigPath properties that lack a base path
-     * or a name, to use a job-implied base path and name. 
+     * Remember all beans for later fixup.
      * @see org.springframework.beans.factory.config.BeanPostProcessor#postProcessAfterInitialization(java.lang.Object, java.lang.String)
      */
     public Object postProcessAfterInitialization(Object bean, String beanName)
     throws BeansException {
-        fixupPaths(bean, beanName);
+        allBeans.put(beanName,bean);
         return bean;
-        
     }
     
+    // APPLICATIONLISTENER IMPLEMENTATION
+    /**
+     * Fix all beans with ConfigPath properties that lack a base path
+     * or a name, to use a job-implied base path and name. 
+     */
+    public void onApplicationEvent(ApplicationEvent event) {
+        if(event instanceof ContextRefreshedEvent) {
+            for(String k : allBeans.keySet()) {
+                fixupPaths(allBeans.get(k),k);
+            }
+            allBeans.clear(); // forget 
+        }
+        // ignore all others
+    }
+    
+    /**
+     * Find any ConfigPath properties in the passed bean; ensure that
+     * if they have a null 'base', that is replaced with the job home
+     * directory. Also, remember all ConfigPaths so fixed-up for later
+     * reference. 
+     * 
+     * @param bean
+     * @param beanName
+     * @return Same bean as passed in, fixed as necessary
+     */
     protected Object fixupPaths(Object bean, String beanName) {
         BeanWrapperImpl wrapper = new BeanWrapperImpl(bean);
         for(PropertyDescriptor d : wrapper.getPropertyDescriptors()) {
-            if(ConfigPath.class.isAssignableFrom(d.getPropertyType())
-                || ReadSource.class.isAssignableFrom(d.getPropertyType())) {
+            if(d.getPropertyType().isAssignableFrom(ConfigPath.class)
+                || d.getPropertyType().isAssignableFrom(ConfigFile.class)) {
                 Object value = wrapper.getPropertyValue(d.getName());
                 if(ConfigPath.class.isInstance(value)) {
                     ConfigPath cp = (ConfigPath) value;
                     if(cp==null) {
                         continue;
                     }
-                    if(cp.getBase()==null) {
+                    if(cp.getBase()==null && cp != path) {
                         cp.setBase(path);
                     }
-                    String propPath = beanName+"."+d.getName();
+                    String beanPath = beanName+"."+d.getName();
                     if(StringUtils.isEmpty(cp.getName())) {
-                        cp.setName(propPath);
+                        cp.setName(beanPath);
                     }
-                    remember(propPath, cp);
+                    remember(beanPath, cp);
                 }
             }
         }
@@ -117,18 +155,27 @@ public class ConfigPathConfigurer
         path = new ConfigPath("job base",basePath); 
     }
 
-    // REMEMBERED PATHS
-    Map<String,ConfigPath> paths = new HashMap<String,ConfigPath>();
+    // REMEMBERED CONFIGPATHS
+    Map<String,ConfigPath> allConfigPaths = new HashMap<String,ConfigPath>();
     protected void remember(String key, ConfigPath cp) {
-        paths.put(key, cp);
+        allConfigPaths.put(key, cp);
     }
-    public Map<String,ConfigPath> getPaths() {
-        return paths; 
+    public Map<String,ConfigPath> getAllConfigPaths() {
+        return allConfigPaths; 
     }
     
     // noop
     public Object postProcessBeforeInitialization(Object bean, String beanName) 
     throws BeansException {
         return bean;
+    }
+
+    /** 
+     * Act as late as possible.
+     * 
+     * @see org.springframework.core.Ordered#getOrder()
+     */
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }
