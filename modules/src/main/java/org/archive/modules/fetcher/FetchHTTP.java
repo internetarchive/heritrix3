@@ -32,8 +32,6 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIF
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
-import it.unimi.dsi.fastutil.chars.CharSet;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -751,9 +749,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         String encoding = null;
         encoding = ((HttpMethodBase) method).getResponseCharSet();
         try {
-            Charset cs = Charset.forName(encoding);
+            Charset.forName(encoding);
         } catch (IllegalArgumentException e) {
-            logger.log(Level.WARNING, "Failed get encoding: "+encoding, e);
             uri.getAnnotations().add("charset_err:"+StringUtils.stripToEmpty(encoding));
             encoding = null;
         }
