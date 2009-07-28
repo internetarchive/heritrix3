@@ -377,8 +377,7 @@ ApplicationContextAware {
 		super.prepForFrontier(caUri);
 		// force cost to be calculated, pre-insert
 		getCost(caUri);
-        // set
-        // TODO:SPRINGY set overrides by curi? 
+        // set precedence value
         getUriPrecedencePolicy().uriScheduled(caUri);
 	}
 	

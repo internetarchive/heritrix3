@@ -58,6 +58,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.CheckpointRecovery;
 import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.SchedulingConstants;
@@ -1440,9 +1441,8 @@ public abstract class AbstractFrontier
         assert KeyedProperties.overridesActiveFrom(curi); 
         
         String queueKey = getForceQueueAssignment();
-        if ("".equals(queueKey)) {
-            // Typical case, barring overrides
-            //TODO:SPRINGY set overrides based on cauri?
+        if (StringUtils.isEmpty(queueKey)) {
+            // Typical case, barring explicit override
             queueKey = getQueueAssignmentPolicy().getClassKey(curi);
         }
         return queueKey;
