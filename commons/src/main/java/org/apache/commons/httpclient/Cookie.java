@@ -482,7 +482,11 @@ public class Cookie extends NameValuePair implements Serializable, Comparator {
                 return 1;
             }
         } else {
-            return STRING_COLLATOR.compare(c1.getPath(), c2.getPath());
+// BEGIN IA/HERITRIX CHANGE
+// based on: https://cwiki.apache.org/jira/browse/HTTPCLIENT-645
+            return c1.getPath().compareTo(c2.getPath());
+//          return STRING_COLLATOR.compare(c1.getPath(), c2.getPath());
+// END IA/HERITRIX CHANGE
         }
     }
 
