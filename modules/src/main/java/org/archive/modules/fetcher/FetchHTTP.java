@@ -32,11 +32,14 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIF
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
+import it.unimi.dsi.fastutil.chars.CharSet;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -735,6 +738,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Now, it may well be the case that the default returned by HttpClient and
      * the default defined by the user are the same.
      * 
+     * TODO:FIXME?: This method does not do the "detect the case where the
+     * [HttpClient] default is returned" mentioned above! Why not?
+     * 
      * @param rec
      *            Recorder for this request.
      * @param method
@@ -743,15 +749,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
     private void setCharacterEncoding(ProcessorURI uri, final Recorder rec,
             final HttpMethod method) {
         String encoding = null;
-
+        encoding = ((HttpMethodBase) method).getResponseCharSet();
         try {
-            encoding = ((HttpMethodBase) method).getResponseCharSet();
-            if (encoding == null) {
-                encoding = getDefaultEncoding();
-            }
-        } catch (Exception e) {
-            logger.warning("Failed get default encoding: "
-                    + e.getLocalizedMessage());
+            Charset cs = Charset.forName(encoding);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING, "Failed get encoding: "+encoding, e);
+            uri.getAnnotations().add("charset_err:"+StringUtils.stripToEmpty(encoding));
+            encoding = null;
+        }
+        if (encoding == null) {
+            encoding = getDefaultEncoding();
         }
         rec.setCharacterEncoding(encoding);
     }
