@@ -147,6 +147,7 @@ public class RecordingInputStream
                     this.in + ", " + Thread.currentThread().getName());
         }
         IOUtils.closeQuietly(this.in);
+        this.in = null; 
         IOUtils.closeQuietly(this.recordingOutputStream);
     }
 
