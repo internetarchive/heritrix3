@@ -1116,6 +1116,7 @@ implements ConcurrentMap<K,V>, Serializable {
         this.memMap.clear();
         this.diskMap.clear();
         this.diskMapSize.set(0);
+        //TODO:FIXME: clear should not equal close!
         try {
             close();
         } catch (DatabaseException e) {

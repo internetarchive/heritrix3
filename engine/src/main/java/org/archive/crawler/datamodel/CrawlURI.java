@@ -564,6 +564,9 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     /**
      * Returns true if this CrawlURI is a prerequisite.
      *
+     * TODO:FIXME: code elsewhere is confused whether this means 
+     * that this CrawlURI is a prerquisite for another, or *has* a 
+     * prequisite; clean up and rename as necessary. 
      * @return true if this CrawlURI is a prerequisite.
      */
     public boolean isPrerequisite() {
