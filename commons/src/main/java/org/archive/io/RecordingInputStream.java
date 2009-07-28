@@ -34,6 +34,8 @@ import java.security.MessageDigest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOUtils;
+
 
 /**
  * Stream which records all data read from it, which it acquires from a wrapped
@@ -88,8 +90,13 @@ public class RecordingInputStream
             throw new IOException("RIS already open for "
                     +Thread.currentThread().getName());
         }
-        this.in = wrappedStream;
-        this.recordingOutputStream.open();
+        try {
+            this.in = wrappedStream;
+            this.recordingOutputStream.open();
+        } catch (IOException ioe) {
+            close(); // ...and rethrow...
+            throw ioe;
+        }
     }
 
     public int read() throws IOException {
@@ -139,11 +146,8 @@ public class RecordingInputStream
             logger.fine(Thread.currentThread().getName() + " closing " +
                     this.in + ", " + Thread.currentThread().getName());
         }
-        if (this.in != null) {
-            this.in.close();
-            this.in = null;
-        }
-        this.recordingOutputStream.close();
+        IOUtils.closeQuietly(this.in);
+        IOUtils.closeQuietly(this.recordingOutputStream);
     }
 
     public ReplayInputStream getReplayInputStream() throws IOException {
