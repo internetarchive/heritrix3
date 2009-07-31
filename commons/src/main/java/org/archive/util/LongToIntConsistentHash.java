@@ -31,37 +31,57 @@ import st.ata.util.FPGenerator;
  * integer. 
  */
 public class LongToIntConsistentHash {
+    protected static final int DEFAULT_REPLICAS = 128;
     TreeMap<Long,Integer> circle = new TreeMap<Long,Integer>();
     int replicasInstalledUpTo=-1; 
-    int numReplicas = 32; 
+    int numReplicas; 
 
     public LongToIntConsistentHash() {
-        this(32); 
+        this(DEFAULT_REPLICAS); 
     }
     
     public LongToIntConsistentHash(int numReplicas) {
         this.numReplicas = numReplicas;
         installReplicas(0);
+        replicasInstalledUpTo=1;
     }
 
     /**
      * Install necessary replicas, if not already present.
      * @param upTo
      */
-    public void installReplicas(int upTo) {
+    public void installReplicasUpTo(int upTo) {
         if(replicasInstalledUpTo>upTo) {
             return;
         }
         for(;replicasInstalledUpTo<upTo;replicasInstalledUpTo++) {
-            for(int i = 0; i < numReplicas; i++) {
-                circle.put(
-                        FPGenerator.std64.fp(
-                                ""+replicasInstalledUpTo+":"+i),
-                        replicasInstalledUpTo);
-            }
+            installReplicas(replicasInstalledUpTo);
+        }
+    }
+
+    private void installReplicas(int bucket) {
+        for(int i = 0; i < numReplicas; i++) {
+            circle.put(
+                    replicaLocation(bucket,i),
+                    bucket);
         }
     }
     
+//    SecureRandom rand = new SecureRandom(); 
+    protected long replicaLocation(int bucketNumber, int replicaNumber) {
+//      return rand.nextLong();
+//      return RandomUtils.nextLong();
+//      return ArchiveUtils.doubleMurmur(string.getBytes());
+//      return (new JenkinsHash()).hash(string.getBytes());
+       return FPGenerator.std64.fp(bucketNumber+"."+replicaNumber);
+    }
+    
+    protected long hash(String string) {
+//      return ArchiveUtils.doubleMurmur(string.getBytes());
+//      return (new JenkinsHash()).hash(string.getBytes());
+       return FPGenerator.std64.fp(string);
+    }
+
     /**
      * Return the proper integer bucket-number for the given long hash,
      * up to the given integer boundary (exclusive). 
@@ -71,7 +91,7 @@ public class LongToIntConsistentHash {
      * @return
      */
     public int bucketFor(long longHash, int upTo) {
-        installReplicas(upTo); 
+        installReplicasUpTo(upTo); 
         
         NavigableMap<Long, Integer> tailMap = circle.tailMap(longHash, true);
         Map.Entry<Long,Integer> match = null;
@@ -96,10 +116,10 @@ public class LongToIntConsistentHash {
      * @return
      */
     public int bucketFor(CharSequence cs, int upTo) {
-        return bucketFor(FPGenerator.std64.fp(cs), upTo);
+        return bucketFor(hash(cs.toString()), upTo);
     }
 
     public int bucketFor(char[] chars, int upTo) {
-        return bucketFor(FPGenerator.std64.fp(chars,0,chars.length), upTo);
+        return bucketFor(hash(new String(chars)), upTo);
     }
 }
