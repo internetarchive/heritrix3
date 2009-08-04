@@ -83,6 +83,32 @@ public class CachedBdbMapTest extends TmpDirTestCase {
         }
     }
     
+    /**
+     * Test that in scarce memory conditions, the memory map is 
+     * expunged of otherwise unreferenced entries as expected.
+     * 
+     * NOTE: this test may be especially fragile with regard to 
+     * GC/timing issues; relies on timely finalization, which is 
+     * never guaranteed by JVM/GC. 
+     * 
+     * @throws InterruptedException
+     */
+    public void testMemMapCleared() throws InterruptedException {
+        assertEquals(cache.memMap.size(), 0);
+        for(int i=0; i < 10000; i++) {
+            cache.putIfAbsent(""+i, new HashMap<String,String>());
+        }
+        assertEquals(cache.memMap.size(), 10000);
+        assertEquals(cache.size(), 10000);
+        TestUtils.forceScarceMemory();
+        Thread.sleep(1000);
+        // The 'canary' trick makes this explicit expunge, or
+        // an expunge triggered by a get() or put...(), unnecessary
+        // cache.expungeStaleEntries();
+        System.out.println(cache.size()+","+cache.memMap.size());
+        assertEquals(0, cache.memMap.size());
+    }
+    
     public static void main(String [] args) {
         junit.textui.TestRunner.run(CachedBdbMapTest.class);
     }

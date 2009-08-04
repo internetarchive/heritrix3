@@ -301,8 +301,8 @@ public class StatisticsTracker
         new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
     protected ConcurrentMap<String,AtomicLong> hostsBytes = 
         new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
-    protected ConcurrentMap<String,Long> hostsLastFinished = 
-        new ConcurrentHashMap<String, Long>(); // temp dummy
+    protected ConcurrentMap<String,AtomicLong> hostsLastFinished = 
+        new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
 
     /** Keep track of URL counts per host per seed */
     protected  
@@ -346,7 +346,7 @@ public class StatisticsTracker
             this.hostsBytes = bdb.getBigMap("hostsBytes", false, String.class,
                 AtomicLong.class);
             this.hostsLastFinished = bdb.getBigMap("hostsLastFinished",
-                false, String.class, Long.class);
+                false, String.class, AtomicLong.class);
             this.processedSeedsRecords = bdb.getBigMap("processedSeedsRecords",
                     false, String.class, SeedRecord.class);
             
@@ -638,9 +638,17 @@ public class StatisticsTracker
      * host was last finished processing. If no URI has been completed for host
      * -1 will be returned. 
      */
-    public long getHostLastFinished(String host){
-        Long l = (Long)hostsLastFinished.get(host);
-        return (l != null)? l.longValue(): -1;
+    public AtomicLong getHostLastFinished(String host){
+        AtomicLong fini = hostsLastFinished.get(host);
+        if(fini==null) {
+            String hkey = new String(host); // ensure private minimal key
+            fini = new AtomicLong(-1);
+            AtomicLong prevVal = hostsLastFinished.putIfAbsent(hkey, fini);
+            if(prevVal!=null) {
+                fini = prevVal;
+            }
+        }
+        return fini;
     }
 
     /**
@@ -682,8 +690,15 @@ public class StatisticsTracker
      */
     private void handleSeed(CrawlURI curi, String disposition) {
         if(curi.isSeed()){
-            SeedRecord sr = new SeedRecord(curi, disposition);
-            processedSeedsRecords.put(sr.getUri(), sr);
+            SeedRecord sr = processedSeedsRecords.get(curi.getURI());
+            if(sr==null) {
+                sr = new SeedRecord(curi, disposition);
+                SeedRecord prevVal = processedSeedsRecords.putIfAbsent(sr.getUri(), sr);
+                if(prevVal!=null) {
+                    sr = prevVal;
+                    sr.updateWith(curi,disposition); 
+                }
+            }
         }
     }
 
@@ -740,7 +755,7 @@ public class StatisticsTracker
                 getReportValue(hostsBytes, hostname));
         
         long time = new Long(System.currentTimeMillis());
-        hostsLastFinished.put(hostname, time);
+        getHostLastFinished(hostname).set(time); 
         hostsLastFinishedTop.update(hostname, time);
     }
 
@@ -857,7 +872,7 @@ public class StatisticsTracker
         if(f.exists() && !controller.isRunning() && controller.hasStarted()) {
             // controller already started and stopped and file exists
             // so, don't overwrite
-            logger.info("reusing report: " + f.getAbsolutePath());
+            logger.warning("reusing report: " + f.getAbsolutePath());
             return f;
         }
         

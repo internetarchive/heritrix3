@@ -144,20 +144,8 @@ implements Serializable, Checkpointable {
      * @return the found or created BdbWorkQueue
      */
     protected WorkQueue getQueueFor(CrawlURI curi) {
-        WorkQueue wq;
         String classKey = curi.getClassKey();
-        synchronized (allQueues) {
-            wq = (WorkQueue)allQueues.get(classKey);
-            if (wq == null) {
-                wq = new BdbWorkQueue(classKey, this);
-                //TODO:SPRINGY set overrides
-                wq.setTotalBudget(getQueueTotalBudget());
-                //TODO:SPRINGY set overrides 
-                getQueuePrecedencePolicy().queueCreated(wq);
-                allQueues.put(classKey, wq);
-            }
-        }
-        return wq;
+        return getQueueFor(classKey);
     }
     
     /**
@@ -171,6 +159,17 @@ implements Serializable, Checkpointable {
         assert Thread.currentThread() == managerThread; 
         
         WorkQueue wq = (WorkQueue)allQueues.get(classKey);
+        if(wq == null) {
+            String qKey = new String(classKey); // ensure private minimal key
+            wq = new BdbWorkQueue(qKey, this);
+            wq.setTotalBudget(getQueueTotalBudget()); 
+            getQueuePrecedencePolicy().queueCreated(wq);
+            WorkQueue prevVal = allQueues.putIfAbsent(qKey, wq);
+            if(prevVal!=null) {
+                // lost race; prefer earlier object
+                wq = prevVal; 
+            }
+        }
         return wq;
     }
 

@@ -190,7 +190,7 @@ implements ConcurrentMap<K,V>, Serializable {
      * high-concurrency client of this class in terms of number of objects 
      * stored and performance impact.
      */
-    private transient ConcurrentHashMap<K,SoftEntry<V>> memMap;
+    protected transient ConcurrentHashMap<K,SoftEntry<V>> memMap;
 
     protected transient ReferenceQueue<V> refQueue;
 
@@ -315,7 +315,7 @@ implements ConcurrentMap<K,V>, Serializable {
      *   mutating an unmapped value instance that would not be persisted.
      *  (warning is emitted at most once per instance)
      */
-    final private boolean LOG_ERROR_ON_DESIGN_VIOLATING_METHODS=false;
+    final private boolean LOG_ERROR_ON_DESIGN_VIOLATING_METHODS=true;
 
     /**
      * Simple structure to keep needed information about a DB Environment.
@@ -421,45 +421,6 @@ implements ConcurrentMap<K,V>, Serializable {
                                                             64 // est. number of concurrent threads
                                                             ); 
         this.refQueue = new ReferenceQueue<V>();
-        startExpunger();
-    }
-    
-    private void startExpunger() {
-        /*
-        SettingsHandler ambientSettingsHandler = null;
-        try {
-            ambientSettingsHandler 
-                    = SettingsHandler.getThreadContextSettingsHandler();
-        } catch (RuntimeException absorbed) {
-        } 
-        if (ambientSettingsHandler != null) {
-            this.expunger = new Expunger("Expunger_" + dbName, refQueue, 
-                    logger, ambientSettingsHandler);
-            this.expunger.setDaemon(true);
-            this.expunger.setPriority(Thread.MAX_PRIORITY - 1);
-            this.expunger.start();
-        }
-        */
-    }
-    
-    /**
-     * 
-     * @return true if expunder thread was stopped, false if no expunger is 
-     *     running.
-     */
-    private boolean stopExpunger() {
-        /*
-        if (expunger != null) {
-            expunger.interrupt();
-            try {
-                expunger.join();
-            } catch (InterruptedException ignored) {
-            }
-            expunger = null;
-            return true;
-        }
-        */
-        return false;
     }
     
     @SuppressWarnings("unchecked")
@@ -595,7 +556,6 @@ implements ConcurrentMap<K,V>, Serializable {
     }
 
     public synchronized void close() throws DatabaseException {
-        stopExpunger();
         // Close out my bdb db.
         if (this.db != null) {
             try {
@@ -798,6 +758,7 @@ implements ConcurrentMap<K,V>, Serializable {
         if (pu == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
             logger.warning("design violating put() used on dbName=" + dbName);
         }
+        expungeStaleEntries(); // catchup all clears; possible disk IO
         int attemptTolerance = BDB_LOCK_ATTEMPT_TOLERANCE;
         while (--attemptTolerance > 0) {
             try {
@@ -873,6 +834,7 @@ implements ConcurrentMap<K,V>, Serializable {
             // warn on non-accretive use
             logger.warning("design violating replace(,,) used on dbName=" + dbName);
         }
+        expungeStaleEntries(); // catchup all clears; possible disk IO
 
         //  make the ref wrappers
         SoftEntry<V> newEntry = new SoftEntry<V>(key, newValue, refQueue);
@@ -1303,7 +1265,6 @@ implements ConcurrentMap<K,V>, Serializable {
         String dbName = null;
         // Sync. memory and disk.
         useStatsSyncUsed.incrementAndGet();
-        boolean expungerWasRunning = stopExpunger();
         long startTime = 0;
         if (logger.isLoggable(Level.INFO)) {
             dbName = getDatabaseName();
@@ -1347,9 +1308,6 @@ implements ConcurrentMap<K,V>, Serializable {
                 this.diskMapSize.get() + ", mem " + this.memMap.size());
             dumpExtraStats();
         }
-        if (expungerWasRunning) {
-            startExpunger();
-    }
     }
 
     /** log at INFO level, interesting stats if non-zero. */
@@ -1398,7 +1356,7 @@ implements ConcurrentMap<K,V>, Serializable {
      * See #Expunger for dedicated thread expunger. 
      */
     @SuppressWarnings("unchecked")
-    private void expungeStaleEntries() {
+    protected void expungeStaleEntries() {
         int c = 0;
         long startTime = System.currentTimeMillis();
         for(SoftEntry<V> entry; (entry = (SoftEntry<V>)refQueuePoll()) != null;) {
@@ -1813,5 +1771,24 @@ implements ConcurrentMap<K,V>, Serializable {
     @SuppressWarnings("unchecked")
     private SoftEntry<?> refQueuePoll() {
         return (SoftEntry<?>)refQueue.poll();
+    }
+    
+    //
+    // Crude, probably unreliable/fragile but harmless mechanism to 
+    // trigger expunge of cleared SoftReferences in low-memory 
+    // conditions even without any of the other get/put triggers. 
+    //
+    
+    protected SoftReference<LowMemoryCanary> canary = 
+        new SoftReference<LowMemoryCanary>(new LowMemoryCanary());
+    protected class LowMemoryCanary {
+        /** When collected/finalized -- as should be expected in 
+         *  low-memory conditions -- trigger an expunge and a 
+         *  new 'canary' insertion. */
+        public void finalize() {
+            CachedBdbMap.this.expungeStaleEntries();
+            CachedBdbMap.this.canary = 
+                new SoftReference<LowMemoryCanary>(new LowMemoryCanary());
+        }
     }
 }

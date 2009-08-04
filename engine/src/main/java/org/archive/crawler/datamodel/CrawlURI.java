@@ -1414,6 +1414,12 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     }
 
     /**
+     * @return String of URI
+     */
+    public String getURI() {
+        return getUURI().toCustomString();
+    }
+    /**
      * @return path (hop-types) from seed
      */
     public String getPathFromSeed() {
@@ -1721,7 +1727,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
      * @return The UURI this CandidateURI wraps as a string 
      */
     public String toString() {
-        return getUURI().toString();
+        return getUURI().toCustomString();
     }
 
     
