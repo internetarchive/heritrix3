@@ -100,6 +100,9 @@ implements
     }
     
     protected int getSubqueue(UURI basis, int parallelQueues) {
+        if(null==basis.getRawPathQuery()) {
+            return 0; 
+        }
         return conhash.bucketFor(basis.getRawPathQuery(), parallelQueues);
     }
 
