@@ -28,6 +28,7 @@ import java.io.ObjectOutputStream;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -39,6 +40,8 @@ import junit.framework.TestSuite;
  * @author gojomo
  */
 public class TestUtils {
+    private static final Logger logger =
+        Logger.getLogger(TestUtils.class.getName());
 
     /**
      * Temporarily exhaust memory, forcing weak/soft references to
@@ -48,16 +51,17 @@ public class TestUtils {
         // force soft references to be broken
         LinkedList<SoftReference<byte[]>> hog = new LinkedList<SoftReference<byte[]>>();
         long blocks = Runtime.getRuntime().maxMemory() / 1000000;
+        logger.info("forcing scarce memory via "+blocks+" 1MB blocks");
         for(long l = 0; l <= blocks; l++) {
             try {
                 hog.add(new SoftReference<byte[]>(new byte[1000000]));
             } catch (OutOfMemoryError e) {
                 hog = null;
+                logger.info("OOME triggered");
                 break;
             }
         }
     }
-
 
     public static void testSerialization(Object proc) throws Exception {
         byte[] first = serialize(proc);

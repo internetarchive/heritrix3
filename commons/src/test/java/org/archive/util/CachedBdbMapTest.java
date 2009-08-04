@@ -89,11 +89,14 @@ public class CachedBdbMapTest extends TmpDirTestCase {
      * 
      * NOTE: this test may be especially fragile with regard to 
      * GC/timing issues; relies on timely finalization, which is 
-     * never guaranteed by JVM/GC. 
+     * never guaranteed by JVM/GC. For example, it is so sensitive
+     * to CPU speed that a Thread.sleep(1000) succeeds when my 
+     * laptop is plugged in, but fails when it is on battery!
      * 
      * @throws InterruptedException
      */
     public void testMemMapCleared() throws InterruptedException {
+        System.gc(); // minimize effects of earlier test heap use
         assertEquals(cache.memMap.size(), 0);
         for(int i=0; i < 10000; i++) {
             cache.putIfAbsent(""+i, new HashMap<String,String>());
@@ -101,7 +104,7 @@ public class CachedBdbMapTest extends TmpDirTestCase {
         assertEquals(cache.memMap.size(), 10000);
         assertEquals(cache.size(), 10000);
         TestUtils.forceScarceMemory();
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         // The 'canary' trick makes this explicit expunge, or
         // an expunge triggered by a get() or put...(), unnecessary
         // cache.expungeStaleEntries();

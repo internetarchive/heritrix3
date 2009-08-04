@@ -384,7 +384,6 @@ implements ConcurrentMap<K,V>, Serializable {
             logger.info("BdbConfiguration: Cache percentage "  +
                 cfg.getCachePercent() + ", cache size " + cfg.getCacheSize() +
                 ", Map size: " + size() + " cfg=" + cfg);
-            System.out.println(" cfg=" + cfg); //DEBUG 
         }
     }
     
