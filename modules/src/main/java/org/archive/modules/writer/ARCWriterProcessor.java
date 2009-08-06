@@ -61,31 +61,17 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     private static final Logger logger = 
         Logger.getLogger(ARCWriterProcessor.class.getName());
 
-    /**
-     * Where to save files. Supply absolute or relative path. If relative, files
-     * will be written relative to the order.disk-path setting. If more than one
-     * path specified, we'll round-robin dropping files to each. This setting is
-     * safe to change midcrawl (You can remove and add new dirs as the crawler
-     * progresses).
-     */
-    List<String> storePaths;
-    {
-        storePaths = new ArrayList<String>();
-        storePaths.add("arcs");
+    public long getDefaultMaxFileSize() {
+        return 100000000L; // 100 SI mega-bytes (10^8 bytes)
     }
-    public List<String> getStorePaths() {
-        return storePaths;
-    }
-    public void setStorePaths(List<String> paths) {
-        this.storePaths = paths; 
+    public List<String> getDefaultStorePaths() {
+        List<String> paths = new ArrayList<String>();
+        paths.add("arcs");
+        return paths;
     }
 
     private transient List<String> cachedMetadata;
 
-    
-    /**
-     * @param name Name of this writer.
-     */
     public ARCWriterProcessor() {
     }
 
@@ -94,7 +80,6 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         WriterPoolSettings wps = getWriterPoolSettings();
         setPool(new ARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWait()));
     }
-
 
     /**
      * Writes a ProcessorURI and its associated data to store file.
@@ -231,7 +216,6 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         }
     }
     
-    
     private static String getHostAddress() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
@@ -240,7 +224,6 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             return "localhost";
         }        
     }
-
 
     private static String readTemplate() {
         InputStream input = ARCWriterProcessor.class.getResourceAsStream(
@@ -257,5 +240,4 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             IOUtils.closeQuietly(input);
         }
     }
-
 }

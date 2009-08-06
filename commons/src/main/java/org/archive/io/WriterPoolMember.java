@@ -215,7 +215,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         String name = this.prefix + '-' + getUniqueBasename(tsn) +
             ((this.suffix == null || this.suffix.length() <= 0)?
                 "": "-" + this.suffix) + '.' + this.extension  +
-            ((this.compressed)? '.' + COMPRESSED_FILE_EXTENSION: "") +
+            ((this.compressed)? DOT_COMPRESSED_FILE_EXTENSION: "") +
             OCCUPIED_SUFFIX;
         this.createTimestamp = tsn.getTimestamp();
         File dir = getNextDirectory(this.writeDirs);
@@ -422,24 +422,6 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
 
 	protected void write(int b) throws IOException {
 		this.out.write(b);
-	}
-	
-	/**
-     * @deprecated Use {@link #copyFrom(InputStream,long,boolean)} instead
-     */
-    protected void readFullyFrom(final InputStream is, final long recordLength,
-    		final byte [] b)
-    throws IOException {
-        copyFrom(is, recordLength, true);
-    }
-
-    /**
-     * @deprecated Use {@link #copyFrom(InputStream,long,boolean)} instead
-     */
-	protected void readToLimitFrom(final InputStream is, final long limit,
-			final byte [] b)
-	throws IOException {
-        copyFrom(is, limit, true);
 	}
 
     /**

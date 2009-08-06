@@ -81,9 +81,8 @@ import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 
 /**
- * Experimental WARCWriterProcessor.
- * Goes against the 0.18 WARC specification.
- * 
+ * WARCWriterProcessor.
+ * Intends to follow the WARC/1.0 specification.
  * 
  * <p>TODO: Remove ANVLRecord. Rename NameValue or use RFC822
  * (commons-httpclient?) or find something else.
@@ -92,9 +91,17 @@ import org.archive.util.anvl.ANVLRecord;
  */
 public class WARCWriterProcessor extends WriterPoolProcessor {
     private static final long serialVersionUID = 6182850087635847443L;
-
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
+    
+    public long getDefaultMaxFileSize() {
+        return 1000000000L; // 1 SI giga-byte (10^9 bytes), per WARC appendix A
+    }
+    public List<String> getDefaultStorePaths() {
+        List<String> paths = new ArrayList<String>();
+        paths.add("warcs");
+        return paths;
+    }
     
     /**
      * Whether to write 'request' type records. Default is true.
@@ -150,30 +157,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
         kp.put("writeRevisitForNotModified",writeRevisits);
     }
 
-    /**
-     * Where to save files. Supply absolute or relative path. If relative, files
-     * will be written relative to the order.disk-path setting. If more than one
-     * path specified, we'll round-robin dropping files to each. This setting is
-     * safe to change midcrawl (You can remove and add new dirs as the crawler
-     * progresses).
-     */
-    List<String> storePaths;
-    {
-        storePaths = new ArrayList<String>();
-        storePaths.add("warcs");
-    }
-    public List<String> getStorePaths() {
-        return storePaths;
-    }
-    public void setStorePaths(List<String> paths) {
-        this.storePaths = paths; 
-    }
-
     private transient List<String> cachedMetadata;
 
-    /**
-     * Constructor.
-     */
     public WARCWriterProcessor() {
     }
 
@@ -182,7 +167,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
         WriterPoolSettings wps = getWriterPoolSettings();
         setPool(new WARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWait()));
     }
-
 
     /**
      * Writes a ProcessorURI and its associated data to store file.
@@ -369,7 +353,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
         return baseid;
     }
 
-    
     protected URI writeRevisitDigest(final WARCWriter w,
             final String timestamp, final String mimetype,
             final URI baseid, final ProcessorURI curi,

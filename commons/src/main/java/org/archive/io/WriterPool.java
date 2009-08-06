@@ -62,7 +62,7 @@ public abstract class WriterPool {
 	/**
 	 * Default maximum active number of files in the pool.
 	 */
-	public static final int DEFAULT_MAX_ACTIVE = 5;
+	public static final int DEFAULT_MAX_ACTIVE = 1;
 
 	/**
 	 * Maximum time to wait on a free file..

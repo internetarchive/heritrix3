@@ -1,27 +1,22 @@
-/* WriterPoolProcessor
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on July 19th, 2006
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2006 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.modules.writer;
 
 import static org.archive.modules.ModuleAttributeConstants.A_DNS_SERVER_IP_LABEL;
@@ -63,7 +58,7 @@ import org.springframework.context.Lifecycle;
  */
 public abstract class WriterPoolProcessor extends Processor 
 implements Lifecycle {
-    
+    private static final long serialVersionUID = 1L;
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
 
@@ -93,16 +88,6 @@ implements Lifecycle {
         this.prefix = prefix;
     }
 
-    /**
-     * Where to save files. Supply absolute or relative path. If relative, files
-     * will be written relative to the order.disk-path setting. If more than one
-     * path specified, we'll round-robin dropping files to each. This setting is
-     * safe to change midcrawl (You can remove and add new dirs as the crawler
-     * progresses).
-     */
-//    final public static Key<List<String>> PATH = 
-//        Key.makeFinal(Collections.singletonList("crawl-store"));
-
 
     /**
      * Suffix to tag onto files. If value is '${HOSTNAME}', will use hostname
@@ -119,7 +104,8 @@ implements Lifecycle {
     /**
      * Max size of each file.
      */
-    long maxFileSizeBytes = 100000000L;
+    long maxFileSizeBytes = getDefaultMaxFileSize();
+    abstract long getDefaultMaxFileSize();
     public long getMaxFileSizeBytes() {
         return maxFileSizeBytes;
     }
@@ -209,6 +195,23 @@ implements Lifecycle {
     }
     public void setDirectory(ConfigPath directory) {
         this.directory = directory;
+    }
+    
+    /**
+     * Where to save files. Supply absolute or relative directory paths. 
+     * If relative, paths will be interpreted relative to the local
+     * 'directory' property. order.disk-path setting. If more than one
+     * path specified, we'll round-robin dropping files to each. This 
+     * setting is safe to change midcrawl (You can remove and add new 
+     * dirs as the crawler progresses).
+     */
+    List<String> storePaths = getDefaultStorePaths();
+    abstract List<String> getDefaultStorePaths();
+    public List<String> getStorePaths() {
+        return storePaths;
+    }
+    public void setStorePaths(List<String> paths) {
+        this.storePaths = paths; 
     }
     
     /**
@@ -327,7 +330,9 @@ implements Lifecycle {
             return (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
         }
         // otherwise, host referenced in URI
-        CrawlHost h = ServerCacheUtil.getHostFor(serverCache, curi.getUURI());
+        // TODO:FIXME: have fetcher insert exact IP contacted into curi,
+        // use that rather than inferred by CrawlHost lookup 
+        CrawlHost h = ServerCacheUtil.getHostFor(getServerCache(), curi.getUURI());
         if (h == null) {
             throw new NullPointerException("Crawlhost is null for " +
                 curi + " " + curi.getVia());
@@ -394,10 +399,7 @@ implements Lifecycle {
         this.totalBytesWritten = totalBytesWritten;
     }
 	
-    
     protected abstract List<String> getMetadata();
-
-    protected abstract List<String> getStorePaths();
     
     private List<File> getOutputDirs() {
         List<String> list = getStorePaths();
@@ -447,14 +449,10 @@ implements Lifecycle {
         return result;
     }
 
-
-
-    
     @Override
     protected void innerProcess(ProcessorURI puri) {
         throw new AssertionError();
     }
-
 
     @Override
     protected abstract ProcessResult innerProcessResult(ProcessorURI uri);
@@ -480,6 +478,4 @@ implements Lifecycle {
         
         return true;
     }
-
-
 }
