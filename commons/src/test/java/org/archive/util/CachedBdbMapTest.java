@@ -96,18 +96,22 @@ public class CachedBdbMapTest extends TmpDirTestCase {
      * @throws InterruptedException
      */
     public void testMemMapCleared() throws InterruptedException {
-        System.gc(); // minimize effects of earlier test heap use
+        System.gc();
+        System.runFinalization();
+        System.gc();
         assertEquals(cache.memMap.size(), 0);
         for(int i=0; i < 10000; i++) {
             cache.putIfAbsent(""+i, new HashMap<String,String>());
         }
-        assertEquals(cache.memMap.size(), 10000);
-        assertEquals(cache.size(), 10000);
+        assertEquals(10000, cache.memMap.size());
+        assertEquals(10000, cache.size());
+        TestUtils.forceScarceMemory();
+        Thread.sleep(2000);
         TestUtils.forceScarceMemory();
         Thread.sleep(2000);
         // The 'canary' trick makes this explicit expunge, or
         // an expunge triggered by a get() or put...(), unnecessary
-        // cache.expungeStaleEntries();
+        //cache.expungeStaleEntries();
         System.out.println(cache.size()+","+cache.memMap.size());
         assertEquals(0, cache.memMap.size());
     }
