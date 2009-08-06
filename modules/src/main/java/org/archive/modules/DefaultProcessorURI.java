@@ -411,4 +411,8 @@ implements ProcessorURI {
     public String getSourceTag() {
         return "";
     }
+
+    public String getURI() {
+        return uuri.toCustomString();
+    }
 }

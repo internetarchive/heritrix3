@@ -34,18 +34,14 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_EMBED_HOPS
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -331,22 +327,6 @@ public abstract class AbstractFrontier
 //    protected final static String ACCEPTABLE_FORCE_QUEUE = "[-\\w\\.,:]*";
 
     /**
-     * Whether to tag seeds with their own URI as a heritable 'source' String,
-     * which will be carried-forward to all URIs discovered on paths originating
-     * from that seed. When present, such source tags appear in the
-     * second-to-last crawl.log field.
-     */
-    {
-        setSourceTagSeeds(false);
-    }
-    public boolean getSourceTagSeeds() {
-        return (Boolean) kp.get("sourceTagSeeds");
-    }
-    public void setSourceTagSeeds(boolean sourceTagSeeds) {
-        kp.put("sourceTagSeeds",sourceTagSeeds);
-    }
-
-    /**
      * Recover log on or off attribute.
      */
     {
@@ -404,8 +384,6 @@ public abstract class AbstractFrontier
      * Ordered list of url canonicalization rules.  Rules are applied in the 
      * order listed from top to bottom.
      */
-    
-    @SuppressWarnings("unchecked")
     public UriCanonicalizationPolicy getUriCanonicalizationPolicy() {
         return (UriCanonicalizationPolicy) kp.get("uriCanonicalizationRules");
     }
@@ -505,7 +483,6 @@ public abstract class AbstractFrontier
         if(isRunning()) {
             return; 
         }
-        seeds.addSeedListener(this);
         
         if (getRecoveryLogEnabled()) try {
             initJournal(loggerModule.getPath().getFile().getAbsolutePath());
@@ -986,70 +963,32 @@ public abstract class AbstractFrontier
     public long totalBytesWritten() {
         return totalProcessedBytes;
     }
-
+    
     /**
-     * Load up the seeds.
+     * Trigger seed loading via the SeedModule's announceSeeds().
      * 
-     * This method is called on initialize and inside in the crawlcontroller
-     * when it wants to force reloading of configuration.
+     * @see org.archive.crawler.framework.Frontier#loadSeeds()
      */
     public void loadSeeds() {
-        logger.info("beginning");
-        // Get the seeds to refresh.
-        Writer ignoredWriter = new StringWriter();
-        Iterator<UURI> iter = getSeeds().seedsIterator(ignoredWriter);
-        int count = 0; 
-        while (iter.hasNext()) {
-            UURI u = (UURI)iter.next();
-            CrawlURI caUri = new CrawlURI(u);
-            caUri.setSeed(true);
-            caUri.setSchedulingDirective(SchedulingConstants.MEDIUM);
-            if (getSourceTagSeeds()) {
-                caUri.setSourceTag(caUri.toString());
-            }
-            schedule(caUri);
-            count++;
-            if(count%1000==0) {
-                logger.info(count+" seeds");
-            }
-        }
-        // save ignored items (if any) where they can be consulted later
-        saveIgnoredItems(ignoredWriter.toString(), getRecoveryDir().getFile());
-        logger.info("finished");        
-    }
-
-    
-    public void seedsRefreshed() {
-        loadSeeds();
-    }
-    
-    public void addedSeed(ProcessorURI puri) {
-        // TODO: schedule?
+        getSeeds().announceSeeds();
     }
     
     /**
-     * Dump ignored seed items (if any) to disk; delete file otherwise.
-     * Static to allow non-derived sibling classes (frontiers not yet 
-     * subclassed here) to reuse.
+     * When notified of a seed via the SeedListener interface, 
+     * schedule it.
      * 
-     * @param ignoredItems
-     * @param dir 
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
      */
-    public static void saveIgnoredItems(String ignoredItems, File dir) {
-        File ignoredFile = new File(dir, IGNORED_SEEDS_FILENAME);
-        if(ignoredItems==null | ignoredItems.length()>0) {
-            try {
-                BufferedWriter bw = new BufferedWriter(new FileWriter(ignoredFile));
-                bw.write(ignoredItems);
-                bw.close();
-            } catch (IOException e) {
-                // TODO make an alert?
-                e.printStackTrace();
-            }
-        } else {
-            // delete any older file (if any)
-            ignoredFile.delete();
-        }
+    public void addedSeed(ProcessorURI puri) {
+        schedule((CrawlURI)puri);
+    }
+    
+    /** 
+     * Do nothing with non-seed lines
+     * @see org.archive.modules.seeds.SeedListener#nonseedLine(java.lang.String)
+     */
+    public boolean nonseedLine(String line) {
+        return false; 
     }
 
     protected void prepForFrontier(CrawlURI curi) {
@@ -1068,16 +1007,25 @@ public abstract class AbstractFrontier
     protected void applySpecialHandling(CrawlURI curi) {
         if (curi.isSeed() && curi.getVia() != null
                 && curi.flattenVia().length() > 0) {
+            
             // The only way a seed can have a non-empty via is if it is the
-            // result of a seed redirect. Add it to the seeds list.
+            // result of a seed redirect. Add it to the seeds module, so 
+            // it may affect scope and be logged as 'discovered' seed.
             //
             // This is a feature. This is handling for case where a seed
             // gets immediately redirected to another page. What we're doing is
             // treating the immediate redirect target as a seed.
+            //
+            // FIXME This will also trigger a redundant attempt scheduling the 
+            // curi, which will fail because as we've already reached here,
+            // it's already-seen. Moving this 'special handling' much earlier,
+            // perhaps even outside the frontier, and letting that addSeed()
+            // code trigger the scheduling could avoid the redundancy. 
             getSeeds().addSeed(curi);
             // And it needs rapid scheduling.
-	    if (curi.getSchedulingDirective() == SchedulingConstants.NORMAL)
+            if (curi.getSchedulingDirective() == SchedulingConstants.NORMAL) {
                 curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
+            }
         }
 
         // optionally preferencing embeds up to MEDIUM
@@ -1639,7 +1587,6 @@ public abstract class AbstractFrontier
         }
     }
     
-    @SuppressWarnings("unchecked")
     protected void applyOverridesTo(CrawlURI curi) {
         curi.setOverlayMapsSource(sheetOverlaysManager); 
         if(!curi.haveOverlayNamesBeenSet()) {

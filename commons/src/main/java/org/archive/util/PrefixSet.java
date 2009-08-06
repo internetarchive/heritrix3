@@ -20,15 +20,15 @@
 package org.archive.util;
 
 import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Utility class for maintaining sorted set of string prefixes.
  * Redundant prefixes are coalesced into the shorter prefix. 
  */
-public class PrefixSet extends TreeSet<String> {
+public class PrefixSet extends ConcurrentSkipListSet<String> {
     private static final long serialVersionUID = -6054697706348411992L;
-
+    
     public PrefixSet() {
         super();
     }

@@ -27,9 +27,7 @@ import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.io.ReadSource;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.seeds.SeedListener;
@@ -37,10 +35,8 @@ import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigFile;
 import org.archive.util.SurtPrefixSet;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.Lifecycle;
-
-
 
 /**
  * Rule applies configured decision to any URIs that, when 
@@ -57,10 +53,11 @@ import org.springframework.context.Lifecycle;
  * @author gojomo
  */
 public class SurtPrefixedDecideRule extends PredicatedDecideRule 
-        implements SeedListener, Lifecycle {
-
+implements 
+    SeedListener,
+    InitializingBean
+{
     private static final long serialVersionUID = 3L;
-
     private static final Logger logger =
         Logger.getLogger(SurtPrefixedDecideRule.class.getName());
 
@@ -144,30 +141,18 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
     @Autowired
     public void setSeeds(SeedModule seeds) {
         this.seeds = seeds;
+        // in case this bean wasn't autowired to listeners (as if an
+        // inner bean)
+        seeds.addSeedListener(this);
     }
     
-    protected SurtPrefixSet surtPrefixes = null;
+    protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
 
-    /**
-     * Usual constructor. 
-     */
     public SurtPrefixedDecideRule() {
     }
 
-    
-    public void start() {
-        if(isRunning()) {
-            return;
-        }
-        this.readPrefixes();
-    }
-    
-    public boolean isRunning() {
-        return surtPrefixes != null; 
-    }
-    
-    public void stop() {
-        surtPrefixes = null; 
+    public void afterPropertiesSet() throws Exception {
+        readPrefixes();
     }
 
     /**
@@ -194,24 +179,11 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
         if (candidateSurt == null) {
             return false;
         }
-        if (getPrefixes().containsPrefixOf(candidateSurt)) {
+        if (surtPrefixes.containsPrefixOf(candidateSurt)) {
             return true;
         } else {
             return false;
         }
-    }
-
-
-    /**
-     * Synchronized get of prefix set to use
-     * 
-     * @return SurtPrefixSet to use for check
-     */
-    private synchronized SurtPrefixSet getPrefixes() {
-        if (surtPrefixes == null) {
-            readPrefixes();
-        }
-        return surtPrefixes;
     }
 
     protected void readPrefixes() {
@@ -246,7 +218,6 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
      * which may include both URIs and '+'-prefixed directives).
      */
     protected void buildSurtPrefixSet() {
-        SurtPrefixSet newSurtPrefixes = new SurtPrefixSet();
         Reader fr = null;
 
         // read SURTs from file, if appropriate
@@ -256,7 +227,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
             try {
                 fr = new FileReader(source);
                 try {
-                    newSurtPrefixes.importFromMixed(fr, true);
+                    surtPrefixes.importFromMixed(fr, true);
                 } finally {
                     fr.close();
                 }
@@ -265,44 +236,26 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule
                 // continue: operator will see severe log message or alert
             }
         }
-        
-        // interpret seeds as surts, if appropriate
-        boolean deduceFromSeeds = getSeedsAsSurtPrefixes();
-        if(deduceFromSeeds) {
-            if(seeds instanceof ReadSource) {
-                // scan text
-                fr = ((ReadSource)seeds).obtainReader();
-                newSurtPrefixes.importFromMixed(fr, deduceFromSeeds);
-                IOUtils.closeQuietly(fr);
-            }  else {
-                // just deduce from URIs
-                for(UURI u : seeds) {
-                    newSurtPrefixes.addFromPlain(u.toCustomString());
-                }
-            }
-        }
-        surtPrefixes = newSurtPrefixes;
     }
 
     /**
-     * Re-read prefixes after an update.
+     * If appropriate, convert seed notification into prefix-addition.
+     * 
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
      */
-    public synchronized void noteReconfiguration(/*KeyChangeEvent event*/) {
-        if (getRebuildOnReconfig()) {
-            readPrefixes();
+    public void addedSeed(final ProcessorURI curi) {
+        if(getSeedsAsSurtPrefixes()) {
+            surtPrefixes.add(prefixFrom(curi.getURI()));
         }
-        // TODO: make conditional on file having actually changed,
-        // perhaps by remembering mod-time
-    }
-
-    public synchronized void addedSeed(final ProcessorURI curi) {
-        SurtPrefixSet newSurtPrefixes = (SurtPrefixSet) surtPrefixes.clone();
-        newSurtPrefixes.add(prefixFrom(curi.toString()));
-        surtPrefixes = newSurtPrefixes;
     }
     
-    public void seedsRefreshed() {
-        // TODO update?        
+    /** 
+     * Pass nonseed lines to set as possible SURT prefix directive.
+     * 
+     * @see org.archive.modules.seeds.SeedListener#nonseedLine(java.lang.String)
+     */
+    public boolean nonseedLine(String line) {
+        return surtPrefixes.considerAsDirective(line);
     }
     
     protected String prefixFrom(String uri) {

@@ -21,26 +21,37 @@ package org.archive.modules.seeds;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.io.IOUtils;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.checkpointing.RecoverAction;
 import org.archive.io.ReadSource;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorURI;
+import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURI;
+import org.archive.net.UURIFactory;
 import org.archive.spring.WriteTarget;
 import org.archive.util.DevUtils;
+import org.archive.util.iterator.LineReadingIterator;
+import org.archive.util.iterator.RegexpLineIterator;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Module that provides a list of seeds from a text source (such
- * as a ConfigFile or ConfigString). 
+ * Module that announces a list of seeds from a text source (such
+ * as a ConfigFile or ConfigString), and provides a mechanism for
+ * adding seeds after a crawl has begun.
  *
  * @contributor gojomo
  */
@@ -69,31 +80,99 @@ implements ReadSource,
     }
 
     /**
-     * Gets an iterator over all configured seeds. Subclasses
-     * which cache seeds in memory can override with more
-     * efficient implementation. 
-     *
-     * @return Iterator, perhaps over a disk file, of seeds
+     * Announce all seeds from configured source to SeedListeners 
+     * (including nonseed lines mixed in). 
+     * @see org.archive.modules.seeds.SeedModule#announceSeeds()
      */
-    @Override
-    public Iterator<UURI> seedsIterator() {
-        return seedsIterator(null);
+    public void announceSeeds() {
+        BufferedReader reader = new BufferedReader(textSource.obtainReader());       
+        try {
+            announceSeedsFromReader(reader);    
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+    }
+            
+    /**
+     * Announce all seeds (and nonseed possible-directive lines) from
+     * the given Reader
+     * @param reader
+     */
+    protected void announceSeedsFromReader(BufferedReader reader) {
+        String s;
+        Iterator<String> iter = 
+            new RegexpLineIterator(
+                    new LineReadingIterator(reader),
+                    RegexpLineIterator.COMMENT_LINE,
+                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexpLineIterator.ENTRY);
+
+        while (iter.hasNext()) {
+            s = (String) iter.next();
+            if(Character.isLetterOrDigit(s.charAt(0))) {
+                // consider a likely URI
+                seedLine(s);
+            } else {
+                // report just in case it's a useful directive
+                nonseedLine(s);
+            }
+        }
     }
     
     /**
-     * Gets an iterator over all configured seeds. Subclasses
-     * which cache seeds in memory can override with more
-     * efficient implementation. 
-     *
-     * @param ignoredItemWriter optional writer to get ignored seed items report
-     * @return Iterator, perhaps over a disk file, of seeds
+     * Handle a read line that is probably a seed.
+     * 
+     * @param uri String seed-containing line
      */
-    @Override
-    public Iterator<UURI> seedsIterator(Writer ignoredItemWriter) {
-        BufferedReader br = new BufferedReader(textSource.obtainReader());
-        return new SeedFileIterator(br,ignoredItemWriter);
+    protected void seedLine(String uri) {
+        if (!uri.matches("[a-zA-Z][\\w+\\-]+:.*")) { // Rfc2396 s3.1 scheme,
+                                                     // minus '.'
+            // Does not begin with scheme, so try http://
+            uri = "http://" + uri;
+        }
+        try {
+            UURI uuri = UURIFactory.getInstance(uri);
+            CrawlURI curi = new CrawlURI(uuri);
+            curi.setSeed(true);
+            curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
+            if (getSourceTagSeeds()) {
+                curi.setSourceTag(curi.toString());
+            }
+            publishAddedSeed(curi);
+        } catch (URIException e) {
+            // try as nonseed line as fallback
+            nonseedLine(uri);
+        }
     }
     
+    /**
+     * Handle a read line that is not a seed, but may still have
+     * meaning to seed-consumers (such as scoping beans). 
+     * 
+     * @param uri String seed-containing line
+     */
+    protected void nonseedLine(String line) {
+        publishNonSeedLine(line);
+    }
+    
+    /**
+     * Treat the given file as a source of additional seeds,
+     * announcing to SeedListeners.
+     * 
+     * @see org.archive.modules.seeds.SeedModule#actOn(java.io.File)
+     */
+    public void actOn(File f) {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(f));
+            announceSeedsFromReader(reader);    
+        } catch(FileNotFoundException fnf) {
+            logger.log(Level.SEVERE,"seed file source not found",fnf);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+    }
+
     /**
      * Add a new seed to scope. By default, simply appends
      * to seeds file, though subclasses may handle differently.
@@ -122,10 +201,7 @@ implements ReadSource,
                 fw.write(curi.toString());
                 fw.flush();
                 fw.close();
-                Iterator<SeedListener> iter = seedListeners.iterator();
-                while(iter.hasNext()) {
-                    ((SeedListener)iter.next()).addedSeed(curi);
-                }
+                publishAddedSeed(curi);
                 return true;
             } catch (IOException e) {
                 DevUtils.warnHandle(e, "problem writing new seed");

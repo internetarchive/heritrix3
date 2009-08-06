@@ -30,12 +30,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -54,10 +52,11 @@ import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.ProcessorURI;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
+import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
-import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
@@ -127,6 +126,7 @@ public class StatisticsTracker
     implements 
         ApplicationContextAware, 
         ApplicationListener,
+        SeedListener,
         Lifecycle, 
         Runnable, 
         Serializable {
@@ -772,21 +772,17 @@ public class StatisticsTracker
     }
     
     /**
-     * Get a seed iterator for the job being monitored. 
+     * Get a seed iterator for the job being monitored. Only reports
+     * known seeds from processedSeedsRecords -- but as a SeedListener, 
+     * that should be complete. 
      * 
      * <b>Note:</b> This iterator will iterate over a list of <i>strings</i> not
      * UURIs like the Scope seed iterator. The strings are equal to the URIs'
      * getURIString() values.
      * @return the seed iterator
-     * FIXME: Consider using TransformingIterator here
      */
     public Iterator<String> getSeedsIterator() {
-        List<String> seedsCopy = new Vector<String>();
-        Iterator<UURI> i = seeds.seedsIterator();
-        while (i.hasNext()) {
-            seedsCopy.add(i.next().toString());
-        }
-        return seedsCopy.iterator();
+        return processedSeedsRecords.keySet().iterator();
     }
 
     public Iterator<SeedRecord> getSeedRecordsSortedByStatusCode() {
@@ -991,5 +987,24 @@ public class StatisticsTracker
                 seedsCrawled++;
             }
         }
+    }
+
+    /** 
+     * Create a seed record, even on initial notification (before
+     * any real attempt/processing.
+     * 
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
+     */
+    public void addedSeed(ProcessorURI curi) {
+        // record even undisposed-seeds for reporting purposes
+        handleSeed((CrawlURI) curi, "");
+    }
+    /**
+     * Do nothing with nonseed lines.
+     * 
+     * @see org.archive.modules.seeds.SeedListener#nonseedLine(java.lang.String)
+     */
+    public boolean nonseedLine(String line) {
+        return false;
     }
 }
