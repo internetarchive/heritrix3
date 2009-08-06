@@ -24,7 +24,7 @@
 */
 package org.archive.crawler.frontier.precedence;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * UriPrecedencePolicy which assigns URIs a precedence equal to the number

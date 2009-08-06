@@ -28,8 +28,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.LogRecord;
 
-import org.archive.crawler.datamodel.CoreAttributeConstants;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CoreAttributeConstants;
+import org.archive.modules.CrawlURI;
 
 /**
  * Runtime exception log formatter.

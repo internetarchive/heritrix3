@@ -26,9 +26,9 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.util.LogUtils;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;

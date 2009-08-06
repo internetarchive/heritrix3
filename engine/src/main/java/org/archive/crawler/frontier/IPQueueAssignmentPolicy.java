@@ -24,7 +24,7 @@
 */ 
 package org.archive.crawler.frontier;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;

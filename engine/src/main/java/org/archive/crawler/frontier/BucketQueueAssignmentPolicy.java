@@ -26,7 +26,7 @@
 package org.archive.crawler.frontier;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.springframework.beans.factory.annotation.Autowired;

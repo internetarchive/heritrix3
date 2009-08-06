@@ -33,8 +33,8 @@ import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.UriUniqFilter;
+import org.archive.modules.CrawlURI;
 
 /**
  * UriUniqFilter based on an underlying UriSet (essentially a Set).

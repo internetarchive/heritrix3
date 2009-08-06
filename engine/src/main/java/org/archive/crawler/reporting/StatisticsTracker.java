@@ -19,7 +19,7 @@
 
 package org.archive.crawler.reporting;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_SOURCE_TAG;
+import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -46,7 +46,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
@@ -54,6 +53,7 @@ import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.crawler.util.TopNSet;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
 import org.archive.modules.seeds.SeedModule;

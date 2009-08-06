@@ -17,19 +17,19 @@
  *  limitations under the License.
  */
  
-package org.archive.crawler.datamodel;
+package org.archive.modules;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_ANNOTATIONS;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_CREDENTIAL_AVATARS_KEY;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_FORCE_RETIRE;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_HERITABLE_KEYS;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_HTML_BASE;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_NONFATAL_ERRORS;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_PREREQUISITE_URI;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_SOURCE_TAG;
-import static org.archive.crawler.datamodel.SchedulingConstants.NORMAL;
+import static org.archive.modules.CoreAttributeConstants.A_ANNOTATIONS;
+import static org.archive.modules.CoreAttributeConstants.A_CREDENTIAL_AVATARS_KEY;
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
+import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
+import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
+import static org.archive.modules.CoreAttributeConstants.A_HTML_BASE;
+import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
+import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
+import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
+import static org.archive.modules.SchedulingConstants.NORMAL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
@@ -76,8 +76,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.archive.modules.ModuleAttributeConstants;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;

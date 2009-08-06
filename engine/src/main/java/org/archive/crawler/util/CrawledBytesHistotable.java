@@ -20,8 +20,8 @@
 package org.archive.crawler.util;
 
 import org.apache.commons.httpclient.HttpStatus;
-import org.archive.crawler.datamodel.CoreAttributeConstants;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CoreAttributeConstants;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Histotable;

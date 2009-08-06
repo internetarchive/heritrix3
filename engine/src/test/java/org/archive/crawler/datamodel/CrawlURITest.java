@@ -30,6 +30,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.TmpDirTestCase;

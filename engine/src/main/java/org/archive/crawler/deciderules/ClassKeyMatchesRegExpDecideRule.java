@@ -25,8 +25,8 @@
 package org.archive.crawler.deciderules;
 
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.framework.CrawlController;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.MatchesRegExpDecideRule;
 

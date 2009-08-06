@@ -24,8 +24,8 @@ package org.archive.crawler.processor;
 
 import java.util.regex.Matcher;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.framework.Frontier;
+import org.archive.modules.CrawlURI;
 import org.archive.net.PublicSuffixes;
 import org.archive.util.TextUtils;
 import org.springframework.beans.factory.annotation.Autowired;

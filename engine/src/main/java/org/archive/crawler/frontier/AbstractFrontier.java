@@ -19,8 +19,8 @@
 
 package org.archive.crawler.frontier;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_NONFATAL_ERRORS;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
+import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
@@ -60,15 +60,15 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.CheckpointRecovery;
-import org.archive.crawler.datamodel.CrawlURI;
-import org.archive.crawler.datamodel.SchedulingConstants;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.spring.SheetOverlaysManager;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.ProcessorURI;
+import org.archive.modules.SchedulingConstants;
 import org.archive.modules.canonicalize.UriCanonicalizationPolicy;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.extractor.ExtractorParameters;
@@ -730,7 +730,7 @@ public abstract class AbstractFrontier
      * Arrange for the given CrawlURI to be visited, if it is not
      * already scheduled/completed.
      *
-     * @see org.archive.crawler.framework.Frontier#schedule(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
     public void schedule(CrawlURI curi) {
         applyOverridesTo(curi);
@@ -761,7 +761,7 @@ public abstract class AbstractFrontier
      * via the next next() call, as a result of finished().
      *
      *  (non-Javadoc)
-     * @see org.archive.crawler.framework.Frontier#finished(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     public void finished(CrawlURI curi) {
         enqueueOrDo(new Finish(curi));

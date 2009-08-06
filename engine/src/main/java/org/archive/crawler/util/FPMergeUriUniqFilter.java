@@ -36,8 +36,8 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.UriUniqFilter;
+import org.archive.modules.CrawlURI;
 import org.archive.util.fingerprint.ArrayLongFPCache;
 
 import st.ata.util.FPGenerator;

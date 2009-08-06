@@ -30,8 +30,8 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.framework.Frontier;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.PostProcessor;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;

@@ -21,7 +21,7 @@ package org.archive.crawler.frontier;
 
 import java.io.Serializable;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * Establishes a mapping from CrawlURIs to String keys (queue names).

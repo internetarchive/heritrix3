@@ -27,8 +27,8 @@ package org.archive.crawler.frontier;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.crawler.datamodel.CrawlURI;
-import org.archive.crawler.datamodel.SchedulingConstants;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURIFactory;
 
 import com.sleepycat.je.tree.Key;

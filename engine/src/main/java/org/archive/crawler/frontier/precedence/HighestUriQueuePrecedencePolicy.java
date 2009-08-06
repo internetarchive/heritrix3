@@ -26,8 +26,8 @@ package org.archive.crawler.frontier.precedence;
 
 import java.io.PrintWriter;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.frontier.WorkQueue;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.Histotable;

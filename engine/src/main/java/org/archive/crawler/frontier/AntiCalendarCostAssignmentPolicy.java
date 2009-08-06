@@ -26,7 +26,7 @@ package org.archive.crawler.frontier;
 
 import java.util.regex.Matcher;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.TextUtils;
 
 /**

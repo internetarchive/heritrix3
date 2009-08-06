@@ -26,7 +26,7 @@ package org.archive.crawler.frontier;
 
 import java.io.Serializable;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * Calculate a integer 'cost' value for the given CrawlURI.

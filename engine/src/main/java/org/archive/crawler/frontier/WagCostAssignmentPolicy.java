@@ -24,7 +24,7 @@
 */ 
 package org.archive.crawler.frontier;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 
 /**
@@ -42,7 +42,7 @@ public class WagCostAssignmentPolicy extends CostAssignmentPolicy {
      * 
      * @param curi CrawlURI to be assigned a cost
      * 
-     * @see org.archive.crawler.frontier.CostAssignmentPolicy#costOf(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.frontier.CostAssignmentPolicy#costOf(org.archive.modules.CrawlURI)
      */
     public int costOf(CrawlURI curi) {
         int cost = 1;

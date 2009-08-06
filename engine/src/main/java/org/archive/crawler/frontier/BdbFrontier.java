@@ -46,7 +46,7 @@ import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.checkpointing.RecoverAction;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 

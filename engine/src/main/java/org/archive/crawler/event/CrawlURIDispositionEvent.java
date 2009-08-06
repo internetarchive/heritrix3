@@ -18,7 +18,7 @@
  */
 package org.archive.crawler.event;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.springframework.context.ApplicationEvent;
 
 public class CrawlURIDispositionEvent extends ApplicationEvent {

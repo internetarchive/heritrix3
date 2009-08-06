@@ -19,11 +19,11 @@
 
 package org.archive.crawler.frontier;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.DEFERRED_FOR_RETRY;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.DISREGARDED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
+import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 
@@ -52,7 +52,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections.Bag;
 import org.apache.commons.collections.BagUtils;
 import org.apache.commons.collections.bag.HashBag;
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
@@ -61,6 +60,7 @@ import org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy;
 import org.archive.crawler.frontier.precedence.CostUriPrecedencePolicy;
 import org.archive.crawler.frontier.precedence.QueuePrecedencePolicy;
 import org.archive.crawler.frontier.precedence.UriPrecedencePolicy;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -354,7 +354,7 @@ ApplicationContextAware {
      * Arrange for the given CrawlURI to be visited, if it is not
      * already scheduled/completed.
      *
-     * @see org.archive.crawler.framework.Frontier#schedule(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
     protected void processScheduleIfUnique(CrawlURI curi) {
         assert Thread.currentThread() == managerThread;
@@ -929,7 +929,7 @@ ApplicationContextAware {
      * via the next next() call, as a result of finished().
      *
      *  (non-Javadoc)
-     * @see org.archive.crawler.framework.Frontier#finished(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     protected void processFinish(CrawlURI curi) {
         assert Thread.currentThread() == managerThread;
@@ -1489,7 +1489,7 @@ ApplicationContextAware {
     /**
      * Force logging, etc. of operator- deleted CrawlURIs
      * 
-     * @see org.archive.crawler.framework.Frontier#deleted(org.archive.crawler.datamodel.CrawlURI)
+     * @see org.archive.crawler.framework.Frontier#deleted(org.archive.modules.CrawlURI)
      */
     public void deleted(CrawlURI curi) {
         //treat as disregarded

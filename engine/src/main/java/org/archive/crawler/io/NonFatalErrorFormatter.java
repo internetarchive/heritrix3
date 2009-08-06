@@ -27,7 +27,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.LogRecord;
 
-import org.archive.crawler.datamodel.CoreAttributeConstants;
+import org.archive.modules.CoreAttributeConstants;
 
 /**
  * @author gojomo

@@ -19,7 +19,7 @@
 
 package org.archive.crawler.framework;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_RUNTIME_EXCEPTION;
+import static org.archive.modules.CoreAttributeConstants.A_RUNTIME_EXCEPTION;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PROCESSING_THREAD_KILLED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_SERIOUS_ERROR;
@@ -33,8 +33,8 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.io.SinkHandlerLogThread;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.PostProcessor;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;

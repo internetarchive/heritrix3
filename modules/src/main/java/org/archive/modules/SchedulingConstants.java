@@ -17,25 +17,36 @@
  *  limitations under the License.
  */
 
-package org.archive.crawler.selftest;
-
-import org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy;
-import org.archive.modules.CrawlURI;
+package org.archive.modules;
 
 /**
- * Testing policy which uses a precedence inside the CrawlURI (presumably
- * put there earlier by KeyWordProcessor).
- * 
  * @author pjack
+ *
  */
-public class KeyWordUriPrecedencePolicy extends BaseUriPrecedencePolicy {
-    private static final long serialVersionUID = 1L;
+public class SchedulingConstants {
 
-    @Override
-    protected int calculatePrecedence(CrawlURI curi) {
-        if (curi.getPrecedence() > 0) {
-            return curi.getPrecedence();
-        }
-        return super.calculatePrecedence(curi);
+    
+    /** Highest scheduling priority.
+     * Before any others of its class.
+     */
+    public static final int HIGHEST = 0;
+    
+    /** High scheduling priority.
+     * After any {@link #HIGHEST}.
+     */
+    public static final int HIGH = 1;
+    
+    /** Medium priority.
+     * After any {@link #HIGH}.
+     */
+    public static final int MEDIUM = 2;
+    
+    /** Normal/low priority.
+     * Whenever/end of queue.
+     */
+    public static final int NORMAL = 3;
+
+    
+    private SchedulingConstants() {
     }
 }

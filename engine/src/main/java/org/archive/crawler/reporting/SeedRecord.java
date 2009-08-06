@@ -22,8 +22,8 @@ package org.archive.crawler.reporting;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
-import org.archive.crawler.datamodel.CoreAttributeConstants;
+import org.archive.modules.CoreAttributeConstants;
+import org.archive.modules.CrawlURI;
 
 /**
  * Record of all interesting info about the most-recent

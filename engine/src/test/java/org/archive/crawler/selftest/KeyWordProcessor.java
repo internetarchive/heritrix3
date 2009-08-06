@@ -2,7 +2,7 @@ package org.archive.crawler.selftest;
 
 import java.util.regex.Pattern;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;
 

@@ -19,7 +19,7 @@
  
 package org.archive.crawler.frontier.precedence;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 

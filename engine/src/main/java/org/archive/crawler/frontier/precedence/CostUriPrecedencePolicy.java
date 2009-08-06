@@ -24,7 +24,7 @@
 */
 package org.archive.crawler.frontier.precedence;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * UriPrecedencePolicy which sets a URI's precedence to its 'cost' -- which

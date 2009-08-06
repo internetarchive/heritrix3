@@ -6,7 +6,7 @@
  */
 package org.archive.crawler.frontier;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * CostAssignmentPolicy considering all URIs costless -- essentially

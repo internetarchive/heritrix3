@@ -30,8 +30,8 @@ import junit.framework.TestSuite;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.UriUniqFilter;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.TmpDirTestCase;

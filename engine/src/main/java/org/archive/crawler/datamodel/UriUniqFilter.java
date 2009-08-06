@@ -24,6 +24,8 @@ package org.archive.crawler.datamodel;
 
 import java.io.File;
 
+import org.archive.modules.CrawlURI;
+
 /**
  * A UriUniqFilter passes URI objects to a destination
  * (receiver) if the passed URI object has not been previously seen.

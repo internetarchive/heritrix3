@@ -24,12 +24,12 @@
 */
 package org.archive.crawler.frontier.precedence;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.A_PRECALC_PRECEDENCE;
+import static org.archive.modules.CoreAttributeConstants.A_PRECALC_PRECEDENCE;
 
 import java.util.Map;
 
 import org.archive.bdb.BdbModule;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.recrawl.PersistProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;

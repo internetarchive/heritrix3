@@ -27,7 +27,7 @@ package org.archive.crawler.util;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.BloomFilter;
 import org.archive.util.BloomFilter32bitSplit;
 

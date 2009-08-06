@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 
 import junit.framework.TestCase;
 
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 
 /**

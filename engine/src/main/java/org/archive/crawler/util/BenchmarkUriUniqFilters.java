@@ -30,8 +30,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.datamodel.UriUniqFilter;
+import org.archive.modules.CrawlURI;
 import org.archive.util.fingerprint.MemLongFPSet;
 
 

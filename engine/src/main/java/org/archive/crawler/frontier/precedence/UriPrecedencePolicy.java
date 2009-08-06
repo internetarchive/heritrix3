@@ -26,7 +26,7 @@ package org.archive.crawler.frontier.precedence;
 
 import java.io.Serializable;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * Superclass for URI precedence policies, which set a integer 

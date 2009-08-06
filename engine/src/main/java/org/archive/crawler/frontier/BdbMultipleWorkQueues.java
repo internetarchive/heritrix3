@@ -35,7 +35,7 @@ import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
 import org.apache.commons.collections.Closure;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;

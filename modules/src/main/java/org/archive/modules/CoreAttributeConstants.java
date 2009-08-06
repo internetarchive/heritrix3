@@ -23,9 +23,8 @@
  * @author gojomo
  *
  */
-package org.archive.crawler.datamodel;
+package org.archive.modules;
 
-import org.archive.modules.ModuleAttributeConstants;
 
 /**
  * CrawlURI attribute keys used by the core crawler

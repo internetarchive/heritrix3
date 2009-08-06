@@ -31,7 +31,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.archive.crawler.datamodel.CoreAttributeConstants.*;
+import static org.archive.modules.CoreAttributeConstants.*;
+
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.recrawl.PersistProcessor;
 import org.archive.util.bdbje.EnhancedEnvironment;

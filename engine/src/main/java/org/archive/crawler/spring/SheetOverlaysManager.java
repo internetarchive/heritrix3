@@ -30,7 +30,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.OverlayMapsSource;
 import org.archive.spring.Sheet;
 import org.archive.util.PrefixFinder;

@@ -26,13 +26,13 @@ package org.archive.crawler.prefetch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 
 import static org.archive.modules.fetcher.FetchStatusCodes.*;
 
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.CrawlStatus;
 import org.archive.crawler.reporting.StatisticsTracker;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;

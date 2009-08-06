@@ -28,8 +28,8 @@ import java.io.IOException;
 
 import javax.management.openmbean.CompositeData;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.frontier.FrontierJournal;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.net.UURI;

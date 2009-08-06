@@ -10,10 +10,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.datamodel.CrawlURI;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.precedence.PrecedenceProvider;
 import org.archive.crawler.frontier.precedence.SimplePrecedenceProvider;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;

@@ -24,7 +24,7 @@
 */ 
 package org.archive.crawler.frontier;
 
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * A CostAssignment policy that uses a constant value of 1 for all CrawlURIs.

@@ -20,7 +20,7 @@
 package org.archive.crawler.frontier;
 
 import org.apache.commons.lang.StringUtils;
-import org.archive.crawler.datamodel.CrawlURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.Hop;
 import org.archive.net.UURI;
 import org.archive.spring.HasKeyedProperties;
