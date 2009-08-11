@@ -1,26 +1,20 @@
-/* RecoveryJournal
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Jul 20, 2004
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2004 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.crawler.frontier;
 
@@ -41,6 +35,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.IoUtils;
 import org.json.JSONObject;
 
 /**
@@ -62,6 +57,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
 
     public final static String F_ADD = "F+ ";
     public final static String F_EMIT = "Fe ";
+    public final static String F_INCLUDE = "Fi ";
     public final static String F_DISREGARD = "Fd ";
     public final static String F_RESCHEDULE = "Fr ";
     public final static String F_SUCCESS = "Fs ";
@@ -109,6 +105,11 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
 
     public void emitted(CrawlURI curi) {
         writeLine(F_EMIT, curi.toString());
+
+    }
+    
+    public void included(CrawlURI curi) {
+        writeLine(F_INCLUDE, curi.toString());
 
     }
 
@@ -194,7 +195,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
         DecideRule scope = (scopeIncludes) ? frontier.getScope() : null;
         FrontierJournal newJournal = frontier.getFrontierJournal();
         
-        BufferedReader br = getBufferedReader(source);
+        BufferedReader br = IoUtils.getBufferedReader(source);
         String read;
         int lines = 0; 
         try {
@@ -273,7 +274,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
         try {
             // Scan log for all 'F+' lines: if not alreadyIncluded, schedule for
             // visitation
-            br = getBufferedReader(source);
+            br = IoUtils.getBufferedReader(source);
             try {
                 while ((read = br.readLine())!=null) {
                     qLines++;

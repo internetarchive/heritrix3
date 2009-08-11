@@ -1,25 +1,22 @@
-/* PersistProcessor.java
- * 
- * Created on Feb 17, 2005
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * Copyright (C) 2007 Internet Archive.
- * 
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- * 
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- * 
- * Heritrix is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.modules.recrawl;
 
 import java.io.BufferedReader;
@@ -37,10 +34,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
-import org.archive.io.CrawlerJournal;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.IoUtils;
 import org.archive.util.SURT;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
@@ -180,7 +177,7 @@ public abstract class PersistProcessor extends Processor {
         
         if(source.isFile()) {
             // scan log, writing to database
-            BufferedReader br = CrawlerJournal.getBufferedReader(source);
+            BufferedReader br = IoUtils.getBufferedReader(source);
             Iterator iter = new LineReadingIterator(br);
             while(iter.hasNext()) {
                 String line = (String) iter.next(); 
@@ -249,7 +246,7 @@ public abstract class PersistProcessor extends Processor {
         
         if(source.isFile()) {
             // scan log, writing to database
-            BufferedReader br = CrawlerJournal.getBufferedReader(source);
+            BufferedReader br = IoUtils.getBufferedReader(source);
             Iterator iter = new LineReadingIterator(br);
             while(iter.hasNext()) {
                 String line = (String) iter.next(); 
