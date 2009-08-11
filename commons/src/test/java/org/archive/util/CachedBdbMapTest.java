@@ -26,13 +26,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.archive.bdb.BdbModule;
 
 /**
- * @author stack
+ * Tests of CachedBdbMap 
+ * 
+ * @contributor stack
+ * @contributor gojomo
  * @version $Date$, $Revision$
  */
 public class CachedBdbMapTest extends TmpDirTestCase {
-    File envDir; 
+    File envDir;
+    BdbModule bdb;
     private CachedBdbMap<String,HashMap<String,String>> cache;
     
     @SuppressWarnings("unchecked")
@@ -40,12 +45,17 @@ public class CachedBdbMapTest extends TmpDirTestCase {
         super.setUp();
         this.envDir = new File(getTmpDir(),"CachedBdbMapTest");
         this.envDir.mkdirs();
-        this.cache = new CachedBdbMap(this.envDir,
-            this.getClass().getName(), String.class, HashMap.class);
+        bdb = new BdbModule();
+        bdb.getDir().setBase(null); 
+        bdb.getDir().setPath(envDir.getAbsolutePath());
+        bdb.start(); 
+        this.cache = bdb.getBigMap(
+                this.getClass().getName(), false, String.class, HashMap.class);
     }
     
     protected void tearDown() throws Exception {
-        this.cache.close();
+        ArchiveUtils.closeQuietly(this.cache);
+        bdb.stop();
         FileUtils.deleteDirectory(this.envDir);
         super.tearDown();
     }

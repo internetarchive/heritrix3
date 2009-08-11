@@ -18,7 +18,9 @@
  */
 package org.archive.util;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -26,7 +28,6 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -50,7 +51,6 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DeadlockException;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
 
 /**
  * A BDB JE backed hashmap. It extends the normal BDB JE map implementation by
@@ -91,14 +91,11 @@ import com.sleepycat.je.EnvironmentConfig;
  *  
  */
 public class CachedBdbMap<K,V> extends AbstractMap<K,V> 
-implements ConcurrentMap<K,V>, Serializable {
+implements ConcurrentMap<K,V>, Serializable, Closeable {
     private static final long serialVersionUID = -8655539411367047332L;
 
     private static final Logger logger =
         Logger.getLogger(CachedBdbMap.class.getName());
-
-    /** The database name of the class definition catalog.*/
-    private static final String CLASS_CATALOG = "java_class_catalog";
 
     /** Number of attempts to tolerate for put().
      * In BDB, simple write lock contention (non-deadlock) arrives as
@@ -114,17 +111,6 @@ implements ConcurrentMap<K,V>, Serializable {
      * timeouts were found.)
      */
     private static final int BDB_LOCK_ATTEMPT_TOLERANCE = 24;
-
-    /**
-     * A map of BDB JE Environments so that we reuse the Environment for
-     * databases in the same directory.
-     */
-    private static final Map<String,DbEnvironmentEntry> dbEnvironmentMap = 
-        new HashMap<String,DbEnvironmentEntry>();
-
-    /** The BDB JE environment used for this instance.
-     */
-    private transient DbEnvironmentEntry dbEnvironment;
 
     /** The BDB JE database used for this instance. */
     protected transient Database db;
@@ -267,14 +253,10 @@ implements ConcurrentMap<K,V>, Serializable {
     final transient private AtomicInteger useStatsSyncUsed 
             = new AtomicInteger(0);
     
-    /**
-     * Count of times we got an object from in-memory cache.
-     */
+    /** count of times we got an object from in-memory cache */
     private AtomicLong cacheHit = new AtomicLong(0);
 
-    /**
-     * Count of times the {@link CachedBdbMap#get} method was called.
-     */
+    /** count of times the {@link CachedBdbMap#get} method was called */
     private AtomicLong countOfGets = new AtomicLong(0);
 
     /**
@@ -283,14 +265,10 @@ implements ConcurrentMap<K,V>, Serializable {
      */
     private AtomicLong diskHit = new AtomicLong(0);
     
-    /**
-     * Name of bdbje db.
-     */
+    /** Name of bdbje db */
     private String dbName = null;
 
-    /**
-     * Reference to the Reference#referent Field.
-     */
+    /** Reference to the Reference#referent Field */
     protected static Field referentField;
     static {
         // We need access to the referent field in the PhantomReference.
@@ -317,19 +295,7 @@ implements ConcurrentMap<K,V>, Serializable {
      */
     final private boolean LOG_ERROR_ON_DESIGN_VIOLATING_METHODS=true;
 
-    /**
-     * Simple structure to keep needed information about a DB Environment.
-     */
-    protected static class DbEnvironmentEntry {
-        Environment environment;
-        StoredClassCatalog classCatalog;
-        int openDbCount = 0;
-        File dbDir;
-    }
-    
-    /**
-     * Shudown default constructor.
-     */
+    /** Shutdown default constructor */
     private CachedBdbMap() {
         super();
     }
@@ -350,43 +316,6 @@ implements ConcurrentMap<K,V>, Serializable {
         this.dbName = dbName;
     }
 
-    /**
-     * A constructor for creating a new CachedBdbMap.
-     * 
-     * Even though the put and get methods conforms to the Collections interface
-     * taking any object as key or value, you have to submit the class of the
-     * allowed key and value objects here and will get an exception if you try
-     * to put anything else in the map.
-     * 
-     * <p>This constructor internally calls
-     * {@link #initialize(Environment, Class, Class, StoredClassCatalog)}.
-     * Do not call initialize if you use this constructor.
-     * 
-     * @param dbDir The directory where the database will be created.
-     * @param dbName The name of the database to back this map by.
-     * @param keyClass The class of the objects allowed as keys.
-     * @param valueClass The class of the objects allowed as values.
-     * 
-     * @throws DatabaseException is thrown if the underlying BDB JE database
-     *             throws an exception.
-     */
-    public CachedBdbMap(final File dbDir, final String dbName,
-            final Class<K> keyClass, final Class<V> valueClass)
-    throws DatabaseException {
-        this(dbName);
-        this.dbEnvironment = getDbEnvironment(dbDir);
-        this.dbEnvironment.openDbCount++;
-        initialize(dbEnvironment.environment, keyClass, valueClass,
-            dbEnvironment.classCatalog);
-        if (logger.isLoggable(Level.INFO)) {
-            // Write out the bdb configuration.
-            EnvironmentConfig cfg = this.dbEnvironment.environment.getConfig();
-            logger.info("BdbConfiguration: Cache percentage "  +
-                cfg.getCachePercent() + ", cache size " + cfg.getCacheSize() +
-                ", Map size: " + size() + " cfg=" + cfg);
-        }
-    }
-    
     /**
      * Call this method when you have an instance when you used the
      * default constructor or when you have a deserialized instance that you
@@ -499,52 +428,6 @@ implements ConcurrentMap<K,V>, Serializable {
         }
     }
 
-
-    /**
-     * Get the database environment for a physical directory where data will be
-     * stored.
-     * <p>
-     * If the environment already exist it will be reused, else a new one will
-     * be created.
-     * 
-     * @param dbDir The directory where BDB JE data will be stored.
-     * @return a datastructure containing the environment and a default database
-     *         for storing class definitions.
-     */
-    private DbEnvironmentEntry getDbEnvironment(File dbDir) {
-        if (dbEnvironmentMap.containsKey(dbDir.getAbsolutePath())) {
-            return (DbEnvironmentEntry) dbEnvironmentMap.get(dbDir
-                    .getAbsolutePath());
-        }
-        EnvironmentConfig envConfig = new EnvironmentConfig();
-        envConfig.setAllowCreate(true);
-        envConfig.setTransactional(false);
-        
-//        // We're doing the caching ourselves so setting these at the lowest
-//        // possible level.
-//        envConfig.setCachePercent(1);
-        DbEnvironmentEntry env = new DbEnvironmentEntry();
-        try {
-            env.environment = new Environment(dbDir, envConfig);
-            env.dbDir = dbDir;
-            dbEnvironmentMap.put(dbDir.getAbsolutePath(), env);
-            
-            DatabaseConfig dbConfig = new DatabaseConfig();
-            dbConfig.setTransactional(false);
-            dbConfig.setAllowCreate(true);
-            dbConfig.setDeferredWrite(true);
-            
-            Database catalogDb = env.environment.openDatabase(null,
-                    CLASS_CATALOG, dbConfig);
-            
-            env.classCatalog = new StoredClassCatalog(catalogDb);
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-            //throw new FatalConfigurationException(e.getMessage());
-        }
-        return env;
-    }
-
     protected Database openDatabase(final Environment environment,
             final String dbName) throws DatabaseException {
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -554,7 +437,7 @@ implements ConcurrentMap<K,V>, Serializable {
         return environment.openDatabase(null, dbName, dbConfig);
     }
 
-    public synchronized void close() throws DatabaseException {
+    public synchronized void close() throws IOException {
         // Close out my bdb db.
         if (this.db != null) {
             try {
@@ -564,15 +447,6 @@ implements ConcurrentMap<K,V>, Serializable {
                 e.printStackTrace();
             } finally {
                 this.db = null;
-            }
-        }
-        if (dbEnvironment != null) {
-            dbEnvironment.openDbCount--;
-            if (dbEnvironment.openDbCount <= 0) {
-                dbEnvironment.classCatalog.close();
-                dbEnvironment.environment.close();
-                dbEnvironmentMap.remove(dbEnvironment.dbDir.getAbsolutePath());
-                dbEnvironment = null;
             }
         }
     }
@@ -691,9 +565,7 @@ implements ConcurrentMap<K,V>, Serializable {
         } while (true);
     }
 
-    /**
-     * Info to log, if at FINE level
-     */
+    /** Info to log, if at FINE level */
     private void logCacheSummary() {
         if (logger.isLoggable((Level.FINE))) {
             logger.fine(composeCacheSummary());
@@ -1067,22 +939,19 @@ implements ConcurrentMap<K,V>, Serializable {
     }
     
     /**
-     * Note that a call to this method CLOSEs the underlying bdbje.
-     * This instance is no longer of any use.  It must be re-initialized.
-     * We close the db here because if this BigMap is being treated as a plain
-     * Map, this is only opportunity for cleanup.
+     * Clear all contents. 
+     * 
+     * Previously, this also close()d the map, in case it was being used
+     * as a normal map. Now, it is incumbent on the code which creates 
+     * the map to close() it; ArchiveUtils.closeQuietly() may be used 
+     * even on objects that may not need closing. 
      */
     public synchronized void clear() {
         dumpExtraStats();
         this.memMap.clear();
         this.diskMap.clear();
         this.diskMapSize.set(0);
-        //TODO:FIXME: clear should not equal close!
-        try {
-            close();
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+        this.sync();
     }
 
     /** Remove mapping for the given key.
@@ -1219,25 +1088,6 @@ implements ConcurrentMap<K,V>, Serializable {
         return memMap.containsKey(key);
     }
 
-    /**
-     * This method is not supported.
-     * @deprecated 
-     * @param value
-     * @return
-     */
-    public synchronized boolean containsValue(Object value) {
-        if (quickContainsValue(value)) {
-            return true;
-        }
-        return diskMap.containsValue(value);
-    }
-
-    private boolean quickContainsValue(Object value) {
-        expungeStaleEntries(); // note: expunge is not quick
-        // FIXME this isn't really right, as memMap is of SoftEntries
-        return memMap.containsValue(value);
-    }
-
     public int size() {
         return diskMapSize.get();
     }
@@ -1296,7 +1146,6 @@ implements ConcurrentMap<K,V>, Serializable {
         try {
             this.db.sync();
         } catch (DatabaseException e) {
-            // TODO Auto-generated catch block
             throw new RuntimeException(e);
         }
         
@@ -1754,9 +1603,6 @@ implements ConcurrentMap<K,V>, Serializable {
         }
     }
 
-    
- 
-    
     @SuppressWarnings("unchecked")
     private K toKey(Object o) {
         return (K)o;

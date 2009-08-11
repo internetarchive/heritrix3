@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -352,7 +351,7 @@ Serializable, Closeable {
     }
 
 
-    public <K,V> ConcurrentMap<K,V> getBigMap(String dbName, boolean recycle,
+    public <K,V> CachedBdbMap<K,V> getBigMap(String dbName, boolean recycle,
             Class<? super K> key, Class<? super V> value) 
     throws DatabaseException {
         @SuppressWarnings("unchecked")
