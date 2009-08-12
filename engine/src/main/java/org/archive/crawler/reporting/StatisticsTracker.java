@@ -295,7 +295,6 @@ public class StatisticsTracker
      = new ConcurrentHashMap<String,AtomicLong>();
     
     /** Keep track of hosts. 
-     * 
      */
     protected ConcurrentMap<String,AtomicLong> hostsDistribution = 
         new ConcurrentHashMap<String, AtomicLong>(); // temp dummy
@@ -315,7 +314,7 @@ public class StatisticsTracker
     protected TopNSet hostsLastFinishedTop;
     
     /**
-     * Record of seeds' latest actions.
+     * Record of seeds and latest results
      */
     protected ConcurrentMap<String,SeedRecord> processedSeedsRecords = 
         new ConcurrentHashMap<String, SeedRecord>();
@@ -786,11 +785,7 @@ public class StatisticsTracker
     }
 
     public Iterator<SeedRecord> getSeedRecordsSortedByStatusCode() {
-        return getSeedRecordsSortedByStatusCode(getSeedsIterator());
-    }
-    
-    protected Iterator<SeedRecord> getSeedRecordsSortedByStatusCode(
-            Iterator<String> i) {
+        Iterator<String> i = getSeedsIterator();
         TreeSet<SeedRecord> sortedSet = 
           new TreeSet<SeedRecord>(new Comparator<SeedRecord>() {
             public int compare(SeedRecord sr1, SeedRecord sr2) {

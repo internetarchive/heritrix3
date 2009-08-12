@@ -36,7 +36,7 @@ public class SeedsReport extends Report {
 
         long seedsCrawled = 0;
         long seedsTotal = 0;
-        for (Iterator<SeedRecord> i = stats.getSeedRecordsSortedByStatusCode(stats.getSeedsIterator());
+        for (Iterator<SeedRecord> i = stats.getSeedRecordsSortedByStatusCode();
                 i.hasNext();) {
             SeedRecord sr = (SeedRecord)i.next();
             writer.print(sr.getStatusCode());
