@@ -34,6 +34,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_EMBED_HOPS
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,6 +52,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
@@ -82,6 +85,7 @@ import org.archive.spring.ConfigPath;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.IoUtils;
 import org.archive.util.iterator.LineReadingIterator;
 import org.archive.util.iterator.RegexpLineIterator;
 import org.json.JSONException;
@@ -1177,6 +1181,90 @@ public abstract class AbstractFrontier
         return false;
     }
     
+    //  show import progress every this many lines
+    private final static int PROGRESS_INTERVAL = 1000000; 
+
+    /**
+     * Import URIs from the given file (in recover-log-like format, with
+     * a 3-character 'type' tag preceding a URI with optional hops/via).
+     * 
+     * If 'includeOnly' is true, the URIs will only be imported into 
+     * the frontier's alreadyIncluded structure, without being queued.
+     * 
+     * Only imports URIs if their first tag field matches the acceptTags 
+     * pattern.
+     * 
+     * @param source File recovery log file to use (may be .gz compressed)
+     * @param applyScope whether to apply crawl scope to URIs
+     * @param includeOnly whether to only add to included filter, not schedule
+     * @param forceFetch whether to force fetching, even if already seen 
+     * (ignored if includeOnly is set)
+     * @param acceptTags String regex; only lines whose first field 
+     * match will be included
+     * @return number of lines in recovery log (for reference)
+     * @throws IOException
+     */
+    public long importRecoverFormat(File source, boolean applyScope, 
+            boolean includeOnly, boolean forceFetch, String acceptTags) 
+    throws IOException {
+        DecideRule scope = (applyScope) ? getScope() : null;
+        FrontierJournal newJournal = getFrontierJournal();
+        Matcher m = Pattern.compile(acceptTags).matcher(""); 
+        BufferedReader br = IoUtils.getBufferedReader(source);
+        String read;
+        int lineCount = 0; 
+        try {
+            while ((read = br.readLine())!=null) {
+                lineCount++;
+                if(read.length()<4) {
+                    continue;
+                }
+                String lineType = read.substring(0, 3);
+                m.reset(lineType);
+                if(m.matches()) {
+                    try {
+                        String uriHopsViaString = read.substring(3).trim();
+                        CrawlURI curi = CrawlURI.fromHopsViaString(uriHopsViaString);
+                        if(scope!=null) {
+                            applyOverridesTo(curi);
+                            try {
+                                KeyedProperties.loadOverridesFrom(curi);
+                                if(!scope.accepts(curi)) {
+                                    // skip out-of-scope URIs if so configured
+                                    continue;
+                                }
+                            } finally {
+                                KeyedProperties.clearOverridesFrom(curi); 
+                            }
+                        }
+                        if(includeOnly) {
+                            considerIncluded(curi);
+                            newJournal.included(curi);
+                        } else {
+                            curi.setForceFetch(forceFetch);
+                            schedule(curi);
+                            newJournal.added(curi);
+                        }
+                    } catch (URIException e) {
+                        logger.log(Level.WARNING,"Problem line: "+read, e);
+                    }
+                }
+                if((lineCount%PROGRESS_INTERVAL)==0) {
+                    // every 1 million lines, print progress
+                    logger.info(
+                            "at line " + lineCount + (includeOnly?" (include-only)":"")
+                            + " alreadyIncluded count = " +
+                            discoveredUriCount());
+                }
+            }
+        } catch (EOFException e) {
+            // expected in some uncleanly-closed recovery logs; ignore
+        } finally {
+            br.close();
+        }
+        return lineCount;
+    }
+    
     /* (non-Javadoc)
      * @see org.archive.crawler.framework.Frontier#importURIs(java.util.Map)
      */
@@ -1191,13 +1279,13 @@ public abstract class AbstractFrontier
             throw ioe;
         }
         if("recoveryLog".equals(params.optString("format"))) {
-            FrontierJournal.importRecoverLog(params, controller);
+            FrontierJournal.importRecoverLog(params, this);
             return;
         }
         // otherwise, do a 'simple' import
         importURIsSimple(params);
     }
-
+    
     /**
      * Import URIs from either a simple (one URI per line) or crawl.log
      * format.

@@ -61,7 +61,6 @@ import org.archive.crawler.frontier.precedence.CostUriPrecedencePolicy;
 import org.archive.crawler.frontier.precedence.QueuePrecedencePolicy;
 import org.archive.crawler.frontier.precedence.UriPrecedencePolicy;
 import org.archive.modules.CrawlURI;
-import org.archive.net.UURI;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Transform;
@@ -1501,18 +1500,16 @@ ApplicationContextAware {
         curi.processingCleanup();
     }
 
-    public void considerIncluded(UURI u) {
-        this.uriUniqFilter.note(canonicalize(u));
-        CrawlURI temp = new CrawlURI(u);
-        applyOverridesTo(temp);
+    public void considerIncluded(CrawlURI curi) {
+        this.uriUniqFilter.note(canonicalize(curi));
+        applyOverridesTo(curi);
         try {
-            KeyedProperties.loadOverridesFrom(temp);
-            temp.setClassKey(getClassKey(temp));
-            getQueueFor(temp).expend(getCost(temp));
+            KeyedProperties.loadOverridesFrom(curi);
+            curi.setClassKey(getClassKey(curi));
+            getQueueFor(curi).expend(getCost(curi));
         } finally {
-            KeyedProperties.clearOverridesFrom(temp); 
+            KeyedProperties.clearOverridesFrom(curi); 
         }
-        
     }
     
     protected abstract void closeQueue() throws IOException;

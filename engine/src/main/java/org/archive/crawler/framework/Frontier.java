@@ -24,6 +24,7 @@
  */
 package org.archive.crawler.framework;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.management.openmbean.CompositeData;
@@ -32,7 +33,6 @@ import org.archive.crawler.frontier.FrontierJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
-import org.archive.net.UURI;
 import org.archive.util.MultiReporter;
 import org.json.JSONException;
 import org.springframework.context.Lifecycle;
@@ -320,6 +320,31 @@ public interface Frontier extends Lifecycle, MultiReporter {
             String params)
 			throws IOException;
 
+    
+    /**
+     * Import URIs from the given file (in recover-log-like format, with
+     * a 3-character 'type' tag preceding a URI with optional hops/via).
+     * 
+     * If 'includeOnly' is true, the URIs will only be imported into 
+     * the frontier's alreadyIncluded structure, without being queued.
+     * 
+     * Only imports URIs if their first tag field matches the acceptTags 
+     * pattern.
+     * 
+     * @param source File recovery log file to use (may be .gz compressed)
+     * @param applyScope whether to apply crawl scope to URIs
+     * @param includeOnly whether to only add to included filter, not schedule
+     * @param forceFetch whether to force fetching, even if already seen 
+     * (ignored if includeOnly is set)
+     * @param acceptTags String regex; only lines whose first field 
+     * match will be included
+     * @return number of lines in recovery log (for reference)
+     * @throws IOException
+     */
+    public long importRecoverFormat(File source, boolean applyScope, 
+            boolean includeOnly, boolean forceFetch, String acceptTags) 
+    throws IOException;
+    
     /**
      * Get a <code>URIFrontierMarker</code> initialized with the given
      * regular expression at the 'start' of the Frontier.
@@ -420,7 +445,7 @@ public interface Frontier extends Lifecycle, MultiReporter {
      * 
      * @param u UURI instance to add to the Already Included set.
      */
-    public void considerIncluded(UURI u);
+    public void considerIncluded(CrawlURI curi);
 
     /**
      * Notify Frontier that it should not release any URIs, instead

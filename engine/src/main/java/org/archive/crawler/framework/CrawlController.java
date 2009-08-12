@@ -173,7 +173,7 @@ implements Serializable,
     }
 
     /** whether to pause at crawl start */
-    boolean pauseAtStart = false; 
+    boolean pauseAtStart = true; 
     public boolean getPauseAtStart() {
         return pauseAtStart;
     }
@@ -341,7 +341,9 @@ implements Serializable,
         this.sExit = CrawlStatus.FINISHED_ABNORMAL;
         
         if (getPauseAtStart()) {
-            requestCrawlPause();
+            // frontier is already paused unless started, so just 
+            // 'complete'/ack pause
+            completePause();
         } else {
             getFrontier().run();
         }

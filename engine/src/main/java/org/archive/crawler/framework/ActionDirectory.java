@@ -45,19 +45,27 @@ import org.springframework.context.Lifecycle;
  * process with regard to current crawl, and rename with a datestamp 
  * into the 'done' directory. 
  * 
- * Initially supports:
- *  - .seeds : add each URI found in file as a new seed (to be crawled
- *             if not already; to affect scope if appropriate).
- *  
- * Future support:
- *  - .include : add each URI found in a recover-log like file to 
- *               the frontier's alreadyIncluded filter (preventing
- *               it from being recrawled)
- *  - .schedule : add each URI found in a recover-log like file to 
- *               the frontier's queues
+ * Currently supports:
+ *  - .seeds(.gz)
+ *      add each URI found in file as a new seed (to be crawled
+ *      if not already; to affect scope if appropriate).
+ *  - (.s).recover(.gz)
+ *      treat as traditional recovery log: consider all 'Fs'-tagged lines 
+ *      included, then try-rescheduling all 'F+'-tagged lines. (If ".s." 
+ *      present, try scoping URIs before including/scheduling.)
+ *  - (.s).include(.gz) 
+ *      add each URI found in a recover-log like file (regardless of its
+ *      tagging) to the frontier's alreadyIncluded filter, preventing them
+ *      from being recrawled. ('.s.' indicates to apply scoping.)
+ *  - (.s).schedule(.gz)
+ *      add each URI found in a recover-log like file (regardless of its
+ *      tagging) to the frontier's queues. ('.s.' indicates to apply 
+ *      scoping.)
+ *      
+ * Future support planned:
  *  - .robots: invalidate robots ASAP
  *  - (?) .block: block-all on named site(s)
- *  -  .overlay: 
+ *  -  .overlay: add new overlay settings
  *  - .js .rb .bsh .rb etc - execute arbitrary script (a la ScriptedProcessor)
  * 
  * @contributor gojomo
@@ -68,6 +76,23 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
 
     ScheduledExecutorService executor;
 
+    /** how long after crawl start to first scan action directory */
+    protected int initialDelay = 30;
+    public int getInitialDelay() {
+        return initialDelay;
+    }
+    public void setInitialDelay(int initialDelay) {
+        this.initialDelay = initialDelay;
+    }
+    /** delay between scans of actionDirectory for new files */
+    protected int delay = 30;
+    public int getDelay() {
+        return delay;
+    }
+    public void setDelay(int delay) {
+        this.delay = delay;
+    }
+    
     /**
      * Scratch directory for temporary overflow-to-disk
      */
@@ -106,6 +131,16 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         this.seeds = seeds;
     }
     
+    /** autowired frontier for actions */
+    protected Frontier frontier;
+    public Frontier getFrontier() {
+        return this.frontier;
+    }
+    @Autowired
+    public void setFrontier(Frontier frontier) {
+        this.frontier = frontier;
+    }
+    
     public boolean isRunning() {
         return executor != null && !executor.isShutdown();
     }
@@ -114,8 +149,12 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         if (isRunning()) {
             return;
         }
+        // create directories
+        getActionDir().getFile().mkdirs();
+        getDoneDir().getFile().mkdirs();
+        // start background executor
         executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleWithFixedDelay(this, 60, 60, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(this, getInitialDelay(), getDelay(), TimeUnit.SECONDS);
     }
     
     public void stop() {
@@ -123,48 +162,101 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         try {
             while (!executor.awaitTermination(10, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            // do nothing
         }
     }
     
+    /** 
+     * Action taken at scheduled intervals
+     * @see java.lang.Runnable#run()
+     */
     public void run() {
         scanActionDirectory();
     }
     
+    /**
+     * Find any new files in the 'action' directory; process each in
+     * order. 
+     */
     protected void scanActionDirectory() {
         File dir = actionDir.getFile();
         File[] files = dir.listFiles((FileFilter)FileFilterUtils.fileFileFilter());
         Arrays.sort(files); 
         for(File f : files) {
-            actOn(f);
-        }
-    }
-    
-    protected void actOn(File f) {
-        LOGGER.info("processing action file: "+f);
-        String filename = f.getName(); 
-        if(filename.endsWith(".seeds")) {
-            getSeeds().actOn(f); 
-        } else if (filename.endsWith("recover")||filename.endsWith("recover.gz")) {
-            // TODO
-//            FrontierJournal.importRecoverLog(params, controller);
-        } else if (filename.endsWith(".robots")) {
-            // force refresh of robots
-            // TODO
-        } else {
-            // try as script
-            
-        }
-        
-        // move file to 'done' area with timestamp
-        String timestamp = ArchiveUtils.get17DigitDate();
-        while(f.exists()) {
             try {
-                FileUtils.moveFile(f, new File(doneDir.getFile(),timestamp+"."+f.getName()));
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE,"unable to move "+f,e);
+                actOn(f);
+            } catch (Throwable e) {
+                LOGGER.log(Level.SEVERE,"unhandled exception from actifile: "+f,e);
             }
         }
     }
+    
+    /**
+     * Process an individual action file found 
+     * 
+     * @param actionFile File to process
+     */
+    protected void actOn(File actionFile) {
+        LOGGER.info("processing action file: "+actionFile);
+        String filename = actionFile.getName(); 
+        boolean isGzip = filename.endsWith(".gz");
+        String corename = isGzip ? filename.substring(0,filename.length()-3) : filename;
+        
+        if(corename.endsWith(".seeds")) {
+            // import seeds
+            getSeeds().actOn(actionFile); 
+        } else if (corename.endsWith(".recover")) {
+            // apply recovery-log
+            boolean alsoScope = corename.endsWith(".s.recover");
+            try {
+                getFrontier().importRecoverFormat(actionFile, alsoScope, true, false, "Fs ");
+                getFrontier().importRecoverFormat(actionFile, alsoScope, false, false, "F\\+ ");
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem with action file: "+actionFile,ioe);
+            }
+        } else if (corename.endsWith(".include")) {
+            // consider-included-only (do not schedule)
+            boolean alsoScope = corename.endsWith(".s.include");
+            try {
+                getFrontier().importRecoverFormat(actionFile, alsoScope, true, false, ".*");
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem with action file: "+actionFile,ioe);
+            }
+        } else if (corename.endsWith(".schedule")) {
+            // schedule to queues
+            boolean alsoScope = corename.endsWith(".s.schedule");
+            try {
+                getFrontier().importRecoverFormat(actionFile, alsoScope, false, false, ".*");
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem with action file: "+actionFile,ioe);
+            }
+        } else if (corename.endsWith(".force")) {
+            // schedule to queues
+            boolean alsoScope = corename.endsWith(".s.force");
+            try {
+                getFrontier().importRecoverFormat(actionFile, alsoScope, false, true, ".*");
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem with action file: "+actionFile,ioe);
+            }
+//        } else if (filename.endsWith(".robots")) {
+//            // force refresh of robots
+//            // TODO
+//        } else {
+//            // try as script
+//            // TODO
+        } else {
+            LOGGER.warning("action file ignored: "+actionFile);
+        }
+        
+        // move file to 'done' area with timestamp prefix
+        String timestamp = ArchiveUtils.get17DigitDate();
+        while(actionFile.exists()) {
+            try {
+                FileUtils.moveFile(actionFile, new File(doneDir.getFile(),timestamp+"."+actionFile.getName()));
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE,"unable to move "+actionFile,e);
+            }
+        }
+    }
+    
 }
