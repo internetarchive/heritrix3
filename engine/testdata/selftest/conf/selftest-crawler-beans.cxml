@@ -20,8 +20,9 @@
 
 metadata.operatorContactUrl=@@URL_VALUE@@
 seeds.textSource.value=@@SEEDS_VALUE@@
-# only self-crawling, so go fast
+# only self-crawling, so go fast and avoid pause-at-start
 frontier.maxDelayMs=50
+crawlController.pauseAtStart=false
 @@MORE_PROPERTIES@@
 
    </value>
