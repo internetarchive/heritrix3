@@ -60,10 +60,10 @@ public abstract class DecideRule implements Serializable, HasKeyedProperties {
     
     public DecideResult decisionFor(ProcessorURI uri) {
         if (!getEnabled()) {
-            return DecideResult.PASS;
+            return DecideResult.NONE;
         }
         DecideResult result = innerDecide(uri);
-        if (result == DecideResult.PASS) {
+        if (result == DecideResult.NONE) {
             return result;
         }
 

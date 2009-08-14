@@ -133,7 +133,7 @@ implements ApplicationContextAware, InitializingBean {
                 return (DecideResult)engine.eval("decisionFor(object)");
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
-                return DecideResult.PASS;
+                return DecideResult.NONE;
             } 
         }
     }

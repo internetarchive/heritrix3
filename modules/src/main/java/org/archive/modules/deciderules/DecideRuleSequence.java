@@ -39,7 +39,7 @@ public class DecideRuleSequence extends DecideRule  {
     }
 
     public DecideResult innerDecide(ProcessorURI uri) {
-        DecideResult result = DecideResult.PASS;
+        DecideResult result = DecideResult.NONE;
         List<DecideRule> rules = getRules();
         int max = rules.size();
         for (int i = 0; i < max; i++) {
@@ -50,7 +50,7 @@ public class DecideRuleSequence extends DecideRule  {
                     LOGGER.finest("DecideRule #" + i + " " + 
                             rule.getClass().getName() + " returned " + r);
                 }
-                if (r != DecideResult.PASS) {
+                if (r != DecideResult.NONE) {
                     result = r;
                 }
             }

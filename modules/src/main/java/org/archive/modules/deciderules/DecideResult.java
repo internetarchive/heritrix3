@@ -35,7 +35,7 @@ public enum DecideResult {
     ACCEPT, 
     
     /** Indicates the URI was neither accepted nor rejected. */
-    PASS, 
+    NONE, 
     
     /** Indicates the URI was rejected. */
     REJECT;

@@ -48,6 +48,6 @@ public class SeedAcceptDecideRule extends DecideRule {
         if (uri.isSeed()) {
             return DecideResult.ACCEPT;
         }
-        return DecideResult.PASS;
+        return DecideResult.NONE;
     }
 }

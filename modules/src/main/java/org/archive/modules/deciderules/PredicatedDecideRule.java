@@ -53,7 +53,7 @@ public abstract class PredicatedDecideRule extends DecideRule {
         if (evaluate(uri)) {
             return getDecision();
         }
-        return DecideResult.PASS;
+        return DecideResult.NONE;
     }
 
     protected abstract boolean evaluate(ProcessorURI object);

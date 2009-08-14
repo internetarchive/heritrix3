@@ -73,7 +73,7 @@ public class PathologicalPathDecideRule extends DecideRule {
         if (p.matcher(uri.getUURI().toString()).matches()) {
             return DecideResult.REJECT;
         } else {
-            return DecideResult.PASS;
+            return DecideResult.NONE;
         }
     }
 

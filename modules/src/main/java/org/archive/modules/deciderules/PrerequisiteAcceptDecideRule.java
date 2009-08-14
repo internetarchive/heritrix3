@@ -49,7 +49,7 @@ public class PrerequisiteAcceptDecideRule extends DecideRule {
                     hopsPath.charAt(hopsPath.length()-1) == Hop.PREREQ.getHopChar()) {
                 return DecideResult.ACCEPT;
             }
-        return DecideResult.PASS;
+        return DecideResult.NONE;
     }
 
 

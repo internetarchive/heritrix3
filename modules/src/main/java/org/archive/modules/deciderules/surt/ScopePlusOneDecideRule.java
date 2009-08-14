@@ -87,7 +87,7 @@ public class ScopePlusOneDecideRule extends SurtPrefixedDecideRule {
             UURI via = uri.getVia();
             if (via == null) {
                 // If there is no via and the URL doesn't match scope,reject it
-                return DecideResult.PASS;
+                return DecideResult.NONE;
             }
             // If the via is within scope, accept it
             boolean result = isInScope (via, set);
@@ -99,7 +99,7 @@ public class ScopePlusOneDecideRule extends SurtPrefixedDecideRule {
                 return DecideResult.ACCEPT;
             }
         }
-        return DecideResult.PASS;
+        return DecideResult.NONE;
     }
     
     /**
