@@ -440,8 +440,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
         	if (curi.forceFetch()) {
         		r.addLabel("force-fetch");
         	}
-            r.addLabelValue("via", flattenVia(curi));
-            r.addLabelValue("hopsFromSeed", curi.getPathFromSeed());
+            if(StringUtils.isNotBlank(flattenVia(curi))) {
+                r.addLabelValue("via", flattenVia(curi));
+            }
+            if(StringUtils.isNotBlank(curi.getPathFromSeed())) {
+                r.addLabelValue("hopsFromSeed", curi.getPathFromSeed());
+            }
             if (curi.containsDataKey(A_SOURCE_TAG)) {
                 r.addLabelValue("sourceTag", 
                         (String)curi.getData().get(A_SOURCE_TAG));

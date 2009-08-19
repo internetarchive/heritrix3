@@ -42,8 +42,8 @@ abstract class SubElement {
 
     protected String baseCheck(final String s) {
         // Check for null.
-        if (s == null || s.length() <= 0) {
-            throw new IllegalArgumentException("Can't be null or empty");
+        if (s == null) {
+            throw new IllegalArgumentException("Can't be null");
         }
         // Check for CRLF.
         for (int i = 0; i < s.length(); i++) {
