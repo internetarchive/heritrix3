@@ -154,7 +154,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING,"charset problem: "+charsetName,e);
             // TODO: better detection or default
-            charset = Charset.forName("UTF-8");
+            charset = Charset.forName(FALLBACK_CHARSET_NAME);
         }
         if (charset.newEncoder().maxBytesPerChar() == 1.0) {
             logger.info("charset=" + charsetName

@@ -91,7 +91,7 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING,"charset problem: "+encoding,e);
             // TODO: better detection or default
-            charset = Charset.forName("UTF-8");
+            charset = Charset.forName(FALLBACK_CHARSET_NAME);
         }
         return charset.decode(bb).asReadOnlyBuffer();
     }

@@ -37,6 +37,11 @@ import java.io.IOException;
  */
 public interface ReplayCharSequence extends CharSequence, Closeable {
 
+    /** charset to use in replay when declared value 
+     * is absent/illegal/unavailable */
+    String FALLBACK_CHARSET_NAME = "UTF-8";
+//    String FALLBACK_CHARSET_NAME = "ISO8859_1";
+    
     /**
      * Call this method when done so implementation has chance to clean up
      * resources.
