@@ -185,7 +185,7 @@ implements Serializable,
      * Size in bytes of in-memory buffer to record outbound traffic. One such 
      * buffer is reserved for every ToeThread. 
      */
-    int recorderOutBufferBytes = 4096;
+    int recorderOutBufferBytes = 16 * 1024; // 16KiB
     public int getRecorderOutBufferBytes() {
         return recorderOutBufferBytes;
     }
@@ -197,7 +197,7 @@ implements Serializable,
      * Size in bytes of in-memory buffer to record inbound traffic. One such 
      * buffer is reserved for every ToeThread.
      */
-    int recorderInBufferBytes = 65536;
+    int recorderInBufferBytes = 512 * 1024; // 512KiB
     public int getRecorderInBufferBytes() {
         return recorderInBufferBytes;
     }
