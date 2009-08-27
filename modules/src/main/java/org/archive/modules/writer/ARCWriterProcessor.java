@@ -209,7 +209,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     
     private static String getHostName() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            return InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
             logger.log(Level.SEVERE, "Could not get local host name.", e);
             return "localhost";

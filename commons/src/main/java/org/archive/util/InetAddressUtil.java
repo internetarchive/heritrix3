@@ -95,7 +95,7 @@ public class InetAddressUtil {
                 InetAddress ia = ee.nextElement();
                 if (ia != null) {
                     if (ia.getHostName() != null) {
-                        localNames.add(ia.getHostName());
+                        localNames.add(ia.getCanonicalHostName());
                     }
                     if (ia.getHostAddress() !=  null) {
                         localNames.add(ia.getHostAddress());

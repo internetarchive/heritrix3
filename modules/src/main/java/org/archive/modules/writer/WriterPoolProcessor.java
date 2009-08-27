@@ -437,7 +437,7 @@ implements Lifecycle {
         sfx = sfx.trim();
         if (sfx.contains(WriterPoolMember.HOSTNAME_VARIABLE)) {            String str = "localhost.localdomain";
             try {
-                str = InetAddress.getLocalHost().getHostName();
+                str = InetAddress.getLocalHost().getCanonicalHostName();
             } catch (UnknownHostException ue) {
                 logger.severe("Failed getHostAddress for this host: " + ue);
             }
