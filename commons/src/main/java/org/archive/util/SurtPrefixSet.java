@@ -117,7 +117,8 @@ public class SurtPrefixSet extends PrefixSet {
 
         while (iter.hasNext()) {
             s = (String) iter.next();
-            if(considerAsDirective(s)) {
+            if(s.startsWith(SURT_PREFIX_DIRECTIVE)) {
+                considerAsAddDirective(s.substring(SURT_PREFIX_DIRECTIVE.length()));
                 continue; 
             } else {
                 if(deduceFromSeeds) {
@@ -137,22 +138,24 @@ public class SurtPrefixSet extends PrefixSet {
      * @param line potential directive
      * @return boolean true if applied as directive, false otherwise
      */
-    public boolean considerAsDirective(String line) {
-        if(line.startsWith(SURT_PREFIX_DIRECTIVE)) {
-            // it's specifically a SURT prefix line
-            String u = line.substring(SURT_PREFIX_DIRECTIVE.length()).trim();
-            if(u.indexOf("(")>0) {
-                // formal SURT prefix; toLowerCase just in case
-                add(u.toLowerCase());
-            } else {
-                // hostname/normal form URI from which 
-                // to deduce SURT prefix
-                addFromPlain(u);
-            }
-            return true;
+    public boolean considerAsAddDirective(String line) {
+        String u = line.trim();
+        if(u.length()==0) {
+            // empty string: consider a mistake
+            return false; 
         }
-        return false; 
+        if(u.indexOf("(")>0) {
+            // formal SURT prefix; toLowerCase just in case
+            add(u.toLowerCase());
+        } else {
+            // hostname/normal form URI from which 
+            // to deduce SURT prefix
+            addFromPlain(u);
+        }
+        return true;
+       
     }
+    
     /**
      * Given a plain URI or hostname, deduce an implied SURT prefix from
      * it and add to active prefixes. 

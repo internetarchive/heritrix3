@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.modules.ProcessorURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
@@ -249,16 +250,45 @@ implements
         }
     }
     
+    protected String prefixFrom(String uri) {
+        return SurtPrefixSet.prefixFromPlainForceHttp(uri);
+    }
+    
+    
+    private static final String DEFAULT_ACCEPT_ADD_PREFIX_DIRECTIVE = "+";
+    private static final String DEFAULT_REJECT_ADD_PREFIX_DIRECTIVE = "-";
+
     /** 
-     * Pass nonseed lines to set as possible SURT prefix directive.
+     * Consider nonseed lines as possible SURT prefix directives. If we 
+     * are ACCEPTing URIs, expect '+' as the add-SURT directive. If we
+     * are REJECTing URIs, expect '-' as the add-SURT directive. 
+     * 
+     * TODO: perhaps, make directive configurable, so many SeedListener
+     * SurtPrefixedDecideRules can all listen for directives meant only 
+     * for them. 
      * 
      * @see org.archive.modules.seeds.SeedListener#nonseedLine(java.lang.String)
      */
     public boolean nonseedLine(String line) {
-        return surtPrefixes.considerAsDirective(line);
+        String effectiveDirective = getEffectiveAddDirective();
+        if(line.startsWith(effectiveDirective)) {
+            return surtPrefixes.considerAsAddDirective(line);
+        } else {
+            // not a line this instance is interested in
+            return false; 
+        }
     }
     
-    protected String prefixFrom(String uri) {
-        return SurtPrefixSet.prefixFromPlainForceHttp(uri);
+    private String getEffectiveAddDirective() {
+        if(getDecision()==DecideResult.ACCEPT) {
+            return DEFAULT_ACCEPT_ADD_PREFIX_DIRECTIVE;
+        }
+        if(getDecision()==DecideResult.REJECT) {
+            return DEFAULT_REJECT_ADD_PREFIX_DIRECTIVE;
+        }
+        throw new IllegalArgumentException("decision must be ACCEPT or REJECT");
     }
+    
+
+
 }//EOC
