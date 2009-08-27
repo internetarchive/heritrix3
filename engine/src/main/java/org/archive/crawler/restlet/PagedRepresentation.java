@@ -90,7 +90,8 @@ public class PagedRepresentation extends CharacterRepresentation {
 
     @Override
     public Reader getReader() throws IOException {
-        StringWriter writer = new StringWriter((int)fileRepresentation.getSize()+100);
+        int estimatedSize = (Math.abs(lineCount) * 128) + 500; 
+        StringWriter writer = new StringWriter(estimatedSize);
         write(writer); 
         return new StringReader(writer.toString());
     }
