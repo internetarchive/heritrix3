@@ -21,12 +21,15 @@ package org.archive.modules.recrawl;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,8 +39,9 @@ import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;
-import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 import org.archive.util.IoUtils;
+import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.SURT;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
@@ -60,6 +64,9 @@ import com.sleepycat.je.EnvironmentConfig;
  * @author gojomo
  */
 public abstract class PersistProcessor extends Processor {
+
+    private static final long serialVersionUID = 1L;
+
     private static final Logger logger =
         Logger.getLogger(PersistProcessor.class.getName());
 
@@ -73,6 +80,7 @@ public abstract class PersistProcessor extends Processor {
         BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
         dbConfig.setTransactional(false);
         dbConfig.setAllowCreate(true);
+        dbConfig.setDeferredWrite(true);
         return dbConfig;
     }
 
@@ -87,6 +95,7 @@ public abstract class PersistProcessor extends Processor {
      * @return String key
      */
     public static String persistKeyFor(ProcessorURI curi) {
+        // use a case-sensitive SURT for uniqueness and sorting benefits
         return persistKeyFor(curi.getUURI().toString());
     }
 
@@ -94,7 +103,7 @@ public abstract class PersistProcessor extends Processor {
         // use a case-sensitive SURT for uniqueness and sorting benefits
         return SURT.fromURI(uri,true);
     }
-
+    
     /**
      * Whether the current CrawlURI's state should be persisted (to log or
      * direct to database)
@@ -119,19 +128,205 @@ public abstract class PersistProcessor extends Processor {
     }
 
     /**
+     * Copies entries from an existing environment db to a new one. If
+     * historyMap is not provided, only logs the entries that would have been 
+     * copied.
+     * 
+     * @param sourceDir existing environment database directory
+     * @param historyMap new environment db (or null for a dry run)
+     * @return number of records
+     * @throws DatabaseException
+     */
+    private static int copyPersistEnv(File sourceDir, StoredSortedMap<String,Map> historyMap) 
+    throws DatabaseException {
+        int count = 0;
+
+        // open the source env history DB, copying entries to target env
+        EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir);
+        StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
+        Database sourceHistoryDB = sourceEnv.openDatabase(
+                null, URI_HISTORY_DBNAME, historyDatabaseConfig().toDatabaseConfig());
+        StoredSortedMap<String,Map> sourceHistoryMap = new StoredSortedMap<String,Map>(sourceHistoryDB,
+                new StringBinding(), new SerialBinding<Map>(sourceClassCatalog,
+                        Map.class), true);
+
+        Iterator<Entry<String,Map>> iter = sourceHistoryMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<String,Map> item = iter.next(); 
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(item.getKey() + " " + item.getValue());
+            }
+            
+            if (historyMap != null) {
+                historyMap.put(item.getKey(), item.getValue());
+            }
+            count++;
+        }
+        StoredIterator.close(iter);
+        sourceHistoryDB.close();
+        sourceEnv.close();
+        
+        return count;
+    }
+
+    /**
+     * Populates an environment db from a persist log. If historyMap is
+     * not provided, only logs the entries that would have been populated.
+     * 
+     * @param persistLogReader
+     *            persist log
+     * @param historyMap
+     *            new environment db (or null for a dry run)
+     * @return number of records
+     * @throws UnsupportedEncodingException
+     * @throws DatabaseException
+     */
+    private static int populatePersistEnvFromLog(BufferedReader persistLogReader, StoredSortedMap<String,Map> historyMap) 
+    throws UnsupportedEncodingException, DatabaseException {
+        int count = 0;
+
+        Iterator<String> iter = new LineReadingIterator(persistLogReader);
+        while (iter.hasNext()) {
+            String line = iter.next(); 
+            if (line.length() == 0) {
+                continue;
+            }
+            String[] splits = line.split(" ");
+            if (splits.length != 2) {
+                logger.severe("bad line: " + line);
+                continue;
+            }
+
+            Map alist = (Map) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(splits[0] + " " + alist);
+            }
+
+            if (historyMap != null) {
+                // XXX allow RuntimeExceptions to propagate
+                historyMap.put(splits[0], alist);
+            }
+            count++;
+        }
+        IOUtils.closeQuietly(persistLogReader);
+        
+        return count;
+    }
+    
+    /**
+     * Populates a new environment db from an old environment db or a persist
+     * log. If path to new environment is not provided, only logs the entries 
+     * that would have been populated.
+     * 
+     * @param sourcePath
+     *            source of old entries: can be a path to an existing
+     *            environment db, or a URL or path to a persist log
+     * @param envFile
+     *            path to new environment db (or null for a dry run)
+     * @return number of records
+     * @throws DatabaseException
+     * @throws IOException
+     */
+    public static int populatePersistEnv(String sourcePath, File envFile)
+        throws DatabaseException, IOException {
+        int count = 0;
+        StoredSortedMap<String,Map> historyMap = null;
+        EnhancedEnvironment targetEnv = null;
+        StoredClassCatalog classCatalog = null;
+        Database historyDB = null;
+
+        if (envFile != null) {
+            // set up target environment
+            if (!envFile.exists()) {
+                envFile.mkdirs();
+            }
+            targetEnv = setupEnvironment(envFile);
+            classCatalog = targetEnv.getClassCatalog();
+            historyDB = targetEnv.openDatabase(null, URI_HISTORY_DBNAME, 
+                    historyDatabaseConfig().toDatabaseConfig());
+            historyMap = new StoredSortedMap<String,Map>(historyDB, 
+                    new StringBinding(), new SerialBinding<Map>(classCatalog,
+                        Map.class), true);
+        }
+
+        try {
+            count = copyPersistSourceToHistoryMap(null, sourcePath, historyMap);
+        } finally {
+            // in finally block so that we unlock the target env even if we
+            // failed to populate it
+            if (envFile != null) {
+                logger.info(count + " records imported from " + sourcePath + " to BDB env " + envFile);
+                historyDB.sync();
+                historyDB.close();
+                targetEnv.close();
+            } else {
+                logger.info(count + " records found in " + sourcePath);
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Populates a given StoredSortedMap (history map) from an old 
+     * environment db or a persist log. If a map is not provided, only 
+     * logs the entries that would have been populated.
+     * 
+     * @param sourcePath
+     *            source of old entries: can be a path to an existing
+     *            environment db, or a URL or path to a persist log
+     * @param historyMap
+     *            map to populate (or null for a dry run)
+     * @return number of records
+     * @throws DatabaseException
+     * @throws IOException
+     */
+    public static int copyPersistSourceToHistoryMap(File context,
+            String sourcePath,
+            StoredSortedMap<String, Map> historyMap)
+            throws DatabaseException, IOException, MalformedURLException,
+            UnsupportedEncodingException {
+        int count;
+        // delegate depending on the source
+        File sourceFile = FileUtils.maybeRelative(context, sourcePath);
+        if (sourceFile.isDirectory()) {
+            count = copyPersistEnv(sourceFile, historyMap);
+        } else {
+            BufferedReader persistLogReader = null;
+            if (sourceFile.isFile()) {
+                persistLogReader = IoUtils.getBufferedReader(sourceFile);
+            } else {
+                URL sourceUrl = new URL(sourcePath);
+                persistLogReader = IoUtils.getBufferedReader(sourceUrl);
+            }
+            count = populatePersistEnvFromLog(persistLogReader, historyMap);
+        }
+        return count;
+    }
+
+    /**
      * Utility main for importing a log into a BDB-JE environment or moving a
      * database between environments (2 arguments), or simply dumping a log
-     * to stdout in a more readable format (1 argument). 
+     * to stderr in a more readable format (1 argument). 
      * 
      * @param args command-line arguments
      * @throws DatabaseException
      * @throws IOException
      */
     public static void main(String[] args) throws DatabaseException, IOException {
-        if(args.length==2) {
-            main2args(args);
-        } else if (args.length==1) {
-            main1arg(args);
+        Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        handler.setFormatter(new OneLineSimpleLogger());
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+
+        if (args.length == 2) {
+            logger.setLevel(Level.INFO);
+            populatePersistEnv(args[0], new File(args[1]));
+        } else if (args.length == 1) {
+            logger.setLevel(Level.FINE);
+            populatePersistEnv(args[0], null);
         } else {
             System.out.println("Arguments: ");
             System.out.println("    source [target]");
@@ -141,160 +336,8 @@ public abstract class PersistProcessor extends Processor {
                 "and target, if present, is a BDB env dir. ");
             return;
         }
-        
     }
 
-    /**
-     * Move the history information in the first argument (either the path 
-     * to a log or to an environment containing a uri_history database) to 
-     * the environment in the second environment (path; environment will 
-     * be created if it dow not already exist). 
-     * 
-     * @param args command-line arguments
-     * @throws DatabaseException
-     * @throws FileNotFoundException
-     * @throws UnsupportedEncodingException
-     * @throws IOException
-     */
-    @SuppressWarnings("unchecked")
-    private static void main2args(String[] args) throws DatabaseException, FileNotFoundException, UnsupportedEncodingException, IOException {
-        File source = new File(args[0]);
-        File env = new File(args[1]);
-        if(!env.exists()) {
-            env.mkdirs();
-        }
-        
-        // setup target environment
-        EnhancedEnvironment targetEnv = setupEnvironment(env);
-        StoredClassCatalog classCatalog = targetEnv.getClassCatalog();
-        Database historyDB = targetEnv.openDatabase(
-                null,URI_HISTORY_DBNAME,historyDatabaseConfig().toDatabaseConfig());
-        StoredSortedMap historyMap = new StoredSortedMap(historyDB,
-                new StringBinding(), new SerialBinding(classCatalog,
-                        Map.class), true);
-        
-        int count = 0;
-        
-        if(source.isFile()) {
-            // scan log, writing to database
-            BufferedReader br = IoUtils.getBufferedReader(source);
-            Iterator iter = new LineReadingIterator(br);
-            while(iter.hasNext()) {
-                String line = (String) iter.next(); 
-                line = line.trim();
-                if(line.length()==0) {
-                    continue;
-                }
-                String[] splits = line.split(" ");
-                if(splits.length!=2) {
-                    logger.severe("bad line: "+line);
-                    continue;
-                }
-                try {
-                    historyMap.put(
-                        splits[0], 
-                        SerializationUtils.deserialize(
-                            Base64.decodeBase64(splits[1].getBytes("UTF8"))));
-                } catch (RuntimeException e) {
-                    logger.log(Level.SEVERE,"problem with line: "+line, e);
-                }
-                count++;
-            }
-            IOUtils.closeQuietly(br);
-        } else {
-            // open the source env history DB, copying entries to target env
-            EnhancedEnvironment sourceEnv = setupEnvironment(source);
-            StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
-            Database sourceHistoryDB = sourceEnv.openDatabase(
-                    null,URI_HISTORY_DBNAME,historyDatabaseConfig().toDatabaseConfig());
-            StoredSortedMap sourceHistoryMap = new StoredSortedMap(sourceHistoryDB,
-                    new StringBinding(), new SerialBinding(sourceClassCatalog,
-                            Map.class), true);
-            Iterator iter = sourceHistoryMap.entrySet().iterator();
-            while(iter.hasNext()) {
-                Entry item = (Entry) iter.next(); 
-                historyMap.put(item.getKey(), item.getValue());
-                count++;
-            }
-            StoredIterator.close(iter);
-            sourceHistoryDB.close();
-            sourceEnv.close();
-        }
-        
-        // cleanup
-        historyDB.sync();
-        historyDB.close();
-        targetEnv.close();
-        System.out.println(count+" records imported from "+source+" to BDB env "+env);
-    }
-
-    /**
-     * Dump the contents of the argument (path to a persist log) to stdout
-     * in a slightly more readable format. 
-     * 
-     * @param args command-line arguments
-     * @throws DatabaseException
-     * @throws FileNotFoundException
-     * @throws UnsupportedEncodingException
-     * @throws IOException
-     */
-    @SuppressWarnings("unchecked")
-    private static void main1arg(String[] args) throws DatabaseException, FileNotFoundException, UnsupportedEncodingException, IOException {
-        File source = new File(args[0]);
-        
-        int count = 0;
-        
-        if(source.isFile()) {
-            // scan log, writing to database
-            BufferedReader br = IoUtils.getBufferedReader(source);
-            Iterator iter = new LineReadingIterator(br);
-            while(iter.hasNext()) {
-                String line = (String) iter.next(); 
-                line = line.trim();
-                if(line.length()==0) {
-                    continue;
-                }
-                String[] splits = line.split(" ");
-                if(splits.length!=2) {
-                    logger.severe("bad line: "+line);
-                    continue;
-                }
-                try {
-                    Map alist = (Map)SerializationUtils.deserialize(
-                        Base64.decodeBase64(splits[1].getBytes("UTF8")));
-                    System.out.println(
-                        splits[0] + " " + ArchiveUtils.prettyString(alist));
-                } catch (RuntimeException e) {
-                    logger.log(Level.SEVERE,"problem with line: "+line, e);
-                }
-                count++;
-            }
-            IOUtils.closeQuietly(br);
-        } else {
-            // open the source env history DB, copying entries to target env
-            EnhancedEnvironment sourceEnv = setupEnvironment(source);
-            StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
-            Database sourceHistoryDB = sourceEnv.openDatabase(
-                    null,URI_HISTORY_DBNAME,historyDatabaseConfig().toDatabaseConfig());
-            StoredSortedMap sourceHistoryMap = new StoredSortedMap(sourceHistoryDB,
-                    new StringBinding(), new SerialBinding(sourceClassCatalog,
-                            Map.class), true);
-            Iterator iter = sourceHistoryMap.entrySet().iterator();
-            while(iter.hasNext()) {
-                Entry item = (Entry) iter.next(); 
-//                Map alist = (Map)item.getValue();
-                Map alist = (Map) sourceHistoryMap.get(item.getKey());
-                System.out.println(item.getKey() + " " + ArchiveUtils.prettyString(alist));
-                count++;
-            }
-            StoredIterator.close(iter);
-            sourceHistoryDB.close();
-            sourceEnv.close();
-        }
-        
-        System.out.println(count+" records dumped from "+source);
-    }
-    
     public static EnhancedEnvironment setupEnvironment(File env) throws DatabaseException {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);

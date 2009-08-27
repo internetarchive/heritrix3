@@ -102,7 +102,7 @@ Serializable, Closeable {
         boolean allowCreate;
         boolean sortedDuplicates;
         boolean transactional;
-
+        boolean deferredWrite = true; 
 
         public BdbConfig() {
         }
@@ -129,7 +129,7 @@ Serializable, Closeable {
 
         public DatabaseConfig toDatabaseConfig() {
             DatabaseConfig result = new DatabaseConfig();
-            result.setDeferredWrite(true);
+            result.setDeferredWrite(deferredWrite);
             result.setTransactional(transactional);
             result.setAllowCreate(allowCreate);
             result.setSortedDuplicates(sortedDuplicates);
@@ -144,6 +144,11 @@ Serializable, Closeable {
 
         public void setTransactional(boolean transactional) {
             this.transactional = transactional;
+        }
+
+
+        public void setDeferredWrite(boolean b) {
+            this.deferredWrite = true; 
         }
     }
     

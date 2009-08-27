@@ -37,6 +37,8 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
@@ -351,5 +353,23 @@ public class IoUtils {
             is = new GZIPInputStream(is);
         }
         return new BufferedReader(new InputStreamReader(is));
+    }
+    
+    /**
+     * Get a BufferedReader on the crawler journal given.
+     * 
+     * @param source URL journal
+     * @return journal buffered reader.
+     * @throws IOException
+     */
+    public static BufferedReader getBufferedReader(URL source) throws IOException {
+        URLConnection conn = source.openConnection();
+        boolean isGzipped = conn.getContentType() != null && conn.getContentType().equalsIgnoreCase("application/x-gzip")
+                || conn.getContentEncoding() != null && conn.getContentEncoding().equalsIgnoreCase("gzip");
+        InputStream uis = conn.getInputStream();
+        return new BufferedReader(isGzipped?
+            new InputStreamReader(new GZIPInputStream(uis)):
+            new InputStreamReader(uis));   
+        
     }
 }
