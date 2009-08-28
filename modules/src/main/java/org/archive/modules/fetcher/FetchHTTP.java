@@ -1424,7 +1424,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return "";
         }
         
-        String r = addr.getHostName();
+        String r = addr.getCanonicalHostName();
         if (r == null) {
             return "";
         }
