@@ -77,7 +77,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
     ScheduledExecutorService executor;
 
     /** how long after crawl start to first scan action directory */
-    protected int initialDelay = 30;
+    protected int initialDelay = 10;
     public int getInitialDelay() {
         return initialDelay;
     }
@@ -209,7 +209,9 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
             // apply recovery-log
             boolean alsoScope = corename.endsWith(".s.recover");
             try {
-                getFrontier().importRecoverFormat(actionFile, alsoScope, true, false, "Fs ");
+                // consider-included all successes and explicit-includes...
+                getFrontier().importRecoverFormat(actionFile, alsoScope, true, false, "F[si] ");
+                // then retry all adds...
                 getFrontier().importRecoverFormat(actionFile, alsoScope, false, false, "F\\+ ");
             } catch (IOException ioe) {
                 LOGGER.log(Level.SEVERE,"problem with action file: "+actionFile,ioe);
