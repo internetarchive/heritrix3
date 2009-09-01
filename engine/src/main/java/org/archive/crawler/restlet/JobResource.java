@@ -230,7 +230,7 @@ public class JobResource extends Resource {
                         pw, 
                         cj.getCrawlController().getLoggerModule().getAlertsLogPath().getFile(), 
                         "tail alert log...",
-                        "?format=paged&pos=-1&lines=-128");
+                        "format=paged&pos=-1&lines=-128");
             }
             
             pw.println("<br/><b>Rates</b><br/>&nbsp;&nbsp;");
@@ -303,7 +303,11 @@ public class JobResource extends Resource {
                 pw.println("<dt>"+cppp+": "+cp.getName()+"</dt>");
                 pw.println("<dd>");
                 if(!StringUtils.isEmpty(cp.getPath())) {
-                    printLinkedFile(pw, cp.getFile());
+                    printLinkedFile(
+                            pw, 
+                            cp.getFile(), 
+                            cp.getFile().toString(),
+                            cp.getPath().endsWith(".log")?"format=paged&pos=-1&lines=-128&reverse=y":null);
                 } else {
                     pw.println("<i>unset</i>");
                 }
