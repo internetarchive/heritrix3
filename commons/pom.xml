@@ -104,7 +104,7 @@
         <dependency>
               <groupId>com.sleepycat</groupId>
               <artifactId>je</artifactId>
-              <version>3.3.82</version>
+              <version>3.3.87</version>
         </dependency> 
         <dependency>
              <groupId>commons-lang</groupId>
