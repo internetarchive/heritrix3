@@ -142,9 +142,11 @@ implements
     @Autowired
     public void setSeeds(SeedModule seeds) {
         this.seeds = seeds;
-        // in case this bean wasn't autowired to listeners (as if an
-        // inner bean)
-        seeds.addSeedListener(this);
+        if(seeds!=null) {
+            // in case this bean wasn't autowired to listeners (as if an
+            // inner bean)
+            seeds.addSeedListener(this);
+        }
     }
     
     protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
