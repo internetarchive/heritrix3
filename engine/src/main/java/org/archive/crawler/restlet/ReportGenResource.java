@@ -54,7 +54,7 @@ public class ReportGenResource extends JobRelatedResource {
         // redirect
         String relative = cj.jobDirRelativePath(f);
         if(relative!=null) {
-            getResponse().redirectSeeOther("../jobdir/"+relative);
+            getResponse().redirectSeeOther("../jobdir/"+relative+"?m="+f.lastModified());
             return new StringRepresentation("");
         } else {
             return new StringRepresentation(
