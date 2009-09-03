@@ -60,6 +60,8 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     /** map of full property-paths (from BeanFactory to individual 
      * property) and their changed value when this Sheet of overrides
      * is in effect
+     * TODO: consider if this should be auto-converted to a concurrentmap,
+     * to allow on-the-fly changes in unpaused crawls
      */
     Map<String,Object> map;
     
@@ -77,7 +79,7 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     }
 
     /**
-     * Return map of full property-path (starting with a target bean-name)
+     * Return map of full bean-path (starting with a target bean-name)
      * to the alternate value for that targeted property
      * @return Map<String,Object>
      */

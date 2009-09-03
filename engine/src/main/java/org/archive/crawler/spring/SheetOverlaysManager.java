@@ -36,6 +36,7 @@ import org.archive.spring.Sheet;
 import org.archive.util.PrefixFinder;
 import org.archive.util.SurtPrefixSet;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,7 +172,6 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     public void applyOverlays(CrawlURI curi) {
         // apply SURT-based overlays
         String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getUURI());
-        @SuppressWarnings("unused")
         List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
         for(String prefix : foundPrefixes) {
             for(String name : sheetNamesBySurt.get(prefix)) {
@@ -228,9 +228,77 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         }
     }
     
+    //
+    // Convenience methods for during-crawl overlay updates
+    //
+    
     /**
-     * Create a new Sheet of the given name. Provided for convenience of
-     * creating Sheet instances after the container has been built. 
+     * Add to named sheet an overlay of the given bean-path and new value. 
+     * Creates the sheet if it does not already exist; re-primes the sheet
+     * after the change to inform any targeted beans of new external paths. 
+     * 
+     * Only if/when the sheet is applied via associations will the overlay 
+     * have a noticeably effect. Inserting/mutating/priming sheets should
+     * only be done in a paused crawl. 
+     * 
+     * @param sheetName sheet name to change (or create)
+     * @param beanPath target bean-path of overlay
+     * @param value new value
+     * @return old value, if any
+     */
+    public Object putSheetOverlay(String sheetName, String beanPath, Object value) {
+        Sheet sheet = getOrCreateSheet(sheetName); 
+        Object prevVal = sheet.getMap().put(beanPath, value);
+        try {
+            sheet.prime(); 
+        } catch (TypeMismatchException tme) {
+            // revert to presumably non-damaging value
+            sheet.getMap().put(beanPath, prevVal);
+            throw tme;
+        }
+        return prevVal; 
+    }
+    
+    /**
+     * Remove the given bean-path overlay in the named sheet. 
+     * 
+     * @param sheetName sheet name from which to remove overlay
+     * @param beanPath overlay to remove
+     * @return previous overlay value, if any
+     */
+    public Object removeSheetOverlay(String sheetName, String beanPath) {
+        Sheet sheet = sheetsByName.get(sheetName); 
+        if(sheet==null) {
+            return null; 
+        }
+        // TODO: do all the externalPaths created by priming need eventual cleanup?
+        return sheet.getMap().remove(beanPath);
+    }
+    
+    /**
+     * Delete a named sheet from all associations and the master named 
+     * sheets map. 
+     * @param sheetName sheet name to delete
+     * @return true if any associations/sheet actually deleted
+     */
+    public boolean deleteSheet(String sheetName) {
+        boolean anyDeleted = false; 
+        // remove as target of any ruled-associations
+        for(DecideRuledSheetAssociation assoc : ruleAssociations) {
+            anyDeleted |= assoc.getTargetSheetNames().remove(sheetName);
+        }
+        // remove as target of any surt-associations
+        for(List<String> sheetNames : sheetNamesBySurt.values()) {
+            anyDeleted |= sheetNames.remove(sheetName);            
+        }
+        anyDeleted |= (null != sheetsByName.remove(sheetName)); 
+        return anyDeleted;
+    }
+    
+    /**
+     * Get a Sheet of the given name, or create if it does not already 
+     * exist. Provided for convenience of creating Sheet instances after 
+     * the container has been built. 
      * 
      * To have effect as an overlay, the returned Sheet must be:
      * 
@@ -239,20 +307,21 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * (2) primed via the prime() method, which will throw an exception
      * if the target bean-path does not address a compatible overlayable
      * value;
-     * (3) added back to the SheetOverlayManager's sheetsByName map;
-     * (4) associated to some URIs, by the addSurtAssociation or 
+     * (3) associated to some URIs, by the addSurtAssociation or 
      * addRuledAssociation methods
      * 
      * @param name Sheet name to create; must be unique
      * @return created Sheet
      */
-    public Sheet createSheet(String name) {
-        if(sheetsByName.containsKey(name)) {
-            throw new IllegalArgumentException("sheet '"+name+"' already exists"); 
+    public Sheet getOrCreateSheet(String name) {
+        Sheet sheet = sheetsByName.get(name); 
+        if(sheet==null) {
+            sheet = new Sheet(); 
+            sheet.setBeanFactory(beanFactory);
+            sheet.setName(name); 
+            sheet.setMap(new HashMap<String, Object>());
+            sheetsByName.put(name, sheet);
         }
-        Sheet sheet = new Sheet(); 
-        sheet.setBeanFactory(beanFactory);
-        sheet.setName(name); 
-        return sheet; 
+        return sheet;
     }
 }
