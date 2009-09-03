@@ -87,7 +87,7 @@ public class JobResource extends Resource {
 
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
-        String jobTitle = "Job "+cj.getShortName();
+        String jobTitle = cj.getShortName()+ " - Job main page";
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
