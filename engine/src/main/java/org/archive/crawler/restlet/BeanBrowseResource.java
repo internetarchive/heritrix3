@@ -91,7 +91,8 @@ public class BeanBrowseResource extends JobRelatedResource {
             Object namedBean = appCtx.getBean(beanName);
             BeanWrapperImpl bwrap = new BeanWrapperImpl(namedBean);
             String propPath = beanPath.substring(i+1);
-            bwrap.setPropertyValue(propPath, newVal);
+            Object coercedVal = bwrap.convertIfNecessary(newVal, bwrap.getPropertyValue(propPath).getClass()); 
+            bwrap.setPropertyValue(propPath, coercedVal);
 
         }
         Reference ref = getRequest().getResourceRef();
@@ -165,7 +166,7 @@ public class BeanBrowseResource extends JobRelatedResource {
                         pw.println(beanPath + " = <input type='text' name='newVal' style='width:400px' value='"+target+"'/>");
                         pw.println("<input type='submit' value='update'/></form></span>");
                     } else {
-                        writeObject(pw, null, target);
+                        writeObject(pw, null, target, beanPath);
                     }
                 }       
             } catch (BeansException e) {

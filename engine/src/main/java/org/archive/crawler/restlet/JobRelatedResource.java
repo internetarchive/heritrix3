@@ -160,18 +160,23 @@ public abstract class JobRelatedResource extends Resource {
      * @param field field name to display for object
      * @param object object to write
      * @param alreadyWritten Set of objects to not redundantly write
-     * @param beanPath eanPath prefix to apply to sub fields browse links
+     * @param beanPathPrefix beanPath prefix to apply to sub fields browse links
      */
-    protected void writeObject(PrintWriter pw, String field, Object object, HashSet<Object> alreadyWritten, String beanPath) {
+    protected void writeObject(PrintWriter pw, String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
             String key = getBeanToNameMap().get(object);
             String close = "";
+            String beanPath = beanPathPrefix;
             if(StringUtils.isNotBlank(field)) {
                 pw.write("<tr><td align='right' valign='top'><b>");
                 String closeAnchor ="";
-                if(StringUtils.isNotBlank(beanPath)) {
-                    pw.println("<a href='../beans/"+beanPath+"."+field+"'>");
+                if(StringUtils.isNotBlank(beanPathPrefix)) {
+                    if(beanPathPrefix.endsWith(".")) {
+                        beanPath += field;
+                    } else if (beanPathPrefix.endsWith("[")) {
+                        beanPath += field + "]";
+                    }
+                    pw.println("<a href='../beans/"+beanPath+"'>");
                     closeAnchor = "</a>";
-                    beanPath += "."+field;
                 }
                 pw.write(field);
                 pw.write(closeAnchor);
@@ -220,17 +225,32 @@ public abstract class JobRelatedResource extends Resource {
                 }
                 if(pd.getReadMethod()!=null && !pd.isHidden()) {
                     String propName = pd.getName();
-                    writeObject(pw, propName, bwrap.getPropertyValue(propName), alreadyWritten, beanPath);
+                    if(beanPath!=null) {
+                        beanPathPrefix = beanPath+".";
+                    }
+                    writeObject(pw, propName, bwrap.getPropertyValue(propName), alreadyWritten, beanPathPrefix);
                 } 
             }
             if(object.getClass().isArray()) {
                 Object[] array = (Object[])object;
                 for(int i = 0; i < array.length; i++) {
+                    if(beanPath!=null) {
+                        beanPathPrefix = beanPath+"[";
+                    }
                     // TODO: protect against overlong content? 
-                    writeObject(pw, i+"", array[i], alreadyWritten, null);
+                    writeObject(pw, i+"", array[i], alreadyWritten, beanPathPrefix);
                 }
             }
-            if(object instanceof Iterable) {
+            if(object instanceof List) {
+                List list = (List)object;
+                for(int i = 0; i < list.size(); i++) {
+                    if(beanPath!=null) {
+                        beanPathPrefix = beanPath+"[";
+                    }
+                    // TODO: protect against overlong content? 
+                    writeObject(pw, i+"", list.get(i), alreadyWritten, beanPathPrefix);
+                }
+            } else if(object instanceof Iterable) {
                 for (Object next : (Iterable)object) {
                     writeObject(pw, "#", next, alreadyWritten, null);
                 }
@@ -239,7 +259,10 @@ public abstract class JobRelatedResource extends Resource {
                 for (Object next : ((Map)object).entrySet()) {
                     // TODO: protect against giant maps?
                     Map.Entry entry = (Map.Entry)next;
-                    writeObject(pw, entry.getKey().toString(), entry.getValue(), alreadyWritten, null);
+                    if(beanPath!=null) {
+                        beanPathPrefix = beanPath+"[";
+                    }
+                    writeObject(pw, entry.getKey().toString(), entry.getValue(), alreadyWritten, beanPathPrefix);
                 }
             }
             pw.println("</table>");
