@@ -22,6 +22,8 @@ package org.archive.crawler.framework;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,8 +31,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.lang.StringUtils;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
@@ -201,6 +208,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         String filename = actionFile.getName(); 
         boolean isGzip = filename.endsWith(".gz");
         String corename = isGzip ? filename.substring(0,filename.length()-3) : filename;
+        String timestamp = ArchiveUtils.get17DigitDate();
         
         if(corename.endsWith(".seeds")) {
             // import seeds
@@ -243,15 +251,11 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
 //        } else if (filename.endsWith(".robots")) {
 //            // force refresh of robots
 //            // TODO
-//        } else {
-//            // try as script
-//            // TODO
-        } else {
+        } else if(!tryAsScript(actionFile,timestamp)) {   
             LOGGER.warning("action file ignored: "+actionFile);
         }
         
         // move file to 'done' area with timestamp prefix
-        String timestamp = ArchiveUtils.get17DigitDate();
         while(actionFile.exists()) {
             try {
                 FileUtils.moveFile(actionFile, new File(doneDir.getFile(),timestamp+"."+actionFile.getName()));
@@ -261,4 +265,77 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         }
     }
     
+    
+    /** shared ScriptEngineManager */
+    static ScriptEngineManager MANAGER = new ScriptEngineManager();
+
+    /**
+     * Try the actionFile as a script, deducing the proper scripting
+     * language from its file extension. Return true if evaluation was
+     * tried with a known script engine. 
+     * 
+     * Provides 'appCtx' and 'rawOut' to script for accessing crawl
+     * and outputting text to a '.out' file paired with the 'done/' 
+     * action file. If an exception occurs, it will be logged to an
+     * '.ex' file alongside the script file in 'done/'. 
+     * 
+     * @param actionFile file to try
+     * @param timestamp timestamp correlating out/ex files with done script
+     * @return true if engine evaluation began (even if an error occurred)
+     */
+    protected boolean tryAsScript(File actionFile, String timestamp) {
+        int i = actionFile.getName().lastIndexOf(".");
+        if(i<0) {
+            return false; 
+        }
+        
+        // deduce language/engine from extension
+        String extension = actionFile.getName().substring(i+1);
+        ScriptEngine engine = MANAGER.getEngineByExtension(extension);
+        if(engine==null) {
+            return false; 
+        }
+        
+        // prepare engine
+        StringWriter rawString = new StringWriter(); 
+        PrintWriter rawOut = new PrintWriter(rawString);
+        Exception ex = null;
+        engine.put("rawOut", rawOut);
+        engine.put("appCtx",appCtx);
+        
+        // evaluate and record any exception
+        try {
+            String script = FileUtils.readFileToString(actionFile);
+            engine.eval(script);
+        } catch (IOException e) {
+            ex = e;
+        } catch (ScriptException e) {
+            ex = e;
+        } catch (RuntimeException e) {
+            ex = e;
+        } 
+
+        // report output/exception to files paired with script in done dir
+        rawOut.flush();
+        String allOut = rawString.toString();
+        if(StringUtils.isNotBlank(allOut)) {
+            File outFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".out");
+            try {
+                FileUtils.writeStringToFile(outFile, rawString.toString());
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem during action file: "+actionFile,ioe);
+            }
+        }
+        if(ex!=null) {
+            File exFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".exception");
+            try {
+                FileUtils.writeStringToFile(exFile, ex.toString());
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem during action file: "+actionFile,ioe);
+            }
+        }
+        
+        return true;        
+    }
+
 }
