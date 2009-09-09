@@ -72,11 +72,11 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
             case RETRIED:
                 if(curi.getFetchStatus()<=0) {
                     fetchNonResponses++;
-                    return;
                 }
                 break;
             case SUCCEEDED:
                 fetchSuccesses++;
+                fetchResponses++;
                 totalBytes += curi.getContentSize();
                 successBytes += curi.getContentSize();
                 break;
@@ -90,6 +90,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 if(curi.getFetchStatus()<=0) {
                     fetchNonResponses++;
                 } else {
+                    fetchResponses++;
                     totalBytes += curi.getContentSize();
                 }
                 fetchFailures++;
