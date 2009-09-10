@@ -176,7 +176,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         if(reversedOrder) {
             pw.print("<td style='text-align:left'>");
             pw.print("<a href='");
-            pw.print(getControlUri(file.length(),-Math.abs(lineCount),reversedOrder));
+            pw.print(getControlUri(-1,-Math.abs(lineCount),reversedOrder));
             pw.println("'>&laquo; end</a>");
             pw.print("<a href='");
             pw.print(getControlUri(
