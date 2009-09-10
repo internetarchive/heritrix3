@@ -19,6 +19,7 @@
 
 package org.archive.crawler.spring;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ import java.util.List;
  * @contributor gojomo
  */
 public abstract class SheetAssociation {
-    List<String> targetSheetNames;
+    List<String> targetSheetNames = new LinkedList<String>();
     public List<String> getTargetSheetNames() {
         return targetSheetNames;
     }
