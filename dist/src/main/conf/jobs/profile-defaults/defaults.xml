@@ -43,6 +43,12 @@
     </bean>
     <bean class="org.archive.modules.deciderules.TransclusionDecideRule">
     </bean>
+    <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule" autowire="byName">
+     <property name="decision" value="REJECT"/>
+     <property name="seedsAsSurtPrefixes" value="false"/>
+    </bean>
+    <bean class="org.archive.modules.deciderules.MatchesListRegExpDecideRule">
+    </bean>
     <bean class="org.archive.modules.deciderules.PathologicalPathDecideRule">
     </bean>
     <bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
@@ -158,4 +164,7 @@
  <bean id="serverCache" class="org.archive.modules.net.BdbServerCache">
  </bean>
  
+ <!-- utility for injecting data to crawl via filesystem 'action' directory -->
+ <bean id="actionDirectory" class="org.archive.crawler.framework.ActionDirectory">
+ </bean> 
 </beans>
