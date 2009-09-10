@@ -1387,14 +1387,20 @@ ApplicationContextAware {
         w.print("\n -----===== MANAGER THREAD =====-----\n");
         ToeThread.reportThread(managerThread, w);
         
+        WorkQueue longest = longestActiveQueue;
+        if (longest != null) {
+            w.print("\n -----===== LONGEST QUEUE =====-----\n");
+            longest.reportTo(w);
+        }
+        
         w.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
         @SuppressWarnings("unchecked")
         Collection<WorkQueue> inProcess = inProcessQueues;
         ArrayList<WorkQueue> copy = extractSome(inProcess, REPORT_MAX_QUEUES);
-        appendQueueReports(w, copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
+        appendQueueReports(w, "IN-PROCESS", copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
         
         w.print("\n -----===== READY QUEUES =====-----\n");
-        appendQueueReports(w, this.readyClassQueues.iterator(),
+        appendQueueReports(w, "READY", this.readyClassQueues.iterator(),
             this.readyClassQueues.size(), REPORT_MAX_QUEUES);
 
         w.print("\n -----===== SNOOZED QUEUES =====-----\n");
@@ -1407,22 +1413,18 @@ ApplicationContextAware {
         Transform<DelayedWorkQueue, WorkQueue> t = 
             new Transform<DelayedWorkQueue,WorkQueue>(snoozedClassQueues, ter);
         copy = extractSome(t, REPORT_MAX_QUEUES);
-        appendQueueReports(w, copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
+        appendQueueReports(w, "SNOOZED", copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
         
-        WorkQueue longest = longestActiveQueue;
-        if (longest != null) {
-            w.print("\n -----===== LONGEST QUEUE =====-----\n");
-            longest.reportTo(w);
-        }
-
         w.print("\n -----===== INACTIVE QUEUES =====-----\n");
-        for(Queue<String> inactiveQueues : getInactiveQueuesByPrecedence().values()) {
-            appendQueueReports(w, inactiveQueues.iterator(),
+        SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
+        for(Integer prec : sortedInactives.keySet()) {
+            Queue<String> inactiveQueues = sortedInactives.get(prec);
+            appendQueueReports(w, "INACTIVE-p"+prec, inactiveQueues.iterator(),
                     inactiveQueues.size(), REPORT_MAX_QUEUES);
         }
         
         w.print("\n -----===== RETIRED QUEUES =====-----\n");
-        appendQueueReports(w, getRetiredQueues().iterator(),
+        appendQueueReports(w, "RETIRED", getRetiredQueues().iterator(),
             getRetiredQueues().size(), REPORT_MAX_QUEUES);
 
         w.flush();
@@ -1463,7 +1465,7 @@ ApplicationContextAware {
      * @param total
      * @param max
      */
-    protected void appendQueueReports(PrintWriter w, Iterator<?> iterator,
+    protected void appendQueueReports(PrintWriter w, String label, Iterator<?> iterator,
             int total, int max) {
         Object obj;
         WorkQueue q;
@@ -1478,10 +1480,11 @@ ApplicationContextAware {
             if(q == null) {
                 w.print("WARNING: No report for queue "+obj);
             }
+            w.println(label+"#"+count+":");
             q.reportTo(w);
         }
         if(total > max) {
-            w.print("...and " + (total - max) + " more.\n");
+            w.print("...and " + (total - max) + " more "+label+".\n");
         }
     }
 
