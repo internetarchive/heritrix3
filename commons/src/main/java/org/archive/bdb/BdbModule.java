@@ -181,7 +181,7 @@ Serializable, Closeable {
         
     }
 
-    protected ConfigPath dir = new ConfigPath("state subdirectory","state");
+    protected ConfigPath dir = new ConfigPath("bdbmodule subdirectory","state");
     public ConfigPath getDir() {
         return dir;
     }
@@ -315,7 +315,12 @@ Serializable, Closeable {
     
     public Database openDatabase(String name, BdbConfig config, 
             boolean recycle) 
-    throws DatabaseException {        
+    throws DatabaseException {
+        if(!isRunning()) {
+            // proper initialization hasn't occurred
+            throw new IllegalStateException(
+                    "BdbModule not started; as a Lifecycle bean it must not be an inner bean.");
+        }
         if (databases.containsKey(name)) {
             throw new IllegalStateException("Database already exists: " +name);
         }
@@ -584,8 +589,10 @@ Serializable, Closeable {
     
     public void close() {
         close2();
-        Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        shutdownHook = null; 
+        if(shutdownHook!=null) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            shutdownHook = null; 
+        }
     }
     
     @SuppressWarnings("unchecked")

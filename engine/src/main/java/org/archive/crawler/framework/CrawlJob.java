@@ -76,7 +76,10 @@ import org.xml.sax.SAXException;
  * 
  * @contributor gojomo
  */
-public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
+public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
+    private final static Logger LOGGER =
+        Logger.getLogger(CrawlJob.class.getName());
+
     File primaryConfig; 
     PathSharingContext ac; 
     int launchCount; 
@@ -401,7 +404,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
         Thread launcher = new Thread(alertThreadGroup, getShortName()+" launchthread") {
             public void run() {
                 startContext();
-                getCrawlController().requestCrawlStart();
+                CrawlController cc = getCrawlController();
+                if(cc!=null) {
+                    cc.requestCrawlStart();
+                }
             }
         };
         getJobLogger().log(Level.INFO,"Job launched");
@@ -426,8 +432,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener{
             ac = null; 
             beansException(be);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
-            getJobLogger().log(Level.SEVERE,e.getMessage(),e);
+            LOGGER.log(Level.SEVERE,e.getClass().getSimpleName()+": "+e.getMessage(),e);
             try {
                 ac.close();
             } catch (Exception e2) {

@@ -566,7 +566,7 @@ public abstract class AbstractFrontier
                 } catch (RuntimeException e) {
                     // log, try to pause, continue
                     logger.log(Level.SEVERE,"",e);
-                    if(targetState!=State.PAUSE) {
+                    if(targetState!=State.PAUSE && targetState!=State.FINISH) {
                         requestState(State.PAUSE);
                     }
                 }

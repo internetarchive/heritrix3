@@ -98,15 +98,8 @@ implements Lifecycle {
         if (!isRunning()) {
             return;
         }
-        try {
-            historyDb.sync();
-            historyDb.close();
-        } catch (DatabaseException e) {
-            // TODO Auto-generated catch block
-            throw new RuntimeException(e);
-        } finally {
-            historyDb = null; 
-        }
+        bdb.closeDatabase(historyDb);
+        historyDb = null;
     }
 
 }

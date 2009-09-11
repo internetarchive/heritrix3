@@ -896,7 +896,11 @@ public class StatisticsTracker
         //controller.addOrderToManifest();
         
         for(Class<Report> reportClass : END_REPORTS) {
-            writeReportFile(reportClass);
+            try {
+                writeReportFile(reportClass);
+            } catch (RuntimeException re) {
+                logger.log(Level.SEVERE, re.getMessage(), re);
+            }
         }
     }
 

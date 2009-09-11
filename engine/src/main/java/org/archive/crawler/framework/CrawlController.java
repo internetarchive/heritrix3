@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.LinkedList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.crawler.event.CrawlStateEvent;
@@ -368,7 +369,11 @@ implements Serializable,
 
         LOGGER.fine("Finished crawl.");
 
-        appCtx.stop(); 
+        try {
+            appCtx.stop(); 
+        } catch (RuntimeException re) {
+            LOGGER.log(Level.SEVERE,re.getMessage(),re);
+        }
         // Ok, now we are ready to exit.
         sendCrawlStateChangeEvent(State.FINISHED, this.sExit);
     }
