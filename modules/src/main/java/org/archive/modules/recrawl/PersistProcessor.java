@@ -142,7 +142,7 @@ public abstract class PersistProcessor extends Processor {
         int count = 0;
 
         // open the source env history DB, copying entries to target env
-        EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir);
+        EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir, true);
         StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
         Database sourceHistoryDB = sourceEnv.openDatabase(
                 null, URI_HISTORY_DBNAME, historyDatabaseConfig().toDatabaseConfig());
@@ -339,8 +339,13 @@ public abstract class PersistProcessor extends Processor {
     }
 
     public static EnhancedEnvironment setupEnvironment(File env) throws DatabaseException {
+        return setupEnvironment(env, false);
+    }
+    
+    public static EnhancedEnvironment setupEnvironment(File env, boolean readOnly) throws DatabaseException {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
+        envConfig.setReadOnly(readOnly); 
         return new EnhancedEnvironment(env, envConfig);
     }
 }

@@ -73,8 +73,9 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
     @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(ProcessorURI curi) throws InterruptedException {
+        String pkey = persistKeyFor(curi);
         Map<String, Object> prior = 
-        	(Map<String,Object>) store.get(persistKeyFor(curi));
+        	(Map<String,Object>) store.get(pkey);
         if(prior!=null) {
             // merge in keys
             curi.getData().putAll(prior); 
@@ -89,6 +90,9 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
     @Override
     public void start() {
         super.start();
+        if (isRunning()) {
+            return;
+        }
         String psource = getPreloadSource().getPath();
         if (StringUtils.isNotBlank(psource)) {
             try {
