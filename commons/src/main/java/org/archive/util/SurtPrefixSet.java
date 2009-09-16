@@ -132,14 +132,14 @@ public class SurtPrefixSet extends PrefixSet {
     
 
     /**
-     * Interpret the given line as a directive, returning true if it
-     * was meaningful. 
+     * Interpret the given SURT/URI/host as a directive, returning true 
+     * if it was meaningful. 
      * 
-     * @param line potential directive
+     * @param suri potential directive
      * @return boolean true if applied as directive, false otherwise
      */
-    public boolean considerAsAddDirective(String line) {
-        String u = line.trim();
+    public boolean considerAsAddDirective(String suri) {
+        String u = suri.trim();
         if(u.length()==0) {
             // empty string: consider a mistake
             return false; 

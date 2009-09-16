@@ -274,7 +274,7 @@ implements
     public boolean nonseedLine(String line) {
         String effectiveDirective = getEffectiveAddDirective();
         if(line.startsWith(effectiveDirective)) {
-            return surtPrefixes.considerAsAddDirective(line);
+            return surtPrefixes.considerAsAddDirective(line.substring(effectiveDirective.length()));
         } else {
             // not a line this instance is interested in
             return false; 
