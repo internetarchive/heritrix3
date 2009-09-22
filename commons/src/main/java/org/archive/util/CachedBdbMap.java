@@ -396,7 +396,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
      * @param entry
      * @return true if entry was expunged, cleared, and no longer in memMap.
      */
-    private boolean isExpunged(final SoftEntry<V> entry) {
+    private boolean isExpunged(final SoftEntry<V> entry, K key) {
         boolean ret = false;
         
         V val = entry.get();
@@ -412,6 +412,9 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                     // the proper way to handle interrupted
                     try {
                         ret = entry.awaitExpunge();
+                        if(ret) {
+                            verifyExpunge(entry, key); 
+                        }
                         return ret;
                     } catch (InterruptedException ex) {
                         if (Thread.interrupted()) {
@@ -421,7 +424,10 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                 }
                 return ret;
             } else {
-                logger.warning("could not start expunge, and expunge was never started and val is null");
+                logger.log(
+                    Level.WARNING,
+                    "could not start expunge, and expunge was never started and val is null",
+                    new Exception());
                 return false;
             }
         } else { // entry not collected, not expunged
@@ -429,6 +435,40 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         }
     }
 
+
+    /**
+     * Verify that expunction has taken place; for debugging. Only 
+     * called after awaitExpunge() reports an entry has been expunged.
+     * 
+     * @param entry entry that should be gone from memMap
+     */
+    private void verifyExpunge(SoftEntry<V> entry, K key) {
+        if(memMap.get(key)==entry) {
+            logger.log(Level.WARNING,"reported-expunged entry at key '"+key+"' still present: "+entry,new Exception()); 
+            // try fixup
+            // FIXME: this is just papering over/recovering from a state
+            // which should not be reached; remove this code when true bug
+            // discovered
+            memMapRemoveOrWarn(key, entry);
+        }
+    }
+    
+    /**
+     * Remove from memMap -- but warn if remove does not have 
+     * expected effect. For debugging purposes. 
+     * 
+     * @param key key to remvoe
+     * @param entry expected item to remove
+     */
+    private void memMapRemoveOrWarn(Object key, SoftEntry<V> entry) {
+        boolean removed = memMap.remove(key, entry);
+        if(!removed) {
+            logger.log(Level.WARNING,"memMap.remove() ineffective",new Exception());
+        } else {
+            // at this point: memMap no longer contains the given entry
+        }
+    }
+    
     protected Database openDatabase(final Environment environment,
             final String dbName) throws DatabaseException {
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -521,7 +561,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                         //   2 cars and an airplane.  
                         // Wait for expunge to finish
                         
-                        if (isExpunged(existingEntry)) {
+                        if (isExpunged(existingEntry, key)) {
                             // existingEntry is no longer in memMap
                             expungeStatsSwapInRetry.incrementAndGet();
                             continue;  // re-try insert into memMap
@@ -531,7 +571,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                                 Thread.sleep(0L, 100000);
                             } catch (InterruptedException ignored) {
                             }
-                            logger.warning("Swap-In Retry");
+                            logger.log(Level.WARNING,"Swap-In Retry", new Exception());
                             continue;  // re-try insert into memMap
                         }
                     }
@@ -544,24 +584,24 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
 
     private V _getMem(K key) {
         do {
-        SoftEntry<V> entry = memMap.get(key);
-        if (entry != null) {
-            V val = entry.get(); // get & hold, so not cleared pre-return
-            if (val != null) {
+            SoftEntry<V> entry = memMap.get(key);
+            if (entry != null) {
+                V val = entry.get(); // get & hold, so not cleared pre-return
+                if (val != null) {
                     cacheHit.incrementAndGet();
-                return val;
-            }
+                    return val;
+                }
                 // null SoftEntry.get() means entry is being GC-ed
                 //  need to wait for expunge to finish and then retry
                 //  which will lead to a diskMap.get()
-                if (isExpunged(entry)) {
+                if (isExpunged(entry, key)) {
                     // entry has been removed, lookup again
                     continue; // tail recursion optimization
                 } else {
-                    logger.warning("entry not expunged AND value is null");
+                    logger.log(Level.WARNING,"entry not expunged AND value is null", new Exception());
                     return null;
-        }
-        }
+                }
+            }
             return null;
         } while (true);
     }
@@ -628,7 +668,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         V prevDiskValue = null;
         int pu = useStatsPutUsed.incrementAndGet();
         if (pu == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
-            logger.warning("design violating put() used on dbName=" + dbName);
+            logger.log(Level.WARNING,"design violating put() used on dbName=" + dbName, new Exception());
         }
         expungeStaleEntries(); // catchup all clears; possible disk IO
         int attemptTolerance = BDB_LOCK_ATTEMPT_TOLERANCE;
@@ -642,9 +682,9 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                         && attemptTolerance > 0) {
                     if (attemptTolerance == BDB_LOCK_ATTEMPT_TOLERANCE - 1) {
                         // emit once on first retry
-                        logger.warning("BDB implicit transaction timeout while "
+                        logger.log(Level.WARNING,"BDB implicit transaction timeout while "
                                 + "waiting to acquire lock, retrying; "
-                                + " dbName=" + dbName + " key=" + key);
+                                + " dbName=" + dbName + " key=" + key, new Exception());
                     }
                     continue;
                 } else {
@@ -656,15 +696,16 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         if (prevDiskValue == null) {
              diskMapSize.incrementAndGet();
         }
-        SoftEntry<V> prevEntry = 
-        memMap.put(key, new SoftEntry<V>(key, value, refQueue));
+        SoftEntry<V> prevEntry = memMap.put(key, new SoftEntry<V>(key, value, refQueue));
         if (prevEntry != null) {
             prevMemValue = prevEntry.get();
             // prevent previous SoftEntry from being expunged
             prevEntry.clearPhantom();
         }
          
-        if (prevMemValue != null)  return prevMemValue;
+        if (prevMemValue != null) {
+            return prevMemValue;
+        }
         return prevDiskValue;
     }
 
@@ -704,7 +745,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         int ru = useStatsReplaceUsed.incrementAndGet();
         if (ru == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
             // warn on non-accretive use
-            logger.warning("design violating replace(,,) used on dbName=" + dbName);
+            logger.log(Level.WARNING,"design violating replace(,,) used on dbName=" + dbName,new Exception());
         }
         expungeStaleEntries(); // catchup all clears; possible disk IO
 
@@ -775,7 +816,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         int ru = useStatsReplaceUsed.incrementAndGet();
         if (ru == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
             // warn on non-accretive use
-            logger.warning("design violating replace(,) used on dbName=" + dbName);
+            logger.log(Level.WARNING,"design violating replace(,) used on dbName=" + dbName, new Exception());
         }
         SoftEntry<V> newEntry = new SoftEntry<V>(key, value, refQueue);
         V prevMemValue =  null;
@@ -852,9 +893,9 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                         && attemptTolerance > 0) {
                     if (attemptTolerance == BDB_LOCK_ATTEMPT_TOLERANCE - 1) {
                         // emit once on first retry
-                        logger.warning("BDB implicit transaction timeout while "
+                        logger.log(Level.WARNING,"BDB implicit transaction timeout while "
                                 + "waiting to acquire lock, retrying; "
-                                + " dbName=" + dbName + " key=" + key);
+                                + " dbName=" + dbName + " key=" + key, new Exception());
                     }
                     continue;
                 } else {
@@ -879,7 +920,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                 //  remove() is occurring.
                 V prevMemValue = prevEntry.get();
                 expungeStatsTransientCond.getAndIncrement();
-                if (prevMemValue == null && isExpunged(prevEntry)) {
+                if (prevMemValue == null && isExpunged(prevEntry, key)) {
                     prevEntry = (SoftEntry<V>) memMap.putIfAbsent(key, newEntry);
                     if (prevEntry == null) {
                         // this put "happens after" the concurrent expunge or remove()
@@ -905,7 +946,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                 //   It is always possible that another thread could remove
                 //  an entry before the calling client sees it, but this is 
                 //  unlikely by design.  
-                logger.warning("unusual put/remove activity for key=" + key);
+                logger.log(Level.WARNING,"unusual put/remove activity for key=" + key, new Exception());
             }
             return retValue;
         }
@@ -918,17 +959,17 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
      * @param prevEntry SoftEntry to remove from memMap.
      * @param key the key to match.
      */
-    private void neutralizeMemMapEntry(SoftEntry<V> prevEntry, final Object key) {
+    private void neutralizeMemMapEntry(SoftEntry<V> prevEntry, final K key) {
         do {
             if (prevEntry.expungeStarted()) {
                 // GC or expunge already in progress.
-                isExpunged(prevEntry);
-                memMap.remove(key, prevEntry); // possibly redundant
+                isExpunged(prevEntry, key);
+                memMapRemoveOrWarn(key, prevEntry); // possibly redundant
                 break;
             } else {
                 // reserve expunge, then clear it
                 if (prevEntry.startExpunge()) { // get exclusive access
-                    memMap.remove(key, prevEntry);
+                    memMapRemoveOrWarn(key, prevEntry);
                     prevEntry.clearPhantom(); // prevent expunge on old entry
                     break;
                 } else {
@@ -984,7 +1025,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
             int ru = useStatsRemove1Used.incrementAndGet();
             if (ru == 1) {
                 // warn on non-accretive use
-                logger.warning("remove() used for dbName=" + dbName);
+                logger.log(Level.WARNING,"remove() used for dbName=" + dbName, new Exception());
             }
         }
         // regardless of whether prevDiskValue is null, memMap remove
@@ -995,12 +1036,12 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
             return prevDiskValue;
         }
         V prevValue = prevEntry.get();
-        neutralizeMemMapEntry(prevEntry, key);
+        neutralizeMemMapEntry(prevEntry, (K) key);
         if (prevValue == null) {
             return prevDiskValue;
         } else {
-        return prevValue;
-    }
+            return prevValue;
+        }
     }
 
     /** remove item matching both the key and value.  
@@ -1029,6 +1070,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
      * @return true if entry removed.
      */
     //@Override
+    @SuppressWarnings("unchecked")
     public boolean remove(Object key, Object value) { // ConcurrentMap version
         SoftEntry<V> entry = null;
         V memValue = null;
@@ -1044,15 +1086,17 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                 // swapped-in value matches
                 int r2u = useStatsRemove2Used.incrementAndGet();
                 if (r2u == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
-                    logger.warning("design violating remove(,) used for dbName="
-                            + dbName);
+                    logger.log(
+                        Level.WARNING,
+                        "design violating remove(,) used for dbName="+ dbName, 
+                        new Exception());
                 }
                 // map mutating operations always change diskMap first
                 Object obj = diskMap.remove(key);
                 if (obj != null) {
                     diskMapSize.decrementAndGet();
                 }
-                neutralizeMemMapEntry(entry, key); // also removes entry from memMap
+                neutralizeMemMapEntry(entry, (K) key); // also removes entry from memMap
                 return true;
             } else { // case (*,F) AND swapped in
                 // if swapped in and value does not match, then
@@ -1067,8 +1111,9 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         if (diskMapFound) { // case (T,F) AND swapped out
             int r2u = useStatsRemove2Used.incrementAndGet();
             if (r2u == 1 && LOG_ERROR_ON_DESIGN_VIOLATING_METHODS) {
-                logger.warning("design violating remove(,) used for dbName="
-                        + dbName);
+                logger.log(
+                    Level.WARNING, 
+                    "design violating remove(,) used for dbName=" + dbName);
             }
             diskMapSize.decrementAndGet();
             return true;
@@ -1225,31 +1270,6 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         }
     }
     
-    /** Expunge an entry from cache (memMap) and put the key,value pair to diskMap. 
-     *  This is the only way entries are written to BDB, except for  {@link #sync()}
-     *  Possible disk io.
-     */
-    @SuppressWarnings({ "unchecked", "unused" })
-    private synchronized void expungeStaleEntry_synchronized(SoftEntry<V> entry) {
-        // If phantom already null, its already expunged -- probably
-        // because it was purged directly first from inside in
-        // {@link #get(String)} and then it went on the poll queue and
-        // when it came off inside in expungeStaleEntries, this method
-        // was called again.
-        if (entry.getPhantom() == null) {
-            return;
-        }
-        // If the object that is in memMap is not the one passed here, then
-        // memMap has been changed -- probably by a put on top of this entry.
-        if (memMap.get(entry.getPhantom().getKey()) == entry) { // NOTE: identity compare
-            memMap.remove(entry.getPhantom().getKey());
-
-            diskMap.put(entry.getPhantom().getKey(),
-                entry.getPhantom().doctoredGet());
-        }
-        entry.clearPhantom();
-    }
-    
     /** Expunge an entry from memMap while updating diskMap.
      * Concurrent implementation.
      * 
@@ -1328,7 +1348,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                     //    since only this thread has the exclusive expunge job
                     //    for entry, we will either remove the exact object
                     //    or remove no object (non-interference).
-                    memMap.remove(phantom.getKey(), entry);
+                    memMapRemoveOrWarn(phantom.getKey(), entry);
                     // at this point: memMap no longer contains the given entry
                 } else { // not in map (a soft assert failure)
                     this.expungeStatsNotInMap.incrementAndGet();
@@ -1487,14 +1507,14 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
          *     {@link #startExpunge()}.         */
         final public synchronized void clearPhantom() {
             if (this.phantom != null) {
-            this.phantom.clear();
-            this.phantom = null;
+                this.phantom.clear();
+                this.phantom = null;
             }
             super.clear();
             if (expungeStarted()) {
                 expunged.countDown();
+            }
         }
-    }
     
         /**
          * Synchronized so this can be atomic w.r.t.
@@ -1508,8 +1528,11 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
          * @see {@link CachedBdbMap#isExpunged(SoftEntry)}
          */
         final public synchronized boolean expungeStarted() {
-            if (expunged != null) return true;
-            else return false;
+            if (expunged != null) {
+                return true;
+            } else {
+                return false;
+            }
         }
 
         /** Can the calling thread perform the expunge on this?
@@ -1530,7 +1553,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
             } else {
                 expunged = new CountDownLatch(1);
                 return true;
-    }
+            }
         }
     
         /** If this entry is in the process of being expunged 
@@ -1553,9 +1576,8 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
                 } else { // timeout
                     // just in case
                     expungeStatsAwaitTimeout.incrementAndGet();
-                    Logger.getLogger(CachedBdbMap.class.getName())
-                            .warning("timeout at " 
-                            + longerThanFullGCsec + " sec");
+                    logger.log(Level.WARNING, "timeout at " 
+                        + longerThanFullGCsec + " sec", new Exception());
                     throw new InterruptedException("timeout");
                 }
             } else { 
