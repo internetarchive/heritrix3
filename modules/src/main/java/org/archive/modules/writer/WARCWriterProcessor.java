@@ -518,8 +518,13 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
         } catch (UnknownHostException e) {
             logger.log(Level.WARNING,"unable top obtain local crawl engine host",e);
         }
-        record.addLabelValue("format","WARC File Format 0.18");
-        record.addLabelValue("conformsTo","http://archive-access.sourceforge.net/warc/WARC_ISO_28500_final_draft%20v018%20Zentveld%20080618.doc");
+        
+        // conforms to ISO 28500:2009 as of May 2009
+        // as described at http://bibnum.bnf.fr/WARC/ 
+        // latest draft as of November 2008
+        record.addLabelValue("format","WARC File Format 1.0"); 
+        record.addLabelValue("conformsTo","http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf");
+        
         // Get other values from metadata provider
 
         CrawlMetadata provider = getMetadataProvider();

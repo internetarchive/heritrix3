@@ -44,8 +44,9 @@ public interface WARCConstants extends ArchiveFileConstants {
     
     /**
      * Hard-coded version for WARC files made with this code.
+     * conforms to ISO 28500:2009 as of May 2009
      */
-	public static final String WARC_VERSION = "0.18";
+	public static final String WARC_VERSION = "1.0";
     
     /**
      * Assumed maximum size of a Header Line.
