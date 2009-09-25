@@ -21,7 +21,6 @@ package org.archive.util;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -41,6 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.archive.crawler.framework.CrawlController;
+import org.archive.modules.net.ServerCache;
 
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
@@ -92,7 +94,7 @@ import com.sleepycat.je.Environment;
  *  
  */
 public class CachedBdbMap<K,V> extends AbstractMap<K,V> 
-implements ConcurrentMap<K,V>, Serializable, Closeable {
+implements ConcurrentMap<K,V>, ObjectIdentityCache<K,V>, Serializable, Closeable {
     private static final long serialVersionUID = -8655539411367047332L;
 
     private static final Logger logger =
@@ -478,7 +480,7 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         return environment.openDatabase(null, dbName, dbConfig);
     }
 
-    public synchronized void close() throws IOException {
+    public synchronized void close() {
         // Close out my bdb db.
         if (this.db != null) {
             try {
@@ -511,6 +513,22 @@ implements ConcurrentMap<K,V>, Serializable, Closeable {
         // Would require complicated implementation to 
         // maintain identity guarantees, so skipping
         throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * ObjectIdentityCache get-or-atomic-create method.
+     */
+    public V getOrUse(K key, Supplier<V> supplierOrNull) {
+        V val = get(key); 
+        if(val!=null || supplierOrNull == null) {
+            return val; 
+        }
+        val = supplierOrNull.get();
+        V prevVal = putIfAbsent(key, val);
+        if(prevVal!=null) {
+            return prevVal;
+        }
+        return val; 
     }
 
     public V get(final Object object) {

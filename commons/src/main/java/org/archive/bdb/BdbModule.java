@@ -47,6 +47,8 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.checkpointing.RecoverAction;
 import org.archive.spring.ConfigPath;
 import org.archive.util.CachedBdbMap;
+import org.archive.util.ObjectIdentityBdbCache;
+import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.springframework.context.Lifecycle;
 
@@ -230,10 +232,9 @@ Serializable, Closeable {
         
     private transient StoredClassCatalog classCatalog;
     
-    @SuppressWarnings("unchecked")
-    private Map<String,CachedBdbMap> bigMaps = 
-        new ConcurrentHashMap<String,CachedBdbMap>();
-    
+    private Map<String,ObjectIdentityCache> oiCaches = 
+        new ConcurrentHashMap<String,ObjectIdentityCache>();
+
     private Map<String,DatabasePlusConfig> databases =
         new ConcurrentHashMap<String,DatabasePlusConfig>();
 
@@ -361,15 +362,24 @@ Serializable, Closeable {
     }
 
 
-    public <K,V> CachedBdbMap<K,V> getBigMap(String dbName, boolean recycle,
+    /**
+     * Get a CachedBdbMap, backed by a BDB Database of the given name, 
+     * with the given key and value class types. If 'recycle' is true,
+     * reuse values already in the database; otherwise start with an 
+     * empty map.  
+     * 
+     * @param <K>
+     * @param <V>
+     * @param dbName
+     * @param recycle
+     * @param key
+     * @param value
+     * @return
+     * @throws DatabaseException
+     */
+    public <K,V> CachedBdbMap<K,V> getCBMMap(String dbName, boolean recycle,
             Class<? super K> key, Class<? super V> value) 
     throws DatabaseException {
-        @SuppressWarnings("unchecked")
-        CachedBdbMap<K,V> r = bigMaps.get(dbName);
-        if (r != null) {
-            return r;
-        }
-        
         if (!recycle) {
             try {
                 bdbEnvironment.truncateDatabase(null, dbName, false);
@@ -377,20 +387,78 @@ Serializable, Closeable {
                 // ignored
             }
         }
-        
-        r = new CachedBdbMap<K,V>(dbName);
-        
+        CachedBdbMap<K, V> r = new CachedBdbMap<K,V>(dbName);     
         r.initialize(bdbEnvironment, key, value, classCatalog);
-        bigMaps.put(dbName, r);
         return r;
     }
 
+    /**
+     * Get an ObjectIdentityBdbCache, backed by a BDB Database of the 
+     * given name, with the given value class type. If 'recycle' is true,
+     * reuse values already in the database; otherwise start with an 
+     * empty cache. 
+     *  
+     * @param <V>
+     * @param dbName
+     * @param recycle
+     * @param valueClass
+     * @return
+     * @throws DatabaseException
+     */
+    public <V> ObjectIdentityBdbCache<V> getOIBCCache(String dbName, boolean recycle,
+            Class<? super V> valueClass) 
+    throws DatabaseException {
+        if (!recycle) {
+            try {
+                bdbEnvironment.truncateDatabase(null, dbName, false);
+            } catch (DatabaseNotFoundException e) {
+                // ignored
+            }
+        }
+        ObjectIdentityBdbCache<V> oic = new ObjectIdentityBdbCache<V>();
+        oic.initialize(bdbEnvironment, dbName, valueClass, classCatalog);
+        return oic;
+    }
 
+    /** controls which alternate ObjectIdentityCache implementation to use */
+    private static boolean USE_OIBC = true;
+    
+
+    
+    /**
+     * Get an ObjectIdentityCache, backed by a BDB Database of the given 
+     * name, with objects of the given valueClass type. If 'recycle' is
+     * true, reuse values already in the database; otherwise start with 
+     * an empty cache. 
+     * 
+     * @param <V>
+     * @param dbName
+     * @param recycle
+     * @param valueClass
+     * @return
+     * @throws DatabaseException
+     */
+    public <V> ObjectIdentityCache<String, V> getObjectCache(String dbName, boolean recycle,
+            Class<? super V> valueClass) 
+    throws DatabaseException {
+        @SuppressWarnings("unchecked")
+        ObjectIdentityCache<String,V> oic = oiCaches.get(dbName);
+        if(oic!=null) {
+            return oic; 
+        }
+        if(USE_OIBC) {
+            oic =  getOIBCCache(dbName, recycle, valueClass);
+        } else {
+            oic =  getCBMMap(dbName, recycle, String.class, valueClass);
+        }
+        oiCaches.put(dbName, oic);
+        return oic; 
+    }
+    
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
     }
     
-
     // TODO:FIXME: restore functionality
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) 
@@ -403,15 +471,15 @@ Serializable, Closeable {
         }
         try {
             setUp(getDir().getFile(), getCachePercent(), false, getUseSharedCache());
-            for (CachedBdbMap map: bigMaps.values()) {
-                map.initialize(
-                        this.bdbEnvironment, 
-                        null,
-                        null,
+//            for (CachedBdbMap map: bigMaps.values()) {
+//                map.initialize(
+//                        this.bdbEnvironment, 
+//                        null,
+//                        null,
 //                        map.getKeyClass(), 
 //                        map.getValueClass(), 
-                        this.classCatalog);
-            }
+//                        this.classCatalog);
+//          }
             for (DatabasePlusConfig dpc: databases.values()) {
                 if (!(dpc.config instanceof SecondaryBdbConfig)) {
                     dpc.database = bdbEnvironment.openDatabase(null, 
@@ -442,9 +510,9 @@ Serializable, Closeable {
         if (checkpointCopyLogs) {
             actions.add(new BdbRecover(getDir().getFile().getAbsolutePath()));
         }
-        // First sync bigMaps
-        for (Map.Entry<String,CachedBdbMap> me: bigMaps.entrySet()) {
-            me.getValue().sync();
+        // First sync objectCaches
+        for (ObjectIdentityCache oic : oiCaches.values()) {
+            oic.sync();
         }
 
         EnvironmentConfig envConfig;
@@ -600,10 +668,13 @@ Serializable, Closeable {
         if (classCatalog == null) {
             return;
         }
-        for (Map.Entry<String,CachedBdbMap> me: bigMaps.entrySet()) try {
-            me.getValue().close();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error closing bigMap " + me.getKey(), e);
+        
+        for(ObjectIdentityCache cache : oiCaches.values()) {
+            try {
+                cache.close();
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Error closing oiCache " + cache, e);
+            }
         }
 
         List<String> dbNames = new ArrayList<String>(databases.keySet());

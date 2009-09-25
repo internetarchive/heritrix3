@@ -82,6 +82,21 @@ public class EnhancedEnvironment extends Environment {
         super.close();
     }
 
-    
-
+    /**
+     * Create a temporary test environment in the given directory.
+     * @param dir target directory
+     * @return EnhancedEnvironment
+     */
+    public static EnhancedEnvironment getTestEnvironment(File dir) {
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(false);
+        EnhancedEnvironment env;
+        try {
+            env = new EnhancedEnvironment(dir, envConfig);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        } 
+        return env;
+    }
 }

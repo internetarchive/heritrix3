@@ -49,7 +49,7 @@ public class CachedBdbMapTest extends TmpDirTestCase {
         bdb.getDir().setBase(null); 
         bdb.getDir().setPath(envDir.getAbsolutePath());
         bdb.start(); 
-        this.cache = bdb.getBigMap(
+        this.cache = bdb.getCBMMap(
                 this.getClass().getName(), false, String.class, HashMap.class);
     }
     

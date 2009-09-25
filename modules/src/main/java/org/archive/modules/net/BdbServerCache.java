@@ -50,8 +50,8 @@ implements Lifecycle {
             return;
         }
         try {
-            this.servers = bdb.getBigMap("servers", false, String.class, CrawlServer.class);
-            this.hosts = bdb.getBigMap("hosts", false, String.class, CrawlHost.class);
+            this.servers = bdb.getObjectCache("servers", false, CrawlServer.class);
+            this.hosts = bdb.getObjectCache("hosts", false, CrawlHost.class);
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         }

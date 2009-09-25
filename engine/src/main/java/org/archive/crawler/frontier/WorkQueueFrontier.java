@@ -40,8 +40,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +61,8 @@ import org.archive.crawler.frontier.precedence.UriPrecedencePolicy;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.ObjectIdentityCache;
+import org.archive.util.ObjectIdentityMemCache;
 import org.archive.util.Transform;
 import org.archive.util.Transformer;
 import org.springframework.beans.BeansException;
@@ -215,7 +215,7 @@ ApplicationContextAware {
 
     /** All known queues.
      */
-    protected ConcurrentMap<String,WorkQueue> allQueues = null; 
+    protected ObjectIdentityCache<String,WorkQueue> allQueues = null; 
     // of classKey -> ClassKeyQueue
 
     /**
@@ -287,7 +287,7 @@ ApplicationContextAware {
                 && getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
                     MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY) {
             this.allQueues = 
-                new ConcurrentHashMap<String,WorkQueue>(701, .9f, 100);
+                new ObjectIdentityMemCache<WorkQueue>(701, .9f, 100);
         } else {
             this.initAllQueues();
         }
@@ -316,19 +316,15 @@ ApplicationContextAware {
         // references.
         if (this.uriUniqFilter != null) {
             this.uriUniqFilter.close();
-//            this.alreadyIncluded = null;
         }
-
-//        this.queueAssignmentPolicy = null;
-        
+       
         try {
             closeQueue();
         } catch (IOException e) {
-            // FIXME exception handling
-            e.printStackTrace();
+            logger.log(Level.WARNING,"closeQueue problem",e); 
         }
         
-        this.allQueues.clear();
+        this.allQueues.close();
     }
     
     /**
@@ -561,7 +557,7 @@ ApplicationContextAware {
         
         // TODO: Only do this when necessary.
         
-        Object key = getRetiredQueues().poll();
+        String key = getRetiredQueues().poll();
         while (key != null) {
             WorkQueue q = (WorkQueue)this.allQueues.get(key);
             if(q != null) {
@@ -754,7 +750,7 @@ ApplicationContextAware {
         Queue<String> inactiveQueues = inactiveQueuesByPrecedence.get(
                 targetPrecedence);
 
-        Object key = inactiveQueues.poll();
+        String key = inactiveQueues.poll();
         assert key != null : "empty precedence queue in map";
         
         if(inactiveQueues.isEmpty()) {
@@ -1282,7 +1278,7 @@ ApplicationContextAware {
                 q = ((DelayedWorkQueue)obj).getWorkQueue();
             } else {
                 try {
-                    q = (WorkQueue)this.allQueues.get(obj);
+                    q = this.allQueues.get((String)obj);
                 } catch (ClassCastException cce) {
                     logger.log(Level.SEVERE,"not convertible to workqueue:"+obj,cce);
                     q = null; 
@@ -1474,9 +1470,9 @@ ApplicationContextAware {
             if (obj ==  null) {
                 continue;
             }
-            q = (obj instanceof WorkQueue)?
-                (WorkQueue)obj:
-                (WorkQueue)this.allQueues.get(obj);
+            q = (obj instanceof WorkQueue)
+            		? (WorkQueue)obj
+            		: this.allQueues.get((String)obj);
             if(q == null) {
                 w.print("WARNING: No report for queue "+obj);
             }

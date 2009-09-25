@@ -21,8 +21,6 @@ package org.archive.modules.fetcher;
 
 import java.io.Closeable;
 import java.io.Serializable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
@@ -31,6 +29,9 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
+import org.archive.util.ObjectIdentityCache;
+import org.archive.util.ObjectIdentityMemCache;
+import org.archive.util.Supplier;
 
 
 /**
@@ -49,27 +50,27 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * hostname[:port] -> CrawlServer.
      * Set in the initialization.
      */
-    protected ConcurrentMap<String,CrawlServer> servers = null;
+    protected ObjectIdentityCache<String,CrawlServer> servers = null;
     
     /**
      * hostname -> CrawlHost.
      * Set in the initialization.
      */
-    protected ConcurrentMap<String,CrawlHost> hosts = null;
+    protected ObjectIdentityCache<String,CrawlHost> hosts = null;
     
     /**
      * Constructor.
      */
     public DefaultServerCache() {
         this(
-            new ConcurrentHashMap<String,CrawlServer>(), 
-            new ConcurrentHashMap<String,CrawlHost>());
+            new ObjectIdentityMemCache<CrawlServer>(), 
+            new ObjectIdentityMemCache<CrawlHost>());
     }
     
     
     
-    public DefaultServerCache(ConcurrentMap<String,CrawlServer> servers, 
-            ConcurrentMap<String,CrawlHost> hosts) {
+    public DefaultServerCache(ObjectIdentityCache<String,CrawlServer> servers, 
+            ObjectIdentityCache<String,CrawlHost> hosts) {
         this.servers = servers;
         this.hosts = hosts;
     }
@@ -79,16 +80,14 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * @param serverKey Server name we're to return server for.
      * @return CrawlServer instance that matches the passed server name.
      */
-    public synchronized CrawlServer getServerFor(String serverKey) {
-        CrawlServer cserver = servers.get(serverKey);
-        if(cserver==null) {
-            String skey = new String(serverKey); // ensure private minimal key
-            cserver = new CrawlServer(skey);
-            CrawlServer prevVal = servers.putIfAbsent(skey, cserver);
-            if(prevVal!=null) {
-                cserver = prevVal;
-            }
-        }
+    public synchronized CrawlServer getServerFor(final String serverKey) {
+        CrawlServer cserver = servers.getOrUse(
+                serverKey,
+                new Supplier<CrawlServer>() {
+                    public CrawlServer get() {
+                        String skey = new String(serverKey); // ensure private minimal key
+                        return new CrawlServer(skey);
+                    }});
         return cserver;
     }
 
@@ -121,19 +120,17 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * @param hostname Host name we're to return Host for.
      * @return CrawlHost instance that matches the passed Host name.
      */
-    public synchronized CrawlHost getHostFor(String hostname) {
+    public synchronized CrawlHost getHostFor(final String hostname) {
         if (hostname == null || hostname.length() == 0) {
             return null;
         }
-        CrawlHost host = hosts.get(hostname);
-        if(host == null) {
-            String hkey = new String(hostname); // ensure private minimal key
-            host = new CrawlHost(hkey); 
-            CrawlHost prevVal = hosts.putIfAbsent(hkey, host);
-            if(prevVal!=null) {
-                host = prevVal; 
-            }
-        }
+        CrawlHost host = hosts.getOrUse(
+                hostname,
+                new Supplier<CrawlHost>() {
+                    public CrawlHost get() {
+                        String hkey = new String(hostname); // ensure private minimal key
+                        return new CrawlHost(hkey);
+                    }});
         return host;
     }
     
@@ -175,11 +172,11 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
         if (this.hosts != null) {
             // If we're using a bdb bigmap, the call to clear will
             // close down the bdb database.
-            this.hosts.clear();
+            this.hosts.close();
             this.hosts = null;
         }
         if (this.servers != null) { 
-            this.servers.clear();
+            this.servers.close();
             this.servers = null;
         }
     }

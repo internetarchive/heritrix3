@@ -77,7 +77,7 @@ public class BdbModuleTest extends TmpDirTestCase {
         config.setAllowCreate(true);
         bdb.openDatabase("testOpen", config, false);
         
-        Map<String,String> testData = bdb.getBigMap("testData", false, 
+        Map<String,String> testData = bdb.getCBMMap("testData", false, 
                 String.class, String.class);
         for (int i = 0; i < 1000; i++) {
             testData.put(String.valueOf(i), String.valueOf(i * 2));

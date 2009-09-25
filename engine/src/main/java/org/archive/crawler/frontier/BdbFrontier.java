@@ -41,6 +41,7 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.checkpointing.RecoverAction;
 import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
+import org.archive.util.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.sleepycat.collections.StoredIterator;
@@ -148,20 +149,17 @@ implements Serializable, Checkpointable {
      * @param classKey key to look for
      * @return the found WorkQueue
      */
-    protected WorkQueue getQueueFor(String classKey) {
-        
-        WorkQueue wq = (WorkQueue)allQueues.get(classKey);
-        if(wq == null) {
-            String qKey = new String(classKey); // ensure private minimal key
-            wq = new BdbWorkQueue(qKey, this);
-            wq.setTotalBudget(getQueueTotalBudget()); 
-            getQueuePrecedencePolicy().queueCreated(wq);
-            WorkQueue prevVal = allQueues.putIfAbsent(qKey, wq);
-            if(prevVal!=null) {
-                // lost race; prefer earlier object
-                wq = prevVal; 
-            }
-        }
+    protected WorkQueue getQueueFor(final String classKey) {      
+        WorkQueue wq = allQueues.getOrUse(
+                classKey,
+                new Supplier<WorkQueue>() {
+                    public WorkQueue get() {
+                        String qKey = new String(classKey); // ensure private minimal key
+                        WorkQueue q = new BdbWorkQueue(qKey, BdbFrontier.this);
+                        q.setTotalBudget(getQueueTotalBudget()); 
+                        getQueuePrecedencePolicy().queueCreated(q);
+                        return q;
+                    }});
         return wq;
     }
 
@@ -228,8 +226,7 @@ implements Serializable, Checkpointable {
     
     @Override
     protected void initAllQueues() throws DatabaseException {
-        this.allQueues = bdb.getBigMap("allqueues", false,
-                String.class, WorkQueue.class);
+        this.allQueues = bdb.getObjectCache("allqueues", false, WorkQueue.class);
         if (logger.isLoggable(Level.FINE)) {
             Iterator<String> i = this.allQueues.keySet().iterator();
             try {
