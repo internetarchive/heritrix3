@@ -331,6 +331,9 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * @see org.archive.util.ObjectIdentityCache#size()
      */
     public int size() {
+        if(db==null) {
+            return 0; 
+        }
         return diskMap.size();
     }
     
