@@ -904,8 +904,17 @@ public class StatisticsTracker
      * Return a copy of the hosts distribution in reverse-sorted
      * (largest first) order. 
      * @return SortedMap of hosts distribution
+     * @deprecated Use {@link #calcReverseSortedHostsDistribution()} instead
      */
     public SortedMap<String,AtomicLong> getReverseSortedHostsDistribution() {
+        return calcReverseSortedHostsDistribution();
+    }
+    /**
+     * Return a copy of the hosts distribution in reverse-sorted
+     * (largest first) order. 
+     * @return SortedMap of hosts distribution
+     */
+    public SortedMap<String,AtomicLong> calcReverseSortedHostsDistribution() {
         synchronized(hostsDistribution){
             return getReverseSortedCopy(hostsDistribution);
         }
