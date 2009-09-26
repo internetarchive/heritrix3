@@ -21,7 +21,6 @@ package org.archive.crawler.frontier;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.extractor.Hop;
 import org.archive.net.UURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
@@ -83,7 +82,7 @@ implements
             return curi.getClassKey();
         }
         
-        UURI basis = getBasisURI(curi); 
+        UURI basis = curi.getPolicyBasisUURI();
         String candidate = getCoreKey(basis); 
         
         if(StringUtils.isEmpty(candidate)) {
@@ -107,17 +106,4 @@ implements
     }
 
     abstract String getCoreKey(UURI basis);
-
-    protected UURI getBasisURI(CrawlURI curi) {
-        UURI effectiveuuri = null;
-        // always use 'via' of prerequisite URIs, if available, so
-        // prerequisites go to same queue as trigger URI
-        if (curi.getPathFromSeed().endsWith(Hop.PREREQ.getHopString())) {
-            effectiveuuri = curi.getVia();
-        }
-        if(effectiveuuri==null) {
-            effectiveuuri = curi.getUURI();
-        }
-        return effectiveuuri;
-    }
 }

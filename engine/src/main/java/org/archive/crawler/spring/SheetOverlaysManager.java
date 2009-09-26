@@ -171,7 +171,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      */
     public void applyOverlays(CrawlURI curi) {
         // apply SURT-based overlays
-        String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getUURI());
+        String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getPolicyBasisUURI());
         List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
         for(String prefix : foundPrefixes) {
             for(String name : sheetNamesBySurt.get(prefix)) {

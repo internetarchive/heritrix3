@@ -1747,6 +1747,27 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
         this.precedence = precedence;
     }
     
+    /**
+     * Get the UURI that should be used as the basis of policy/overlay
+     * decisions. In the case of prerequisites, this is the URI that 
+     * triggered the prerequisite -- the 'via' -- so that the prerequisite
+     * lands in the same queue, with the same overlay values, as the 
+     * triggering URI. 
+     * @return UURI to use for policy decisions
+     */
+    public UURI getPolicyBasisUURI() {
+        UURI effectiveuuri = null;
+        // always use 'via' of prerequisite URIs, if available, so
+        // prerequisites go to same queue as trigger URI
+        if (getPathFromSeed().endsWith(Hop.PREREQ.getHopString())) {
+            effectiveuuri = getVia();
+        }
+        if(effectiveuuri==null) {
+            effectiveuuri = getUURI();
+        }
+        return effectiveuuri;
+    }
+    
     
     //
     // OverridesSource implementation
