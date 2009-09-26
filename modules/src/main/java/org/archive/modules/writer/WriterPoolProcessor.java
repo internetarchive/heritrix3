@@ -180,7 +180,7 @@ implements Lifecycle {
         kp.put("metadataProvider",provider);
     }
 
-    protected ServerCache serverCache;
+    transient protected ServerCache serverCache;
     public ServerCache getServerCache() {
         return this.serverCache;
     }
