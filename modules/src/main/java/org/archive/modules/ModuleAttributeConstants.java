@@ -30,8 +30,6 @@ public class ModuleAttributeConstants {
     /** a 'source' (usu. URI) that's inherited by discovered URIs */
     public static final String A_SOURCE_TAG = "source";
 
-    public static final String A_HTTP_TRANSACTION = "http-transaction";
-
     public static final String A_FETCH_BEGAN_TIME= "fetch-began-time";
 
     private ModuleAttributeConstants() {

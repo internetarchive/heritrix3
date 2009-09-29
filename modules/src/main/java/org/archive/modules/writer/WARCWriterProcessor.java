@@ -37,7 +37,6 @@ import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_NOT_MODIFIED;
 import static org.archive.io.warc.WARCConstants.REQUEST;
 import static org.archive.io.warc.WARCConstants.TYPE;
 import static org.archive.modules.ModuleAttributeConstants.A_DNS_SERVER_IP_LABEL;
-import static org.archive.modules.ModuleAttributeConstants.A_HTTP_TRANSACTION;
 import static org.archive.modules.ModuleAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.ModuleAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.ModuleAttributeConstants.LENGTH_TRUNC;
@@ -62,7 +61,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -72,6 +71,7 @@ import org.archive.io.WriterPoolSettings;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.modules.CrawlMetadata;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
@@ -380,15 +380,15 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     
     protected URI writeRevisitNotModified(final WARCWriter w,
             final String timestamp, 
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final ProcessorURI puri,
             final ANVLRecord namedFields) 
     throws IOException {
+    	CrawlURI curi = (CrawlURI) puri;
         namedFields.addLabelValue(
         		HEADER_KEY_PROFILE, PROFILE_REVISIT_NOT_MODIFIED);
         // save just enough context to understand basis of not-modified
-        if(curi.containsDataKey(A_HTTP_TRANSACTION)) {
-            HttpMethodBase method = 
-                (HttpMethodBase) curi.getData().get(A_HTTP_TRANSACTION);
+        if(curi.isHttpTransaction()) {
+            HttpMethod method = curi.getHttpMethod();
             saveHeader(A_ETAG_HEADER,method,namedFields,HEADER_KEY_ETAG);
             saveHeader(A_LAST_MODIFIED_HEADER,method,namedFields,
             		HEADER_KEY_LAST_MODIFIED);
@@ -415,7 +415,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
      * @param origName header name to get if present
      * @param method http operation containing headers
      */
-    protected void saveHeader(String origName, HttpMethodBase method, 
+    protected void saveHeader(String origName, HttpMethod method, 
     		ANVLRecord headers, String newName) {
         Header header = method.getResponseHeader(origName);
         if(header!=null) {

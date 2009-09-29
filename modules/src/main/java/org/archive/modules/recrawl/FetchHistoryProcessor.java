@@ -22,12 +22,12 @@ package org.archive.modules.recrawl;
 import java.util.HashMap;
 
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.HttpMethod;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorURI;
 
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.*;
-import static org.archive.modules.ModuleAttributeConstants.A_HTTP_TRANSACTION;
 import static org.archive.modules.ModuleAttributeConstants.A_FETCH_BEGAN_TIME;
 
 /**
@@ -60,7 +60,8 @@ public class FetchHistoryProcessor extends Processor {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void innerProcess(ProcessorURI curi) throws InterruptedException {
+    protected void innerProcess(ProcessorURI puri) throws InterruptedException {
+    	CrawlURI curi = (CrawlURI) puri;
         curi.addPersistentDataMapKey(A_FETCH_HISTORY);
         HashMap<String, Object> latestFetch = new HashMap<String,Object>();
 
@@ -74,9 +75,8 @@ public class FetchHistoryProcessor extends Processor {
             latestFetch.put(A_CONTENT_DIGEST,digest);
         }
         // save relevant HTTP headers, if available
-        if(curi.containsDataKey(A_HTTP_TRANSACTION)) {
-            HttpMethodBase method = 
-                (HttpMethodBase) curi.getData().get(A_HTTP_TRANSACTION);
+        if(curi.isHttpTransaction()) {
+            HttpMethod method = curi.getHttpMethod();
             saveHeader(A_ETAG_HEADER,method,latestFetch);
             saveHeader(A_LAST_MODIFIED_HEADER,method,latestFetch);
             // save reference length (real or virtual)
@@ -122,7 +122,7 @@ public class FetchHistoryProcessor extends Processor {
      * @param method http operation containing headers
      * @param latestFetch AList to get header
      */
-    protected void saveHeader(String name, HttpMethodBase method, 
+    protected void saveHeader(String name, HttpMethod method, 
     		HashMap<String, Object> latestFetch) {
         Header header = method.getResponseHeader(name);
         if(header!=null) {
