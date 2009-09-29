@@ -203,9 +203,9 @@ public interface WARCConstants extends ArchiveFileConstants {
     public static final String HEADER_KEY_LAST_MODIFIED = "WARC-Last-Modified";
     
     public static final String PROFILE_REVISIT_IDENTICAL_DIGEST = 
-        "http://netpreserve.org/warc/0.17/revisit/identical-payload-digest";
+        "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest";
     public static final String PROFILE_REVISIT_NOT_MODIFIED = 
-        "http://netpreserve.org/warc/0.17/revisit/server-not-modified";
+        "http://netpreserve.org/warc/1.0/revisit/server-not-modified";
     
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_TYPE = "Content-Type";
