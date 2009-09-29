@@ -394,9 +394,11 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     }
 
     /** An incremental, poll-based expunger.
+     * 
+     * Package-protected for unit-test visibility. 
      */
     @SuppressWarnings("unchecked")
-    private synchronized void pageOutStaleEntries() {
+    synchronized void pageOutStaleEntries() {
         int c = 0;
         long startTime = System.currentTimeMillis();
         for(SoftEntry<V> entry; (entry = (SoftEntry<V>)refQueue.poll()) != null;) {

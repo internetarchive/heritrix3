@@ -181,11 +181,12 @@ public class ObjectIdentityBdbCacheTest extends TmpDirTestCase {
         assertEquals(cache.size(), 10000);
         TestUtils.forceScarceMemory();
         Thread.sleep(3000);
-        // The 'canary' trick makes this explicit expunge, or
-        // an expunge triggered by a get() or put...(), unnecessary
-        // cache.expungeStaleEntries();
+        // The 'canary' trick may make this explicit page-out, or
+        // a page-out riggered by a get() or put...(), unnecessary --
+        // but we include anyway.
+        cache.pageOutStaleEntries();
         System.out.println(cache.size()+","+cache.memMap.size());
-        assertEquals(0, cache.memMap.size());
+        assertEquals("memMap not cleared", 0, cache.memMap.size());
     }
     
     
