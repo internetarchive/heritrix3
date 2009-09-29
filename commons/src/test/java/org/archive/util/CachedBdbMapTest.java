@@ -75,7 +75,8 @@ public class CachedBdbMapTest extends TmpDirTestCase {
         final int upperbound = 3;
         // First put in empty hashmap.
         for (int i = 0; i < upperbound; i++) {
-            this.cache.put(key + Integer.toString(i), new HashMap<String,String>());
+            assertNull("unexpected prior entry", 
+                this.cache.putIfAbsent(key + Integer.toString(i), new HashMap<String,String>()));
         }
         // Now add value to hash map.
         for (int i = 0; i < upperbound; i++) {

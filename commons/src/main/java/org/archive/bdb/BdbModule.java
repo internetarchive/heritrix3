@@ -389,6 +389,7 @@ Serializable, Closeable {
         }
         CachedBdbMap<K, V> r = new CachedBdbMap<K,V>(dbName);     
         r.initialize(bdbEnvironment, key, value, classCatalog);
+        oiCaches.put(dbName, r);
         return r;
     }
 
@@ -417,6 +418,7 @@ Serializable, Closeable {
         }
         ObjectIdentityBdbCache<V> oic = new ObjectIdentityBdbCache<V>();
         oic.initialize(bdbEnvironment, dbName, valueClass, classCatalog);
+        oiCaches.put(dbName, oic);
         return oic;
     }
 
@@ -451,7 +453,6 @@ Serializable, Closeable {
         } else {
             oic =  getCBMMap(dbName, recycle, String.class, valueClass);
         }
-        oiCaches.put(dbName, oic);
         return oic; 
     }
     

@@ -22,6 +22,7 @@ package org.archive.settings.file;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
@@ -77,10 +78,10 @@ public class BdbModuleTest extends TmpDirTestCase {
         config.setAllowCreate(true);
         bdb.openDatabase("testOpen", config, false);
         
-        Map<String,String> testData = bdb.getCBMMap("testData", false, 
+        ConcurrentMap<String,String> testData = bdb.getCBMMap("testData", false, 
                 String.class, String.class);
         for (int i = 0; i < 1000; i++) {
-            testData.put(String.valueOf(i), String.valueOf(i * 2));
+            assertNull("unexpected prior entry", testData.putIfAbsent(String.valueOf(i), String.valueOf(i * 2)));
         }
         
         File checkpointDir = new File(getTmpDir(), "checkpoint");
