@@ -145,12 +145,10 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
      * @param curi the crawl URI containing the fetched robots.txt
      * @throws IOException
      */
-    public void updateRobots(RobotsHonoringPolicy honoringPolicy, 
+    public synchronized void updateRobots(RobotsHonoringPolicy honoringPolicy, 
             ProcessorURI curi) {
 
-        robotsFetched = System.currentTimeMillis();
-
-	ProcessorURI.FetchType ft = curi.getFetchType();
+        ProcessorURI.FetchType ft = curi.getFetchType();
         boolean gotSomething = curi.getFetchStatus() > 0
                 && (ft == HTTP_GET || ft == HTTP_POST);
         if (!gotSomething && curi.getFetchAttempts() < MIN_ROBOTS_RETRIES) {
@@ -159,6 +157,8 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
             return;
         }
         
+        robotsFetched = System.currentTimeMillis();
+
         RobotsHonoringPolicy.Type type = honoringPolicy.getType();
         if (type == RobotsHonoringPolicy.Type.IGNORE) {
             // IGNORE = ALLOWALL
@@ -173,7 +173,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
             return;
         }
         
-	int fetchStatus = curi.getFetchStatus();
+        int fetchStatus = curi.getFetchStatus();
         if (fetchStatus < 200 || fetchStatus >= 300) {
             // Not found or anything but a status code in the 2xx range is
             // treated as giving access to all of a sites' content.
@@ -213,13 +213,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
             validRobots = true;
             curi.getNonFatalFailures().add(e);
         }
-    }
-
-    /**
-     * @return Returns the time when robots.txt was fetched.
-     */
-    public long getRobotsFetchedTime() {
-        return robotsFetched;
     }
 
     /**
@@ -279,7 +272,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
      *
 	 * @return Returns the validRobots.
 	 */
-	public boolean isValidRobots() {
+	public synchronized boolean isValidRobots() {
 		return validRobots;
 	}
     
@@ -321,5 +314,31 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
      */
     public FetchStats getSubstats() {
         return substats;
+    }
+
+    /**
+     * Is the robots policy expired.
+     *
+     * This method will also return true if we haven't tried to get the
+     * robots.txt for this server.
+     *
+     * @param curi
+     * @return true if the robots policy is expired.
+     */
+    public synchronized boolean isRobotsExpired(int validityDuration) {
+        if (robotsFetched == ROBOTS_NOT_FETCHED) {
+            // Have not attempted to fetch robots
+            return true;
+        }
+        long duration = validityDuration*1000L;
+        if (duration == 0) {
+            // When zero, robots should be valid forever
+            return false;
+        }
+        if (robotsFetched + duration < System.currentTimeMillis()) {
+            // Robots is still valid
+            return true;
+        }
+        return false;
     }
 }

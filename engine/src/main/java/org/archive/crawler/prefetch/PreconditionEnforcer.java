@@ -216,17 +216,16 @@ public class PreconditionEnforcer extends Processor  {
                 curi.setPrerequisite(true);
                 return false;
             }
-        }
-        catch (URIException e) {
+        } catch (URIException e) {
             logger.severe("Failed get of path for " + curi);
         }
         
+        CrawlServer cs = getServerFor(curi);
         // require /robots.txt if not present
-        if (isRobotsExpired(curi)) {
+        if (cs.isRobotsExpired(getRobotsValidityDurationSeconds())) {
         	// Need to get robots
             if (logger.isLoggable(Level.FINE)) {
-                CrawlServer server = getServerFor(curi);
-                logger.fine( "No valid robots for " + server  +
+                logger.fine( "No valid robots for " + cs  +
                     "; deferring " + curi);
             }
 
@@ -243,7 +242,6 @@ public class PreconditionEnforcer extends Processor  {
             return true;
         }
         // test against robots.txt if available
-        CrawlServer cs = getServerFor(curi);
         if (cs.isValidRobots()) {
             String ua = getUserAgentProvider().getUserAgent();
             if(cs.getRobots().disallows(curi, ua)) {
@@ -360,34 +358,6 @@ public class PreconditionEnforcer extends Processor  {
         }
 
         return (duration + host.getIpFetched()) < System.currentTimeMillis();
-    }
-
-    /**
-     * Is the robots policy expired.
-     *
-     * This method will also return true if we haven't tried to get the
-     * robots.txt for this server.
-     *
-     * @param curi
-     * @return true if the robots policy is expired.
-     */
-    public boolean isRobotsExpired(ProcessorURI curi) {
-        CrawlServer server = getServerFor(curi);
-        long robotsFetched = server.getRobotsFetchedTime();
-        if (robotsFetched == CrawlServer.ROBOTS_NOT_FETCHED) {
-            // Have not attempted to fetch robots
-            return true;
-        }
-        long duration = getRobotsValidityDurationSeconds()*1000L;
-        if (duration == 0) {
-            // When zero, robots should be valid forever
-            return false;
-        }
-        if (robotsFetched + duration < System.currentTimeMillis()) {
-            // Robots is still valid
-            return true;
-        }
-        return false;
     }
 
    /**
