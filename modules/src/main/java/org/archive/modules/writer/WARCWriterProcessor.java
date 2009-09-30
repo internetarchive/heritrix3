@@ -547,7 +547,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
 //                }
 //            }
         addIfNotBlank(record,"description", provider.getDescription());
-        addIfNotBlank(record,"robots", provider.getRobotsPolicyName());
+        addIfNotBlank(record,"robots", provider.getRobotsPolicyName().toLowerCase());
 
         addIfNotBlank(record,"http-header-user-agent",
                 provider.getUserAgent());
