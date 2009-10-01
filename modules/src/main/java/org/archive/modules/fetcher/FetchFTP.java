@@ -325,9 +325,9 @@ public class FetchFTP extends Processor  {
     private void saveToRecorder(ProcessorURI curi,
             Socket socket, Recorder recorder) 
     throws IOException, InterruptedException {
-        recorder.markContentBegin();
         recorder.inputWrap(socket.getInputStream());
         recorder.outputWrap(socket.getOutputStream());
+        recorder.markContentBegin();
 
         // Read the remote file/dir listing in its entirety.
         long softMax = 0;
