@@ -466,7 +466,7 @@ public class UURIFactory extends URI {
         
         // fixup authority portion: lowercase/IDN-punycode any domain; 
         // remove stray trailing spaces
-        uriAuthority = fixupAuthority(uriAuthority);
+        uriAuthority = fixupAuthority(uriAuthority,charset);
 
         // Do some checks if absolute path.
         if (uriSchemeSpecificPart != null &&
@@ -586,7 +586,7 @@ public class UURIFactory extends URI {
      * @return fixed version
      * @throws URIException
      */
-    private String fixupAuthority(String uriAuthority) throws URIException {
+    private String fixupAuthority(String uriAuthority, String charset) throws URIException {
         // Lowercase the host part of the uriAuthority; don't destroy any
         // userinfo capitalizations.  Make sure no illegal characters in
         // domainlabel substring of the uri authority.
@@ -612,12 +612,12 @@ public class UURIFactory extends URI {
                 return domain + port;
             } else if (atIndex>-1 && portColonIndex<0) {
                 // uncommon: userinfo, no port
-                String userinfo = uriAuthority.substring(0,atIndex+1);
+                String userinfo = ensureMinimalEscaping(uriAuthority.substring(0,atIndex+1),charset);
                 String domain = fixupDomainlabel(uriAuthority.substring(atIndex+1));
                 return userinfo + domain;
             } else {
                 // uncommon: userinfo, port
-                String userinfo = uriAuthority.substring(0,atIndex+1);
+                String userinfo = ensureMinimalEscaping(uriAuthority.substring(0,atIndex+1),charset);
                 String domain = fixupDomainlabel(uriAuthority.substring(atIndex+1,portColonIndex));
                 String port = uriAuthority.substring(portColonIndex);
                 return userinfo + domain + port;
