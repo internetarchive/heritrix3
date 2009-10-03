@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.io.UTF8Bytes;
 
@@ -48,7 +50,9 @@ import org.archive.io.UTF8Bytes;
  */
 public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
 	private static final long serialVersionUID = -4610638888453052958L;
-	
+    private static final Logger logger = 
+        Logger.getLogger(ANVLRecord.class.getName());
+
 	public static final String MIMETYPE = "application/warc-fields";
 	
 	public static final ANVLRecord EMPTY_ANVL_RECORD = new ANVLRecord();
@@ -84,7 +88,12 @@ public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
     }
 
     public boolean addLabelValue(final String l, final String v) {
-    	return super.add(new Element(new Label(l), new Value(v)));
+    	try {
+    		return super.add(new Element(new Label(l), new Value(v)));
+    	} catch (IllegalArgumentException e) {
+    		logger.log(Level.WARNING, "bad label " + l + " or value " + v, e);
+    		return false;
+    	}
     }
     
     @Override

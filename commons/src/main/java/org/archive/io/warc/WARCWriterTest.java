@@ -60,17 +60,17 @@ extends TmpDirTestCase implements WARCConstants {
     public void testCheckHeaderLineValue() throws Exception {
         WARCWriter writer = new WARCWriter();
         writer.checkHeaderValue("one");
-        IOException exception = null;
+        IllegalArgumentException exception = null;
         try {
             writer.checkHeaderValue("with space");
-        } catch(IOException e) {
+        } catch(IllegalArgumentException e) {
             exception = e;
         }
        assertNotNull(exception);
        exception = null;
        try {
            writer.checkHeaderValue("with\0x0000controlcharacter");
-       } catch(IOException e) {
+       } catch(IllegalArgumentException e) {
            exception = e;
        }
       assertNotNull(exception);
