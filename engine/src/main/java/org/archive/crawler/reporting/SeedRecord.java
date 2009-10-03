@@ -130,4 +130,8 @@ public class SeedRecord implements CoreAttributeConstants, Serializable {
     public String getUri() {
         return uri;
     }
+
+    public int sortShiftStatusCode() {
+        return -statusCode - Integer.MAX_VALUE;
+    }
 }

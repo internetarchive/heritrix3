@@ -20,6 +20,11 @@ package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.Map;
+
+import org.archive.bdb.TempStoredSortedMap;
+
+import com.sleepycat.collections.StoredIterator;
 
 
 /**
@@ -36,9 +41,12 @@ public class SeedsReport extends Report {
 
         long seedsCrawled = 0;
         long seedsTotal = 0;
-        for (Iterator<SeedRecord> i = stats.getSeedRecordsSortedByStatusCode();
-                i.hasNext();) {
-            SeedRecord sr = (SeedRecord)i.next();
+        TempStoredSortedMap<Integer, SeedRecord> seedsByCode = stats.getSeedRecordsSortedByStatusCode();
+//        for (Map.Entry<Integer,SeedRecord> entry : seedsByCode.entrySet()) {
+        Iterator<Map.Entry<Integer,SeedRecord>> iter = seedsByCode.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry<Integer,SeedRecord> entry = iter.next();
+            SeedRecord sr = entry.getValue();
             writer.print(sr.getStatusCode());
             writer.print(" ");
             seedsTotal++;
@@ -56,6 +64,8 @@ public class SeedsReport extends Report {
             }
             writer.print("\n");
         }
+        StoredIterator.close(iter);
+        seedsByCode.destroy();
         stats.seedsTotal = seedsTotal;
         stats.seedsCrawled = seedsCrawled; 
     }

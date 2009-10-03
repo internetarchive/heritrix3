@@ -20,9 +20,9 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
+
+import org.archive.bdb.TempStoredSortedMap;
 
 /**
  * The "Mimetypes Report", tallies by MIME type.
@@ -35,17 +35,18 @@ public class MimetypesReport extends Report {
     public void write(PrintWriter writer) {
         // header
         writer.print("[#urls] [#bytes] [mime-types]\n");
-        TreeMap<String,AtomicLong> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
-        for (Iterator<String> i = fd.keySet().iterator(); i.hasNext();) {
-            Object key = i.next();
-            // Key is mime type.
-            writer.print(Long.toString(((AtomicLong)fd.get(key)).get()));
+        TempStoredSortedMap<Long,String> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
+        for (Map.Entry<Long,String> entry : fd.entrySet()) {
+            // key is -count, value is type
+            writer.print(Math.abs(entry.getKey()));
             writer.print(" ");
-            writer.print(Long.toString(stats.getBytesPerFileType((String)key)));
+            writer.print(stats.getBytesPerFileType(entry.getValue()));
             writer.print(" ");
-            writer.print((String)key);
+            writer.print(entry.getValue());
             writer.print("\n");
-        }    }
+        }
+        fd.destroy();
+    }
 
     @Override
     public String getFilename() {

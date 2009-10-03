@@ -19,9 +19,9 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
+
+import org.archive.bdb.TempStoredSortedMap;
 
 /**
  * The "Response Codes Report", tallies by response/disposition code.
@@ -33,17 +33,17 @@ public class ResponseCodeReport extends Report {
     @Override
     public void write(PrintWriter writer) {
         // header
-        writer.print("[rescode] [#urls]\n");
+        writer.print("[#urls] [rescode]\n");
         
-        TreeMap<String,AtomicLong> scd = 
+        TempStoredSortedMap<Long,String> scd = 
             stats.getReverseSortedCopy(stats.getStatusCodeDistribution());
-        for (Iterator<String> i = scd.keySet().iterator(); i.hasNext();) {
-            Object key = i.next();
-            writer.print((String)key);
+        for (Map.Entry<Long,String> entry : scd.entrySet()) {
+            writer.print(Math.abs(entry.getKey()));
             writer.print(" ");
-            writer.print(Long.toString(((AtomicLong)scd.get(key)).get()));
+            writer.print(entry.getValue());
             writer.print("\n");
         }
+        scd.destroy();
     }
 
     @Override

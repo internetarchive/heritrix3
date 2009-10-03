@@ -52,7 +52,10 @@ import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.springframework.context.Lifecycle;
 
+import com.sleepycat.bind.EntryBinding;
+import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
+import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -60,9 +63,6 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.DbInternal;
 import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.SecondaryConfig;
-import com.sleepycat.je.SecondaryDatabase;
-import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.dbi.EnvironmentImpl;
 import com.sleepycat.je.utilint.DbLsn;
 
@@ -154,35 +154,6 @@ Serializable, Closeable {
         }
     }
     
-    
-    public static class  SecondaryBdbConfig extends BdbConfig {
-        private static final long serialVersionUID = 1L;
-        
-        private SecondaryKeyCreator keyCreator;
-        
-        public SecondaryBdbConfig() {
-        }
-        
-        public SecondaryKeyCreator getKeyCreator() {
-            return keyCreator;
-        }
-
-        public void setKeyCreator(SecondaryKeyCreator keyCreator) {
-            this.keyCreator = keyCreator;
-        }
-
-        public SecondaryConfig toSecondaryConfig() {
-            SecondaryConfig result = new SecondaryConfig();
-            result.setDeferredWrite(true);
-            result.setTransactional(transactional);
-            result.setAllowCreate(allowCreate);
-            result.setSortedDuplicates(sortedDuplicates);
-            result.setKeyCreator(keyCreator);
-            return result;
-        }
-        
-    }
-
     protected ConfigPath dir = new ConfigPath("bdbmodule subdirectory","state");
     public ConfigPath getDir() {
         return dir;
@@ -340,23 +311,6 @@ Serializable, Closeable {
         return dpc.database;
     }
 
-
-    public SecondaryDatabase openSecondaryDatabase(String name, Database db, 
-            SecondaryBdbConfig config) throws DatabaseException {
-        if (databases.containsKey(name)) {
-            throw new IllegalStateException("Database already exists: " +name);
-        }
-        SecondaryDatabase result = bdbEnvironment.openSecondaryDatabase(null, 
-                name, db, config.toSecondaryConfig());
-        DatabasePlusConfig dpc = new DatabasePlusConfig();
-        dpc.database = result;
-        dpc.name = name;
-        dpc.primaryName = db.getDatabaseName();
-        dpc.config = config;
-        databases.put(name, dpc);
-        return result;
-    }
-
     public StoredClassCatalog getClassCatalog() {
         return classCatalog;
     }
@@ -482,18 +436,8 @@ Serializable, Closeable {
 //                        this.classCatalog);
 //          }
             for (DatabasePlusConfig dpc: databases.values()) {
-                if (!(dpc.config instanceof SecondaryBdbConfig)) {
-                    dpc.database = bdbEnvironment.openDatabase(null, 
-                            dpc.name, dpc.config.toDatabaseConfig());
-                }
-            }
-            for (DatabasePlusConfig dpc: databases.values()) {
-                if (dpc.config instanceof SecondaryBdbConfig) {
-                    SecondaryBdbConfig conf = (SecondaryBdbConfig)dpc.config;
-                    Database primary = databases.get(dpc.primaryName).database;
-                    dpc.database = bdbEnvironment.openSecondaryDatabase(null, 
-                            dpc.name, primary, conf.toSecondaryConfig());
-                }
+                dpc.database = bdbEnvironment.openDatabase(null, 
+                        dpc.name, dpc.config.toDatabaseConfig());
             }
         } catch (DatabaseException e) {
             IOException io = new IOException();
@@ -724,14 +668,11 @@ Serializable, Closeable {
             path = recovery.translatePath(path);
             FileUtils.copyDirectory(bdbDir, new File(path));
         }
-        
     }
 
     
     private static class BdbShutdownHook extends Thread {
- 
         final private BdbModule bdb;
-        
         
         public BdbShutdownHook(BdbModule bdb) {
             this.bdb = bdb;
@@ -740,6 +681,47 @@ Serializable, Closeable {
         public void run() {
             this.bdb.close2();
         }
+    }
+
+    /** uniqueness serial number for temp map databases */
+    long sn = 0; 
         
+    /**
+     * Creates a database-backed TempStoredSortedMap for transient 
+     * reporting requirements. Calling the returned map's destroy()
+     * method when done discards the associated Database. 
+     * 
+     * @param <K>
+     * @param <V>
+     * @param dbName Database name to use; if null a name will be synthesized
+     * @param keyClass Class of keys; should be a Java primitive type
+     * @param valueClass Class of values; may be any serializable type
+     * @param allowDuplicates whether duplicate keys allowed
+     * @return
+     */
+    public <K,V> TempStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates) {
+        BdbConfig config = new BdbConfig(); 
+        config.setSortedDuplicates(true);
+        config.setAllowCreate(true); 
+        Database mapDb;
+        if(dbName==null) {
+            dbName = "tempMap-"+System.identityHashCode(this)+"-"+sn;
+            sn++;
+        }
+        try {
+            mapDb = openDatabase(dbName,config,false);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e); 
+        } 
+        EntryBinding<V> valueBinding = TupleBinding.getPrimitiveBinding(valueClass);
+        if(valueBinding == null) {
+            valueBinding = new SerialBinding<V>(classCatalog, valueClass);
+        }
+        TempStoredSortedMap<K,V> storedMap = new TempStoredSortedMap<K, V>(
+                mapDb,
+                TupleBinding.getPrimitiveBinding(keyClass),
+                valueBinding,
+                true);
+        return storedMap; 
     }
 }

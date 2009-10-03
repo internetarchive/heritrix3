@@ -26,14 +26,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -44,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
+import org.archive.bdb.TempStoredSortedMap;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
@@ -615,12 +613,12 @@ public class StatisticsTracker
     }
 
     /**
-     * Sort the entries of the given HashMap in descending order by their
+     * Sort the entries of the given Map in descending order by their
      * values, which must be longs wrapped with <code>AtomicLong</code>.
      * <p>
      * Elements are sorted by value from largest to smallest. Equal values are
-     * sorted in an arbitrary, but consistent manner by their keys. Only items
-     * with identical value and key are considered equal.
+     * sorted by their keys. The returned map is a StoredSortedMap, and
+     * thus may include duplicate keys. 
      *
      * If the passed-in map requires access to be synchronized, the caller
      * should ensure this synchronization. 
@@ -629,32 +627,16 @@ public class StatisticsTracker
      *            Assumes values are wrapped with AtomicLong.
      * @return a sorted set containing the same elements as the map.
      */
-    public TreeMap<String,AtomicLong> getReverseSortedCopy(
+    public TempStoredSortedMap<Long,String> getReverseSortedCopy(
             final Map<String,AtomicLong> mapOfAtomicLongValues) {
-        TreeMap<String,AtomicLong> sortedMap = 
-          new TreeMap<String,AtomicLong>(new Comparator<String>() {
-            public int compare(String e1, String e2) {
-                long firstVal = mapOfAtomicLongValues.get(e1).get();
-                long secondVal = mapOfAtomicLongValues.get(e2).get();
-                if (firstVal < secondVal) {
-                    return 1;
-                }
-                if (secondVal < firstVal) {
-                    return -1;
-                }
-                // If the values are the same, sort by keys.
-                return e1.compareTo(e2);
-            }
-        });
-        try {
-            sortedMap.putAll(mapOfAtomicLongValues);
-        } catch (UnsupportedOperationException e) {
-            Iterator<String> i = mapOfAtomicLongValues.keySet().iterator();
-            for (;i.hasNext();) {
-                // Ok. Try doing it the slow way then.
-                String key = i.next();
-                sortedMap.put(key, mapOfAtomicLongValues.get(key));
-            }
+        TempStoredSortedMap<Long,String> sortedMap = 
+            bdb.getStoredMap(
+                    null,
+                    Long.class,
+                    String.class,
+                    true);
+        for(String k : mapOfAtomicLongValues.keySet()) {
+            sortedMap.put(-mapOfAtomicLongValues.get(k).longValue(), k);
         }
         return sortedMap;
     }
@@ -674,25 +656,16 @@ public class StatisticsTracker
      *            Assumes values are wrapped with AtomicLong.
      * @return a sorted set containing the same elements as the map.
      */
-    public TreeMap<String,AtomicLong> getReverseSortedCopy(
+    public TempStoredSortedMap<Long,String> getReverseSortedCopy(
             final ObjectIdentityCache<String,AtomicLong> cacheOfAtomicLongValues) {
-        TreeMap<String,AtomicLong> sortedMap = 
-          new TreeMap<String,AtomicLong>(new Comparator<String>() {
-            public int compare(String e1, String e2) {
-                long firstVal = cacheOfAtomicLongValues.get(e1).get();
-                long secondVal = cacheOfAtomicLongValues.get(e2).get();
-                if (firstVal < secondVal) {
-                    return 1;
-                }
-                if (secondVal < firstVal) {
-                    return -1;
-                }
-                // If the values are the same, sort by keys.
-                return e1.compareTo(e2);
-            }
-        });
-        for(String key : cacheOfAtomicLongValues.keySet()) {
-            sortedMap.put(key, cacheOfAtomicLongValues.get(key));
+        TempStoredSortedMap<Long,String> sortedMap = 
+            bdb.getStoredMap(
+                    null,
+                    Long.class,
+                    String.class,
+                    true);
+        for(String k : cacheOfAtomicLongValues.keySet()) {
+            sortedMap.put(-cacheOfAtomicLongValues.get(k).longValue(), k);
         }
         return sortedMap;
     }
@@ -854,27 +827,15 @@ public class StatisticsTracker
         return processedSeedsRecords.keySet().iterator();
     }
 
-    public Iterator<SeedRecord> getSeedRecordsSortedByStatusCode() {
+    public TempStoredSortedMap<Integer,SeedRecord> getSeedRecordsSortedByStatusCode() {
         Iterator<String> i = getSeedsIterator();
-        TreeSet<SeedRecord> sortedSet = 
-          new TreeSet<SeedRecord>(new Comparator<SeedRecord>() {
-            public int compare(SeedRecord sr1, SeedRecord sr2) {
-                int code1 = sr1.getStatusCode();
-                int code2 = sr2.getStatusCode();
-                if (code1 == code2) {
-                    // If the values are equal, sort by URIs.
-                    return sr1.getUri().compareTo(sr2.getUri());
-                }
-                // mirror and shift the nubmer line so as to
-                // place zero at the beginning, then all negatives 
-                // in order of ascending absolute value, then all 
-                // positives descending
-                code1 = -code1 - Integer.MAX_VALUE;
-                code2 = -code2 - Integer.MAX_VALUE;
-                
-                return new Integer(code1).compareTo(new Integer(code2));
-            }
-        });
+        TempStoredSortedMap<Integer,SeedRecord> sortedMap = 
+            bdb.getStoredMap(
+                    null,
+                    Integer.class,
+                    SeedRecord.class,
+                    true);
+        
         while (i.hasNext()) {
             String seed = i.next();
             SeedRecord sr = (SeedRecord) processedSeedsRecords.get(seed);
@@ -882,9 +843,9 @@ public class StatisticsTracker
                 sr = new SeedRecord(seed,"Seed has not been processed");
                 // no need to retain synthesized record
             }
-            sortedSet.add(sr);
+            sortedMap.put(sr.sortShiftStatusCode(), sr); 
         }
-        return sortedSet.iterator();
+        return sortedMap;
     }
     
     /**
@@ -893,7 +854,7 @@ public class StatisticsTracker
      * 
      * @return SortedMap of hosts distribution
      */
-    public SortedMap<String,AtomicLong> getReverseSortedHostCounts(
+    public TempStoredSortedMap<Long,String> getReverseSortedHostCounts(
             Map<String,AtomicLong> hostCounts) {
         synchronized(hostCounts){
             return getReverseSortedCopy(hostCounts);
@@ -906,7 +867,7 @@ public class StatisticsTracker
      * @return SortedMap of hosts distribution
      * @deprecated Use {@link #calcReverseSortedHostsDistribution()} instead
      */
-    public SortedMap<String,AtomicLong> getReverseSortedHostsDistribution() {
+    public SortedMap<Long,String> getReverseSortedHostsDistribution() {
         return calcReverseSortedHostsDistribution();
     }
     /**
@@ -914,7 +875,7 @@ public class StatisticsTracker
      * (largest first) order. 
      * @return SortedMap of hosts distribution
      */
-    public SortedMap<String,AtomicLong> calcReverseSortedHostsDistribution() {
+    public TempStoredSortedMap<Long,String> calcReverseSortedHostsDistribution() {
         synchronized(hostsDistribution){
             return getReverseSortedCopy(hostsDistribution);
         }

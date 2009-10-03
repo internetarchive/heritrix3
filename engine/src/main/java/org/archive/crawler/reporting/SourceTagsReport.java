@@ -19,10 +19,10 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.archive.bdb.TempStoredSortedMap;
 
 /**
  * The "Source Report", tallies of source tags (usually seeds) by host.
@@ -36,24 +36,22 @@ public class SourceTagsReport extends Report {
 
         writer.print("[source] [host] [#urls]\n");
         // for each source
-        for (Iterator<String> i = stats.sourceHostDistribution.keySet().iterator(); i.hasNext();) {
-            String sourceKey = i.next();
+        for (String sourceKey : stats.sourceHostDistribution.keySet()) {
             Map<String,AtomicLong> hostCounts = 
                 (Map<String,AtomicLong>)stats.sourceHostDistribution.get(sourceKey);
             // sort hosts by #urls
-            SortedMap<String,AtomicLong> sortedHostCounts = 
+            TempStoredSortedMap<Long,String> sortedHostCounts = 
                 stats.getReverseSortedHostCounts(hostCounts);
             // for each host
-            for (Iterator<String> j = sortedHostCounts.keySet().iterator(); j.hasNext();) {
-                Object hostKey = j.next();
-                AtomicLong hostCount = (AtomicLong) hostCounts.get(hostKey);
+            for (Map.Entry<Long, String> entry : sortedHostCounts.entrySet()) {
                 writer.print(sourceKey.toString());
                 writer.print(" ");
-                writer.print(hostKey.toString());
+                writer.print(entry.getValue());
                 writer.print(" ");
-                writer.print(hostCount.get());
+                writer.print(Math.abs(entry.getKey()));
                 writer.print("\n");
             }
+            sortedHostCounts.destroy();
         }
     }
 

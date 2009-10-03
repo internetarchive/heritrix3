@@ -20,11 +20,10 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 
 import org.apache.commons.collections.Closure;
+import org.archive.bdb.TempStoredSortedMap;
 import org.archive.modules.net.CrawlHost;
 
 /**
@@ -38,21 +37,21 @@ public class HostsReport extends Report {
     public void write(final PrintWriter writer) {
         // TODO: use CrawlHosts for all stats; only perform sorting on 
         // manageable number of hosts
-        SortedMap<String,AtomicLong> hd = stats.calcReverseSortedHostsDistribution();
+        TempStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
         // header
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining]\n");
-        for (Iterator<String> i = hd.keySet().iterator(); i.hasNext();) {
-            // Key is 'host'.
-            String key = (String) i.next();
-            CrawlHost host = stats.serverCache.getHostFor(key);
-            AtomicLong val = (AtomicLong)hd.get(key);
+        for (Map.Entry<Long,String> entry : hd.entrySet()) {
+            // key is -count, value is hostname
+            CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
+            long count = Math.abs(entry.getKey()); 
             writeReportLine(writer,
-                    ((val==null)?"-":val.get()),
-                    stats.getBytesPerHost(key),
-                    key,
+                    count,
+                    stats.getBytesPerHost(entry.getValue()),
+                    entry.getValue(),
                     host.getSubstats().getRobotsDenials(),
                     host.getSubstats().getRemaining());
         }
+        hd.destroy();
         // StatisticsTracker doesn't know of zero-completion hosts; 
         // so supplement report with those entries from host cache
         Closure logZeros = new Closure() {
