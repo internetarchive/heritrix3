@@ -75,7 +75,6 @@ import com.sleepycat.je.Environment;
 public class ObjectIdentityBdbCache<V> 
 implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     private static final long serialVersionUID = 1L;
-
     private static final Logger logger =
         Logger.getLogger(ObjectIdentityBdbCache.class.getName());
 
@@ -188,21 +187,17 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     /* (non-Javadoc)
      * @see org.archive.util.ObjectIdentityCache#close()
      */
-    public void close() {
-        synchronized(memMap) {
-            synchronized(diskMap) {
-                // Close out my bdb db.
-                if (this.db != null) {
-                    try {
-                        sync(); 
-                        this.db.sync();
-                        this.db.close();
-                    } catch (DatabaseException e) {
-                        logger.log(Level.WARNING,"problem closing ObjectIdentityBdbCache",e);
-                    } finally {
-                        this.db = null;
-                    }
-                }
+    public synchronized void close() {
+        // Close out my bdb db.
+        if (this.db != null) {
+            try {
+                sync(); 
+                this.db.sync();
+                this.db.close();
+            } catch (DatabaseException e) {
+                logger.log(Level.WARNING,"problem closing ObjectIdentityBdbCache",e);
+            } finally {
+                this.db = null;
             }
         }
     }
@@ -240,62 +235,66 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
             } 
         }
         
-        // everything other difficult case happens inside this block
-        synchronized(memMap) {
-            synchronized(diskMap) {
-                // recheck mem cache -- if another thread beat us into sync 
-                // block and already filled the key 
-                entry = memMap.get(key);
-                if(entry != null) {
-                    V val = entry.get();
-                    if(val != null) {
-                        cacheHit.incrementAndGet();
-                        return val;
-                    } 
-                }
-                // persist to disk all stale (soft-ref-cleared) entries now
-                pageOutStaleEntries();
-                if(memMap.get(key)!=null) {
-                    System.err.println("linger key:"+key+" "+System.identityHashCode(entry));
-                    pageOutStaleEntry(entry);
-                    if(memMap.get(key)!=null) {
-                        logger.log(Level.SEVERE,"nulled key "+key+" not paged-out", new Exception());
-                    }
-                }
-                
-                // check disk 
-                V valDisk = (V) diskMap.get(key); 
-                if(valDisk==null) {
-                    // never yet created, consider creating
-                    if(supplierOrNull==null) {
-                        return null;
-                    }
-                    // create using provided Supplier
-                    valDisk = supplierOrNull.get();
-                    supplierUsed.incrementAndGet(); 
-                    V prevVal = diskMap.putIfAbsent(key, valDisk); 
-                    if(prevVal!=null) {
-                        // ERROR: diskMap modification since previous
-                        // diskMap.get() should be impossible
-                        logger.log(Level.SEVERE,"diskMap modified outside synchronized block?");
-                    }
-                } else {
-                    diskHit.incrementAndGet();
-                }
-    
-                // keep new val in memMap
-                SoftEntry<V> newEntry = new SoftEntry<V>(key, valDisk, refQueue);
-                SoftEntry<V> prevVal = memMap.putIfAbsent(key, newEntry); 
-                if(prevVal != null) {
-                    // ERROR: memMap modification since previous 
-                    // memMap.get() should be impossible
-                    logger.log(Level.SEVERE,"memMap modified outside synchronized block?", new Exception());
-                }
-                return valDisk; 
+        // everything in other difficult cases happens inside this block
+        synchronized(this) {
+            // recheck mem cache -- if another thread beat us into sync 
+            // block and already filled the key 
+            entry = memMap.get(key);
+            if(entry != null) {
+                V val = entry.get();
+                if(val != null) {
+                    cacheHit.incrementAndGet();
+                    return val;
+                } 
             }
+            // persist to disk all ref-enqueued stale (soft-ref-cleared) entries now
+            pageOutStaleEntries();
+            // and catch if this exact entry not yet ref-enqueued 
+            if(memMap.get(key)!=null) {
+                pageOutStaleEntry(entry);
+                if(memMap.get(key)!=null) {
+                    logger.log(Level.SEVERE,"nulled key "+key+" not paged-out", new Exception());
+                }
+            }
+            
+            // check disk 
+            V valDisk = (V) diskMap.get(key); 
+            if(valDisk==null) {
+                // never yet created, consider creating
+                if(supplierOrNull==null) {
+                    return null;
+                }
+                // create using provided Supplier
+                valDisk = supplierOrNull.get();
+                supplierUsed.incrementAndGet();
+                // putting initial value directly into diskMap
+                // (rather than just the memMap until page-out)
+                // ensures diskMap.keySet() provides complete view
+                V prevVal = diskMap.putIfAbsent(key, valDisk); 
+                if(prevVal!=null) {
+                    // ERROR: diskMap modification since previous
+                    // diskMap.get() should be impossible
+                    logger.log(Level.SEVERE,"diskMap modified outside synchronized block?");
+                }
+            } else {
+                diskHit.incrementAndGet();
+            }
+
+            // keep new val in memMap
+            SoftEntry<V> newEntry = new SoftEntry<V>(key, valDisk, refQueue);
+            SoftEntry<V> prevVal = memMap.putIfAbsent(key, newEntry); 
+            if(prevVal != null) {
+                // ERROR: memMap modification since previous 
+                // memMap.get() should be impossible
+                logger.log(Level.SEVERE,"memMap modified outside synchronized block?", new Exception());
+            }
+            return valDisk; 
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.archive.util.ObjectIdentityCache#keySet()
+     */
     public Set<String> keySet() {
         return diskMap.keySet();
     }
@@ -363,47 +362,43 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * Sync all in-memory map entries to backing disk store.
      */
     @SuppressWarnings("unchecked")
-    public void sync() {
-        synchronized(memMap) {
-            synchronized(diskMap) {
-                String dbName = null;
-                // Sync. memory and disk.
-                useStatsSyncUsed.incrementAndGet();
-                long startTime = 0;
-                if (logger.isLoggable(Level.INFO)) {
-                    dbName = getDatabaseName();
-                    startTime = System.currentTimeMillis();
-                    logger.info(dbName + " start sizes: disk " + this.diskMap.size() +
-                        ", mem " + this.memMap.size());
-                }
-                
-                for (String key : this.memMap.keySet()) {
-                    SoftEntry<V> entry = memMap.get(key);
-                    if (entry != null) {
-                        // Get & hold so not cleared pre-return.
-                        V value = entry.get();
-                        if (value != null) {
-                            expungeStatsDiskPut.incrementAndGet();
-                            this.diskMap.put(key, value); // unchecked cast
-                        } 
-                    }
-                }
-                pageOutStaleEntries();
-                
-                // force sync of deferred-writes
-                try {
-                    this.db.sync();
-                } catch (DatabaseException e) {
-                    throw new RuntimeException(e);
-                }
-                
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info(dbName + " sync took " +
-                        (System.currentTimeMillis() - startTime) + "ms. " +
-                        "Finish sizes: disk " +
-                        this.diskMap.size() + ", mem " + this.memMap.size());
-                }
+    public synchronized void sync() {
+        String dbName = null;
+        // Sync. memory and disk.
+        useStatsSyncUsed.incrementAndGet();
+        long startTime = 0;
+        if (logger.isLoggable(Level.INFO)) {
+            dbName = getDatabaseName();
+            startTime = System.currentTimeMillis();
+            logger.info(dbName + " start sizes: disk " + this.diskMap.size() +
+                ", mem " + this.memMap.size());
+        }
+        
+        for (String key : this.memMap.keySet()) {
+            SoftEntry<V> entry = memMap.get(key);
+            if (entry != null) {
+                // Get & hold so not cleared pre-return.
+                V value = entry.get();
+                if (value != null) {
+                    expungeStatsDiskPut.incrementAndGet();
+                    this.diskMap.put(key, value); // unchecked cast
+                } 
             }
+        }
+        pageOutStaleEntries();
+        
+        // force sync of deferred-writes
+        try {
+            this.db.sync();
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+        
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(dbName + " sync took " +
+                (System.currentTimeMillis() - startTime) + "ms. " +
+                "Finish sizes: disk " +
+                this.diskMap.size() + ", mem " + this.memMap.size());
         }
     }
 
@@ -412,26 +407,22 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * Package-protected for unit-test visibility. 
      */
     @SuppressWarnings("unchecked")
-    void pageOutStaleEntries() {
-        synchronized(memMap) {
-            synchronized(diskMap) {
-                int c = 0;
-                long startTime = System.currentTimeMillis();
-                for(SoftEntry<V> entry; (entry = (SoftEntry<V>)refQueue.poll()) != null;) {
-                    pageOutStaleEntry(entry);
-                    c++;
-                }
-                if (c > 0 && logger.isLoggable(Level.FINER)) {
-                    long endTime = System.currentTimeMillis();
-                    try {
-                        logger.finer("DB: " + db.getDatabaseName() + ",  Expunged: "
-                                + c + ", Diskmap size: " + diskMap.size()
-                                + ", Cache size: " + memMap.size()
-                                + ", in "+(endTime-startTime)+"ms");
-                    } catch (DatabaseException e) {
-                        logger.log(Level.FINER,"exception while logging",e);
-                    }
-                }
+    synchronized void pageOutStaleEntries() {
+        int c = 0;
+        long startTime = System.currentTimeMillis();
+        for(SoftEntry<V> entry; (entry = (SoftEntry<V>)refQueue.poll()) != null;) {
+            pageOutStaleEntry(entry);
+            c++;
+        }
+        if (c > 0 && logger.isLoggable(Level.FINER)) {
+            long endTime = System.currentTimeMillis();
+            try {
+                logger.finer("DB: " + db.getDatabaseName() + ",  Expunged: "
+                        + c + ", Diskmap size: " + diskMap.size()
+                        + ", Cache size: " + memMap.size()
+                        + ", in "+(endTime-startTime)+"ms");
+            } catch (DatabaseException e) {
+                logger.log(Level.FINER,"exception while logging",e);
             }
         }
     }
@@ -441,50 +432,41 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * 
      * @param entry a SoftEntry<V> obtained from refQueuePoll()
      */
-   private void pageOutStaleEntry(SoftEntry<V> entry) { 
-        V phantomValue = null;
-        // keep this ref on stack so it cannot be nulled in mid-operation
-        PhantomEntry<V> phantom = entry.getPhantom();
-        if (phantom == null) {
-            logger.log(Level.WARNING,"unexpected null phantom before flush", new Exception());
-            return; // nothing to do
-        } else {
-            // recover hidden value
-            phantomValue = phantom.doctoredGet(); 
-        }
-
-        // Still in memMap? (should be) 
-        if (memMap.get(phantom.getKey()) != entry) { // NOTE: intentional identity compare
-            System.err.println("linger enqueue:"+phantom.getKey()+" "+System.identityHashCode(entry));
-//            logger.log(Level.WARNING,"unexpected memMap mismatch", new Exception());
-            return; // nothing to do
+   synchronized private void pageOutStaleEntry(SoftEntry<V> entry) {
+        PhantomEntry<V> phantom = entry.phantom;
+        
+        // Still in memMap? if not, was paged-out by earlier direct access
+        // before placed into reference-queue; just return
+        if (memMap.get(phantom.key) != entry) { // NOTE: intentional identity compare
+            return; 
         }
         
-        // Expected value present? (should be)
+        // recover hidden value
+        V phantomValue = phantom.doctoredGet(); 
+
+        // Expected value present? (should be; only clear is at end of
+        // this method, after entry removal from memMap)
         if(phantomValue == null) {
             logger.log(Level.WARNING,"unexpected null phantomValue", new Exception());
             return; // nothing to do
         }
         
         // given instance entry still in memMap;
-        // we have the key and if we have a phantom Value, then
-        //   the diskMap can be updated.
-        diskMap.put(phantom.getKey(), phantomValue); // unchecked cast
+        // we have the key and phantom Value, 
+        // the diskMap can be updated.
+        diskMap.put(phantom.key, phantomValue); // unchecked cast
         expungeStatsDiskPut.incrementAndGet();
         
-        //  remove memMap entry that matches key and value; 
-        //    since only this thread has the exclusive expunge job
-        //    for entry, we will either remove the exact object
-        //    or remove no object (non-interference).
-        boolean removed = memMap.remove(phantom.getKey(), entry);
+        //  remove memMap entry 
+        boolean removed = memMap.remove(phantom.key, entry);
         if(!removed) {
             logger.log(Level.WARNING,"expunge memMap.remove() ineffective",new Exception());
         }
-        entry.clearPhantom(); // truly allows GC of unreferenced V object
+        phantom.clear(); // truly allows GC of unreferenced V object
     }
     
     private static class PhantomEntry<V> extends PhantomReference<V> {
-        private final String key;
+        final String key;
 
         public PhantomEntry(String key, V referent) {
             super(referent, null);
@@ -508,13 +490,6 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 throw new RuntimeException(e);
             }
         }
-
-        /**
-         * @return Returns the key.
-         */
-        final public String getKey() {
-            return this.key;
-        }
     }
 
     /** 
@@ -526,7 +501,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * Entries are not recycled.
      */
     private static class SoftEntry<V> extends SoftReference<V> {
-        private PhantomEntry<V> phantom;
+        PhantomEntry<V> phantom;
 
         @SuppressWarnings("unchecked")
         public SoftEntry(String key, V referent, ReferenceQueue<V> q) {
@@ -541,27 +516,9 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
             }
         }
 
-        /**
-         * @return Returns the phantom reference.
-         */
-        final public PhantomEntry<V> getPhantom() {
-            return this.phantom;
-        }
-        
-        /** 
-         * Clear referent and end-of-life-cycle this instance. Idempotent.
-         */
-        final void clearPhantom() {
-            if (this.phantom != null) {
-                this.phantom.clear();
-//                this.phantom = null;
-            }
-            super.clear();
-        }
-        
         public String toString() {
             if (phantom != null) {
-                return "SoftEntry(key=" + phantom.getKey().toString() + ")";
+                return "SoftEntry(key=" + phantom.key + ")";
             } else {
                 return "SoftEntry()";
             }
