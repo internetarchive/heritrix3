@@ -255,6 +255,9 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 }
                 // persist to disk all stale (soft-ref-cleared) entries now
                 pageOutStaleEntries();
+                if(memMap.get(key)!=null) {
+                    logger.log(Level.SEVERE,"nulled key "+key+" not paged-out", new Exception());
+                }
                 
                 // check disk 
                 V valDisk = (V) diskMap.get(key); 
@@ -282,10 +285,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 if(prevVal != null) {
                     // ERROR: memMap modification since previous 
                     // memMap.get() should be impossible
-                    logger.log(Level.SEVERE,"memMap modified outside synchronized block?");
-                }
-                if(valDisk==null) {
-                    System.err.println("ruh-roh!");
+                    logger.log(Level.SEVERE,"memMap modified outside synchronized block?", new Exception());
                 }
                 return valDisk; 
             }
