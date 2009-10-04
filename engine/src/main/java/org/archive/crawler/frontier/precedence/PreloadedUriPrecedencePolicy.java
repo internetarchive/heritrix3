@@ -87,7 +87,7 @@ implements Lifecycle {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
             BdbModule.BdbConfig dbConfig = PersistProcessor.historyDatabaseConfig();
 
-            historyDb = bdb.openDatabase(dbName, dbConfig, true);
+            historyDb = bdb.openManagedDatabase(dbName, dbConfig, true);
             historyMap = new StoredSortedMap(historyDb,
                     new StringBinding(), new SerialBinding(classCatalog,
                             Map.class), true);

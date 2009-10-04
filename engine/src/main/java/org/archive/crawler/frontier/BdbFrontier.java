@@ -123,7 +123,7 @@ implements Serializable, Checkpointable {
             dbConfig.setAllowCreate(!recycle);
             // Make database deferred write: URLs that are added then removed 
             // before a page-out is required need never cause disk IO.
-            db = bdb.openDatabase("pending", dbConfig, recycle);
+            db = bdb.openManagedDatabase("pending", dbConfig, recycle);
         }
         
         return new BdbMultipleWorkQueues(db, bdb.getClassCatalog());
@@ -248,7 +248,7 @@ implements Serializable, Checkpointable {
         inactiveQueuesByPrecedence = new TreeMap<Integer,Queue<String>>();
         
         Database retiredQueuesDb;
-        retiredQueuesDb = bdb.openDatabase("retiredQueues", 
+        retiredQueuesDb = bdb.openManagedDatabase("retiredQueues", 
                 StoredQueue.databaseConfig(), false);
         retiredQueues = new StoredQueue<String>(retiredQueuesDb,
                 String.class, null);
@@ -270,7 +270,7 @@ implements Serializable, Checkpointable {
     Queue<String> createInactiveQueueForPrecedence(int precedence) {
         Database inactiveQueuesDb;
         try {
-            inactiveQueuesDb = bdb.openDatabase("inactiveQueues-"+precedence,
+            inactiveQueuesDb = bdb.openManagedDatabase("inactiveQueues-"+precedence,
                     StoredQueue.databaseConfig(), false);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);

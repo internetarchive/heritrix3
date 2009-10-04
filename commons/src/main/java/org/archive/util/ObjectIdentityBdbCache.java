@@ -549,7 +549,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
         final void clearPhantom() {
             if (this.phantom != null) {
                 this.phantom.clear();
-                this.phantom = null;
+//                this.phantom = null;
             }
             super.clear();
         }

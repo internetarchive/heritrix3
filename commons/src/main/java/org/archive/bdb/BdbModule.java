@@ -280,13 +280,44 @@ Serializable, Closeable {
             db.sync();
             db.close();
         } catch (DatabaseException e) {
-            LOGGER.log(Level.SEVERE, "Error closing db " + name, e);
+            LOGGER.log(Level.WARNING, "Error closing db " + name, e);
         }
     }
     
     
-    public Database openDatabase(String name, BdbConfig config, 
-            boolean recycle) 
+
+    /**
+     * Open a Database inside this BdbModule's environment.
+     * 
+     * @param name
+     * @param config
+     * @param usePriorData use existing data in database, if any 
+     * @return
+     * @throws DatabaseException
+     */
+    public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
+    throws DatabaseException {
+        if (!usePriorData) {
+            try {
+                bdbEnvironment.truncateDatabase(null, name, false);
+            } catch (DatabaseNotFoundException e) {
+                // Ignored
+            }
+        }
+        return bdbEnvironment.openDatabase(null, name, config.toDatabaseConfig());
+    }
+    
+    /**
+     * Open a Database inside this BdbModule's environment, and 
+     * remember it for automatic close-at-module-stop. 
+     * 
+     * @param name
+     * @param config
+     * @param usePriorData
+     * @return
+     * @throws DatabaseException
+     */
+    public Database openManagedDatabase(String name, BdbConfig config, boolean usePriorData) 
     throws DatabaseException {
         if(!isRunning()) {
             // proper initialization hasn't occurred
@@ -296,15 +327,9 @@ Serializable, Closeable {
         if (databases.containsKey(name)) {
             throw new IllegalStateException("Database already exists: " +name);
         }
-        if (!recycle) {
-            try {
-                bdbEnvironment.truncateDatabase(null, name, false);
-            } catch (DatabaseNotFoundException e) {
-                // Ignored
-            }
-        }
+        
         DatabasePlusConfig dpc = new DatabasePlusConfig();
-        dpc.database = bdbEnvironment.openDatabase(null, name, config.toDatabaseConfig());
+        dpc.database = openDatabase(name, config, usePriorData);
         dpc.name = name;
         dpc.config = config;
         databases.put(name, dpc);

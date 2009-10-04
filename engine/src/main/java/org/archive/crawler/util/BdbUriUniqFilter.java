@@ -103,7 +103,7 @@ implements Lifecycle, Serializable {
         try {
             BdbModule.BdbConfig config = getDatabaseConfig();
             config.setAllowCreate(true);
-            initialize(bdb.openDatabase(DB_NAME, config, false));
+            initialize(bdb.openManagedDatabase(DB_NAME, config, false));
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         }

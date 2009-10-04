@@ -65,7 +65,7 @@ public class BdbCookieStorage extends AbstractCookieStorage {
             BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
             dbConfig.setTransactional(false);
             dbConfig.setAllowCreate(true);
-            cookieDb = bdb.openDatabase(COOKIEDB_NAME, dbConfig, true);
+            cookieDb = bdb.openManagedDatabase(COOKIEDB_NAME, dbConfig, true);
             cookies = 
                 new StoredSortedMap<String,Cookie>(
                     cookieDb,

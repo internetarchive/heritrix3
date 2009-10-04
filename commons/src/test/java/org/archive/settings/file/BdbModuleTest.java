@@ -76,7 +76,7 @@ public class BdbModuleTest extends TmpDirTestCase {
         
         BdbModule.BdbConfig config = new BdbModule.BdbConfig();
         config.setAllowCreate(true);
-        bdb.openDatabase("testOpen", config, false);
+        bdb.openManagedDatabase("testOpen", config, false);
         
         ConcurrentMap<String,String> testData = bdb.getCBMMap("testData", false, 
                 String.class, String.class);
