@@ -256,7 +256,11 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 // persist to disk all stale (soft-ref-cleared) entries now
                 pageOutStaleEntries();
                 if(memMap.get(key)!=null) {
-                    logger.log(Level.SEVERE,"nulled key "+key+" not paged-out", new Exception());
+                    System.err.println("linger key:"+key+" "+System.identityHashCode(entry));
+                    pageOutStaleEntry(entry);
+                    if(memMap.get(key)!=null) {
+                        logger.log(Level.SEVERE,"nulled key "+key+" not paged-out", new Exception());
+                    }
                 }
                 
                 // check disk 
@@ -451,7 +455,8 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
 
         // Still in memMap? (should be) 
         if (memMap.get(phantom.getKey()) != entry) { // NOTE: intentional identity compare
-            logger.log(Level.WARNING,"unexpected memMap mismatch", new Exception());
+            System.err.println("linger enqueue:"+phantom.getKey()+" "+System.identityHashCode(entry));
+//            logger.log(Level.WARNING,"unexpected memMap mismatch", new Exception());
             return; // nothing to do
         }
         
