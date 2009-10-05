@@ -368,37 +368,28 @@ extends TmpDirTestCase implements WARCConstants {
         return writer;
     }
     
-    public void testSpaceInURL() {
-        String eMessage = null;
-        try {
-            holeyUrl("testSpaceInURL-" + PREFIX, false, " ");
-        } catch (IOException e) {
-            eMessage = e.getMessage();
-        }
-        assertTrue("Didn't get expected exception: " + eMessage,
-            eMessage.startsWith("Contains disallowed"));
+    public void testSpaceInURL() throws IOException {
+        long bytesWritten = holeyUrl("testSpaceInURL-" + PREFIX, false, " ");
+        assertEquals("Unexpected successful writing occurred",0,bytesWritten);
     }
 
-    public void testTabInURL() {
-        String eMessage = null;
-        try {
-            holeyUrl("testTabInURL-" + PREFIX, false, "\t");
-        } catch (IOException e) {
-            eMessage = e.getMessage();
-        }
-        assertTrue("Didn't get expected exception: " + eMessage,
-            eMessage.startsWith("Contains illegal"));
+    public void testTabInURL() throws IOException {
+        long bytesWritten = holeyUrl("testTabInURL-" + PREFIX, false, "\t");
+        assertEquals("Unexpected successful writing occurred",0,bytesWritten);
     }
     
-    protected void holeyUrl(String name, boolean compress, String urlInsert)
+    protected long holeyUrl(String name, boolean compress, String urlInsert)
     throws IOException {
         WARCWriter writer = createWithOneRecord(name, compress);
         // Add some bytes on the end to mess up the record.
+        long startPos = writer.getPosition();
         String content = getContent();
         ByteArrayOutputStream baos = getBaos(content);
         writeRecord(writer, SOME_URL + urlInsert + "/index.html", "text/html",
             content.length(), baos);
+        long endPos = writer.getPosition();
         writer.close();
+        return endPos-startPos;
     }
     
     /**
