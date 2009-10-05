@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -325,7 +325,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
     
 
-    protected void processGeneralTag(ProcessorURI curi, CharSequence element,
+    protected void processGeneralTag(CrawlURI curi, CharSequence element,
             CharSequence cs) {
 
         Matcher attr = eachAttributeExtractor.matcher(cs);
@@ -510,7 +510,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @param curi  source CrawlURI
      * @param cs    CharSequence of javascript code
      */
-    protected void processScriptCode(ProcessorURI curi, CharSequence cs) {
+    protected void processScriptCode(CrawlURI curi, CharSequence cs) {
         if (getExtractJavascript()) {
             this.numberOfLinksExtracted +=
                 ExtractorJS.considerStrings(this, curi, cs, false);
@@ -526,7 +526,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @param value
      * @param context
      */
-    protected void processLink(ProcessorURI curi, final CharSequence value,
+    protected void processLink(CrawlURI curi, final CharSequence value,
             CharSequence context) {
         if (TextUtils.matches(JAVASCRIPT, value)) {
             processScriptCode(curi, value. subSequence(11, value.length()));
@@ -542,7 +542,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
     }
 
-    private void addLinkFromString(ProcessorURI curi, String uri,
+    private void addLinkFromString(CrawlURI curi, String uri,
             CharSequence context, Hop hop) {
         try {
             // We do a 'toString' on context because its a sequence from
@@ -557,12 +557,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
     }
 
-    protected final void processEmbed(ProcessorURI curi, CharSequence value,
+    protected final void processEmbed(CrawlURI curi, CharSequence value,
             CharSequence context) {
         processEmbed(curi, value, context, Hop.EMBED);
     }
 
-    protected void processEmbed(ProcessorURI curi, final CharSequence value,
+    protected void processEmbed(CrawlURI curi, final CharSequence value,
             CharSequence context, Hop hop) {
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest("embed (" + hop.getHopChar() + "): " + value.toString() +
@@ -576,7 +576,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     
-    protected boolean shouldExtract(ProcessorURI uri) {
+    protected boolean shouldExtract(CrawlURI uri) {
         if (getIgnoreUnexpectedHtml()) {
             try {
                 // HTML was not expected (eg a GIF was expected) so ignore
@@ -599,7 +599,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
     
     
-    public boolean innerExtract(ProcessorURI curi) {
+    public boolean innerExtract(CrawlURI curi) {
         this.numberOfCURIsHandled++;
         ReplayCharSequence cs = null;
         try {
@@ -621,12 +621,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     /**
      * Run extractor.
      * This method is package visible to ease testing.
-     * @param curi ProcessorURI we're processing.
+     * @param curi CrawlURI we're processing.
      * @param cs Sequence from underlying ReplayCharSequence. This
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      */
-    void extract(ProcessorURI curi, CharSequence cs) {
+    void extract(CrawlURI curi, CharSequence cs) {
         Matcher tags = relevantTagExtractor.matcher(cs);
         while(tags.find()) {
             if(Thread.interrupted()){
@@ -696,11 +696,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * Test whether this HTML is so unexpected (eg in place of a GIF URI)
      * that it shouldn't be scanned for links.
      *
-     * @param curi ProcessorURI to examine.
+     * @param curi CrawlURI to examine.
      * @return True if HTML is acceptable/expected here
      * @throws URIException
      */
-    protected boolean isHtmlExpectedHere(ProcessorURI curi) throws URIException {
+    protected boolean isHtmlExpectedHere(CrawlURI curi) throws URIException {
         String path = curi.getUURI().getPath();
         if(path==null) {
             // no path extension, HTML is fine
@@ -719,7 +719,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         return ! TextUtils.matches(NON_HTML_PATH_EXTENSION, ext);
     }
 
-    protected void processScript(ProcessorURI curi, CharSequence sequence,
+    protected void processScript(CrawlURI curi, CharSequence sequence,
             int endOfOpenTag) {
         // first, get attributes of script-open tag
         // as per any other tag
@@ -734,13 +734,13 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     /**
      * Process metadata tags.
-     * @param curi ProcessorURI we're processing.
+     * @param curi CrawlURI we're processing.
      * @param cs Sequence from underlying ReplayCharSequence. This
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      * @return True robots exclusion metatag.
      */
-    protected boolean processMeta(ProcessorURI curi, CharSequence cs) {
+    protected boolean processMeta(CrawlURI curi, CharSequence cs) {
         Matcher attr = eachAttributeExtractor.matcher(cs);
         String name = null;
         String httpEquiv = null;
@@ -796,13 +796,13 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     /**
      * Process style text.
-     * @param curi ProcessorURI we're processing.
+     * @param curi CrawlURI we're processing.
      * @param sequence Sequence from underlying ReplayCharSequence. This
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      * @param endOfOpenTag
      */
-    protected void processStyle(ProcessorURI curi, CharSequence sequence,
+    protected void processStyle(CrawlURI curi, CharSequence sequence,
             int endOfOpenTag) {
         // First, get attributes of script-open tag as per any other tag.
         processGeneralTag(curi, sequence.subSequence(0,6),
@@ -822,11 +822,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorHTML\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on HTML documents\n");
-        ret.append("  ProcessorURIs handled: " + this.numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + this.numberOfLinksExtracted +
-            "\n\n");
+        ret.append("  CrawlURIs handled: " + this.numberOfCURIsHandled + "\n");
+        ret.append("  Links extracted:   " + this.numberOfLinksExtracted + "\n");
         return ret.toString();
     }
     

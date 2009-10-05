@@ -1,34 +1,26 @@
 /*
- * AggressiveExtractorHTML
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Jan 6, 2004
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2004 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.archive.modules.extractor;
 
 import java.util.logging.Logger;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * Extended version of ExtractorHTML with more aggressive javascript link
@@ -48,7 +40,7 @@ extends ExtractorHTML {
     public AggressiveExtractorHTML() {
     }
 
-    protected void processScript(ProcessorURI curi, CharSequence sequence,
+    protected void processScript(CrawlURI curi, CharSequence sequence,
             int endOfOpenTag) {
         super.processScript(curi, sequence, endOfOpenTag);
         // then, proccess entire javascript code as html code
@@ -62,11 +54,11 @@ extends ExtractorHTML {
      */
     public String report() {
         StringBuffer ret = new StringBuffer(256);
-        ret.append("Processor: "+AggressiveExtractorHTML.class.getName()+"\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on HTML documents " +
             "(including embedded CSS)\n");
         ret.append("  ProcessorURRIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
         return ret.toString();
     }
 }

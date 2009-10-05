@@ -73,7 +73,6 @@ import org.archive.io.warc.WARCWriterPool;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.extractor.Link;
 import org.archive.uid.GeneratorFactory;
@@ -169,17 +168,17 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     }
 
     /**
-     * Writes a ProcessorURI and its associated data to store file.
+     * Writes a CrawlURI and its associated data to store file.
      * 
      * Currently this method understands the following uri types: dns, http, and
      * https.
      * 
-     * @param curi ProcessorURI to process.
+     * @param curi CrawlURI to process.
      * 
      */
     @Override
-    protected ProcessResult innerProcessResult(ProcessorURI puri) {
-        ProcessorURI curi = (ProcessorURI)puri;
+    protected ProcessResult innerProcessResult(CrawlURI puri) {
+        CrawlURI curi = (CrawlURI)puri;
         String scheme = curi.getUURI().getScheme().toLowerCase();
         try {
             if (shouldWrite(curi)) {
@@ -197,7 +196,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     }
     
     protected ProcessResult write(final String lowerCaseScheme, 
-            final ProcessorURI curi)
+            final CrawlURI curi)
     throws IOException {
         WriterPoolMember writer = getPool().borrowFile();
         long position = writer.getPosition();
@@ -304,7 +303,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     
     protected URI writeRequest(final WARCWriter w,
             final String timestamp, final String mimetype,
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
         final URI uid = qualifyRecordID(baseid, TYPE, REQUEST);
@@ -322,7 +321,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     
     protected URI writeResponse(final WARCWriter w,
             final String timestamp, final String mimetype,
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
         ReplayInputStream ris =
@@ -339,7 +338,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     
     protected URI writeResource(final WARCWriter w,
             final String timestamp, final String mimetype,
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
         ReplayInputStream ris = curi.getRecorder().getRecordedInput().getReplayInputStream();
@@ -355,7 +354,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
 
     protected URI writeRevisitDigest(final WARCWriter w,
             final String timestamp, final String mimetype,
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
         long revisedLength = curi.getRecorder().getRecordedInput().getContentBegin();
@@ -380,7 +379,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     
     protected URI writeRevisitNotModified(final WARCWriter w,
             final String timestamp, 
-            final URI baseid, final ProcessorURI puri,
+            final URI baseid, final CrawlURI puri,
             final ANVLRecord namedFields) 
     throws IOException {
     	CrawlURI curi = (CrawlURI) puri;
@@ -425,7 +424,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
 
 	protected URI writeMetadata(final WARCWriter w,
             final String timestamp,
-            final URI baseid, final ProcessorURI curi,
+            final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
         final URI uid = qualifyRecordID(baseid, TYPE, METADATA);

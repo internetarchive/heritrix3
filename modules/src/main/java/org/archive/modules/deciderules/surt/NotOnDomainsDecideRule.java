@@ -24,7 +24,7 @@
 */
 package org.archive.modules.deciderules.surt;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 
 /**
@@ -54,7 +54,7 @@ public class NotOnDomainsDecideRule extends OnDomainsDecideRule {
      * @param object to evaluate
      * @return true if URI is not in domain set
      */
-    protected boolean evaluate(ProcessorURI object) {
+    protected boolean evaluate(CrawlURI object) {
         boolean superDecision = super.evaluate(object);
         return !superDecision;
     }

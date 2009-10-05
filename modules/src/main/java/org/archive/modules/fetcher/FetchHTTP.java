@@ -19,7 +19,7 @@
 
 package org.archive.modules.fetcher;
 
-import static org.archive.modules.ProcessorURI.FetchType.HTTP_POST;
+import static org.archive.modules.CrawlURI.FetchType.HTTP_POST;
 import static org.archive.modules.fetcher.FetchErrors.HEADER_TRUNC;
 import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
 import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
@@ -89,9 +89,9 @@ import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecorderTooMuchHeaderException;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.CredentialStore;
@@ -503,7 +503,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public FetchHTTP() {
     }
 
-    protected void innerProcess(final ProcessorURI curi)
+    protected void innerProcess(final CrawlURI curi)
             throws InterruptedException {
         // Note begin time
         curi.setFetchBeginTime(System.currentTimeMillis());
@@ -631,8 +631,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
 
         if (isSuccess(curi) && addedCredentials) {
-            // Promote the credentials from the ProcessorURI to the CrawlServer
-            // so they are available for all subsequent ProcessorURIs on this
+            // Promote the credentials from the CrawlURI to the CrawlServer
+            // so they are available for all subsequent CrawlURIs on this
             // server.
             promoteCredentials(curi);
             if (logger.isLoggable(Level.FINE)) {
@@ -667,7 +667,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param rec HttpRecorder
      */
     @SuppressWarnings("unchecked")
-    protected void setSizes(ProcessorURI curi, Recorder rec) {
+    protected void setSizes(CrawlURI curi, Recorder rec) {
         // set reporting size
         curi.setContentSize(rec.getRecordedInput().getSize());
         // special handling for 304-not modified
@@ -687,14 +687,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
     
-    protected void doAbort(ProcessorURI curi, HttpMethod method,
+    protected void doAbort(CrawlURI curi, HttpMethod method,
             String annotation) {
         curi.getAnnotations().add(annotation);
         curi.getRecorder().close();
         method.abort();
     }
 
-    protected boolean checkMidfetchAbort(ProcessorURI curi,
+    protected boolean checkMidfetchAbort(CrawlURI curi,
             HttpRecorderMethod method, HttpConnection conn) {
         if (curi.isPrerequisite()) {
             return false;
@@ -712,11 +712,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * content type.
      * 
      * @param curi
-     *            ProcessorURI to populate.
+     *            CrawlURI to populate.
      * @param method
      *            Method to get response status and headers from.
      */
-    protected void addResponseContent(HttpMethod method, ProcessorURI curi) {
+    protected void addResponseContent(HttpMethod method, CrawlURI curi) {
         curi.setFetchStatus(method.getStatusCode());
         Header ct = method.getResponseHeader("content-type");
         curi.setContentType((ct == null) ? null : ct.getValue());
@@ -744,7 +744,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param method
      *            Method used for the request.
      */
-    private void setCharacterEncoding(ProcessorURI uri, final Recorder rec,
+    private void setCharacterEncoding(CrawlURI uri, final Recorder rec,
             final HttpMethod method) {
         String encoding = null;
         encoding = ((HttpMethodBase) method).getResponseCharSet();
@@ -764,14 +764,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Cleanup after a failed method execute.
      * 
      * @param curi
-     *            ProcessorURI we failed on.
+     *            CrawlURI we failed on.
      * @param method
      *            Method we failed on.
      * @param exception
      *            Exception we failed with.
      */
     private void failedExecuteCleanup(final HttpMethod method,
-            final ProcessorURI curi, final Exception exception) {
+            final CrawlURI curi, final Exception exception) {
         cleanup(curi, exception, "executeMethod", S_CONNECT_FAILED);
         method.releaseConnection();
     }
@@ -780,7 +780,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Cleanup after a failed method execute.
      * 
      * @param curi
-     *            ProcessorURI we failed on.
+     *            CrawlURI we failed on.
      * @param exception
      *            Exception we failed with.
      * @param message
@@ -788,7 +788,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param status
      *            Status to set on the fetch.
      */
-    private void cleanup(final ProcessorURI curi, final Exception exception,
+    private void cleanup(final CrawlURI curi, final Exception exception,
             final String message, final int status) {
         // message ignored!
         curi.getNonFatalFailures().add(exception);
@@ -797,7 +797,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
 
     @Override
-    public ProcessResult process(ProcessorURI uri) throws InterruptedException {
+    public ProcessResult process(CrawlURI uri) throws InterruptedException {
         if (uri.getFetchStatus() < 0) {
             // already marked as errored, this pass through
             // skip to end
@@ -808,15 +808,15 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
 
     /**
-     * Can this processor fetch the given ProcessorURI. May set a fetch status
-     * if this processor would usually handle the ProcessorURI, but cannot in
+     * Can this processor fetch the given CrawlURI. May set a fetch status
+     * if this processor would usually handle the CrawlURI, but cannot in
      * this instance.
      * 
      * @param curi
      * @return True if processor can fetch.
      */
     @Override
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme();
         if (!(scheme.equals("http") || scheme.equals("https"))) {
             // handles only plain http and https
@@ -836,11 +836,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Configure the HttpMethod setting options and headers.
      * 
      * @param curi
-     *            ProcessorURI from which we pull configuration.
+     *            CrawlURI from which we pull configuration.
      * @param method
      *            The Method to configure.
      */
-    protected HostConfiguration configureMethod(ProcessorURI curi,
+    protected HostConfiguration configureMethod(CrawlURI curi,
             HttpMethod method) {
         // Don't auto-follow redirects
         method.setFollowRedirects(false);
@@ -925,7 +925,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param targetHeader header to set if possible
      */
     @SuppressWarnings("unchecked")
-    protected void setConditionalGetHeader(ProcessorURI curi, HttpMethod method, 
+    protected void setConditionalGetHeader(CrawlURI curi, HttpMethod method, 
             boolean conditional, String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
@@ -946,10 +946,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     /**
-     * Setup proxy, based on attributes in ProcessorURI and settings, 
+     * Setup proxy, based on attributes in CrawlURI and settings, 
      * in given HostConfiguration
      */
-    private void configureProxy(ProcessorURI curi, HostConfiguration config) {
+    private void configureProxy(CrawlURI curi, HostConfiguration config) {
         String proxy = (String) getAttributeEither(curi, "httpProxyHost");
         int port = (Integer) getAttributeEither(curi, "httpProxyPort");            
         configureProxy(proxy, port, config);
@@ -963,10 +963,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     /**
-     * Setup local bind address, based on attributes in ProcessorURI and 
+     * Setup local bind address, based on attributes in CrawlURI and 
      * settings, in given HostConfiguration
      */
-    private void configureBindAddress(ProcessorURI curi, HostConfiguration config) {
+    private void configureBindAddress(CrawlURI curi, HostConfiguration config) {
         String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
         configureBindAddress(addressString,config);
     }
@@ -986,16 +986,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
 
     /**
-     * Get a value either from inside the ProcessorURI instance, or from
+     * Get a value either from inside the CrawlURI instance, or from
      * settings (module attributes).
      * 
      * @param curi
-     *            ProcessorURI to consult
+     *            CrawlURI to consult
      * @param key
      *            key to lookup
-     * @return value from either ProcessorURI (preferred) or settings
+     * @return value from either CrawlURI (preferred) or settings
      */
-    protected Object getAttributeEither(ProcessorURI curi, String key) {
+    protected Object getAttributeEither(CrawlURI curi, String key) {
         
         Object r = curi.getData().get(key);
         if (r != null) {
@@ -1014,18 +1014,18 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Returns true if found credentials to be tried.
      * 
      * @param curi
-     *            Current ProcessorURI.
+     *            Current CrawlURI.
      * @param method
      *            The method to add to.
      * @return True if prepopulated <code>method</code> with credentials AND
      *         the credentials came from the <code>curi</code>, not from the
      *         CrawlServer. The former is special in that if the
      *         <code>curi</curi> credentials
-     * succeed, then the caller needs to promote them from the ProcessorURI to the
-     * CrawlServer so they are available for all subsequent ProcessorURIs on this
+     * succeed, then the caller needs to promote them from the CrawlURI to the
+     * CrawlServer so they are available for all subsequent CrawlURIs on this
      * server.
      */
-    private boolean populateCredentials(ProcessorURI curi, HttpMethod method) {
+    private boolean populateCredentials(CrawlURI curi, HttpMethod method) {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
         // return true when we call 'isEveryTime().
@@ -1064,9 +1064,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Promote successful credential to the server.
      * 
      * @param curi
-     *            ProcessorURI whose credentials we are to promote.
+     *            CrawlURI whose credentials we are to promote.
      */
-    private void promoteCredentials(final ProcessorURI curi) {
+    private void promoteCredentials(final CrawlURI curi) {
         Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
         for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
             CredentialAvatar ca = i.next();
@@ -1089,7 +1089,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     /**
      * Server is looking for basic/digest auth credentials (RFC2617). If we have
-     * any, put them into the ProcessorURI and have it come around again.
+     * any, put them into the CrawlURI and have it come around again.
      * Presence of the credential serves as flag to frontier to requeue
      * promptly. If we already tried this domain and still got a 401, then our
      * credentials are bad. Remove them and let this curi die.
@@ -1097,9 +1097,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param method
      *            Method that got a 401.
      * @param curi
-     *            ProcessorURI that got a 401.
+     *            CrawlURI that got a 401.
      */
-    protected void handle401(final HttpMethod method, final ProcessorURI curi) {
+    protected void handle401(final HttpMethod method, final CrawlURI curi) {
         AuthScheme authscheme = getAuthScheme(method, curi);
         if (authscheme == null) {
             return;
@@ -1168,12 +1168,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param method
      *            Method that got a 401.
      * @param curi
-     *            ProcessorURI that got a 401.
+     *            CrawlURI that got a 401.
      * @return Returns first wholesome authscheme found else null.
      */
     @SuppressWarnings("unchecked")
     protected AuthScheme getAuthScheme(final HttpMethod method,
-            final ProcessorURI curi) {
+            final CrawlURI curi) {
         Header[] headers = method.getResponseHeaders("WWW-Authenticate");
         if (headers == null || headers.length <= 0) {
             logger.info("We got a 401 but no WWW-Authenticate challenge: "
@@ -1238,12 +1238,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     /**
      * @param curi
-     *            ProcessorURI that got a 401.
+     *            CrawlURI that got a 401.
      * @param type
      *            Class of credential to get from curi.
      * @return Set of credentials attached to this curi.
      */
-    private Set<Credential> getCredentials(ProcessorURI curi, Class<?> type) {
+    private Set<Credential> getCredentials(CrawlURI curi, Class<?> type) {
         Set<Credential> result = null;
 
         if (curi.hasCredentialAvatars()) {
@@ -1387,16 +1387,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.fetcher.FetchHTTP\n");
+        ret.append(super.report());
         ret.append("  Function:          Fetch HTTP URIs\n");
-        ret.append("  ProcessorURIs handled: " + this.getURICount() + "\n");
-        ret.append("  Recovery retries:   " + this.recoveryRetries + "\n\n");
+        ret.append("  CrawlURIs handled: " + this.getURICount() + "\n");
+        ret.append("  Recovery retries:   " + this.recoveryRetries + "\n");
 
         return ret.toString();
     }
 
 
-    private void setAcceptHeaders(ProcessorURI curi, HttpMethod get) {
+    private void setAcceptHeaders(CrawlURI curi, HttpMethod get) {
         List<String> acceptHeaders = getAcceptHeaders();
         if (acceptHeaders.isEmpty()) {
             return;
@@ -1490,7 +1490,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         return this.http;
     }
 
-    private static String getServerKey(ProcessorURI uri) {
+    private static String getServerKey(CrawlURI uri) {
         try {
             return CrawlServer.getServerKey(uri.getUURI());
         } catch (URIException e) {

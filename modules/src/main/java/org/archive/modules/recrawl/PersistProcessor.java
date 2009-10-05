@@ -37,8 +37,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.util.FileUtils;
 import org.archive.util.IoUtils;
 import org.archive.util.OneLineSimpleLogger;
@@ -94,7 +94,7 @@ public abstract class PersistProcessor extends Processor {
      * @param curi CrawlURI
      * @return String key
      */
-    public static String persistKeyFor(ProcessorURI curi) {
+    public static String persistKeyFor(CrawlURI curi) {
         // use a case-sensitive SURT for uniqueness and sorting benefits
         return persistKeyFor(curi.getUURI().toString());
     }
@@ -111,7 +111,7 @@ public abstract class PersistProcessor extends Processor {
      * @param curi CrawlURI
      * @return true if state should be stored; false to skip persistence
      */
-    protected boolean shouldStore(ProcessorURI curi) {
+    protected boolean shouldStore(CrawlURI curi) {
         // TODO: don't store some codes, such as 304 unchanged?
         return curi.isSuccess();
     }
@@ -122,7 +122,7 @@ public abstract class PersistProcessor extends Processor {
      * @param curi CrawlURI
      * @return true if state should be loaded; false to skip loading
      */
-    protected boolean shouldLoad(ProcessorURI curi) {
+    protected boolean shouldLoad(CrawlURI curi) {
         // TODO: don't load some (prereqs?)
         return true;
     }

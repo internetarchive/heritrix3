@@ -1,5 +1,24 @@
-package org.archive.crawler.frontier;
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
+package org.archive.crawler.frontier;
+ 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -14,7 +33,6 @@ import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.precedence.PrecedenceProvider;
 import org.archive.crawler.frontier.precedence.SimplePrecedenceProvider;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
@@ -665,9 +683,9 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
 
     /* (non-Javadoc)
-     * @see org.archive.modules.fetcher.FetchStats.HasFetchStats#tally(org.archive.modules.ProcessorURI, org.archive.modules.fetcher.FetchStats.Stage)
+     * @see org.archive.modules.fetcher.FetchStats.HasFetchStats#tally(org.archive.modules.CrawlURI, org.archive.modules.fetcher.FetchStats.Stage)
      */
-    public void tally(ProcessorURI curi, Stage stage) {
+    public void tally(CrawlURI curi, Stage stage) {
         substats.tally(curi, stage);
         precedenceProvider.tally(curi, stage);
     }

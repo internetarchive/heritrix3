@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * A credential representation.
@@ -184,7 +184,7 @@ implements Serializable {
      * @param curi ProcessorURI to use for context.
      * @return The credential this avatar represents.
      */
-    public Credential getCredential(CredentialStore cs, ProcessorURI curi) {
+    public Credential getCredential(CredentialStore cs, CrawlURI curi) {
         Credential result = null;
 
         if (cs == null) {

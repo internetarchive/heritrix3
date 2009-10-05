@@ -28,7 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.SeekReader;
 import org.archive.io.SeekReaderCharSequence;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ms.Doc;
@@ -58,7 +58,7 @@ public class ExtractorDOC extends ContentExtractor {
 
     
     @Override
-    protected boolean shouldExtract(ProcessorURI uri) {
+    protected boolean shouldExtract(CrawlURI uri) {
         String mimeType = uri.getContentType();
         if (mimeType == null) {
             return false;
@@ -71,9 +71,9 @@ public class ExtractorDOC extends ContentExtractor {
      *  Processes a word document and extracts any hyperlinks from it.
      *  This only extracts href style links, and does not examine the actual
      *  text for valid URIs.
-     * @param curi ProcessorURI to process.
+     * @param curi CrawlURI to process.
      */
-    protected boolean innerExtract(ProcessorURI curi){
+    protected boolean innerExtract(CrawlURI curi){
         int links = 0;
         ReplayInputStream documentStream = null;
         SeekReader docReader = null;
@@ -108,7 +108,7 @@ public class ExtractorDOC extends ContentExtractor {
     }
     
     
-    private void addLink(ProcessorURI curi, String hyperlink) {
+    private void addLink(CrawlURI curi, String hyperlink) {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), hyperlink);
             LinkContext lc = LinkContext.NAVLINK_MISC;
@@ -125,10 +125,10 @@ public class ExtractorDOC extends ContentExtractor {
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorDOC\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on MS Word documents (.doc)\n");
-        ret.append("  ProcessorURIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  CrawlURIs handled: " + numberOfCURIsHandled + "\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
 
         return ret.toString();
     }

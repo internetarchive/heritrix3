@@ -1,35 +1,29 @@
-/* MatchesRegExpDecideRule
-*
-* $Id$
-*
-* Created on Apr 4, 2005
-*
-* Copyright (C) 2005 Internet Archive.
-*
-* This file is part of the Heritrix web crawler (crawler.archive.org).
-*
-* Heritrix is free software; you can redistribute it and/or modify
-* it under the terms of the GNU Lesser Public License as published by
-* the Free Software Foundation; either version 2.1 of the License, or
-* any later version.
-*
-* Heritrix is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser Public License for more details.
-*
-* You should have received a copy of the GNU Lesser Public License
-* along with Heritrix; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.archive.modules.deciderules;
 
 import java.util.regex.Pattern;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 /**
- * Rule applies configured decision to any ProcessorURIs whose String URI
+ * Rule applies configured decision to any CrawlURIs whose String URI
  * matches the supplied regexp.
  *
  * @author gojomo
@@ -63,12 +57,12 @@ public class MatchesRegExpDecideRule extends PredicatedDecideRule {
      * @return true if regexp is matched
      */
     @Override
-    protected boolean evaluate(ProcessorURI uri) {
+    protected boolean evaluate(CrawlURI uri) {
         Pattern p = getRegex();
         return p.matcher(getString(uri)).matches();
     }
     
-    protected String getString(ProcessorURI uri) {
+    protected String getString(CrawlURI uri) {
         return uri.toString();
     }
 }

@@ -24,8 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +85,7 @@ public abstract class Extractor extends Processor {
      * 
      * @param uri  the URI to extract links from
      */
-    final protected void innerProcess(ProcessorURI uri)
+    final protected void innerProcess(CrawlURI uri)
     throws InterruptedException {
         try {
             extract(uri);
@@ -100,7 +100,7 @@ public abstract class Extractor extends Processor {
     }
     
     
-    private void handleException(ProcessorURI uri, Throwable t) {
+    private void handleException(CrawlURI uri, Throwable t) {
         // both annotate (to highlight in crawl log) & add as local-error
         uri.getAnnotations().add("err=" + t.getClass().getName());
         uri.getNonFatalFailures().add(t);
@@ -119,7 +119,7 @@ public abstract class Extractor extends Processor {
      * 
      * @param uri  the uri to extract links from
      */
-    protected abstract void extract(ProcessorURI uri);
+    protected abstract void extract(CrawlURI uri);
 
     
     public void logUriError(URIException e, UURI uuri, 

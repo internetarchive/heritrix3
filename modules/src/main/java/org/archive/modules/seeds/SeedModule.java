@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.archive.checkpointing.RecoverAction;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class SeedModule implements Serializable
@@ -72,7 +72,7 @@ public abstract class SeedModule implements Serializable
         this.seedListeners = seedListeners;
     }
     
-    protected void publishAddedSeed(ProcessorURI curi) {
+    protected void publishAddedSeed(CrawlURI curi) {
         for (SeedListener l: seedListeners) {
             l.addedSeed(curi);
         }
@@ -91,7 +91,7 @@ public abstract class SeedModule implements Serializable
     
     public abstract void actOn(File f); 
     
-    public abstract boolean addSeed(final ProcessorURI curi);
+    public abstract void addSeed(final CrawlURI curi);
 
     public abstract void checkpoint(File dir, List<RecoverAction> actions) throws IOException;
 

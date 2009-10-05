@@ -38,7 +38,6 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.checkpointing.RecoverAction;
 import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -186,7 +185,7 @@ implements ReadSource,
      * @return true if successful, false if add failed for any reason
      */
     @Override
-    public synchronized boolean addSeed(final ProcessorURI curi) {
+    public synchronized void addSeed(final CrawlURI curi) {
         if(!(textSource instanceof WriteTarget)) {
             // TODO: do something else to log seed update
             logger.warning("nowhere to log added seed: "+curi);
@@ -201,13 +200,11 @@ implements ReadSource,
                 fw.write(curi.toString());
                 fw.flush();
                 fw.close();
-                publishAddedSeed(curi);
-                return true;
             } catch (IOException e) {
                 DevUtils.warnHandle(e, "problem writing new seed");
             }
         }
-        return false; 
+        publishAddedSeed(curi); 
     }
     
     @Override

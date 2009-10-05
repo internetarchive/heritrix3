@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 public class DecideRuleSequence extends DecideRule  {
     final private static Logger LOGGER = 
@@ -38,7 +38,7 @@ public class DecideRuleSequence extends DecideRule  {
         kp.put("rules", rules);
     }
 
-    public DecideResult innerDecide(ProcessorURI uri) {
+    public DecideResult innerDecide(CrawlURI uri) {
         DecideResult result = DecideResult.NONE;
         List<DecideRule> rules = getRules();
         int max = rules.size();

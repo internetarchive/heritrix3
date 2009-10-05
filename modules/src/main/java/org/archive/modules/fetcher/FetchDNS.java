@@ -1,25 +1,20 @@
-/* Copyright (C) 2003 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * FetchDNS
- * Created on Jun 5, 2003
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.fetcher;
 
@@ -41,7 +36,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
@@ -133,12 +128,12 @@ public class FetchDNS extends Processor {
     public FetchDNS() {
     }
 
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         return curi.getUURI().getScheme().equals("dns");
     }
     
     
-    protected void innerProcess(ProcessorURI curi) {
+    protected void innerProcess(CrawlURI curi) {
         Record[] rrecordSet = null; // Retrieved dns records
         String dnsName = null;
         try {
@@ -207,7 +202,7 @@ public class FetchDNS extends Processor {
         curi.setFetchCompletedTime(System.currentTimeMillis());
     }
     
-    protected void storeDNSRecord(final ProcessorURI curi, final String dnsName,
+    protected void storeDNSRecord(final CrawlURI curi, final String dnsName,
     		final CrawlHost targetHost, final Record[] rrecordSet) {
         // Get TTL and IP info from the first A record (there may be
         // multiple, e.g. www.washington.edu) then update the CrawlServer
@@ -228,7 +223,7 @@ public class FetchDNS extends Processor {
         }
     }
     
-    protected boolean isQuadAddress(final ProcessorURI curi, final String dnsName,
+    protected boolean isQuadAddress(final CrawlURI curi, final String dnsName,
 			final CrawlHost targetHost) {
 		boolean result = false;
 		Matcher matcher = InetAddressUtil.IPV4_QUADS.matcher(dnsName);
@@ -238,10 +233,10 @@ public class FetchDNS extends Processor {
 		}
 		
 		result = true;
-		// Ideally this branch would never be reached: no ProcessorURI
+		// Ideally this branch would never be reached: no CrawlURI
 		// would be created for numerical IPs
 		if (logger.isLoggable(Level.WARNING)) {
-			logger.warning("Unnecessary DNS ProcessorURI created: " + curi);
+			logger.warning("Unnecessary DNS CrawlURI created: " + curi);
 		}
 		try {
 			targetHost.setIP(InetAddress.getByAddress(dnsName, new byte[] {
@@ -258,7 +253,7 @@ public class FetchDNS extends Processor {
 		return result;
 	}
     
-    protected void recordDNS(final ProcessorURI curi, final Record[] rrecordSet)
+    protected void recordDNS(final CrawlURI curi, final Record[] rrecordSet)
             throws IOException {
         final byte[] dnsRecord = getDNSRecord(curi.getFetchBeginTime(),
                 rrecordSet);
@@ -321,7 +316,7 @@ public class FetchDNS extends Processor {
         return baos.toByteArray();
     }
     
-    protected void setUnresolvable(ProcessorURI curi, CrawlHost host) {
+    protected void setUnresolvable(CrawlURI curi, CrawlHost host) {
         host.setIP(null, 0);
         curi.setFetchStatus(S_DOMAIN_UNRESOLVABLE); 
     }

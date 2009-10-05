@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
@@ -185,7 +185,7 @@ public class Kw3WriterProcessor extends Processor {
   public Kw3WriterProcessor() {
   }
   
-  protected boolean shouldProcess(ProcessorURI curi) {
+  protected boolean shouldProcess(CrawlURI curi) {
       // Only successful fetches are written.
       if (!isSuccess(curi)) { 
           return false;
@@ -202,7 +202,7 @@ public class Kw3WriterProcessor extends Processor {
   }
 
 
-  protected void innerProcess(ProcessorURI curi) {      
+  protected void innerProcess(CrawlURI curi) {      
       // Write the MIME-file
       try {
           writeMimeFile(curi);
@@ -221,7 +221,7 @@ public class Kw3WriterProcessor extends Processor {
    * 
    * For more on this format, see '?'.
    */
-  protected void writeMimeFile(ProcessorURI curi) throws IOException {
+  protected void writeMimeFile(CrawlURI curi) throws IOException {
       ReplayInputStream ris = null;
       OutputStream out = null;
                 
@@ -263,7 +263,7 @@ public class Kw3WriterProcessor extends Processor {
    * 
    * Example: '/53/www.kb.se/current/6879ad79c0ccf886ee8ca55d80e5d6a1.1169211837'            
    */
-  protected OutputStream initOutputStream(ProcessorURI curi) throws IOException {
+  protected OutputStream initOutputStream(CrawlURI curi) throws IOException {
       String uri = curi.toString();
       int port = curi.getUURI().getPort();
       String host = (port == 80 || port <= 0) ?
@@ -283,7 +283,7 @@ public class Kw3WriterProcessor extends Processor {
       return new FastBufferedOutputStream(new FileOutputStream(arcFile));       
   }
   
-  protected void writeArchiveInfoPart(String boundary, ProcessorURI curi,
+  protected void writeArchiveInfoPart(String boundary, CrawlURI curi,
           ReplayInputStream ris, OutputStream out)
           throws IOException {
       // Get things we need to write in this part
@@ -334,7 +334,7 @@ public class Kw3WriterProcessor extends Processor {
       ris.readHeaderTo(out);       
   }
   
-  protected void writeContentPart(String boundary, ProcessorURI curi,
+  protected void writeContentPart(String boundary, CrawlURI curi,
           ReplayInputStream ris, OutputStream out) 
           throws IOException {
       // Get things we need to write in this part
@@ -424,7 +424,7 @@ public class Kw3WriterProcessor extends Processor {
       }
   }
 
-  private String getHostAddress(ProcessorURI curi) {
+  private String getHostAddress(CrawlURI curi) {
       CrawlHost h = ServerCacheUtil.getHostFor(serverCache, curi.getUURI());
       if (h == null) {
           throw new NullPointerException("Crawlhost is null for " + curi + " " +

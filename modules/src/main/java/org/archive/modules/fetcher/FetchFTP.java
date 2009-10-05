@@ -1,26 +1,20 @@
-/* FetchFTP.java
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Jun 5, 2003
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2003 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.fetcher;
 
@@ -38,8 +32,8 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.net.ftp.FTPCommand;
 import org.archive.io.RecordingInputStream;
 import org.archive.io.ReplayCharSequence;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
@@ -189,7 +183,7 @@ public class FetchFTP extends Processor  {
 
     
     @Override
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         if (!curi.getUURI().getScheme().equals("ftp")) {
             return false;
         }
@@ -227,7 +221,7 @@ public class FetchFTP extends Processor  {
      *   processing
      */
     @Override
-    protected void innerProcess(ProcessorURI curi) throws InterruptedException {
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
         curi.setFetchBeginTime(System.currentTimeMillis());
         Recorder recorder = curi.getRecorder();
         ClientFTP client = new ClientFTP();
@@ -257,7 +251,7 @@ public class FetchFTP extends Processor  {
      * @throws IOException  if a network or protocol error occurs
      * @throws InterruptedException  if the thread is interrupted
      */
-    private void fetch(ProcessorURI curi, ClientFTP client, Recorder recorder) 
+    private void fetch(CrawlURI curi, ClientFTP client, Recorder recorder) 
     throws IOException, InterruptedException {
         // Connect to the FTP server.
         UURI uuri = curi.getUURI();
@@ -322,7 +316,7 @@ public class FetchFTP extends Processor  {
      * @throws IOException  if a network or file error occurs
      * @throws InterruptedException  if the thread is interrupted
      */
-    private void saveToRecorder(ProcessorURI curi,
+    private void saveToRecorder(CrawlURI curi,
             Socket socket, Recorder recorder) 
     throws IOException, InterruptedException {
         recorder.inputWrap(socket.getInputStream());
@@ -347,7 +341,7 @@ public class FetchFTP extends Processor  {
      * @param curi      The curi to save extracted links to
      * @param recorder  The recorder containing the directory listing
      */
-    private void extract(ProcessorURI curi, Recorder recorder) {
+    private void extract(CrawlURI curi, Recorder recorder) {
         if (!getExtractFromDirs()) {
             return;
         }
@@ -373,7 +367,7 @@ public class FetchFTP extends Processor  {
      * @param dir   The directory listing to extract links from
      * @throws URIException  if an extracted link is invalid
      */
-    private void extract(ProcessorURI curi, ReplayCharSequence dir) {
+    private void extract(CrawlURI curi, ReplayCharSequence dir) {
         logger.log(Level.FINEST, "Extracting URIs from FTP directory.");
         Matcher matcher = DIR.matcher(dir);
         while (matcher.find()) {
@@ -391,7 +385,7 @@ public class FetchFTP extends Processor  {
      * @param curi  the curi to store the discovered link in
      * @param file  the filename of the discovered link
      */
-    private void addExtracted(ProcessorURI curi, String file) {
+    private void addExtracted(CrawlURI curi, String file) {
         try {
             file = URLEncoder.encode(file, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -428,7 +422,7 @@ public class FetchFTP extends Processor  {
      * 
      * @param curi  the curi whose parent to add
      */
-    private void addParent(ProcessorURI curi) {
+    private void addParent(CrawlURI curi) {
         if (!getExtractParent()) {
             return;
         }
@@ -469,7 +463,7 @@ public class FetchFTP extends Processor  {
      * @param curi  the curi whose username and password to return
      * @return  an array containing the username and password
      */
-    private String[] getAuth(ProcessorURI curi) {
+    private String[] getAuth(CrawlURI curi) {
         String[] result = new String[2];
         UURI uuri = curi.getUURI();
         String userinfo;

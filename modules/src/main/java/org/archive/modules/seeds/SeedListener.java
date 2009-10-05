@@ -18,7 +18,7 @@
  */
 package org.archive.modules.seeds;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * Implemented by components which want notifications of 
@@ -27,6 +27,6 @@ import org.archive.modules.ProcessorURI;
  * @author gojomo
  */
 public interface SeedListener {
-    void addedSeed(final ProcessorURI uuri);
+    void addedSeed(final CrawlURI uuri);
     boolean nonseedLine(String line);
 }

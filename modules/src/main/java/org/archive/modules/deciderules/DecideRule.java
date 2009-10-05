@@ -1,32 +1,27 @@
-/* Copyright (C) 2006 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * DecideRule.java
- * Created on October 5, 2006
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.deciderules;
 
 
 import java.io.Serializable;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 
@@ -58,7 +53,7 @@ public abstract class DecideRule implements Serializable, HasKeyedProperties {
 
     }
     
-    public DecideResult decisionFor(ProcessorURI uri) {
+    public DecideResult decisionFor(CrawlURI uri) {
         if (!getEnabled()) {
             return DecideResult.NONE;
         }
@@ -71,14 +66,14 @@ public abstract class DecideRule implements Serializable, HasKeyedProperties {
     }
     
     
-    protected abstract DecideResult innerDecide(ProcessorURI uri);
+    protected abstract DecideResult innerDecide(CrawlURI uri);
     
     
-    public DecideResult onlyDecision(ProcessorURI uri) {
+    public DecideResult onlyDecision(CrawlURI uri) {
         return null;
     }
 
-    public boolean accepts(ProcessorURI uri) {
+    public boolean accepts(CrawlURI uri) {
         return DecideResult.ACCEPT == decisionFor(uri);
     }
     

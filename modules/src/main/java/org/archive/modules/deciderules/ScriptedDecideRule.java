@@ -32,7 +32,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.io.ReadSource;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
@@ -121,7 +121,7 @@ implements ApplicationContextAware, InitializingBean {
         }
     }
     @Override
-    public DecideResult innerDecide(ProcessorURI uri) {
+    public DecideResult innerDecide(CrawlURI uri) {
         // depending on previous configuration, engine may 
         // be local to this thread or shared
         ScriptEngine engine = getEngine(); 

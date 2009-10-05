@@ -1,24 +1,20 @@
-/* Credential
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * Created on Apr 1, 2004
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Copyright (C) 2004 Internet Archive.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.credential;
 
@@ -31,7 +27,7 @@ import javax.management.AttributeNotFoundException;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
@@ -95,21 +91,21 @@ public abstract class Credential implements Serializable {
      *
      * Override if credential knows internally what it wants to attach as
      * payload.  Otherwise, if payload is external, use the below
-     * {@link #attach(ProcessorURI, String)}.
+     * {@link #attach(CrawlURI, String)}.
      *
-     * @param curi ProcessorURI to load with credentials.
+     * @param curi CrawlURI to load with credentials.
      */
-    public void attach(ProcessorURI curi) {
+    public void attach(CrawlURI curi) {
         attach(curi, null);
     }
 
     /**
      * Attach this credentials avatar to the passed <code>curi</code> .
      *
-     * @param curi ProcessorURI to load with credentials.
+     * @param curi CrawlURI to load with credentials.
      * @param payload Payload to carry in avatar.  Usually credentials.
      */
-    public void attach(ProcessorURI curi, String payload) {
+    public void attach(CrawlURI curi, String payload) {
         CredentialAvatar ca = (payload == null )?
                 new CredentialAvatar(this.getClass(), getKey()):
                 new CredentialAvatar(this.getClass(), getKey(), payload);
@@ -122,7 +118,7 @@ public abstract class Credential implements Serializable {
      * @param curi
      * @return True if we detached a Credential reference.
      */
-    public boolean detach(ProcessorURI curi) {
+    public boolean detach(CrawlURI curi) {
         boolean result = false;
         Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
         if (avatars.isEmpty()) {
@@ -147,7 +143,7 @@ public abstract class Credential implements Serializable {
      * @param curi
      * @return True if we detached references.
      */
-    public boolean detachAll(ProcessorURI curi) {
+    public boolean detachAll(CrawlURI curi) {
         boolean result = false;
         Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
         if (avatars.isEmpty()) {
@@ -166,26 +162,26 @@ public abstract class Credential implements Serializable {
     }
 
     /**
-     * @param curi ProcessorURI to look at.
+     * @param curi CrawlURI to look at.
      * @return True if this credential IS a prerequisite for passed
-     * ProcessorURI.
+     * CrawlURI.
      */
-    public abstract boolean isPrerequisite(ProcessorURI curi);
+    public abstract boolean isPrerequisite(CrawlURI curi);
 
     /**
-     * @param curi ProcessorURI to look at.
-     * @return True if this credential HAS a prerequisite for passed ProcessorURI.
+     * @param curi CrawlURI to look at.
+     * @return True if this credential HAS a prerequisite for passed CrawlURI.
      */
-    public abstract boolean hasPrerequisite(ProcessorURI curi);
+    public abstract boolean hasPrerequisite(CrawlURI curi);
 
     /**
      * Return the authentication URI, either absolute or relative, that serves
      * as prerequisite the passed <code>curi</code>.
      *
-     * @param curi ProcessorURI to look at.
+     * @param curi CrawlURI to look at.
      * @return Prerequisite URI for the passed curi.
      */
-    public abstract String getPrerequisite(ProcessorURI curi);
+    public abstract String getPrerequisite(CrawlURI curi);
 
     /**
      * @param context Context to use when searching for credential domain.
@@ -202,17 +198,17 @@ public abstract class Credential implements Serializable {
     public abstract boolean isEveryTime();
 
     /**
-     * @param curi ProcessorURI to as for context.
+     * @param curi CrawlURI to as for context.
      * @param http Instance of httpclient.
      * @param method Method to populate.
      * @param payload Avatar payload to use populating the method.
      * @return True if added a credentials.
      */
-    public abstract boolean populate(ProcessorURI curi, HttpClient http,
+    public abstract boolean populate(CrawlURI curi, HttpClient http,
         HttpMethod method, String payload);
 
     /**
-     * @param curi ProcessorURI to look at.
+     * @param curi CrawlURI to look at.
      * @return True if this credential is to be posted.  Return false if the
      * credential is to be GET'd or if POST'd or GET'd are not pretinent to this
      * credential type.
@@ -222,11 +218,11 @@ public abstract class Credential implements Serializable {
     /**
      * Test passed curi matches this credentials rootUri.
      * @param controller
-     * @param curi ProcessorURI to test.
+     * @param curi CrawlURI to test.
      * @return True if domain for credential matches that of the passed curi.
      */
     public boolean rootUriMatch(ServerCache cache, 
-            ProcessorURI curi) {
+            CrawlURI curi) {
         String cd = getDomain();
 
         CrawlServer serv = ServerCacheUtil.getServerFor(cache, curi.getUURI());

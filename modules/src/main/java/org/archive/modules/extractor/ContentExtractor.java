@@ -1,29 +1,24 @@
-/* Copyright (C) 2006 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * ContentExtractor.java
- * Created on October 5, 2006
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.extractor;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 
 /**
@@ -37,7 +32,7 @@ public abstract class ContentExtractor extends Extractor {
     /**
      * Extracts links 
      */
-    final protected void extract(ProcessorURI uri) {
+    final protected void extract(CrawlURI uri) {
         boolean finished = innerExtract(uri);
         if (finished) {
             uri.linkExtractorFinished();
@@ -64,7 +59,7 @@ public abstract class ContentExtractor extends Extractor {
      * @return   true if links should be extracted from the URI, 
      *   false otherwise
      */
-    final protected boolean shouldProcess(ProcessorURI uri) {
+    final protected boolean shouldProcess(CrawlURI uri) {
         if (uri.hasBeenLinkExtracted()) {
             return false;
         }
@@ -91,7 +86,7 @@ public abstract class ContentExtractor extends Extractor {
      * @return   true if links should be extracted from that URI, false
      *   otherwise
      */
-    protected abstract boolean shouldExtract(ProcessorURI uri);
+    protected abstract boolean shouldExtract(CrawlURI uri);
 
     
     /**
@@ -112,6 +107,6 @@ public abstract class ContentExtractor extends Extractor {
      * @return  true if link extraction finished; false if downstream
      * extractors should attempt to extract links
      */
-    protected abstract boolean innerExtract(ProcessorURI uri);
+    protected abstract boolean innerExtract(CrawlURI uri);
     
 }

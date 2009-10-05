@@ -23,8 +23,7 @@ package org.archive.modules.extractor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.DefaultProcessorURI;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -54,7 +53,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
      */
     public void testFormsLinkGet() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.example.org");
-        ProcessorURI curi = new DefaultProcessorURI(uuri, null);
+        CrawlURI curi = new CrawlURI(uuri);
         CharSequence cs = 
         	"<form name=\"testform\" method=\"GET\" action=\"redirect_me?form=true\"> " +
         	"  <INPUT TYPE=CHECKBOX NAME=\"checked[]\" VALUE=\"1\" CHECKED> "+
@@ -83,7 +82,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
      */
     public void testFormsLinkIgnorePost() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.example.org");
-        ProcessorURI curi = new DefaultProcessorURI(uuri, null);
+        CrawlURI curi = new CrawlURI(uuri);
         CharSequence cs = 
             "<form name=\"testform\" method=\"POST\" action=\"redirect_me?form=true\"> " +
             "  <INPUT TYPE=CHECKBOX NAME=\"checked[]\" VALUE=\"1\" CHECKED> "+
@@ -112,7 +111,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
      */
     public void testFormsLinkFindPost() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.example.org");
-        DefaultProcessorURI curi = new DefaultProcessorURI(uuri, null);
+        CrawlURI curi = new CrawlURI(uuri);
         CharSequence cs = 
             "<form name=\"testform\" method=\"POST\" action=\"redirect_me?form=true\"> " +
             "  <INPUT TYPE=CHECKBOX NAME=\"checked[]\" VALUE=\"1\" CHECKED> "+
@@ -137,7 +136,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
     
     public void testMultipleAttributesPerElement() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.example.org");
-        DefaultProcessorURI curi = new DefaultProcessorURI(uuri, null);
+        CrawlURI curi = new CrawlURI(uuri);
         CharSequence cs = "<a src=\"http://www.example.com/\" href=\"http://www.archive.org/\"> "; 
         JerichoExtractorHTML ex = (JerichoExtractorHTML)makeExtractor();
         ex.extract(curi, cs);

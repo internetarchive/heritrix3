@@ -25,7 +25,6 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.*;
 import static org.archive.modules.ModuleAttributeConstants.A_FETCH_BEGAN_TIME;
@@ -60,7 +59,7 @@ public class FetchHistoryProcessor extends Processor {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void innerProcess(ProcessorURI puri) throws InterruptedException {
+    protected void innerProcess(CrawlURI puri) throws InterruptedException {
     	CrawlURI curi = (CrawlURI) puri;
         curi.addPersistentDataMapKey(A_FETCH_HISTORY);
         HashMap<String, Object> latestFetch = new HashMap<String,Object>();
@@ -132,7 +131,7 @@ public class FetchHistoryProcessor extends Processor {
 
 
     @Override
-    protected boolean shouldProcess(ProcessorURI uri) {
+    protected boolean shouldProcess(CrawlURI uri) {
         // TODO evaluate if any pre-eligibility testing should occur
         return true;
     }

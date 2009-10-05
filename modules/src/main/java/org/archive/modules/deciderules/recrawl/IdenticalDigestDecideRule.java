@@ -24,7 +24,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HIST
 
 import java.util.Map;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 
@@ -55,7 +55,7 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
      * @param object should be CrawlURI
      * @return true if current-fetch content-digest matches previous
      */
-    protected boolean evaluate(ProcessorURI curi) {
+    protected boolean evaluate(CrawlURI curi) {
         return hasIdenticalDigest(curi);
     }
 
@@ -70,7 +70,7 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
      * otherwise false
      */
     @SuppressWarnings("unchecked")
-    public static boolean hasIdenticalDigest(ProcessorURI curi) {
+    public static boolean hasIdenticalDigest(CrawlURI curi) {
         if(curi.containsDataKey(A_FETCH_HISTORY)) {
             Map<String,Object>[] history = 
                 (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);

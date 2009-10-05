@@ -28,7 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.seeds.SeedListener;
@@ -165,7 +165,7 @@ implements
      * @return true if item, as SURT form URI, is prefixed by an item in the set
      */
     @Override
-    protected boolean evaluate(ProcessorURI uri) {
+    protected boolean evaluate(CrawlURI uri) {
         if (getAlsoCheckVia()) {
             if (innerDecide(uri.getVia())) {
                 return true;
@@ -244,9 +244,9 @@ implements
     /**
      * If appropriate, convert seed notification into prefix-addition.
      * 
-     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.CrawlURI)
      */
-    public void addedSeed(final ProcessorURI curi) {
+    public void addedSeed(final CrawlURI curi) {
         if(getSeedsAsSurtPrefixes()) {
             surtPrefixes.add(prefixFrom(curi.getURI()));
         }

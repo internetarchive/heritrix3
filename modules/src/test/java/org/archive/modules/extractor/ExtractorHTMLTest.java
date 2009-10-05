@@ -20,13 +20,14 @@
 package org.archive.modules.extractor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.DefaultProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
@@ -86,12 +87,12 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     throws Exception {
         List<TestData> result = new ArrayList<TestData>();
         UURI src = UURIFactory.getInstance("http://www.archive.org/start/");
-        DefaultProcessorURI euri = new DefaultProcessorURI(src, 
+        CrawlURI euri = new CrawlURI(src, null, null, 
                 LinkContext.NAVLINK_MISC);
         Recorder recorder = createRecorder(content);
         euri.setContentType("text/html");
         euri.setRecorder(recorder);
-        euri.setContentLength(content.length());
+        euri.setContentSize(content.length());
                 
         UURI dest = UURIFactory.getInstance(destURI);
         LinkContext context = determineContext(content);
@@ -99,11 +100,11 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         Link link = new Link(src, dest, context, hop);
         result.add(new TestData(euri, link));
         
-        euri = new DefaultProcessorURI(src, LinkContext.NAVLINK_MISC);
+        euri = new CrawlURI(src, null, null, LinkContext.NAVLINK_MISC);
         recorder = createRecorder(content);
         euri.setContentType("application/xhtml");
         euri.setRecorder(recorder);
-        euri.setContentLength(content.length());
+        euri.setContentSize(content.length());
         result.add(new TestData(euri, link));
         
         return result;
@@ -152,8 +153,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * @throws URIException
      */
     protected void expectSingleLink(String expected, CharSequence source) throws URIException {
-        DefaultProcessorURI puri = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com"), null);
+        CrawlURI puri = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com"));
         ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
         extractor.extract(puri, source);
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
@@ -170,8 +171,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * http://webteam.archive.org/jira/browse/HER-1280
      */
     public void testOnlyExtractFormGets() throws URIException {
-        DefaultProcessorURI puri = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com"),null);
+        CrawlURI puri = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com"));
         CharSequence cs = 
             "<form method=\"get\" action=\"http://www.example.com/ok1\"> "+
             "<form action=\"http://www.example.com/ok2\" method=\"get\"> "+
@@ -188,8 +189,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * Test detection, respect of meta robots nofollow directive
      */
     public void testMetaRobots() throws URIException {
-        DefaultProcessorURI puri = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com"),null);
+        CrawlURI puri = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com"));
         CharSequence cs = 
             "Blah Blah "+
             "<meta name='robots' content='index,nofollow'>"+
@@ -212,8 +213,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * @throws URIException
      */
     public void testBadRelativeLinks() throws URIException {
-        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com"), null);
+        CrawlURI curi = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com"));
         CharSequence cs = "<a href=\"example.html;jsessionid=deadbeef:deadbeed?parameter=this:value\"/>"
                 + "<a href=\"example.html?parameter=this:value\"/>";
         ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
@@ -244,8 +245,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * [HER-1524] speculativeFixup in ExtractorJS should maintain URL scheme
      */
     public void testSpeculativeLinkExtraction() throws URIException {
-        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
-                .getInstance("https://www.example.com"), null);
+        CrawlURI curi = new CrawlURI(UURIFactory
+                .getInstance("https://www.example.com"));
         CharSequence cs = 
             "<script type=\"text/javascript\">_parameter=\"www.anotherexample.com\";"
                 + "_anotherparameter=\"www.example.com/index.html\""
@@ -281,8 +282,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * @throws URIException
      */
     public void testScriptTagWritingScriptType() throws URIException {
-        DefaultProcessorURI curi = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com/en/fiche/dossier/322/"), null);
+        CrawlURI curi = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com/en/fiche/dossier/322/"));
         CharSequence cs = 
             "<script type=\"text/javascript\">"
             + "var gaJsHost = ((\"https:\" == document.location.protocol) "
@@ -298,8 +299,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     }
 
     public void testOutLinksWithBaseHref() throws URIException {
-        DefaultProcessorURI puri = new DefaultProcessorURI(UURIFactory
-                .getInstance("http://www.example.com/abc/index.html"),null);
+        CrawlURI puri = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com/abc/index.html"));
         puri.setBaseURI(puri.getUURI());
         CharSequence cs = 
             "<base href=\"http://www.example.com/\">" + 
@@ -308,6 +309,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
         extractor.extract(puri, cs);
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
+        Arrays.sort(links); 
         String dest1 = "http://www.example.com/def/another1.html";
         String dest2 = "http://www.example.com/ghi/another2.html";
         // ensure outlink from base href

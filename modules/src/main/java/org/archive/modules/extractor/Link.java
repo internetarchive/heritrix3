@@ -1,33 +1,27 @@
-/* Link
-*
-* $Id$
-*
-* Created on Mar 7, 2005
-*
-* Copyright (C) 2005 Internet Archive.
-*
-* This file is part of the Heritrix web crawler (crawler.archive.org).
-*
-* Heritrix is free software; you can redistribute it and/or modify
-* it under the terms of the GNU Lesser Public License as published by
-* the Free Software Foundation; either version 2.1 of the License, or
-* any later version.
-*
-* Heritrix is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser Public License for more details.
-*
-* You should have received a copy of the GNU Lesser Public License
-* along with Heritrix; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/ 
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.archive.modules.extractor;
 
 import java.io.Serializable;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -42,7 +36,7 @@ import org.archive.net.UURIFactory;
  * 
  * @author gojomo
  */
-public class Link implements Serializable {
+public class Link implements Serializable, Comparable<Link> {
 
     private static final long serialVersionUID = 2L;
 
@@ -130,28 +124,28 @@ public class Link implements Serializable {
          ^ context.hashCode() ^ hop.hashCode();
     }
 
-    public static void addRelativeToBase(ProcessorURI uri, int max, 
+    public static void addRelativeToBase(CrawlURI uri, int max, 
             String newUri, LinkContext context, Hop hop) throws URIException {
         UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
         add2(uri, max, dest, context, hop);
     }
 
     
-    public static void addRelativeToVia(ProcessorURI uri, int max,
+    public static void addRelativeToVia(CrawlURI uri, int max,
             String newUri, LinkContext context, Hop hop) throws URIException {
         UURI dest = UURIFactory.getInstance(uri.getVia(), newUri);
         add2(uri, max, dest, context, hop);
     }
 
 
-    public static void add(ProcessorURI uri, int max, String newUri, 
+    public static void add(CrawlURI uri, int max, String newUri, 
             LinkContext context, Hop hop) throws URIException {
         UURI dest = UURIFactory.getInstance(newUri);
         add2(uri, max, dest, context, hop);
     }
 
 
-    private static void add2(ProcessorURI uri, int max, UURI dest, 
+    private static void add2(CrawlURI uri, int max, UURI dest, 
             LinkContext context, Hop hop) throws URIException {
         if (uri.getOutLinks().size() < max) {
             UURI src = uri.getUURI();
@@ -161,6 +155,20 @@ public class Link implements Serializable {
         } else {
             uri.incrementDiscardedOutLinks();
         }
+    }
+
+    public int compareTo(Link o) {
+        int cmp = source.toString().compareTo(o.source.toString());
+        if (cmp==0) {
+            cmp = destination.toString().compareTo(o.destination.toString());
+        }
+        if (cmp==0) {
+            cmp = context.toString().compareTo(o.context.toString());
+        }
+        if (cmp==0) {
+            cmp = hop.toString().compareTo(o.hop.toString());
+        }
+        return cmp;
     }
 
 }

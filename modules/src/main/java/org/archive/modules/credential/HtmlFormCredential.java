@@ -32,7 +32,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -93,7 +93,7 @@ public class HtmlFormCredential extends Credential {
     public HtmlFormCredential() {
     }
 
-    public boolean isPrerequisite(final ProcessorURI curi) {
+    public boolean isPrerequisite(final CrawlURI curi) {
         boolean result = false;
         String curiStr = curi.getUURI().toString();
         String loginUri = getPrerequisite(curi);
@@ -116,11 +116,11 @@ public class HtmlFormCredential extends Credential {
         return result;
     }
 
-    public boolean hasPrerequisite(ProcessorURI curi) {
+    public boolean hasPrerequisite(CrawlURI curi) {
         return getPrerequisite(curi) != null;
     }
 
-    public String getPrerequisite(ProcessorURI curi) {
+    public String getPrerequisite(CrawlURI curi) {
         return getLoginUri();
     }
 
@@ -133,7 +133,7 @@ public class HtmlFormCredential extends Credential {
         return false;
     }
 
-    public boolean populate(ProcessorURI curi, HttpClient http, HttpMethod method,
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
             String payload) {
         // http is not used.
         // payload is not used.

@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
 /**
@@ -100,7 +100,7 @@ public class HTTPContentDigest extends Processor {
     }
 
     
-    protected boolean shouldProcess(ProcessorURI uri) {
+    protected boolean shouldProcess(CrawlURI uri) {
         if (!uri.getContentType().startsWith("text")) {
             return false;
         }
@@ -113,7 +113,7 @@ public class HTTPContentDigest extends Processor {
         return true;
     }
 
-    protected void innerProcess(ProcessorURI curi) throws InterruptedException {
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
         // Ok, if we got this far we need to calculate the content digest. 
         // Get the regexpr
         Pattern regexpr = getStripRegex();

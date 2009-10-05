@@ -22,7 +22,7 @@ package org.archive.modules.extractor;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.archive.modules.DefaultProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.Extractor;
 import org.archive.modules.extractor.ExtractorCSS;
 import org.archive.modules.extractor.Hop;
@@ -75,11 +75,11 @@ public class ExtractorCSSTest extends StringExtractorTestBase {
     protected Collection<TestData> makeData(String content, String uri) 
     throws Exception {
         UURI src = UURIFactory.getInstance("http://www.archive.org/start/");
-        DefaultProcessorURI euri = new DefaultProcessorURI(src, NAVLINK_MISC);
+        CrawlURI euri = new CrawlURI(src, null, null, NAVLINK_MISC);
         Recorder recorder = createRecorder(content);
         euri.setContentType("text/css");
         euri.setRecorder(recorder);
-        euri.setContentLength(content.length());
+        euri.setContentSize(content.length());
         
         UURI dest = UURIFactory.getInstance(uri);
         Link link = new Link(src, dest, EMBED_MISC, Hop.EMBED);

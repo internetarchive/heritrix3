@@ -1,29 +1,21 @@
 /*
- * ExtractorXML
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * $Id$
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Created on Sep 27, 2005
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2005 Internet Archive.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
- *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
- *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.archive.modules.extractor;
 
 import java.io.IOException;
@@ -34,7 +26,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 
@@ -71,7 +63,7 @@ public class ExtractorXML extends ContentExtractor {
 
     
     @Override
-    protected boolean shouldExtract(ProcessorURI curi) {
+    protected boolean shouldExtract(CrawlURI curi) {
         String mimeType = curi.getContentType();
         if (mimeType == null) {
             return false;
@@ -90,7 +82,7 @@ public class ExtractorXML extends ContentExtractor {
      * @param curi Crawl URI to process.
      */
     @Override
-    protected boolean innerExtract(ProcessorURI curi) {
+    protected boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
@@ -106,7 +98,7 @@ public class ExtractorXML extends ContentExtractor {
     }
 
     public static long processXml(Extractor ext, 
-            ProcessorURI curi, CharSequence cs) {
+            CrawlURI curi, CharSequence cs) {
         long foundLinks = 0;
         Matcher uris = null;
         String xmlUri;
@@ -134,10 +126,10 @@ public class ExtractorXML extends ContentExtractor {
 
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorXML\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on XML/RSS\n");
         ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + linksExtracted + "\n");
 
         return ret.toString();
     }

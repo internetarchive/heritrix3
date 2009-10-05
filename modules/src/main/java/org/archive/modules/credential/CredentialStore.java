@@ -34,7 +34,7 @@ import javax.management.AttributeNotFoundException;
 import javax.management.MBeanException;
 import javax.management.ReflectionException;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 
@@ -140,7 +140,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
      * credentials.
      * @return Unmodifable sublist of all elements of passed type.
      */
-    public Set<Credential> subset(ProcessorURI context, Class<?> type) {
+    public Set<Credential> subset(CrawlURI context, Class<?> type) {
         return subset(context, type, null);
     }
 
@@ -157,7 +157,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
      * but different ports (e.g. http and https).
      * @return Unmodifable sublist of all elements of passed type.
      */
-    public Set<Credential> subset(ProcessorURI context, Class<?> type, String rootUri) {
+    public Set<Credential> subset(CrawlURI context, Class<?> type, String rootUri) {
         Set<Credential> result = null;
         for (Credential c: getAll()) {
             if (!type.isInstance(c)) {
@@ -181,7 +181,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
     }
     
     
-    public Credential getCredential(ProcessorURI curi, CredentialAvatar ca) {
+    public Credential getCredential(CrawlURI curi, CredentialAvatar ca) {
         Credential result = null;
 
         Collection<Credential> all = getAll();

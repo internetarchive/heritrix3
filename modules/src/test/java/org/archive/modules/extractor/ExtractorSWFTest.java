@@ -33,7 +33,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import org.archive.modules.DefaultProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
@@ -66,9 +66,9 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
         return extractor;
     }
 
-    private DefaultProcessorURI setupURI(String url) throws MalformedURLException, IOException {
+    private CrawlURI setupURI(String url) throws MalformedURLException, IOException {
         UURI uuri = UURIFactory.getInstance(url);
-        DefaultProcessorURI curi = new DefaultProcessorURI(uuri, uuri, LinkContext.NAVLINK_MISC);
+        CrawlURI curi = new CrawlURI(uuri, null, uuri, LinkContext.NAVLINK_MISC);
 
         URLConnection conn = new URL(url).openConnection();
         conn.setConnectTimeout(10000);
@@ -101,7 +101,7 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
         for (String url : testUrls.keySet()) {
             logger.info("testing " + url);
 
-            DefaultProcessorURI curi;
+            CrawlURI curi;
             try {
                 curi = setupURI(url);
             } catch (IOException e) {
@@ -157,7 +157,7 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
 
         for (String url : testUrls.keySet()) {
             logger.info("testing " + url);
-            DefaultProcessorURI curi;
+            CrawlURI curi;
             try {
                 curi = setupURI(url);
             } catch (IOException e) {

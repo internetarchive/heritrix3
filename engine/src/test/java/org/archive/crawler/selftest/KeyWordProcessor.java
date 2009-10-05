@@ -1,10 +1,29 @@
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package org.archive.crawler.selftest;
 
 import java.util.regex.Pattern;
 
+import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 
 
 /**
@@ -67,26 +86,24 @@ public class KeyWordProcessor extends Processor {
     }
 
     @Override
-    protected void innerProcess(ProcessorURI uri) throws InterruptedException {
-        CrawlURI curi = (CrawlURI)uri;
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
         try {
-            CharSequence seq = uri.getRecorder().getReplayCharSequence();
-            int precedence;
-            if (getPattern().matcher(seq).find()) {
-                precedence = getFoundPrecedence();
-            } else {
-                precedence = getNotFoundPrecedence();
+            CrawlURI viaUri = curi.getFullVia(); 
+            if(!viaUri.getData().containsKey("keywordHit")) {
+                ReplayCharSequence seq = viaUri.getRecorder().getReplayCharSequence();
+                viaUri.getData().put("keywordHit", getPattern().matcher(seq).find());
+                seq.close();
             }
-            for (CrawlURI c: curi.getOutCandidates()) {
-                c.setPrecedence(precedence);
-            }
+            boolean keywordHit = (Boolean) viaUri.getData().get("keywordHit");
+            int precedence = keywordHit ? getFoundPrecedence() : getNotFoundPrecedence(); 
+            curi.setPrecedence(precedence);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    protected boolean shouldProcess(ProcessorURI uri) {
+    protected boolean shouldProcess(CrawlURI uri) {
         if (!uri.getContentType().equals("text/html")) {
             return false;
         }

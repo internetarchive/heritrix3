@@ -28,7 +28,7 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 
 /**
  * A Basic/Digest HTTP Authentication (RFC2617) credential.
@@ -78,19 +78,19 @@ public class HttpAuthenticationCredential extends Credential {
     public HttpAuthenticationCredential() {
     }
 
-    public boolean isPrerequisite(ProcessorURI curi) {
+    public boolean isPrerequisite(CrawlURI curi) {
         // Return false.  Later when we implement preemptive
         // rfc2617, this will change.
         return false;
     }
 
-    public boolean hasPrerequisite(ProcessorURI curi) {
+    public boolean hasPrerequisite(CrawlURI curi) {
         // Return false.  Later when we implement preemptive
         // rfc2617, this will change.
         return false;
     }
 
-    public String getPrerequisite(ProcessorURI curi) {
+    public String getPrerequisite(CrawlURI curi) {
         // Return null.  Later when we implement preemptive
         // rfc2617, this will change.
         return null;
@@ -104,7 +104,7 @@ public class HttpAuthenticationCredential extends Credential {
         return true;
     }
 
-    public boolean populate(ProcessorURI curi, HttpClient http, HttpMethod method,
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
             String payload) {
         boolean result = false;
         String authRealm = payload;
@@ -161,7 +161,7 @@ public class HttpAuthenticationCredential extends Credential {
      * found.
      */
     public static HttpAuthenticationCredential getByRealm(Set<Credential> rfc2617Credentials,
-            String realm, ProcessorURI context) {
+            String realm, CrawlURI context) {
 
         HttpAuthenticationCredential result = null;
         if (rfc2617Credentials == null || rfc2617Credentials.size() <= 0) {

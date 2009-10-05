@@ -39,9 +39,9 @@ import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
 import org.archive.modules.CrawlMetadata;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -155,7 +155,7 @@ implements Lifecycle {
     }
 
     /**
-     * ProcessorURI annotation indicating no record was written.
+     * CrawlURI annotation indicating no record was written.
      */
     protected static final String ANNOTATION_UNWRITTEN = "unwritten";
 
@@ -279,13 +279,13 @@ implements Lifecycle {
     }
     
     /**
-     * Whether the given ProcessorURI should be written to archive files.
-     * Annotates ProcessorURI with a reason for any negative answer.
+     * Whether the given CrawlURI should be written to archive files.
+     * Annotates CrawlURI with a reason for any negative answer.
      * 
-     * @param curi ProcessorURI
+     * @param curi CrawlURI
      * @return true if URI should be written; false otherwise
      */
-    protected boolean shouldWrite(ProcessorURI curi) {
+    protected boolean shouldWrite(CrawlURI curi) {
         if (getSkipIdenticalDigests()
             && IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN 
@@ -295,7 +295,7 @@ implements Lifecycle {
         
         boolean retVal;
         String scheme = curi.getUURI().getScheme().toLowerCase();
-        // TODO: possibly move this sort of isSuccess() test into ProcessorURI
+        // TODO: possibly move this sort of isSuccess() test into CrawlURI
         if (scheme.equals("dns")) {
             retVal = curi.getFetchStatus() == S_DNS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
@@ -321,10 +321,10 @@ implements Lifecycle {
      * Return IP address of given URI suitable for recording (as in a
      * classic ARC 5-field header line).
      * 
-     * @param curi ProcessorURI
+     * @param curi CrawlURI
      * @return String of IP address
      */
-    protected String getHostAddress(ProcessorURI curi) {
+    protected String getHostAddress(CrawlURI curi) {
         // special handling for DNS URIs: want address of DNS server
         if (curi.getUURI().getScheme().toLowerCase().equals("dns")) {
             return (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
@@ -450,19 +450,19 @@ implements Lifecycle {
     }
 
     @Override
-    protected void innerProcess(ProcessorURI puri) {
+    protected void innerProcess(CrawlURI puri) {
         throw new AssertionError();
     }
 
     @Override
-    protected abstract ProcessResult innerProcessResult(ProcessorURI uri);
+    protected abstract ProcessResult innerProcessResult(CrawlURI uri);
 
-    protected boolean shouldProcess(ProcessorURI uri) {
-        if (!(uri instanceof ProcessorURI)) {
+    protected boolean shouldProcess(CrawlURI uri) {
+        if (!(uri instanceof CrawlURI)) {
             return false;
         }
         
-        ProcessorURI curi = (ProcessorURI)uri;
+        CrawlURI curi = (CrawlURI)uri;
         // If failure, or we haven't fetched the resource yet, return
         if (curi.getFetchStatus() <= 0) {
             return false;

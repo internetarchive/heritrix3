@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.SinkHandlerLogThread;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -66,7 +66,7 @@ public class ExtractorPDF extends ContentExtractor {
     }
     
     @Override
-    protected boolean shouldExtract(ProcessorURI uri) {
+    protected boolean shouldExtract(CrawlURI uri) {
         long max = getMaxSizeToParse();
         if (uri.getRecorder().getRecordedInput().getSize() > max) {
             return false;
@@ -77,7 +77,7 @@ public class ExtractorPDF extends ContentExtractor {
     }
     
     
-    protected boolean innerExtract(ProcessorURI curi){
+    protected boolean innerExtract(CrawlURI curi){
         File tempFile;
 
         int sn;
@@ -145,10 +145,10 @@ public class ExtractorPDF extends ContentExtractor {
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorPDF\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on PDF documents\n");
         ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
 
         return ret.toString();
     }

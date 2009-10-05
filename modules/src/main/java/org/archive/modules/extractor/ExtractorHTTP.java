@@ -1,33 +1,29 @@
-/* Copyright (C) 2003 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * SimpleHTTPExtractor.java
- * Created on Jul 3, 2003
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.modules.extractor;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.ProcessorURI;
-import org.archive.modules.ProcessorURI.FetchType;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.CrawlURI.FetchType;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -49,7 +45,7 @@ public class ExtractorHTTP extends Extractor {
     
     
     @Override
-    protected boolean shouldProcess(ProcessorURI uri) {
+    protected boolean shouldProcess(CrawlURI uri) {
         if (uri.getFetchStatus() <= 0) {
             return false;
         }
@@ -59,13 +55,13 @@ public class ExtractorHTTP extends Extractor {
     
     
     @Override
-    protected void extract(ProcessorURI curi) {
+    protected void extract(CrawlURI curi) {
         HttpMethod method = curi.getHttpMethod();
         addHeaderLink(curi, method.getResponseHeader("Location"));
         addHeaderLink(curi, method.getResponseHeader("Content-Location"));
     }
 
-    protected void addHeaderLink(ProcessorURI curi, Header loc) {
+    protected void addHeaderLink(CrawlURI curi, Header loc) {
         if (loc == null) {
             // If null, return without adding anything.
             return;
@@ -85,11 +81,11 @@ public class ExtractorHTTP extends Extractor {
 
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorHTTP\n");
+        ret.append(super.report());
         ret.append("  Function:          " +
             "Extracts URIs from HTTP response headers\n");
         ret.append("  CrawlURIs handled: " + this.getURICount());
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
         return ret.toString();
     }
 }

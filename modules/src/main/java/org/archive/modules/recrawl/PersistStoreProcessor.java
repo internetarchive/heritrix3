@@ -19,7 +19,7 @@
 
 package org.archive.modules.recrawl;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 /**
  * Store CrawlURI attributes from latest fetch to persistent storage for
  * consultation by a later recrawl. 
@@ -39,12 +39,12 @@ public class PersistStoreProcessor extends PersistOnlineProcessor
     
     @SuppressWarnings("unchecked")
     @Override
-    protected void innerProcess(ProcessorURI curi) throws InterruptedException {
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
         store.put(persistKeyFor(curi),curi.getPersistentDataMap());
     }
 
     @Override
-    protected boolean shouldProcess(ProcessorURI uri) {
+    protected boolean shouldProcess(CrawlURI uri) {
         return shouldStore(uri);
     }
 }

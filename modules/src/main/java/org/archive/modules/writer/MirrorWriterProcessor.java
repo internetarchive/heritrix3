@@ -47,8 +47,8 @@ import javax.management.AttributeNotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.archive.io.RecordingInputStream;
 import org.archive.io.ReplayInputStream;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.net.UURI;
 import org.archive.util.IoUtils;
 
@@ -333,13 +333,13 @@ public class MirrorWriterProcessor extends Processor {
 
     
     @Override
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         return isSuccess(curi);
     }
     
     
     @Override
-    protected void innerProcess(ProcessorURI curi) {
+    protected void innerProcess(CrawlURI curi) {
         UURI uuri = curi.getUURI(); // Current URI.
 
         // Only http and https schemes are supported.
@@ -482,7 +482,7 @@ public class MirrorWriterProcessor extends Processor {
        @throws IOException
        if a non-directory file exists with the same path as a needed directory
     */
-    private URIToFileReturn uriToFile(String baseDir, ProcessorURI curi)
+    private URIToFileReturn uriToFile(String baseDir, CrawlURI curi)
         throws AttributeNotFoundException, IOException {
         UURI uuri = curi.getUURI(); // Current URI.
         String host = null;
@@ -632,7 +632,7 @@ public class MirrorWriterProcessor extends Processor {
        @throws IOException
        if a non-directory file exists with the same path as a needed directory
     */
-    private URIToFileReturn uriToFile(ProcessorURI curi, String host, int port,
+    private URIToFileReturn uriToFile(CrawlURI curi, String host, int port,
             String uriPath, String query, String suffix, String baseDir,
             int maxSegLen, int maxPathLen, boolean caseSensitive,
             String dirFile, Map characterMap, String dotBegin, String dotEnd,
@@ -773,7 +773,7 @@ public class MirrorWriterProcessor extends Processor {
         protected static final int EXISTS_CASE_INSENSITIVE_MATCH = 3;
 
         /** The URI, for logging and error reporting.*/
-        protected ProcessorURI curi;
+        protected CrawlURI curi;
 
         /**
            The main part of this segment.
@@ -808,7 +808,7 @@ public class MirrorWriterProcessor extends Processor {
            @throws IllegalArgumentException if
            maxSegLen is too small
         */
-        PathSegment(int maxSegLen, boolean caseSensitive, ProcessorURI curi) {
+        PathSegment(int maxSegLen, boolean caseSensitive, CrawlURI curi) {
             if (maxSegLen < 2) {
                 throw new IllegalArgumentException("maxSegLen: " + maxSegLen);
             }
@@ -937,7 +937,7 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         DirSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, ProcessorURI curi, Map characterMap,
+                   boolean caseSensitive, CrawlURI curi, Map characterMap,
                    String dotBegin, String dotEnd, Set underscoreSet) {
             super(maxSegLen, caseSensitive, curi);
             mainPart = new LumpyString(uriPath, beginIndex, endIndex,
@@ -1126,7 +1126,7 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         EndSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, ProcessorURI curi, Map characterMap,
+                   boolean caseSensitive, CrawlURI curi, Map characterMap,
                    String dotBegin, String query, String suffix,
                    int maxPathLen, boolean suffixAtEnd) {
             super(maxSegLen - 1, caseSensitive, curi);

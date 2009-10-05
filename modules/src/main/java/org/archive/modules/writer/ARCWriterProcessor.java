@@ -39,7 +39,7 @@ import org.archive.io.WriterPoolSettings;
 import org.archive.io.arc.ARCWriter;
 import org.archive.io.arc.ARCWriterPool;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
 /**
@@ -82,15 +82,15 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     }
 
     /**
-     * Writes a ProcessorURI and its associated data to store file.
+     * Writes a CrawlURI and its associated data to store file.
      *
      * Currently this method understands the following uri types: dns, http, 
      * and https.
      *
-     * @param curi ProcessorURI to process.
+     * @param curi CrawlURI to process.
      */
-    protected ProcessResult innerProcessResult(ProcessorURI puri) {
-        ProcessorURI curi = (ProcessorURI)puri;
+    protected ProcessResult innerProcessResult(CrawlURI puri) {
+        CrawlURI curi = (CrawlURI)puri;
         
         long recordLength = getRecordedSize(curi);
         
@@ -113,7 +113,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         return ProcessResult.PROCEED;
     }
     
-    protected ProcessResult write(ProcessorURI curi, long recordLength, 
+    protected ProcessResult write(CrawlURI curi, long recordLength, 
             InputStream in, String ip)
     throws IOException {
         WriterPoolMember writer = getPool().borrowFile();

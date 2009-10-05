@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.util.TextUtils;
 
 import com.anotherbigidea.flash.interfaces.SWFActions;
@@ -75,7 +75,7 @@ public class ExtractorSWF extends ContentExtractor {
 
     
     @Override
-    protected boolean shouldExtract(ProcessorURI uri) {
+    protected boolean shouldExtract(CrawlURI uri) {
         String contentType = uri.getContentType();
         if (contentType == null) {
             return false;
@@ -89,7 +89,7 @@ public class ExtractorSWF extends ContentExtractor {
 
     
     @Override
-    protected boolean innerExtract(ProcessorURI curi) {
+    protected boolean innerExtract(CrawlURI curi) {
         InputStream documentStream = null;
         // Get the SWF file's content stream.
         try {
@@ -129,12 +129,12 @@ public class ExtractorSWF extends ContentExtractor {
     
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorSWF\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on Shockwave Flash " +
             "documents (.swf)\n");
 
         ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + linksExtracted + "\n");
         return ret.toString();
     }
     
@@ -312,7 +312,7 @@ public class ExtractorSWF extends ContentExtractor {
      */
     public class CrawlUriSWFAction extends SWFActionsImpl {
         
-        ProcessorURI curi;
+        CrawlURI curi;
         
         private long linkCount;
         private Extractor ext;
@@ -321,7 +321,7 @@ public class ExtractorSWF extends ContentExtractor {
          *
          * @param curi
          */
-        public CrawlUriSWFAction(ProcessorURI curi, Extractor ext) {
+        public CrawlUriSWFAction(CrawlURI curi, Extractor ext) {
             assert (curi != null) : "CrawlURI should not be null";
             this.curi = curi;
             this.linkCount = 0;

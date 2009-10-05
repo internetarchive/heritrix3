@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -113,7 +113,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
     }
 
 
-    protected void processGeneralTag(ProcessorURI curi, Element element,
+    protected void processGeneralTag(CrawlURI curi, Element element,
             Attributes attributes) {
         Attribute attr;
         String attrValue;
@@ -282,7 +282,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         }
     }
 
-    protected boolean processMeta(ProcessorURI curi, Element element) {
+    protected boolean processMeta(CrawlURI curi, Element element) {
         String name = element.getAttributeValue("name");
         String httpEquiv = element.getAttributeValue("http-equiv");
         String content = element.getAttributeValue("content");
@@ -316,7 +316,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         return false;
     }
 
-    protected void processScript(ProcessorURI curi, Element element) {
+    protected void processScript(CrawlURI curi, Element element) {
         // first, get attributes of script-open tag
         // as per any other tag
         processGeneralTag(curi, element, element.getAttributes());
@@ -327,7 +327,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
     }
 
-    protected void processStyle(ProcessorURI curi, Element element) {
+    protected void processStyle(CrawlURI curi, Element element) {
         // First, get attributes of script-open tag as per any other tag.
         processGeneralTag(curi, element, element.getAttributes());
 
@@ -336,7 +336,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                 this, curi, element.getContent());
     }
 
-    protected void processForm(ProcessorURI curi, Element element) {
+    protected void processForm(CrawlURI curi, Element element) {
         String action = element.getAttributeValue("action");
         String name = element.getAttributeValue("name");
         String queryURL = "";
@@ -411,11 +411,11 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      * Run extractor. This method is package visible to ease testing.
      * 
      * @param curi
-     *            ProcessorURI we're processing.
+     *            CrawlURI we're processing.
      * @param cs
      *            Sequence from underlying ReplayCharSequence.
      */
-    void extract(ProcessorURI curi, CharSequence cs) {
+    void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
         List elements = source.findAllElements(StartTagType.NORMAL);
         for (Iterator elementIter = elements.iterator();
@@ -447,11 +447,11 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.JerichoExtractorHTML\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on HTML documents\n");
-        ret.append("  ProcessorURIs handled: " + this.numberOfCURIsHandled + "\n");
+        ret.append("  CrawlURIs handled: " + this.numberOfCURIsHandled + "\n");
         ret.append("  Forms processed:   " + this.numberOfFormsProcessed + "\n");
-        ret.append("  Links extracted:   " + this.numberOfLinksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + this.numberOfLinksExtracted + "\n");
         return ret.toString();
     }
 }

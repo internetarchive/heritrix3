@@ -16,7 +16,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.archive.modules.extractor;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ import java.util.regex.Matcher;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.LaxURLCodec;
 import org.archive.net.UURI;
 import org.archive.util.ArchiveUtils;
@@ -96,7 +95,7 @@ public class ExtractorJS extends ContentExtractor {
     }
 
     
-    protected boolean shouldExtract(ProcessorURI uri) {
+    protected boolean shouldExtract(CrawlURI uri) {
         
         // special-cases, for when we know our current JS extractor does poorly.
         // TODO: remove this test when JS extractor is improved 
@@ -137,7 +136,7 @@ public class ExtractorJS extends ContentExtractor {
     
 
     @Override
-    protected boolean innerExtract(ProcessorURI curi) {
+    protected boolean innerExtract(CrawlURI curi) {
         this.numberOfCURIsHandled++;
         ReplayCharSequence cs = null;
         try {
@@ -159,7 +158,7 @@ public class ExtractorJS extends ContentExtractor {
     }
 
     public static long considerStrings(Extractor ext, 
-            ProcessorURI curi, CharSequence cs, boolean handlingJSFile) {
+            CrawlURI curi, CharSequence cs, boolean handlingJSFile) {
         long foundLinks = 0;
         Matcher strings =
             TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, cs);
@@ -221,7 +220,7 @@ public class ExtractorJS extends ContentExtractor {
      * @return String changed/decoded to increase liklihood it is a 
      * meaningful non-404 URI
      */
-    public static String speculativeFixup(String string, ProcessorURI puri) {
+    public static String speculativeFixup(String string, CrawlURI puri) {
         String retVal = string;
         
         // unescape ampersands
@@ -270,10 +269,10 @@ public class ExtractorJS extends ContentExtractor {
      */
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorJS\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on JavaScript code\n");
-        ret.append("  ProcessorURIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  CrawlURIs handled: " + numberOfCURIsHandled + "\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
 
         return ret.toString();
     }

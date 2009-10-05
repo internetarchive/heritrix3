@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
@@ -84,7 +84,7 @@ public class ExtractorCSS extends ContentExtractor {
 
     
     @Override
-    protected boolean shouldExtract(ProcessorURI curi) {
+    protected boolean shouldExtract(CrawlURI curi) {
         String mimeType = curi.getContentType();
         if (mimeType == null) {
             return false; // FIXME: This check should be unnecessary
@@ -99,7 +99,7 @@ public class ExtractorCSS extends ContentExtractor {
     /**
      * @param curi Crawl URI to process.
      */
-    public boolean innerExtract(ProcessorURI curi) {
+    public boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
@@ -116,7 +116,7 @@ public class ExtractorCSS extends ContentExtractor {
     }
 
     public static long processStyleCode(Extractor ext, 
-            ProcessorURI curi, CharSequence cs) {
+            CrawlURI curi, CharSequence cs) {
         long foundLinks = 0;
         Matcher uris = null;
         String cssUri;
@@ -148,10 +148,10 @@ public class ExtractorCSS extends ContentExtractor {
 
     public String report() {
         StringBuffer ret = new StringBuffer();
-        ret.append("Processor: org.archive.crawler.extractor.ExtractorCSS\n");
+        ret.append(super.report());
         ret.append("  Function:          Link extraction on Cascading Style Sheets (.css)\n");
         ret.append("  ExtractorURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n\n");
+        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
 
         return ret.toString();
     }

@@ -21,7 +21,7 @@ package org.archive.modules.deciderules;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.net.PublicSuffixes;
 import org.archive.net.UURI;
 
@@ -42,7 +42,7 @@ public class HopCrossesAssignmentLevelDomainDecideRule extends PredicatedDecideR
     public HopCrossesAssignmentLevelDomainDecideRule() {
     }
 
-    protected boolean evaluate(ProcessorURI uri) {
+    protected boolean evaluate(CrawlURI uri) {
         UURI via = uri.getVia();
         if (via == null) {
             return false;

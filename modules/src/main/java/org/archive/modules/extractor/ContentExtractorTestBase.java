@@ -1,25 +1,20 @@
-/* Copyright (C) 2006 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * ContentExtractorTest.java
- * Created on October 5, 2006
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.modules.extractor;
 
@@ -29,7 +24,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Collections;
 
-import org.archive.modules.DefaultProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -76,14 +71,14 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
     
     
     /**
-     * Returns a DefaultProcessorURI for testing purposes.
+     * Returns a CrawlURI for testing purposes.
      * 
-     * @return   a DefaultProcessorURI
+     * @return   a CrawlURI
      * @throws Exception   just in case
      */
-    protected DefaultProcessorURI defaultURI() throws Exception {
+    protected CrawlURI defaultURI() throws Exception {
         UURI uuri = UURIFactory.getInstance("http://www.archive.org/start/");
-        return new DefaultProcessorURI(uuri, LinkContext.NAVLINK_MISC);
+        return new CrawlURI(uuri, null, null, LinkContext.NAVLINK_MISC);
     }
     
     
@@ -93,7 +88,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      * @throws Exception   just in case
      */
     public void testZeroContent() throws Exception {
-        DefaultProcessorURI uri = defaultURI();
+        CrawlURI uri = defaultURI();
         Recorder recorder = createRecorder("");
         uri.setContentType("text/plain");
         uri.setRecorder(recorder);
@@ -110,7 +105,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      * @throws Exception   just in case
      */
     public void testFinished() throws Exception {
-        DefaultProcessorURI uri = defaultURI();
+        CrawlURI uri = defaultURI();
         uri.linkExtractorFinished();
         extractor.process(uri);
         assertEquals(0, uri.getOutLinks().size());
@@ -124,8 +119,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      * 
      * @param uri   the URI to test
      */
-    protected static void assertNoSideEffects(DefaultProcessorURI uri) {
-        assertEquals(0, uri.getUriErrors().size());
+    protected static void assertNoSideEffects(CrawlURI uri) {
         assertEquals(0, uri.getNonFatalFailures().size());
         assertEquals(Collections.EMPTY_LIST, uri.getAnnotations());        
     }
