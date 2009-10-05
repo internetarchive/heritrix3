@@ -122,7 +122,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
      * @param uri  The URI to process
      * @throws  InterruptedException   if the thread is interrupted
      */
-    public ProcessResult process(ProcessorURI uri) 
+    public ProcessResult process(CrawlURI uri) 
     throws InterruptedException {
         if (!getEnabled()) {
             return ProcessResult.PROCEED;
@@ -163,10 +163,10 @@ implements Serializable, HasKeyedProperties, Lifecycle {
      * @param uri   the URI to test
      * @return  true if this processor should process that uri; false if not
      */
-    protected abstract boolean shouldProcess(ProcessorURI uri);
+    protected abstract boolean shouldProcess(CrawlURI uri);
 
     
-    protected ProcessResult innerProcessResult(ProcessorURI uri) 
+    protected ProcessResult innerProcessResult(CrawlURI uri) 
     throws InterruptedException {
         innerProcess(uri);
         return ProcessResult.PROCEED;
@@ -181,7 +181,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
      * @param uri    the URI to process
      * @throws InterruptedException   if the thread is interrupted
      */
-    protected abstract void innerProcess(ProcessorURI uri) 
+    protected abstract void innerProcess(CrawlURI uri) 
     throws InterruptedException;
 
 
@@ -192,18 +192,18 @@ implements Serializable, HasKeyedProperties, Lifecycle {
      * @param uri   the URI that was rejected
      * @throws InterruptedException   if the thread is interrupted
      */
-    protected void innerRejectProcess(ProcessorURI uri) 
+    protected void innerRejectProcess(CrawlURI uri) 
     throws InterruptedException {        
     }
 
 
-    public static String flattenVia(ProcessorURI puri) {
+    public static String flattenVia(CrawlURI puri) {
         UURI uuri = puri.getVia();
         return (uuri == null) ? "" : uuri.toString();
     }
 
     
-    public static boolean isSuccess(ProcessorURI puri) {
+    public static boolean isSuccess(CrawlURI puri) {
         boolean result = false;
         int statusCode = puri.getFetchStatus();
         if (statusCode == HttpStatus.SC_UNAUTHORIZED &&
@@ -216,7 +216,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     }
     
     
-    public static long getRecordedSize(ProcessorURI puri) {
+    public static long getRecordedSize(CrawlURI puri) {
         if (puri.getRecorder() == null) {
             return puri.getContentSize();
         } else {
@@ -228,7 +228,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     /**
      * @return True if we have an HttpAuthentication (rfc2617) payload.
      */
-    public static boolean hasHttpAuthenticationCredentialAvatar(ProcessorURI puri) {
+    public static boolean hasHttpAuthenticationCredentialAvatar(CrawlURI puri) {
         Set<CredentialAvatar> avatars = puri.getCredentialAvatars();
         for (CredentialAvatar ca: avatars) {
             if (ca.match(HttpAuthenticationCredential.class)) {
@@ -243,7 +243,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     // FIXME: Internationalize somehow
     // FIXME: Pass in PrintWriter instead creating large in-memory strings
     public String report() {
-        return "";
+        return "Processor: "+getClass().getName()+"\n";
     }
     
     boolean isRunning = false; 

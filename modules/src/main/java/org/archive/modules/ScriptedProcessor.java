@@ -124,12 +124,12 @@ implements ApplicationContextAware, InitializingBean {
             throw new BeanInitializationException("named ScriptEngine not available");
         }
     }
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         return true;
     }
     
     @Override
-    protected void innerProcess(ProcessorURI curi) {
+    protected void innerProcess(CrawlURI curi) {
         // depending on previous configuration, engine may 
         // be local to this thread or shared
         ScriptEngine engine = getEngine(); 
