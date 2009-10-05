@@ -324,4 +324,11 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         }
         return sheet;
     }
+    
+    public void applyOverridesTo(CrawlURI curi) {
+        curi.setOverlayMapsSource(this); 
+        if(!curi.haveOverlayNamesBeenSet()) {
+            applyOverlays(curi);
+        }
+    }
 }

@@ -4,6 +4,8 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 
+import org.archive.crawler.framework.ToeThread;
+import org.archive.crawler.framework.ToeThread.Step;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -20,6 +22,7 @@ import org.springframework.context.Lifecycle;
  *  - future override capability may allow inserts at any place in
  *  order, not just end (assuming TBD specialized iterator)
  *  
+ *  See subclasses CandidateChain, FetchChain, and DispositionChain
  */
 public class ProcessorChain 
 implements Iterable<Processor>, 
@@ -78,16 +81,17 @@ implements Iterable<Processor>,
      */
     public void reportTo(PrintWriter writer) {
         writer.print(
-            "Processors report - "
+            getClass().getSimpleName() + " - Processors report - "
                 + ArchiveUtils.get12DigitDate()
                 + "\n");
  
-            writer.print("  Number of Processors: " + size() + "\n");
-        writer.print("  NOTE: Some processors may not return a report!\n\n");
+        writer.print("  Number of Processors: " + size() + "\n\n");
 
         for (Processor p: this) {
             writer.print(p.report());
+            writer.println();
         }
+        writer.println();
     }
 
     public String singleLineLegend() {
@@ -103,4 +107,30 @@ implements Iterable<Processor>,
         }
     }
 
+    public void process(CrawlURI curi, ToeThread thread) throws InterruptedException {
+        assert KeyedProperties.overridesActiveFrom(curi);
+        String skipToProc = null; 
+        
+        ploop: for(Processor curProc : this ) {
+            if(skipToProc!=null && curProc.getName() != skipToProc) {
+                continue;
+            } else {
+                skipToProc = null; 
+            }
+            if(thread!=null) {
+                thread.setStep(Step.ABOUT_TO_BEGIN_PROCESSOR, curProc.getName());
+            }
+            ArchiveUtils.continueCheck();
+            ProcessResult pr = curProc.process(curi);
+            switch (pr.getProcessStatus()) {
+                case PROCEED:
+                    continue;
+                case FINISH:
+                    break ploop;
+                case JUMP:
+                    skipToProc = pr.getJumpTarget();
+                    continue;
+            }
+        }
+    }
 }

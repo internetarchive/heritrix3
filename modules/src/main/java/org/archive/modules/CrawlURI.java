@@ -76,6 +76,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.lang.StringUtils;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
@@ -105,11 +106,13 @@ import org.archive.util.Recorder;
  * @author Gordon Mohr
  */
 public class CrawlURI 
-implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
+implements MultiReporter, Serializable, OverlayContext {
     private static final long serialVersionUID = 3L;
 
     public static final int UNCALCULATED = -1;
     
+    public static enum FetchType { HTTP_GET, HTTP_POST, UNKNOWN };
+
     /**
      * The URI being crawled.  It's transient to save space when storing to BDB.
      */
@@ -344,7 +347,7 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
     
     public boolean containsDataKey(String key) {
         if (data == null) {
-                return false;
+            return false;
         }
         return data.containsKey(key);
     }
@@ -525,9 +528,6 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
         this.deferrals = 0;
     }
 
-
-
-
     /**
      * Set a prerequisite for this URI.
      * <p>
@@ -536,8 +536,8 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
      *
      * @param link Link to set as prereq.
      */
-    public void setPrerequisiteUri(Object link) {
-        getData().put(A_PREREQUISITE_URI, link);
+    public void setPrerequisiteUri(CrawlURI pre) {
+        getData().put(A_PREREQUISITE_URI, pre);
     }
 
     /**
@@ -548,8 +548,15 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
      *
      * @return the prerequisite for this URI or null if no prerequisite.
      */
-    public Object getPrerequisiteUri() {
-        return getData().get(A_PREREQUISITE_URI);
+    public CrawlURI getPrerequisiteUri() {
+        return (CrawlURI) getData().get(A_PREREQUISITE_URI);
+    }
+    
+    /**
+     * Clear prerequisite, if any.
+     */
+    public CrawlURI clearPrerequisiteUri() {
+        return (CrawlURI) getData().remove(A_PREREQUISITE_URI);
     }
     
     /**
@@ -1143,11 +1150,6 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
         return outCandidates;
     }
     
-    
-    
-    
-
-        
     /**
      * Set the (HTML) Base URI used for derelativizing internal URIs. 
      * 
@@ -1791,5 +1793,37 @@ implements ProcessorURI, MultiReporter, Serializable, OverlayContext {
 
     public void setOverlayMapsSource(OverlayMapsSource overrideMapsSource) {
         this.overlayMapsSource = overrideMapsSource;
+    }
+
+    protected String canonicalString; 
+    public void setCanonicalString(String canonical) {
+        this.canonicalString = canonical; 
+    }
+    public String getCanonicalString() {
+        if(StringUtils.isEmpty(canonicalString)){
+            System.err.println("not canonicalized");
+            return getURI();
+        }
+        return canonicalString;
+    }
+
+    protected long politenessDelay = -1; 
+    public void setPolitenessDelay(long polite) {
+        this.politenessDelay = polite; 
+    }
+    public long getPolitenessDelay() {
+        if(politenessDelay<0) {
+            System.err.println("not politeness-calc");
+            return 5000;
+        }
+        return 0;
+    }
+
+    transient CrawlURI fullVia; 
+    public void setFullVia(CrawlURI curi) {
+        this.fullVia = curi; 
+    }
+    public CrawlURI getFullVia() {
+        return fullVia;
     }
 }

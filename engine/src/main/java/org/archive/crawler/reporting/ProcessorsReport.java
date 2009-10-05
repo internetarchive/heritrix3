@@ -31,7 +31,9 @@ public class ProcessorsReport extends Report {
 
     @Override
     public void write(PrintWriter writer) {
-        stats.controller.getProcessorChain().reportTo(writer);
+        stats.controller.getCandidateChain().reportTo(writer);
+        stats.controller.getFetchChain().reportTo(writer);
+        stats.controller.getDispositionChain().reportTo(writer);
     }
 
     @Override

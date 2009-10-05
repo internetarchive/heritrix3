@@ -1,28 +1,22 @@
-/* LinksScoper
- * 
- * $Id$
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * Created on Oct 2, 2003
- * 
- * Copyright (C) 2003 Internet Archive.
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.archive.crawler.postprocessor;
 
 import static org.archive.modules.SchedulingConstants.HIGH;
@@ -36,8 +30,6 @@ import java.util.logging.Logger;
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Scoper;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.PostProcessor;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.deciderules.RejectDecideRule;
@@ -55,10 +47,12 @@ import org.archive.modules.extractor.Link;
  * Frontier (Frontier#schedule expects CrawlURI, not Link).  This class
  * replaces Links w/ the CrawlURI that wraps the Link in the CrawlURI.
  *
+ * @deprecated Use CandidatesProcessor and CandidateChain/CandidateScoper instead
+ * 
  * @author gojomo
  * @author stack
  */
-public class LinksScoper extends Scoper implements PostProcessor {
+public class LinksScoper extends Scoper {
 
     private static final long serialVersionUID = -3L;
 
@@ -123,7 +117,7 @@ public class LinksScoper extends Scoper implements PostProcessor {
     
     
     @Override
-    protected boolean shouldProcess(ProcessorURI puri) {
+    protected boolean shouldProcess(CrawlURI puri) {
         if (!(puri instanceof CrawlURI)) {
             return false;
         }
@@ -151,7 +145,7 @@ public class LinksScoper extends Scoper implements PostProcessor {
 
     
     @Override
-    protected void innerProcess(final ProcessorURI puri) {
+    protected void innerProcess(final CrawlURI puri) {
         CrawlURI curi = (CrawlURI)puri;
         final boolean redirectsNewSeeds = getSeedsRedirectNewSeeds(); 
         int preferenceDepthHops = getPreferenceDepthHops(); 
@@ -169,38 +163,6 @@ public class LinksScoper extends Scoper implements PostProcessor {
                     wref.getDestination().toString());
         }
         curi.getOutLinks().clear();
-        
-//        Collection<CrawlURI> inScopeLinks = new HashSet<CrawlURI>();
-//        for (final Iterator i = curi.getOutObjects().iterator(); i.hasNext();) {
-//            Object o = i.next();
-//            if(o instanceof Link){
-//                final Link wref = (Link)o;
-//                try {
-//                    final int directive = getSchedulingFor(curi, wref, 
-//                        preferenceDepthHops);
-//                    final CrawlURI caURI =
-//                        curi.createCrawlURI(curi.getBaseURI(), wref, 
-//                            directive, 
-//                            considerAsSeed(curi, wref, redirectsNewSeeds));
-//                    if (isInScope(caURI)) {
-//                        inScopeLinks.add(caURI);
-//                    }
-//                } catch (URIException e) {
-//                    getController().logUriError(e, curi.getUURI(), 
-//                        wref.getDestination().toString());
-//                }
-//            } else if(o instanceof CrawlURI){
-//                CrawlURI caURI = (CrawlURI)o;
-//                if(isInScope(caURI)){
-//                    inScopeLinks.add(caURI);
-//                }
-//            } else {
-//                LOGGER.severe("Unexpected type: " + o);
-//            }
-//        }
-//        // Replace current links collection w/ inscopeLinks.  May be
-//        // an empty collection.
-//        curi.replaceOutlinks(inScopeLinks);
     }
     
     /**
@@ -209,38 +171,20 @@ public class LinksScoper extends Scoper implements PostProcessor {
      * @param curi CrawlURI with prereq to consider
      */
     protected void handlePrerequisite(CrawlURI curi) {
-        try {
-            // Create prerequisite CrawlURI
-            CrawlURI caUri =
-                curi.createCrawlURI(curi.getBaseURI(),
-                    (Link) curi.getPrerequisiteUri());
-            int prereqPriority = curi.getSchedulingDirective() - 1;
-            if (prereqPriority < 0) {
-                prereqPriority = 0;
-                LOGGER.severe("Unable to promote prerequisite " + caUri +
-                    " above " + curi);
-            }
-            caUri.setSchedulingDirective(prereqPriority);
-            caUri.setForceFetch(true);
+        CrawlURI caUri = curi.getPrerequisiteUri();
 // FIXME!!!            getController().setStateProvider(caUri);
-            if(isInScope(caUri)) {
-                // replace link with CrawlURI
-                curi.setPrerequisiteUri(caUri);
-            } else {
-                // prerequisite is out-of-scope; mark CrawlURI as error,
-                // preventinting normal S_DEFERRED handling
-                curi.setFetchStatus(S_PREREQUISITE_UNSCHEDULABLE_FAILURE);
-            }
-       } catch (URIException ex) {
-            Object[] array = {curi, curi.getPrerequisiteUri()};
-            loggerModule.getUriErrors().log(Level.INFO,ex.getMessage(), array);
-        } catch (NumberFormatException e) {
-            // UURI.createUURI will occasionally throw this error.
-            Object[] array = {curi, curi.getPrerequisiteUri()};
-            loggerModule.getUriErrors().log(Level.INFO,e.getMessage(), array);
+        if(isInScope(caUri)) {
+            // replace link with CrawlURI
+            curi.setPrerequisiteUri(caUri);
+        } else {
+            // prerequisite is out-of-scope; mark CrawlURI as error,
+            // preventing normal S_DEFERRED handling
+            curi.clearPrerequisiteUri();
+            curi.setFetchStatus(S_PREREQUISITE_UNSCHEDULABLE_FAILURE);
         }
     }
 
+    // TODO: move similar outOfScope logging to CandidatesProcessor/CandidateChain/CandidateScoper
     protected void outOfScope(CrawlURI caUri) {
         super.outOfScope(caUri);
         if (!LOGGER.isLoggable(Level.INFO)) {

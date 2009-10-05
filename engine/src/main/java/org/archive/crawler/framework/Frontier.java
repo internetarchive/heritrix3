@@ -484,12 +484,6 @@ public interface Frontier extends Lifecycle, MultiReporter {
      * deciding whether a URI is crawled or not). 
      */
     public DecideRule getScope();
-    
-    /**
-     * Request that the Frontier load (or reload) crawl seeds, 
-     * typically by contacting the Scope. 
-     */
-    public void loadSeeds();
 
     /**
      * Request that Frontier allow crawling to begin. Usually

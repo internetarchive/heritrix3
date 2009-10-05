@@ -33,9 +33,12 @@ import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.reporting.StatisticsTracker;
+import org.archive.modules.CandidateChain;
 import org.archive.modules.CrawlMetadata;
-import org.archive.modules.ProcessorChain;
+import org.archive.modules.DispositionChain;
+import org.archive.modules.FetchChain;
 import org.archive.modules.net.ServerCache;
+import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.springframework.beans.BeansException;
@@ -137,17 +140,49 @@ implements Serializable,
         this.statisticsTracker = statisticsTracker;
     }
 
-    
-    /**
-     * Processor chain
-     */
-    protected ProcessorChain processorChain;
-    public ProcessorChain getProcessorChain() {
-        return this.processorChain;
+    protected SeedModule seeds;
+    public SeedModule getSeeds() {
+        return this.seeds;
     }
     @Autowired
-    public void setProcessorChain(ProcessorChain processorChain) {
-        this.processorChain = processorChain;
+    public void setSeeds(SeedModule seeds) {
+        this.seeds = seeds;
+    }
+    
+    /**
+     * Fetch chain
+     */
+    protected FetchChain fetchChain;
+    public FetchChain getFetchChain() {
+        return this.fetchChain;
+    }
+    @Autowired
+    public void setFetchChain(FetchChain fetchChain) {
+        this.fetchChain = fetchChain;
+    }
+    
+    /**
+     * Disposition chain
+     */
+    protected DispositionChain dispositionChain;
+    public DispositionChain getDispositionChain() {
+        return this.dispositionChain;
+    }
+    @Autowired
+    public void setDispositionChain(DispositionChain dispositionChain) {
+        this.dispositionChain = dispositionChain;
+    }
+    
+    /**
+     * Candidate chain
+     */
+    protected CandidateChain candidateChain;
+    public CandidateChain getCandidateChain() {
+        return this.candidateChain;
+    }
+    @Autowired
+    public void setCandidateChain(CandidateChain candidateChain) {
+        this.candidateChain = candidateChain;
     }
 
     /**
@@ -334,7 +369,7 @@ implements Serializable,
     public void requestCrawlStart() {
         hasStarted = true; 
         sendCrawlStateChangeEvent(State.PREPARING, CrawlStatus.PREPARING);
-        frontier.loadSeeds();
+        getSeeds().announceSeeds();
         
         setupToePool();
 

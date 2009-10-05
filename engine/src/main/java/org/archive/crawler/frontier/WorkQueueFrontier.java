@@ -55,9 +55,7 @@ import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.ToeThread;
 import org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy;
-import org.archive.crawler.frontier.precedence.CostUriPrecedencePolicy;
 import org.archive.crawler.frontier.precedence.QueuePrecedencePolicy;
-import org.archive.crawler.frontier.precedence.UriPrecedencePolicy;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -170,17 +168,6 @@ ApplicationContextAware {
     public void setQueueTotalBudget(long budget) {
         kp.put("queueTotalBudget",budget);
     }
-
-    /** cost assignment policy to use. */
-    {
-        setCostAssignmentPolicy(new UnitCostAssignmentPolicy());
-    }
-    public CostAssignmentPolicy getCostAssignmentPolicy() {
-        return (CostAssignmentPolicy) kp.get("costAssignmentPolicy");
-    }
-    public void setCostAssignmentPolicy(CostAssignmentPolicy policy) {
-        kp.put("costAssignmentPolicy",policy);
-    }
     
     /** queue precedence assignment policy to use. */
     {
@@ -202,16 +189,7 @@ ApplicationContextAware {
         this.precedenceFloor = floor;
     }
 
-    /** URI precedence assignment policy to use. */
-    {
-        setUriPrecedencePolicy(new CostUriPrecedencePolicy());
-    }
-    public UriPrecedencePolicy getUriPrecedencePolicy() {
-        return (UriPrecedencePolicy) kp.get("uriPrecedencePolicy");
-    }
-    public void setUriPrecedencePolicy(UriPrecedencePolicy policy) {
-        kp.put("uriPrecedencePolicy",policy);
-    }
+
 
     /** All known queues.
      */
@@ -283,8 +261,8 @@ ApplicationContextAware {
     protected void initInternalQueues(boolean recycle) 
     throws IOException, DatabaseException {
         if (workQueueDataOnDisk()
-                && getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
-                && getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
+                && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
+                && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
                     MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY) {
             this.allQueues = 
                 new ObjectIdentityMemCache<WorkQueue>(701, .9f, 100);
@@ -341,7 +319,6 @@ ApplicationContextAware {
         assert KeyedProperties.overridesActiveFrom(curi); 
         
         prepForFrontier(curi);
-        applySpecialHandling(curi);
         sendToQueue(curi);
     }
     
@@ -357,7 +334,7 @@ ApplicationContextAware {
         
         // Canonicalization may set forceFetch flag.  See
         // #canonicalization(CrawlURI) javadoc for circumstance.
-        String canon = canonicalize(curi);
+        String canon = curi.getCanonicalString();
         if (curi.forceFetch()) {
             uriUniqFilter.addForce(canon, curi);
         } else {
@@ -365,17 +342,6 @@ ApplicationContextAware {
         }
     }
 
-	/* (non-Javadoc)
-	 * @see org.archive.crawler.frontier.AbstractFrontier#asCrawlUri(org.archive.crawler.datamodel.CrawlURI)
-	 */
-	protected void prepForFrontier(CrawlURI caUri) {
-		super.prepForFrontier(caUri);
-		// force cost to be calculated, pre-insert
-		getCost(caUri);
-        // set precedence value
-        getUriPrecedencePolicy().uriScheduled(caUri);
-	}
-	
     /**
      * Send a CrawlURI to the appropriate subqueue.
      * 
@@ -718,24 +684,7 @@ ApplicationContextAware {
             return null; 
     }
 
-    /**
-     * Return the 'cost' of a CrawlURI (how much of its associated
-     * queue's budget it depletes upon attempted processing)
-     * 
-     * @param curi
-     * @return the associated cost
-     */
-    private int getCost(CrawlURI curi) {
-        assert KeyedProperties.overridesActiveFrom(curi);
-        
-        int cost = curi.getHolderCost();
-        if (cost == CrawlURI.UNCALCULATED) {
-            //TODO:SPRINGY push overrides by curi
-            cost = getCostAssignmentPolicy().costOf(curi);
-            curi.setHolderCost(cost);
-        }
-        return cost;
-    }
+
     
     /**
      * Activate an inactive queue, if any are available. 
@@ -949,7 +898,7 @@ ApplicationContextAware {
         if (needsRetrying(curi)) {
             // Consider errors which can be retried, leaving uri atop queue
             if(curi.getFetchStatus()!=S_DEFERRED) {
-                wq.expend(getCost(curi)); // all retries but DEFERRED cost
+                wq.expend(curi.getHolderCost()); // all retries but DEFERRED cost
             }
             long delay_sec = retryDelayFor(curi);
             curi.processingCleanup(); // lose state that shouldn't burden retry
@@ -983,7 +932,7 @@ ApplicationContextAware {
             appCtx.publishEvent(
                 new CrawlURIDispositionEvent(this,curi,SUCCEEDED));
             doJournalFinishedSuccess(curi);
-            wq.expend(getCost(curi)); // successes cost
+            wq.expend(curi.getHolderCost()); // successes cost
         } else if (isDisregarded(curi)) {
             // Check for codes that mean that while we the crawler did
             // manage to schedule it, it must be disregarded for some reason.
@@ -1017,10 +966,10 @@ ApplicationContextAware {
             
             wq.noteError(getErrorPenaltyAmount());
             doJournalFinishedFailure(curi);
-            wq.expend(getCost(curi)); // failures cost
+            wq.expend(curi.getHolderCost()); // failures cost
         }
 
-        long delay_ms = politenessDelayFor(curi);
+        long delay_ms = curi.getPolitenessDelay();
 
             if (delay_ms > 0) {
                 snoozeQueue(wq,now,delay_ms);
@@ -1067,7 +1016,7 @@ ApplicationContextAware {
      */
     protected void forget(CrawlURI curi) {
         logger.finer("Forgetting " + curi);
-        uriUniqFilter.forget(canonicalize(curi.getUURI()), curi);
+        uriUniqFilter.forget(curi.getCanonicalString(), curi);
     }
 
     /**  (non-Javadoc)
@@ -1500,12 +1449,12 @@ ApplicationContextAware {
     }
 
     public void considerIncluded(CrawlURI curi) {
-        this.uriUniqFilter.note(canonicalize(curi));
-        applyOverridesTo(curi);
+        this.uriUniqFilter.note(curi.getCanonicalString());
+        sheetOverlaysManager.applyOverridesTo(curi);
         try {
             KeyedProperties.loadOverridesFrom(curi);
             curi.setClassKey(getClassKey(curi));
-            getQueueFor(curi).expend(getCost(curi));
+            getQueueFor(curi).expend(curi.getHolderCost());
         } finally {
             KeyedProperties.clearOverridesFrom(curi); 
         }

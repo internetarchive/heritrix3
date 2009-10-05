@@ -38,7 +38,6 @@ import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.CredentialStore;
@@ -154,19 +153,19 @@ public class PreconditionEnforcer extends Processor  {
     }
     
     @Override
-    protected boolean shouldProcess(ProcessorURI puri) {
+    protected boolean shouldProcess(CrawlURI puri) {
         return (puri instanceof CrawlURI);
     }
     
     
     @Override
-    protected void innerProcess(ProcessorURI puri) {
+    protected void innerProcess(CrawlURI puri) {
         throw new AssertionError();
     }
 
     
     @Override
-    protected ProcessResult innerProcessResult(ProcessorURI puri) {
+    protected ProcessResult innerProcessResult(CrawlURI puri) {
         CrawlURI curi = (CrawlURI)puri;
         if (considerDnsPreconditions(curi)) {
             return ProcessResult.FINISH;
@@ -201,7 +200,7 @@ public class PreconditionEnforcer extends Processor  {
     /**
      * Consider the robots precondition.
      *
-     * @param curi ProcessorURI we're checking for any required preconditions.
+     * @param curi CrawlURI we're checking for any required preconditions.
      * @return True, if this <code>curi</code> has a precondition or processing
      *         should be terminated for some other reason.  False if
      *         we can precede to process this url.
@@ -272,7 +271,7 @@ public class PreconditionEnforcer extends Processor  {
     }
 
     /**
-     * @param curi ProcessorURI whose dns prerequisite we're to check.
+     * @param curi CrawlURI whose dns prerequisite we're to check.
      * @return true if no further processing in this module should occur
      */
     private boolean considerDnsPreconditions(CrawlURI curi) {
@@ -296,7 +295,7 @@ public class PreconditionEnforcer extends Processor  {
         if (ch == null || ch.hasBeenLookedUp() && ch.getIP() == null) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine( "no dns for " + ch +
-                    " cancelling processing for ProcessorURI " + curi.toString());
+                    " cancelling processing for CrawlURI " + curi.toString());
             }
             curi.setFetchStatus(S_DOMAIN_PREREQUISITE_FAILURE);
 //            curi.skipToPostProcessing();
@@ -306,7 +305,7 @@ public class PreconditionEnforcer extends Processor  {
         // If we haven't done a dns lookup  and this isn't a dns uri
         // shoot that off and defer further processing
         if (isIpExpired(curi) && !curi.getUURI().getScheme().equals("dns")) {
-            logger.fine("Deferring processing of ProcessorURI " + curi.toString()
+            logger.fine("Deferring processing of CrawlURI " + curi.toString()
                 + " for dns lookup.");
             String preq = "dns:" + ch.getHostName();
             try {
@@ -326,7 +325,7 @@ public class PreconditionEnforcer extends Processor  {
      * @param curi the URI to check.
      * @return true if ip should be looked up.
      */
-    public boolean isIpExpired(ProcessorURI curi) {
+    public boolean isIpExpired(CrawlURI curi) {
         CrawlHost host = getHostFor(curi);
         if (!host.hasBeenLookedUp()) {
             // IP has not been looked up yet.
@@ -373,7 +372,7 @@ public class PreconditionEnforcer extends Processor  {
     * Argument for running the code everytime is that overrides and refinements
     * may change what comes back from credential store.
     *
-    * @param curi ProcessorURI we're checking for any required preconditions.
+    * @param curi CrawlURI we're checking for any required preconditions.
     * @return True, if this <code>curi</code> has a precondition that needs to
     *         be met before we can proceed. False if we can precede to process
     *         this url.
@@ -397,7 +396,7 @@ public class PreconditionEnforcer extends Processor  {
                 // credential domain because such as yahoo have you go to
                 // another domain altogether to login.
                 c.attach(curi);
-                curi.setFetchType(ProcessorURI.FetchType.HTTP_POST);
+                curi.setFetchType(CrawlURI.FetchType.HTTP_POST);
                 break;
             }
 
@@ -443,11 +442,11 @@ public class PreconditionEnforcer extends Processor  {
      * Has passed credential already been authenticated.
      *
      * @param credential Credential to test.
-     * @param curi ProcessorURI.
+     * @param curi CrawlURI.
      * @return True if already run.
      */
     private boolean authenticated(final Credential credential,
-            final ProcessorURI curi) {
+            final CrawlURI curi) {
         boolean result = false;
         CrawlServer server = getServerFor(curi);
         if (!server.hasCredentialAvatars()) {
@@ -481,19 +480,29 @@ public class PreconditionEnforcer extends Processor  {
         LinkContext lc = LinkContext.PREREQ_MISC;
         Hop hop = Hop.PREREQ;
         Link link = new Link(src, dest, lc, hop);
-        curi.setPrerequisiteUri(link);
+        CrawlURI caUri = curi.createCrawlURI(curi.getBaseURI(), link);
+        // TODO: consider moving some of this to candidate-handling
+        int prereqPriority = curi.getSchedulingDirective() - 1;
+        if (prereqPriority < 0) {
+            prereqPriority = 0;
+            logger.severe("Unable to promote prerequisite " + caUri +
+                " above " + this);
+        }
+        caUri.setSchedulingDirective(prereqPriority);
+        caUri.setForceFetch(true);
+        curi.setPrerequisiteUri(caUri);
         curi.incrementDeferrals();
         curi.setFetchStatus(S_DEFERRED);
         //skipToPostProcessing();
     }
     
     
-    private CrawlServer getServerFor(ProcessorURI curi) {
+    private CrawlServer getServerFor(CrawlURI curi) {
         return ServerCacheUtil.getServerFor(serverCache, curi.getUURI());
     }
     
     
-    private CrawlHost getHostFor(ProcessorURI curi) {
+    private CrawlHost getHostFor(CrawlURI curi) {
         return ServerCacheUtil.getHostFor(serverCache, curi.getUURI());
     }
 }

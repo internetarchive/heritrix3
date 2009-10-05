@@ -59,7 +59,7 @@
   </property>
  </bean>
  
- <!-- Processors as named beans; assembled into ProcessorChain later --> 
+ <!-- Processors as named beans; assembled into FetchChain later --> 
  <bean id="preselector" class="org.archive.crawler.prefetch.Preselector">
  </bean>
  <bean id="preconditionEnforcer" class="org.archive.crawler.prefetch.PreconditionEnforcer">
@@ -80,14 +80,30 @@
  </bean>    
  <bean id="arcWriterProcessor" class="org.archive.modules.writer.ARCWriterProcessor">
  </bean>
- <bean id="crawlStateUpdater" class="org.archive.crawler.postprocessor.CrawlStateUpdater">
+ 
+  <!-- Processors as named beans; assembled into DispositionChain later --> 
+ <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
  </bean>
- <bean id="linksScoper" class="org.archive.crawler.postprocessor.LinksScoper">
- </bean>
- <bean id="frontierScheduler" class="org.archive.crawler.postprocessor.FrontierScheduler">
+ <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
  </bean>
     
- <bean id="processors" class="org.archive.modules.ProcessorChain">
+<!-- Processors as named beans; assembled into CandidateChain later --> 
+ <bean id="candidateScoper" class="org.archive.crawler.prefetch.CandidateScoper">
+ </bean>
+ <bean id="preparer" class="org.archive.crawler.prefetch.FrontierPreparer">
+ </bean>
+
+
+<bean id="candidateProcessors" class="org.archive.modules.CandidateChain">
+  <property name="processors">
+   <list>
+    <ref bean="candidateScoper"/>
+    <ref bean="preparer"/>
+   </list>
+  </property>
+ </bean>
+
+ <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
   <property name="processors">
    <list>
     <ref bean="preselector"/>
@@ -100,9 +116,15 @@
     <ref bean="extractorJs"/>
     <ref bean="extractorSwf"/>
     <ref bean="arcWriterProcessor"/>
-    <ref bean="crawlStateUpdater"/>
-    <ref bean="linksScoper"/>
-    <ref bean="frontierScheduler"/>
+   </list>
+  </property>
+ </bean>
+
+<bean id="dispositionProcessors" class="org.archive.modules.DispositionChain">
+  <property name="processors">
+   <list>
+    <ref bean="disposition"/>
+    <ref bean="candidates"/>
    </list>
   </property>
  </bean>
@@ -111,13 +133,7 @@
  <bean id="credentialStore" 
    class="org.archive.modules.credential.CredentialStore">
  </bean>
- 
- <!-- policy for URI canonicalizationl a default set of rules will 
-      be used if none are specified (see source code)-->
- <bean id="uriCanonicalizationPolicy" 
-   class="org.archive.modules.canonicalize.RulesCanonicalizationPolicy">
- </bean>
- 
+  
  <bean id="frontier" 
    class="org.archive.crawler.frontier.BdbFrontier" autowire="byName">
  </bean>

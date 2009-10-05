@@ -29,24 +29,19 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.io.SinkHandlerLogThread;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.PostProcessor;
-import org.archive.modules.ProcessResult;
-import org.archive.modules.Processor;
-import org.archive.modules.ProcessorChain;
 import org.archive.modules.fetcher.HostResolver;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
+import org.archive.util.MultiReporter;
 import org.archive.util.ProgressStatisticsReporter;
 import org.archive.util.Recorder;
 import org.archive.util.RecorderMarker;
-import org.archive.util.MultiReporter;
 
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
@@ -60,18 +55,11 @@ public class ToeThread extends Thread
 implements RecorderMarker, MultiReporter, ProgressStatisticsReporter, 
            HostResolver, SinkHandlerLogThread {
 
-    private static final String STEP_NASCENT = "NASCENT";
-    private static final String STEP_ABOUT_TO_GET_URI = "ABOUT_TO_GET_URI";
-    private static final String STEP_FINISHED = "FINISHED";
-    private static final String STEP_ABOUT_TO_BEGIN_PROCESSOR =
-        "ABOUT_TO_BEGIN_PROCESSOR";
-    private static final String STEP_DONE_WITH_PROCESSORS =
-        "DONE_WITH_PROCESSORS";
-    private static final String STEP_HANDLING_RUNTIME_EXCEPTION =
-        "HANDLING_RUNTIME_EXCEPTION";
-    private static final String STEP_ABOUT_TO_RETURN_URI =
-        "ABOUT_TO_RETURN_URI";
-    private static final String STEP_FINISHING_PROCESS = "FINISHING_PROCESS";
+    public enum Step {
+        NASCENT, ABOUT_TO_GET_URI, FINISHED, 
+        ABOUT_TO_BEGIN_PROCESSOR, HANDLING_RUNTIME_EXCEPTION, 
+        ABOUT_TO_RETURN_URI, FINISHING_PROCESS
+    }
 
     private static Logger logger =
         Logger.getLogger("org.archive.crawler.framework.ToeThread");
@@ -86,19 +74,17 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
      * @see org.archive.util.RecorderMarker
      */
     private Recorder httpRecorder = null;
-    
- //   private HashMap<String,Processor> localProcessors
- //    = new HashMap<String,Processor>();
-    private String currentProcessorName = "";
 
+    // activity monitoring, debugging, and problem detection
+    private Step step = Step.NASCENT;
+    private long atStepSince;
+    private String currentProcessorName = "";
+    
     private String coreName;
     private CrawlURI currentCuri;
     private long lastStartTime;
     private long lastFinishTime;
 
-    // activity monitoring, debugging, and problem detection
-    private String step = STEP_NASCENT;
-    private long atStepSince;
     
     // default priority; may not be meaningful in recent JVMs
     private static final int DEFAULT_PRIORITY = Thread.NORM_PRIORITY-2;
@@ -136,33 +122,59 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
 
         try {
             while ( true ) {
-                continueCheck();
+                ArchiveUtils.continueCheck();
                 
-                setStep(STEP_ABOUT_TO_GET_URI);
+                setStep(Step.ABOUT_TO_GET_URI, null);
 
                 CrawlURI curi = controller.getFrontier().next();
                 
                 synchronized(this) {
-                    continueCheck();
+                    ArchiveUtils.continueCheck();
                     setCurrentCuri(curi);
+                    currentCuri.setThreadNumber(this.serialNumber);
+                    lastStartTime = System.currentTimeMillis();
+                    currentCuri.setRecorder(httpRecorder);
                 }
                 
                 try {
                     KeyedProperties.loadOverridesFrom(curi);
-                    processCrawlUri();
+                    
+                    controller.getFetchChain().process(curi,this);
+                    // TODO: insert barrier here to support checkpointing
+                    // only checkpoint when all URIs have finished
+                    // disposition chain
+                    controller.getDispositionChain().process(curi,this);
+  
+                } catch (RuntimeExceptionWrapper e) {
+                    // Workaround to get cause from BDB
+                    if(e.getCause() == null) {
+                        e.initCause(e.getCause());
+                    }
+                    recoverableProblem(e);
+                } catch (AssertionError ae) {
+                    // This risks leaving crawl in fatally inconsistent state, 
+                    // but is often reasonable for per-Processor assertion problems 
+                    recoverableProblem(ae);
+                } catch (RuntimeException e) {
+                    recoverableProblem(e);
+                } catch (StackOverflowError err) {
+                    recoverableProblem(err);
+                } catch (Error err) {
+                    // OutOfMemory and any others
+                    seriousError(err); 
                 } finally {
                     KeyedProperties.clearOverridesFrom(curi); 
                 }
                 
-                setStep(STEP_ABOUT_TO_RETURN_URI);
-                continueCheck();
+                setStep(Step.ABOUT_TO_RETURN_URI, null);
+                ArchiveUtils.continueCheck();
 
                 synchronized(this) {
                     controller.getFrontier().finished(currentCuri);
                     setCurrentCuri(null);
                 }
                 
-                setStep(STEP_FINISHING_PROCESS);
+                setStep(Step.FINISHING_PROCESS, null);
                 lastFinishTime = System.currentTimeMillis();
                 if(shouldRetire) {
                     break; // from while(true)
@@ -184,7 +196,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         this.httpRecorder = null;
 
         logger.fine(getName()+" finished for order '"+name+"'");
-        setStep(STEP_FINISHED);
+        setStep(Step.FINISHED, null);
         controller = null;
     }
 
@@ -204,9 +216,10 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
     /**
      * @param s
      */
-    private void setStep(String s) {
+    public void setStep(Step s, String procName) {
         step=s;
         atStepSince = System.currentTimeMillis();
+        currentProcessorName = procName != null ? procName : "";
     }
 
     private void seriousError(Error err) {
@@ -241,123 +254,19 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
 //        DevUtils.sigquitSelf();
         
         String context = "unknown";
-                if(currentCuri!=null) {
+        if(currentCuri!=null) {
             // update fetch-status, saving original as annotation
             currentCuri.getAnnotations().add("err="+err.getClass().getName());
             currentCuri.getAnnotations().add("os"+currentCuri.getFetchStatus());
                         currentCuri.setFetchStatus(S_SERIOUS_ERROR);
             context = currentCuri.singleLineReport() + " in " + currentProcessorName;
-                }
+         }
         String message = "Serious error occured trying " +
             "to process '" + context + "'\n" + extraInfo;
         logger.log(Level.SEVERE, message.toString(), err);
         setPriority(DEFAULT_PRIORITY);
-        }
-
-        /**
-     * Perform checks as to whether normal execution should proceed.
-     * 
-     * If an external interrupt is detected, throw an interrupted exception.
-     * Used before anything that should not be attempted by a 'zombie' thread
-     * that the Frontier/Crawl has given up on.
-     * 
-     * Otherwise, if the controller's memoryGate has been closed,
-     * hold until it is opened. (Provides a better chance of 
-     * being able to complete some tasks after an OutOfMemoryError.)
-     *
-     * @throws InterruptedException
-     */
-    private void continueCheck() throws InterruptedException {
-        if(Thread.interrupted()) {
-            throw new InterruptedException("die request detected");
-        }
     }
 
-    /**
-     * Pass the CrawlURI to all appropriate processors
-     *
-     * @throws InterruptedException
-     */
-    private void processCrawlUri() throws InterruptedException {
-        assert KeyedProperties.overridesActiveFrom(currentCuri);
-        
-        currentCuri.setThreadNumber(this.serialNumber);
-        lastStartTime = System.currentTimeMillis();
-        ProcessorChain localProcessors = 
-            controller.getProcessorChain();
-        
-        currentCuri.setRecorder(httpRecorder);
-        try {
-            Iterator<Processor> iter = localProcessors.iterator();
-            Processor curProc = 
-                iter.hasNext() ? iter.next() : null;
-            while (curProc != null) {
-                setStep(STEP_ABOUT_TO_BEGIN_PROCESSOR);
-                currentProcessorName = curProc.getName();
-                continueCheck();
-                ProcessResult pr = curProc.process(currentCuri);
-                switch (pr.getProcessStatus()) {
-                    case PROCEED:
-                        curProc = iter.hasNext() ? iter.next() : null;
-                        break;
-                    case STUCK:
-                        controller.requestCrawlPause();
-                        curProc = null;
-                        break;
-                    case FINISH:
-                        curProc = advanceToPostProcessing(iter);
-                        break;
-                    case JUMP:
-                        curProc = advanceToNamed(iter, pr.getJumpTarget());
-                        break;
-                }
-            }
-            setStep(STEP_DONE_WITH_PROCESSORS);
-            currentProcessorName = "";
-        } catch (RuntimeExceptionWrapper e) {
-            // Workaround to get cause from BDB
-            if(e.getCause() == null) {
-                e.initCause(e.getCause());
-            }
-            recoverableProblem(e);
-        } catch (AssertionError ae) {
-            // This risks leaving crawl in fatally inconsistent state, 
-            // but is often reasonable for per-Processor assertion problems 
-            recoverableProblem(ae);
-        } catch (RuntimeException e) {
-            recoverableProblem(e);
-        } catch (StackOverflowError err) {
-            recoverableProblem(err);
-        } catch (Error err) {
-            // OutOfMemory and any others
-            seriousError(err); 
-        }
-    }
-
-    
-    private Processor advanceToNamed(
-            Iterator<Processor> iter, String name) {
-        while (iter.hasNext()) {
-            Processor me = iter.next();
-            if (me.getName().equals(name)) {
-                return me;
-            }
-        }
-        return null;
-    }
-
-    
-    private Processor advanceToPostProcessing(Iterator<Processor> iter) {
-        while (iter.hasNext()) {
-            Processor me = iter.next();
-            if (me instanceof PostProcessor) {
-                return me;
-            }
-        }
-        return null;
-    }
-
-    
     /**
      * Handling for exceptions and errors that are possibly recoverable.
      * 
@@ -365,7 +274,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
      */
     private void recoverableProblem(Throwable e) {
         Object previousStep = step;
-        setStep(STEP_HANDLING_RUNTIME_EXCEPTION);
+        setStep(Step.HANDLING_RUNTIME_EXCEPTION, null);
         e.printStackTrace(System.err);
         currentCuri.setFetchStatus(S_RUNTIME_EXCEPTION);
         // store exception temporarily for logging

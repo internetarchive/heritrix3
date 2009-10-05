@@ -19,7 +19,6 @@
 
 package org.archive.crawler.frontier;
 
-import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
@@ -45,7 +44,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -57,30 +55,23 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.CheckpointRecovery;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
+import org.archive.crawler.prefetch.FrontierPreparer;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ModuleAttributeConstants;
-import org.archive.modules.ProcessorURI;
-import org.archive.modules.SchedulingConstants;
-import org.archive.modules.canonicalize.UriCanonicalizationPolicy;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.extractor.ExtractorParameters;
-import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
-import org.archive.modules.net.RobotsExclusionPolicy;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
-import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
@@ -188,92 +179,24 @@ public abstract class AbstractFrontier
         this.recoveryDir = recoveryDir;
     }
 
-    /**
-     * How many multiples of last fetch elapsed time to wait before recontacting
-     * same server.
-     */
-    {
-        setDelayFactor(5.0f);
+    FrontierPreparer preparer;
+    public FrontierPreparer getFrontierPreparer() {
+        return this.preparer;
     }
-    public float getDelayFactor() {
-        return (Float) kp.get("delayFactor");
-    }
-    public void setDelayFactor(float factor) {
-        kp.put("delayFactor",factor);
-    }
-
-    /**
-     * always wait this long after one completion before recontacting same
-     * server, regardless of multiple
-     */
-    {
-        setMinDelayMs(3000);
-    }
-    public int getMinDelayMs() {
-        return (Integer) kp.get("minDelayMs");
-    }
-    public void setMinDelayMs(int minDelay) {
-        kp.put("minDelayMs",minDelay);
+    @Autowired
+    public void setFrontierPreparer(FrontierPreparer prep) {
+        this.preparer = prep;
     }
     
     /**
-     * Whether to respect a 'Crawl-Delay' (in seconds) given in a site's
-     * robots.txt
+     * @param cauri CrawlURI we're to get a key for.
+     * @return a String token representing a queue
      */
-    {
-        setRespectCrawlDelayUpToSeconds(300);
+    public String getClassKey(CrawlURI curi) {
+        assert KeyedProperties.overridesActiveFrom(curi); 
+        return preparer.getClassKey(curi);
     }
-    public int getRespectCrawlDelayUpToSeconds() {
-        return (Integer) kp.get("respectCrawlDelayUpToSeconds");
-    }
-    public void setRespectCrawlDelayUpToSeconds(int respect) {
-        kp.put("respectCrawlDelayUpToSeconds",respect);
-    }
-
-    /** never wait more than this long, regardless of multiple */
-    {
-        setMaxDelayMs(30000);
-    }
-    public int getMaxDelayMs() {
-        return (Integer) kp.get("maxDelayMs");
-    }
-    public void setMaxDelayMs(int maxDelay) {
-        kp.put("maxDelayMs",maxDelay);
-    }    
-
-    /** number of hops of embeds (ERX) to bump to front of host queue */
-    {
-        setPreferenceEmbedHops(1);
-    }
-    public int getPreferenceEmbedHops() {
-        return (Integer) kp.get("preferenceEmbedHops");
-    }
-    public void setPreferenceEmbedHops(int pref) {
-        kp.put("preferenceEmbedHops",pref);
-    }
-
-    /** maximum per-host bandwidth usage */
-    {
-        setMaxPerHostBandwidthUsageKbSec(0);
-    }
-    public int getMaxPerHostBandwidthUsageKbSec() {
-        return (Integer) kp.get("maxPerHostBandwidthUsageKbSec");
-    }
-    public void setMaxPerHostBandwidthUsageKbSec(int max) {
-        kp.put("maxPerHostBandwidthUsageKbSec",max);
-    }
-
-    /** maximum overall bandwidth usage */
-    {
-        setTotalBandwidthUsageKbSec(0);
-    }
-    public int getTotalBandwidthUsageKbSec() {
-        return (Integer) kp.get("totalBandwidthUsageKbSec");
-    }
-    public void setTotalBandwidthUsageKbSec(int total) {
-        kp.put("totalBandwidthUsageKbSec",total);
-    }
-
+    
     /** for retryable problems, seconds to wait before a retry */
     {
         setRetryDelaySeconds(900);
@@ -315,21 +238,6 @@ public abstract class AbstractFrontier
         this.inboundQueueMultiple = multiple;
     }
     
-
-    /** queue assignment to force onto CrawlURIs; intended to be overridden */
-    {
-        setForceQueueAssignment("");
-    }
-    public String getForceQueueAssignment() {
-        return (String) kp.get("forceQueueAssignment");
-    }
-    public void setForceQueueAssignment(String forceQueueAssignment) {
-        kp.put("forceQueueAssignment",forceQueueAssignment);
-    }
-
-    // word chars, dash, period, comma, colon
-//    protected final static String ACCEPTABLE_FORCE_QUEUE = "[-\\w\\.,:]*";
-
     /**
      * Recover log on or off attribute.
      */
@@ -380,52 +288,6 @@ public abstract class AbstractFrontier
      * Can be null if user chose not to run a recovery.log.
      */
     private transient FrontierJournal recover = null;
-    
-    /** file collecting report of ignored seed-file entries (if any) */
-    public static final String IGNORED_SEEDS_FILENAME = "seeds.ignored";
-
-    /**
-     * Ordered list of url canonicalization rules.  Rules are applied in the 
-     * order listed from top to bottom.
-     */
-    public UriCanonicalizationPolicy getUriCanonicalizationPolicy() {
-        return (UriCanonicalizationPolicy) kp.get("uriCanonicalizationRules");
-    }
-    @Autowired
-    public void setCanonicalizationPolicy(UriCanonicalizationPolicy policy) {
-        kp.put("uriCanonicalizationRules",policy);
-    }
-
-    /**
-     * Defines how to assign URIs to queues. Can assign by host, by ip, 
-     * by SURT-ordered authority, by SURT-ordered authority truncated to 
-     * a topmost-assignable domain, and into one of a fixed set of buckets 
-     * (1k).
-     */
-    {
-        setQueueAssignmentPolicy(new SurtAuthorityQueueAssignmentPolicy());
-    }
-    public QueueAssignmentPolicy getQueueAssignmentPolicy() {
-        return (QueueAssignmentPolicy) kp.get("queueAssignmentPolicy");
-    }
-    @Autowired(required=false)
-    public void setQueueAssignmentPolicy(QueueAssignmentPolicy policy) {
-        kp.put("queueAssignmentPolicy",policy);
-    }
-
-    /**
-     * Auto-discovered module providing configured (or overridden)
-     * User-Agent value; now necessary in frontier because User-Agent
-     * may affect politeness delays via robots.txt Crawl-Delay. 
-     */
-    public UserAgentProvider getUserAgentProvider() {
-        return (UserAgentProvider) kp.get("userAgentProvider");
-    }
-    @Autowired
-    public void setUserAgentProvider(UserAgentProvider provider) {
-        kp.put("userAgentProvider",provider);
-    }
-
     
     /**
      * @param name Name of this frontier.
@@ -714,7 +576,17 @@ public abstract class AbstractFrontier
      * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
     public void schedule(CrawlURI curi) {
-        applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverridesTo(curi);
+        if(curi.getClassKey()==null) {
+            // remedial processing
+            System.err.println("curi not preped "+curi);
+            try {
+                KeyedProperties.loadOverridesFrom(curi);
+                preparer.prepare(curi);
+            } finally {
+                KeyedProperties.clearOverridesFrom(curi); 
+            }
+        }
         enqueueOrDo(new ScheduleIfUnique(curi));
     }
 
@@ -728,7 +600,7 @@ public abstract class AbstractFrontier
      * @param caUri CrawlURI.
      */
     public void receive(CrawlURI curi) {
-        applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverridesTo(curi);
         // prefer doing asap if already in manager thread
         doOrEnqueue(new ScheduleAlways(curi));
     }
@@ -969,22 +841,13 @@ public abstract class AbstractFrontier
     }
     
     /**
-     * Trigger seed loading via the SeedModule's announceSeeds().
-     * 
-     * @see org.archive.crawler.framework.Frontier#loadSeeds()
-     */
-    public void loadSeeds() {
-        getSeeds().announceSeeds();
-    }
-    
-    /**
      * When notified of a seed via the SeedListener interface, 
      * schedule it.
      * 
-     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.CrawlURI)
      */
-    public void addedSeed(ProcessorURI puri) {
-        schedule((CrawlURI)puri);
+    public void addedSeed(CrawlURI puri) {
+        schedule(puri);
     }
     
     /** 
@@ -999,51 +862,9 @@ public abstract class AbstractFrontier
         if (curi.getOrdinal() == 0) {
             curi.setOrdinal(nextOrdinal.getAndIncrement());
         }
-        curi.setClassKey(getClassKey(curi));
     }
 
-    /**
-     * Perform any special handling of the CrawlURI, such as promoting its URI
-     * to seed-status, or preferencing it because it is an embed.
-     * 
-     * @param curi
-     */
-    protected void applySpecialHandling(CrawlURI curi) {
-        if (curi.isSeed() && curi.getVia() != null
-                && curi.flattenVia().length() > 0) {
-            
-            // The only way a seed can have a non-empty via is if it is the
-            // result of a seed redirect. Add it to the seeds module, so 
-            // it may affect scope and be logged as 'discovered' seed.
-            //
-            // This is a feature. This is handling for case where a seed
-            // gets immediately redirected to another page. What we're doing is
-            // treating the immediate redirect target as a seed.
-            //
-            // FIXME This will also trigger a redundant attempt scheduling the 
-            // curi, which will fail because as we've already reached here,
-            // it's already-seen. Moving this 'special handling' much earlier,
-            // perhaps even outside the frontier, and letting that addSeed()
-            // code trigger the scheduling could avoid the redundancy. 
-            getSeeds().addSeed(curi);
-            // And it needs rapid scheduling.
-            if (curi.getSchedulingDirective() == SchedulingConstants.NORMAL) {
-                curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
-            }
-        }
 
-        // optionally preferencing embeds up to MEDIUM
-        int prefHops = getPreferenceEmbedHops(); 
-        if (prefHops > 0) {
-            int embedHops = curi.getTransHops();
-            if (embedHops > 0 && embedHops <= prefHops
-                    && curi.getSchedulingDirective() == SchedulingConstants.NORMAL) {
-                // number of embed hops falls within the preferenced range, and
-                // uri is not already MEDIUM -- so promote it
-                curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
-            }
-        }
-    }
 
     /**
      * Perform fixups on a CrawlURI about to be returned via next().
@@ -1074,83 +895,6 @@ public abstract class AbstractFrontier
         return (status == S_CONNECT_FAILED || status == S_CONNECT_LOST ||
                 status == S_DOMAIN_UNRESOLVABLE)? getRetryDelaySeconds() : 0;
                 // no delay for most
-    }
-
-    /**
-     * Update any scheduling structures with the new information in this
-     * CrawlURI. Chiefly means make necessary arrangements for no other URIs at
-     * the same host to be visited within the appropriate politeness window.
-     * 
-     * @param curi
-     *            The CrawlURI
-     * @return millisecond politeness delay
-     */
-    protected long politenessDelayFor(CrawlURI curi) {
-        long durationToWait = 0;
-        Map<String,Object> cdata = curi.getData();
-        if (cdata.containsKey(ModuleAttributeConstants.A_FETCH_BEGAN_TIME)
-                && cdata.containsKey(A_FETCH_COMPLETED_TIME)) {
-
-            long completeTime = curi.getFetchCompletedTime();
-            long durationTaken = (completeTime - curi.getFetchBeginTime());
-            durationToWait = (long)(getDelayFactor() * durationTaken);
-
-            long minDelay = getMinDelayMs();
-            if (minDelay > durationToWait) {
-                // wait at least the minimum
-                durationToWait = minDelay;
-            }
-
-            long maxDelay = getMaxDelayMs();
-            if (durationToWait > maxDelay) {
-                // wait no more than the maximum
-                durationToWait = maxDelay;
-            }
-            
-            long respectThreshold = getRespectCrawlDelayUpToSeconds() * 1000;
-            if (durationToWait<respectThreshold) {
-                // may need to extend wait
-                CrawlServer s = ServerCacheUtil.getServerFor(
-                        getServerCache(),curi.getUURI());
-                UserAgentProvider uap = getUserAgentProvider();
-                String ua = curi.getUserAgent();
-                if (ua == null) {
-                    ua = uap.getUserAgent();
-                }
-                RobotsExclusionPolicy rep = s.getRobots();
-                if (rep != null) {
-                    long crawlDelay = (long)(1000 * s.getRobots().getCrawlDelay(ua));
-                    crawlDelay = 
-                        (crawlDelay > respectThreshold) 
-                            ? respectThreshold 
-                            : crawlDelay;
-                    if (crawlDelay > durationToWait) {
-                        // wait at least the directive crawl-delay
-                        durationToWait = crawlDelay;
-                    }
-                }
-            }
-            
-            long now = System.currentTimeMillis();
-            int maxBandwidthKB = getMaxPerHostBandwidthUsageKbSec();
-            if (maxBandwidthKB > 0) {
-                // Enforce bandwidth limit
-                ServerCache cache = this.getServerCache();
-                CrawlHost host = ServerCacheUtil.getHostFor(cache, curi.getUURI());
-                long minDurationToWait = host.getEarliestNextURIEmitTime()
-                        - now;
-                float maxBandwidth = maxBandwidthKB * 1.024F; // kilo factor
-                long processedBytes = curi.getContentSize();
-                host
-                        .setEarliestNextURIEmitTime((long)(processedBytes / maxBandwidth)
-                                + now);
-
-                if (minDurationToWait > durationToWait) {
-                    durationToWait = minDurationToWait;
-                }
-            }
-        }
-        return durationToWait;
     }
 
     /**
@@ -1226,7 +970,7 @@ public abstract class AbstractFrontier
                         String uriHopsViaString = read.substring(3).trim();
                         CrawlURI curi = CrawlURI.fromHopsViaString(uriHopsViaString);
                         if(scope!=null) {
-                            applyOverridesTo(curi);
+                            sheetOverlaysManager.applyOverridesTo(curi);
                             try {
                                 KeyedProperties.loadOverridesFrom(curi);
                                 if(!scope.accepts(curi)) {
@@ -1418,72 +1162,7 @@ public abstract class AbstractFrontier
             return false;
         }
     }
-
-    /**
-     * Canonicalize passed uuri. Its would be sweeter if this canonicalize
-     * function was encapsulated by that which it canonicalizes but because
-     * settings change with context -- i.e. there may be overrides in operation
-     * for a particular URI -- its not so easy; Each CrawlURI would need a
-     * reference to the settings system. That's awkward to pass in.
-     * 
-     * @param uuri Candidate URI to canonicalize.
-     * @return Canonicalized version of passed <code>uuri</code>.
-     */
-    protected String canonicalize(UURI uuri) {
-        return getUriCanonicalizationPolicy().canonicalize(uuri.toString());
-    }
-
-    /**
-     * Canonicalize passed CrawlURI. This method differs from
-     * {@link #canonicalize(UURI)} in that it takes a look at
-     * the CrawlURI context possibly overriding any canonicalization effect if
-     * it could make us miss content. If canonicalization produces an URL that
-     * was 'alreadyseen', but the entry in the 'alreadyseen' database did
-     * nothing but redirect to the current URL, we won't get the current URL;
-     * we'll think we've already see it. Examples would be archive.org
-     * redirecting to www.archive.org or the inverse, www.netarkivet.net
-     * redirecting to netarkivet.net (assuming stripWWW rule enabled).
-     * <p>Note, this method under circumstance sets the forceFetch flag.
-     * 
-     * @param cauri CrawlURI to examine.
-     * @return Canonicalized <code>cacuri</code>.
-     */
-    protected String canonicalize(CrawlURI cauri) {
-        String canon = canonicalize(cauri.getUURI());
-        if (cauri.isLocation()) {
-            // If the via is not the same as where we're being redirected (i.e.
-            // we're not being redirected back to the same page, AND the
-            // canonicalization of the via is equal to the the current cauri, 
-            // THEN forcefetch (Forcefetch so no chance of our not crawling
-            // content because alreadyseen check things its seen the url before.
-            // An example of an URL that redirects to itself is:
-            // http://bridalelegance.com/images/buttons3/tuxedos-off.gif.
-            // An example of an URL whose canonicalization equals its via's
-            // canonicalization, and we want to fetch content at the
-            // redirection (i.e. need to set forcefetch), is netarkivet.dk.
-            if (!cauri.toString().equals(cauri.getVia().toString()) &&
-                    canonicalize(cauri.getVia()).equals(canon)) {
-                cauri.setForceFetch(true);
-            }
-        }
-        return canon;
-    }
-
-    /**
-     * @param cauri CrawlURI we're to get a key for.
-     * @return a String token representing a queue
-     */
-    public String getClassKey(CrawlURI curi) {
-        assert KeyedProperties.overridesActiveFrom(curi); 
-        
-        String queueKey = getForceQueueAssignment();
-        if (StringUtils.isEmpty(queueKey)) {
-            // Typical case, barring explicit override
-            queueKey = getQueueAssignmentPolicy().getClassKey(curi);
-        }
-        return queueKey;
-    }
-
+   
     /**
      * @return RecoveryJournal instance.  May be null.
      */
@@ -1672,13 +1351,6 @@ public abstract class AbstractFrontier
                 default:
                     // ignore;
             }
-        }
-    }
-    
-    protected void applyOverridesTo(CrawlURI curi) {
-        curi.setOverlayMapsSource(sheetOverlaysManager); 
-        if(!curi.haveOverlayNamesBeenSet()) {
-            sheetOverlaysManager.applyOverlays(curi);
         }
     }
 }
