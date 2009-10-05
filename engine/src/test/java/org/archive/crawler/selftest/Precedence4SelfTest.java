@@ -98,7 +98,7 @@ public class Precedence4SelfTest extends Precedence1SelfTest {
             "<bean id='loPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
-            "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='10'/>\n" +
+            "   <entry key='preparer.uriPrecedencePolicy.basePrecedence' value='10'/>\n" +
             "  </map>\n" +
             " </property>\n" +
             "</bean>\n" +
@@ -117,7 +117,7 @@ public class Precedence4SelfTest extends Precedence1SelfTest {
             "<bean id='hiPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
-            "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='1'/>\n" +
+            "   <entry key='preparer.uriPrecedencePolicy.basePrecedence' value='1'/>\n" +
             "  </map>\n" +
             " </property>\n" +
             "</bean>\n";

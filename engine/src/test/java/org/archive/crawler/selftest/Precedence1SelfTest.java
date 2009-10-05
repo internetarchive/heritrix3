@@ -173,12 +173,10 @@ public class Precedence1SelfTest extends SelfTestBase {
         // add a uriPrecedencePolicy with overlayable values, IF replaced
         // string not already gone (as if by subclass)
         String uriPrecedencePolicy = 
-            "<property name='uriPrecedencePolicy'>\n" +
-            " <bean class='org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy'>\n" +
+            " <bean name=\'uriPrecedencePolicy\' class='org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy'>\n" +
             "  <property name='basePrecedence' value='5'/>\n" +
-            " </bean>" +
-            "</property>";
-        config = config.replace("<!--@@FRONTIER_PROPERTIES@@-->", uriPrecedencePolicy);
+            " </bean>";
+        config = config.replace("<!--@@BEANS_MOREBEANS@@-->", uriPrecedencePolicy);
         
         config = configureSheets(config);
         return super.changeGlobalConfig(config);
@@ -202,7 +200,7 @@ public class Precedence1SelfTest extends SelfTestBase {
             "<bean id='loPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
-            "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='10'/>\n" +
+            "   <entry key='preparer.uriPrecedencePolicy.basePrecedence' value='10'/>\n" +
             "  </map>\n" +
             " </property>\n" +
             "</bean>\n" +
@@ -221,7 +219,7 @@ public class Precedence1SelfTest extends SelfTestBase {
             "<bean id='hiPri' class='org.archive.spring.Sheet'>\n" +
             " <property name='map'>\n" +
             "  <map>\n" +
-            "   <entry key='frontier.uriPrecedencePolicy.basePrecedence' value='1'/>\n" +
+            "   <entry key='preparer.uriPrecedencePolicy.basePrecedence' value='1'/>\n" +
             "  </map>\n" +
             " </property>\n" +
             "</bean>\n";

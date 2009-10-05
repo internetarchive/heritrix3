@@ -111,6 +111,9 @@ public class FormAuthSelfTest
         config = config.replaceFirst(
                 "(?s)<bean id=\"credentialStore\".*?</bean>", 
                 newCredStore);
+        config = config.replace(
+                "@@MORE_PROPERTIES@@", 
+                "candidatesProcessor.seedsRedirectNewSeeds=false");
         return super.changeGlobalConfig(config);
     }
 

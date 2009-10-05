@@ -175,17 +175,15 @@ public class Precedence3SelfTest extends SelfTestBase {
         
         // add the keyword-based uriPrecedencePolicy
         String uriPrecedencePolicy = 
-            "<property name='uriPrecedencePolicy'>\n" +
-            " <bean class='org.archive.crawler.selftest.KeyWordUriPrecedencePolicy'>\n" +
+            "<bean class='org.archive.crawler.selftest.KeyWordUriPrecedencePolicy'>\n" +
             "  <property name='basePrecedence' value='5'/>\n" +
-            " </bean>" +
-            "</property>";
-        config = config.replace("<!--@@FRONTIER_PROPERTIES@@-->", uriPrecedencePolicy);
+            " </bean>";
+        config = config.replace("<!--@@BEANS_MOREBEANS@@-->", uriPrecedencePolicy);
 
-        // add the keyword processor after linkScoper
+        // add the keyword processor after candidateScoper
         config = config.replace(
-                "<ref bean=\"linksScoper\"/>", 
-                "<ref bean=\"linksScoper\"/>\n" +
+                "<ref bean=\"candidateScoper\"/>", 
+                "<ref bean=\"candidateScoper\"/>\n" +
                 "<bean class='org.archive.crawler.selftest.KeyWordProcessor'/>");
         return super.changeGlobalConfig(config);
     }
