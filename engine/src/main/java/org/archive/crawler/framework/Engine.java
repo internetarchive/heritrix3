@@ -258,6 +258,12 @@ public class Engine {
             }
             break;
         }
+        try {
+            // wait an extra second for good measure
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // ignore
+        }
         return false; 
     }
 
