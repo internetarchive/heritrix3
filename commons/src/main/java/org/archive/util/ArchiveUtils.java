@@ -897,14 +897,36 @@ public class ArchiveUtils {
         return TLDS.contains(dom.toUpperCase());
     }
     
-    public static void closeQuietly(Closeable input) {
+    public static void closeQuietly(Object input) {
+        if(input == null || ! (input instanceof Closeable)) {
+            return;
+        }
         try {
-            if (input != null) {
-                input.close();
-            }
+            ((Closeable)input).close();
         } catch (IOException ioe) {
             // ignore
         }
     }
+    
+    /**
+     * Perform checks as to whether normal execution should proceed.
+     * 
+     * If an external interrupt is detected, throw an interrupted exception.
+     * Used before anything that should not be attempted by a 'zombie' thread
+     * that the Frontier/Crawl has given up on.
+     * 
+     * @throws InterruptedException
+     */
+    public static void continueCheck() throws InterruptedException {
+        if(Thread.interrupted()) {
+            throw new InterruptedException("interrupt detected");
+        }
+    }
+    
+//    public static long doubleMurmur(byte[] data) {
+//        int first = MurmurHash.hash(data, 7);
+//        int second = MurmurHash.hash(data, 13);
+//        return (((long)first)<<32) | ((long)second & 0x00000000ffffffffl);
+//    }
 }
 

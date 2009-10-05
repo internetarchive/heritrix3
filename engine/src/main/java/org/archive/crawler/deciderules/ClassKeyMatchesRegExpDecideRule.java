@@ -27,8 +27,8 @@ package org.archive.crawler.deciderules;
 
 import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.deciderules.MatchesRegExpDecideRule;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
@@ -41,19 +41,24 @@ public class ClassKeyMatchesRegExpDecideRule extends MatchesRegExpDecideRule {
 
     private static final long serialVersionUID = 3L;
 
-
-    final private CrawlController controller;
+    protected CrawlController controller;
+    public CrawlController getCrawlController() {
+        return this.controller;
+    }
+    @Autowired
+    public void setCrawlController(CrawlController controller) {
+        this.controller = controller;
+    }
     
     /**
      * Usual constructor. 
      */
-    public ClassKeyMatchesRegExpDecideRule(CrawlController controller) {
-        this.controller = controller;
+    public ClassKeyMatchesRegExpDecideRule() {
     }
 
     
     @Override
-    protected String getString(ProcessorURI uri) {
+    protected String getString(CrawlURI uri) {
         CrawlURI curi = (CrawlURI)uri;
         return controller.getFrontier().getClassKey(curi);
     }
