@@ -22,13 +22,33 @@ package org.archive.crawler.frontier;
 import java.io.Serializable;
 
 import org.archive.modules.CrawlURI;
+import org.archive.spring.HasKeyedProperties;
+import org.archive.spring.KeyedProperties;
 
 /**
  * Establishes a mapping from CrawlURIs to String keys (queue names).
  * 
  * @author gojomo
  */
-public abstract class QueueAssignmentPolicy implements Serializable {
+public abstract class QueueAssignmentPolicy implements Serializable, HasKeyedProperties {
+    
+    KeyedProperties kp = new KeyedProperties();
+    public KeyedProperties getKeyedProperties() {
+        return kp;
+    }
+    
+    /** queue assignment to force onto CrawlURIs; intended to be overridden */
+    {
+        setForceQueueAssignment("");
+    }
+    public String getForceQueueAssignment() {
+        return (String) kp.get("forceQueueAssignment");
+    }
+    public void setForceQueueAssignment(String forceQueueAssignment) {
+        kp.put("forceQueueAssignment",forceQueueAssignment);
+    }
+    
+    
     /** 
      * Get the String key (name) of the queue to which the 
      * CrawlURI should be assigned. 

@@ -82,6 +82,10 @@ implements
             return curi.getClassKey();
         }
         
+        if(!StringUtils.isEmpty(getForceQueueAssignment())) {
+            return getForceQueueAssignment(); 
+        }
+        
         UURI basis = curi.getPolicyBasisUURI();
         String candidate = getCoreKey(basis); 
         
