@@ -50,7 +50,6 @@ import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
 import org.archive.modules.seeds.SeedListener;
@@ -1032,9 +1031,9 @@ public class StatisticsTracker
      * Create a seed record, even on initial notification (before
      * any real attempt/processing.
      * 
-     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.ProcessorURI)
+     * @see org.archive.modules.seeds.SeedListener#addedSeed(org.archive.modules.CrawlURI)
      */
-    public void addedSeed(ProcessorURI curi) {
+    public void addedSeed(CrawlURI curi) {
         // record even undisposed-seeds for reporting purposes
         handleSeed((CrawlURI) curi, "");
     }
