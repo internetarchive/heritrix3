@@ -34,10 +34,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.archive.modules.PostProcessor;
+import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Processor module which uses 'df -k', where available and with
@@ -45,7 +46,7 @@ import org.archive.modules.ProcessorURI;
  * disk space and pause the crawl if free space on  monitored 
  * filesystems falls below certain thresholds.
  */
-public class LowDiskPauseProcessor extends Processor implements PostProcessor {
+public class LowDiskPauseProcessor extends Processor {
 
     private static final long serialVersionUID = 3L;
 
@@ -56,6 +57,15 @@ public class LowDiskPauseProcessor extends Processor implements PostProcessor {
         Logger.getLogger(LowDiskPauseProcessor.class.getName());
 
 
+    protected CrawlController controller;
+    public CrawlController getCrawlController() {
+        return this.controller;
+    }
+    @Autowired
+    public void setCrawlController(CrawlController controller) {
+        this.controller = controller;
+    }
+    
     /**
      * List of filessystem mounts whose 'available' space should be monitored
      * via 'df' (if available).
@@ -107,12 +117,12 @@ public class LowDiskPauseProcessor extends Processor implements PostProcessor {
     
     
     @Override
-    protected boolean shouldProcess(ProcessorURI curi) {
+    protected boolean shouldProcess(CrawlURI curi) {
         return true;
     }
 
     @Override
-    protected void innerProcess(ProcessorURI uri) {
+    protected void innerProcess(CrawlURI uri) {
         throw new AssertionError();
     }
     
@@ -125,7 +135,7 @@ public class LowDiskPauseProcessor extends Processor implements PostProcessor {
      * @param curi CrawlURI to process.
      */
     @Override
-    protected ProcessResult innerProcessResult(ProcessorURI curi) {
+    protected ProcessResult innerProcessResult(CrawlURI curi) {
         synchronized (this) {
             contentSinceCheck += curi.getContentSize();
             if (contentSinceCheck/1024 > getRecheckThresholdKb()) {
@@ -145,7 +155,7 @@ public class LowDiskPauseProcessor extends Processor implements PostProcessor {
      * crawl pause. 
      * @param curi Current context.
      */
-    private ProcessResult checkAvailableSpace(ProcessorURI curi) {
+    private ProcessResult checkAvailableSpace(CrawlURI curi) {
         try {
             String df = IOUtils.toString(Runtime.getRuntime().exec(
                     "df -k").getInputStream());
@@ -166,7 +176,8 @@ public class LowDiskPauseProcessor extends Processor implements PostProcessor {
                                 availKilobytes + "K available on " + mount
                                         + " (below threshold "
                                         + thresholdKilobytes + "K)");
-                        return ProcessResult.STUCK;
+                        controller.requestCrawlPause();
+                        return ProcessResult.PROCEED;
                     }
                 }
             }

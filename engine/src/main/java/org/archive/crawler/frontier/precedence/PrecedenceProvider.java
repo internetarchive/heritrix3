@@ -27,7 +27,7 @@ package org.archive.crawler.frontier.precedence;
 import java.io.PrintWriter;
 import java.io.Serializable;
 
-import org.archive.modules.ProcessorURI;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
@@ -43,9 +43,9 @@ FetchStats.CollectsFetchStats, Serializable {
     abstract public int getPrecedence();
 
     /* (non-Javadoc)
-     * @see org.archive.modules.fetcher.FetchStats.CollectsFetchStats#tally(org.archive.modules.ProcessorURI, org.archive.modules.fetcher.FetchStats.Stage)
+     * @see org.archive.modules.fetcher.FetchStats.CollectsFetchStats#tally(org.archive.modules.CrawlURI, org.archive.modules.fetcher.FetchStats.Stage)
      */
-    public void tally(ProcessorURI curi, Stage stage) {
+    public void tally(CrawlURI curi, Stage stage) {
         // by default do nothing; subclasses do more
     }
 

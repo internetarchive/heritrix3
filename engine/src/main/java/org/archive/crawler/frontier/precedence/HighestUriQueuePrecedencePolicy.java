@@ -28,7 +28,6 @@ import java.io.PrintWriter;
 
 import org.archive.crawler.frontier.WorkQueue;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorURI;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.Histotable;
 
@@ -66,11 +65,10 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
         }
         
         /* (non-Javadoc)
-         * @see org.archive.crawler.frontier.precedence.PrecedenceProvider#tally(org.archive.modules.ProcessorURI, org.archive.modules.fetcher.FetchStats.Stage)
+         * @see org.archive.crawler.frontier.precedence.PrecedenceProvider#tally(org.archive.modules.CrawlURI, org.archive.modules.fetcher.FetchStats.Stage)
          */
         @Override
-        public void tally(ProcessorURI puri, Stage stage) {
-            CrawlURI curi = (CrawlURI)puri; 
+        public void tally(CrawlURI curi, Stage stage) {
             switch(stage) {
             case SCHEDULED:
                 // enqueued
