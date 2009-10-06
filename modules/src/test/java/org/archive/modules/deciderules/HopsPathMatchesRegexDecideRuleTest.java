@@ -24,7 +24,7 @@ import org.archive.state.ModuleTestBase;
  * Generic Module unit test
  * 
  */
-public class HasViaDecideRuleTest extends ModuleTestBase {
+public class HopsPathMatchesRegexDecideRuleTest extends ModuleTestBase {
     // NOTE: even if empty, existence triggers minimal key -registration 
     // and -documentation tests from superclass
     

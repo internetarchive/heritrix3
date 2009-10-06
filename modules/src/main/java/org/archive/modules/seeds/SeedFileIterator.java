@@ -34,7 +34,7 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.iterator.LineReadingIterator;
-import org.archive.util.iterator.RegexpLineIterator;
+import org.archive.util.iterator.RegexLineIterator;
 import org.archive.util.iterator.TransformingIteratorWrapper;
 
 
@@ -70,11 +70,11 @@ public class SeedFileIterator extends TransformingIteratorWrapper<String,UURI> {
      */
     public SeedFileIterator(BufferedReader inputReader, Writer ignoredWriter) {
         super();
-        inner = new RegexpLineIterator(
+        inner = new RegexLineIterator(
                     new LineReadingIterator(inputReader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
         input = inputReader;
         ignored = ignoredWriter;
     }

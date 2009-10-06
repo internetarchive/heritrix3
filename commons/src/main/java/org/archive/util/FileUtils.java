@@ -297,7 +297,7 @@ public class FileUtils {
      * @return the newly created filter.
      */
     public static IOFileFilter getRegexFileFilter(String regex) {
-        // Inner class defining the RegexpFileFilter
+        // Inner class defining the RegexFileFilter
         class RegexFileFilter implements IOFileFilter {
             Pattern pattern;
 

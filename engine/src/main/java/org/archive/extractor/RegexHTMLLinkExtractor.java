@@ -1,25 +1,20 @@
-/* Copyright (C) 2003 Internet Archive.
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- * This file is part of the Heritrix web crawler (crawler.archive.org).
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
- * Heritrix is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * Heritrix is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser Public License
- * along with Heritrix; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * SimpleHTMLExtractor.java
- * Created on Jun 5, 2003
- *
- * $Header$
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.archive.extractor;
 
@@ -49,9 +44,9 @@ import org.archive.util.TextUtils;
  *
  * @author gojomo
  */
-public class RegexpHTMLLinkExtractor extends CharSequenceLinkExtractor {
+public class RegexHTMLLinkExtractor extends CharSequenceLinkExtractor {
     private static Logger logger =
-        Logger.getLogger(RegexpHTMLLinkExtractor.class.getName());
+        Logger.getLogger(RegexHTMLLinkExtractor.class.getName());
 
     boolean honorRobots = true;
     boolean extractInlineCss = true;
@@ -311,7 +306,7 @@ public class RegexpHTMLLinkExtractor extends CharSequenceLinkExtractor {
      * @param cs
      */
     protected void processScriptCode(CharSequence cs) {
-        RegexpJSLinkExtractor.extract(cs, source, base, next,
+        RegexJSLinkExtractor.extract(cs, source, base, next,
                 extractErrorListener);
     }
 
@@ -446,7 +441,7 @@ public class RegexpHTMLLinkExtractor extends CharSequenceLinkExtractor {
             sequence.subSequence(0,endOfOpenTag));
 
         // then, parse for URIs
-        RegexpCSSLinkExtractor.extract(sequence.subSequence(endOfOpenTag,
+        RegexCSSLinkExtractor.extract(sequence.subSequence(endOfOpenTag,
                 sequence.length()), source, base, next, extractErrorListener);
     }
 
@@ -460,7 +455,7 @@ public class RegexpHTMLLinkExtractor extends CharSequenceLinkExtractor {
     }
 
     protected static CharSequenceLinkExtractor newDefaultInstance() {
-        return new RegexpHTMLLinkExtractor();
+        return new RegexHTMLLinkExtractor();
     }
 }
 

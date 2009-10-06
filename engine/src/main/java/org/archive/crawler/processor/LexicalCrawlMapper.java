@@ -38,7 +38,7 @@ import org.archive.crawler.framework.Frontier;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigPath;
 import org.archive.util.iterator.LineReadingIterator;
-import org.archive.util.iterator.RegexpLineIterator;
+import org.archive.util.iterator.RegexLineIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -185,11 +185,11 @@ public class LexicalCrawlMapper extends CrawlMapper {
         }
         reader = new BufferedReader(reader);
         Iterator<String> iter = 
-            new RegexpLineIterator(
+            new RegexLineIterator(
                     new LineReadingIterator((BufferedReader) reader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.TRIMMED_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.TRIMMED_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
         while (iter.hasNext()) {
             String[] entry = ((String) iter.next()).split("\\s+");
             map.put(entry[0],entry[1]);

@@ -33,11 +33,11 @@ import java.util.regex.Pattern;
  * expression pattern, applying its configured decision to all matches.
  *
  * Several predefined patterns are available for convenience. Choosing
- * 'custom' makes this the same as a regular MatchesRegExpDecideRule. 
+ * 'custom' makes this the same as a regular MatchesRegexDecideRule. 
  *
  * @author Igor Ranitovic
  */
-public class MatchesFilePatternDecideRule extends MatchesRegExpDecideRule {
+public class MatchesFilePatternDecideRule extends MatchesRegexDecideRule {
 
     public static enum Preset { 
         
@@ -57,11 +57,11 @@ public class MatchesFilePatternDecideRule extends MatchesRegExpDecideRule {
         
         final private Pattern pattern;
         
-        Preset(String regexp) {
-            if (regexp == null) {
+        Preset(String regex) {
+            if (regex == null) {
                 pattern = null;
             } else {
-                pattern = Pattern.compile(regexp);
+                pattern = Pattern.compile(regex);
             }
         }
         
@@ -91,9 +91,7 @@ public class MatchesFilePatternDecideRule extends MatchesRegExpDecideRule {
     /**
      * Use a preset if configured to do so.
      * @param o Context
-     * @return Regex to use.
-     * 
-     * @see org.archive.crawler.filter.URIRegExpFilter#getRegexp(Object)
+     * @return regex to use.
      */
     @Override
     public Pattern getRegex() {

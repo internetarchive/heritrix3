@@ -34,7 +34,7 @@ import java.util.Iterator;
 
 import org.archive.net.UURI;
 import org.archive.util.iterator.LineReadingIterator;
-import org.archive.util.iterator.RegexpLineIterator;
+import org.archive.util.iterator.RegexLineIterator;
 
 /**
  * Specialized TreeSet for keeping a set of String prefixes. 
@@ -63,11 +63,11 @@ public class SurtPrefixSet extends PrefixSet {
         String s;
         
         Iterator<String> iter = 
-            new RegexpLineIterator(
+            new RegexLineIterator(
                     new LineReadingIterator(reader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
 
         while (iter.hasNext()) {
             s = (String) iter.next();
@@ -83,11 +83,11 @@ public class SurtPrefixSet extends PrefixSet {
         String s;
         
         Iterator<String> iter = 
-            new RegexpLineIterator(
+            new RegexLineIterator(
                     new LineReadingIterator(reader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
 
         while (iter.hasNext()) {
             s = (String) iter.next();
@@ -109,11 +109,11 @@ public class SurtPrefixSet extends PrefixSet {
         String s;
         
         Iterator<String> iter = 
-            new RegexpLineIterator(
+            new RegexLineIterator(
                     new LineReadingIterator(reader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
 
         while (iter.hasNext()) {
             s = (String) iter.next();

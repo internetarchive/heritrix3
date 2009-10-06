@@ -27,7 +27,9 @@ import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
@@ -76,8 +78,11 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     @Override
     protected Extractor makeExtractor() {
         ExtractorHTML result = new ExtractorHTML();
-        UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();   
+        UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
         result.setLoggerModule(ulm);
+        CrawlMetadata metadata = new CrawlMetadata();
+        metadata.setRobotsHonoringPolicy(new RobotsHonoringPolicy());
+        result.setMetadata(metadata);
         result.afterPropertiesSet();
         return result;
     }

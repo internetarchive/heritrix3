@@ -23,7 +23,9 @@ package org.archive.modules.extractor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -41,6 +43,9 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
         JerichoExtractorHTML result = new JerichoExtractorHTML();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();
         result.setLoggerModule(ulm);
+        CrawlMetadata metadata = new CrawlMetadata();
+        metadata.setRobotsHonoringPolicy(new RobotsHonoringPolicy());
+        result.setMetadata(metadata);
         result.afterPropertiesSet();
         return result;
     }
