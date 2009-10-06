@@ -139,6 +139,7 @@ public class CandidatesProcessor extends Processor {
         // Handle any prerequisites when S_DEFERRED for prereqs
         if (curi.hasPrerequisiteUri() && curi.getFetchStatus() == S_DEFERRED) {
             CrawlURI prereq = curi.getPrerequisiteUri();
+            prereq.setFullVia(curi); 
             sheetOverlaysManager.applyOverridesTo(prereq);
             try {
                 KeyedProperties.clearOverridesFrom(curi); 
