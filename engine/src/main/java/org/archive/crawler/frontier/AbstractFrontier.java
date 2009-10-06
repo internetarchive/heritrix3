@@ -78,7 +78,7 @@ import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.IoUtils;
 import org.archive.util.iterator.LineReadingIterator;
-import org.archive.util.iterator.RegexpLineIterator;
+import org.archive.util.iterator.RegexLineIterator;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1048,8 +1048,8 @@ public abstract class AbstractFrontier
             output = "$1";
         } else {
             extractor =
-                RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT;
-            output = RegexpLineIterator.ENTRY;
+                RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT;
+            output = RegexLineIterator.ENTRY;
         }
         
         // Read the input stream.
@@ -1061,8 +1061,8 @@ public abstract class AbstractFrontier
         DecideRule scope = scopeScheduleds ? getScope() : null;
         try {
             br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
-            Iterator<String> iter = new RegexpLineIterator(new LineReadingIterator(br),
-                RegexpLineIterator.COMMENT_LINE, extractor, output);
+            Iterator<String> iter = new RegexLineIterator(new LineReadingIterator(br),
+                RegexLineIterator.COMMENT_LINE, extractor, output);
             while(iter.hasNext()) {
                 try {
                     

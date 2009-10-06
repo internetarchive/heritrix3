@@ -129,18 +129,18 @@ public class Preselector extends Scoper {
         }
 
         // Check if allowed by regular expression
-        String regexp = getAllowByRegex();
-        if (regexp != null && !regexp.equals("")) {
-            if (!TextUtils.matches(regexp, curi.toString())) {
+        String regex = getAllowByRegex();
+        if (regex != null && !regex.equals("")) {
+            if (!TextUtils.matches(regex, curi.toString())) {
                 curi.setFetchStatus(S_BLOCKED_BY_USER);
                 return ProcessResult.FINISH;
             }
         }
 
         // Check if blocked by regular expression
-        regexp = getBlockByRegex();
-        if (regexp != null && !regexp.equals("")) {
-            if (TextUtils.matches(regexp, curi.toString())) {
+        regex = getBlockByRegex();
+        if (regex != null && !regex.equals("")) {
+            if (TextUtils.matches(regex, curi.toString())) {
                 curi.setFetchStatus(S_BLOCKED_BY_USER);
                 return ProcessResult.FINISH;
             }

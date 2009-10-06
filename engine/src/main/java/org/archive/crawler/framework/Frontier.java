@@ -348,7 +348,7 @@ public interface Frontier extends Lifecycle, MultiReporter {
     /**
      * Get a <code>URIFrontierMarker</code> initialized with the given
      * regular expression at the 'start' of the Frontier.
-     * @param regexpr The regular expression that URIs within the frontier must
+     * @param regex The regular expression that URIs within the frontier must
      *                match to be considered within the scope of this marker
      * @param inCacheOnly If set to true, only those URIs within the frontier
      *                that are stored in cache (usually this means in memory
@@ -359,7 +359,7 @@ public interface Frontier extends Lifecycle, MultiReporter {
      * @return A URIFrontierMarker that is set for the 'start' of the frontier's
      *                URI list.
      */
-//    public FrontierMarker getInitialMarker(String regexpr,
+//    public FrontierMarker getInitialMarker(String regex,
 //                                              boolean inCacheOnly);
 
     /**
