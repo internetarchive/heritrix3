@@ -113,9 +113,12 @@ public class InterruptibleCharSequenceTest extends TestCase {
     public void testInterruptibility() throws InterruptedException {
         BlockingQueue<Object> q = new LinkedBlockingQueue<Object>();
         Thread t = tryMatchInThread(new InterruptibleCharSequence(INPUT), BACKTRACKER, q);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         t.interrupt();
         Object result = q.take(); 
+        if(result instanceof Boolean) {
+            System.err.println(result+" match beat interrupt");
+        }
         assertTrue("exception not thrown",result instanceof RuntimeException);
     }
 }
