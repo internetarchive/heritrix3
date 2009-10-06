@@ -23,7 +23,7 @@ import org.archive.modules.CrawlURI;
 
 /**
  * Rule applies configured decision to any URIs which do *not*
- * match the supplied (file-pattern) regexp.
+ * match the supplied (file-pattern) regex.
  *
  * @author gojomo
  */
@@ -32,7 +32,7 @@ extends MatchesFilePatternDecideRule {
 
     private static final long serialVersionUID = -8161371026787859554L;
     //private static final Logger logger =
-    //    Logger.getLogger(NotMatchesRegExpDecideRule.class.getName());
+    //    Logger.getLogger(NotMatchesRegexDecideRule.class.getName());
 
     /**
      * Usual constructor. 
@@ -43,10 +43,10 @@ extends MatchesFilePatternDecideRule {
     
     /**
      * Evaluate whether given object's string version does not match 
-     * configured regexp (by reversing the superclass's answer).
+     * configured regex (by reversing the superclass's answer).
      * 
      * @param object Object to make decision about.
-     * @return true if the regexp is not matched
+     * @return true if the regex is not matched
      */
     @Override
     protected boolean evaluate(CrawlURI uri) {

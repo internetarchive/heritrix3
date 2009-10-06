@@ -289,7 +289,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
         if ("robots".equals(name) && content != null) {
             curi.getData().put(A_META_ROBOTS, content);
-            RobotsHonoringPolicy policy = honoringPolicy;
+            RobotsHonoringPolicy policy = metadata.getRobotsHonoringPolicy();
             String contentLower = content.toLowerCase();
             if ((policy == null || (!policy.isType(
                     RobotsHonoringPolicy.Type.IGNORE) && !policy.isType(

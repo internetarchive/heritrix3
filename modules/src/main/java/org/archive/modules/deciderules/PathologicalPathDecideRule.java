@@ -32,7 +32,6 @@ import org.archive.modules.CrawlURI;
  * @author gojomo
  */
 public class PathologicalPathDecideRule extends DecideRule {
-
     private static final long serialVersionUID = 3L;
 
     /**
@@ -72,9 +71,9 @@ public class PathologicalPathDecideRule extends DecideRule {
     }
 
     /** 
-     * Construct the regexp string to be matched against the URI.
+     * Construct the regex string to be matched against the URI.
      * @param o an object to extract a URI from.
-     * @return the regexp pattern.
+     * @return the regex pattern.
      */
     private Pattern getPattern(int maxRep) {
         // race no concern: assignment is atomic, happy with any last value
@@ -82,13 +81,13 @@ public class PathologicalPathDecideRule extends DecideRule {
         if (p != null) {
             return p;
         }
-        String regex = constructRegexp(maxRep);
+        String regex = constructRegex(maxRep);
         p = Pattern.compile(regex);
         pattern.set(p);
         return p;
     }
     
-    protected String constructRegexp(int rep) {
+    protected String constructRegex(int rep) {
         return (rep == 0) ? null : ".*?/(.*?/)\\1{" + rep + ",}.*";
     }
 }

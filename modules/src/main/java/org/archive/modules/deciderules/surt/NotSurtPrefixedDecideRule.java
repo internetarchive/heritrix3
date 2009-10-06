@@ -49,7 +49,7 @@ public class NotSurtPrefixedDecideRule extends SurtPrefixedDecideRule {
      * prefix set -- simply reverse superclass's determination
      * 
      * @param object
-     * @return true if regexp is matched
+     * @return true if regex is matched
      */
     protected boolean evaluate(CrawlURI object) {
         return !super.evaluate(object);

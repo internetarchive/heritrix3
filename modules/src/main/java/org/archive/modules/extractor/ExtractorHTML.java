@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
@@ -287,26 +288,24 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
     
     /**
-     * The robots honoring policy to use when considering a robots META tag.
+     * CrawlMetadata provides the robots honoring policy to use when 
+     * considering a robots META tag.
      */
-    public RobotsHonoringPolicy getRobotsHonoringPolicy() {
-        return (RobotsHonoringPolicy) kp.get("robotsHonoringPolicy");
+    CrawlMetadata metadata;
+    public CrawlMetadata getMetadata() {
+        return metadata;
     }
     @Autowired
-    public void setRobotsHonoringPolicy(RobotsHonoringPolicy policy) {
-        kp.put("robotsHonoringPolicy",policy);
+    public void setMetadata(CrawlMetadata provider) {
+        this.metadata = provider;
     }
  
     protected long numberOfCURIsHandled = 0;
     protected long numberOfLinksExtracted = 0;
-
-    
-    RobotsHonoringPolicy honoringPolicy;
     
     private Pattern relevantTagExtractor;
     private Pattern eachAttributeExtractor;
-
-    
+ 
     public ExtractorHTML() {
     }
 
@@ -765,7 +764,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         // Look for the 'robots' meta-tag
         if("robots".equalsIgnoreCase(name) && content != null ) {
             curi.getData().put(A_META_ROBOTS, content);
-            RobotsHonoringPolicy policy = honoringPolicy;
+            RobotsHonoringPolicy policy = metadata.getRobotsHonoringPolicy();
             String contentLower = content.toLowerCase();
             if ((policy == null
                 || (!policy.isType(RobotsHonoringPolicy.Type.IGNORE)

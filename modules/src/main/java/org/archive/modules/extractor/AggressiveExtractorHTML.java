@@ -25,7 +25,7 @@ import org.archive.modules.CrawlURI;
 /**
  * Extended version of ExtractorHTML with more aggressive javascript link
  * extraction where javascript code is parsed first with general HTML tags
- * regexp, and than by javascript speculative link regexp.
+ * regex, and than by javascript speculative link regex.
  *
  * @author Igor Ranitovic
  *
@@ -57,7 +57,7 @@ extends ExtractorHTML {
         ret.append(super.report());
         ret.append("  Function:          Link extraction on HTML documents " +
             "(including embedded CSS)\n");
-        ret.append("  ProcessorURRIs handled: " + numberOfCURIsHandled + "\n");
+        ret.append("  ProcessorURIs handled: " + numberOfCURIsHandled + "\n");
         ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
         return ret.toString();
     }

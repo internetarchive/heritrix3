@@ -44,7 +44,7 @@ import org.archive.net.UURIFactory;
 import org.archive.spring.WriteTarget;
 import org.archive.util.DevUtils;
 import org.archive.util.iterator.LineReadingIterator;
-import org.archive.util.iterator.RegexpLineIterator;
+import org.archive.util.iterator.RegexLineIterator;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -100,11 +100,11 @@ implements ReadSource,
     protected void announceSeedsFromReader(BufferedReader reader) {
         String s;
         Iterator<String> iter = 
-            new RegexpLineIterator(
+            new RegexLineIterator(
                     new LineReadingIterator(reader),
-                    RegexpLineIterator.COMMENT_LINE,
-                    RegexpLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
-                    RegexpLineIterator.ENTRY);
+                    RegexLineIterator.COMMENT_LINE,
+                    RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
+                    RegexLineIterator.ENTRY);
 
         while (iter.hasNext()) {
             s = (String) iter.next();

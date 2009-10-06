@@ -115,8 +115,8 @@ public class HTTPContentDigest extends Processor {
 
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         // Ok, if we got this far we need to calculate the content digest. 
-        // Get the regexpr
-        Pattern regexpr = getStripRegex();
+        // Get the regex
+        Pattern regex = getStripRegex();
         
         // Get a replay of the document character seq.
         ReplayCharSequence cs = null;
@@ -135,11 +135,11 @@ public class HTTPContentDigest extends Processor {
 
            String s = null;
 
-           if (regexpr != null) {
+           if (regex != null) {
                s = cs.toString();
            } else {
                // Process the document
-               Matcher m = regexpr.matcher(cs);
+               Matcher m = regex.matcher(cs);
                s = m.replaceAll(" ");
            }
            digest.update(s.getBytes());
