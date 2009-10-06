@@ -4,8 +4,6 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 
-import org.archive.crawler.framework.ToeThread;
-import org.archive.crawler.framework.ToeThread.Step;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -107,7 +105,7 @@ implements Iterable<Processor>,
         }
     }
 
-    public void process(CrawlURI curi, ToeThread thread) throws InterruptedException {
+    public void process(CrawlURI curi, ChainStatusReceiver thread) throws InterruptedException {
         assert KeyedProperties.overridesActiveFrom(curi);
         String skipToProc = null; 
         
@@ -118,7 +116,7 @@ implements Iterable<Processor>,
                 skipToProc = null; 
             }
             if(thread!=null) {
-                thread.setStep(Step.ABOUT_TO_BEGIN_PROCESSOR, curProc.getName());
+                thread.atProcessor(curProc);
             }
             ArchiveUtils.continueCheck();
             ProcessResult pr = curProc.process(curi);
@@ -132,5 +130,9 @@ implements Iterable<Processor>,
                     continue;
             }
         }
+    }
+    
+    public interface ChainStatusReceiver {
+        public void atProcessor(Processor proc);
     }
 }

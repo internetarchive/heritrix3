@@ -34,6 +34,8 @@ import java.util.logging.Logger;
 
 import org.archive.io.SinkHandlerLogThread;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
+import org.archive.modules.ProcessorChain.ChainStatusReceiver;
 import org.archive.modules.fetcher.HostResolver;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -53,7 +55,7 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  */
 public class ToeThread extends Thread
 implements RecorderMarker, MultiReporter, ProgressStatisticsReporter, 
-           HostResolver, SinkHandlerLogThread {
+           HostResolver, SinkHandlerLogThread, ChainStatusReceiver {
 
     public enum Step {
         NASCENT, ABOUT_TO_GET_URI, FINISHED, 
@@ -220,6 +222,10 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         step=s;
         atStepSince = System.currentTimeMillis();
         currentProcessorName = procName != null ? procName : "";
+    }
+    
+    public void atProcessor(Processor proc) {
+        setStep(Step.ABOUT_TO_BEGIN_PROCESSOR, proc.getName());
     }
 
     private void seriousError(Error err) {
