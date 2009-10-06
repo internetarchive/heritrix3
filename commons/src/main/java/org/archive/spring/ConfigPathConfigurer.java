@@ -57,6 +57,16 @@ implements
     Ordered {
     Map<String,Object> allBeans = new HashMap<String,Object>();
     
+    
+    //// BEAN PROPERTIES
+    
+    /** 'home' directory for all other paths to be resolved 
+     * relative to; defaults to directory of primary XML config file */
+    ConfigPath path; 
+    public ConfigPath getPath() {
+        return path;
+    }
+    
     //// BEANPOSTPROCESSOR IMPLEMENTATION
     /**
      * Remember all beans for later fixup.
@@ -117,19 +127,7 @@ implements
         }
         return bean;
     }
-    
-    //// BEAN PROPERTIES
-    
-    /** 'home' directory for all other paths to be resolved 
-     * relative to; defaults to directory of primary XML config file */
-    ConfigPath path; 
-    public ConfigPath getPath() {
-        return path;
-    }
-    public void setPath(ConfigPath p) {
-        path = p; 
-    }
-    
+
     //// APPLICATIONCONTEXTAWARE IMPLEMENTATION
 
     AbstractApplicationContext appCtx;

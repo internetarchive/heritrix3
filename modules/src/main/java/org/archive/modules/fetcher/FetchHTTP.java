@@ -113,9 +113,10 @@ import org.springframework.context.Lifecycle;
  * href="http://jakarta.apache.org/commons/httpclient/">Apache Jakarta Commons
  * HttpClient</a> library.
  * 
- * @author Gordon Mohr
- * @author Igor Ranitovic
- * @author others
+ * @contributor gojomo
+ * @contributor Igor Ranitovic
+ * @contributor stack
+ * @contributor others
  * @version $Id$
  */
 public class FetchHTTP extends Processor implements Lifecycle {
@@ -171,7 +172,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * retry read.
      */
     {
-        setSoTimeoutMs(20*1000); // 20 minutes
+        setSoTimeoutMs(20*1000); // 20 seconds
     }
     public int getSoTimeoutMs() {
         return (Integer) kp.get("soTimeoutMs");
@@ -278,11 +279,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * 'normal' (all valid certificates not including selfsigned) to 'strict'
      * (Cert is valid and DN must match servername).
      */
-    public TrustLevel getTrustLevel() {
+    {
+        setSslTrustLevel(TrustLevel.OPEN);
+    }
+    public TrustLevel getSslTrustLevel() {
         return (TrustLevel) kp.get("trustLevel");
     }
-    public void getTrustLevel(TrustLevel trustLevel) {
-        kp.put("trustLevel",trustLevel);
+    public void setSslTrustLevel(TrustLevel trustLevel) {
+        kp.put("sslTrustLevel",trustLevel);
     }
 
     private transient HttpClient http = null;
@@ -452,10 +456,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
     /**
      * Used to store credentials.
      */
+    {
+        // initialize with empty store so declaration not required
+        setCredentialStore(new CredentialStore());
+    }
     public CredentialStore getCredentialStore() {
         return (CredentialStore) kp.get("credentialStore");
     }
-    @Autowired
+    @Autowired(required=false)
     public void setCredentialStore(CredentialStore credentials) {
         kp.put("credentialStore",credentials);
     }
@@ -1311,7 +1319,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             SSLContext context = SSLContext.getInstance("SSL");
             context.init(null,
                     new TrustManager[] { new ConfigurableX509TrustManager(
-                            getTrustLevel()) }, null);
+                            getSslTrustLevel()) }, null);
             this.sslfactory = context.getSocketFactory();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed configure of ssl context "

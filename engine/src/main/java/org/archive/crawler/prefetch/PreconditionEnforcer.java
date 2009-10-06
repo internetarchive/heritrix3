@@ -57,21 +57,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author gojomo
  */
 public class PreconditionEnforcer extends Processor  {
-
     private static final long serialVersionUID = 3L;
-
     private static final Logger logger =
         Logger.getLogger(PreconditionEnforcer.class.getName());
 
-
-    public UserAgentProvider getUserAgentProvider() {
-        return (UserAgentProvider) kp.get("userAgentProvider");
-    }
-    @Autowired
-    public void setUserAgentProvider(UserAgentProvider provider) {
-        kp.put("userAgentProvider",provider);
-    }
-    
     /**
      * The minimum interval for which a dns-record will be considered 
      * valid (in seconds). If the record's DNS TTL is larger, that will 
@@ -113,9 +102,29 @@ public class PreconditionEnforcer extends Processor  {
     public boolean getCalculateRobotsOnly() {
         return (Boolean) kp.get("calculateRobotsOnly");
     }
-    public void setCalculateRobotsOnly(boolean recheck) {
-        kp.put("calculateRobotsOnly",recheck);
+    public void setCalculateRobotsOnly(boolean calcOnly) {
+        kp.put("calculateRobotsOnly",calcOnly);
     }   
+    
+    public UserAgentProvider getUserAgentProvider() {
+        return (UserAgentProvider) kp.get("userAgentProvider");
+    }
+    @Autowired
+    public void setUserAgentProvider(UserAgentProvider provider) {
+        kp.put("userAgentProvider",provider);
+    }
+    
+    {
+        // initialize with empty store so declaration not required
+        setCredentialStore(new CredentialStore());
+    }
+    public CredentialStore getCredentialStore() {
+        return (CredentialStore) kp.get("credentialStore");
+    }
+    @Autowired(required=false)
+    public void setCredentialStore(CredentialStore credentials) {
+        kp.put("credentialStore",credentials);
+    }
     
     protected ServerCache serverCache;
     public ServerCache getServerCache() {
@@ -124,14 +133,6 @@ public class PreconditionEnforcer extends Processor  {
     @Autowired
     public void setServerCache(ServerCache serverCache) {
         this.serverCache = serverCache;
-    }
-    
-    public CredentialStore getCredentialStore() {
-        return (CredentialStore) kp.get("credentialStore");
-    }
-    @Autowired
-    public void setCredentialStore(CredentialStore credentials) {
-        kp.put("credentialStore",credentials);
     }
     
     protected CrawlerLoggerModule loggerModule;

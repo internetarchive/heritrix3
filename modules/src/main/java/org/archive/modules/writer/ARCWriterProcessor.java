@@ -78,7 +78,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     @Override
     protected void setupPool(AtomicInteger serialNo) {
         WriterPoolSettings wps = getWriterPoolSettings();
-        setPool(new ARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWait()));
+        setPool(new ARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWaitMs()));
     }
 
     /**

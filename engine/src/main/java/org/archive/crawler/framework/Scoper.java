@@ -43,6 +43,15 @@ public abstract class Scoper extends Processor implements Lifecycle {
     private static Logger LOGGER =
         Logger.getLogger(Scoper.class.getName());
     
+    protected DecideRule scope;
+    public DecideRule getScope() {
+        return this.scope;
+    }
+    @Autowired
+    public void setScope(DecideRule scope) {
+        this.scope = scope;
+    }
+    
     FileHandler fileLogger = null; 
     
     /**
@@ -70,15 +79,6 @@ public abstract class Scoper extends Processor implements Lifecycle {
     @Autowired
     public void setLoggerModule(CrawlerLoggerModule loggerModule) {
         this.loggerModule = loggerModule;
-    }
-    
-    protected DecideRule scope;
-    public DecideRule getScope() {
-        return this.scope;
-    }
-    @Autowired
-    public void setScope(DecideRule scope) {
-        this.scope = scope;
     }
     
     // FIXME: Weirdo log overriding might not work on a per-subclass basis,

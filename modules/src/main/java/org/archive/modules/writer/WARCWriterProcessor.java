@@ -164,7 +164,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     @Override
     protected void setupPool(final AtomicInteger serialNo) {
         WriterPoolSettings wps = getWriterPoolSettings();
-        setPool(new WARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWait()));
+        setPool(new WARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWaitMs()));
     }
 
     /**

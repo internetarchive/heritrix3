@@ -84,20 +84,20 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
     ScheduledExecutorService executor;
 
     /** how long after crawl start to first scan action directory */
-    protected int initialDelay = 10;
-    public int getInitialDelay() {
-        return initialDelay;
+    protected int initialDelaySeconds = 10;
+    public int getInitialDelaySeconds() {
+        return initialDelaySeconds;
     }
-    public void setInitialDelay(int initialDelay) {
-        this.initialDelay = initialDelay;
+    public void setInitialDelaySeconds(int initialDelay) {
+        this.initialDelaySeconds = initialDelay;
     }
     /** delay between scans of actionDirectory for new files */
-    protected int delay = 30;
-    public int getDelay() {
-        return delay;
+    protected int delaySeconds = 30;
+    public int getDelaySeconds() {
+        return delaySeconds;
     }
-    public void setDelay(int delay) {
-        this.delay = delay;
+    public void setDelaySeconds(int delay) {
+        this.delaySeconds = delay;
     }
     
     /**
@@ -161,7 +161,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         getDoneDir().getFile().mkdirs();
         // start background executor
         executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleWithFixedDelay(this, getInitialDelay(), getDelay(), TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(this, getInitialDelaySeconds(), getDelaySeconds(), TimeUnit.SECONDS);
     }
     
     public void stop() {

@@ -40,7 +40,7 @@ public abstract class SeedModule implements Serializable
      * from that seed. When present, such source tags appear in the
      * second-to-last crawl.log field.
      */
-    boolean sourceTagSeeds;
+    boolean sourceTagSeeds = false;
     public boolean getSourceTagSeeds() {
         return sourceTagSeeds;
     }
@@ -48,20 +48,6 @@ public abstract class SeedModule implements Serializable
         this.sourceTagSeeds = sourceTagSeeds;
     }
     
-    /**
-     * Whether to reread the seeds specification, whether it has changed or not,
-     * every time any configuration change occurs. If true, seeds are reread
-     * even when (for example) new domain overrides are set. Rereading the seeds
-     * can take a long time with large seed lists.
-     */
-    protected boolean rereadSeedsOnConfig = true;
-    public boolean getRereadSeedsOnConfig() {
-        return rereadSeedsOnConfig;
-    }
-    public void setRereadSeedsOnConfig(boolean rereadSeedsOnConfig) {
-        this.rereadSeedsOnConfig = rereadSeedsOnConfig;
-    }
-
     protected Set<SeedListener> seedListeners = 
         new HashSet<SeedListener>();
     public Set<SeedListener> getSeedListeners() {

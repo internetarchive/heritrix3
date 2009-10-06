@@ -129,12 +129,12 @@ implements Lifecycle {
      * Maximum time to wait on pool element (milliseconds). This setting cannot
      * be varied over the life of a crawl.
      */
-    int poolMaxWait = WriterPool.DEFAULT_MAXIMUM_WAIT;
-    public int getPoolMaxWait() {
-        return poolMaxWait;
+    int poolMaxWaitMs = WriterPool.DEFAULT_MAXIMUM_WAIT;
+    public int getPoolMaxWaitMs() {
+        return poolMaxWaitMs;
     }
-    public void setPoolMaxWait(int poolMaxWait) {
-        this.poolMaxWait = poolMaxWait;
+    public void setPoolMaxWaitMs(int poolMaxWait) {
+        this.poolMaxWaitMs = poolMaxWait;
     }
     
     /**

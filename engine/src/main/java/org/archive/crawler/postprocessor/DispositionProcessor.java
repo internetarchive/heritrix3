@@ -31,7 +31,6 @@ import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.Processor;
-import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.RobotsExclusionPolicy;
@@ -142,15 +141,6 @@ public class DispositionProcessor extends Processor {
         this.metadata = provider;
     }
 
-    
-    public UserAgentProvider getUserAgentProvider() {
-        return (UserAgentProvider) kp.get("userAgentProvider");
-    }
-    @Autowired
-    public void setUserAgentProvider(UserAgentProvider provider) {
-        kp.put("userAgentProvider",provider);
-    }
-    
     public DispositionProcessor() {
         super();
     }
@@ -234,10 +224,9 @@ public class DispositionProcessor extends Processor {
                 // may need to extend wait
                 CrawlServer s = ServerCacheUtil.getServerFor(
                         getServerCache(),curi.getUURI());
-                UserAgentProvider uap = getUserAgentProvider();
                 String ua = curi.getUserAgent();
                 if (ua == null) {
-                    ua = uap.getUserAgent();
+                    ua = metadata.getUserAgent();
                 }
                 RobotsExclusionPolicy rep = s.getRobots();
                 if (rep != null) {

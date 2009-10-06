@@ -120,28 +120,28 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 //     "(?is)(\\w+)\\s+.*?(?:(robots))\\s*=(?:(?:\\s*\"(.+)\")|(?:\\s*'(.+)')|(\\S+))");
 
     {
-        setMaxAttrNameLength(1024); // 1K
+        setMaxAttributeNameLength(1024); // 1K
     }
 
-    public int getMaxAttrNameLength() {
-        return (Integer) kp.get("maxAttrNameLength");
+    public int getMaxAttributeNameLength() {
+        return (Integer) kp.get("maxAttributeNameLength");
     }
 
-    public void setMaxAttrNameLength(int max) {
-        kp.put("maxAttrNameLength", max);
+    public void setMaxAttributeNameLength(int max) {
+        kp.put("maxAttributeNameLength", max);
     }
 
 
     {
-        setMaxAttrValLength(16384); // 16K
+        setMaxAttributeValLength(16384); // 16K
     }
 
-    public int getMaxAttrValLength() {
-        return (Integer) kp.get("maxAttrValLength");
+    public int getMaxAttributeValLength() {
+        return (Integer) kp.get("maxAttributeValLength");
     }
 
-    public void setMaxAttrValLength(int max) {
-        kp.put("maxAttrValLength", max);
+    public void setMaxAttributeValLength(int max) {
+        kp.put("maxAttributeValLength", max);
     }
       
     // TODO: perhaps cut to near MAX_URI_LENGTH
@@ -317,9 +317,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         
         regex = EACH_ATTRIBUTE_EXTRACTOR;
         regex = regex.replace(MAX_ATTR_NAME_REPLACE, 
-                    Integer.toString(getMaxAttrNameLength()));
+                    Integer.toString(getMaxAttributeNameLength()));
         regex = regex.replace(MAX_ATTR_VAL_REPLACE,
-                    Integer.toString(getMaxAttrValLength()));
+                    Integer.toString(getMaxAttributeValLength()));
         this.eachAttributeExtractor = Pattern.compile(regex);
     }
     

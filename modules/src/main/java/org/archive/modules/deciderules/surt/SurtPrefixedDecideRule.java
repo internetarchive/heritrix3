@@ -95,7 +95,7 @@ implements
      * Dump file to save SURT prefixes actually used: Useful debugging SURTs.
      */
     protected ConfigFile surtsDumpFile = 
-        new ConfigFile("surtsDumpFile","");
+        new ConfigFile("surtsDumpFile","surts.dump");
     public ConfigFile getSurtsDumpFile() {
         return surtsDumpFile;
     }
