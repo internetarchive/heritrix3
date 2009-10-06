@@ -52,10 +52,16 @@ implements UserAgentProvider,
         return kp;
     }
     
+    /**
+     * Robots honoring 
+     */
+    {
+        setRobotsHonoringPolicy(new RobotsHonoringPolicy());
+    }
     public RobotsHonoringPolicy getRobotsHonoringPolicy() {
         return (RobotsHonoringPolicy) kp.get("robotsHonoringPolicy");
     }
-    @Autowired
+    @Autowired(required=false)
     public void setRobotsHonoringPolicy(RobotsHonoringPolicy policy) {
         kp.put("robotsHonoringPolicy",policy);
     }
