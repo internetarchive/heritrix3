@@ -104,7 +104,7 @@ public class KeyWordProcessor extends Processor {
 
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
-        if (!uri.getContentType().equals("text/html")) {
+        if (!uri.getFullVia().getContentType().equals("text/html")) {
             return false;
         }
         return uri instanceof CrawlURI;
