@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.Processor;
@@ -34,7 +35,6 @@ import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.RobotsExclusionPolicy;
-import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.net.ServerCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,19 +129,20 @@ public class DispositionProcessor extends Processor {
         kp.put("maxPerHostBandwidthUsageKbSec",max);
     }
     
-    public RobotsHonoringPolicy getRobotsHonoringPolicy() {
-        return (RobotsHonoringPolicy) kp.get("robotsHonoringPolicy");
-    }
-    @Autowired
-    public void setRobotsHonoringPolicy(RobotsHonoringPolicy policy) {
-        kp.put("robotsHonoringPolicy",policy);
-    }
-
     /**
      * Auto-discovered module providing configured (or overridden)
-     * User-Agent value; now necessary in frontier because User-Agent
-     * may affect politeness delays via robots.txt Crawl-Delay. 
+     * User-Agent value and RobotsHonoringPolicy
      */
+    CrawlMetadata metadata;
+    public CrawlMetadata getMetadata() {
+        return metadata;
+    }
+    @Autowired
+    public void setMetadata(CrawlMetadata provider) {
+        this.metadata = provider;
+    }
+
+    
     public UserAgentProvider getUserAgentProvider() {
         return (UserAgentProvider) kp.get("userAgentProvider");
     }
@@ -182,7 +183,7 @@ public class DispositionProcessor extends Processor {
                 if (curi.getUURI().getPath() != null &&
                         curi.getUURI().getPath().equals("/robots.txt")) {
                     // Update server with robots info
-                    server.updateRobots(getRobotsHonoringPolicy(),  curi);
+                    server.updateRobots(metadata.getRobotsHonoringPolicy(),  curi);
                 }
             }
             catch (URIException e) {
