@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="engine/src/main/java"/>
-	<classpathentry kind="src" path="engine/src/main/resources"/>
 	<classpathentry kind="src" path="engine/src/test/java"/>
 	<classpathentry kind="src" path="modules/src/main/java"/>
-	<classpathentry kind="src" path="modules/src/main/resources"/>
 	<classpathentry kind="src" path="modules/src/test/java"/>
 	<classpathentry kind="src" path="commons/src/main/java"/>
-	<classpathentry kind="src" path="commons/src/main/resources"/>
 	<classpathentry kind="src" path="commons/src/test/java"/>
-	<classpathentry kind="src" path="commons/src/test/resources"/>
 	<classpathentry kind="src" path="dist/src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="var" path="M2_REPO/org/beanshell/bsh/2.0b5/bsh-2.0b5.jar"/>
@@ -40,7 +36,7 @@
 	<classpathentry kind="var" path="M2_REPO/jboss/jboss-common-client/3.2.3/jboss-common-client-3.2.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/jboss/jnp-client/4.0.2/jnp-client-4.0.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/ant/ant/1.6.5/ant-1.6.5.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/3.3.87/je-3.3.87.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/3.3.87/je-3.3.87.jar" sourcepath="/M2SRC/je-3.3.87/src"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/1.4/commons-io-1.4.jar" sourcepath="/M2SRC/commons-io-1.4-src/src/java"/>
 	<classpathentry kind="var" path="M2_REPO/org/archive/overlays/archive-overlay-commons-httpclient/3.1/archive-overlay-commons-httpclient-3.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/archive/overlays/archive-overlay-commons-pool/1.3/archive-overlay-commons-pool-1.3.jar"/>
@@ -60,5 +56,9 @@
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.2/com.noelios.restlet-1.1.2.jar" sourcepath="/M2SRC/restlet-1.1.1/src/com.noelios.restlet"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.2/com.noelios.restlet.ext.jetty-1.1.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3.jar"/>
+	<classpathentry kind="lib" path="engine/src/main/resources"/>
+	<classpathentry kind="lib" path="modules/src/main/resources"/>
+	<classpathentry kind="lib" path="commons/src/main/resources"/>
+    <classpathentry kind="lib" path="commons/src/test/resources"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

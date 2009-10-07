@@ -76,8 +76,6 @@ public class MigrateH1to3Tool {
             return;
         }
         
-        
-        
         File sourceOrderXmlFile = new File(args[0]);
 		File destinationH3JobDir = new File(args[1]);
         
@@ -89,7 +87,7 @@ public class MigrateH1to3Tool {
         System.out.print("Migrating settings...");
         
         InputStream inStream = getClass().getResourceAsStream(
-                "migrate-template-crawler-beans.cxml");
+                "/org/archive/crawler/migrate/migrate-template-crawler-beans.cxml");
         String template = IOUtils.toString(inStream);
         inStream.close(); 
         
@@ -105,11 +103,18 @@ public class MigrateH1to3Tool {
         for(String key : h1simpleSettings.keySet()) {
             String beanPath = migrateH1toH3Map.get(key);
             String value = h1simpleSettings.get(key);
+            System.out.print("."); 
             if(beanPath==null) {
-                System.err.println("no rule found for: "+key);
-            } else if (beanPath.startsWith("$")) {
-                notApplicable.add(key+" "+value);  
-            } else if (beanPath.startsWith("*")) {
+                // no equivalence rule
+                needsAttention.add(key+" "+value);  
+                continue; 
+            } 
+            if (beanPath.startsWith("$")) {
+                // rule indicates not-available/not-applicable
+                notApplicable.add(key+" "+value);
+                continue;
+            }  
+            if (beanPath.startsWith("*")) {
                 // TODO: needs special handling
                 if(beanPath.equals("*metadata.userAgentTemplate")) {
                     splitH1userAgent(value,sb); 
@@ -117,16 +122,19 @@ public class MigrateH1to3Tool {
                 } else {
                     needsAttention.add(key+" "+value);  
                 }
-            } else {
-                sb
-                 .append(beanPath)
-                 .append("=")
-                 .append(value)
-                 .append("\n");
-                migrated++; 
-                
+                continue;
+            } 
+            if (beanPath.startsWith("^")) {
+                // uppercase to new enum-style
+                value = value.toUpperCase();
+                beanPath = beanPath.substring(1);
             }
-            System.out.print("."); 
+            sb
+             .append(beanPath)
+             .append("=")
+             .append(value)
+             .append("\n");
+            migrated++; 
         }
         System.out.println();
         System.out.println(); 
@@ -144,12 +152,12 @@ public class MigrateH1to3Tool {
         
         System.out.println(notApplicable.size()+" settings skipped as not-applicable");
         System.out.println("These are probably harmless, but if the following settings were");
-        System.out.println("important to your crawl, investigate other options."); 
+        System.out.println("important to your crawl process, investigate other options."); 
         listProblems(notApplicable);
         System.out.println();
         System.out.println(needsAttention.size()+" settings may need attention");
         System.out.println("Please review your original crawl and the created H3 job, for each");
-        System.out.println("of the following and update manually to reflect your intent ");
+        System.out.println("of the following, and manually update as needed.");
         listProblems(needsAttention);
         System.out.println();
         System.out.println(migrated +" H1 settings successfully migrated to H3 configuration");
@@ -178,6 +186,7 @@ public class MigrateH1to3Tool {
                 "^.*?\\+(http://[^)]*).*$",
                 "$1");
         String newTemplate = userAgent.replace(originalUrl,"@OPERATOR_CONTACT_URL@");
+        // TODO: catch, change outdated version info? 
         sb
          .append("metadata.operatorContactUrl=")
          .append(originalUrl)
@@ -189,7 +198,8 @@ public class MigrateH1to3Tool {
 
     protected Map<String, String> getMigrateMap() throws IOException {
         Map<String,String> map = new HashMap<String,String>();
-        InputStream inStream = getClass().getResourceAsStream("H1toH3.map");
+        InputStream inStream = getClass().getResourceAsStream(
+                "/org/archive/crawler/migrate/H1toH3.map");
         LineIterator iter = IOUtils.lineIterator(inStream, "UTF-8");
         while(iter.hasNext()) {
             String[] fields = iter.nextLine().split("\\|");

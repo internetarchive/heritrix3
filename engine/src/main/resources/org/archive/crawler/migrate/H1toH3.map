@@ -28,7 +28,7 @@ scope.rules[6].maxRepetitions|//controller/*[@name="scope"]/*[@name="decide-rule
 scope.rules[7].maxPathDepth|//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfTooManyPathSegs"]/*[@name="max-path-depth"]|20
 *metadata.userAgentTemplate|//controller/*[@name="http-headers"]/*[@name="user-agent"]|Mozilla/5.0|(compatible;|heritrix/@VERSION@|+PROJECT_URL_HERE)
 metadata.operatorFrom|//controller/*[@name="http-headers"]/*[@name="from"]|CONTACT_EMAIL_ADDRESS_HERE
-*metadata.robotsHonoringPolicy.type|//controller/*[@name="robots-honoring-policy"]/*[@name="type"]|classic
+^metadata.robotsHonoringPolicy.type|//controller/*[@name="robots-honoring-policy"]/*[@name="type"]|classic
 metadata.robotsHonoringPolicy.masquerade|//controller/*[@name="robots-honoring-policy"]/*[@name="masquerade"]|false
 disposition.delayFactor|//controller/*[@name="frontier"]/*[@name="delay-factor"]|4.0
 disposition.maxDelayMs|//controller/*[@name="frontier"]/*[@name="max-delay-ms"]|20000
@@ -53,12 +53,12 @@ frontier.snoozeLongMs|//controller/*[@name="frontier"]/*[@name="snooze-deactivat
 $|//controller/*[@name="frontier"]/*[@name="target-ready-backlog"]|50
 *frontier.uriUniqFilter|//controller/*[@name="frontier"]/*[@name="uri-included-structure"]|org.archive.crawler.util.BdbUriUniqFilter
 frontier.dumpPendingAtClose|//controller/*[@name="frontier"]/*[@name="dump-pending-at-close"]|false
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="Lowercase"]/*[@name="enabled"]|true
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="Userinfo"]/*[@name="enabled"]|true
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="WWW[0-9]*"]/*[@name="enabled"]|true
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionIDs"]/*[@name="enabled"]|true
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionCFIDs"]/*[@name="enabled"]|true
-$|//controller/*[@name="uri-canonicalization-rules"]/*[@name="QueryStrPrefix"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[0].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="Lowercase"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[1].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="Userinfo"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[2].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="WWW[0-9]*"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[3].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionIDs"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[4].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionCFIDs"]/*[@name="enabled"]|true
+preparer.uriCanonicalizationPolicy.rules[5].enabled|//controller/*[@name="uri-canonicalization-rules"]/*[@name="QueryStrPrefix"]/*[@name="enabled"]|true
 preselector.enabled|//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="enabled"]|true
 preselector.logToFile|//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="override-logger"]|false
 preselector.recheckScope|//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="recheck-scope"]|true
@@ -78,7 +78,7 @@ fetchHttp.maxFetchKBSec|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]
 fetchHttp.maxLengthBytes|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="max-length-bytes"]|0
 fetchHttp.ignoreCookies|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="ignore-cookies"]|false
 $|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="use-bdb-for-cookies"]|true
-*fetchHttp.sslTrustLevel|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="trust-level"]|open
+^fetchHttp.sslTrustLevel|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="trust-level"]|open
 fetchHttp.defaultEncoding|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="default-encoding"]|ISO-8859-1
 fetchHttp.digestContent|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="digest-content"]|true
 fetchHttp.digestAlgorithm|//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="digest-algorithm"]|sha1
