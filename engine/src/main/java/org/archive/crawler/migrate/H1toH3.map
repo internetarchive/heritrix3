@@ -26,9 +26,9 @@ seeds.textSource.path //controller/*[@name="scope"]/*[@name="seedsfile"] seeds.t
 ?scope.rules[3].maxSpeculativeHops //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfTranscluded"]/*[@name="max-speculative-hops"] 1
 ?scope.rules[6].maxRepetitions //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfPathological"]/*[@name="max-repetitions"] 2
 ?scope.rules[7].maxPathDepth //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfTooManyPathSegs"]/*[@name="max-path-depth"] 20
-//controller/*[@name="http-headers"]/*[@name="user-agent"] Mozilla/5.0 (compatible; heritrix/@VERSION@ +PROJECT_URL_HERE)
-//controller/*[@name="http-headers"]/*[@name="from"] CONTACT_EMAIL_ADDRESS_HERE
-//controller/*[@name="robots-honoring-policy"]/*[@name="type"] classic
+*metadata.userAgentTemplate //controller/*[@name="http-headers"]/*[@name="user-agent"] Mozilla/5.0 (compatible; heritrix/@VERSION@ +PROJECT_URL_HERE)
+metadata.operatorFrom //controller/*[@name="http-headers"]/*[@name="from"] CONTACT_EMAIL_ADDRESS_HERE
+ //controller/*[@name="robots-honoring-policy"]/*[@name="type"] classic
 //controller/*[@name="robots-honoring-policy"]/*[@name="masquerade"] false
 //controller/*[@name="frontier"]/*[@name="delay-factor"] 4.0
 //controller/*[@name="frontier"]/*[@name="max-delay-ms"] 20000
