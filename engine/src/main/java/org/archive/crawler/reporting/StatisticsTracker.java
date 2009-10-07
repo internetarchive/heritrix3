@@ -826,7 +826,7 @@ public class StatisticsTracker
         return processedSeedsRecords.keySet().iterator();
     }
 
-    public TempStoredSortedMap<Integer,SeedRecord> getSeedRecordsSortedByStatusCode() {
+    public TempStoredSortedMap<Integer,SeedRecord> calcSeedRecordsSortedByStatusCode() {
         Iterator<String> i = getSeedsIterator();
         TempStoredSortedMap<Integer,SeedRecord> sortedMap = 
             bdb.getStoredMap(
@@ -860,15 +860,6 @@ public class StatisticsTracker
         }
     }
 
-    /**
-     * Return a copy of the hosts distribution in reverse-sorted
-     * (largest first) order. 
-     * @return SortedMap of hosts distribution
-     * @deprecated Use {@link #calcReverseSortedHostsDistribution()} instead
-     */
-    public SortedMap<Long,String> getReverseSortedHostsDistribution() {
-        return calcReverseSortedHostsDistribution();
-    }
     /**
      * Return a copy of the hosts distribution in reverse-sorted
      * (largest first) order. 

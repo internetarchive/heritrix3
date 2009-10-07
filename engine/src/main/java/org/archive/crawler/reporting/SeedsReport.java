@@ -41,7 +41,7 @@ public class SeedsReport extends Report {
 
         long seedsCrawled = 0;
         long seedsTotal = 0;
-        TempStoredSortedMap<Integer, SeedRecord> seedsByCode = stats.getSeedRecordsSortedByStatusCode();
+        TempStoredSortedMap<Integer, SeedRecord> seedsByCode = stats.calcSeedRecordsSortedByStatusCode();
 //        for (Map.Entry<Integer,SeedRecord> entry : seedsByCode.entrySet()) {
         Iterator<Map.Entry<Integer,SeedRecord>> iter = seedsByCode.entrySet().iterator();
         while(iter.hasNext()) {
