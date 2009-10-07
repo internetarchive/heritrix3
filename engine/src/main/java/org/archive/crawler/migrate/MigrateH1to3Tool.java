@@ -22,8 +22,10 @@ package org.archive.crawler.migrate;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -69,11 +71,22 @@ public class MigrateH1to3Tool {
     }
     
 	public void instanceMain(String[] args) throws Exception {
-		
+		if(args.length == 0) {
+		    printHelp();
+            return;
+        }
+        
+        
+        
         File sourceOrderXmlFile = new File(args[0]);
 		File destinationH3JobDir = new File(args[1]);
         
         destinationH3JobDir.mkdirs();
+ 
+        System.out.println("H1 source: "+sourceOrderXmlFile.getAbsolutePath()); 
+        System.out.println("H3 destination: "+destinationH3JobDir.getAbsolutePath());
+        
+        System.out.print("Migrating settings...");
         
         InputStream inStream = getClass().getResourceAsStream(
                 "migrate-template-crawler-beans.cxml");
@@ -85,28 +98,34 @@ public class MigrateH1to3Tool {
         Document sourceOrderXmlDom = DOCUMENT_BUILDER.parse(sourceOrderXmlFile);
         Map<String,String> h1simpleSettings = flattenH1Order(sourceOrderXmlDom);
         
+        List<String> notApplicable = new ArrayList<String>(); 
+        List<String> needsAttention = new ArrayList<String>();
         StringBuilder sb = new StringBuilder(); 
         for(String key : h1simpleSettings.keySet()) {
             String beanPath = migrateH1toH3Map.get(key);
+            String value = h1simpleSettings.get(key);
             if(beanPath==null) {
                 System.err.println("no rule found for: "+key);
             } else if (beanPath.startsWith("$")) {
-                System.err.println(beanPath.substring(1)+": "+key);
+                notApplicable.add(key+" "+value);  
             } else if (beanPath.startsWith("*")) {
                 // TODO: needs special handling
                 if(beanPath.equals("*metadata.userAgentTemplate")) {
-                    splitH1userAgent(h1simpleSettings.get(key),sb); 
+                    splitH1userAgent(value,sb); 
                 } else {
-                    System.err.println(beanPath+": "+key);
+                    needsAttention.add(key+" "+value);  
                 }
             } else {
                 sb
                  .append(beanPath)
                  .append("=")
-                 .append(h1simpleSettings.get(key))
+                 .append(value)
                  .append("\n");
             }
+            System.out.print("."); 
         }
+        System.out.println();
+        System.out.println(); 
         
         // patch all overrides derived from H1 into H3 template
         String beansCxml = template.replace("###MIGRATE_OVERRIDES###", sb.toString());
@@ -117,7 +136,36 @@ public class MigrateH1to3Tool {
         FileUtils.copyFile(
                     new File(sourceOrderXmlFile.getParentFile(), "seeds.txt"), 
                     new File(destinationH3JobDir, "seeds.txt"));
+        
+        
+        System.out.println(notApplicable.size()+" settings skipped as not-applicable");
+        System.out.println("These are probably harmless, but if the following settings were");
+        System.out.println("important to your crawl, investigate other options."); 
+        listProblems(notApplicable);
+        System.out.println();
+        System.out.println(needsAttention.size()+" settings may need attention");
+        System.out.println("Please review your original crawl and the created H3 job, for each");
+        System.out.println("of the following and update manually to reflect your intent ");
+        listProblems(needsAttention);
+        System.out.println();
+        System.out.println("Review your converted crawler-beans.cxml at:");
+        System.out.println(targetBeansXmlFile.getAbsolutePath());
 	}
+
+    protected void listProblems(List<String> problems) {
+        for(String problem : problems) {
+            System.out.println(" "+problem); 
+        }
+    }
+
+    protected void printHelp() {
+        System.out.println(
+            "Usage: takes two arguments. First argument is path to a " +
+            "Heritrix 1.X order.xml, second argument is path for a new " +
+            "Heritrix 3.X job directory. Will generate a basic H3 job " +
+            "with as many of the H1 settings replicated as currently " +
+            "possible."); 
+    }
 
     protected void splitH1userAgent(String userAgent, StringBuilder sb) {
         String originalUrl = userAgent.replaceAll(
