@@ -19,8 +19,8 @@ seeds.textSource.path //controller/*[@name="scope"]/*[@name="seedsfile"] seeds.t
 # //controller/*[@name="scope"]/*[@name="reread-seeds-on-config"] true
 ?scope.rules[1].decision //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="decision"] ACCEPT
 ?scope.rules[1].seedsAsSurtPrefixes //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="seeds-as-surt-prefixes"] true
-//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="also-check-via"] false
-//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="rebuild-on-reconfig"] true
+?scope.rules[1].alsoCheckVia //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="also-check-via"] false
+# //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="rebuild-on-reconfig"] true
 //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfTooManyHops"]/*[@name="max-hops"] 20
 //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfTranscluded"]/*[@name="max-trans-hops"] 3
 //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfTranscluded"]/*[@name="max-speculative-hops"] 1
