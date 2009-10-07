@@ -1,0 +1,121 @@
+metadata.jobName //meta/name default
+metadata.description //meta/description Default Profile
+metadata.operator //meta/operator Admin
+# //meta/date 20091006215050
+# //controller/*[@name="settings-directory"] settings
+loggerModule.path //controller/*[@name="logs-path"] logs
+crawlController.checkpointsDir //controller/*[@name="checkpoints-path"] checkpoints
+bdb.dir //controller/*[@name="state-path"] state
+crawlController.scratchDir //controller/*[@name="scratch-path"] scratch
+crawlLimiter.maxBytesDownload //controller/*[@name="max-bytes-download"] 0
+crawlLimiter.maxDocumentsDownload //controller/*[@name="max-document-download"] 0
+crawlLimiter.maxTimeSeconds //controller/*[@name="max-time-sec"] 0
+crawlController.maxToeThreads //controller/*[@name="max-toe-threads"] 50
+crawlController.recorderOutBufferBytes //controller/*[@name="recorder-out-buffer-bytes"] 4096
+crawlController.recorderInBufferBytes //controller/*[@name="recorder-in-buffer-bytes"] 65536
+bdb.cachePercent //controller/*[@name="bdb-cache-percent"] 0
+! //controller/*[@name="scope"]/*[@name="enabled"] true
+seeds.textSource.path //controller/*[@name="scope"]/*[@name="seedsfile"] seeds.txt
+# //controller/*[@name="scope"]/*[@name="reread-seeds-on-config"] true
+?scope.rules[1].decision //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="decision"] ACCEPT
+?scope.rules[1].seedsAsSurtPrefixes //controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="seeds-as-surt-prefixes"] true
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="also-check-via"] false
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfSurtPrefixed"]/*[@name="rebuild-on-reconfig"] true
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfTooManyHops"]/*[@name="max-hops"] 20
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfTranscluded"]/*[@name="max-trans-hops"] 3
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="acceptIfTranscluded"]/*[@name="max-speculative-hops"] 1
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfPathological"]/*[@name="max-repetitions"] 2
+//controller/*[@name="scope"]/*[@name="decide-rules"]/*[@name="rules"]/*[@name="rejectIfTooManyPathSegs"]/*[@name="max-path-depth"] 20
+//controller/*[@name="http-headers"]/*[@name="user-agent"] Mozilla/5.0 (compatible; heritrix/@VERSION@ +PROJECT_URL_HERE)
+//controller/*[@name="http-headers"]/*[@name="from"] CONTACT_EMAIL_ADDRESS_HERE
+//controller/*[@name="robots-honoring-policy"]/*[@name="type"] classic
+//controller/*[@name="robots-honoring-policy"]/*[@name="masquerade"] false
+//controller/*[@name="frontier"]/*[@name="delay-factor"] 4.0
+//controller/*[@name="frontier"]/*[@name="max-delay-ms"] 20000
+//controller/*[@name="frontier"]/*[@name="min-delay-ms"] 2000
+//controller/*[@name="frontier"]/*[@name="respect-crawl-delay-up-to-secs"] 300
+//controller/*[@name="frontier"]/*[@name="max-retries"] 30
+//controller/*[@name="frontier"]/*[@name="retry-delay-seconds"] 900
+//controller/*[@name="frontier"]/*[@name="preference-embed-hops"] 1
+//controller/*[@name="frontier"]/*[@name="total-bandwidth-usage-KB-sec"] 0
+//controller/*[@name="frontier"]/*[@name="max-per-host-bandwidth-usage-KB-sec"] 0
+//controller/*[@name="frontier"]/*[@name="queue-assignment-policy"] org.archive.crawler.frontier.HostnameQueueAssignmentPolicy
+//controller/*[@name="frontier"]/*[@name="pause-at-start"] false
+//controller/*[@name="frontier"]/*[@name="pause-at-finish"] false
+//controller/*[@name="frontier"]/*[@name="source-tag-seeds"] false
+//controller/*[@name="frontier"]/*[@name="recovery-log-enabled"] true
+//controller/*[@name="frontier"]/*[@name="hold-queues"] true
+//controller/*[@name="frontier"]/*[@name="balance-replenish-amount"] 3000
+//controller/*[@name="frontier"]/*[@name="error-penalty-amount"] 100
+//controller/*[@name="frontier"]/*[@name="queue-total-budget"] -1
+//controller/*[@name="frontier"]/*[@name="cost-policy"] org.archive.crawler.frontier.ZeroCostAssignmentPolicy
+//controller/*[@name="frontier"]/*[@name="snooze-deactivate-ms"] 300000
+//controller/*[@name="frontier"]/*[@name="target-ready-backlog"] 50
+//controller/*[@name="frontier"]/*[@name="uri-included-structure"] org.archive.crawler.util.BdbUriUniqFilter
+//controller/*[@name="frontier"]/*[@name="dump-pending-at-close"] false
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="Lowercase"]/*[@name="enabled"] true
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="Userinfo"]/*[@name="enabled"] true
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="WWW[0-9]*"]/*[@name="enabled"] true
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionIDs"]/*[@name="enabled"] true
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="SessionCFIDs"]/*[@name="enabled"] true
+//controller/*[@name="uri-canonicalization-rules"]/*[@name="QueryStrPrefix"]/*[@name="enabled"] true
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="enabled"] true
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="override-logger"] false
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="recheck-scope"] true
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preselector"]/*[@name="block-all"] false
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preprocessor"]/*[@name="enabled"] true
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preprocessor"]/*[@name="ip-validity-duration-seconds"] 21600
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preprocessor"]/*[@name="robot-validity-duration-seconds"] 86400
+//controller/*[@name="pre-fetch-processors"]/*[@name="Preprocessor"]/*[@name="calculate-robots-only"] false
+//controller/*[@name="fetch-processors"]/*[@name="DNS"]/*[@name="enabled"] true
+//controller/*[@name="fetch-processors"]/*[@name="DNS"]/*[@name="accept-non-dns-resolves"] false
+//controller/*[@name="fetch-processors"]/*[@name="DNS"]/*[@name="digest-content"] true
+//controller/*[@name="fetch-processors"]/*[@name="DNS"]/*[@name="digest-algorithm"] sha1
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="enabled"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="timeout-seconds"] 1200
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="sotimeout-ms"] 20000
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="fetch-bandwidth"] 0
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="max-length-bytes"] 0
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="ignore-cookies"] false
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="use-bdb-for-cookies"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="trust-level"] open
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="default-encoding"] ISO-8859-1
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="digest-content"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="digest-algorithm"] sha1
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="send-if-modified-since"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="send-if-none-match"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="send-connection-close"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="send-referer"] true
+//controller/*[@name="fetch-processors"]/*[@name="HTTP"]/*[@name="send-range"] false
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTTP"]/*[@name="enabled"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="enabled"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="extract-javascript"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="treat-frames-as-embed-links"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="ignore-form-action-urls"] false
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="extract-only-form-gets"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="extract-value-attributes"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorHTML"]/*[@name="ignore-unexpected-html"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorCSS"]/*[@name="enabled"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorJS"]/*[@name="enabled"] true
+//controller/*[@name="extract-processors"]/*[@name="ExtractorSWF"]/*[@name="enabled"] true
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="enabled"] true
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="compress"] true
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="prefix"] IAH
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="suffix"] ${HOSTNAME}
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="max-size-bytes"] 100000000
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="path"]/string arcs
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="pool-max-active"] 5
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="pool-max-wait"] 300000
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="total-bytes-to-write"] 0
+//controller/*[@name="write-processors"]/*[@name="Archiver"]/*[@name="skip-identical-digests"] false
+//controller/*[@name="post-processors"]/*[@name="Updater"]/*[@name="enabled"] true
+//controller/*[@name="post-processors"]/*[@name="LinksScoper"]/*[@name="enabled"] true
+//controller/*[@name="post-processors"]/*[@name="LinksScoper"]/*[@name="override-logger"] false
+//controller/*[@name="post-processors"]/*[@name="LinksScoper"]/*[@name="seed-redirects-new-seed"] true
+//controller/*[@name="post-processors"]/*[@name="LinksScoper"]/*[@name="preference-depth-hops"] -1
+//controller/*[@name="post-processors"]/*[@name="Scheduler"]/*[@name="enabled"] true
+//controller/*[@name="loggers"]/*[@name="crawl-statistics"]/*[@name="interval-seconds"] 20
+//controller/*[@name="checkpoint-copy-bdbje-logs"] true
+//controller/*[@name="recover-retain-failures"] false
+//controller/*[@name="recover-scope-includes"] true
+//controller/*[@name="recover-scope-enqueues"] true
