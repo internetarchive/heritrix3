@@ -356,7 +356,6 @@ http://example.example/example
  <!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
  <bean id="frontier" 
    class="org.archive.crawler.frontier.BdbFrontier">
-  <!-- <property name="dumpPendingAtClose" value="false" /> -->
   <!-- <property name="holdQueues" value="true" /> -->
   <!-- <property name="queueTotalBudget" value="-1" /> -->
   <!-- <property name="balanceReplenishAmount" value="3000" /> -->
@@ -366,6 +365,13 @@ http://example.example/example
         <bean class="org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy" />
        </property> -->
   <!-- <property name="snoozeLongMs" value="300000" /> -->
+  <!-- <property name="retryDelaySeconds" value="900" /> -->
+  <!-- <property name="maxRetries" value="30" /> -->
+  <!-- <property name="recoveryDir" value="logs" /> -->
+  <!-- <property name="recoveryLogEnabled" value="true" /> -->
+  <!-- <property name="maxOutlinks" value="6000" /> -->
+  <!-- <property name="outboundQueueCapacity" value="50" /> -->
+  <!-- <property name="inboundQueueMultiple" value="3" /> -->
   <!-- <property name="dumpPendingAtClose" value="false" /> -->
  </bean>
  
