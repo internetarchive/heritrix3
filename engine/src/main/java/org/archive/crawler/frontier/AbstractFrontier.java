@@ -104,6 +104,77 @@ public abstract class AbstractFrontier
         return kp;
     }
     
+    /** for retryable problems, seconds to wait before a retry */
+    {
+        setRetryDelaySeconds(900);
+    }
+    public int getRetryDelaySeconds() {
+        return (Integer) kp.get("retryDelaySeconds");
+    }
+    public void setRetryDelaySeconds(int delay) {
+        kp.put("retryDelaySeconds",delay);
+    }
+    
+    /** maximum times to emit a CrawlURI without final disposition */
+    {
+        setMaxRetries(30);
+    }
+    public int getMaxRetries() {
+        return (Integer) kp.get("maxRetries");
+    }
+    public void setMaxRetries(int maxRetries) {
+        kp.put("maxRetries",maxRetries);
+    }
+    
+    protected ConfigPath recoveryDir = new ConfigPath("recovery subdirectory","logs");
+    public ConfigPath getRecoveryDir() {
+        return recoveryDir;
+    }
+    public void setRecoveryDir(ConfigPath recoveryDir) {
+        this.recoveryDir = recoveryDir;
+    }
+    
+    /**
+     * Recover log on or off attribute.
+     */
+    {
+        setRecoveryLogEnabled(true);
+    }
+    public boolean getRecoveryLogEnabled() {
+        return (Boolean) kp.get("recoveryLogEnabled");
+    }
+    public void setRecoveryLogEnabled(boolean enabled) {
+        kp.put("recoveryLogEnabled",enabled);
+    }
+
+    {
+        setMaxOutlinks(6000);
+    }
+    public int getMaxOutlinks() {
+        return (Integer) kp.get("maxOutlinks");
+    }
+    public void setMaxOutlinks(int max) {
+        kp.put("maxOutlinks", max);
+    }
+    
+    /** size of the 'outbound' mediation queue between manager thread 
+     * and toethreads */
+    int outboundQueueCapacity = 50; 
+    public int getOutboundQueueCapacity() {
+        return this.outboundQueueCapacity;
+    }
+    public void setOutboundQueueCapacity(int capacity) {
+        this.outboundQueueCapacity = capacity; 
+    }
+    
+    /** size of the inbound queue as multiple of the outbound queue */
+    int inboundQueueMultiple = 3;
+    public int getInboundQueueMultiple() {
+        return this.inboundQueueMultiple;
+    }
+    public void setInboundQueueMultiple(int multiple) {
+        this.inboundQueueMultiple = multiple;
+    }
     
     public boolean isRunning() {
         return managerThread!=null && managerThread.isAlive();
@@ -170,14 +241,6 @@ public abstract class AbstractFrontier
     public void setScope(DecideRule scope) {
         this.scope = scope;
     }
-    
-    protected ConfigPath recoveryDir = new ConfigPath("recovery subdirectory","logs");
-    public ConfigPath getRecoveryDir() {
-        return recoveryDir;
-    }
-    public void setRecoveryDir(ConfigPath recoveryDir) {
-        this.recoveryDir = recoveryDir;
-    }
 
     FrontierPreparer preparer;
     public FrontierPreparer getFrontierPreparer() {
@@ -196,71 +259,7 @@ public abstract class AbstractFrontier
         assert KeyedProperties.overridesActiveFrom(curi); 
         return preparer.getClassKey(curi);
     }
-    
-    /** for retryable problems, seconds to wait before a retry */
-    {
-        setRetryDelaySeconds(900);
-    }
-    public int getRetryDelaySeconds() {
-        return (Integer) kp.get("retryDelaySeconds");
-    }
-    public void setRetryDelaySeconds(int delay) {
-        kp.put("retryDelaySeconds",delay);
-    }
-    
-    /** maximum times to emit a CrawlURI without final disposition */
-    {
-        setMaxRetries(30);
-    }
-    public int getMaxRetries() {
-        return (Integer) kp.get("maxRetries");
-    }
-    public void setMaxRetries(int maxRetries) {
-        kp.put("maxRetries",maxRetries);
-    }
-
-    /** size of the 'outbound' mediation queue between manager thread 
-     * and toethreads */
-    int outboundQueueCapacity = 50; 
-    public int getOutboundQueueCapacity() {
-        return this.outboundQueueCapacity;
-    }
-    public void setOutboundQueueCapacity(int capacity) {
-        this.outboundQueueCapacity = capacity; 
-    }
-    
-    /** size of the inbound queue as multiple of the outbound queue */
-    int inboundQueueMultiple = 3;
-    public int getInboundQueueMultiple() {
-        return this.inboundQueueMultiple;
-    }
-    public void setInboundQueueMultiple(int multiple) {
-        this.inboundQueueMultiple = multiple;
-    }
-    
-    /**
-     * Recover log on or off attribute.
-     */
-    {
-        setRecoveryLogEnabled(true);
-    }
-    public boolean getRecoveryLogEnabled() {
-        return (Boolean) kp.get("recoveryLogEnabled");
-    }
-    public void setRecoveryLogEnabled(boolean enabled) {
-        kp.put("recoveryLogEnabled",enabled);
-    }
-    
-    {
-        setMaxOutlinks(6000);
-    }
-    public int getMaxOutlinks() {
-        return (Integer) kp.get("maxOutlinks");
-    }
-    public void setMaxOutlinks(int max) {
-        kp.put("maxOutlinks", max);
-    }
-
+   
     // top-level stats
     /** total URIs queued to be visited */
     protected AtomicLong queuedUriCount = new AtomicLong(0); 

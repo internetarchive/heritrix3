@@ -159,7 +159,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public int getTimeoutSeconds() {
         return (Integer) kp.get("timeoutSeconds");
     }
-    public void setTimeoutSeconds(Integer timeout) {
+    public void setTimeoutSeconds(int timeout) {
         kp.put("timeoutSeconds",timeout);
     }
 

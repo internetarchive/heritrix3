@@ -162,7 +162,7 @@ Serializable, Closeable {
         this.dir = dir;
     }
     
-    int cachePercent = 60;
+    int cachePercent = -1;
     public int getCachePercent() {
         return cachePercent;
     }
@@ -243,8 +243,10 @@ Serializable, Closeable {
     throws DatabaseException {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
-        config.setLockTimeout(5000000);        
-        config.setCachePercent(cachePercent);
+        config.setLockTimeout(5000000);
+        if(cachePercent>0) {
+            config.setCachePercent(cachePercent);
+        }
         config.setSharedCache(sharedCache);
         
         // we take the advice literally from...
