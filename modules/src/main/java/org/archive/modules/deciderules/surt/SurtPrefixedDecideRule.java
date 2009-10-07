@@ -102,22 +102,6 @@ implements
     public void setSurtsDumpFile(ConfigFile cp) {
         this.surtsDumpFile.merge(cp);
     }
-    
-
-    /**
-     * Whether to rebuild the internal structures from source files (including
-     * seeds if appropriate) every time any configuration change occurs. If
-     * true, rule is rebuilt from sources even when (for example) unrelated new
-     * domain overrides are set. Rereading large source files can take a long
-     * time.
-     */
-    protected boolean rebuildOnReconfig = true; 
-    public boolean getRebuildOnReconfig() {
-        return rebuildOnReconfig;
-    }
-    public void setRebuildOnReconfig(boolean rebuildOnReconfig) {
-        this.rebuildOnReconfig = rebuildOnReconfig;
-    }
 
     /**
      * Whether to also make the configured decision if a URI's 'via' URI (the

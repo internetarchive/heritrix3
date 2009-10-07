@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
   HERITRIX 3 CRAWL JOB CONFIGURATION FILE
+  
+   This is a relatively minimal configuration suitable for many crawls.
+   
+   Commented-out beans and properties are provided as an example; values
+   shown in comments reflect the actual defaults which are in effect
+   without specification. (To change from the default behavior, 
+   uncomment AND alter the shown values.)   
  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
 	     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -109,6 +116,7 @@ http://example.example/example
     <!-- ...then ACCEPT those within configured/seed-implied SURT prefixes... -->
     <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
      <!-- <property name="seedsAsSurtPrefixes" value="true" /> -->
+     <!-- <property name="alsoCheckVia" value="true" /> -->
      <!-- <property name="surtsSourceFile" value="" /> -->
      <!-- <property name="surtsDumpFile" value="surts.dump" /> -->
     </bean>
@@ -378,6 +386,13 @@ http://example.example/example
   <!-- <property name="initialDelaySeconds" value="10" /> -->
   <!-- <property name="delaySeconds" value="30" /> -->
  </bean> 
+ 
+ <!--  CRAWLLIMITENFORCER: stops crawl when it reaches configured limits -->
+ <bean id="crawlLimiter" class="org.archive.crawler.framework.CrawlLimitEnforcer">
+  <!-- <property name="maxBytesDownload" value="0" /> -->
+  <!-- <property name="maxDocumentsDownload" value="0" /> -->
+  <!-- <property name="maxTimeSeconds" value="0" /> -->
+ </bean>
  
  <!-- 
    OPTIONAL BEANS
