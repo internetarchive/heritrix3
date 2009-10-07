@@ -270,7 +270,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
             }
             ToeThread tt = (ToeThread)toes[i];
             if(tt!=null) {
-                steps.tally(tt.getStep());
+                steps.tally(tt.getStep().toString());
                 processors.tally(tt.getCurrentProcessorName());
             }
         }

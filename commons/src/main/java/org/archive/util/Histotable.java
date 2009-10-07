@@ -83,8 +83,8 @@ public class Histotable<K> extends TreeMap<K,Long> {
                 if (firstVal < secondVal) { return 1; }
                 if (secondVal < firstVal) { return -1; }
                 // If the values are the same, sort by keys.
-                String firstKey = (String) ((Map.Entry<K,Long>) e1).getKey();
-                String secondKey = (String) ((Map.Entry<K,Long>) e2).getKey();
+                String firstKey = ((Map.Entry<K,Long>) e1).getKey().toString();
+                String secondKey = ((Map.Entry<K,Long>) e2).getKey().toString();
                 return firstKey.compareTo(secondKey);
             }
         });
