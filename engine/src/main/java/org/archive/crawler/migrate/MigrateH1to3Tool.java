@@ -100,6 +100,7 @@ public class MigrateH1to3Tool {
         
         List<String> notApplicable = new ArrayList<String>(); 
         List<String> needsAttention = new ArrayList<String>();
+        int migrated = 0; 
         StringBuilder sb = new StringBuilder(); 
         for(String key : h1simpleSettings.keySet()) {
             String beanPath = migrateH1toH3Map.get(key);
@@ -112,6 +113,7 @@ public class MigrateH1to3Tool {
                 // TODO: needs special handling
                 if(beanPath.equals("*metadata.userAgentTemplate")) {
                     splitH1userAgent(value,sb); 
+                    migrated += 2; 
                 } else {
                     needsAttention.add(key+" "+value);  
                 }
@@ -121,6 +123,8 @@ public class MigrateH1to3Tool {
                  .append("=")
                  .append(value)
                  .append("\n");
+                migrated++; 
+                
             }
             System.out.print("."); 
         }
@@ -147,6 +151,8 @@ public class MigrateH1to3Tool {
         System.out.println("Please review your original crawl and the created H3 job, for each");
         System.out.println("of the following and update manually to reflect your intent ");
         listProblems(needsAttention);
+        System.out.println();
+        System.out.println(migrated +" H1 settings successfully migrated to H3 configuration");
         System.out.println();
         System.out.println("Review your converted crawler-beans.cxml at:");
         System.out.println(targetBeansXmlFile.getAbsolutePath());
