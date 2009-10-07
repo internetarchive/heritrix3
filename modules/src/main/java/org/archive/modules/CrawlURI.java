@@ -1816,7 +1816,7 @@ implements MultiReporter, Serializable, OverlayContext {
             System.err.println("not politeness-calc");
             return 5000;
         }
-        return 0;
+        return this.politenessDelay;
     }
 
     transient CrawlURI fullVia; 
