@@ -88,10 +88,15 @@ public class Engine {
     }
 
     public boolean considerAsJobDirectory(File dir) {
-        for (File cxml : dir.listFiles(new FilenameFilter() {
+        File[] candidateConfigs = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
-            }})) {
+            }});
+        if(candidateConfigs==null) {
+            // directory did not exist or did not contain cxml
+            return false; 
+        }
+        for (File cxml : candidateConfigs) {
             try {
                 CrawlJob cj = new CrawlJob(cxml);
                 if(!jobConfigs.containsKey(cj.getShortName())) {

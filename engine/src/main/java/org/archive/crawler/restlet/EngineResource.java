@@ -26,6 +26,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.restlet.Context;
@@ -73,7 +74,17 @@ public class EngineResource extends Resource {
         if("rescan".equals(action)) {
             getEngine().findJobConfigs(); 
         } else if ("add".equals(action)) {
-            getEngine().considerAsJobDirectory(new File(form.getFirstValue("addpath")));
+            String path = form.getFirstValue("addpath");
+            if(path==null) {
+                path = "";
+            }
+            boolean added = false;
+            if(StringUtils.isNotBlank(path)) {
+                added = getEngine().considerAsJobDirectory(new File(path));
+            }
+            if(!added) {
+                Flash.addFlash(getResponse(), "not a valid preexisting job directory: \""+path+"\"", Flash.Kind.NACK);
+            }
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
@@ -98,6 +109,8 @@ public class EngineResource extends Resource {
         pw.println("</head><body>");
         pw.println("<h1>"+engineTitle+"</h1>"); 
         
+        Flash.renderFlashesHTML(pw, getRequest());
+
         pw.println("<b>Memory: </b>");
         pw.println(engine.heapReport());
         pw.println("<br/><br/>");
