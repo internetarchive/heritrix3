@@ -23,12 +23,14 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.archive.util.ArchiveUtils;
 
@@ -271,6 +273,27 @@ public class Engine {
         }
         return false; 
     }
+
+	public boolean createNewJobWithDefaults(String path) throws IOException {
+
+		File newJobDir = new File(jobsDir,"/"+path);
+		if (newJobDir.exists()) {
+		  throw new IOException("file exists: "+newJobDir);
+		}
+		newJobDir.mkdirs();
+
+		// get crawler-beans template from this package into string 
+		InputStream inStream = getClass().getResourceAsStream(
+			"/org/archive/crawler/restlet/profile-crawler-beans.cxml");
+		String defaultCxmlStr = IOUtils.toString(inStream);
+		inStream.close(); 
+		
+		// write default crawler-beans string to new job config
+		File newJobCxml = new File(newJobDir,"crawler-beans.cxml");
+		FileUtils.writeStringToFile(newJobCxml, defaultCxmlStr);
+
+		return true;
+	}
 
    
 }
