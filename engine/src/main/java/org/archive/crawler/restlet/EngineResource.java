@@ -90,29 +90,34 @@ public class EngineResource extends Resource {
         	String warnStyle = errStyle;
         	String msgStyle = "style=\"margin:1em;padding:0.2em 1em;background:khaki;\"";
         	String path = form.getFirstValue("addpath");
-        	if (path.indexOf("/") != -1) {
+        	if (path==null) {
+        		String warn = "<div "+warnStyle+">WARNING: no job created. "
+        		+ "null path given.</div>\n";
+        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
+        		System.err.println(warn);  
+        	} else if (path.indexOf("/") != -1) {
         		String warn = "<div "+warnStyle+">WARNING: "
-        			+ "no job created. sub-directories disallowed: "
-        			+ "<i>" + path + "</i></div>\n";
-                Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
-                System.err.println(warn);
+        		+ "no job created. sub-directories disallowed: "
+        		+ "<i>" + path + "</i></div>\n";
+        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
+        		System.err.println(warn);
         	} else {
-        	boolean created = false;
-        	try {
-        		created = getEngine().createNewJobWithDefaults(path);
-			} catch (IOException e) {
-				String err = "<div "+errStyle+">ERROR! failed to create new job: "
-					+ "<i>" + path + "</i> "+ e.toString() + "</div>\n";
-                Flash.addFlash(getResponse(), err, Flash.Kind.NACK);
-                System.err.println(err);
-                
-			}
-			if (created) {
-				String msg = "<p "+msgStyle+">Successfully created job: " 
-					+ "<i>" + path + "</i></p>\n";
-				Flash.addFlash(getResponse(), msg, Flash.Kind.NACK);
-				getEngine().findJobConfigs();
-			}
+        		boolean created = false;
+        		try {
+        			created = getEngine().createNewJobWithDefaults(path);
+        		} catch (IOException e) {
+        			String err = "<div "+errStyle+">ERROR! failed to create new job: "
+        			+ "<i>" + path + "</i> "+ e.toString() + "</div>\n";
+        			Flash.addFlash(getResponse(), err, Flash.Kind.NACK);
+        			System.err.println(err);
+
+        		}
+        		if (created) {
+        			String msg = "<p "+msgStyle+">Successfully created job: " 
+        			+ "<i>" + path + "</i></p>\n";
+        			Flash.addFlash(getResponse(), msg, Flash.Kind.NACK);
+        			getEngine().findJobConfigs();
+        		}
         	}
         }
         // default: redirect to GET self
