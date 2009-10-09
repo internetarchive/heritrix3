@@ -87,8 +87,8 @@ public class EngineResource extends Resource {
             }
         } else if ("create".equals(action)) {
         	String errStyle = "style=\"margin:1em;padding:0.2em 1em;background:pink;\"";
-        	String warnStyle = errStyle;
-        	String msgStyle = "style=\"margin:1em;padding:0.2em 1em;background:khaki;\"";
+        	String warnStyle = "style=\"margin:1em;padding:0.2em 1em;background:khaki;\"";
+        	String msgStyle = "style=\"margin:1em;padding:0.2em 1em;background:lavender;\"";
         	String path = form.getFirstValue("addpath");
         	if (path==null) {
         		String warn = "<div "+warnStyle+">WARNING: no job created. "
