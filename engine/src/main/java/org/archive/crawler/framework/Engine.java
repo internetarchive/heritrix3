@@ -20,7 +20,6 @@
 package org.archive.crawler.framework;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,15 +80,47 @@ public class Engine {
         }
         
         // discover any new job directories
-        for (File dir : jobsDir.listFiles(new FileFilter(){
-            public boolean accept(File pathname) {
-                return pathname.isDirectory();
-            }})) {
-            considerAsJobDirectory(dir);
+        if (! jobsDir.exists()) {
+            LOGGER.log(Level.WARNING,"jobsDir has disappeared: "+jobsDir.toString());
+        } else {
+        	for (File jobFile: jobsDir.listFiles()) {
+        		if (jobFile.isDirectory()) {
+        			considerAsJobDirectory(jobFile);
+        		} else if (jobFile.getName().endsWith(".jobpath")) {
+                    considerAsJobPath(jobFile);
+        		}
+        	}
         }
     }
 
-    public boolean considerAsJobDirectory(File dir) {
+    private void considerAsJobPath(File jobpathFile) {
+    	try {
+    		String pathToJob = FileUtils.readFileToString(jobpathFile).trim();
+			File jobPathFromFile = new File(pathToJob);
+			if (jobPathFromFile.isDirectory()) {
+				if (!considerAsJobDirectory(jobPathFromFile)) {
+					LOGGER.log(Level.WARNING,"invalid job path: "
+							+ "'" + jobPathFromFile.toString().trim() + "'"
+							+ " specified in jobpathFile: "
+							+ jobpathFile.toString());
+				}
+			} else {
+				// invalid job path specified
+				LOGGER.log(Level.WARNING,"invalid job path: "
+						+ "'" + jobPathFromFile.toString().trim() + "'"
+						+ " specified in jobpathFile: "
+						+ jobpathFile.toString());
+			}
+		} catch (IOException e) {
+			// problem reading jobpathFile
+			LOGGER.log(Level.WARNING,
+					"could not read jobPath from jobpathFile: "
+					+ jobpathFile.toString());
+			e.printStackTrace();
+		}
+	}
+
+	public boolean considerAsJobDirectory(File dir) {
         File[] candidateConfigs = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
@@ -103,12 +134,17 @@ public class Engine {
                 CrawlJob cj = new CrawlJob(cxml);
                 if(!jobConfigs.containsKey(cj.getShortName())) {
                     jobConfigs.put(cj.getShortName(),cj);
+                    LOGGER.log(Level.INFO,"added crawl job: " +cj.getShortName());
                     return true;
+                } else {
+                	// jobConfig exists
+                	return true;
                 }
             } catch (IllegalArgumentException iae) {
                 LOGGER.log(Level.WARNING,"bad cxml: "+cxml,iae);
             }
         }
+        // path rejected for some reason
         return false; 
     }
     
@@ -295,5 +331,22 @@ public class Engine {
 		return true;
 	}
 
-   
+    public void leaveJobPathFile(String path) throws IOException {
+    	String jobName = path.substring(path.lastIndexOf("/")+1,path.length());
+    	if (jobConfigs.containsKey(jobName)) {
+        	String jobpathFileName = jobName+".jobpath";
+        	File jobpathFile = new File(jobsDir,jobpathFileName);
+        	try {
+            	FileUtils.writeStringToFile(jobpathFile, path+"\n");
+            	System.out.println("Engine.leaveJobPathFile() wrote file: "
+            			+ jobpathFileName);
+        	} catch (IOException e) {
+        		throw new IOException("could not create jobpathFile: "
+        				+ jobpathFile.toString());
+        	}
+    	} else {
+    		LOGGER.log(Level.SEVERE,"job: "+jobName+" not found in jobConfig!");
+    	}
+	}
+
 }

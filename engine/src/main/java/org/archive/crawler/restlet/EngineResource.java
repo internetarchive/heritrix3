@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
@@ -83,45 +84,69 @@ public class EngineResource extends Resource {
                 added = getEngine().considerAsJobDirectory(new File(path));
             }
             if(!added) {
-                Flash.addFlash(getResponse(), "not a valid preexisting job directory: \""+path+"\"", Flash.Kind.NACK);
+            	String msg = messageDiv("ERROR! invalid job path: '"+path+"'","ERROR");
+                Flash.addFlash(getResponse(),msg,Flash.Kind.NACK);
+            } else {
+            	try { 
+            		getEngine().leaveJobPathFile(path);
+            		String msg = messageDiv("Added job path: '"+path+"'","MESSAGE");
+                    Flash.addFlash(getResponse(),msg);
+            	} catch (IOException e) {
+                    String msg = messageDiv(e.getMessage(),"ERROR");
+            		Flash.addFlash(getResponse(),msg,Flash.Kind.NACK); 
+            	}
             }
         } else if ("create".equals(action)) {
-        	String errStyle = "style=\"margin:1em;padding:0.2em 1em;background:pink;\"";
-        	String warnStyle = "style=\"margin:1em;padding:0.2em 1em;background:khaki;\"";
-        	String msgStyle = "style=\"margin:1em;padding:0.2em 1em;background:lavender;\"";
         	String path = form.getFirstValue("addpath");
         	if (path==null) {
-        		String warn = "<div "+warnStyle+">WARNING: no job created. "
-        		+ "null path given.</div>\n";
+        		String warn = messageDiv("WARNING! null path given.","WARNING");
         		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
-        		System.err.println(warn);  
         	} else if (path.indexOf("/") != -1) {
-        		String warn = "<div "+warnStyle+">WARNING: "
-        		+ "no job created. sub-directories disallowed: "
-        		+ "<i>" + path + "</i></div>\n";
+        		String warn = messageDiv("WARNING! sub-directories disallowed: <i>" + path + "</i>","WARNING");
         		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
-        		System.err.println(warn);
+        	} else if (getEngine().getJobConfigs().containsKey(path)) {
+        		String warn = messageDiv("ERROR! job exists: <i>" + path + "</i>","ERROR");
+        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
         	} else {
         		boolean created = false;
         		try {
         			created = getEngine().createNewJobWithDefaults(path);
         		} catch (IOException e) {
-        			String err = "<div "+errStyle+">ERROR! failed to create new job: "
-        			+ "<i>" + path + "</i> "+ e.toString() + "</div>\n";
+        			String err = messageDiv("ERROR! " + e.toString(),"ERROR");
         			Flash.addFlash(getResponse(), err, Flash.Kind.NACK);
-        			System.err.println(err);
-
         		}
         		if (created) {
-        			String msg = "<p "+msgStyle+">Successfully created job: " 
-        			+ "<i>" + path + "</i></p>\n";
-        			Flash.addFlash(getResponse(), msg, Flash.Kind.NACK);
+        			String msg = messageDiv("Successfully created job: <i>" + path + "</i>","MESSAGE");
+        			Flash.addFlash(getResponse(), msg, Flash.Kind.ACK);
         			getEngine().findJobConfigs();
         		}
         	}
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
+    }
+    
+    /**
+     * wraps a message in a styled div given messsage type 
+     * @param msg message to be displayed
+     * @param type message type selector
+     * @return string wrapped in styled <div/>
+     * TODO: put this in a sensible place, and use a stylesheet instead
+     */
+    protected String messageDiv(String message, String type) {
+    	HashMap<String,String> colorMap = new HashMap<String,String>();
+    	colorMap.put("ERROR","pink");
+    	colorMap.put("WARNING","lightyellow");
+    	colorMap.put("MESSAGE","lavender");
+    	String color;
+    	if (colorMap.containsKey(type)) {
+    		color = colorMap.get(type);
+    	} else {
+    		color = "gray";
+    	}
+    	String style = "style=\"margin:1em;padding:0.2em 1em;"
+    		+ "background:" + color + ";\"";
+    	return "<div " + style + ">" + message + "</div>\n";
     }
 
     protected void writeHtml(Writer writer) {
@@ -151,6 +176,9 @@ public class EngineResource extends Resource {
         pw.println("<b>Jobs Directory</b>: <a href='jobsdir'>"+jobsDir.getAbsolutePath()+"</a></h2>");
         
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
+        
+        // re-scan job configs on each page load
+        engine.findJobConfigs();
         jobs.addAll(engine.getJobConfigs().values());
          
         pw.println("<form method=\'POST\'><h2>Job Directories ("+jobs.size()+")");
