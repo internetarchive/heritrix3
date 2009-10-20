@@ -88,7 +88,7 @@ public class FrontierPreparer extends Scoper {
     {
         setCanonicalizationPolicy(new RulesCanonicalizationPolicy());
     }
-    public UriCanonicalizationPolicy getUriCanonicalizationPolicy() {
+    public UriCanonicalizationPolicy getCanonicalizationPolicy() {
         return (UriCanonicalizationPolicy) kp.get("uriCanonicalizationRules");
     }
     @Autowired(required=false)
@@ -235,7 +235,7 @@ public class FrontierPreparer extends Scoper {
      * @return Canonicalized <code>cacuri</code>.
      */
     protected String canonicalize(CrawlURI cauri) {
-        String canon = getUriCanonicalizationPolicy().canonicalize(cauri.getURI());
+        String canon = getCanonicalizationPolicy().canonicalize(cauri.getURI());
         if (cauri.isLocation()) {
             // If the via is not the same as where we're being redirected (i.e.
             // we're not being redirected back to the same page, AND the
@@ -248,7 +248,7 @@ public class FrontierPreparer extends Scoper {
             // canonicalization, and we want to fetch content at the
             // redirection (i.e. need to set forcefetch), is netarkivet.dk.
             if (!cauri.toString().equals(cauri.getVia().toString()) &&
-                    getUriCanonicalizationPolicy().canonicalize(
+                    getCanonicalizationPolicy().canonicalize(
                             cauri.getVia().toCustomString()).equals(canon)) {
                 cauri.setForceFetch(true);
             }
