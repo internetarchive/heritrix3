@@ -23,8 +23,6 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
 
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
@@ -49,8 +47,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class CandidatesProcessor extends Processor {
     private static final long serialVersionUID = -3L;
-
-    ReentrantLock lock = new ReentrantLock(true);
     
     /**
      * Candidate chain
@@ -163,49 +159,44 @@ public class CandidatesProcessor extends Processor {
             curi.getOutLinks().clear();
             return;
         }
-        
-        try {
-            lock.lock();
-            for (Link wref: curi.getOutLinks()) {
-                CrawlURI candidate;
-                try {
-                    candidate = curi.createCrawlURI(curi.getBaseURI(),wref);
-                    // at least for duration of candidatechain, offer
-                    // access to full CrawlURI of via
-                    candidate.setFullVia(curi); 
-                } catch (URIException e) {
-                    loggerModule.logUriError(e, curi.getUURI(), 
-                            wref.getDestination().toString());
-                    continue;
-                }
-                sheetOverlaysManager.applyOverridesTo(candidate);
-                try {
-                    KeyedProperties.clearOverridesFrom(curi); 
-                    KeyedProperties.loadOverridesFrom(candidate);
-                    
-                    if(getSeedsRedirectNewSeeds() && curi.isSeed() 
-                            && wref.getHopType() == Hop.REFER) {
-                        candidate.setSeed(true); 
-                    }
-                    getCandidateChain().process(candidate, null); 
-                    if(candidate.getFetchStatus()>=0) {
-                        if(checkForSeedPromotion(candidate)) {
-                            getSeeds().addSeed(candidate);
-                        } else {
-                            frontier.schedule(candidate);
-                        }
-                        curi.getOutCandidates().add(candidate);
-                    }
-                    
-                } finally {
-                    KeyedProperties.clearOverridesFrom(candidate); 
-                    KeyedProperties.loadOverridesFrom(curi);
-                }
+
+        for (Link wref: curi.getOutLinks()) {
+            CrawlURI candidate;
+            try {
+                candidate = curi.createCrawlURI(curi.getBaseURI(),wref);
+                // at least for duration of candidatechain, offer
+                // access to full CrawlURI of via
+                candidate.setFullVia(curi); 
+            } catch (URIException e) {
+                loggerModule.logUriError(e, curi.getUURI(), 
+                        wref.getDestination().toString());
+                continue;
             }
-            curi.getOutLinks().clear();
-        } finally {
-            lock.unlock();
+            sheetOverlaysManager.applyOverridesTo(candidate);
+            try {
+                KeyedProperties.clearOverridesFrom(curi); 
+                KeyedProperties.loadOverridesFrom(candidate);
+                
+                if(getSeedsRedirectNewSeeds() && curi.isSeed() 
+                        && wref.getHopType() == Hop.REFER) {
+                    candidate.setSeed(true); 
+                }
+                getCandidateChain().process(candidate, null); 
+                if(candidate.getFetchStatus()>=0) {
+                    if(checkForSeedPromotion(candidate)) {
+                        getSeeds().addSeed(candidate);
+                    } else {
+                        frontier.schedule(candidate);
+                    }
+                    curi.getOutCandidates().add(candidate);
+                }
+                
+            } finally {
+                KeyedProperties.clearOverridesFrom(candidate); 
+                KeyedProperties.loadOverridesFrom(curi);
+            }
         }
+        curi.getOutLinks().clear();
     }
     
     /**
