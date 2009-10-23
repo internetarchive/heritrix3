@@ -341,6 +341,7 @@ public abstract class AbstractFrontier
                 AbstractFrontier.this.managementTasks();
             }
         };
+        managerThread.setPriority(Thread.NORM_PRIORITY+1); 
         managerThread.start();
     }
     
@@ -578,7 +579,6 @@ public abstract class AbstractFrontier
         sheetOverlaysManager.applyOverridesTo(curi);
         if(curi.getClassKey()==null) {
             // remedial processing
-            System.err.println("curi not preped "+curi);
             try {
                 KeyedProperties.loadOverridesFrom(curi);
                 preparer.prepare(curi);
