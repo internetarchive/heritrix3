@@ -257,6 +257,8 @@ Serializable, Closeable {
         }
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
         
+        // triple this value to 6K because stats show many faults
+        config.setConfigParam("je.log.faultReadSize", "6144");
         f.mkdirs();
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
         
