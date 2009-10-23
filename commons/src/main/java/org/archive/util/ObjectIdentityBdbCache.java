@@ -88,6 +88,8 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     /** The Collection view of the BDB JE database used for this instance. */
     protected transient StoredSortedMap<String, V> diskMap;
 
+    protected AtomicLong count;
+    
     //
     // USAGE STATS
     //
@@ -162,6 +164,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
         
         this.db = openDatabase(env, dbName);
         this.diskMap = createDiskMap(this.db, classCatalog, valueClass);
+        this.count = new AtomicLong(diskMap.size());
     }
 
     @SuppressWarnings("unchecked")
@@ -271,6 +274,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 // (rather than just the memMap until page-out)
                 // ensures diskMap.keySet() provides complete view
                 V prevVal = diskMap.putIfAbsent(key, valDisk); 
+                count.incrementAndGet();
                 if(prevVal!=null) {
                     // ERROR: diskMap modification since previous
                     // diskMap.get() should be impossible
@@ -343,7 +347,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
         if(db==null) {
             return 0; 
         }
-        return diskMap.size();
+        return (int) count.get();
     }
     
     protected String getDatabaseName() {
