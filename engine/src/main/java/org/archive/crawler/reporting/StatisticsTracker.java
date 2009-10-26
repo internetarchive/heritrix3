@@ -238,6 +238,18 @@ public class StatisticsTracker
             }};
     
     /**
+     * Whether to maintain seed disposition records (expensive in 
+     * crawls with millions of seeds)
+     */
+    boolean trackSeeds = true;
+    public boolean getTrackSeeds() {
+        return this.trackSeeds;
+    }
+    public void setTrackSeeds(boolean trackSeeds) {
+        this.trackSeeds = trackSeeds;
+    }
+            
+    /**
      * The interval between writing progress information to log.
      */
     int intervalSeconds = 20;
@@ -733,16 +745,18 @@ public class StatisticsTracker
      * @param curi The CrawlURI that may be a seed.
      * @param disposition The disposition of the CrawlURI.
      */
-    private void handleSeed(final CrawlURI curi, final String disposition) {
-        if(curi.isSeed()){
-            SeedRecord sr = processedSeedsRecords.getOrUse(
-                    curi.getURI(),
-                    new Supplier<SeedRecord>() {
-                        public SeedRecord get() {
-                            return new SeedRecord(curi, disposition);
-                        }});
-            sr.updateWith(curi,disposition); 
-        }
+    protected void handleSeed(final CrawlURI curi, final String disposition) {
+        if(getTrackSeeds()) {
+            if(curi.isSeed()){
+                SeedRecord sr = processedSeedsRecords.getOrUse(
+                        curi.getURI(),
+                        new Supplier<SeedRecord>() {
+                            public SeedRecord get() {
+                                return new SeedRecord(curi, disposition);
+                            }});
+                sr.updateWith(curi,disposition); 
+            }
+        } // else ignore
     }
 
     public void crawledURISuccessful(CrawlURI curi) {
