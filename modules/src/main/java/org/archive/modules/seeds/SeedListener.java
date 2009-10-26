@@ -29,4 +29,5 @@ import org.archive.modules.CrawlURI;
 public interface SeedListener {
     void addedSeed(final CrawlURI uuri);
     boolean nonseedLine(String line);
+    void concludedSeedBatch();
 }

@@ -116,6 +116,7 @@ implements ReadSource,
                 nonseedLine(s);
             }
         }
+        publishConcludedSeedBatch(); 
     }
     
     /**

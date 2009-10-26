@@ -856,14 +856,16 @@ public abstract class AbstractFrontier
     public boolean nonseedLine(String line) {
         return false; 
     }
+    
+    public void concludedSeedBatch() {
+        // do nothing;
+    }
 
     protected void prepForFrontier(CrawlURI curi) {
         if (curi.getOrdinal() == 0) {
             curi.setOrdinal(nextOrdinal.getAndIncrement());
         }
     }
-
-
 
     /**
      * Perform fixups on a CrawlURI about to be returned via next().

@@ -35,8 +35,8 @@ import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigFile;
+import org.archive.spring.PathFixupListener;
 import org.archive.util.SurtPrefixSet;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class SurtPrefixedDecideRule extends PredicatedDecideRule 
 implements 
     SeedListener,
-    InitializingBean
+    PathFixupListener
 {
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
@@ -78,6 +78,7 @@ implements
     public void setSurtsSourceFile(ConfigFile cp) {
         this.surtsSourceFile.merge(cp);
     }
+    boolean sourceWasRead = false; 
 
     /**
      * Should seeds also be interpreted as SURT prefixes.
@@ -102,7 +103,7 @@ implements
     public void setSurtsDumpFile(ConfigFile cp) {
         this.surtsDumpFile.merge(cp);
     }
-
+    
     /**
      * Whether to also make the configured decision if a URI's 'via' URI (the
      * URI from which it was discovered) in SURT form begins with any of the
@@ -138,10 +139,15 @@ implements
     public SurtPrefixedDecideRule() {
     }
 
-    public void afterPropertiesSet() throws Exception {
+    public void pathsFixedUp() {
         readPrefixes();
+        dumpSurtPrefixSet();
     }
-
+    
+    public void concludedSeedBatch() {
+        dumpSurtPrefixSet();
+    }
+ 
     /**
      * Evaluate whether given object's URI is covered by the SURT prefix set
      * 
@@ -155,7 +161,6 @@ implements
                 return true;
             }
         }
-
         return innerDecide(uri.getUURI());
     }
     
@@ -175,7 +180,6 @@ implements
 
     protected void readPrefixes() {
         buildSurtPrefixSet();
-        dumpSurtPrefixSet();
     }
     
     /**

@@ -37,6 +37,7 @@ import org.archive.io.SinkHandlerLogThread;
 public class AlertThreadGroup extends ThreadGroup {
     protected int count;
     protected LinkedList<Logger> loggers = new LinkedList<Logger>(); 
+    static protected ThreadLocal<Logger> threadLogger = new ThreadLocal<Logger>();
     
     public AlertThreadGroup(String name) {
         super(name);
@@ -53,6 +54,11 @@ public class AlertThreadGroup extends ThreadGroup {
     public void addLogger(Logger logger) {
         loggers.add(logger);
     }
+    
+    /** set alternate temporary alert logger */
+    public static void setThreadLogger(Logger logger) {
+        threadLogger.set(logger); 
+    }
 
     public static AlertThreadGroup current() {
         Thread t = Thread.currentThread();
@@ -66,6 +72,14 @@ public class AlertThreadGroup extends ThreadGroup {
     public static void publishCurrent(LogRecord record) {
         AlertThreadGroup atg = AlertThreadGroup.current();
         if (atg == null) {
+            Logger tlog = threadLogger.get(); 
+            if(tlog!=null) {
+                // send to temp-registered logger
+                boolean usePar = tlog.getUseParentHandlers();
+                tlog.setUseParentHandlers(false);
+                tlog.log(record);
+                tlog.setUseParentHandlers(usePar);
+            }
             return;
         }
         atg.publish(record);

@@ -125,6 +125,9 @@ implements
                 }
             }
         }
+        if(bean instanceof PathFixupListener) {
+            ((PathFixupListener)bean).pathsFixedUp();
+        }
         return bean;
     }
 

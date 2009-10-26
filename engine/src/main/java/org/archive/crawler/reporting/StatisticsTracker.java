@@ -30,7 +30,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -1035,5 +1034,9 @@ public class StatisticsTracker
      */
     public boolean nonseedLine(String line) {
         return false;
+    }
+    
+    public void concludedSeedBatch() {
+        // do nothing;
     }
 }

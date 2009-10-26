@@ -32,6 +32,8 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.crawler.reporting.AlertHandler;
+import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.Report;
 import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.spring.ConfigPath;
@@ -391,6 +393,8 @@ public class JobResource extends Resource {
             copyJob(copyTo,"on".equals(form.getFirstValue("asProfile")));
             return;
         }
+        AlertHandler.ensureStaticInitialization();
+        AlertThreadGroup.setThreadLogger(cj.getJobLogger());
         String action = form.getFirstValue("action");
         if("launch".equals(action)) {
             cj.launch(); 
@@ -411,6 +415,7 @@ public class JobResource extends Resource {
         } else if("terminate".equals(action)) {
             cj.terminate();
         }
+        AlertThreadGroup.setThreadLogger(null);
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
     }

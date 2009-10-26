@@ -68,6 +68,11 @@ public abstract class SeedModule implements Serializable
             l.nonseedLine(line);
         }
     }
+    protected void publishConcludedSeedBatch() {
+        for (SeedListener l: seedListeners) {
+            l.concludedSeedBatch();
+        }
+    }
 
     public SeedModule() {
         super();
