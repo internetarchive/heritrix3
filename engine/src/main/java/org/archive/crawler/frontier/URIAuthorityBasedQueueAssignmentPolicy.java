@@ -102,11 +102,29 @@ implements
         return candidate; 
     }
     
-    protected int getSubqueue(UURI basis, int parallelQueues) {
-        if(null==basis.getRawPathQuery()) {
+    protected int getSubqueue(UURI basisUuri, int parallelQueues) {
+        String basis = bucketBasis(basisUuri);
+        if(StringUtils.isEmpty(basis)) {
             return 0; 
         }
-        return conhash.bucketFor(basis.getRawPathQuery(), parallelQueues);
+        return conhash.bucketFor(basis, parallelQueues);
+    }
+    
+    /**
+     * Base subqueue on first path-segment, if any. (Means unbalanced
+     * subqueues, but consistency for most-common case where fanout
+     * can be at first segment, and it's beneficial to keep similar
+     * URIs in same queue.)
+     * @param uuri
+     * @return
+     */
+    protected String bucketBasis(UURI uuri) {
+        String path = new String(uuri.getRawPath());
+        int i = path.indexOf('/',1);
+        if(i<0) {
+            return null; 
+        }
+        return path.substring(1,i);
     }
 
     abstract String getCoreKey(UURI basis);
