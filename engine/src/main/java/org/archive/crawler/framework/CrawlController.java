@@ -678,7 +678,8 @@ implements Serializable,
             }
             if(atFinish()) { // really, "just reached finish"
                 if (getPauseAtFinish()) {
-                    requestCrawlPause();
+                    completePause();
+                    break;
                 } else {
                     beginCrawlStop();
                 }
