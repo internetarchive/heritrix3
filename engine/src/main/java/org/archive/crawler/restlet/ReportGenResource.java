@@ -52,9 +52,9 @@ public class ReportGenResource extends JobRelatedResource {
             throw new ResourceException(500);
         }
         // redirect
-        String relative = cj.jobDirRelativePath(f);
+        String relative = JobResource.getHrefPath(f,cj);
         if(relative!=null) {
-            getResponse().redirectSeeOther("../jobdir/"+relative+"?m="+f.lastModified());
+            getResponse().redirectSeeOther("../"+relative+"?m="+f.lastModified());
             return new StringRepresentation("");
         } else {
             return new StringRepresentation(

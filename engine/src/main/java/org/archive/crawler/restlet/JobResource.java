@@ -355,7 +355,7 @@ public class JobResource extends Resource {
      * @param f File
      */
     protected void printLinkedFile(PrintWriter pw, File f, String linktext, String queryString) {      
-        String relativePath = getHrefPath(f);
+        String relativePath = JobResource.getHrefPath(f,cj);
         pw.println("<a href='" 
                 + relativePath 
                 + ((queryString==null) ? "" : "?" + queryString)
@@ -368,7 +368,16 @@ public class JobResource extends Resource {
         }
     }
 
-    protected String getHrefPath(File f) {
+    /**
+     * Get a usable HrefPath, relative to the JobResource, for the given
+     * file. Assumes usual helper resources ('jobdir/', 'anypath/') at
+     * the usual locations.
+     * 
+     * @param f File to provide an href (suitable for clicking or redirection)
+     * @param cj CrawlJob for calculating jobdir-relative path if possible
+     * @return String path suitable as href or Location header
+     */
+    public static String getHrefPath(File f, CrawlJob cj) {
         String jobDirRelative = cj.jobDirRelativePath(f);
         if(jobDirRelative!=null) {
             return "jobdir/"+jobDirRelative;
