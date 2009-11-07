@@ -89,7 +89,9 @@ public class JobResource extends Resource {
 
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
-        String jobTitle = cj.getShortName()+ " - Job main page";
+        String jobTitle = cj.getShortName() + " - " 
+                          + getJobStatusDescription() 
+                          + " - Job main page";
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
@@ -207,17 +209,8 @@ public class JobResource extends Resource {
             }
         }
         pw.println("</div>");
-        
-       
-        if(!cj.isContainerOk()) {
-            pw.println("<h2>Unbuilt Job</h2>");
-        } else if(cj.isRunning()) {
-            pw.println("<h2>Active Job: "+cj.getCrawlController().getState()+"</h2>");
-        } else if(cj.isLaunchable()){
-            pw.println("<h2>Ready Job</h2>");
-        } else {
-            pw.println("<h2>Finished Job: "+cj.getCrawlController().getCrawlExitStatus()+"</h2>");
-        }
+         
+        pw.println("<h2>Job is "+getJobStatusDescription()+"</h2>");
 
         if(cj.isContainerOk()) {
             pw.println("<b>Totals</b><br/>&nbsp;&nbsp;");
@@ -336,6 +329,18 @@ public class JobResource extends Resource {
             "<label for='asProfile'>as profile</label></form>");
         pw.println("<hr/>");
         pw.close();
+    }
+    
+    public String getJobStatusDescription() {
+        if(!cj.isContainerOk()) {
+            return "Unbuilt";
+        } else if(cj.isRunning()) {
+            return "Active: "+cj.getCrawlController().getState();
+        } else if(cj.isLaunchable()){
+            return "Ready";
+        } else {
+            return "Finished: "+cj.getCrawlController().getCrawlExitStatus();
+        }
     }
 
     /**
