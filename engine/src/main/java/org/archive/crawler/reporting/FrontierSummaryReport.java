@@ -35,8 +35,8 @@ public class FrontierSummaryReport extends Report {
     public void write(PrintWriter writer) {
         if(!stats.controller.getFrontier().isRunning()) {
             writer.println("frontier unstarted");
-        } else if (stats.controller.getFrontier().isEmpty()) {
-            writer.println("frontier empty");
+//        } else if (stats.controller.getFrontier().isEmpty()) {
+//            writer.println("frontier empty");
         } else {
             stats.controller.getFrontier().reportTo(
                     WorkQueueFrontier.STANDARD_REPORT, writer);
