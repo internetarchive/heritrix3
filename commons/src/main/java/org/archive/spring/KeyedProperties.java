@@ -20,11 +20,11 @@
  package org.archive.spring;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Map for storing overridable properties. 
@@ -35,7 +35,7 @@ import java.util.Map;
  * to the 'prop' entry in this map.)
  * 
  */
-public class KeyedProperties extends HashMap<String,Object> {
+public class KeyedProperties extends ConcurrentHashMap<String,Object> {
     private static final long serialVersionUID = 3403222335436162778L;
     /** the alternate global property-paths leading to this map 
      * TODO: consider if deterministic ordered list is important */

@@ -20,6 +20,7 @@
 package org.archive.crawler.spring;
 
 import org.archive.modules.deciderules.DecideRule;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.Ordered;
 
@@ -30,7 +31,7 @@ import org.springframework.core.Ordered;
  * @contributor gojomo
  */
 public class DecideRuledSheetAssociation extends SheetAssociation 
-implements Ordered, Comparable<DecideRuledSheetAssociation> {
+implements Ordered, Comparable<DecideRuledSheetAssociation>, BeanNameAware {
     DecideRule rules;
     int order = 0; 
     
@@ -51,6 +52,15 @@ implements Ordered, Comparable<DecideRuledSheetAssociation> {
 
     // compare on the basis of Ordered value
     public int compareTo(DecideRuledSheetAssociation o) {
-        return order - ((Ordered)o).getOrder();
+        int cmp = order - ((Ordered)o).getOrder();
+        if(cmp!=0) {
+            return cmp;
+        }
+        return name.compareTo(o.name); 
+    }
+    
+    String name;
+    public void setBeanName(String name) {
+        this.name = name;
     }
 }

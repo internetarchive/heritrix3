@@ -20,9 +20,8 @@
 package org.archive.modules;
 
 import java.io.Reader;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -108,8 +107,7 @@ implements ApplicationContextAware, InitializingBean {
         new ThreadLocal<ScriptEngine>();
     protected ScriptEngine sharedEngine;
     /** map for optional use by scripts */
-    public Map<Object,Object> sharedMap = 
-        Collections.synchronizedMap(new HashMap<Object,Object>());
+    public Map<Object,Object> sharedMap = new ConcurrentHashMap<Object,Object>();
 
     /**
      * Constructor.

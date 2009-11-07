@@ -20,6 +20,7 @@
 package org.archive.spring;
 import java.beans.PropertyChangeEvent;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
@@ -60,10 +61,8 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     /** map of full property-paths (from BeanFactory to individual 
      * property) and their changed value when this Sheet of overrides
      * is in effect
-     * TODO: consider if this should be auto-converted to a concurrentmap,
-     * to allow on-the-fly changes in unpaused crawls
      */
-    Map<String,Object> map;
+    Map<String,Object> map = new ConcurrentHashMap<String, Object>(); 
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
@@ -86,9 +85,16 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     public Map<String, Object> getMap() {
         return map;
     }
+    /**
+     * Set map of property full bean-path (starting with a target 
+     * bean-name) to alternate values. Note: provided map is copied 
+     * into a local concurrent map, rather than used directly. 
+     * @param m
+     */
     @Required
     public void setMap(Map<String, Object> m) {
-        this.map = m;
+        this.map.clear();
+        this.map.putAll(m);
     }
     
     /**

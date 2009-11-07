@@ -24,10 +24,12 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
@@ -59,11 +61,11 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     BeanFactory beanFactory; 
     /** all SheetAssociations by DecideRule evaluation */ 
     SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
-        new TreeSet<DecideRuledSheetAssociation>();
-    TreeMap<String,List<String>> sheetNamesBySurt = new TreeMap<String,List<String>>(); 
+        new ConcurrentSkipListSet<DecideRuledSheetAssociation>();
+    NavigableMap<String,List<String>> sheetNamesBySurt = new ConcurrentSkipListMap<String,List<String>>(); 
     
     /** all sheets by (bean)name*/
-    Map<String,Sheet> sheetsByName = new HashMap<String, Sheet>();
+    Map<String,Sheet> sheetsByName = new ConcurrentHashMap<String, Sheet>();
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
@@ -100,7 +102,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * 
      * @return map of Sheet names by their configured SURT
      */
-    public TreeMap<String,List<String>> getSheetsNamesBySurt() {
+    public NavigableMap<String,List<String>> getSheetsNamesBySurt() {
         return this.sheetNamesBySurt;
     }
     /**
