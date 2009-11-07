@@ -22,12 +22,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.Processor;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.TextUtils;
 
 /**
  * A processor for calculating custum HTTP content digests in place of the 
@@ -70,12 +71,12 @@ public class HTTPContentDigest extends Processor {
      * the content digest.
      */
     {
-        setStripRegex(null);
+        setStripRegex("");
     }
-    public Pattern getStripRegex() {
-        return (Pattern) kp.get("stripRegex");
+    public String getStripRegex() {
+        return (String) kp.get("stripRegex");
     }
-    public void setStripRegex(Pattern regex) {
+    public void setStripRegex(String regex) {
         kp.put("stripRegex",regex);
     }
 
@@ -116,7 +117,7 @@ public class HTTPContentDigest extends Processor {
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         // Ok, if we got this far we need to calculate the content digest. 
         // Get the regex
-        Pattern regex = getStripRegex();
+        String regex = getStripRegex();
         
         // Get a replay of the document character seq.
         ReplayCharSequence cs = null;
@@ -135,12 +136,13 @@ public class HTTPContentDigest extends Processor {
 
            String s = null;
 
-           if (regex != null) {
+           if (StringUtils.isEmpty(regex)) {
                s = cs.toString();
            } else {
                // Process the document
-               Matcher m = regex.matcher(cs);
+               Matcher m = TextUtils.getMatcher(regex, cs);
                s = m.replaceAll(" ");
+               TextUtils.recycleMatcher(m);
            }
            digest.update(s.getBytes());
            // Get the new digest value
