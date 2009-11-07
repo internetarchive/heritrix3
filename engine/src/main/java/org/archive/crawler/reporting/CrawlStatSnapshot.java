@@ -85,9 +85,9 @@ public class CrawlStatSnapshot {
         
         // overall rates
         docsPerSecond = (double) downloadedUriCount /
-            (double)(stats.getCrawlElapsedTime() / 1000);
-        totalKiBPerSec = (long)(((bytesProcessed / 1024) /
-            (double)((stats.getCrawlElapsedTime()) / 1000)) + .5 );
+            (stats.getCrawlElapsedTime() / 1000d);
+        totalKiBPerSec = (long)((bytesProcessed / 1024d) /
+            ((stats.getCrawlElapsedTime()+1) / 1000d));
         
         CrawlStatSnapshot lastSnapshot = stats.snapshots.peek();
 
@@ -100,10 +100,10 @@ public class CrawlStatSnapshot {
         long sampleTime = timestamp - lastSnapshot.timestamp;
         currentDocsPerSecond =
             (double) (downloadedUriCount - lastSnapshot.downloadedUriCount) 
-            / (double)(sampleTime / 1000);
+            / (sampleTime / 1000d);
         currentKiBPerSec = 
             (long) (((bytesProcessed-lastSnapshot.bytesProcessed)/1024)
-            / ((double)sampleTime/1000));
+            / (sampleTime / 1000d));
     }
     
     /**
