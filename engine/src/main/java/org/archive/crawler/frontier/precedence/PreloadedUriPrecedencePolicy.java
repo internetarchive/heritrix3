@@ -79,7 +79,7 @@ implements Lifecycle {
         StoredSortedMap historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
-            BdbModule.BdbConfig dbConfig = PersistProcessor.historyDatabaseConfig();
+            BdbModule.BdbConfig dbConfig = PersistProcessor.HISTORY_DB_CONFIG;
 
             historyDb = bdb.openManagedDatabase(dbName, dbConfig, true);
             historyMap = new StoredSortedMap(historyDb,

@@ -74,7 +74,7 @@ implements Lifecycle {
         StoredSortedMap<String,Map> historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
-            BdbModule.BdbConfig dbConfig = historyDatabaseConfig();
+            BdbModule.BdbConfig dbConfig = HISTORY_DB_CONFIG;
 
             historyDb = bdb.openManagedDatabase(getHistoryDbName(), dbConfig, true);
             historyMap = 
@@ -94,11 +94,10 @@ implements Lifecycle {
     }
 
     public void stop() {
-    	// TODO leave this cleanup to BdbModule?
         if (!isRunning()) {
             return;
         }
-        bdb.closeDatabase(historyDb);
+        // leave other cleanup to BdbModule
         historyDb = null;
     }
 

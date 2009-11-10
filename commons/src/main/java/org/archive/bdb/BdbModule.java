@@ -329,6 +329,12 @@ Serializable, Closeable {
                     "BdbModule not started; as a Lifecycle bean it must not be an inner bean.");
         }
         if (databases.containsKey(name)) {
+            DatabasePlusConfig dpc = databases.get(name);
+            if(dpc.config == config) {
+                // object-identical configs: OK to share DB
+                return dpc.database;
+            }
+            // unshared config object: might be name collision; error
             throw new IllegalStateException("Database already exists: " +name);
         }
         

@@ -73,15 +73,13 @@ public abstract class PersistProcessor extends Processor {
     /** name of history Database */
     public static final String URI_HISTORY_DBNAME = "uri_history";
     
-    /**
-     * @return DatabaseConfig for history Database
-     */
-    public static BdbModule.BdbConfig historyDatabaseConfig() {
+    public static final BdbModule.BdbConfig HISTORY_DB_CONFIG;
+    static {
         BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
         dbConfig.setTransactional(false);
         dbConfig.setAllowCreate(true);
         dbConfig.setDeferredWrite(true);
-        return dbConfig;
+        HISTORY_DB_CONFIG = dbConfig;
     }
 
     public PersistProcessor() {
@@ -145,7 +143,7 @@ public abstract class PersistProcessor extends Processor {
         EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir, true);
         StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
         Database sourceHistoryDB = sourceEnv.openDatabase(
-                null, URI_HISTORY_DBNAME, historyDatabaseConfig().toDatabaseConfig());
+                null, URI_HISTORY_DBNAME, HISTORY_DB_CONFIG.toDatabaseConfig());
         StoredSortedMap<String,Map> sourceHistoryMap = new StoredSortedMap<String,Map>(sourceHistoryDB,
                 new StringBinding(), new SerialBinding<Map>(sourceClassCatalog,
                         Map.class), true);
@@ -244,7 +242,7 @@ public abstract class PersistProcessor extends Processor {
             targetEnv = setupEnvironment(envFile);
             classCatalog = targetEnv.getClassCatalog();
             historyDB = targetEnv.openDatabase(null, URI_HISTORY_DBNAME, 
-                    historyDatabaseConfig().toDatabaseConfig());
+                    HISTORY_DB_CONFIG.toDatabaseConfig());
             historyMap = new StoredSortedMap<String,Map>(historyDB, 
                     new StringBinding(), new SerialBinding<Map>(classCatalog,
                         Map.class), true);

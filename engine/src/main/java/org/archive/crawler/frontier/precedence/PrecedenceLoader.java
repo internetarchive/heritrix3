@@ -110,7 +110,7 @@ public class PrecedenceLoader {
         Database historyDB = targetEnv.openDatabase(
                 null,
                 PersistProcessor.URI_HISTORY_DBNAME,
-                PersistProcessor.historyDatabaseConfig().toDatabaseConfig());
+                PersistProcessor.HISTORY_DB_CONFIG.toDatabaseConfig());
         StoredSortedMap historyMap = new StoredSortedMap(historyDB,
                 new StringBinding(), new SerialBinding(classCatalog,
                         Map.class), true);
