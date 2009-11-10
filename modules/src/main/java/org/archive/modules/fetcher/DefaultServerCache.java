@@ -80,7 +80,7 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * @param serverKey Server name we're to return server for.
      * @return CrawlServer instance that matches the passed server name.
      */
-    public synchronized CrawlServer getServerFor(final String serverKey) {
+    public CrawlServer getServerFor(final String serverKey) {
         CrawlServer cserver = servers.getOrUse(
                 serverKey,
                 new Supplier<CrawlServer>() {
@@ -120,7 +120,7 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
      * @param hostname Host name we're to return Host for.
      * @return CrawlHost instance that matches the passed Host name.
      */
-    public synchronized CrawlHost getHostFor(final String hostname) {
+    public CrawlHost getHostFor(final String hostname) {
         if (hostname == null || hostname.length() == 0) {
             return null;
         }
