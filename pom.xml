@@ -32,9 +32,17 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale,
 
     <licenses>
         <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>See LICENSE.txt for more information.</comments>
+        </license>
+        <license>
             <name>GNU LESSER GENERAL PUBLIC LICENSE</name>
             <url>http://www.gnu.org/licenses/lgpl.txt</url>
             <distribution>repo</distribution>
+            <comments>LGPL applies only to a few remaining files in the
+                project. See LICENSE.txt for more information.</comments>
        </license>
     </licenses>
   <organization>

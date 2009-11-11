@@ -3,8 +3,28 @@ under the terms of the Apache License, Version 2.0:
 
   http://www.apache.org/licenses/LICENSE-2.0
   
-Individual source code files may be subject to or offered under other
-licenses, as indicated therein. 
+Some individual source code files are subject to or offered under other
+licenses. Here is a list of such files currently known:
+
+ * commons/src/main/resources/effective_tld_names.dat
+ * commons/src/main/java/org/archive/util/BenchmarkBlooms.java
+ * commons/src/main/java/org/archive/util/BloomFilter32bit.java
+ * commons/src/main/java/org/archive/util/BloomFilter32bitSplit.java
+ * commons/src/main/java/org/archive/util/BloomFilter32bp2.java
+ * commons/src/main/java/org/archive/util/BloomFilter32bp2Split.java
+ * commons/src/main/java/org/archive/util/BloomFilter64bit.java
+ * commons/src/main/java/org/archive/util/BloomFilter.java
+ * engine/src/main/java/org/archive/crawler/frontier/BucketQueueAssignmentPolicy.java
+ * engine/src/main/java/org/archive/crawler/util/RecoveryLogMapper.java
+ * engine/src/main/java/org/archive/crawler/util/SeedUrlNotFoundException.java
+ * modules/src/main/java/org/archive/modules/canonicalize/StripExtraSlashes.java
+ * modules/src/main/java/org/archive/modules/extractor/JerichoExtractorHTML.java
+ * modules/src/main/java/org/archive/modules/writer/Kw3Constants.java
+ * modules/src/main/java/org/archive/modules/writer/Kw3WriterProcessor.java
+ * modules/src/main/java/org/archive/modules/writer/MirrorWriterProcessor.java
+
+Except as otherwise noted, always consult individual source files for most
+accurate info.
  
 Heritrix is distributed with the libraries it depends upon.  The 
 libraries can be found under the 'lib' directory, and are used under 
