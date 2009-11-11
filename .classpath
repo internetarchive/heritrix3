@@ -33,8 +33,6 @@
 	<classpathentry kind="var" path="M2_REPO/commons-net/commons-net/1.4.1/commons-net-1.4.1.jar" sourcepath="M2_REPO/commons-net/commons-net/1.4.1/commons-net-1.4.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/poi/poi-scratchpad/2.5.1-final-20040804/poi-scratchpad-2.5.1-final-20040804.jar"/>
-	<classpathentry kind="var" path="M2_REPO/jboss/jboss-common-client/3.2.3/jboss-common-client-3.2.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/jboss/jnp-client/4.0.2/jnp-client-4.0.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/ant/ant/1.6.5/ant-1.6.5.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/3.3.87/je-3.3.87.jar" sourcepath="/M2SRC/je-3.3.87/src"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/1.4/commons-io-1.4.jar" sourcepath="/M2SRC/commons-io-1.4-src/src/java"/>
@@ -51,7 +49,7 @@
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-context/2.5.6/spring-context-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/dist/module-sources/spring-context-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/joda-time/joda-time/1.6/joda-time-1.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-ajp/6.1.11/jetty-ajp-6.1.11.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.11/jetty-sslengine-6.1.11.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.14/jetty-sslengine-6.1.14.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/restlet/org.restlet/1.1.2/org.restlet-1.1.2.jar" sourcepath="/M2SRC/restlet-1.1.1/src/org.restlet"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.2/com.noelios.restlet-1.1.2.jar" sourcepath="/M2SRC/restlet-1.1.1/src/com.noelios.restlet"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.2/com.noelios.restlet.ext.jetty-1.1.2.jar"/>
@@ -59,6 +57,7 @@
 	<classpathentry kind="lib" path="engine/src/main/resources"/>
 	<classpathentry kind="lib" path="modules/src/main/resources"/>
 	<classpathentry kind="lib" path="commons/src/main/resources"/>
-    <classpathentry kind="lib" path="commons/src/test/resources"/>
+	<classpathentry kind="lib" path="commons/src/test/resources"/>
+	<classpathentry kind="var" path="M2_REPO/org/json/json/20090211/json-20090211.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
