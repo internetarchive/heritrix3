@@ -8,7 +8,7 @@
 </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.archive.heritrix</groupId>
-  <artifactId>modules</artifactId>
+  <artifactId>heritrix-modules</artifactId>
   <packaging>jar</packaging>
   <name>Heritrix 3: 'modules' subproject (reusable components)</name>
   <description>
@@ -41,7 +41,7 @@ be used in applications other than Heritrix, however.
   <dependencies>
         <dependency>
              <groupId>org.archive.heritrix</groupId>
-             <artifactId>commons</artifactId>
+             <artifactId>heritrix-commons</artifactId>
              <version>${project.version}</version>
              <scope>compile</scope>
         </dependency>

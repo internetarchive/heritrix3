@@ -7,7 +7,7 @@
 </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.archive.heritrix</groupId>
-  <artifactId>engine</artifactId>
+  <artifactId>heritrix-engine</artifactId>
   <packaging>jar</packaging>
   <name>Heritrix 3: 'engine' subproject</name>
     <pluginRepositories>
@@ -74,7 +74,7 @@
   <dependencies>
         <dependency>
              <groupId>org.archive.heritrix</groupId>
-             <artifactId>modules</artifactId>
+             <artifactId>heritrix-modules</artifactId>
              <version>${project.version}</version>
              <scope>compile</scope>
         </dependency>

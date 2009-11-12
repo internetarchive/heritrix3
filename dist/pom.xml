@@ -68,7 +68,7 @@
   <dependencies>
         <dependency>
              <groupId>org.archive.heritrix</groupId>
-             <artifactId>engine</artifactId>
+             <artifactId>heritrix-engine</artifactId>
              <version>${project.version}</version>
              <scope>compile</scope>
         </dependency>

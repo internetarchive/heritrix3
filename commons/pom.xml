@@ -8,7 +8,7 @@
 </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.archive.heritrix</groupId>
-  <artifactId>commons</artifactId>
+  <artifactId>heritrix-commons</artifactId>
   <packaging>jar</packaging>
   <name>Heritrix 3: 'commons' subproject (utility classes)</name>
   <description>
