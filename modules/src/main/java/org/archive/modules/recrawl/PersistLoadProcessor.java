@@ -85,20 +85,20 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
 
     @Override
     public void start() {
-        super.start();
         if (isRunning()) {
             return;
         }
+        super.start();
         String psource = getPreloadSource().getPath();
         if (StringUtils.isNotBlank(psource)) {
             try {
                 int count = PersistProcessor.copyPersistSourceToHistoryMap(
                         null, preloadSource.getFile().getAbsolutePath(),store);
-                logger.info("Loaded deduplication information for " + count + " previously fetched urls from " + preloadSource);
+                logger.info("Loaded deduplication information for " + count + " previously fetched urls from " + preloadSource.getFile());
             } catch (IOException ioe) {
-                logger.log(Level.WARNING, "Problem loading " + preloadSource + ", proceeding without deduplication! " + ioe);
+                logger.log(Level.WARNING, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication! " + ioe);
             } catch(DatabaseException de) {
-                logger.log(Level.WARNING, "Problem loading " + preloadSource + ", proceeding without deduplication! " + de);
+                logger.log(Level.WARNING, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication! " + de);
             }
         }
     }
