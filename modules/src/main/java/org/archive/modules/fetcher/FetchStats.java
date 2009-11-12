@@ -24,9 +24,11 @@ import java.io.Serializable;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MultiReporter;
+import org.apache.commons.httpclient.HttpStatus; 
+import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 
 /**
- * Collector of statististics for a 'subset' of a crawl,
+ * Collector of statistics for a 'subset' of a crawl,
  * such as a server (host:port), host, or frontier group 
  * (eg queue). 
  * 
@@ -58,6 +60,13 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
     long fetchNonResponses; // processing attempts resulting in no response
                            // (both failures and temp deferrals)
     
+    long novelBytes; 
+    long novelUrls;
+    long notModifiedBytes;
+    long notModifiedUrls;
+    long dupByHashBytes;
+    long dupByHashUrls;  
+    
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {
             case SCHEDULED:
@@ -73,6 +82,18 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 fetchResponses++;
                 totalBytes += curi.getContentSize();
                 successBytes += curi.getContentSize();
+           
+                if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) {
+                    notModifiedBytes += curi.getContentSize();
+                    notModifiedUrls++;
+                } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)){
+                    dupByHashBytes += curi.getContentSize();
+                    dupByHashUrls++;
+                } else {
+                    novelBytes += curi.getContentSize();
+                    novelUrls++;
+                } 
+                
                 break;
             case DISREGARDED:
                 fetchDisregards++;
@@ -86,6 +107,19 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 } else {
                     fetchResponses++;
                     totalBytes += curi.getContentSize();
+                    
+                    if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) { 
+                        notModifiedBytes += curi.getContentSize();
+                        notModifiedUrls++;
+                    } else if (IdenticalDigestDecideRule.
+                            hasIdenticalDigest(curi)) {
+                        dupByHashBytes += curi.getContentSize();
+                        dupByHashUrls++;
+                    } else {
+                        novelBytes += curi.getContentSize();
+                        novelUrls++;
+                    } 
+
                 }
                 fetchFailures++;
                 break;
@@ -124,6 +158,30 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         return fetchSuccesses + fetchFailures;
     }
 
+    public long getNovelBytes() { 
+        return novelBytes;
+    }
+
+    public long getNovelUrls() {
+        return novelUrls;
+    }
+
+    public long getNotModifiedBytes() {
+        return notModifiedBytes;
+    }
+
+    public long getNotModifiedUrls() {
+        return notModifiedUrls;
+    }
+
+    public long getDupByHashBytes() {
+        return dupByHashBytes;
+    }
+
+    public long getDupByHashUrls() {
+        return dupByHashUrls;
+    } 
+    
     public String[] getReports() {
         // TODO Auto-generated method stub
         return null;

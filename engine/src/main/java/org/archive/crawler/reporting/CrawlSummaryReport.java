@@ -47,6 +47,22 @@ public class CrawlSummaryReport extends Report {
         writer.print("\nURIs Crawled successfully: " + snapshot.downloadedUriCount);
         writer.print("\nURIs Failed to Crawl: " + snapshot.downloadFailures);
         writer.print("\nURIs Disregarded: " + snapshot.downloadDisregards);
+        
+        writer.print("\nNovel URIs: " + stats.crawledBytes.get(
+                CrawledBytesHistotable.NOVELCOUNT));
+        if(stats.crawledBytes.containsKey(CrawledBytesHistotable.
+                DUPLICATECOUNT)) {
+            writer.print("\nDuplicate-by-hash URIs: " + 
+                    stats.crawledBytes.get(CrawledBytesHistotable.
+                            DUPLICATECOUNT));
+        }
+        if(stats.crawledBytes.containsKey(CrawledBytesHistotable.
+                NOTMODIFIEDCOUNT)) {
+            writer.print("\nNot-modified URIs: " +
+                    stats.crawledBytes.get(CrawledBytesHistotable.
+                            NOTMODIFIEDCOUNT)); 
+        }
+        
         writer.print("\nProcessed docs/sec: " +
                 ArchiveUtils.doubleToString(snapshot.docsPerSecond,2));
         writer.print("\nBandwidth in Kbytes/sec: " + snapshot.totalKiBPerSec);

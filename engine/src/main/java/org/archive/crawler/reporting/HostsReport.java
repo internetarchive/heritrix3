@@ -39,7 +39,7 @@ public class HostsReport extends Report {
         // manageable number of hosts
         TempStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
         // header
-        writer.print("[#urls] [#bytes] [host] [#robots] [#remaining]\n");
+        writer.print("[#urls] [#bytes] [host] [#robots] [#remaining] [#novel-urls] [#novel-bytes] [#dup-by-hash-urls] [#dup-by-hash-bytes] [#not-modified-urls] [#not-modified-bytes]\n"); 
         for (Map.Entry<Long,String> entry : hd.entrySet()) {
             // key is -count, value is hostname
             CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
@@ -49,7 +49,13 @@ public class HostsReport extends Report {
                     stats.getBytesPerHost(entry.getValue()),
                     entry.getValue(),
                     host.getSubstats().getRobotsDenials(),
-                    host.getSubstats().getRemaining());
+                    host.getSubstats().getRemaining(), 
+                    host.getSubstats().getNovelUrls(),
+                    host.getSubstats().getNovelBytes(),
+                    host.getSubstats().getDupByHashUrls(),
+                    host.getSubstats().getDupByHashBytes(),
+                    host.getSubstats().getNotModifiedUrls(),
+                    host.getSubstats().getNotModifiedBytes()); 
         }
         hd.destroy();
         // StatisticsTracker doesn't know of zero-completion hosts; 
@@ -63,7 +69,13 @@ public class HostsReport extends Report {
                             host.getSubstats().getTotalBytes(),
                             host.getHostName(),
                             host.getSubstats().getRobotsDenials(),
-                            host.getSubstats().getRemaining());
+                            host.getSubstats().getRemaining(),
+                            host.getSubstats().getNovelUrls(),
+                            host.getSubstats().getNovelBytes(),
+                            host.getSubstats().getDupByHashUrls(),
+                            host.getSubstats().getDupByHashBytes(),
+                            host.getSubstats().getNotModifiedUrls(),
+                            host.getSubstats().getNotModifiedBytes()); 
                 }
             }};
         stats.serverCache.forAllHostsDo(logZeros);
