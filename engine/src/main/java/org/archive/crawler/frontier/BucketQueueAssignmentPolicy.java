@@ -25,7 +25,6 @@
  */
 package org.archive.crawler.frontier;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -56,13 +55,7 @@ public class BucketQueueAssignmentPolicy extends QueueAssignmentPolicy {
     public String getClassKey(final CrawlURI curi) {
         
         CrawlHost host;
-        try {
-            host = serverCache.getHostFor(curi.getUURI().getReferencedHost());
-        } catch (URIException e) {
-            // FIXME error handling
-            e.printStackTrace();
-            host = null;
-        }
+        host = serverCache.getHostFor(curi.getUURI());
         if(host == null) {
             return "NO-HOST";
         } else if(host.getIP() == null) {

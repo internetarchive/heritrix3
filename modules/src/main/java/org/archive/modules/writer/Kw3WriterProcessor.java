@@ -43,11 +43,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.io.ReplayInputStream;
-import org.archive.modules.Processor;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.spring.ConfigPath;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -425,7 +424,7 @@ public class Kw3WriterProcessor extends Processor {
   }
 
   private String getHostAddress(CrawlURI curi) {
-      CrawlHost h = ServerCacheUtil.getHostFor(serverCache, curi.getUURI());
+      CrawlHost h = serverCache.getHostFor(curi.getUURI());
       if (h == null) {
           throw new NullPointerException("Crawlhost is null for " + curi + " " +
                   curi.getVia());

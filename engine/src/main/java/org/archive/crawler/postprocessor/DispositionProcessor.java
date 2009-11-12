@@ -247,7 +247,7 @@ public class DispositionProcessor extends Processor {
             if (maxBandwidthKB > 0) {
                 // Enforce bandwidth limit
                 ServerCache cache = this.getServerCache();
-                CrawlHost host = ServerCacheUtil.getHostFor(cache, curi.getUURI());
+                CrawlHost host = cache.getHostFor(curi.getUURI());
                 long minDurationToWait = host.getEarliestNextURIEmitTime()
                         - now;
                 float maxBandwidth = maxBandwidthKB * 1.024F; // kilo factor

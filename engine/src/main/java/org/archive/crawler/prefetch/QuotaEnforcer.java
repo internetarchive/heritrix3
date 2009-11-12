@@ -317,8 +317,7 @@ public class QuotaEnforcer extends Processor {
         CrawlURI curi = (CrawlURI)puri;
         final CrawlServer server = ServerCacheUtil.getServerFor(serverCache, 
                 curi.getUURI());
-        final CrawlHost host = ServerCacheUtil.getHostFor(serverCache, 
-                curi.getUURI());
+        final CrawlHost host = serverCache.getHostFor(curi.getUURI());
         FetchStats.HasFetchStats[] haveStats = 
             new FetchStats.HasFetchStats[] {
                 server, 

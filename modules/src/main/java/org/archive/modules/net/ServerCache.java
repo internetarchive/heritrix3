@@ -20,6 +20,7 @@
 package org.archive.modules.net;
 
 import org.apache.commons.collections.Closure;
+import org.archive.net.UURI;
 
 /**
  * Interface for crawl-global registry of CrawlServer (host:port) 
@@ -31,6 +32,8 @@ import org.apache.commons.collections.Closure;
 public interface ServerCache {
 
     CrawlHost getHostFor(String host);
+    
+    CrawlHost getHostFor(UURI uuri);
     
     CrawlServer getServerFor(String serverKey);
 

@@ -287,7 +287,7 @@ public class PreconditionEnforcer extends Processor  {
         // If we've done a dns lookup and it didn't resolve a host
         // cancel further fetch-processing of this URI, because
         // the domain is unresolvable
-        CrawlHost ch = getHostFor(curi);
+        CrawlHost ch = serverCache.getHostFor(curi.getUURI());
         if (ch == null || ch.hasBeenLookedUp() && ch.getIP() == null) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine( "no dns for " + ch +
@@ -322,7 +322,7 @@ public class PreconditionEnforcer extends Processor  {
      * @return true if ip should be looked up.
      */
     public boolean isIpExpired(CrawlURI curi) {
-        CrawlHost host = getHostFor(curi);
+        CrawlHost host = serverCache.getHostFor(curi.getUURI());
         if (!host.hasBeenLookedUp()) {
             // IP has not been looked up yet.
             return true;
@@ -492,13 +492,7 @@ public class PreconditionEnforcer extends Processor  {
         //skipToPostProcessing();
     }
     
-    
     private CrawlServer getServerFor(CrawlURI curi) {
         return ServerCacheUtil.getServerFor(serverCache, curi.getUURI());
-    }
-    
-    
-    private CrawlHost getHostFor(CrawlURI curi) {
-        return ServerCacheUtil.getHostFor(serverCache, curi.getUURI());
     }
 }

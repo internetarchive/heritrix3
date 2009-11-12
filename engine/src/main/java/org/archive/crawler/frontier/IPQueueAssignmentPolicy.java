@@ -21,7 +21,6 @@ package org.archive.crawler.frontier;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -45,8 +44,7 @@ public class IPQueueAssignmentPolicy
     }
     
     public String getClassKey(CrawlURI cauri) {
-        CrawlHost host = ServerCacheUtil.getHostFor(serverCache, 
-                cauri.getUURI());
+        CrawlHost host = serverCache.getHostFor(cauri.getUURI());
         if (host == null || host.getIP() == null) {
             // if no server or no IP, use superclass implementation
             return super.getClassKey(cauri);

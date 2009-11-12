@@ -679,8 +679,7 @@ public abstract class AbstractFrontier
         if (server != null) {
             server.getSubstats().tally(curi, stage);
         }
-        CrawlHost host = ServerCacheUtil.getHostFor(
-                getServerCache(),curi.getUURI());
+        CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host != null) {
             host.getSubstats().tally(curi, stage);
         }

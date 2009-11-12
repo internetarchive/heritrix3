@@ -33,17 +33,6 @@ public class ServerCacheUtil {
     private ServerCacheUtil() {
     }
     
-    
-    public static CrawlHost getHostFor(ServerCache cache, UURI uuri) {
-        try {
-            return cache.getHostFor(uuri.getReferencedHost());
-        } catch (URIException e) {
-            logger.log(Level.SEVERE, uuri.toString(), e);
-            return null;
-        }
-    }
-
-
     public static CrawlServer getServerFor(ServerCache cache, UURI uuri) {
         CrawlServer cs = null;
         try {

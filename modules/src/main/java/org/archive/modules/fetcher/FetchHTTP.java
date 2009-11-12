@@ -103,7 +103,6 @@ import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.net.UURI;
 import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -831,7 +830,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return false;
         }
 
-        CrawlHost host = getHostFor(curi.getUURI());
+        CrawlHost host = serverCache.getHostFor(curi.getUURI());
         if (host.getIP() == null && host.hasBeenLookedUp()) {
             curi.setFetchStatus(S_DOMAIN_PREREQUISITE_FAILURE);
             return false;
@@ -1507,22 +1506,4 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return null;
         }
     }
-
-    /**
-     * Get the {@link CrawlHost} associated with <code>curi</code>.
-     * 
-     * @param uuri
-     *            CandidateURI we're to return Host for.
-     * @return CandidateURI instance that matches the passed Host name.
-     */
-    private CrawlHost getHostFor(UURI uuri) {
-        CrawlHost h = null;
-        try {
-            h = serverCache.getHostFor(uuri.getReferencedHost());
-        } catch (URIException e) {
-            e.printStackTrace();
-        }
-        return h;
-    }
-
 }

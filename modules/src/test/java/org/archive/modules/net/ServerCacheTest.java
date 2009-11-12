@@ -55,7 +55,7 @@ public class ServerCacheTest extends TestCase {
     throws URIException {
         UURI uuri = UURIFactory.getInstance(uri);
         ServerCacheUtil.getServerFor(servers, uuri);
-        ServerCacheUtil.getHostFor(servers, uuri);;
+        servers.getHostFor(uuri);
         assertTrue("cache lost server",
             servers.containsServer(CrawlServer.getServerKey(uuri)));
         assertTrue("cache lost host",

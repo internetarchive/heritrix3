@@ -142,7 +142,11 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
     public CrawlHost getHostFor(UURI uuri) {
         CrawlHost h = null;
         try {
-            h = getHostFor(uuri.getReferencedHost());
+            if (uuri.getScheme().equals("dns")) {
+                h = getHostFor("dns:");
+            } else {
+                h = getHostFor(uuri.getReferencedHost());
+            }
         } catch (URIException e) {
             e.printStackTrace();
         }

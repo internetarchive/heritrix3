@@ -50,7 +50,6 @@ import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
@@ -775,13 +774,12 @@ public class StatisticsTracker
 
         // Save hosts stats.
         ServerCache sc = serverCache;
-        saveHostStats((curi.getFetchStatus() == 1)? "dns:":
-                ServerCacheUtil.getHostFor(sc, curi.getUURI()).getHostName(),
+        saveHostStats(sc.getHostFor(curi.getUURI()).getHostName(),
                 curi.getContentSize());
         
         if (curi.getData().containsKey(A_SOURCE_TAG)) {
         	saveSourceStats((String)curi.getData().get(A_SOURCE_TAG),
-                        ServerCacheUtil.getHostFor(sc, curi.getUURI()).
+                        sc.getHostFor(curi.getUURI()).
                     getHostName()); 
         }
     }

@@ -45,7 +45,6 @@ import org.archive.modules.Processor;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.spring.ConfigPath;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -332,7 +331,7 @@ implements Lifecycle {
         // otherwise, host referenced in URI
         // TODO:FIXME: have fetcher insert exact IP contacted into curi,
         // use that rather than inferred by CrawlHost lookup 
-        CrawlHost h = ServerCacheUtil.getHostFor(getServerCache(), curi.getUURI());
+        CrawlHost h = getServerCache().getHostFor(curi.getUURI());
         if (h == null) {
             throw new NullPointerException("Crawlhost is null for " +
                 curi + " " + curi.getVia());
