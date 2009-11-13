@@ -300,7 +300,7 @@ implements Lifecycle {
         } else if (scheme.equals("http") || scheme.equals("https")) {
             retVal = curi.getFetchStatus() > 0 && curi.getHttpMethod() != null;
         } else if (scheme.equals("ftp")) {
-            retVal = curi.getFetchStatus() == 200;
+            retVal = curi.getFetchStatus() > 0;
         } else {
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN
                     + ":scheme");

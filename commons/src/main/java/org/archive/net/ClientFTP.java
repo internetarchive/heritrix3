@@ -19,112 +19,138 @@
 package org.archive.net;
 
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.apache.commons.net.ProtocolCommandEvent;
+import org.apache.commons.net.ProtocolCommandListener;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPReply;
+import org.archive.util.IterableLineIterator;
 
 
 /**
- * Client for FTP operations.  This class is necessary only because the
- * {@link #_openDataConnection_(int, String)} method is protected in 
- * the superclass, and we need to call it directly to handle directory
- * listings.  (The code that provides directory listings in the 
- * superclass doesn't scale:  It reads the entire directory into
- * an in-memory list).
+ * Client for FTP operations. Saves the commands sent to the server and replies
+ * received, which can be retrieved with {@link #getControlConversation()}.
  * 
- * <p>Additionally, "strict" methods are provided for the other operations
- * we use.  Maddeningly, the superclass never raises exceptions.  If an 
- * FTP operation fails, then the superclass methods generally return false.
- * A developer then needs to check the {@link FTP#getReplyCode()}
- * method to see what actually went wrong.  The "strict" methods provided
- * by this class invoke the superclass method, check if the success flag
- * is false, and then raise an {@link FTPException} with the value of
- * {@link FTP#getReplyCode()}.
- *
- * @author pjack
+ * @contributor pjack
+ * @contributor nlevitt
  */
-public class ClientFTP extends FTPClient {
-    
-    
+public class ClientFTP extends FTPClient implements ProtocolCommandListener {
+
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
+    // Records the conversation on the ftp control channel. The format is based on "curl -v".
+    protected StringBuilder controlConversation;
+    protected Socket dataSocket;
+
     /**
      * Constructs a new <code>ClientFTP</code>.
      */
     public ClientFTP() {
+        controlConversation = new StringBuilder();
+        addProtocolCommandListener(this);
     }
-    
 
     /**
-     * Connects to the FTP server at the given host and port.
+     * Opens a data connection.
      * 
-     * @param host    the host of the FTP server to connect to
-     * @param port    the port the FTP server listens on
-     * @throws IOException  if the connection cannot be made due to IO error
-     * @throws FTPException  if the server refuses the connection
-     */
-    public void connectStrict(String host, int port) throws IOException {
-        this.connect(host, port);
-        int reply = this.getReplyCode();
-        if (!FTPReply.isPositiveCompletion(reply)) {
-            throw new FTPException(reply);
-        }
-    }
-
-    
-    /**
-     * Login to the FTP server with the given username and password.
-     * 
-     * @param user   the username to login under
-     * @param pass   the password to use
-     * @throws IOException   if a network error occurs
-     * @throws FTPException  if the login is rejected by the server
-     * @throws org.apache.commons.net.ftp.FTPConnectionClosedException   
-     *   if the FTP server prematurely closes the connection (for 
-     *   instance, if the client was idle for too long)
-     */
-    public void loginStrict(String user, String pass) throws IOException {
-        boolean r = this.login(user, pass);
-        if (!r) {
-            throw new FTPException(this.getReplyCode());
-        }
-    }
-
-    
-    /**
-     * Tells the FTP server to send binary files.
-     *
-     * @throws IOException   if a network error occurs
-     * @throws FTPException  if the server rejects the command
-     * @throws org.apache.commons.net.ftp.FTPConnectionClosedException   
-     *   if the FTP server prematurely closes the connection (for 
-     *   instance, if the client was idle for too long)
-     */
-    public void setBinary() throws IOException {
-        boolean r = super.setFileType(BINARY_FILE_TYPE);
-        if (!r) {
-            throw new FTPException(getReplyCode());
-        }
-    }
-
-
-    /**
-     * Opens a data connection. 
-     * 
-     * @param command  the data command (eg, RETR or LIST)
-     * @param path     the path of the file to retrieve
-     * @return  the socket to read data from
-     * @throws  IOException  if a network error occurs
-     * @throws  FTPException  if a protocol error occurs
+     * @param command
+     *            the data command (eg, RETR or LIST)
+     * @param path
+     *            the path of the file to retrieve
+     * @return the socket to read data from, or null if server says not found,
+     *         permission denied, etc
+     * @throws IOException
+     *             if a network error occurs
      */
     public Socket openDataConnection(int command, String path)
     throws IOException {
-        Socket socket = _openDataConnection_(command, path);
-        if (socket == null) {
-            throw new FTPException(this.getReplyCode());
+        try {
+            dataSocket = _openDataConnection_(command, path);
+            if (dataSocket != null) {
+                recordAdditionalInfo("Opened data connection to "
+                        + dataSocket.getInetAddress().getHostAddress() + ":"
+                        + dataSocket.getPort());
+            }
+            return dataSocket;
+        } catch (IOException e) {
+            if (getPassiveHost() != null) {
+                recordAdditionalInfo("Failed to open data connection to "
+                        + getPassiveHost() + ":" + getPassivePort() + ": "
+                        + e.getMessage());
+            } else {
+                recordAdditionalInfo("Failed to open data connection: "
+                        + e.getMessage());
+            }
+            throw e;
         }
-        return socket;
     }
 
+    public void closeDataConnection() {
+        if (dataSocket != null) {
+            String dataHostPort = dataSocket.getInetAddress().getHostAddress()
+                    + ":" + dataSocket.getPort();
+            try {
+                dataSocket.close();
+                recordAdditionalInfo("Closed data connection to "
+                        + dataHostPort);
+            } catch (IOException e) {
+                recordAdditionalInfo("Problem closing data connection to "
+                        + dataHostPort + ": " + e.getMessage());
+            }
+        }
+    }
+
+    protected void _connectAction_() throws IOException {
+        try {
+            recordAdditionalInfo("Opening control connection to "
+                    + getRemoteAddress().getHostAddress() + ":"
+                    + getRemotePort());
+            super._connectAction_();
+        } catch (IOException e) {
+            recordAdditionalInfo("Failed to open control connection to "
+                    + getRemoteAddress().getHostAddress() + ":"
+                    + getRemotePort() + ": " + e.getMessage());
+            throw e;
+        }
+    }
     
+    public void disconnect() throws IOException {
+        String remoteHostPort = getRemoteAddress().getHostAddress() + ":"
+                + getRemotePort();
+        super.disconnect();
+        recordAdditionalInfo("Closed control connection to " + remoteHostPort);
+    }
+
+    public String getControlConversation() {
+        return controlConversation.toString();
+    }    
+    
+    protected void recordControlMessage(String linePrefix, String message) {
+        for (String line: new IterableLineIterator(new BufferedReader(new StringReader(message)))) {
+            controlConversation.append(linePrefix);
+            controlConversation.append(line);
+            controlConversation.append(NETASCII_EOL);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest(linePrefix + line);
+            }
+        }
+    }
+
+    public void protocolCommandSent(ProtocolCommandEvent event) {
+        recordControlMessage("> ", event.getMessage());
+    }
+
+    public void protocolReplyReceived(ProtocolCommandEvent event) {
+        recordControlMessage("< ", event.getMessage());
+    }
+
+    // for noting things like successful/unsuccessful connection to data port
+    private void recordAdditionalInfo(String message) {
+        recordControlMessage("* ", message);
+    }
 }

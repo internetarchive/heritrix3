@@ -9,7 +9,6 @@ package org.archive.modules;
  *
  */
 public class ModuleAttributeConstants {
-
     
     final public static String A_DNS_SERVER_IP_LABEL = "dns-server-ip";
     
@@ -31,8 +30,10 @@ public class ModuleAttributeConstants {
     public static final String A_SOURCE_TAG = "source";
 
     public static final String A_FETCH_BEGAN_TIME= "fetch-began-time";
+    
+    public static final String A_FTP_CONTROL_CONVERSATION = "ftp-control-conversation";
+    public static final String A_FTP_FETCH_STATUS = "ftp-fetch-status";
 
     private ModuleAttributeConstants() {
     }
-
 }

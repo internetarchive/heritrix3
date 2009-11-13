@@ -18,17 +18,21 @@
  */
 package org.archive.modules.fetcher;
 
+import static org.archive.modules.ModuleAttributeConstants.A_FTP_CONTROL_CONVERSATION;
+import static org.archive.modules.ModuleAttributeConstants.A_FTP_FETCH_STATUS;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPCommand;
 import org.archive.io.RecordingInputStream;
 import org.archive.io.ReplayCharSequence;
@@ -38,7 +42,6 @@ import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.ClientFTP;
-import org.archive.net.FTPException;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
@@ -134,6 +137,33 @@ public class FetchFTP extends Processor  {
     }
 
     /**
+     * Whether or not to perform an on-the-fly digest hash of retrieved
+     * content-bodies.
+     */
+    {
+        setDigestContent(true);
+    }
+    public boolean getDigestContent() {
+        return (Boolean) kp.get("digestContent");
+    }
+    public void setDigestContent(boolean digest) {
+        kp.put("digestContent",digest);
+    }
+ 
+    /**
+     * Which algorithm (for example MD5 or SHA-1) to use to perform an
+     * on-the-fly digest hash of retrieved content-bodies.
+     */
+    String digestAlgorithm = "sha1"; 
+    public String getDigestAlgorithm() {
+        return digestAlgorithm;
+    }
+    public void setDigestAlgorithm(String digestAlgorithm) {
+        this.digestAlgorithm = digestAlgorithm;
+    }
+
+
+    /**
      * Maximum length in bytes to fetch. Fetch is truncated at this length. A
      * value of 0 means no limit.
      */
@@ -223,21 +253,24 @@ public class FetchFTP extends Processor  {
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         curi.setFetchBeginTime(System.currentTimeMillis());
-        Recorder recorder = curi.getRecorder();
         ClientFTP client = new ClientFTP();
+        Recorder recorder = curi.getRecorder();
         
         try {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("attempting to fetch ftp uri: " + curi);
+            }
             fetch(curi, client, recorder);
-        } catch (FTPException e) {
-            logger.log(Level.SEVERE, "FTP server reported problem.", e);
-            curi.setFetchStatus(e.getReplyCode());
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "IO Error during FTP fetch.", e);
-            curi.setFetchStatus(FetchStatusCodes.S_CONNECT_LOST);
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(curi + ": " + e);
+            }
+            curi.getNonFatalFailures().add(e);
+            curi.setFetchStatus(FetchStatusCodes.S_CONNECT_FAILED);
         } finally {
             disconnect(client);
-            curi.setContentSize(recorder.getRecordedInput().getSize());
             curi.setFetchCompletedTime(System.currentTimeMillis());
+            curi.getData().put(A_FTP_CONTROL_CONVERSATION, client.getControlConversation());
         }
     }
 
@@ -259,50 +292,99 @@ public class FetchFTP extends Processor  {
         if (port == -1) {
             port = 21;
         }
-        client.connectStrict(uuri.getHost(), port);
+
+        client.connect(uuri.getHost(), port);
         
         // Authenticate.
         String[] auth = getAuth(curi);
-        client.loginStrict(auth[0], auth[1]);
+        client.login(auth[0], auth[1]);
         
         // The given resource may or may not be a directory.
         // To figure out which is which, execute a CD command to
         // the UURI's path.  If CD works, it's a directory.
-        boolean dir = client.changeWorkingDirectory(uuri.getPath());
-        if (dir) {
-            curi.setContentType("text/plain");
-        }
-        
-        // TODO: A future version of this class could use the system string to
-        // set up custom directory parsing if the FTP server doesn't support 
-        // the nlist command.
-        if (logger.isLoggable(Level.FINE)) {
-            String system = client.getSystemName();
-            logger.fine(system);
-        }
-        
-        // Get a data socket.  This will either be the result of a NLIST
+        boolean isDirectory = client.changeWorkingDirectory(uuri.getPath());
+
+        // Get a data socket.  This will either be the result of a NLST
         // command for a directory, or a RETR command for a file.
-        int command = dir ? FTPCommand.NLST : FTPCommand.RETR;
-        String path = dir ? "." : uuri.getPath();
+        int command;
+        String path;
+        if (isDirectory) {
+            curi.getAnnotations().add("ftpDirectoryList");
+            command = FTPCommand.NLST;
+            client.setFileType(FTP.ASCII_FILE_TYPE);
+            path = ".";
+        } else { 
+            command = FTPCommand.RETR;
+            client.setFileType(FTP.BINARY_FILE_TYPE);
+            path = uuri.getPath();
+        }
+
         client.enterLocalPassiveMode();
-        client.setBinary();
-        Socket socket = client.openDataConnection(command, path);
-        curi.setFetchStatus(client.getReplyCode());
+        Socket socket = null;
+
+        try {
+            socket = client.openDataConnection(command, path);
+
+            // if "227 Entering Passive Mode" these will get reset later
+            curi.setFetchStatus(client.getReplyCode());
+            curi.getData().put(A_FTP_FETCH_STATUS, client.getReplyStrings()[0]);
+        } catch (IOException e) {
+            // try it again, see AbstractFrontier.needsRetrying()
+            curi.setFetchStatus(FetchStatusCodes.S_CONNECT_LOST);
+        }
 
         // Save the streams in the CURI, where downstream processors
         // expect to find them.
-        try {
-            saveToRecorder(curi, socket, recorder);
-        } finally {
-            recorder.close();
-            close(socket);
+        if (socket != null) {
+            // Shall we get a digest on the content downloaded?
+            boolean digestContent = getDigestContent();
+            String algorithm = null; 
+            if (digestContent) {
+                algorithm = getDigestAlgorithm();
+                recorder.getRecordedInput().setDigest(algorithm);
+                recorder.getRecordedInput().startDigest();
+            } else {
+                // clear
+                recorder.getRecordedInput().setDigest((MessageDigest)null);
+            }
+                    
+            try {
+                saveToRecorder(curi, socket, recorder);
+            } finally {
+                recorder.close();
+                client.closeDataConnection(); // does socket.close()
+                curi.setContentSize(recorder.getRecordedInput().getSize());
+
+                // "226 Transfer complete."
+                client.getReply();
+                curi.setFetchStatus(client.getReplyCode());
+                curi.getData().put(A_FTP_FETCH_STATUS, client.getReplyStrings()[0]);
+                
+                if (isDirectory) {
+                    curi.setContentType("text/plain");
+                } else {
+                    curi.setContentType("application/octet-stream");
+                }
+                
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.info("read " + recorder.getRecordedInput().getSize()
+                            + " bytes from ftp data socket");
+                }
+
+                if (digestContent) {
+                    curi.setContentDigest(algorithm,
+                        recorder.getRecordedInput().getDigestValue());
+                }
+            }
+
+            if (isDirectory) {
+                extract(curi, recorder);
+            }
+        } else {
+            // no data - without this, content size is -1
+            curi.setContentSize(0);
         }
 
-        curi.setFetchStatus(200);
-        if (dir) {
-            extract(curi, recorder);
-        }
         addParent(curi);
     }
     
@@ -487,23 +569,6 @@ public class FetchFTP extends Processor  {
         return result;
     }
     
-    
-
-
-    /**
-     * Quietly closes the given socket.
-     * 
-     * @param socket  the socket to close
-     */
-    private static void close(Socket socket) {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "IO error closing socket.", e);
-        }
-    }
-
-
     /**
      * Quietly closes the given sequence.
      * If an IOException is raised, this method logs it as a warning.
@@ -531,12 +596,14 @@ public class FetchFTP extends Processor  {
      */
     private static void disconnect(ClientFTP client) {
         if (client.isConnected()) try {
+            client.logout();
+        } catch (IOException e) {
+        }
+
+        if (client.isConnected()) try {
             client.disconnect();
         } catch (IOException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Could not disconnect from FTP client: " 
-                 + e.getMessage());
-            }
-        }        
+            logger.warning("Could not disconnect from FTP client: " + e);
+        }
     }
 }
