@@ -39,6 +39,7 @@ import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.IoUtils;
 import org.archive.util.OneLineSimpleLogger;
@@ -198,7 +199,7 @@ public abstract class PersistProcessor extends Processor {
             Map alist = (Map) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
 
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(splits[0] + " " + alist);
+                logger.fine(splits[0] + " " + ArchiveUtils.prettyString(alist));
             }
 
             if (historyMap != null) {
@@ -211,7 +212,7 @@ public abstract class PersistProcessor extends Processor {
         
         return count;
     }
-    
+
     /**
      * Populates a new environment db from an old environment db or a persist
      * log. If path to new environment is not provided, only logs the entries 

@@ -748,8 +748,16 @@ public class ArchiveUtils {
      * @param obj Object to prettify
      * @return prettified String
      */
+    @SuppressWarnings("unchecked")
     public static String prettyString(Object obj) {
-        return "<"+obj+">"; 
+        // these things have to checked and casted unfortunately
+        if (obj instanceof Object[]) {
+            return prettyString((Object[]) obj);
+        } else if (obj instanceof Map) {
+            return prettyString((Map) obj);
+        } else {
+            return "<"+obj+">";
+        }
     }
     
     /**
@@ -777,28 +785,26 @@ public class ArchiveUtils {
     }
     
     /**
-     * Provide a slightly-improved String of Map[]
+     * Provide a slightly-improved String of Object[]
      * 
-     * @param Map[]
-     * @return prettified (in square brackets) of Map[]
+     * @param Object[]
+     * @return prettified (in square brackets) of Object[]
      */
-    @SuppressWarnings("unchecked")
-    public static String prettyString(Map[] maps) {
+    public static String prettyString(Object[] array) {
         StringBuilder builder = new StringBuilder();
         builder.append("[ ");
         boolean needsComma = false; 
-        for( Map map : maps) {
-            if(map==null) continue;
+        for (Object o: array) {
+            if(o==null) continue;
             if(needsComma) {
                 builder.append(", ");
             }
-            builder.append(prettyString(map));
+            builder.append(prettyString(o));
             needsComma = true; 
         }
         builder.append(" ]");
         return builder.toString();
     }
-    
     
     private static String loadVersion() {
         InputStream input = ArchiveUtils.class.getResourceAsStream(
