@@ -61,7 +61,7 @@ implements Checkpointable, Lifecycle {
 //    class description: "PersistLogProcessor. Logs CrawlURI attributes " +
 //    "from latest fetch for consultation by a later recrawl."
     
-    public PersistLogProcessor() {;
+    public PersistLogProcessor() {
     }
 
 
@@ -93,8 +93,8 @@ implements Checkpointable, Lifecycle {
     @Override
     protected void innerProcess(CrawlURI curi) {
         log.writeLine(persistKeyFor(curi), " ", 
-        new String(Base64.encodeBase64(
-                SerializationUtils.serialize((Serializable)curi.getData()))));      
+                new String(Base64.encodeBase64(
+                        SerializationUtils.serialize((Serializable)curi.getPersistentDataMap()))));      
     }
 
 	public void checkpoint(File dir, List<RecoverAction> actions) throws IOException {
