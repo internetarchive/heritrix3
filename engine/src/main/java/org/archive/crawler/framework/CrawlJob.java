@@ -325,7 +325,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return ex.getMessage().replace('\n', ' ');
     }
 
-    public boolean isContainerOk() {
+    public boolean hasApplicationContext() {
         return ac!=null;
     }
     
@@ -354,7 +354,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * Ddid the ApplicationContext self-validate? 
      * return true if validation passed without errors
      */
-    public boolean isContainerValidated() {
+    public boolean hasValidApplicationContext() {
         if(ac==null) {
             return false;
         }
@@ -389,7 +389,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         }
         
         validateConfiguration();
-        if(!isContainerValidated()) {
+        if(!hasValidApplicationContext()) {
             getJobLogger().log(Level.SEVERE,"Can't launch problem configuration");
             return;
         }
@@ -612,15 +612,21 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     }
 
     /**
-     * Is this launchable? (Has CrawlController and not yet been launched?)
+     * Is it reasonable to offer a launch button
      * @return true if launchable
      */
     public boolean isLaunchable() {
-        CrawlController cc = getCrawlController();
-        if(cc==null) {
-            return true;
+        if (!hasApplicationContext()) {
+            // ok to try launch if not yet built
+            return true; 
         }
-        return !cc.hasStarted();
+        if (!hasValidApplicationContext()) {
+            // never launch if specifically invalid
+            return false;
+        }
+        // launchable if cc not yet instantiated or not yet started
+        CrawlController cc = getCrawlController();        
+        return cc == null || !cc.hasStarted();
     }
 
     public int getAlertCount() {

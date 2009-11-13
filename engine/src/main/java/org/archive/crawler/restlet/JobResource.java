@@ -123,14 +123,14 @@ public class JobResource extends Resource {
         pw.println("<div style='white-space:nowrap'><form method='POST'>");
         // PREP, LAUNCH
         pw.print("<input type='submit' name='action' value='build' ");
-        pw.print(cj.isContainerValidated()?"disabled='disabled' title='build job'":"");
+        pw.print(cj.hasApplicationContext()?"disabled='disabled' title='build job'":"");
         pw.println("/>");
         pw.print("<input type='submit' name='action' value='launch'");
         if(cj.isProfile()) {
             pw.print("disabled='disabled' title='profiles cannot be launched'");
         }
         if(!cj.isLaunchable()) {
-            pw.print("disabled='disabled' title='launched OK'");
+            pw.print("disabled='disabled' ");
         }
         pw.println("/>&nbsp;&nbsp;&nbsp;");
         
@@ -159,7 +159,7 @@ public class JobResource extends Resource {
         }
         pw.println(" type='submit' name='action' value='terminate'/>");
         pw.println("<input type='submit' name='action' value='teardown' ");
-        pw.print(cj.isContainerOk()?"":"disabled='disabled' title='no instance'");
+        pw.print(cj.hasApplicationContext()?"":"disabled='disabled' title='no instance'");
         pw.println("/><br/>");
 
         pw.println("</form></div>");
@@ -212,7 +212,7 @@ public class JobResource extends Resource {
          
         pw.println("<h2>Job is "+getJobStatusDescription()+"</h2>");
 
-        if(cj.isContainerOk()) {
+        if(cj.hasApplicationContext()) {
             pw.println("<b>Totals</b><br/>&nbsp;&nbsp;");
             pw.println(cj.uriTotalsReport());
             pw.println("<br/>&nbsp;&nbsp;");
@@ -246,7 +246,7 @@ public class JobResource extends Resource {
             pw.println("<br/><b>Memory</b><br/>&nbsp;&nbsp;");
             pw.println(getEngine().heapReport());
             
-            if(cj.isRunning() || (cj.isContainerOk() && !cj.isLaunchable())) {
+            if(cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable())) {
                 // show crawl log for running or finished crawls
                 pw.println("<h3>Crawl Log");
                 printLinkedFile(
@@ -276,7 +276,7 @@ public class JobResource extends Resource {
             
         }
         
-        if(cj.isContainerOk()) {
+        if(cj.hasApplicationContext()) {
             pw.println("<h2>Reports</h2>");
             for(Class<Report> reportClass : StatisticsTracker.LIVE_REPORTS) {
                 String className = reportClass.getSimpleName();
@@ -315,7 +315,7 @@ public class JobResource extends Resource {
         pw.println("<h2>Advanced</h2>");
         pw.println("<h3><a href='script'>Scripting console</a></h3>");
 
-        if(!cj.isContainerOk()) {
+        if(!cj.hasApplicationContext()) {
             pw.println("<i>build the job to browse bean instances</i>");
         } else {
             pw.println("<h3><a href='beans'>Browse beans</a></h3>");
@@ -332,7 +332,7 @@ public class JobResource extends Resource {
     }
     
     public String getJobStatusDescription() {
-        if(!cj.isContainerOk()) {
+        if(!cj.hasApplicationContext()) {
             return "Unbuilt";
         } else if(cj.isRunning()) {
             return "Active: "+cj.getCrawlController().getState();
