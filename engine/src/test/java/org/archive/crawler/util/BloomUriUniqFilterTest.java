@@ -52,7 +52,10 @@ implements UriUniqFilter.CrawlUriReceiver {
 
     protected void setUp() throws Exception {
         super.setUp();
-        this.filter = new BloomUriUniqFilter(2000,24);
+        this.filter = new BloomUriUniqFilter();
+        this.filter.setExpectedInserts(2000);
+        this.filter.setHashCount(24); 
+        this.filter.afterPropertiesSet();
         this.filter.setDestination(this);
     }
 

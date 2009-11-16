@@ -41,7 +41,9 @@ import java.security.SecureRandom;
  * <li>Removed dependence on cern.colt MersenneTwister (replaced with
  * SecureRandom) and QuickBitVector (replaced with local methods).</li>
  * <li>Adapted to allow long bit indices so long as the index/64 (used 
- * an array index in bit vector) fits within Integer.MAX_VALUE</li>
+ * an array index in bit vector) fits within Integer.MAX_VALUE. (Thus
+ * it supports filters up to 64*Integer.MAX_VALUE bits in size, or 
+ * 16GiB.</li>
  * </ul>
  * 
  * <hr>

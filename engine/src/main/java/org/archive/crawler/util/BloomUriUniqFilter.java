@@ -1,20 +1,20 @@
 /* BloomUriUniqFilter
- *
+*
  * $Id$
- *
- * Created on June 21, 2005
- *
- * Copyright (C) 2005 Internet Archive.
- *
- *  This file is part of the Heritrix web crawler (crawler.archive.org).
- *
+*
+* Created on June 21, 2005
+*
+* Copyright (C) 2005 Internet Archive.
+*
+* This file is part of the Heritrix web crawler (crawler.archive.org).
+*
  *  Licensed to the Internet Archive (IA) by one or more individual 
  *  contributors. 
- *
+*
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
  *  the License.  You may obtain a copy of the License at
- *
+*
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
@@ -22,8 +22,7 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- */
-
+*/
 package org.archive.crawler.util;
 
 import java.io.Serializable;
@@ -31,11 +30,12 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.util.BloomFilter;
-import org.archive.util.BloomFilter32bitSplit;
+import org.archive.util.BloomFilter64bit;
+import org.springframework.beans.factory.InitializingBean;
 
 
 /**
- * A MG4J BloomFilter-based implementation of an AlreadySeen list.
+ * An implementation of an AlreadySeen list based on the MG4J BloomFilter.
  *
  * This implementation performs adequately without blowing out
  * the heap through to very large numbers of URIs. See
@@ -59,72 +59,64 @@ import org.archive.util.BloomFilter32bitSplit;
  *    
  * ...bytes. 
  * 
- * The default size is very close to the maximum practical size of the 
- * Bloom filter implementation, BloomFilter32bitSplit, created in the
- * initialize() method, due to integer arithmetic limits. 
+ * The BloomFilter64bit implementation class supports filters up to 
+ * 16GiB in size. 
  * 
- * If you need a larger filter, you should edit the initialize 
- * method to intantiate a BloomFilter64bit instead.  
+ * (If you only need a filter up to 512MiB in size, the 
+ * BloomFilter32bitSplit *might* offer better performance, on 32bit
+ * JVMs or with respect to heap-handling of giant arrays. The only 
+ * current way to swap in this class is by editing the source.)
  * 
  * @author gojomo
  * @version $Date$, $Revision$
  */
 public class BloomUriUniqFilter extends SetBasedUriUniqFilter
-implements Serializable {
+implements Serializable, InitializingBean {
 	private static final long serialVersionUID = 1061526253773091309L;
 
 	private static Logger LOGGER =
         Logger.getLogger(BloomUriUniqFilter.class.getName());
 
     BloomFilter bloom; // package access for testing convenience
-    protected int expected_n; // remember bloom contruction param
-
-    protected static final String EXPECTED_SIZE_KEY = ".expected-size";
-    protected static final String HASH_COUNT_KEY = ".hash-count";
-
+    
     // these defaults create a bloom filter that is
     // 1.44*125mil*22/8 ~= 495MB in size, and at full
     // capacity will give a false contained indication
     // 1/(2^22) ~= 1 in every 4 million probes
-    private static final int DEFAULT_EXPECTED_SIZE = 125000000; // 125 million
-    private static final int DEFAULT_HASH_COUNT = 22; // 1 in 4 million false pos
+    protected int expectedInserts= 125000000; // default 125 million;
+    public int getExpectedInserts() {
+        return expectedInserts;
+    }
+    public void setExpectedInserts(int expectedInserts) {
+        this.expectedInserts = expectedInserts;
+    }
 
+    protected int hashCount = 22; // 1 in 4 million false pos
+    public int getHashCount() {
+        return hashCount;
+    }
+    public void setHashCount(int hashCount) {
+        this.hashCount = hashCount;
+    }
+    
+    
     /**
      * Default constructor
      */
     public BloomUriUniqFilter() {
         super();
-        String ns = System.getProperty(this.getClass().getName() + EXPECTED_SIZE_KEY);
-        int n = (ns == null) ? DEFAULT_EXPECTED_SIZE : Integer.parseInt(ns);
-        String ds = System.getProperty(this.getClass().getName() + HASH_COUNT_KEY);
-        int d = (ds == null) ? DEFAULT_HASH_COUNT : Integer.parseInt(ds);
-        initialize(n,d);
     }
 
     /**
-     * Constructor.
+     * Initializer.
      *
      * @param n the expected number of elements.
      * @param d the number of hash functions; if the filter adds not more
      * than <code>n</code> elements, false positives will happen with
      * probability 2<sup>-<var>d</var></sup>.
      */
-    public BloomUriUniqFilter( final int n, final int d ) {
-        super();
-        initialize(n, d);
-    }
-
-    /**
-     * Initializer shared by constructors.
-     *
-     * @param n the expected number of elements.
-     * @param d the number of hash functions; if the filter adds not more
-     * than <code>n</code> elements, false positives will happen with
-     * probability 2<sup>-<var>d</var></sup>.
-     */
-    protected void initialize(final int n, final int d) {
-        this.expected_n = n;
-        bloom = new BloomFilter32bitSplit(n,d);
+    public void afterPropertiesSet() {
+        bloom = new BloomFilter64bit(expectedInserts,hashCount);
     }
 
     public void forget(String canonical, CrawlURI item) {
@@ -132,13 +124,12 @@ implements Serializable {
         LOGGER.severe("forget(\""+canonical+"\",CrawlURI) not supported");
     }
 
-    
     protected boolean setAdd(CharSequence uri) {
         boolean added = bloom.add(uri);
         // warn if bloom has reached its expected size (and its false-pos
         // rate will now exceed the theoretical/designed level)
-        if( added && (count() == expected_n)) {
-            LOGGER.warning("Bloom has reached expected limit "+expected_n);
+        if( added && (count() == expectedInserts)) {
+            LOGGER.warning("Bloom has reached expected limit "+expectedInserts);
         }
         return added;
     }
