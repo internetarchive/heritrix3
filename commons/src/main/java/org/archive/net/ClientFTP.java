@@ -153,4 +153,10 @@ public class ClientFTP extends FTPClient implements ProtocolCommandListener {
     private void recordAdditionalInfo(String message) {
         recordControlMessage("* ", message);
     }
+    
+    // XXX see https://issues.apache.org/jira/browse/NET-257
+    @Override
+    public String[] getReplyStrings() {
+        return _replyLines.toArray(new String[0]);
+    }
 }
