@@ -131,7 +131,7 @@ public class ClientFTP extends FTPClient implements ProtocolCommandListener {
     }    
     
     protected void recordControlMessage(String linePrefix, String message) {
-        for (String line: new IterableLineIterator(new BufferedReader(new StringReader(message)))) {
+        for (String line: new IterableLineIterator(new StringReader(message))) {
             controlConversation.append(linePrefix);
             controlConversation.append(line);
             controlConversation.append(NETASCII_EOL);

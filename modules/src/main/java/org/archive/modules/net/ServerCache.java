@@ -19,29 +19,76 @@
 
 package org.archive.modules.net;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.commons.collections.Closure;
+import org.apache.commons.httpclient.URIException;
 import org.archive.net.UURI;
 
 /**
- * Interface for crawl-global registry of CrawlServer (host:port) 
- * and CrawlHost (hostname) objects.
- * 
- * TODO?: Turn this into an abstract superclass which subsumes the 
- * utility methods of ServerCacheUtil.
+ * Abstract class for crawl-global registry of CrawlServer (host:port) and
+ * CrawlHost (hostname) objects.
  */
-public interface ServerCache {
+public abstract class ServerCache {
 
-    CrawlHost getHostFor(String host);
-    
-    CrawlHost getHostFor(UURI uuri);
-    
-    CrawlServer getServerFor(String serverKey);
+    public abstract CrawlHost getHostFor(String host);
 
+    public abstract CrawlServer getServerFor(String serverKey);
 
     /**
      * Utility for performing an action on every CrawlHost. 
      * 
      * @param action 1-argument Closure to apply to each CrawlHost
      */
-    void forAllHostsDo(Closure action);
+    public abstract void forAllHostsDo(Closure action);
+
+    
+    private static Logger logger =
+        Logger.getLogger(ServerCache.class.getName());
+    
+    /**
+     * Get the {@link CrawlHost} associated with <code>curi</code>.
+     * @param uuri CandidateURI we're to return Host for.
+     * @return CandidateURI instance that matches the passed Host name.
+     */
+    public CrawlHost getHostFor(UURI uuri) {
+        CrawlHost h = null;
+        try {
+            if (uuri.getScheme().equals("dns")) {
+                h = getHostFor("dns:");
+            } else {
+                h = getHostFor(uuri.getReferencedHost());
+            }
+        } catch (URIException e) {
+            logger.log(Level.SEVERE, uuri.toString(), e);
+        }
+        return h;
+    }
+
+    /**
+     * Get the {@link CrawlServer} associated with <code>curi</code>.
+     * @param uuri CandidateURI we're to get server from.
+     * @return CrawlServer instance that matches the passed CandidateURI.
+     */
+    public CrawlServer getServerFor(UURI uuri) {
+        CrawlServer cs = null;
+        try {
+            String key = CrawlServer.getServerKey(uuri);
+            // TODOSOMEDAY: make this robust against those rare cases
+            // where authority is not a hostname.
+            if (key != null) {
+                cs = getServerFor(key);
+            }
+        } catch (URIException e) {
+            logger.log(
+                Level.FINE, "No server key obtainable: "+uuri.toString(), e);
+        } catch (NullPointerException npe) {
+            logger.log(
+                Level.FINE, "No server key obtainable: "+uuri.toString(), npe);
+        }
+        return cs;
+    }
+
+
 }

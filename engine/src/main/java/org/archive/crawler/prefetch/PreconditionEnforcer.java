@@ -43,7 +43,6 @@ import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -215,7 +214,7 @@ public class PreconditionEnforcer extends Processor  {
             logger.severe("Failed get of path for " + curi);
         }
         
-        CrawlServer cs = getServerFor(curi);
+        CrawlServer cs = serverCache.getServerFor(curi.getUURI());
         // require /robots.txt if not present
         if (cs.isRobotsExpired(getRobotsValidityDurationSeconds())) {
         	// Need to get robots
@@ -277,7 +276,7 @@ public class PreconditionEnforcer extends Processor  {
             return false; 
         }
         
-        CrawlServer cs = getServerFor(curi);
+        CrawlServer cs = serverCache.getServerFor(curi.getUURI());
         if(cs == null) {
             curi.setFetchStatus(S_UNFETCHABLE_URI);
 //            curi.skipToPostProcessing();
@@ -410,7 +409,7 @@ public class PreconditionEnforcer extends Processor  {
                 // html form).
                 String prereq = c.getPrerequisite(curi);
                 if (prereq == null || prereq.length() <= 0) {
-                    CrawlServer server = getServerFor(curi);
+                    CrawlServer server = serverCache.getServerFor(curi.getUURI());
                     logger.severe(server.getName() + " has "
                         + " credential(s) of type " + c + " but prereq"
                         + " is null.");
@@ -444,7 +443,7 @@ public class PreconditionEnforcer extends Processor  {
     private boolean authenticated(final Credential credential,
             final CrawlURI curi) {
         boolean result = false;
-        CrawlServer server = getServerFor(curi);
+        CrawlServer server = serverCache.getServerFor(curi.getUURI());
         if (!server.hasCredentialAvatars()) {
             return result;
         }
@@ -490,9 +489,5 @@ public class PreconditionEnforcer extends Processor  {
         curi.incrementDeferrals();
         curi.setFetchStatus(S_DEFERRED);
         //skipToPostProcessing();
-    }
-    
-    private CrawlServer getServerFor(CrawlURI curi) {
-        return ServerCacheUtil.getServerFor(serverCache, curi.getUURI());
     }
 }

@@ -22,8 +22,6 @@ import junit.framework.TestCase;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.fetcher.DefaultServerCache;
-import org.archive.modules.net.CrawlServer;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -54,7 +52,7 @@ public class ServerCacheTest extends TestCase {
     private void testHostServer(DefaultServerCache servers, String uri)
     throws URIException {
         UURI uuri = UURIFactory.getInstance(uri);
-        ServerCacheUtil.getServerFor(servers, uuri);
+        servers.getServerFor(uuri);
         servers.getHostFor(uuri);
         assertTrue("cache lost server",
             servers.containsServer(CrawlServer.getServerKey(uuri)));

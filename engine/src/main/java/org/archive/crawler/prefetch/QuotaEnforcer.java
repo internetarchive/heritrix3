@@ -31,7 +31,6 @@ import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -315,8 +314,7 @@ public class QuotaEnforcer extends Processor {
     
     protected ProcessResult innerProcessResult(CrawlURI puri) {
         CrawlURI curi = (CrawlURI)puri;
-        final CrawlServer server = ServerCacheUtil.getServerFor(serverCache, 
-                curi.getUURI());
+        final CrawlServer server = serverCache.getServerFor(curi.getUURI());
         final CrawlHost host = serverCache.getHostFor(curi.getUURI());
         FetchStats.HasFetchStats[] haveStats = 
             new FetchStats.HasFetchStats[] {

@@ -24,11 +24,9 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
-import org.apache.commons.httpclient.URIException;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.net.UURI;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.ObjectIdentityMemCache;
 import org.archive.util.Supplier;
@@ -39,7 +37,7 @@ import org.archive.util.Supplier;
  * @author stack
  * @version $Date$, $Revision$
  */
-public class DefaultServerCache implements ServerCache, Closeable, Serializable {
+public class DefaultServerCache extends ServerCache implements Closeable, Serializable {
     private static final long serialVersionUID = 1L;
 
     private static Logger logger =
@@ -90,30 +88,6 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
                     }});
         return cserver;
     }
-
-    /**
-     * Get the {@link CrawlServer} associated with <code>curi</code>.
-     * @param uuri CandidateURI we're to get server from.
-     * @return CrawlServer instance that matches the passed CandidateURI.
-     */
-    public CrawlServer getServerFor(UURI uuri) {
-        CrawlServer cs = null;
-        try {
-            String key = CrawlServer.getServerKey(uuri);
-            // TODOSOMEDAY: make this robust against those rare cases
-            // where authority is not a hostname.
-            if (key != null) {
-                cs = getServerFor(key);
-            }
-        } catch (URIException e) {
-            logger.severe(e.getMessage() + ": " + uuri);
-            e.printStackTrace();
-        } catch (NullPointerException npe) {
-            logger.severe(npe.getMessage() + ": " + uuri);
-            npe.printStackTrace();
-        }
-        return cs;
-    }
     
     /**
      * Get the {@link CrawlHost} associated with <code>name</code>.
@@ -132,25 +106,6 @@ public class DefaultServerCache implements ServerCache, Closeable, Serializable 
                         return new CrawlHost(hkey);
                     }});
         return host;
-    }
-    
-    /**
-     * Get the {@link CrawlHost} associated with <code>curi</code>.
-     * @param uuri CandidateURI we're to return Host for.
-     * @return CandidateURI instance that matches the passed Host name.
-     */
-    public CrawlHost getHostFor(UURI uuri) {
-        CrawlHost h = null;
-        try {
-            if (uuri.getScheme().equals("dns")) {
-                h = getHostFor("dns:");
-            } else {
-                h = getHostFor(uuri.getReferencedHost());
-            }
-        } catch (URIException e) {
-            e.printStackTrace();
-        }
-        return h;
     }
 
     /**

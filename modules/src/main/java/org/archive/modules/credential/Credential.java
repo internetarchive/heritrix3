@@ -30,7 +30,6 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 
 /**
  * Credential type.
@@ -47,9 +46,10 @@ import org.archive.modules.net.ServerCacheUtil;
  */
 public abstract class Credential implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final Logger logger =
         Logger.getLogger(Credential.class.getName());
-
     
     /**
      * The root domain this credential goes against: E.g. www.archive.org
@@ -225,7 +225,7 @@ public abstract class Credential implements Serializable {
             CrawlURI curi) {
         String cd = getDomain();
 
-        CrawlServer serv = ServerCacheUtil.getServerFor(cache, curi.getUURI());
+        CrawlServer serv = cache.getServerFor(curi.getUURI());
         String serverName = serv.getName();
 //        String serverName = controller.getServerCache().getServerFor(curi).
 //            getName();

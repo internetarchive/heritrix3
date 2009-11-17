@@ -69,7 +69,6 @@ import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
@@ -676,8 +675,7 @@ public abstract class AbstractFrontier
      */
     protected void tally(CrawlURI curi, Stage stage) {
         // Tally per-server, per-host, per-frontier-class running totals
-        CrawlServer server = ServerCacheUtil.getServerFor(
-                getServerCache(),curi.getUURI());
+        CrawlServer server = getServerCache().getServerFor(curi.getUURI());
         if (server != null) {
             server.getSubstats().tally(curi, stage);
         }

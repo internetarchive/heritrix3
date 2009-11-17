@@ -35,7 +35,6 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.RobotsExclusionPolicy;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.net.ServerCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -155,8 +154,7 @@ public class DispositionProcessor extends Processor {
         CrawlURI curi = (CrawlURI)puri;
         
         // Tally per-server, per-host, per-frontier-class running totals
-        CrawlServer server = ServerCacheUtil.getServerFor(serverCache, 
-                curi.getUURI());
+        CrawlServer server = serverCache.getServerFor(curi.getUURI());
 
         String scheme = curi.getUURI().getScheme().toLowerCase();
         if (scheme.equals("http") || scheme.equals("https") &&
@@ -222,8 +220,7 @@ public class DispositionProcessor extends Processor {
             long respectThreshold = getRespectCrawlDelayUpToSeconds() * 1000;
             if (durationToWait<respectThreshold) {
                 // may need to extend wait
-                CrawlServer s = ServerCacheUtil.getServerFor(
-                        getServerCache(),curi.getUURI());
+                CrawlServer s = getServerCache().getServerFor(curi.getUURI());
                 String ua = curi.getUserAgent();
                 if (ua == null) {
                     ua = metadata.getUserAgent();
