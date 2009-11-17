@@ -83,6 +83,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 /**
  * Shared facilities for Frontier implementations.
@@ -94,7 +95,8 @@ public abstract class AbstractFrontier
                Serializable, 
                SeedListener, 
                HasKeyedProperties,
-               ExtractorParameters {
+               ExtractorParameters,
+               ApplicationListener {
     private static final long serialVersionUID = 555881755284996860L;
     private static final Logger logger = Logger
             .getLogger(AbstractFrontier.class.getName());
