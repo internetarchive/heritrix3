@@ -202,10 +202,17 @@ public abstract class PersistProcessor extends Processor {
                 logger.fine(splits[0] + " " + ArchiveUtils.prettyString(alist));
             }
 
-            if (historyMap != null) {
-                // XXX allow RuntimeExceptions to propagate
+            if (historyMap != null) try {
                 historyMap.put(splits[0], alist);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "caught exception after loading " + count + 
+                        " urls from the persist log (perhaps crawl was stopped by user?)", e);
+                IOUtils.closeQuietly(persistLogReader);
+
+                // seems to finish most cleanly when we return rather than throw something
+                return count;
             }
+
             count++;
         }
         IOUtils.closeQuietly(persistLogReader);
