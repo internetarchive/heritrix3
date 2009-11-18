@@ -656,14 +656,10 @@ public abstract class AbstractFrontier
         requestState(State.RUN);
     }
 
-
     synchronized public void terminate() {
         requestState(State.FINISH);
         // TODO: move this recover-cleanup to manager thread?
-        if (this.recover != null) {
-            this.recover.close();
-            this.recover = null;
-        }
+        ArchiveUtils.closeQuietly(this.recover);
     }
     
     /**

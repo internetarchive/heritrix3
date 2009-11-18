@@ -18,12 +18,10 @@
  */
 package org.archive.crawler.frontier;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -38,9 +36,10 @@ import javax.management.openmbean.CompositeData;
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpointer.Checkpoint;
 import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -182,6 +181,7 @@ implements Serializable, Checkpointable {
     }
     
     protected void closeQueue() {
+        // before closing/releasing, dump if requested
         if (getDumpPendingAtClose()) {
             try {
                 dumpAllPendingToLog();
@@ -189,10 +189,7 @@ implements Serializable, Checkpointable {
                 logger.log(Level.WARNING, "dump pending problem", e);
             }
         }
-        if (this.pendingUris != null) {
-            this.pendingUris.close();
-            this.pendingUris = null;
-        }
+        ArchiveUtils.closeQuietly(pendingUris);
     }
         
     protected BdbMultipleWorkQueues getWorkQueues() {
@@ -223,7 +220,6 @@ implements Serializable, Checkpointable {
         logger.fine("Finished syncing already seen as part of checkpoint.");
     }
 
-    
     @Override
     protected void initAllQueues() throws DatabaseException {
         this.allQueues = bdb.getObjectCache("allqueues", false, WorkQueue.class);

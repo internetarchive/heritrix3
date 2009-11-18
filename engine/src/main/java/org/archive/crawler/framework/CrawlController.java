@@ -253,6 +253,7 @@ implements Serializable,
         this.checkpointerPeriod = checkpointerPeriod;
     }
 
+
     protected CrawlerLoggerModule loggerModule;
     public CrawlerLoggerModule getLoggerModule() {
         return this.loggerModule;
@@ -294,7 +295,7 @@ implements Serializable,
      * Knows if checkpoint in progress and what name of checkpoint is.  Also runs
      * checkpoints.
      */
-    private Checkpointer checkpointer;
+    protected Checkpointer checkpointer;
 
     public CrawlController() {
     }
@@ -313,7 +314,7 @@ implements Serializable,
         }
         this.checkpointer = new Checkpointer(
                 this, getCheckpointsDir().getFile());
-
+        
         sExit = CrawlStatus.FINISHED_ABNORMAL;
 
         // force creation of DNS Cache now -- avoids CacheCleaner in toe-threads group
@@ -335,6 +336,7 @@ implements Serializable,
     public void stop() {
         // TODO: more stop/cleanup?
         isRunning = false; 
+        this.checkpointer.cleanup();
     }
 
     /**
@@ -391,12 +393,7 @@ implements Serializable,
     protected void completeStop() {
         LOGGER.fine("Entered complete stop.");
 
-        loggerModule.closeLogFiles();
         this.reserveMemory = null;
-        if (this.checkpointer != null) {
-            this.checkpointer.cleanup();
-            this.checkpointer = null;
-        }
         if (this.toePool != null) {
             this.toePool.cleanup();
         }
@@ -443,16 +440,8 @@ implements Serializable,
         if (this.checkpointer.isCheckpointing()) {
             throw new IllegalStateException("Checkpoint already running.");
         }
-        this.checkpointer.checkpoint();
+        this.checkpointer.checkpoint(appCtx,checkpointsDir.getFile());
     }   
-    
-    /**
-     * @return True if checkpointing.
-     */
-    public boolean isCheckpointing() {
-        return this.state == State.CHECKPOINTING;
-    }
-
 
     /**
      * Operator requested for crawl to stop.

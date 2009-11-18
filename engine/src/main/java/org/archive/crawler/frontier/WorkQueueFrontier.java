@@ -286,23 +286,25 @@ ApplicationContextAware {
      */
     protected abstract void initOtherQueues(boolean recycle) throws DatabaseException;
 
+    
+    
     /* (non-Javadoc)
-     * @see org.archive.crawler.frontier.AbstractFrontier#crawlEnded(java.lang.String)
+     * @see org.archive.crawler.frontier.AbstractFrontier#stop()
+     */
+    @Override
+    public void stop() {
+        super.stop();
+        // also release resources and trigger end-of-frontier actions
+        close();
+    }
+    
+    /**
+     * Release resources only needed when running
      */
     public void close() {
-        // Cleanup.  CrawlJobs persist after crawl has finished so undo any
-        // references.
-        if (this.uriUniqFilter != null) {
-            this.uriUniqFilter.close();
-        }
-       
-        try {
-            closeQueue();
-        } catch (IOException e) {
-            logger.log(Level.WARNING,"closeQueue problem",e); 
-        }
-        
-        this.allQueues.close();
+        ArchiveUtils.closeQuietly(uriUniqFilter);
+        closeQueue();        
+        ArchiveUtils.closeQuietly(allQueues);
     }
     
     /**
@@ -1460,7 +1462,7 @@ ApplicationContextAware {
         }
     }
     
-    protected abstract void closeQueue() throws IOException;
+    protected abstract void closeQueue();
     
     /**
      * Returns <code>true</code> if the WorkQueue implementation of this
