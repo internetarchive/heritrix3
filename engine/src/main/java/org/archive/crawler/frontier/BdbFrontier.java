@@ -18,10 +18,12 @@
  */
 package org.archive.crawler.frontier;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -36,7 +38,7 @@ import javax.management.openmbean.CompositeData;
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpointer.Checkpoint;
+import org.archive.checkpointing.RecoverAction;
 import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
 import org.archive.util.ArchiveUtils;

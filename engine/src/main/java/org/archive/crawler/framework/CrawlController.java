@@ -440,7 +440,7 @@ implements Serializable,
         if (this.checkpointer.isCheckpointing()) {
             throw new IllegalStateException("Checkpoint already running.");
         }
-        this.checkpointer.checkpoint(appCtx,checkpointsDir.getFile());
+        this.checkpointer.checkpoint();
     }   
 
     /**
