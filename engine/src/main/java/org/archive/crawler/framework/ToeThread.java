@@ -225,7 +225,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
     }
     
     public void atProcessor(Processor proc) {
-        setStep(Step.ABOUT_TO_BEGIN_PROCESSOR, proc.getName());
+        setStep(Step.ABOUT_TO_BEGIN_PROCESSOR, proc.getBeanName());
     }
 
     private void seriousError(Error err) {
