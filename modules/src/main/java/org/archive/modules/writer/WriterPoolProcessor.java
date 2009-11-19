@@ -24,8 +24,6 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -33,7 +31,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import org.archive.checkpointing.RecoverAction;
+import org.archive.checkpointing.Checkpointable;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.io.DefaultWriterPoolSettings;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
@@ -46,6 +45,8 @@ import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -56,7 +57,7 @@ import org.springframework.context.Lifecycle;
  * @author stack
  */
 public abstract class WriterPoolProcessor extends Processor 
-implements Lifecycle {
+implements Lifecycle, Checkpointable {
     private static final long serialVersionUID = 1L;
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
@@ -348,40 +349,32 @@ implements Lifecycle {
         return h.getIP().getHostAddress();
     }
 
-    
-    public void checkpoint(File checkpointDir, List<RecoverAction> actions) 
+    // TODO: add non-urgent checkpoint request, that waits for a good
+    // moment (when (W)ARCs are already rolling over)? 
+    public void doCheckpoint(Checkpoint checkpointInProgress) 
     throws IOException {
-        int serial = getSerialNo().get();
-        if (this.pool.getNumActive() > 0) {
-            // If we have open active Archive files, up the serial number
-            // so after checkpoint, we start at one past current number and
-            // so the number we serialize, is one past current serialNo.
-            // All this serial number manipulation should be fine in here since
-            // we're paused checkpointing (Revisit if this assumption changes).
-            serial = getSerialNo().incrementAndGet();
-        }
-
-        // Close all ARCs on checkpoint.
-        try {
-            this.pool.close();
-        } finally {
-            // Reopen on checkpoint.
-            this.serial = new AtomicInteger(serial);
-            setupPool(this.serial);
-        }
-    }
-  
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
+        // close all ARCs on checkpoint
+        this.pool.close();
+        
+        super.doCheckpoint(checkpointInProgress);
+   
+        // reopen post checkpoint
+        setupPool(this.serial);
     }
     
-    
-    private void readObject(ObjectInputStream stream) 
-    throws IOException, ClassNotFoundException {
-        stream.defaultReadObject();
-        this.setupPool(serial);
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = super.toCheckpointJson();
+        json.put("serialNumber", getSerialNo().get());
+        return json;
     }
-
+    
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+        serial.set(json.getInt("serialNumber"));
+    }
+    
     protected WriterPool getPool() {
         return pool;
     }

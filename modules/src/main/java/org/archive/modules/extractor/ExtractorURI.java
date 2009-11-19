@@ -20,7 +20,6 @@ package org.archive.modules.extractor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -55,9 +54,6 @@ public class ExtractorURI extends Extractor {
         Logger.getLogger(ExtractorURI.class.getName());
 
     static final String ABS_HTTP_URI_PATTERN = "^https?://[^\\s<>]*$";
-    
-
-    private AtomicLong linksExtracted = new AtomicLong(0);
 
     /**
      * Constructor
@@ -113,7 +109,7 @@ public class ExtractorURI extends Extractor {
                 LinkContext lc = LinkContext.SPECULATIVE_MISC;
                 Hop hop = Hop.SPECULATIVE;
                 Link link = new Link(src, dest, lc, hop);
-                linksExtracted.incrementAndGet();
+                numberOfLinksExtracted.incrementAndGet();
                 curi.getOutLinks().add(link);
             } catch (URIException e) {
                 LOGGER.log(Level.FINE, "bad URI", e);
@@ -169,15 +165,5 @@ public class ExtractorURI extends Extractor {
             }
         }
         return results;
-    }
-
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Extracts links inside other URIs\n");
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n");
-
-        return ret.toString();
     }
 }

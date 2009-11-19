@@ -20,13 +20,10 @@
 package org.archive.modules.seeds;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.archive.checkpointing.RecoverAction;
 import org.archive.modules.CrawlURI;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -83,8 +80,6 @@ public abstract class SeedModule implements Serializable
     public abstract void actOn(File f); 
     
     public abstract void addSeed(final CrawlURI curi);
-
-    public abstract void checkpoint(File dir, List<RecoverAction> actions) throws IOException;
 
     public void addSeedListener(SeedListener sl) {
         seedListeners.add(sl);

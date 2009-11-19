@@ -20,7 +20,6 @@ package org.archive.modules.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -344,10 +343,6 @@ public class ExtractorUniversal extends ContentExtractor {
         + "|(zw(/.*)?)" // zw  Zimbabwe
         );
 
-
-    protected AtomicLong linksExtracted = new AtomicLong(0);
-
-
     /**
      * Constructor.
      */
@@ -412,7 +407,7 @@ public class ExtractorUniversal extends ContentExtractor {
                         }
 
                         // And add the URL to speculative embeds.
-                        linksExtracted.incrementAndGet();
+                        numberOfLinksExtracted.incrementAndGet();
                         UURI src = curi.getUURI();
                         UURI dest = UURIFactory.getInstance(newURL);
                         LinkContext lc = LinkContext.SPECULATIVE_MISC;
@@ -528,19 +523,5 @@ public class ExtractorUniversal extends ContentExtractor {
             || (ch==95)
             || (ch>=97 && ch<=122)
             || (ch==126);
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on unknown file" +
-            " types.\n");
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n");
-
-        return ret.toString();
     }
 }

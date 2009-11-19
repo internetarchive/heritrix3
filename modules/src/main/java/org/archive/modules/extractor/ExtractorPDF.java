@@ -21,7 +21,6 @@ package org.archive.modules.extractor;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
@@ -56,8 +55,6 @@ public class ExtractorPDF extends ContentExtractor {
     public void setMaxSizeToParse(long threshold) {
         kp.put("maxSizeToParse",threshold);
     }
-
-    final private AtomicLong numberOfLinksExtracted = new AtomicLong(0);
 
     public ExtractorPDF() {
     }
@@ -133,20 +130,5 @@ public class ExtractorPDF extends ContentExtractor {
         LOGGER.fine(curi+" has "+uris.size()+" links.");
         // Set flag to indicate that link extraction is completed.
         return true;
-    }
-
-    /**
-     * Provide a human-readable textual summary of this Processor's state.
-     *
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on PDF documents\n");
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-
-        return ret.toString();
     }
 }

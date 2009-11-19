@@ -48,17 +48,4 @@ extends ExtractorHTML {
         processGeneralTag(curi, sequence.subSequence(0,6),
             sequence.subSequence(endOfOpenTag, sequence.length()));
     }
-
-    /* (non-Javadoc)
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer(256);
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on HTML documents " +
-            "(including embedded CSS)\n");
-        ret.append("  ProcessorURIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-        return ret.toString();
-    }
 }

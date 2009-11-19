@@ -299,9 +299,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     public void setMetadata(CrawlMetadata provider) {
         this.metadata = provider;
     }
- 
-    protected long numberOfCURIsHandled = 0;
-    protected long numberOfLinksExtracted = 0;
     
     private Pattern relevantTagExtractor;
     private Pattern eachAttributeExtractor;
@@ -448,8 +445,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             } else if (attr.start(11) > -1) {
                 // STYLE inline attribute
                 // then, parse for URIs
-                this.numberOfLinksExtracted += ExtractorCSS.processStyleCode(
-                        this, curi, value);
+                numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
+                        this, curi, value));
                 
             } else if (attr.start(12) > -1) {
                 // METHOD
@@ -511,8 +508,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      */
     protected void processScriptCode(CrawlURI curi, CharSequence cs) {
         if (getExtractJavascript()) {
-            this.numberOfLinksExtracted +=
-                ExtractorJS.considerStrings(this, curi, cs, false);
+            numberOfLinksExtracted.addAndGet(
+                ExtractorJS.considerStrings(this, curi, cs, false));
         }
     }
 
@@ -537,7 +534,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 (value instanceof String)?
                     (String)value: value.toString(),
                 context, Hop.NAVLINK);
-            this.numberOfLinksExtracted++;
+            numberOfLinksExtracted.incrementAndGet();
         }
     }
 
@@ -571,7 +568,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             (value instanceof String)?
                 (String)value: value.toString(),
             context, hop);
-        this.numberOfLinksExtracted++;
+        numberOfLinksExtracted.incrementAndGet();
     }
 
     
@@ -599,7 +596,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     
     
     public boolean innerExtract(CrawlURI curi) {
-        this.numberOfCURIsHandled++;
         ReplayCharSequence cs = null;
         try {
            cs = curi.getRecorder().getReplayCharSequence();
@@ -808,26 +804,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             sequence.subSequence(0,endOfOpenTag));
 
         // then, parse for URIs
-        this.numberOfLinksExtracted += ExtractorCSS.processStyleCode(
+        numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
                 this,
                 curi, 
-                sequence.subSequence(endOfOpenTag,sequence.length()));
-    }
-    
-
-
-    /* (non-Javadoc)
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on HTML documents\n");
-        ret.append("  CrawlURIs handled: " + this.numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + this.numberOfLinksExtracted + "\n");
-        return ret.toString();
-    }
-    
+                sequence.subSequence(endOfOpenTag,sequence.length())));
+    }   
     
     /**
      * Create a suitable XPath-like context from an element name and optional

@@ -21,15 +21,15 @@ package org.archive.modules.recrawl;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigPath;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 
@@ -96,12 +96,22 @@ implements Checkpointable, Lifecycle {
                 new String(Base64.encodeBase64(
                         SerializationUtils.serialize((Serializable)curi.getPersistentDataMap()))));      
     }
+    
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
 
-	public void checkpoint(File dir, List<RecoverAction> actions) throws IOException {
+	public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // rotate log
-        log.checkpoint(dir,null);
+        log.doCheckpoint(checkpointInProgress);
     }
+    
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
 
+    Checkpoint recoveryCheckpoint;
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
+        this.recoveryCheckpoint = checkpoint; 
+    }
+    
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         return shouldStore(uri);

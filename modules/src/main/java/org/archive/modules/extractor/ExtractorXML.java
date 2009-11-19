@@ -19,7 +19,6 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,8 +51,6 @@ public class ExtractorXML extends ContentExtractor {
     "(?i)[\"\'>]\\s*(http:[^\\s\"\'<>]+)\\s*[\"\'<]"); 
     // GROUPS:
     // (G1) URI
-    
-    private AtomicLong linksExtracted = new AtomicLong(0);
 
     /**
      * @param name
@@ -86,7 +83,7 @@ public class ExtractorXML extends ContentExtractor {
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
-            this.linksExtracted.addAndGet(processXml(this, curi, cs));
+            numberOfLinksExtracted.addAndGet(processXml(this, curi, cs));
             // Set flag to indicate that link extraction is completed.
             return true;
         } catch (IOException e) {
@@ -122,15 +119,5 @@ public class ExtractorXML extends ContentExtractor {
             }
         }
         return foundLinks;
-    }
-
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on XML/RSS\n");
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n");
-
-        return ret.toString();
     }
 }

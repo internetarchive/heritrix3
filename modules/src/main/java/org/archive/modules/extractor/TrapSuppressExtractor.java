@@ -70,19 +70,4 @@ public class TrapSuppressExtractor extends ContentExtractor  {
         }
         return false; 
     }
-
-    /**
-     * Provide a human-readable textual summary of this Processor's state.
-     *
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:             Suppress extraction on likely traps\n");
-        ret.append("  CrawlURIs handled:    " + numberOfCURIsHandled + "\n");
-        ret.append("  CrawlURIs suppressed: " + numberOfCURIsSuppressed + "\n");
-
-        return ret.toString();
-    }
 }

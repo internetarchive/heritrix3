@@ -47,8 +47,6 @@ public class ExtractorDOC extends ContentExtractor {
 
     private static Logger logger =
         Logger.getLogger("org.archive.crawler.extractor.ExtractorDOC");
-    private long numberOfCURIsHandled = 0;
-    private long numberOfLinksExtracted = 0;
 
     /**
      * @param name
@@ -117,19 +115,6 @@ public class ExtractorDOC extends ContentExtractor {
         } catch (URIException e1) {
             logUriError(e1, curi.getUURI(), hyperlink);
         }
-        numberOfLinksExtracted++;        
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on MS Word documents (.doc)\n");
-        ret.append("  CrawlURIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-
-        return ret.toString();
+        numberOfLinksExtracted.incrementAndGet();   
     }
 }

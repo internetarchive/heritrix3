@@ -20,7 +20,6 @@ package org.archive.modules.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
@@ -52,8 +51,6 @@ public class ExtractorSWF extends ContentExtractor {
 
     private static Logger logger =
         Logger.getLogger(ExtractorSWF.class.getName());
-
-    protected AtomicLong linksExtracted = new AtomicLong(0);
 
     private static final int MAX_READ_SIZE = 1024 * 1024; // 1MB
 
@@ -102,7 +99,7 @@ public class ExtractorSWF extends ContentExtractor {
                 new ExtractorSWFReader(new ExtractorTagParser(customTags), documentStream);
             
             reader.readFile();
-            linksExtracted.addAndGet(curiAction.getLinkCount());
+            numberOfLinksExtracted.addAndGet(curiAction.getLinkCount());
             logger.fine(curi + " has " + curiAction.getLinkCount() + " links.");
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
@@ -118,18 +115,7 @@ public class ExtractorSWF extends ContentExtractor {
         // Set flag to indicate that link extraction is completed.
         return true;
     }
-    
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on Shockwave Flash " +
-            "documents (.swf)\n");
 
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted + "\n");
-        return ret.toString();
-    }
-    
     class ExtractorSWFReader extends SWFReader 
     {
         public ExtractorSWFReader(SWFTags consumer, InputStream inputstream) {

@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,7 +82,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
     final private static Logger logger = 
         Logger.getLogger(JerichoExtractorHTML.class.getName());
 
-    protected long numberOfFormsProcessed = 0;
+    protected AtomicLong numberOfFormsProcessed = new AtomicLong(0);
 
     /*
     public JerichoExtractorHTML(String name) {
@@ -247,8 +248,8 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                  ((attrValue = attr.getValue()) != null)) {
             // STYLE inline attribute
             // then, parse for URIs
-            this.numberOfLinksExtracted += ExtractorCSS.processStyleCode(
-                    this, curi, attrValue);
+            numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
+                    this, curi, attrValue));
         }
 
         // handle codebase/resources
@@ -332,8 +333,8 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         processGeneralTag(curi, element, element.getAttributes());
 
         // then, parse for URIs
-        this.numberOfLinksExtracted += ExtractorCSS.processStyleCode(
-                this, curi, element.getContent());
+        numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
+                this, curi, element.getContent()));
     }
 
     protected void processForm(CrawlURI curi, Element element) {
@@ -354,7 +355,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                  && ! "GET".equalsIgnoreCase(method)) {
              return;
         }
-        numberOfFormsProcessed++;
+        numberOfFormsProcessed.incrementAndGet();
 
         // get all form fields
         FormFields formFields = element.findFormFields();
@@ -448,10 +449,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
     public String report() {
         StringBuffer ret = new StringBuffer();
         ret.append(super.report());
-        ret.append("  Function:          Link extraction on HTML documents\n");
-        ret.append("  CrawlURIs handled: " + this.numberOfCURIsHandled + "\n");
-        ret.append("  Forms processed:   " + this.numberOfFormsProcessed + "\n");
-        ret.append("  Links extracted:   " + this.numberOfLinksExtracted + "\n");
+        ret.append("  " + this.numberOfFormsProcessed + " forms processed\n");
         return ret.toString();
     }
 }

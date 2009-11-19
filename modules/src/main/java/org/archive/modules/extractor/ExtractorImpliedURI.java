@@ -20,7 +20,6 @@ package org.archive.modules.extractor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -101,10 +100,7 @@ public class ExtractorImpliedURI extends Extractor {
     public void setRemoveTriggerUris(boolean remove) {
         kp.put("removeTriggerUris",remove);
     }
-    
-    final AtomicLong linksExtracted = new AtomicLong();
-
-
+ 
     /**
      * Constructor.
      */
@@ -140,7 +136,7 @@ public class ExtractorImpliedURI extends Extractor {
                     Hop hop = Hop.SPECULATIVE;
                     Link out = new Link(src, target, lc, hop);
                     curi.getOutLinks().add(out);
-                    linksExtracted.incrementAndGet();
+                    numberOfLinksExtracted.incrementAndGet();
 
                     boolean removeTriggerURI = getRemoveTriggerUris();
                     // remove trigger URI from the outlinks if configured so.
@@ -149,7 +145,7 @@ public class ExtractorImpliedURI extends Extractor {
                                LOGGER.log(Level.FINE, link.getDestination() + 
                                      " has been removed from " + 
                                      link.getSource() + " outlinks list.");
-                               linksExtracted.decrementAndGet();
+                               numberOfLinksExtracted.decrementAndGet();
                        } else {
                                LOGGER.log(Level.FINE, "Failed to remove " + 
                                       link.getDestination() + " from " + 
@@ -182,14 +178,5 @@ public class ExtractorImpliedURI extends Extractor {
             return result; 
         }
         return null; 
-    }
-
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Extracts links inside other URIs\n");
-        ret.append("  CrawlURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + linksExtracted.get() + "\n");
-        return ret.toString();
     }
 }

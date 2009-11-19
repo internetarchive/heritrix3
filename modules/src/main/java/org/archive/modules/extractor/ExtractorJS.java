@@ -263,17 +263,4 @@ public class ExtractorJS extends ContentExtractor {
         
         return retVal; 
     }
-
-    /* (non-Javadoc)
-     * @see org.archive.crawler.framework.Processor#report()
-     */
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on JavaScript code\n");
-        ret.append("  CrawlURIs handled: " + numberOfCURIsHandled + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-
-        return ret.toString();
-    }
 }

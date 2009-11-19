@@ -75,7 +75,6 @@ public class ExtractorCSS extends ContentExtractor {
     // (G1) optional ' or "
     // (G2) URI
     
-    private long numberOfLinksExtracted = 0;
 
     /**
      */
@@ -103,8 +102,8 @@ public class ExtractorCSS extends ContentExtractor {
         ReplayCharSequence cs = null;
         try {
             cs = curi.getRecorder().getReplayCharSequence();
-            this.numberOfLinksExtracted +=
-                processStyleCode(this, curi, cs);
+            numberOfLinksExtracted.addAndGet(
+                processStyleCode(this, curi, cs));
             // Set flag to indicate that link extraction is completed.
             return true;
         } catch (IOException e) {
@@ -144,15 +143,5 @@ public class ExtractorCSS extends ContentExtractor {
             TextUtils.recycleMatcher(uris);
         }
         return foundLinks;
-    }
-
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          Link extraction on Cascading Style Sheets (.css)\n");
-        ret.append("  ExtractorURIs handled: " + getURICount() + "\n");
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-
-        return ret.toString();
     }
 }

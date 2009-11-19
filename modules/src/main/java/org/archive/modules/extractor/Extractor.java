@@ -20,6 +20,7 @@
 package org.archive.modules.extractor;
 
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,8 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -41,6 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public abstract class Extractor extends Processor {
 
+    protected AtomicLong numberOfLinksExtracted = new AtomicLong(0);
 
     /** Logger. */
     private static final Logger logger = 
@@ -129,6 +133,31 @@ public abstract class Extractor extends Processor {
             return; 
         }
         loggerModule.logUriError(e, uuri, l);
+    }
+    
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = super.toCheckpointJson();
+        json.put("numberOfLinksExtracted", numberOfLinksExtracted.get());
+        return json;
+    }
+
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+        numberOfLinksExtracted.set(json.getLong("numberOfLinksExtracted"));
+    }
+    
+    @Override
+    protected boolean shouldProcess(CrawlURI uri) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+    public String report() {
+        StringBuffer ret = new StringBuffer();
+        ret.append(super.report());
+        ret.append("  " + numberOfLinksExtracted + " links from " + getURICount() +" CrawlURIs\n");
+        return ret.toString();
     }
 
 }

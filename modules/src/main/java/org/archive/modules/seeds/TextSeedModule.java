@@ -25,17 +25,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Serializable;
 import java.io.Writer;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
-import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
 import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
@@ -55,9 +51,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @contributor gojomo
  */
 public class TextSeedModule extends SeedModule 
-implements ReadSource,
-           Serializable, 
-           Checkpointable {
+implements ReadSource {
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =
@@ -191,6 +185,8 @@ implements ReadSource,
             // TODO: do something else to log seed update
             logger.warning("nowhere to log added seed: "+curi);
         } else {
+            // TODO: determine if this modification to seeds file means
+            // TextSeedModule should (again) be Checkpointable
             try {
                 Writer fw = ((WriteTarget)textSource).obtainWriter(true);
                 // Write to new (last) line the URL.
@@ -207,37 +203,6 @@ implements ReadSource,
         }
         publishAddedSeed(curi); 
     }
-    
-    @Override
-    public void checkpoint(File dir, List<RecoverAction> actions)
-            throws IOException {
-        int id = System.identityHashCode(this);
-        String backup = "seeds" + id + " .txt";
-        backup.getBytes();
-        //TODO:SPRINGY
-//        FileUtils.copyFile(getSeedsFile().getFile(), new File(dir, backup));
-//        actions.add(new SeedModuleRecoverAction(backup, getSeedsFile().getFile()));
-    }
-
-//    private static class SeedModuleRecoverAction implements RecoverAction {
-//
-//        private static final long serialVersionUID = 1L;
-//
-//        private File target;
-//        private String backup;
-//        
-//        public SeedModuleRecoverAction(String backup, File target) {
-//            this.target = target;
-//            this.backup = backup;
-//        }
-//        
-//        public void recoverFrom(File checkpointDir, CheckpointRecovery cr)
-//                throws Exception {
-//            target = new File(cr.translatePath(target.getAbsolutePath()));
-//            FileUtils.copyFile(new File(checkpointDir, backup), target); 
-//        }
-//        
-//    }
 
     public Reader obtainReader() {
         return textSource.obtainReader();

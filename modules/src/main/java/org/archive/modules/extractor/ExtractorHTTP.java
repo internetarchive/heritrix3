@@ -36,14 +36,9 @@ public class ExtractorHTTP extends Extractor {
 
     private static final long serialVersionUID = 3L;
 
-//    protected long numberOfCURIsHandled = 0;
-    protected long numberOfLinksExtracted = 0;
-
     public ExtractorHTTP() {
     }
 
-    
-    
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         if (uri.getFetchStatus() <= 0) {
@@ -72,20 +67,10 @@ public class ExtractorHTTP extends Extractor {
             LinkContext lc = new HTMLLinkContext(loc.getName()+":"); 
             Link link = new Link(curi.getUURI(), dest, lc, Hop.REFER);
             curi.getOutLinks().add(link);
-            numberOfLinksExtracted++;
+            numberOfLinksExtracted.incrementAndGet();
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), loc.getValue());
         }
 
-    }
-
-    public String report() {
-        StringBuffer ret = new StringBuffer();
-        ret.append(super.report());
-        ret.append("  Function:          " +
-            "Extracts URIs from HTTP response headers\n");
-        ret.append("  CrawlURIs handled: " + this.getURICount());
-        ret.append("  Links extracted:   " + numberOfLinksExtracted + "\n");
-        return ret.toString();
     }
 }
