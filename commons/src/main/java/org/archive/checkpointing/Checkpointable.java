@@ -19,19 +19,59 @@
 
 package org.archive.checkpointing;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
+import org.archive.crawler.framework.Checkpoint;
 
 /**
- * @author pjack
- *
+ * Interface for objects that can checkpoint their state, possibly
+ * but not necessarily into the provided Checkpoint instance, on 
+ * request.
+ * 
+ * @contributor pjack
+ * @contributor gojomo
  */
 public interface Checkpointable {
 
+    /**
+     * Note a checkpoint is about to begin. Most beans will ignore,
+     * but some can use this to wrap up tasks that shouldn't be 
+     * half-done during a checkpoint (and hold a lock to prevent 
+     * tasks from beginning during the checkpoint). 
+     * 
+     * @param checkpointInProgress Checkpoint
+     */
+    void startCheckpoint(Checkpoint checkpointInProgress);
     
-    void checkpoint(File dir, List<RecoverAction> actions) throws IOException;
+    /**
+     * Do the actual checkpoint. Beans should ensure any state that
+     * they would need to recover gets saved in an appropriate place. 
+     * A moderate amount of state may be saved as a JSONObject into
+     * the Checkpoint (which then keeps it in the checkpoint directory.)
+     * Larger amounts of state may be stored in a manner private to 
+     * the bean, or via other collaborating beans (such as BdbModule) 
+     * which checkpoint backgin database state. 
+     * 
+     * @param checkpointInProgress Checkpoint
+     * @throws IOException
+     */
+    void doCheckpoint(Checkpoint checkpointInProgress) throws IOException;
     
-
+    // 
+    /**
+     * Cleanup/unlock; need not complete for a checkpoint to be valid.
+     * 
+     * @param checkpointInProgress Checkpoint
+     */
+    void finishCheckpoint(Checkpoint checkpointInProgress);
+   
+    /**
+     * Used to inform a bean that it should restore its state from
+     * the given Checkpoint when launched (Lifecycle start()). May be
+     * autowired or configured after build, but before launch, for
+     * example via CheckpointService.setRecoveryCheckpointByName().
+     * 
+     * @param recoveryCheckpoint Checkpoint
+     */
+    void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint);
 }
