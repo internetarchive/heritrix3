@@ -100,7 +100,7 @@ implements Iterable<Processor>,
         pw.print(size());
         pw.print(" processors: ");
         for(Processor p : this) {
-            pw.print(p.getName());
+            pw.print(p.getBeanName());
             pw.print(" ");
         }
     }
@@ -110,7 +110,7 @@ implements Iterable<Processor>,
         String skipToProc = null; 
         
         ploop: for(Processor curProc : this ) {
-            if(skipToProc!=null && curProc.getName() != skipToProc) {
+            if(skipToProc!=null && curProc.getBeanName() != skipToProc) {
                 continue;
             } else {
                 skipToProc = null; 

@@ -19,11 +19,14 @@
 package org.archive.modules;
 
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.archive.checkpointing.Checkpointable;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
@@ -32,6 +35,10 @@ import org.archive.modules.deciderules.DecideRule;
 import org.archive.net.UURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 
@@ -42,18 +49,22 @@ import org.springframework.context.Lifecycle;
  * @author pjack
  */
 public abstract class Processor 
-implements Serializable, HasKeyedProperties, Lifecycle {
+implements Serializable, 
+           HasKeyedProperties, 
+           Lifecycle, 
+           BeanNameAware,
+           Checkpointable {
     protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }
 
-    String name = this.getClass().getSimpleName(); 
-    public String getName() {
-        return this.name;
+    String beanName; 
+    public String getBeanName() {
+        return this.beanName;
     }
-    public void setName(String name) {
-        this.name = name;
+    public void setBeanName(String name) {
+        this.beanName = name;
     }
     
     /** 
@@ -91,7 +102,7 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     /**
      * The number of URIs processed by this processor.
      */
-    private AtomicLong uriCount = new AtomicLong(0);
+    protected AtomicLong uriCount = new AtomicLong(0);
 
     
     /**
@@ -233,7 +244,6 @@ implements Serializable, HasKeyedProperties, Lifecycle {
         return false;
     }
 
-
     // FIXME: Raise to interface
     // FIXME: Internationalize somehow
     // FIXME: Pass in PrintWriter instead creating large in-memory strings
@@ -247,10 +257,66 @@ implements Serializable, HasKeyedProperties, Lifecycle {
     }
 
     public void start() {
+        if(isRunning) {
+            return; 
+        }
         isRunning = true; 
+        if(recoveryCheckpoint!=null) {
+            try {
+                JSONObject json = recoveryCheckpoint.loadJson(getBeanName());
+                fromCheckpointJson(json); 
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
+
 
     public void stop() {
         isRunning = false; 
+    }
+    
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    
+    public void doCheckpoint(Checkpoint checkpointInProgress) 
+    throws IOException {
+        try {
+            JSONObject json = toCheckpointJson();
+            checkpointInProgress.saveJson(beanName, json); 
+        } catch(JSONException j) {
+            // impossible
+        } 
+    }
+  
+    /**
+     * Return a JSONObject of current stat that can be consulted 
+     * on recovery to restore necessary values. 
+     * 
+     * @return JSONObject
+     * @throws JSONException
+     */
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("uriCount", getURICount());
+        return json;
+    }
+    
+    /**
+     * Restore internal state from JSONObject stored at earlier
+     * checkpoint-time.
+     * 
+     * @param json JSONObject
+     * @throws JSONException
+     */
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        uriCount.set(json.getLong("uriCount"));
+    }
+    
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+    
+    protected Checkpoint recoveryCheckpoint;
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
+        this.recoveryCheckpoint = checkpoint; 
     }
 }
