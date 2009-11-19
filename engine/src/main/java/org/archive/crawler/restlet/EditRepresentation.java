@@ -61,6 +61,8 @@ public class EditRepresentation extends CharacterRepresentation {
     @Override
     public void write(Writer writer) throws IOException {
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<head><title>"+fileRepresentation.getFile().getName()+"</title></head>");
+
         Flash.renderFlashesHTML(pw, dirResource.getRequest());
         pw.println("<form method='POST'>");
         // TODO: enable button on after changes made
