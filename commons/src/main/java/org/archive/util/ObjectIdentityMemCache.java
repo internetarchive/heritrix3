@@ -19,6 +19,7 @@
  
 package org.archive.util;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,5 +72,13 @@ implements ObjectIdentityCache<String,V> {
 
     public void sync() {
         // do nothing
+    }
+
+    /**
+     * Offer raw map access for convenience of checkpoint/recovery.
+     * @return Map<String, V>
+     */
+    public Map<String, V> getMap() {
+        return map;
     }
 }

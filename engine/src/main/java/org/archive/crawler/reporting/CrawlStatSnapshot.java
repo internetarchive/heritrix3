@@ -152,4 +152,20 @@ public class CrawlStatSnapshot {
         }
         return (int) (100 * finishedUriCount / total);
     }
+
+    /**
+     * Return true if this snapshot shows no tangible progress in 
+     * its URI counts over the supplied snapshot. May be used to 
+     * suppress unnecessary redundant reporting/checkpointing. 
+     * @param lastSnapshot
+     * @return true if this snapshot stats are essentially same as previous given
+     */
+    public boolean sameProgressAs(CrawlStatSnapshot lastSnapshot) {
+        if(lastSnapshot==null) {
+            return false;
+        }
+        return (finishedUriCount == lastSnapshot.finishedUriCount)
+            && (queuedUriCount == lastSnapshot.queuedUriCount)
+            && (downloadDisregards == lastSnapshot.downloadDisregards);
+    }
 }

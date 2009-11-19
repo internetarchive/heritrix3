@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -33,7 +32,7 @@ import java.util.logging.SimpleFormatter;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.io.NonFatalErrorFormatter;
 import org.archive.crawler.io.RuntimeErrorFormatter;
@@ -48,6 +47,7 @@ import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 /**
@@ -342,20 +342,27 @@ public class CrawlerLoggerModule
         manifest.append(type + (bundle? "+": "-") + " " + file + "\n");
     }
     
-    
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+
     /**
      * Run checkpointing.
      * 
      * <p>Default access only to be called by Checkpointer.
      * @throws Exception
      */
-    public void checkpoint(File checkpointDir, List<RecoverAction> actions) 
-    throws IOException {
+    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // Rotate off crawler logs.
-        rotateLogFiles("." + checkpointDir.getName());
-//            this.checkpointer.getNextCheckpointName());
+        rotateLogFiles("." + checkpointInProgress.getShortName());
     }
 
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+
+    Checkpoint recoveryCheckpoint;
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
+        this.recoveryCheckpoint = checkpoint; 
+    }
+    
     public Logger getNonfatalErrors() {
         return nonfatalErrors;
     }

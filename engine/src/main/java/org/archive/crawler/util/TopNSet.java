@@ -88,8 +88,11 @@ public class TopNSet implements Serializable {
         }
     }
     
-    public String[] keySet(){
-        return set.keySet().toArray(new String[0]);
-
+    /**
+     * Make internal map available (for checkpoint/restore purposes). 
+     * @return HashMap<String,Long>
+     */
+    public HashMap<String,Long> getTopSet() {
+        return set;
     }
 }

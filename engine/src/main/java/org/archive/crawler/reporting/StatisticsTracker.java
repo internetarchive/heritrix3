@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -41,9 +40,11 @@ import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
 import org.archive.bdb.TempStoredSortedMap;
+import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
@@ -54,12 +55,16 @@ import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.JSONUtils;
 import org.archive.util.MimetypeUtils;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.ObjectIdentityMemCache;
 import org.archive.util.PaddingStringBuffer;
 import org.archive.util.Supplier;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -127,7 +132,8 @@ public class StatisticsTracker
         SeedListener,
         Lifecycle, 
         Runnable, 
-        Serializable {
+        Checkpointable,
+        BeanNameAware {
     private static final long serialVersionUID = 5L;
 
     protected SeedModule seeds;
@@ -351,24 +357,62 @@ public class StatisticsTracker
         dumpReports();
     }
     
+    @SuppressWarnings("unchecked")
     public void start() {
         isRunning = true;
+        boolean isRecover = (recoveryCheckpoint != null); 
         try {
             this.sourceHostDistribution = bdb.getObjectCache("sourceHostDistribution",
-            	    false, ConcurrentMap.class);
+            	    isRecover, ConcurrentMap.class);
             this.hostsDistribution = bdb.getObjectCache("hostsDistribution",
-                false, AtomicLong.class);
-            this.hostsBytes = bdb.getObjectCache("hostsBytes", false, 
-                AtomicLong.class);
+                    isRecover, AtomicLong.class);
+            this.hostsBytes = bdb.getObjectCache("hostsBytes", 
+                    isRecover, AtomicLong.class);
             this.hostsLastFinished = bdb.getObjectCache("hostsLastFinished",
-                false, AtomicLong.class);
+                    isRecover, AtomicLong.class);
             this.processedSeedsRecords = bdb.getObjectCache("processedSeedsRecords",
-                    false, SeedRecord.class);
+                    isRecover, SeedRecord.class);
             
             this.hostsDistributionTop = new TopNSet(getLiveHostReportSize());
             this.hostsBytesTop = new TopNSet(getLiveHostReportSize());
             this.hostsLastFinishedTop = new TopNSet(getLiveHostReportSize());
+            
+            if(isRecover) {
+                JSONObject json = recoveryCheckpoint.loadJson(beanName);
+                
+                crawlStartTime = json.getLong("crawlStartTime");
+                crawlEndTime = json.getLong("crawlEndTime");
+                crawlTotalPausedTime = json.getLong("crawlTotalPausedTime");
+                crawlPauseStarted = json.getLong("crawlPauseStarted");
+                tallyCurrentPause();
+                
+                JSONUtils.putAllLongs(
+                        hostsDistributionTop.getTopSet(),
+                        json.getJSONObject("hostsDistributionTop"));
+                JSONUtils.putAllLongs(
+                        hostsBytesTop.getTopSet(),
+                        json.getJSONObject("hostsBytesTop"));
+                JSONUtils.putAllLongs(
+                        hostsLastFinishedTop.getTopSet(),
+                        json.getJSONObject("hostsLastFinishedTop"));
+                
+                JSONUtils.putAllAtomicLongs(
+                    ((ObjectIdentityMemCache)mimeTypeDistribution).getMap(),
+                    json.getJSONObject("mimeTypeDistribution"));
+                JSONUtils.putAllAtomicLongs(
+                    ((ObjectIdentityMemCache)mimeTypeBytes).getMap(),
+                    json.getJSONObject("mimeTypeBytes"));
+                JSONUtils.putAllAtomicLongs(
+                    ((ObjectIdentityMemCache)statusCodeDistribution).getMap(),
+                    json.getJSONObject("statusCodeDistribution"));
+          
+                JSONUtils.putAllLongs(
+                    crawledBytes,
+                    json.getJSONObject("crawledBytes"));
+            }
         } catch (DatabaseException e) {
+            throw new IllegalStateException(e);
+        } catch (JSONException e) {
             throw new IllegalStateException(e);
         }
         // Log the legend
@@ -394,6 +438,13 @@ public class StatisticsTracker
             "   queued   downloaded       doc/s(avg)  KB/s(avg) " +
             "  dl-failures   busy-thread   mem-use-KB  heap-size-KB " +
             "  congestion   max-depth   avg-depth";
+    }
+    
+    public String getProgressStamp() {
+        return 
+            progressStatisticsLegend() 
+            + "\n" 
+            + getSnapshot().getProgressStatisticsLine();
     }
 
     /**
@@ -1051,4 +1102,51 @@ public class StatisticsTracker
     public void concludedSeedBatch() {
         // do nothing;
     }
+    
+    // BeanNameAware
+    String beanName; 
+    public void setBeanName(String name) {
+        this.beanName = name;
+    }
+    
+    // Checkpointable
+    // CrawlController's only interest is in knowing that a Checkpoint is
+    // being recovered
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("crawlStartTime",crawlStartTime);
+            json.put("crawlEndTime",crawlEndTime);
+            long virtualCrawlPauseStarted = crawlPauseStarted;
+            if(virtualCrawlPauseStarted<1) {
+                // TODO: use instant checkpoint started?
+                virtualCrawlPauseStarted = System.currentTimeMillis();
+            }
+            json.put("crawlPauseStarted",virtualCrawlPauseStarted);
+            json.put("crawlTotalPausedTime",crawlTotalPausedTime);
+            
+            json.put("hostsDistributionTop", hostsDistributionTop.getTopSet());
+            json.put("hostsBytesTop", hostsBytesTop.getTopSet());
+            json.put("hostsLastFinishedTop", hostsLastFinishedTop.getTopSet());
+
+            json.put("mimeTypeDistribution", ((ObjectIdentityMemCache)mimeTypeDistribution).getMap());
+            json.put("mimeTypeBytes", ((ObjectIdentityMemCache)mimeTypeBytes).getMap());
+            json.put("statusCodeDistribution", ((ObjectIdentityMemCache)statusCodeDistribution).getMap());
+
+            json.put("crawledBytes", crawledBytes);
+
+            // TODO: save crawledBytesHistotable
+            checkpointInProgress.saveJson(beanName, json);
+        } catch (JSONException e) {
+            // impossible
+            throw new RuntimeException(e);
+        }
+    }
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+    Checkpoint recoveryCheckpoint;
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        this.recoveryCheckpoint = recoveryCheckpoint;
+    }
+    
 }

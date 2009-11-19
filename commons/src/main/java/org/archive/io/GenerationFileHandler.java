@@ -100,6 +100,7 @@ public class GenerationFileHandler extends FileHandler {
              storeSuffix;
         File activeFile = new File(filename);
         File storeFile = new File(storeFilename);
+        FileUtils.moveAsideIfExists(storeFile);
         if (!activeFile.renameTo(storeFile)) {
             throw new IOException("Unable to move " + filename + " to " +
                 storeFilename);
