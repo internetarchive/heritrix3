@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.Cookie;
 import org.archive.spring.ConfigPath;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 import org.springframework.context.Lifecycle;
 
 /**
@@ -154,7 +154,7 @@ public abstract class AbstractCookieStorage
         } catch (IOException e) {
             LOGGER.log(Level.WARNING,e.getMessage(), e);
         } finally {
-            IoUtils.close(raf);
+            ArchiveUtils.closeQuietly(raf);
         }
     }
     

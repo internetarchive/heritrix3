@@ -29,7 +29,7 @@ import org.archive.bdb.BdbModule;
 import org.archive.modules.net.BdbServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.state.ModuleTestBase;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 
 /**
  * 
@@ -55,7 +55,7 @@ public class CrawlControllerTest extends ModuleTestBase {
             fileWriter.write("http://www.pandemoniummovie.com");
             fileWriter.close();
         } finally {
-            IoUtils.close(fileWriter);
+            ArchiveUtils.closeQuietly(fileWriter);
         }
         
         File state = new File(tmp, "state");
@@ -69,11 +69,8 @@ public class CrawlControllerTest extends ModuleTestBase {
 //        def.set(bdb, BdbModule.DIR, state.getAbsolutePath());
         bdb.start();
         
-        String cp = checkpoints.getAbsolutePath();
-        
         CrawlController controller = new CrawlController();
         controller.setServerCache(new BdbServerCache());
-        controller.setCheckpointsDir(new ConfigPath("test",cp));
         controller.start();
         return controller;
     }

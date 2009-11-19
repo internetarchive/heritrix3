@@ -24,7 +24,7 @@ import java.nio.ByteOrder;
 import java.util.Map;
 
 import org.archive.io.SeekInputStream;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.LRU;
 
 
@@ -156,7 +156,7 @@ public class DefaultBlockFileSystem implements BlockFileSystem {
     throws IOException {
         this.input = input;
         byte[] temp = new byte[BLOCK_SIZE];
-        IoUtils.readFully(input, temp);
+        ArchiveUtils.readFully(input, temp);
         this.header = new HeaderBlock(ByteBuffer.wrap(temp));
         this.cache = new LRU<Integer,ByteBuffer>(batCacheSize);
     }
@@ -268,7 +268,7 @@ public class DefaultBlockFileSystem implements BlockFileSystem {
 
         byte[] buf = new byte[BLOCK_SIZE];
         input.position((block + 1) * BLOCK_SIZE);
-        IoUtils.readFully(input, buf);
+        ArchiveUtils.readFully(input, buf);
 
         r = ByteBuffer.wrap(buf);
         r.order(ByteOrder.LITTLE_ENDIAN);

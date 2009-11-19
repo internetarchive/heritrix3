@@ -119,17 +119,6 @@ public class FileUtilsTest extends TmpDirTestCase {
         org.apache.commons.io.FileUtils.deleteQuietly(nakedLastLineWindows);
         
     }
-
-    @SuppressWarnings("deprecation")
-    public void testCopyFiles() throws IOException {
-        FileUtils.copyFiles(this.srcDirFile, this.tgtDirFile);
-        File [] srcFiles = this.srcDirFile.listFiles();
-        for (int i = 0; i < srcFiles.length; i++) {
-            File tgt = new File(this.tgtDirFile, srcFiles[i].getName());
-            assertTrue("Tgt doesn't exist " + tgt.getAbsolutePath(),
-                tgt.exists());
-        }
-    }
     
     public void testCopyFile() {
         // Test exception copying nonexistent file.

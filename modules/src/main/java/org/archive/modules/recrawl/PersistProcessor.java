@@ -41,7 +41,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
-import org.archive.util.IoUtils;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.SURT;
 import org.archive.util.bdbje.EnhancedEnvironment;
@@ -301,10 +300,10 @@ public abstract class PersistProcessor extends Processor {
         } else {
             BufferedReader persistLogReader = null;
             if (sourceFile.isFile()) {
-                persistLogReader = IoUtils.getBufferedReader(sourceFile);
+                persistLogReader = ArchiveUtils.getBufferedReader(sourceFile);
             } else {
                 URL sourceUrl = new URL(sourcePath);
-                persistLogReader = IoUtils.getBufferedReader(sourceUrl);
+                persistLogReader = ArchiveUtils.getBufferedReader(sourceUrl);
             }
             count = populatePersistEnvFromLog(persistLogReader, historyMap);
         }

@@ -248,20 +248,20 @@ public class ArchiveUtilsTest extends TestCase {
                 .formatBytesForDisplay(0));
         assertEquals("1023 bytes", "1,023 B", ArchiveUtils
                 .formatBytesForDisplay(1023));
-        assertEquals("1025 bytes", "1.0 KB", ArchiveUtils
+        assertEquals("1025 bytes", "1.0 KiB", ArchiveUtils
                 .formatBytesForDisplay(1025));
         // expected display values taken from Google calculator
-        assertEquals("10,000 bytes", "9.8 KB",
+        assertEquals("10,000 bytes", "9.8 KiB",
                 ArchiveUtils.formatBytesForDisplay(10000));
-        assertEquals("1,000,000 bytes", "977 KB",
+        assertEquals("1,000,000 bytes", "977 KiB",
                 ArchiveUtils.formatBytesForDisplay(1000000));
-        assertEquals("100,000,000 bytes", "95 MB",
+        assertEquals("100,000,000 bytes", "95 MiB",
                 ArchiveUtils.formatBytesForDisplay(100000000));
-        assertEquals("100,000,000,000 bytes", "93 GB",
+        assertEquals("100,000,000,000 bytes", "93 GiB",
                 ArchiveUtils.formatBytesForDisplay(100000000000L));
-        assertEquals("100,000,000,000,000 bytes", "91 TB",
+        assertEquals("100,000,000,000,000 bytes", "91 TiB",
                 ArchiveUtils.formatBytesForDisplay(100000000000000L));
-        assertEquals("100,000,000,000,000,000 bytes", "90,949 TB",
+        assertEquals("100,000,000,000,000,000 bytes", "90,949 TiB",
                 ArchiveUtils.formatBytesForDisplay(100000000000000000L));
     }
 

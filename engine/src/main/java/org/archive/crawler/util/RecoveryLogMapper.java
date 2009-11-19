@@ -41,7 +41,7 @@
 package org.archive.crawler.util;
 
 import org.archive.crawler.frontier.FrontierJournal;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 
 import java.io.File;
 import java.io.LineNumberReader;
@@ -118,7 +118,7 @@ public class RecoveryLogMapper {
     protected void load(String recoverLogFileName)
             throws java.io.FileNotFoundException, java.io.IOException,
             SeedUrlNotFoundException {
-        LineNumberReader reader = new LineNumberReader(IoUtils
+        LineNumberReader reader = new LineNumberReader(ArchiveUtils
                 .getBufferedReader(new File(recoverLogFileName)));
         String curLine = null;
         while ((curLine = reader.readLine()) != null) {

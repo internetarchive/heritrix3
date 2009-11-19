@@ -33,7 +33,7 @@ import org.archive.io.warc.WARCReaderFactory;
 import org.archive.net.UURI;
 import org.archive.net.md5.Md5URLConnection;
 import org.archive.net.rsync.RsyncURLConnection;
-import org.archive.util.IoUtils;
+import org.archive.util.FileUtils;
 
 
 /**
@@ -273,8 +273,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
             addUserAgent((HttpURLConnection)connection);
             connection.connect();
             try {
-                IoUtils.readFullyToFile(connection.getInputStream(), localFile,
-                    new byte[16 * 1024]);
+                FileUtils.readFullyToFile(connection.getInputStream(), localFile);
             } catch (IOException ioe) {
                 localFile.delete();
                 throw ioe;

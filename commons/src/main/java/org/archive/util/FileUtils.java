@@ -18,6 +18,9 @@
  */
 package org.archive.util;
 
+import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
+
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -25,6 +28,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.FileChannel;
 import java.util.Iterator;
@@ -55,18 +60,6 @@ public class FileUtils {
     private FileUtils() {
         super();
     }
-
-    /** Recursively copy all files from one directory to another.
-     *
-     * @param src file or directory to copy from.
-     * @param dest file or directory to copy to.
-     * @throws IOException
-     * @deprecated use org.apache.commons.io.FileUtils.copyDirectory()
-     */
-    public static void copyFiles(File src, File dest)
-    throws IOException {
-        org.apache.commons.io.FileUtils.copyDirectory(src, dest);
-    }
     
     /**
      * Copy the src file to the destination. Deletes any preexisting
@@ -81,26 +74,6 @@ public class FileUtils {
     public static boolean copyFile(final File src, final File dest)
     throws FileNotFoundException, IOException {
         return copyFile(src, dest, -1, true);
-    }
-    
-    /**
-     * Copy the src file to the destination.
-     * 
-     * @param src
-     * @param dest
-     * @param overwrite If target file already exits, and this parameter is
-     * true, overwrite target file (We do this by first deleting the target
-     * file before we begin the copy).
-     * @return True if the extent was greater than actual bytes copied.
-     * @throws FileNotFoundException
-     * @throws IOException
-     * @deprecated use org.apache.commons.io.FileUtils.co
-     */
-    public static boolean copyFile(final File srcFile, final File destFile,
-        final boolean overwrite)
-    throws FileNotFoundException, IOException {
-        org.apache.commons.io.FileUtils.copyFile(srcFile, destFile);
-        return false; 
     }
     
     /**
@@ -237,40 +210,6 @@ public class FileUtils {
         }
     }
 
-	/** Deletes all files and subdirectories under dir.
-     * @param dir
-     * @return true if all deletions were successful. If a deletion fails, the
-     *          method stops attempting to delete and returns false.
-     * @deprecated use org.apache.commons.io.FileUtils.deleteDirectory()
-     */
-    public static boolean deleteDir(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (int i=0; i<children.length; i++) {
-                boolean success = deleteDir(new File(dir, children[i]));
-                if (!success) {
-                    return false;
-                }
-            }
-        }
-        // The directory is now empty so delete it
-        return dir.delete();
-    }
-
-
-
-    /**
-     * Utility method to read an entire file as a String.
-     *
-     * @param file
-     * @return File as String.
-     * @throws IOException
-     * @deprecated use org.apache.commons.io.FileUtils.readFileToString()
-     */
-    public static String readFileAsString(File file) throws IOException {
-        return org.apache.commons.io.FileUtils.readFileToString(file);
-    }
-
     /**
      * Get a list of all files in directory that have passed prefix.
      *
@@ -403,7 +342,7 @@ public class FileUtils {
             p.load(finp);
             return p;
         } finally {
-            IoUtils.close(finp);
+            ArchiveUtils.closeQuietly(finp);
         }
     }
     
@@ -418,17 +357,24 @@ public class FileUtils {
         try {
             p.store(fos,"");
         } finally {
-            IoUtils.close(fos);
+            ArchiveUtils.closeQuietly(fos);
         }
     }
 
-    public static void moveAsideIfExists(File file) throws IOException {
-        if(file.exists()) {
-            String newName = 
-                file.getCanonicalPath() + "." 
-                + ArchiveUtils.get14DigitDate(file.lastModified());
-            file.renameTo(new File(newName));
+    // TODO: comment
+    public static boolean moveAsideIfExists(File file) throws IOException {
+        if(!file.exists()) {
+            return true; 
         }
+        String newName = 
+            file.getCanonicalPath() + "." 
+            + ArchiveUtils.get14DigitDate(file.lastModified());
+        boolean retVal = file.renameTo(new File(newName));
+        if(!retVal) {
+            LOGGER.warning("unable to move aside: "+file+" to "+newName);
+        }
+        return retVal;
+
     }
 
     /**
@@ -484,7 +430,7 @@ public class FileUtils {
         FileInputStream fis = new FileInputStream(file);
         fis.getChannel().position(startPosition); 
         byte[] buf = new byte[bufferSize];
-        IoUtils.readFully(fis, buf);
+        ArchiveUtils.readFully(fis, buf);
         IOUtils.closeQuietly(fis);
         
         // find all line starts fully in buffer
@@ -657,5 +603,99 @@ public class FileUtils {
             LOGGER.severe(">50 pending Files to delete even after gc/finalization");
         }
     }
-    static LinkedList<File> pendingDeletes = new LinkedList<File>(); 
+    static LinkedList<File> pendingDeletes = new LinkedList<File>();
+
+    /**
+     * Read the entire stream to EOF into the passed file.
+     * Closes <code>is</code> when done or if an exception.
+     * @param is Stream to read.
+     * @param toFile File to write to.
+     * @throws IOException 
+     */
+    public static void readFullyToFile(InputStream is, File toFile)
+            throws IOException {
+        byte[] buffer = new byte[16 * 1024];
+        long totalcount = -1;
+        OutputStream os = new FastBufferedOutputStream(new FileOutputStream(
+                toFile));
+        InputStream localIs = (is instanceof BufferedInputStream) ? is
+                : new BufferedInputStream(is);
+        try {
+            for (int count = -1; (count = localIs
+                    .read(buffer, 0, buffer.length)) != -1; totalcount += count) {
+                os.write(buffer, 0, count);
+            }
+        } finally {
+            os.close();
+            if (localIs != null) {
+                localIs.close();
+            }
+        }
+    }
+
+    /**
+     * Ensure writeable directory.
+     *
+     * If doesn't exist, we attempt creation.
+     *
+     * @param dir Directory to test for exitence and is writeable.
+     *
+     * @return The passed <code>dir</code>.
+     *
+     * @exception IOException If passed directory does not exist and is not
+     * createable, or directory is not writeable or is not a directory.
+     */
+    public static File ensureWriteableDirectory(String dir)
+    throws IOException {
+        return FileUtils.ensureWriteableDirectory(new File(dir));
+    }
+
+    /**
+     * Ensure writeable directories.
+     *
+     * If doesn't exist, we attempt creation.
+     *
+     * @param dirs List of Files to test.
+     *
+     * @return The passed <code>dirs</code>.
+     *
+     * @exception IOException If passed directory does not exist and is not
+     * createable, or directory is not writeable or is not a directory.
+     */
+    public static List<File> ensureWriteableDirectory(List<File> dirs)
+    throws IOException {
+        for (Iterator<File> i = dirs.iterator(); i.hasNext();) {
+             FileUtils.ensureWriteableDirectory(i.next());
+        }
+        return dirs;
+    }
+
+    /**
+     * Ensure writeable directory.
+     *
+     * If doesn't exist, we attempt creation.
+     *
+     * @param dir Directory to test for exitence and is writeable.
+     *
+     * @return The passed <code>dir</code>.
+     *
+     * @exception IOException If passed directory does not exist and is not
+     * createable, or directory is not writeable or is not a directory.
+     */
+    public static File ensureWriteableDirectory(File dir)
+    throws IOException {
+        if (!dir.exists()) {
+            dir.mkdirs();
+        } else {
+            if (!dir.canWrite()) {
+                throw new IOException("Dir " + dir.getAbsolutePath() +
+                    " not writeable.");
+            } else if (!dir.isDirectory()) {
+                throw new IOException("Dir " + dir.getAbsolutePath() +
+                    " is not a directory.");
+            }
+        }
+    
+        return dir;
+    } 
 }

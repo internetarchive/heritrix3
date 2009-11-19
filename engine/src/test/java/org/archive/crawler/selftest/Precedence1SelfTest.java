@@ -24,7 +24,7 @@ import java.io.File;
 import java.io.FileReader;
 
 import org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 
 /**
  * Tests that operators can create precedence groups for URIs, and that URIs
@@ -158,7 +158,7 @@ public class Precedence1SelfTest extends SelfTestBase {
                 crawled = crawled + s + "\n";
             }
         } finally {
-            IoUtils.close(br);
+            ArchiveUtils.closeQuietly(br);
         }
         
         assertEquals(EXPECTED, crawled);

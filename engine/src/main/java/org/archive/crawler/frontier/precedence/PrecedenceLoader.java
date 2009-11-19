@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.archive.modules.recrawl.PersistProcessor;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
 
@@ -119,7 +119,7 @@ public class PrecedenceLoader {
         
         if(source.isFile()) {
             // scan log, writing to database
-            BufferedReader br = IoUtils.getBufferedReader(source);
+            BufferedReader br = ArchiveUtils.getBufferedReader(source);
             Iterator iter = new LineReadingIterator(br);
             while(iter.hasNext()) {
                 String line = (String) iter.next(); 

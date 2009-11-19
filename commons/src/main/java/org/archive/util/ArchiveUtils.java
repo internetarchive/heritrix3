@@ -19,25 +19,30 @@
 
 package org.archive.util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
 
 
 /**
@@ -117,7 +122,7 @@ public class ArchiveUtils {
 
     /**
      * Utility function for creating arc-style date stamps
-     * in the format yyyMMddHHmmss.
+     * in the format yyyyMMddHHmmss.
      * Date stamps are in the UTC time zone
      * @return the date stamp
      */
@@ -127,7 +132,7 @@ public class ArchiveUtils {
 
     /**
      * Utility function for creating arc-style date stamps
-     * in the format yyyMMddHHmm.
+     * in the format yyyyMMddHHmm.
      * Date stamps are in the UTC time zone
      * @return the date stamp
      */
@@ -349,41 +354,6 @@ public class ArchiveUtils {
     }
     
     /**
-     * Convert 17-digit date format timestamps (as found in crawl.log, for
-     * example) into a GregorianCalendar object. + * Useful so you can convert
-     * into milliseconds-since-epoch. Note: it is possible to compute
-     * milliseconds-since-epoch + * using {@link #parse17DigitDate}.UTC(), but
-     * that method is deprecated in favor of using Calendar.getTimeInMillis(). + *
-     * <p/>I probably should have dug into all the utility methods in
-     * DateFormat.java to parse the timestamp, but this was + * easier. If
-     * someone wants to fix this to use those methods, please have at it! <p/>
-     * Mike Schwartz, schwartz at CodeOnTheRoad dot com.
-     * 
-     * @param timestamp17String
-     * @return Calendar set to <code>timestamp17String</code>.
-     */
-    public static Calendar timestamp17ToCalendar(String timestamp17String) {
-        GregorianCalendar calendar = new GregorianCalendar();
-        int year = Integer.parseInt(timestamp17String.substring(0, 4));
-        int dayOfMonth = Integer.parseInt(timestamp17String.substring(6, 8));
-        // Month is 0-based
-        int month = Integer.parseInt(timestamp17String.substring(4, 6)) - 1;
-        int hourOfDay = Integer.parseInt(timestamp17String.substring(8, 10));
-        int minute = Integer.parseInt(timestamp17String.substring(10, 12));
-        int second = Integer.parseInt(timestamp17String.substring(12, 14));
-        int milliseconds = Integer
-                .parseInt(timestamp17String.substring(14, 17));
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month);
-        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, second);
-        calendar.set(Calendar.MILLISECOND, milliseconds);
-        return calendar;
-    }
-    
-    /**
      * @param timestamp A 14-digit timestamp or the suffix for a 14-digit
      * timestamp: E.g. '20010909014640' or '20010101' or '1970'.
      * @return Seconds since the epoch as a string zero-pre-padded so always
@@ -539,14 +509,9 @@ public class ArchiveUtils {
      * Takes a byte size and formats it for display with 'friendly' units. 
      * <p>
      * This involves converting it to the largest unit 
-     * (of B, KB, MB, GB, TB) for which the amount will be > 1.
+     * (of B, KiB, MiB, GiB, TiB) for which the amount will be > 1.
      * <p>
      * Additionally, at least 2 significant digits are always displayed. 
-     * <p>
-     * Displays as bytes (B): 0-1023
-     * Displays as kilobytes (KB): 1024 - 2097151 (~2Mb)
-     * Displays as megabytes (MB): 2097152 - 4294967295 (~4Gb)
-     * Displays as gigabytes (GB): 4294967296 - infinity
      * <p>
      * Negative numbers will be returned as '0 B'.
      *
@@ -566,8 +531,7 @@ public class ArchiveUtils {
             unitPowerOf1024++;
         }
         
-        // TODO: get didactic, make these KiB, MiB, GiB, TiB
-        final String[] units = { " B", " KB", " MB", " GB", " TB" };
+        final String[] units = { " B", " KiB", " MiB", " GiB", " TiB" };
         
         // ensure at least 2 significant digits (#.#) for small displayValues
         int fractionDigits = (displayAmount < 10) ? 1 : 0; 
@@ -756,8 +720,8 @@ public class ArchiveUtils {
         } else if (obj instanceof Map) {
             return prettyString((Map) obj);
         } else {
-            return "<"+obj+">";
-        }
+        return "<"+obj+">"; 
+    }
     }
     
     /**
@@ -806,6 +770,7 @@ public class ArchiveUtils {
         return builder.toString();
     }
     
+    
     private static String loadVersion() {
         InputStream input = ArchiveUtils.class.getResourceAsStream(
                 "/org/archive/util/version.txt");
@@ -821,7 +786,7 @@ public class ArchiveUtils {
         } catch (IOException e) {
             return e.getMessage();
         } finally {
-            IoUtils.close(br);
+            closeQuietly(br);
         }
         
         version = version.trim();
@@ -842,7 +807,7 @@ public class ArchiveUtils {
         } catch (IOException e) {
             return version;
         } finally {
-            IoUtils.close(br);
+            closeQuietly(br);
         }
         
         if (timestamp.startsWith("timestamp=")) {
@@ -927,6 +892,65 @@ public class ArchiveUtils {
         if(Thread.interrupted()) {
             throw new InterruptedException("interrupt detected");
         }
+    }
+
+    /**
+     * Read stream into buf until EOF or buf full.
+     * 
+     * @param input
+     * @param buf
+     * @throws IOException
+     */
+    public static void readFully(InputStream input, byte[] buf) 
+    throws IOException {
+        int max = buf.length;
+        int ofs = 0;
+        while (ofs < max) {
+            int l = input.read(buf, ofs, max - ofs);
+            if (l == 0) {
+                throw new EOFException();
+            }
+            ofs += l;
+        }
+    }
+
+    /** suffix to recognize gzipped files */
+    public static final String GZIP_SUFFIX = ".gz";
+
+    /**
+     * Get a BufferedReader on the crawler journal given
+     * 
+     * TODO: move to a general utils class 
+     * 
+     * @param source File journal
+     * @return journal buffered reader.
+     * @throws IOException
+     */
+    public static BufferedReader getBufferedReader(File source) throws IOException {
+        InputStream is = new BufferedInputStream(new FileInputStream(source));
+        boolean isGzipped = source.getName().toLowerCase().
+            endsWith(GZIP_SUFFIX);
+        if(isGzipped) {
+            is = new GZIPInputStream(is);
+        }
+        return new BufferedReader(new InputStreamReader(is));
+    }
+
+    /**
+     * Get a BufferedReader on the crawler journal given.
+     * 
+     * @param source URL journal
+     * @return journal buffered reader.
+     * @throws IOException
+     */
+    public static BufferedReader getBufferedReader(URL source) throws IOException {
+        URLConnection conn = source.openConnection();
+        boolean isGzipped = conn.getContentType() != null && conn.getContentType().equalsIgnoreCase("application/x-gzip")
+                || conn.getContentEncoding() != null && conn.getContentEncoding().equalsIgnoreCase("gzip");
+        InputStream uis = conn.getInputStream();
+        return new BufferedReader(isGzipped?
+            new InputStreamReader(new GZIPInputStream(uis)):
+            new InputStreamReader(uis));    
     }
     
 //    public static long doubleMurmur(byte[] data) {

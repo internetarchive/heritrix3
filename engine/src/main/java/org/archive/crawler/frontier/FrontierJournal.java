@@ -32,7 +32,7 @@ import org.archive.crawler.framework.Frontier;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 import org.json.JSONObject;
 
 /**
@@ -191,7 +191,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
         DecideRule scope = (scopeIncludes) ? frontier.getScope() : null;
         FrontierJournal newJournal = frontier.getFrontierJournal();
         
-        BufferedReader br = IoUtils.getBufferedReader(source);
+        BufferedReader br = ArchiveUtils.getBufferedReader(source);
         String read;
         int lines = 0; 
         try {
@@ -268,7 +268,7 @@ public class FrontierJournal extends CrawlerJournal implements Checkpointable {
         try {
             // Scan log for all 'F+' lines: if not alreadyIncluded, schedule for
             // visitation
-            br = IoUtils.getBufferedReader(source);
+            br = ArchiveUtils.getBufferedReader(source);
             try {
                 while ((read = br.readLine())!=null) {
                     qLines++;

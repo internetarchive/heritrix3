@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 import org.archive.util.ArchiveUtils;
-import org.archive.util.IoUtils;
+import org.archive.util.FileUtils;
 import org.archive.util.TimestampSerialno;
 
 
@@ -269,7 +269,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         }
         
         try {
-            IoUtils.ensureWriteableDirectory(d);
+            FileUtils.ensureWriteableDirectory(d);
         } catch(IOException e) {
             logger.warning("Directory " + d.getPath() + " is not" +
                 " writeable or cannot be created: " + e.getMessage());

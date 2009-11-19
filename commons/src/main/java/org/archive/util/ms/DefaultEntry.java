@@ -24,7 +24,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.archive.util.IoUtils;
+import org.archive.util.ArchiveUtils;
 import org.archive.io.SeekInputStream;
 
 class DefaultEntry implements Entry {
@@ -47,7 +47,7 @@ class DefaultEntry implements Entry {
         // FIXME: Read directly from the stream
         this.origin = origin;
         byte[] temp = new byte[128];
-        IoUtils.readFully(input, temp);
+        ArchiveUtils.readFully(input, temp);
         ByteBuffer buf = ByteBuffer.wrap(temp);
         buf.order(ByteOrder.LITTLE_ENDIAN);
         buf.position(0);

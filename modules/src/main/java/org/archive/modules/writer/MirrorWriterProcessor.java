@@ -50,7 +50,7 @@ import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.net.UURI;
-import org.archive.util.IoUtils;
+import org.archive.util.FileUtils;
 
 /**
    Processor module that writes the results of successful fetches to
@@ -399,7 +399,7 @@ public class MirrorWriterProcessor extends Processor {
                 destFile = new File(baseDir + File.separator + mps);
                 File parent = destFile.getParentFile();
                 if (null != parent) {
-                    IoUtils.ensureWriteableDirectory(parent);
+                    FileUtils.ensureWriteableDirectory(parent);
                 }
             } else {
                 URIToFileReturn r = null; // Return from uriToFile().
