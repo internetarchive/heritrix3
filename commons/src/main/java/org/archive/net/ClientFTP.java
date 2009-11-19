@@ -19,7 +19,6 @@
 package org.archive.net;
 
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.Socket;

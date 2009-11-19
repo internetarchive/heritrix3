@@ -560,6 +560,7 @@ public class Cookie extends NameValuePair implements Serializable, Comparator {
     * Collator for Cookie comparisons.  Could be replaced with references to
     * specific Locales.
     */
+   @SuppressWarnings("unused") // IA/HERITRIX ADDITION
    private static final RuleBasedCollator STRING_COLLATOR =
         (RuleBasedCollator) RuleBasedCollator.getInstance(
                                                 new Locale("en", "US", ""));

@@ -40,6 +40,7 @@ import org.archive.util.Supplier;
 public class DefaultServerCache extends ServerCache implements Closeable, Serializable {
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("unused")
     private static Logger logger =
         Logger.getLogger(DefaultServerCache.class.getName());
     
