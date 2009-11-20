@@ -30,6 +30,7 @@ import java.util.List;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.reporting.AlertHandler;
@@ -145,15 +146,16 @@ public class JobResource extends Resource {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='unpause'/>");
-        pw.println("<input ");
-        if(true /*!cj.isUnpausable()*/) { // TODO: not yet implemented
-            pw.println(" disabled ");
+        if(cj.getCheckpointService()!=null) {
+            pw.println("<input ");
+            if(!cj.isRunning()) { // TODO: not yet implemented
+                pw.println(" disabled ");
+            }
+            pw.println(" type='submit' name='action' value='checkpoint'/>");
         }
-        pw.println(" type='submit' name='action' value='checkpoint'/>&nbsp;&nbsp;&nbsp;");
-
         
         // TERMINATE, RESET
-        pw.println("<input ");
+        pw.println("&nbsp;&nbsp;&nbsp;<input ");
         if(!cj.isRunning()) {
             pw.println(" disabled ");
         }
@@ -162,7 +164,24 @@ public class JobResource extends Resource {
         pw.print(cj.hasApplicationContext()?"":"disabled='disabled' title='no instance'");
         pw.println("/><br/>");
 
+        
+        // display checkpoint options
+        if(cj.getCheckpointService()!=null) {
+            Checkpoint recoveryCheckpoint = cj.getCheckpointService().getRecoveryCheckpoint();
+            if(recoveryCheckpoint!=null) {
+                pw.println("recover from <i>"+recoveryCheckpoint.getName()+"</i>");
+            } else if (cj.getCheckpointService().hasAvailableCheckpoints()) {
+                pw.println("select an available checkpoint before launch to recover:");
+                pw.println("<select name='checkpoint'><option> </option>");
+                for(File f : cj.getCheckpointService().getAvailableCheckpointDirectories()) {
+                    pw.println("<option>"+f.getName()+"</option>");
+                }
+                pw.println("</select>");
+            }
+        }
+        
         pw.println("</form></div>");
+
         
         // configuration 
         pw.println("configuration: ");
@@ -411,6 +430,10 @@ public class JobResource extends Resource {
         AlertThreadGroup.setThreadLogger(cj.getJobLogger());
         String action = form.getFirstValue("action");
         if("launch".equals(action)) {
+            String selectedCheckpoint = form.getFirstValue("checkpoint");
+            if(StringUtils.isNotEmpty(selectedCheckpoint)) {
+                cj.getCheckpointService().setRecoveryCheckpointByName(selectedCheckpoint);
+            }
             cj.launch(); 
         } else if("checkXML".equals(action)) {
             cj.checkXML();
@@ -426,6 +449,13 @@ public class JobResource extends Resource {
             cj.getCrawlController().requestCrawlPause();
         } else if("unpause".equals(action)) {
             cj.getCrawlController().requestCrawlResume();
+        } else if("checkpoint".equals(action)) {
+            String cp = cj.getCheckpointService().requestCrawlCheckpoint();
+            if(StringUtils.isNotEmpty(cp)) {
+                Flash.addFlash(getResponse(), "Checkpoint <i>"+cp+"</i> saved",Flash.Kind.ACK);
+            } else {
+                Flash.addFlash(getResponse(), "Checkpoint not made; check logs",Flash.Kind.NACK);
+            }
         } else if("terminate".equals(action)) {
             cj.terminate();
         }

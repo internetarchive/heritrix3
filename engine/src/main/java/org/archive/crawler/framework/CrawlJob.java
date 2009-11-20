@@ -485,6 +485,21 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     }
     
     /**
+     * Return the configured Checkpointer instance, if there is exactly
+     * one, otherwise null.
+     * 
+     * @return Checkpointer
+     */
+    @SuppressWarnings("unchecked")
+    public CheckpointService getCheckpointService() {
+        if(ac==null) {
+            return null;
+        }
+        Map<String, CheckpointService> beans = 
+            getJobContext().getBeansOfType(CheckpointService.class);
+        return (beans.size() == 1) ? beans.values().iterator().next() : null;
+    }
+    /**
      * Ensure a fresh start for any configuration changes or relaunches,
      * by stopping and discarding an existing ApplicationContext.
      */
