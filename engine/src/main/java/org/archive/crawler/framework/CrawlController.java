@@ -19,7 +19,6 @@
  
 package org.archive.crawler.framework;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
@@ -29,6 +28,7 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
@@ -63,7 +63,8 @@ import org.xbill.DNS.Lookup;
 public class CrawlController 
 implements Serializable, 
            Lifecycle,
-           ApplicationContextAware {
+           ApplicationContextAware,
+           Checkpointable {
     private static final long serialVersionUID = 1L;
     
     // ApplicationContextAware implementation, for eventing
@@ -112,18 +113,6 @@ implements Serializable,
     }
     public void setScratchDir(ConfigPath scratchDir) {
         this.scratchDir = scratchDir;
-    }
-
-    /**
-     * Checkpoints directory
-     */
-    protected ConfigPath checkpointsDir = 
-        new ConfigPath("checkpoints subdirectory","checkpoints");
-    public ConfigPath getCheckpointsDir() {
-        return checkpointsDir;
-    }
-    public void setCheckpointsDir(ConfigPath checkpointsDir) {
-        this.checkpointsDir = checkpointsDir;
     }
 
     /**
@@ -240,19 +229,6 @@ implements Serializable,
     public void setRecorderInBufferBytes(int recorderInBufferBytes) {
         this.recorderInBufferBytes = recorderInBufferBytes;
     }
-    
-    /**
-     * Period at which to create automatic checkpoints; -1 means
-     * no auto checkpointing. 
-     */
-    int checkpointerPeriod = -1;
-    public int getCheckpointerPeriod() {
-        return checkpointerPeriod;
-    }
-    public void setCheckpointerPeriod(int checkpointerPeriod) {
-        this.checkpointerPeriod = checkpointerPeriod;
-    }
-
 
     protected CrawlerLoggerModule loggerModule;
     public CrawlerLoggerModule getLoggerModule() {
@@ -284,19 +260,12 @@ implements Serializable,
     private transient CrawlStatus sExit = CrawlStatus.CREATED;
 
     public static enum State {
-        NASCENT, RUNNING, PAUSED, PAUSING, CHECKPOINTING, 
+        NASCENT, RUNNING, PAUSED, PAUSING, 
         STOPPING, FINISHED, PREPARING 
     }
 
     transient private State state = State.NASCENT;
     
-    /**
-     * Checkpointer.
-     * Knows if checkpoint in progress and what name of checkpoint is.  Also runs
-     * checkpoints.
-     */
-    protected Checkpointer checkpointer;
-
     public CrawlController() {
     }
     
@@ -312,9 +281,7 @@ implements Serializable,
         if(isRunning) {
             return; 
         }
-        this.checkpointer = new Checkpointer(
-                this, getCheckpointsDir().getFile());
-        
+       
         sExit = CrawlStatus.FINISHED_ABNORMAL;
 
         // force creation of DNS Cache now -- avoids CacheCleaner in toe-threads group
@@ -336,15 +303,12 @@ implements Serializable,
     public void stop() {
         // TODO: more stop/cleanup?
         isRunning = false; 
-        this.checkpointer.cleanup();
     }
 
     /**
      * Send crawl change event to all listeners.
      * @param newState State change we're to tell listeners' about.
      * @param message Message on state change.
-     * @see #sendCheckpointEvent(File) for special case event sending
-     * telling listeners to checkpoint.
      */
     @SuppressWarnings("unchecked")
     protected void sendCrawlStateChangeEvent(State newState, 
@@ -371,7 +335,12 @@ implements Serializable,
     public void requestCrawlStart() {
         hasStarted = true; 
         sendCrawlStateChangeEvent(State.PREPARING, CrawlStatus.PREPARING);
-        getSeeds().announceSeeds();
+        
+        if(recoveryCheckpoint==null) {
+            // only announce (trigger scheduling of) seeds
+            // when doing a cold (non-recovery) start
+            getSeeds().announceSeeds();
+        }
         
         setupToePool();
 
@@ -410,10 +379,7 @@ implements Serializable,
         sendCrawlStateChangeEvent(State.FINISHED, this.sExit);
     }
     
-    synchronized void completePause() {
-        // Send a notifyAll. At least checkpointing thread may be waiting on a
-        // complete pause.
-        notifyAll();
+    protected synchronized void completePause() {
         sendCrawlStateChangeEvent(State.PAUSED, CrawlStatus.PAUSED);
     }
 
@@ -425,23 +391,6 @@ implements Serializable,
         }
         return state == State.RUNNING;
     }
-
-    /**
-     * Request a checkpoint.
-     * Sets a checkpointing thread running.
-     * @throws IllegalStateException Thrown if crawl is not in paused state
-     * (Crawl must be first paused before checkpointing).
-     */
-    public synchronized void requestCrawlCheckpoint()
-    throws IllegalStateException {
-        if (this.checkpointer == null) {
-            return;
-        }
-        if (this.checkpointer.isCheckpointing()) {
-            throw new IllegalStateException("Checkpoint already running.");
-        }
-        this.checkpointer.checkpoint();
-    }   
 
     /**
      * Operator requested for crawl to stop.
@@ -465,7 +414,10 @@ implements Serializable,
         if (message == null) {
             throw new IllegalArgumentException("Message cannot be null.");
         }
-        this.sExit = message;
+        if(this.sExit != CrawlStatus.FINISHED) {
+            // don't clobber an already-FINISHED with alternate status
+            this.sExit = message;
+        }
         beginCrawlStop();
     }
 
@@ -524,9 +476,8 @@ implements Serializable,
             this.setupToePool();
         }
 
-        if (state != State.PAUSING && state != State.PAUSED && state != State.CHECKPOINTING) {
-            // Can't resume if not been told to pause or if we're in middle of
-            // a checkpoint.
+        if (state != State.PAUSING && state != State.PAUSED ) {
+            // Can't resume if not been told to pause
             return;
         }
         
@@ -685,4 +636,16 @@ implements Serializable,
             // do nothing
         }
     }
+    
+    // Checkpointable
+    // CrawlController's only interest is in knowing that a Checkpoint is
+    // being recovered
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {}
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+    Checkpoint recoveryCheckpoint;
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        this.recoveryCheckpoint = recoveryCheckpoint;
+    }
+    
 }//EOC
