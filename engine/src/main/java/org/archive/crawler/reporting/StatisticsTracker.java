@@ -40,11 +40,11 @@ import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
 import org.archive.bdb.TempStoredSortedMap;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
-import org.archive.crawler.framework.Checkpoint;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;

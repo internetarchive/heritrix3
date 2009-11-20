@@ -22,7 +22,7 @@ package org.archive.settings.file;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.archive.bdb.BdbModule;
-import org.archive.crawler.framework.Checkpoint;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ObjectIdentityBdbCache;
 import org.archive.util.Supplier;

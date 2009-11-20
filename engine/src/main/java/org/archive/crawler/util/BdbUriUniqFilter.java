@@ -25,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpoint;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.BeanNameAware;

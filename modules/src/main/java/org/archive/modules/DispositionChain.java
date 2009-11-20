@@ -22,8 +22,8 @@ import java.io.IOException;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DispositionChain extends ProcessorChain implements Checkpointable {

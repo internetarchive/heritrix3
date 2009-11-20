@@ -30,7 +30,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.zip.GZIPOutputStream;
 
-import org.archive.crawler.framework.Checkpoint;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 

@@ -21,7 +21,6 @@ package org.archive.checkpointing;
 
 import java.io.IOException;
 
-import org.archive.crawler.framework.Checkpoint;
 
 /**
  * Interface for objects that can checkpoint their state, possibly

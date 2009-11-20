@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpoint;
 import org.archive.io.DefaultWriterPoolSettings;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;

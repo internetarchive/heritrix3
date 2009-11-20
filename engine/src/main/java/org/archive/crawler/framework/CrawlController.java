@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.reporting.AlertThreadGroup;

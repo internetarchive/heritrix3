@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.archive.crawler.framework;
+package org.archive.checkpointing;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.archive.crawler.framework.CheckpointService;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.json.JSONException;
@@ -122,7 +123,8 @@ public class Checkpoint implements InitializingBean {
     public String getShortName() {
         return shortName; 
     }
-    protected void writeValidity(String stamp) {
+    
+    public void writeValidity(String stamp) {
         if(!success) {
             return;
         }

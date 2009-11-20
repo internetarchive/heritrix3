@@ -34,8 +34,8 @@ import javax.management.openmbean.CompositeData;
 
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpoint;
 import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
 import org.archive.util.ArchiveUtils;

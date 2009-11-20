@@ -24,8 +24,8 @@ import java.io.Serializable;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.SerializationUtils;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.crawler.framework.Checkpoint;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigPath;

@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
 import org.archive.spring.ConfigPath;
