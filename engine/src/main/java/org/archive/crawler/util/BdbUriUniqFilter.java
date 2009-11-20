@@ -20,13 +20,16 @@ package org.archive.crawler.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
+import org.archive.checkpointing.Checkpointable;
+import org.archive.crawler.framework.Checkpoint;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -61,7 +64,7 @@ import com.sleepycat.je.OperationStatus;
  * @version $Date$, $Revision$
  */
 public class BdbUriUniqFilter extends SetBasedUriUniqFilter 
-implements Lifecycle, Serializable {
+implements Lifecycle, Checkpointable, BeanNameAware {
     private static final long serialVersionUID = -8099357538178524011L;
 
     private static Logger logger =
@@ -75,7 +78,7 @@ implements Lifecycle, Serializable {
     static protected DatabaseEntry ZERO_LENGTH_ENTRY = 
         new DatabaseEntry(new byte[0]);
     private static final String DB_NAME = "alreadySeenUrl";
-    protected long count = 0;
+    protected AtomicLong count = new AtomicLong(0);
     private long aggregatedLookupTime = 0;
     
     private static final String COLON_SLASH_SLASH = "://";
@@ -86,6 +89,11 @@ implements Lifecycle, Serializable {
         this.bdb = bdb;
     }
     
+    String beanName; 
+    public void setBeanName(String name) {
+        this.beanName = name;
+    }
+    
     public BdbUriUniqFilter() {
     }
     
@@ -94,12 +102,21 @@ implements Lifecycle, Serializable {
         if(isRunning()) {
             return; 
         }
+        boolean isRecovery = (recoveryCheckpoint != null);
         try {
             BdbModule.BdbConfig config = getDatabaseConfig();
-            config.setAllowCreate(true);
-            initialize(bdb.openManagedDatabase(DB_NAME, config, false));
+            config.setAllowCreate(!isRecovery);
+            initialize(bdb.openManagedDatabase(DB_NAME, config, isRecovery));
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
+        }
+        if(isRecovery) {
+            JSONObject json = recoveryCheckpoint.loadJson(beanName);
+            try {
+                count.set(json.getLong("count"));
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }           
         }
         isRunning = true; 
     }
@@ -212,8 +229,7 @@ implements Lifecycle, Serializable {
     
     public synchronized void close() {
         if (logger.isLoggable(Level.INFO)) {
-            logger.info("Count of alreadyseen on close "
-                    + Long.toString(count));
+            logger.info("Count of alreadyseen on close " + count.get());
         }
         Environment env = null;
         if (this.alreadySeen != null) {
@@ -314,10 +330,10 @@ implements Lifecycle, Serializable {
             logger.severe(e.getMessage());
         }
         if (status == OperationStatus.SUCCESS) {
-            count++;
+            count.incrementAndGet();
             if (logger.isLoggable(Level.INFO)) {
                 final int logAt = 10000;
-                if (count > 0 && ((count % logAt) == 0)) {
+                if (count.get() > 0 && ((count.get() % logAt) == 0)) {
                     logger.info("Average lookup " +
                         (aggregatedLookupTime / logAt) + "ms.");
                     aggregatedLookupTime = 0;
@@ -332,7 +348,7 @@ implements Lifecycle, Serializable {
     }
 
     protected long setCount() {
-        return count;
+        return count.get();
     }
 
     protected boolean setRemove(CharSequence uri) {
@@ -345,7 +361,7 @@ implements Lifecycle, Serializable {
             logger.severe(e.getMessage());
         }
         if (status == OperationStatus.SUCCESS) {
-            count--;
+            count.decrementAndGet();
             return true; // removed
         } else {
             return false; // not present
@@ -358,32 +374,23 @@ implements Lifecycle, Serializable {
         return 0;
     }
 
-    private void writeObject(ObjectOutputStream output) throws IOException {
-        // sync deferred-write database
+    // Checkpointable
+    // CrawlController's only interest is in knowing that a Checkpoint is
+    // being recovered
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
+        JSONObject json = new JSONObject();
         try {
-            alreadySeen.sync();
-        } catch (DatabaseException e) {
-            // TODO Auto-generated catch block
+            json.put("count", setCount());
+            checkpointInProgress.saveJson(beanName, json);
+        } catch (JSONException e) {
+            // impossible
             throw new RuntimeException(e);
         }
-        output.defaultWriteObject();
     }
-
-    private void readObject(ObjectInputStream input) 
-    throws IOException, ClassNotFoundException {
-        input.defaultReadObject();        
-
-        try {
-            BdbModule.BdbConfig config = getDatabaseConfig();
-            config.setAllowCreate(false);
-            reopen(bdb.getDatabase(DB_NAME));
-        } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        }
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+    Checkpoint recoveryCheckpoint;
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        this.recoveryCheckpoint = recoveryCheckpoint;
     }
-
-    
-
-}
+} //EOC

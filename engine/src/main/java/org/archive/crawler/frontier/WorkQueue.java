@@ -92,7 +92,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     private long totalBudget = 0;
 
     /** The next item to be returned */
-    protected CrawlURI peekItem = null;
+    transient protected CrawlURI peekItem = null;
 
     /** Last URI enqueued */
     private String lastQueued;
@@ -109,7 +109,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /** Substats for all CrawlURIs in this group */
     protected FetchStats substats = new FetchStats();
 
-    private boolean retired;
+    protected boolean retired;
 
     public WorkQueue(final String pClassKey) {
         this.classKey = pClassKey;

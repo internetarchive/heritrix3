@@ -258,14 +258,6 @@ public interface Frontier extends Lifecycle, MultiReporter {
     public long disregardedUriCount();
 
     /**
-     * Total number of bytes contained in all URIs that have been processed.
-     *
-     * @return The total amounts of bytes in all processed URIs.
-     * @deprecated misnomer; consult StatisticsTracker instead
-     */
-    public long totalBytesWritten();
-
-    /**
      * Load URIs from a file, for scheduling and/or considered-included 
      * status (if from a recovery log). 
      *

@@ -236,14 +236,17 @@ ApplicationContextAware {
     }
     
     public void start() {
-        super.start();
+        if(isRunning()) {
+            return; 
+        }
         uriUniqFilter.setDestination(this);
-        
+        super.start();
         try {
-            initInternalQueues(false);
+            initInternalQueues();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+
     }
 
     /**
@@ -258,7 +261,7 @@ ApplicationContextAware {
      * @throws IOException
      * @throws DatabaseException
      */
-    protected void initInternalQueues(boolean recycle) 
+    protected void initInternalQueues() 
     throws IOException, DatabaseException {
         if (workQueueDataOnDisk()
                 && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
@@ -269,7 +272,7 @@ ApplicationContextAware {
         } else {
             this.initAllQueues();
         }
-        this.initOtherQueues(recycle);
+        this.initOtherQueues();
     }
     
     /**
@@ -284,7 +287,7 @@ ApplicationContextAware {
      * way.
      * @throws DatabaseException
      */
-    protected abstract void initOtherQueues(boolean recycle) throws DatabaseException;
+    protected abstract void initOtherQueues() throws DatabaseException;
 
     
     
@@ -430,7 +433,7 @@ ApplicationContextAware {
      * Put the given queue on the inactiveQueues queue
      * @param wq
      */
-    private void deactivateQueue(WorkQueue wq) {
+    protected void deactivateQueue(WorkQueue wq) {
         assert Thread.currentThread() == managerThread;
         
         wq.setSessionBalance(0); // zero out session balance
@@ -492,7 +495,7 @@ ApplicationContextAware {
      * Put the given queue on the retiredQueues queue
      * @param wq
      */
-    private void retireQueue(WorkQueue wq) {
+    protected void retireQueue(WorkQueue wq) {
         assert Thread.currentThread() == managerThread;
 
         getRetiredQueues().add(wq.getClassKey());
@@ -928,7 +931,7 @@ ApplicationContextAware {
         log(curi);
 
         if (curi.isSuccess()) {
-            totalProcessedBytes += curi.getRecordedSize();
+            totalProcessedBytes.addAndGet(curi.getRecordedSize());
             incrementSucceededFetchCount();
             // Let everyone know in case they want to do something before we strip the curi.
             appCtx.publishEvent(

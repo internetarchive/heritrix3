@@ -18,12 +18,9 @@
  */
 package org.archive.crawler.frontier;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -38,14 +35,16 @@ import javax.management.openmbean.CompositeData;
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.modules.CrawlURI;
 import org.archive.queue.StoredQueue;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Supplier;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.sleepycat.collections.StoredIterator;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
@@ -56,7 +55,7 @@ import com.sleepycat.je.DatabaseException;
  * @author Gordon Mohr
  */
 public class BdbFrontier extends WorkQueueFrontier 
-implements Serializable, Checkpointable {
+implements Serializable, Checkpointable, BeanNameAware {
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =
@@ -81,6 +80,11 @@ implements Serializable, Checkpointable {
     @Autowired
     public void setBdbModule(BdbModule bdb) {
         this.bdb = bdb;
+    }
+    
+    String beanName; 
+    public void setBeanName(String name) {
+        this.beanName = name;
     }
     
     boolean dumpPendingAtClose = false; 
@@ -114,18 +118,16 @@ implements Serializable, Checkpointable {
      * @return the created BdbMultipleWorkQueues
      * @throws DatabaseException
      */
-    private BdbMultipleWorkQueues createMultipleWorkQueues(boolean recycle)
+    protected BdbMultipleWorkQueues createMultipleWorkQueues()
     throws DatabaseException {
         Database db;
-        if (recycle) {
-            db = bdb.getDatabase("pending");
-        } else {
-            BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
-            dbConfig.setAllowCreate(!recycle);
-            // Make database deferred write: URLs that are added then removed 
-            // before a page-out is required need never cause disk IO.
-            db = bdb.openManagedDatabase("pending", dbConfig, recycle);
-        }
+        boolean recycle = (recoveryCheckpoint != null);
+
+        BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
+        dbConfig.setAllowCreate(!recycle);
+        // Make database deferred write: URLs that are added then removed 
+        // before a page-out is required need never cause disk IO.
+        db = bdb.openManagedDatabase("pending", dbConfig, recycle);
         
         return new BdbMultipleWorkQueues(db, bdb.getClassCatalog());
     }
@@ -202,43 +204,85 @@ implements Serializable, Checkpointable {
         return true;
     }
 
-    
-    /**
-     * Constructor.
-     */
     public BdbFrontier() {
         super();
     }
     
-    public void checkpoint(File checkpointDir, List<RecoverAction> actions) 
-    throws IOException {
-        logger.fine("Started syncing already seen as part "
-            + "of checkpoint. Can take some time.");
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+
+    public void doCheckpoint(Checkpoint checkpointInProgress) {
         // An explicit sync on the any deferred write dbs is needed to make the
         // db recoverable. Sync'ing the environment doesn't work.
-        if (this.pendingUris != null) {
-        	this.pendingUris.sync();
+        this.pendingUris.sync();
+        // object caches will be sync()d by BdbModule
+        
+        JSONObject json = new JSONObject();
+        try {
+            json.put("queuedUriCount", queuedUriCount.get());
+            json.put("succeededFetchCount", succeededFetchCount.get());
+            json.put("failedFetchCount", failedFetchCount.get());
+            json.put("disregardedUriCount", disregardedUriCount.get());
+            json.put("totalProcessedBytes", totalProcessedBytes.get());
+            checkpointInProgress.saveJson(beanName, json);
+        } catch (JSONException e) {
+            // impossible
+            throw new RuntimeException(e);
         }
-        logger.fine("Finished syncing already seen as part of checkpoint.");
     }
 
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+
+    Checkpoint recoveryCheckpoint;
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
+        this.recoveryCheckpoint = checkpoint; 
+    }
+    
     @Override
     protected void initAllQueues() throws DatabaseException {
-        this.allQueues = bdb.getObjectCache("allqueues", false, WorkQueue.class);
-        if (logger.isLoggable(Level.FINE)) {
-            Iterator<String> i = this.allQueues.keySet().iterator();
+        boolean isRecovery = (recoveryCheckpoint != null);
+        this.allQueues = bdb.getObjectCache("allqueues", isRecovery, WorkQueue.class);
+        if(isRecovery) {
+            JSONObject json = recoveryCheckpoint.loadJson(beanName);
             try {
-                for (; i.hasNext();) {
-                    logger.fine((String) i.next());
+                queuedUriCount.set(json.getLong("queuedUriCount"));
+                succeededFetchCount.set(json.getLong("succeededFetchCount"));
+                failedFetchCount.set(json.getLong("failedFetchCount"));
+                disregardedUriCount.set(json.getLong("disregardedUriCount"));
+                totalProcessedBytes.set(json.getLong("totalProcessedBytes"));
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }            
+            // restore WorkQueues to internal management queues
+            enqueueOrDo(new Recover());
+        }
+    }
+    
+    /**
+     * Frontier managerThread action to restore the placement of
+     * all queues to either the 'retired' collection or one of the
+     * inactive tiers (from which they will become ready/active as
+     * necessary). 
+     */
+    public class Recover extends InEvent {
+        @Override
+        public void process() {
+            // restore WorkQueues to internal management queues
+            for (String key : allQueues.keySet()) {
+                WorkQueue q = allQueues.get(key);
+                q.getOnInactiveQueues().clear();
+                q.setSessionBalance(0); 
+                if(q.isRetired()) {
+                    getRetiredQueues().add(key); 
+                } else {
+                    deactivateQueue(q);
                 }
-            } finally {
-                StoredIterator.close(i);
             }
         }
     }
     
     @Override
-    protected void initOtherQueues(boolean recycle) throws DatabaseException {
+    protected void initOtherQueues() throws DatabaseException {
         // small risk of OutOfMemoryError: if 'hold-queues' is false,
         // readyClassQueues may grow in size without bound
         readyClassQueues = new LinkedBlockingQueue<String>();
@@ -257,7 +301,7 @@ implements Serializable, Checkpointable {
         snoozedClassQueues = new DelayQueue<DelayedWorkQueue>();
         
         // initialize master map in which other queues live
-        this.pendingUris = createMultipleWorkQueues(recycle);
+        this.pendingUris = createMultipleWorkQueues();
     }
 
 

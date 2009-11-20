@@ -38,8 +38,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Collection;
@@ -55,7 +53,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
-import org.archive.checkpointing.CheckpointRecovery;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
@@ -71,11 +68,9 @@ import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
-import org.archive.spring.ConfigPath;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.IoUtils;
 import org.archive.util.iterator.LineReadingIterator;
 import org.archive.util.iterator.RegexLineIterator;
 import org.json.JSONException;
@@ -125,14 +120,6 @@ public abstract class AbstractFrontier
     }
     public void setMaxRetries(int maxRetries) {
         kp.put("maxRetries",maxRetries);
-    }
-    
-    protected ConfigPath recoveryDir = new ConfigPath("recovery subdirectory","logs");
-    public ConfigPath getRecoveryDir() {
-        return recoveryDir;
-    }
-    public void setRecoveryDir(ConfigPath recoveryDir) {
-        this.recoveryDir = recoveryDir;
     }
     
     /**
@@ -275,11 +262,7 @@ public abstract class AbstractFrontier
     /**
      * Used when bandwidth constraint are used.
      */
-    protected long totalProcessedBytes = 0;
-
-    protected long processedBytesAfterLastEmittedURI = 0;
-    
-    protected int lastMaxBandwidthKB = 0;
+    protected AtomicLong totalProcessedBytes = new AtomicLong(0);
 
     /**
      * Crawl replay logger.
@@ -829,11 +812,6 @@ public abstract class AbstractFrontier
         return disregardedUriCount.get();
     }
 
-    /** @deprecated misnomer; use StatisticsTracker figures instead */
-    public long totalBytesWritten() {
-        return totalProcessedBytes;
-    }
-    
     /**
      * When notified of a seed via the SeedListener interface, 
      * schedule it.
@@ -950,7 +928,7 @@ public abstract class AbstractFrontier
         DecideRule scope = (applyScope) ? getScope() : null;
         FrontierJournal newJournal = getFrontierJournal();
         Matcher m = Pattern.compile(acceptTags).matcher(""); 
-        BufferedReader br = IoUtils.getBufferedReader(source);
+        BufferedReader br = ArchiveUtils.getBufferedReader(source);
         String read;
         int lineCount = 0; 
         try {
@@ -1182,36 +1160,6 @@ public abstract class AbstractFrontier
 
     public void reportTo(PrintWriter writer) {
         reportTo(null, writer);
-    }
-
-
-    private void writeObject(ObjectOutputStream out) 
-    throws IOException {
-        out.defaultWriteObject();
-        boolean recoveryLogEnabled = getRecoveryLogEnabled();
-        out.writeBoolean(recoveryLogEnabled);
-        if (recoveryLogEnabled) {
-            out.writeUTF(loggerModule.getPath().getFile().getAbsolutePath());
-        }
-    }
-    
-    
-    private void readObject(ObjectInputStream inp) 
-    throws IOException, ClassNotFoundException {
-        inp.defaultReadObject();
-        boolean recoveryLogEnabled = inp.readBoolean();
-        if (recoveryLogEnabled) {
-            String path = inp.readUTF();
-            if (inp instanceof CheckpointRecovery) {
-                CheckpointRecovery cr = (CheckpointRecovery)inp;
-                path = cr.translatePath(path);
-                new File(path).mkdirs();
-            }
-            initJournal(path);
-        }
-        targetState = State.PAUSE;
-        outbound = new ArrayBlockingQueue<CrawlURI>(outboundCapacity, true);
-        inbound = new ArrayBlockingQueue<InEvent>(inboundCapacity, true);
     }
     
     /**
