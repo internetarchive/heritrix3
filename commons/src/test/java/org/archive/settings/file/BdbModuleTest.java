@@ -19,82 +19,94 @@
 
 package org.archive.settings.file;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.archive.bdb.BdbModule;
-import org.archive.checkpointing.DefaultCheckpointRecovery;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.spring.ConfigPath;
+import org.archive.util.ObjectIdentityBdbCache;
+import org.archive.util.Supplier;
 import org.archive.util.TmpDirTestCase;
 
 /**
- * @author pjack
+ * Test BdbModule.
+ * 
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class BdbModuleTest extends TmpDirTestCase {
 
-    public void testCheckpoint() throws Exception {
-        doCheckpoint();
-        
-        File first = new File(getTmpDir(), "first");
-//        File checkpointDir = new File(getTmpDir(), "checkpoint");
-        
-        File second = new File(getTmpDir(), "second");
-        FileUtils.deleteDirectory(second);
-        
-        DefaultCheckpointRecovery cr = new DefaultCheckpointRecovery("job");
-        cr.getFileTranslations().put(first.getAbsolutePath(), 
-                second.getAbsolutePath());
-//        SheetManager mgr2 = Checkpointer.recover(checkpointDir, cr);
-//        BdbModule bdb2 = (BdbModule)mgr2.getRoot().get("module");
-//        Map<String,String> testData2 = bdb2.getBigMap("testData", false,
-//                String.class, String.class);
-        Map<String,String> map1 = new HashMap<String,String>();
-        for (int i = 0; i < 1000; i++) {
-            map1.put(String.valueOf(i), String.valueOf(i * 2));
-        }
+    public void testDoCheckpoint() throws Exception {
+        ConfigPath basePath = new ConfigPath("testBase",getTmpDir().getAbsolutePath());
+        ConfigPath bdbDir = new ConfigPath("bdb","bdb"); 
+        bdbDir.setBase(basePath); 
+        FileUtils.deleteDirectory(bdbDir.getFile());
 
-//        Map<String,String> map2 = dump(testData2);
-//        assertEquals(map1, map2);
-    }
-
-    
-    private void doCheckpoint() throws Exception {
-        File first = new File(getTmpDir(), "first");
-        FileUtils.deleteDirectory(first);
-        
-        File firstState = new File(first, "state");
-//        MemorySheetManager mgr = new MemorySheetManager();
-        
         BdbModule bdb = new BdbModule();
-//        mgr.getRoot().put("module", bdb);
-        bdb.setDir(new ConfigPath("test",firstState.getAbsolutePath()));
-//        mgr.getGlobalSheet().set(bdb, BdbModule.DIR, firstState.getAbsolutePath());
+        bdb.setDir(bdbDir);
         bdb.start();
+
+        // avoid data from prior runs being mistaken for current run
+        int randomFactor = RandomUtils.nextInt();
         
-        BdbModule.BdbConfig config = new BdbModule.BdbConfig();
-        config.setAllowCreate(true);
-        bdb.openManagedDatabase("testOpen", config, false);
-        
-        ConcurrentMap<String,String> testData = bdb.getCBMMap("testData", false, 
-                String.class, String.class);
-        for (int i = 0; i < 1000; i++) {
-            assertNull("unexpected prior entry", testData.putIfAbsent(String.valueOf(i), String.valueOf(i * 2)));
+        ObjectIdentityBdbCache<String> testData = 
+            bdb.getOIBCCache("testData", false,String.class);
+        for (int i1 = 0; i1 < 1000; i1++) {
+            String key = String.valueOf(i1);
+            final String value = String.valueOf(randomFactor*i1);
+            String cached = testData.getOrUse(key, new Supplier<String>(){
+                public String get() {
+                    return value;
+                }
+            });
+            assertSame("unexpected prior entry",value,cached);  
         }
         
-        File checkpointDir = new File(getTmpDir(), "checkpoint");
-        checkpointDir.mkdirs();
-//        Checkpointer.checkpoint(mgr, checkpointDir);        
+        Checkpoint checkpointInProgress = new Checkpoint();
+        ConfigPath checkpointsPath = new ConfigPath("checkpoints","checkpoints");
+        checkpointsPath.setBase(basePath); 
+        checkpointInProgress.generateFrom(checkpointsPath,998);
+
+        bdb.doCheckpoint(checkpointInProgress);
+        String firstCheckpointName = checkpointInProgress.getName();
+        
+        for (int i2 = 1000; i2 < 2000; i2++) {
+            String key = String.valueOf(i2);
+            final String value = String.valueOf(randomFactor*i2);
+            String cached = testData.getOrUse(key, new Supplier<String>(){
+                public String get() {
+                    return value;
+                }
+            });
+            assertSame("unexpected prior entry",value,cached);  
+        }
+
+        checkpointInProgress = new Checkpoint(); 
+        checkpointInProgress.generateFrom(checkpointsPath,999);
+
+        bdb.doCheckpoint(checkpointInProgress);
+        
         bdb.stop();
+        
+        BdbModule bdb2 = new BdbModule();
+        bdb2.setDir(bdbDir);
+        
+        Checkpoint recoveryCheckpoint = new Checkpoint();
+        ConfigPath recoverPath = new ConfigPath("recover",firstCheckpointName);
+        recoverPath.setBase(basePath);
+        recoveryCheckpoint.setCheckpointDir(recoverPath);
+        recoveryCheckpoint.afterPropertiesSet();
+        
+        bdb2.setRecoveryCheckpoint(recoveryCheckpoint);
+        
+        bdb2.start();
+        
+        ObjectIdentityBdbCache<String> restoreData = 
+            bdb2.getOIBCCache("testData",true,String.class);
+        
+        assertEquals("unexpected size", 1000, restoreData.size());
+        assertEquals("unexpected value",randomFactor*999,Integer.parseInt(restoreData.get(""+999)));
+
+        bdb2.stop(); 
     }
-    
-//    private Map<String,String> dump(Map<String,String> src) {
-//        HashMap<String,String> dest = new HashMap<String,String>();
-//        for (String k: src.keySet()) {
-//            dest.put(k, src.get(k));
-//        }
-//        return dest;
-//    }
 }

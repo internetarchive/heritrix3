@@ -21,35 +21,32 @@ package org.archive.bdb;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
+import java.io.FileFilter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
-import org.archive.checkpointing.CheckpointRecovery;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.spring.ConfigPath;
 import org.archive.util.CachedBdbMap;
 import org.archive.util.ObjectIdentityBdbCache;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 import com.sleepycat.bind.EntryBinding;
@@ -61,10 +58,8 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseNotFoundException;
-import com.sleepycat.je.DbInternal;
 import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.dbi.EnvironmentImpl;
-import com.sleepycat.je.utilint.DbLsn;
+import com.sleepycat.je.util.DbBackup;
 
 /**
  * Utility module for managing a shared BerkeleyDB-JE environment
@@ -219,11 +214,21 @@ Serializable, Closeable {
         if (isRunning()) {
             return;
         }
+        
         try {
-            setUp(getDir().getFile(), getCachePercent(), true, getUseSharedCache());
+            boolean isRecovery = false; 
+            if(recoveryCheckpoint!=null) {
+                isRecovery = true; 
+                doRecover(); 
+            }
+   
+            setup(getDir().getFile(), getCachePercent(), !isRecovery, getUseSharedCache());
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
+        
         shutdownHook = new BdbShutdownHook(this);
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
@@ -239,7 +244,7 @@ Serializable, Closeable {
         close();
     }
     
-    private void setUp(File f, int cachePercent, boolean create, boolean sharedCache) 
+    protected void setup(File f, int cachePercent, boolean create, boolean sharedCache) 
     throws DatabaseException {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
@@ -260,6 +265,10 @@ Serializable, Closeable {
         // triple this value to 6K because stats show many faults
         config.setConfigParam("je.log.faultReadSize", "6144");
         f.mkdirs();
+        
+        // to support checkpoints, prevent BDB's cleaner from deleting log files
+        config.setConfigParam("je.cleaner.expunge", "false");
+
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
         
         this.classCatalog = this.bdbEnvironment.getClassCatalog();
@@ -449,71 +458,21 @@ Serializable, Closeable {
         out.defaultWriteObject();
     }
     
-    // TODO:FIXME: restore functionality
-    @SuppressWarnings("unchecked")
-    private void readObject(ObjectInputStream in) 
-    throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        if (in instanceof CheckpointRecovery) {
-//            CheckpointRecovery cr = (CheckpointRecovery)in;
-//            path = cr.translatePath(path);
-//            cr.setState(this, DIR, path);
-        }
-        try {
-            setUp(getDir().getFile(), getCachePercent(), false, getUseSharedCache());
-//            for (CachedBdbMap map: bigMaps.values()) {
-//                map.initialize(
-//                        this.bdbEnvironment, 
-//                        null,
-//                        null,
-//                        map.getKeyClass(), 
-//                        map.getValueClass(), 
-//                        this.classCatalog);
-//          }
-            for (DatabasePlusConfig dpc: databases.values()) {
-                dpc.database = bdbEnvironment.openDatabase(null, 
-                        dpc.name, dpc.config.toDatabaseConfig());
-            }
-        } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        }
-        this.shutdownHook = new BdbShutdownHook(this);
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
-    }
-
+    public void startCheckpoint(Checkpoint checkpointInProgress) {}
 
     @SuppressWarnings("unchecked")
-    public void checkpoint(File dir, List<RecoverAction> actions) 
-    throws IOException {
-        if (checkpointCopyLogs) {
-            actions.add(new BdbRecover(getDir().getFile().getAbsolutePath()));
-        }
+    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // First sync objectCaches
         for (ObjectIdentityCache oic : oiCaches.values()) {
             oic.sync();
         }
 
-        EnvironmentConfig envConfig;
         try {
             // sync all databases
             for (DatabasePlusConfig dbc: databases.values()) {
                 dbc.database.sync();
             }
-            envConfig = bdbEnvironment.getConfig();
-        } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        }
         
-        final List<String> bkgrdThreads = Arrays.asList(new String []
-            {"je.env.runCheckpointer", "je.env.runCleaner",
-                "je.env.runINCompressor"});
-        try {
-            // Disable background threads
-            setBdbjeBkgrdThreads(envConfig, bkgrdThreads, "false");
             // Do a force checkpoint.  Thats what a sync does (i.e. doSync).
             CheckpointConfig chkptConfig = new CheckpointConfig();
             chkptConfig.setForce(true);
@@ -531,109 +490,69 @@ Serializable, Closeable {
             // in the log, and then applying the delta to it.  This can be
             // pretty slow, since it is potentially a large amount of
             // random I/O."
-            chkptConfig.setMinimizeRecoveryTime(true);
+            // chkptConfig.setMinimizeRecoveryTime(true);
             bdbEnvironment.checkpoint(chkptConfig);
             LOGGER.fine("Finished bdb checkpoint.");
-            
-            // From the sleepycat folks: A trick for flipping db logs.
-            EnvironmentImpl envImpl = 
-                DbInternal.envGetEnvironmentImpl(bdbEnvironment);
-            long firstFileInNextSet =
-                DbLsn.getFileNumber(envImpl.forceLogFileFlip());
-            // So the last file in the checkpoint is firstFileInNextSet - 1.
-            // Write manifest of all log files into the bdb directory.
-            final String lastBdbCheckpointLog =
-                getBdbLogFileName(firstFileInNextSet - 1);
-            processBdbLogs(dir, lastBdbCheckpointLog);
-            LOGGER.fine("Finished processing bdb log files.");
+        
+            DbBackup dbBackup = new DbBackup(bdbEnvironment);
+            try {
+                dbBackup.startBackup();
+                
+                File envCpDir = new File(dir.getFile(),checkpointInProgress.getName());
+                envCpDir.mkdirs();
+                File logfilesList = new File(envCpDir,"jdbfiles.manifest");
+                FileUtils.writeLines(logfilesList, 
+                        Arrays.asList(dbBackup.getLogFilesInBackupSet()));
+                LOGGER.fine("Finished processing bdb log files.");
+            } finally {
+                dbBackup.endBackup();
+            }
         } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        } finally {
-            // Restore background threads.
-            setBdbjeBkgrdThreads(envConfig, bkgrdThreads, "true");
+            throw new IOException(e);
         }
     }
-
-
-    private void processBdbLogs(final File checkpointDir,
-            final String lastBdbCheckpointLog) throws IOException {
-        File bdbDir = getBdbSubDirectory(checkpointDir);
-        if (!bdbDir.exists()) {
-            bdbDir.mkdir();
-        }
-        PrintWriter pw = new PrintWriter(new FileOutputStream(new File(
-             checkpointDir, "bdbje-logs-manifest.txt")));
-        try {
-            // Don't copy any beyond the last bdb log file (bdbje can keep
-            // writing logs after checkpoint).
-            boolean pastLastLogFile = false;
-            Set<String> srcFilenames = null;
-            do {
-                FilenameFilter filter = new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name != null 
-                            && name.toLowerCase().endsWith(".jdb");
-                    }
-                };
-
-                srcFilenames =
-                    new HashSet<String>(Arrays.asList(getDir().getFile().list(filter)));
-                List<String> tgtFilenames = Arrays.asList(bdbDir.list(filter));
-                if (tgtFilenames != null && tgtFilenames.size() > 0) {
-                    srcFilenames.removeAll(tgtFilenames);
-                }
-                if (srcFilenames.size() > 0) {
-                    // Sort files.
-                    srcFilenames = new TreeSet<String>(srcFilenames);
-                    int count = 0;
-                    for (final Iterator<String> i = srcFilenames.iterator();
-                            i.hasNext() && !pastLastLogFile;) {
-                        String name = (String) i.next();
-                        if (this.checkpointCopyLogs) {
-                            FileUtils.copyDirectory(new File(getDir().getFile(), name),
-                                new File(bdbDir, name));
-                        }
-                        pw.println(name);
-                        if (name.equals(lastBdbCheckpointLog)) {
-                            // We're done.
-                            pastLastLogFile = true;
-                        }
-                        count++;
-                    }
-                    if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.fine("Copied " + count);
-                    }
-                }
-            } while (!pastLastLogFile && srcFilenames != null &&
-                srcFilenames.size() > 0);
-        } finally {
-            pw.close();
-        }
-    }
-
-
     
-    private void setBdbjeBkgrdThreads(final EnvironmentConfig config,
-            final List<String> threads, final String setting) {
-        for (final Iterator<String> i = threads.iterator(); i.hasNext();) {
-            config.setConfigParam((String)i.next(), setting);
+    @SuppressWarnings("unchecked")
+    protected void doRecover() throws IOException {
+        File logfilesList = new File(
+                new File(dir.getFile(),recoveryCheckpoint.getName()),
+                "jdbfiles.manifest");
+        Set<String> retainLogfiles = new HashSet<String>(FileUtils.readLines(logfilesList));
+        IOFileFilter filter = FileFilterUtils.orFileFilter(
+                FileFilterUtils.suffixFileFilter(".jdb"), 
+                FileFilterUtils.suffixFileFilter(".del"));
+        filter = FileFilterUtils.makeFileOnly(filter);
+        for(File f : dir.getFile().listFiles((FileFilter)filter)) {
+            if(retainLogfiles.contains(f.getName())) {
+                retainLogfiles.remove(f.getName()); 
+                continue;
+            }
+            String undelName = f.getName().replace(".del", ".jdb");
+            if(retainLogfiles.contains(undelName)) {
+                if(!f.renameTo(new File(f.getParentFile(),undelName))) {
+                    throw new IOException("Unable to rename " + f + " to " +
+                            undelName);
+                }
+                retainLogfiles.remove(f.getName()); 
+            }
+            // not needed; move aside
+            org.archive.util.FileUtils.moveAsideIfExists(f);
+            // TODO: log/warn of ruined later checkpoints? 
         }
+        if(retainLogfiles.size()>0) {
+            // some needed files weren't present
+            LOGGER.severe("needed log files missing: "+retainLogfiles);
+        }
+        
     }
 
-    
-    private String getBdbLogFileName(final long index) {
-        String lastBdbLogFileHex = Long.toHexString(index);
-        StringBuffer buffer = new StringBuffer();
-        for (int i = 0; i < (8 - lastBdbLogFileHex.length()); i++) {
-            buffer.append('0');
-        }
-        buffer.append(lastBdbLogFileHex);
-        buffer.append(".jdb");
-        return buffer.toString();
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+     
+    Checkpoint recoveryCheckpoint;
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
+        this.recoveryCheckpoint = checkpoint; 
     }
-
     
     public void close() {
         close2();
@@ -671,12 +590,6 @@ Serializable, Closeable {
             LOGGER.log(Level.SEVERE, "Error closing environment.", e);
         }
     }
-
-
-    private static File getBdbSubDirectory(File checkpointDir) {
-        return new File(checkpointDir, "bdbje-logs");
-    }
-    
     
     public Database getDatabase(String name) {
         DatabasePlusConfig dpc = databases.get(name);
@@ -686,26 +599,6 @@ Serializable, Closeable {
         return dpc.database;
     }
 
-
-    private static class BdbRecover implements RecoverAction {
-
-        private static final long serialVersionUID = 1L;
-
-        private String path;
-
-        public BdbRecover(String path) {
-            this.path = path;
-        }
-        
-        public void recoverFrom(File checkpointDir, 
-            CheckpointRecovery recovery) throws Exception {
-            File bdbDir = getBdbSubDirectory(checkpointDir);
-            path = recovery.translatePath(path);
-            FileUtils.copyDirectory(bdbDir, new File(path));
-        }
-    }
-
-    
     private static class BdbShutdownHook extends Thread {
         final private BdbModule bdb;
         
