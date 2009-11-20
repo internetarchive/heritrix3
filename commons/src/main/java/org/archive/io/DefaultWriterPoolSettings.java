@@ -20,25 +20,17 @@
 package org.archive.io;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.archive.checkpointing.CheckpointRecovery;
-
 /**
  * @author pjack
- *
  */
 public class DefaultWriterPoolSettings 
 implements WriterPoolSettings, Serializable {
-
-
+    
     private static final long serialVersionUID = 1L;
-
 
     private long maxSize;
     private List<String> metadata = new ArrayList<String>();;
@@ -109,35 +101,5 @@ implements WriterPoolSettings, Serializable {
     
     public void setSuffix(String suffix) {
         this.suffix = suffix;
-    }
-
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-        out.writeInt(outputDirs.size());
-        for (File f: outputDirs) {
-            out.writeUTF(f.getAbsolutePath());
-        }
-    }
-
-    
-    private void readObject(ObjectInputStream input) 
-    throws IOException, ClassNotFoundException {
-        input.defaultReadObject();
-        CheckpointRecovery cr = null;
-        this.outputDirs = new ArrayList<File>();
-        if (input instanceof CheckpointRecovery) {
-            cr = (CheckpointRecovery)input;
-        }
-        int size = input.readInt();
-        for (int i = 0; i < size; i++) {
-            String path = input.readUTF();
-            if (cr != null) {
-                path = cr.translatePath(path);
-            }
-            File f = new File(path);
-            f.mkdirs();
-            outputDirs.add(f);
-        }
     }
 }
