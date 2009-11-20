@@ -20,19 +20,17 @@ package org.archive.checkpointing;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
-import org.archive.crawler.framework.CheckpointService;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-
 
 /**
  * Represents a single checkpoint, by its name and main store directory.
@@ -43,6 +41,11 @@ public class Checkpoint implements InitializingBean {
     private final static Logger LOGGER =
         Logger.getLogger(Checkpoint.class.getName());
 
+    /** format for serial numbers */
+    public static final DecimalFormat INDEX_FORMAT = new DecimalFormat("00000");
+    /** Name of file written with timestamp into valid checkpoints */
+    public static final String VALIDITY_STAMP_FILENAME = "valid";
+    
     String name; 
     String shortName; 
     boolean success = false;
@@ -60,32 +63,12 @@ public class Checkpoint implements InitializingBean {
         this.checkpointDir = checkpointsDir;
     }
     
-    protected CheckpointService checkpointService;
-    public CheckpointService getCheckpointService() {
-        return this.checkpointService;
-    }
-    @Autowired
-    public void setCheckpointService(CheckpointService checkpointer) {
-        this.checkpointService = checkpointer;
-    }
-    
     public Checkpoint() {
     }
-    
+
     /**
      * Use immediately after instantiation to fill-in a Checkpoint 
      * created outside Spring configuration.
-     * 
-     * @param nextCheckpointNumber
-     * @param checkpointsDir
-     */
-    public void generateFrom(CheckpointService checkpointer) {
-        setCheckpointService(checkpointer);
-        generateFrom(checkpointer.getCheckpointsDir(),checkpointer.getNextCheckpointNumber());
-    }
-    
-    /**
-     * Generate without CheckpointService (useful for unit testing)
      * 
      * @param checkpointsDir
      * @param nextCheckpointNumber
@@ -94,7 +77,7 @@ public class Checkpoint implements InitializingBean {
         getCheckpointDir().setBase(checkpointsDir);
         getCheckpointDir().setPath(
                 "cp" 
-                + CheckpointService.INDEX_FORMAT.format(nextCheckpointNumber) 
+                + INDEX_FORMAT.format(nextCheckpointNumber) 
                 + "-" 
                 + ArchiveUtils.get14DigitDate());
         getCheckpointDir().getFile().mkdirs();
@@ -102,10 +85,6 @@ public class Checkpoint implements InitializingBean {
     }
     
     public void afterPropertiesSet() {
-        if(checkpointDir.getBase()==null && checkpointService != null) {
-            // if not otherwise set, adopt base from Checkpointer
-            checkpointDir.setBase(checkpointService.getCheckpointsDir());
-        }
         name = checkpointDir.getFile().getName();
         shortName = name.substring(name.indexOf("-"));
     }
@@ -128,7 +107,7 @@ public class Checkpoint implements InitializingBean {
         if(!success) {
             return;
         }
-        File valid = new File(checkpointDir.getFile(), CheckpointService.VALIDITY_STAMP_FILENAME);
+        File valid = new File(checkpointDir.getFile(), VALIDITY_STAMP_FILENAME);
         try {
             FileUtils.writeStringToFile(valid, stamp);
         } catch (IOException e) {

@@ -20,7 +20,6 @@ package org.archive.crawler.framework;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -55,13 +54,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 public class CheckpointService implements Lifecycle, ApplicationContextAware {
     private final static Logger LOGGER =
         Logger.getLogger(CheckpointService.class.getName());
-
-    /** Name of file written with timestamp into valid checkpoints */
-    public static final String VALIDITY_STAMP_FILENAME = "valid";
         
-    /** format for serial numbers */
-    public static final DecimalFormat INDEX_FORMAT = new DecimalFormat("00000");
-    
     /** Next overall series checkpoint number */
     protected int nextCheckpointNumber = 1;
     
@@ -100,6 +93,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
+        checkpoint.getCheckpointDir().setBase(getCheckpointsDir());
     }
     public Checkpoint getRecoveryCheckpoint() {
         return this.recoveryCheckpoint;
@@ -194,7 +188,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
         }
         
         checkpointInProgress = new Checkpoint();
-        checkpointInProgress.generateFrom(this);
+        checkpointInProgress.generateFrom(getCheckpointsDir(),getNextCheckpointNumber());
         
         @SuppressWarnings("unchecked")
         Map<String,Checkpointable> toCheckpoint = appCtx.getBeansOfType(Checkpointable.class);
@@ -281,8 +275,8 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     @SuppressWarnings("unchecked")
     public void setRecoveryCheckpointByName(String selectedCheckpoint) {
         Checkpoint recoveryCheckpoint = new Checkpoint();
+        recoveryCheckpoint.getCheckpointDir().setBase(getCheckpointsDir());
         recoveryCheckpoint.getCheckpointDir().setPath(selectedCheckpoint);
-        recoveryCheckpoint.setCheckpointService(this);
         recoveryCheckpoint.afterPropertiesSet();
         setRecoveryCheckpoint(recoveryCheckpoint);
         Map<String,Checkpointable> toSetRecovery = appCtx.getBeansOfType(Checkpointable.class);

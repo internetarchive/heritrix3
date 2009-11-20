@@ -170,7 +170,7 @@ public class JobResource extends Resource {
             Checkpoint recoveryCheckpoint = cj.getCheckpointService().getRecoveryCheckpoint();
             if(recoveryCheckpoint!=null) {
                 pw.println("recover from <i>"+recoveryCheckpoint.getName()+"</i>");
-            } else if (cj.getCheckpointService().hasAvailableCheckpoints()) {
+            } else if (cj.getCheckpointService().hasAvailableCheckpoints() && cj.isLaunchable()) {
                 pw.println("select an available checkpoint before launch to recover:");
                 pw.println("<select name='checkpoint'><option> </option>");
                 for(File f : cj.getCheckpointService().getAvailableCheckpointDirectories()) {
