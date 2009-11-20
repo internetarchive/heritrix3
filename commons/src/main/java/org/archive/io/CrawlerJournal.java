@@ -21,16 +21,16 @@ package org.archive.io;
 import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
 import it.unimi.dsi.mg4j.util.MutableString;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import org.archive.checkpointing.RecoverAction;
+import org.archive.crawler.framework.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 
@@ -40,7 +40,7 @@ import org.archive.util.FileUtils;
  * 
  * @author gojomo
  */
-public class CrawlerJournal {
+public class CrawlerJournal implements Closeable {
 
     /** prefix for error lines*/
     public static final String LOG_ERROR = "E ";
@@ -222,17 +222,17 @@ public class CrawlerJournal {
      * @param checkpointDir
      * @throws IOException
      */
-    public synchronized void checkpoint(final File checkpointDir, 
-            List<RecoverAction> actions) throws IOException {
+    public synchronized void rotateForCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         if (this.out == null || !this.gzipFile.exists()) {
             return;
         }
         close();
         // Rename gzipFile with the checkpoint name as suffix.
-        this.gzipFile.renameTo(new File(this.gzipFile.getParentFile(),
-                this.gzipFile.getName() + "." + checkpointDir.getName()));
+        File newName = new File(this.gzipFile.getParentFile(),
+                this.gzipFile.getName() + "." + checkpointInProgress.getShortName());
+        FileUtils.moveAsideIfExists(newName); 
+        this.gzipFile.renameTo(newName);
         // Open new gzip file.
         this.out = initialize(this.gzipFile);
     }
-
 }

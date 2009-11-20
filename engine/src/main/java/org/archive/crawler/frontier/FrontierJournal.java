@@ -27,7 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.framework.Frontier;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;
@@ -46,7 +45,7 @@ import org.json.JSONObject;
  * 
  * @author gojomo
  */
-public class FrontierJournal extends CrawlerJournal implements Checkpointable {
+public class FrontierJournal extends CrawlerJournal {
     private static final Logger LOGGER = Logger.getLogger(
             FrontierJournal.class.getName());
     

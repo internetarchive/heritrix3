@@ -101,7 +101,7 @@ implements Checkpointable, Lifecycle {
 
 	public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // rotate log
-        log.doCheckpoint(checkpointInProgress);
+        log.rotateForCheckpoint(checkpointInProgress);
     }
     
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
