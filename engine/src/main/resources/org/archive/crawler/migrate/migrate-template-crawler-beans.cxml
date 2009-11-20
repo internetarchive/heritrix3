@@ -387,6 +387,13 @@
   <!-- <property name="maxDocumentsDownload" value="0" /> -->
   <!-- <property name="maxTimeSeconds" value="0" /> -->
  </bean>
+
+ <!-- CHECKPOINTSERVICE: checkpointing assistance -->
+ <bean id="checkpointService" 
+   class="org.archive.crawler.framework.CheckpointService">
+  <!-- <property name="checkpointIntervalMinutes" value="-1"/> -->
+  <!-- <property name="checkpointsDir" value="checkpoints"/> -->
+ </bean>
  
  <!-- 
    OPTIONAL BEANS
