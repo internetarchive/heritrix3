@@ -79,10 +79,21 @@ public class Checkpoint implements InitializingBean {
      * @param checkpointsDir
      */
     public void generateFrom(CheckpointService checkpointer) {
-        getCheckpointDir().setBase(checkpointer.getCheckpointsDir());
+        setCheckpointService(checkpointer);
+        generateFrom(checkpointer.getCheckpointsDir(),checkpointer.getNextCheckpointNumber());
+    }
+    
+    /**
+     * Generate without CheckpointService (useful for unit testing)
+     * 
+     * @param checkpointsDir
+     * @param nextCheckpointNumber
+     */
+    public void generateFrom(ConfigPath checkpointsDir, int nextCheckpointNumber) {
+        getCheckpointDir().setBase(checkpointsDir);
         getCheckpointDir().setPath(
                 "cp" 
-                + CheckpointService.INDEX_FORMAT.format(checkpointer.getNextCheckpointNumber()) 
+                + CheckpointService.INDEX_FORMAT.format(nextCheckpointNumber) 
                 + "-" 
                 + ArchiveUtils.get14DigitDate());
         getCheckpointDir().getFile().mkdirs();
@@ -90,7 +101,7 @@ public class Checkpoint implements InitializingBean {
     }
     
     public void afterPropertiesSet() {
-        if(checkpointDir.getBase()==null) {
+        if(checkpointDir.getBase()==null && checkpointService != null) {
             // if not otherwise set, adopt base from Checkpointer
             checkpointDir.setBase(checkpointService.getCheckpointsDir());
         }
