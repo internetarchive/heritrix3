@@ -41,6 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.crawler.framework.CrawlController;
+import org.archive.modules.net.ServerCache;
+
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
@@ -49,8 +52,8 @@ import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.DeadlockException;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.LockConflictException;
 
 /**
  * A BDB JE backed hashmap. It extends the normal BDB JE map implementation by
@@ -693,7 +696,7 @@ implements ConcurrentMap<K,V>, ObjectIdentityCache<K,V>, Serializable, Closeable
                 break;
             } catch (Exception e) {
                 if (e instanceof com.sleepycat.util.RuntimeExceptionWrapper
-                        && e.getCause() instanceof DeadlockException
+                        && e.getCause() instanceof LockConflictException
                         && attemptTolerance > 0) {
                     if (attemptTolerance == BDB_LOCK_ATTEMPT_TOLERANCE - 1) {
                         // emit once on first retry
@@ -904,7 +907,7 @@ implements ConcurrentMap<K,V>, ObjectIdentityCache<K,V>, Serializable, Closeable
                 break;
             } catch (Exception e) {
                 if (e instanceof com.sleepycat.util.RuntimeExceptionWrapper
-                        && e.getCause() instanceof DeadlockException
+                        && e.getCause() instanceof LockConflictException
                         && attemptTolerance > 0) {
                     if (attemptTolerance == BDB_LOCK_ATTEMPT_TOLERANCE - 1) {
                         // emit once on first retry
