@@ -19,9 +19,6 @@
 
 package org.archive.modules.fetcher;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.SortedMap;
 
@@ -65,7 +62,7 @@ public class BdbCookieStorage extends AbstractCookieStorage {
             BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
             dbConfig.setTransactional(false);
             dbConfig.setAllowCreate(true);
-            cookieDb = bdb.openManagedDatabase(COOKIEDB_NAME, dbConfig, true);
+            cookieDb = bdb.openDatabase(COOKIEDB_NAME, dbConfig, true);
             cookies = 
                 new StoredSortedMap<String,Cookie>(
                     cookieDb,
@@ -80,37 +77,12 @@ public class BdbCookieStorage extends AbstractCookieStorage {
         }
     }
 
-
     @SuppressWarnings("unchecked")
     public SortedMap<String, Cookie> getCookiesMap() {
 //        assert cookies != null : "cookie map not set up";
         return cookies;
     }
 
-
     protected void innerSaveCookiesMap(Map<String, Cookie> map) {
     }
-
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-        try {
-            out.writeUTF(cookieDb.getDatabaseName());
-        } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    private void readObject(ObjectInputStream in)
-    throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        cookieDb = bdb.getDatabase(in.readUTF());
-        cookies = new StoredSortedMap(cookieDb,
-                new StringBinding(), new SerialBinding(bdb.getClassCatalog(),
-                        Cookie.class), true);        
-    }
-    
 }

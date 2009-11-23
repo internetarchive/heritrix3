@@ -321,7 +321,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @return
      * @throws DatabaseException
      */
-    public Database openManagedDatabase(String name, BdbConfig config, boolean usePriorData) 
+    public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
     throws DatabaseException {
         if(!isRunning()) {
             // proper initialization hasn't occurred
@@ -360,7 +360,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz, boolean b) {
         try {
             Database queueDb;
-            queueDb = openManagedDatabase(dbname,
+            queueDb = openDatabase(dbname,
                     StoredQueue.databaseConfig(), false);
             return new StoredQueue<K>(queueDb, clazz, getClassCatalog());
         } catch (DatabaseException e) {
@@ -637,10 +637,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @param allowDuplicates whether duplicate keys allowed
      * @return
      */
-    public <K,V> DisposableStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates) {
+    public <K,V> DisposableStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates, boolean usePriorData) {
         BdbConfig config = new BdbConfig(); 
-        config.setSortedDuplicates(true);
-        config.setAllowCreate(true); 
+        config.setSortedDuplicates(allowDuplicates);
+        config.setAllowCreate(!usePriorData); 
         Database mapDb;
         if(dbName==null) {
             dbName = "tempMap-"+System.identityHashCode(this)+"-"+sn;
@@ -648,7 +648,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         }
         final String openName = dbName; 
         try {
-            mapDb = openManagedDatabase(openName,config,false);
+            mapDb = openDatabase(openName,config,usePriorData);
         } catch (DatabaseException e) {
             throw new RuntimeException(e); 
         } 

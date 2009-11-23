@@ -694,7 +694,8 @@ public class StatisticsTracker
                     null,
                     Long.class,
                     String.class,
-                    true);
+                    true,
+                    false);
         for(String k : mapOfAtomicLongValues.keySet()) {
             sortedMap.put(-mapOfAtomicLongValues.get(k).longValue(), k);
         }
@@ -723,7 +724,8 @@ public class StatisticsTracker
                     null,
                     Long.class,
                     String.class,
-                    true);
+                    true,
+                    false);
         for(String k : cacheOfAtomicLongValues.keySet()) {
             sortedMap.put(-cacheOfAtomicLongValues.get(k).longValue(), k);
         }
@@ -895,7 +897,8 @@ public class StatisticsTracker
                     null,
                     Integer.class,
                     SeedRecord.class,
-                    true);
+                    true,
+                    false);
         
         while (i.hasNext()) {
             String seed = i.next();

@@ -106,7 +106,7 @@ implements Lifecycle, Checkpointable, BeanNameAware {
         try {
             BdbModule.BdbConfig config = getDatabaseConfig();
             config.setAllowCreate(!isRecovery);
-            initialize(bdb.openManagedDatabase(DB_NAME, config, isRecovery));
+            initialize(bdb.openDatabase(DB_NAME, config, isRecovery));
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         }
