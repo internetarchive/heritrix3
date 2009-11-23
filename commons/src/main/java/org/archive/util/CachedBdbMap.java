@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.net.ServerCache;
 
 import com.sleepycat.bind.EntryBinding;
