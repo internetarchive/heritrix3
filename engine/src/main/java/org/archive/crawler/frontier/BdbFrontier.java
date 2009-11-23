@@ -124,7 +124,7 @@ implements Checkpointable, BeanNameAware {
         dbConfig.setAllowCreate(!recycle);
         // Make database deferred write: URLs that are added then removed 
         // before a page-out is required need never cause disk IO.
-        db = bdb.openManagedDatabase("pending", dbConfig, recycle);
+        db = bdb.openDatabase("pending", dbConfig, recycle);
         
         return new BdbMultipleWorkQueues(db, bdb.getClassCatalog());
     }
