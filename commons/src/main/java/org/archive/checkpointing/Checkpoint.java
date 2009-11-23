@@ -86,7 +86,7 @@ public class Checkpoint implements InitializingBean {
     
     public void afterPropertiesSet() {
         name = checkpointDir.getFile().getName();
-        shortName = name.substring(name.indexOf("-"));
+        shortName = name.substring(0, name.indexOf("-"));
     }
     
     public void setSuccess(boolean b) {

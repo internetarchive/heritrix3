@@ -352,7 +352,7 @@ public class CrawlerLoggerModule
      */
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // Rotate off crawler logs.
-        rotateLogFiles("." + checkpointInProgress.getShortName());
+        rotateLogFiles("." + checkpointInProgress.getName());
     }
 
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
