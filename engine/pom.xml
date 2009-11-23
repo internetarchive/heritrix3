@@ -3,7 +3,7 @@
 <parent>
   <groupId>org.archive</groupId>
   <artifactId>heritrix</artifactId>
-  <version>3.0.0-RC1</version>
+  <version>3.0.0-SNAPSHOT</version>
 </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.archive.heritrix</groupId>
