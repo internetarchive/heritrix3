@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,8 +68,7 @@ import com.sleepycat.je.util.DbBackup;
  * @contributor pjack
  * @contributor gojomo
  */
-public class BdbModule implements Lifecycle, Checkpointable, 
-Serializable, Closeable {
+public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     private static final long serialVersionUID = 1L;
     final private static Logger LOGGER = 
         Logger.getLogger(BdbModule.class.getName()); 
@@ -248,7 +248,7 @@ Serializable, Closeable {
     throws DatabaseException {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
-        config.setLockTimeout(5000000);
+        config.setLockTimeout(75, TimeUnit.MINUTES); // set to max
         if(cachePercent>0) {
             config.setCachePercent(cachePercent);
         }
@@ -297,29 +297,20 @@ Serializable, Closeable {
         }
     }
     
-    
-
-    /**
-     * Open a Database inside this BdbModule's environment.
-     * 
-     * @param name
-     * @param config
-     * @param usePriorData use existing data in database, if any 
-     * @return
-     * @throws DatabaseException
-     */
-    public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
-    throws DatabaseException {
-        if (!usePriorData) {
-            try {
-                bdbEnvironment.truncateDatabase(null, name, false);
-            } catch (DatabaseNotFoundException e) {
-                // Ignored
-            }
+    public void disposeDatabase(String name) {
+        DatabasePlusConfig dpc = databases.remove(name);
+        if (dpc == null) {
+            throw new IllegalStateException("No such database: " + name);
         }
-        return bdbEnvironment.openDatabase(null, name, config.toDatabaseConfig());
+        Database db = dpc.database;
+        try {
+            db.close();
+            bdbEnvironment.removeDatabase(null, name);
+        } catch (DatabaseException e) {
+            LOGGER.log(Level.WARNING, "Error closing db " + name, e);
+        }
     }
-    
+
     /**
      * Open a Database inside this BdbModule's environment, and 
      * remember it for automatic close-at-module-stop. 
@@ -348,7 +339,14 @@ Serializable, Closeable {
         }
         
         DatabasePlusConfig dpc = new DatabasePlusConfig();
-        dpc.database = openDatabase(name, config, usePriorData);
+        if (!usePriorData) {
+            try {
+                bdbEnvironment.truncateDatabase(null, name, false);
+            } catch (DatabaseNotFoundException e) {
+                // Ignored
+            }
+        }
+        dpc.database = bdbEnvironment.openDatabase(null, name, config.toDatabaseConfig());
         dpc.name = name;
         dpc.config = config;
         databases.put(name, dpc);
@@ -359,7 +357,19 @@ Serializable, Closeable {
         return classCatalog;
     }
 
-
+    public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz, boolean b) {
+        try {
+            Database queueDb;
+            queueDb = openManagedDatabase(dbname,
+                    StoredQueue.databaseConfig(), false);
+            return new StoredQueue<K>(queueDb, clazz, getClassCatalog());
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+        
+    }
+    
+    
     /**
      * Get a CachedBdbMap, backed by a BDB Database of the given name, 
      * with the given key and value class types. If 'recycle' is true,
@@ -627,7 +637,7 @@ Serializable, Closeable {
      * @param allowDuplicates whether duplicate keys allowed
      * @return
      */
-    public <K,V> TempStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates) {
+    public <K,V> DisposableStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates) {
         BdbConfig config = new BdbConfig(); 
         config.setSortedDuplicates(true);
         config.setAllowCreate(true); 
@@ -636,8 +646,9 @@ Serializable, Closeable {
             dbName = "tempMap-"+System.identityHashCode(this)+"-"+sn;
             sn++;
         }
+        final String openName = dbName; 
         try {
-            mapDb = openDatabase(dbName,config,false);
+            mapDb = openManagedDatabase(openName,config,false);
         } catch (DatabaseException e) {
             throw new RuntimeException(e); 
         } 
@@ -645,11 +656,18 @@ Serializable, Closeable {
         if(valueBinding == null) {
             valueBinding = new SerialBinding<V>(classCatalog, valueClass);
         }
-        TempStoredSortedMap<K,V> storedMap = new TempStoredSortedMap<K, V>(
+        DisposableStoredSortedMap<K,V> storedMap = new DisposableStoredSortedMap<K, V>(
                 mapDb,
                 TupleBinding.getPrimitiveBinding(keyClass),
                 valueBinding,
-                true);
+                true) {
+                    @Override
+                    public void dispose() {
+                        BdbModule.this.disposeDatabase(openName);
+                    }
+            ;
+        };
         return storedMap; 
     }
+
 }

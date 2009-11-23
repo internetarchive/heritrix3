@@ -33,7 +33,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -81,8 +80,9 @@ import com.sleepycat.je.DatabaseException;
  * @author Christian Kohlschuetter
  */
 public abstract class WorkQueueFrontier extends AbstractFrontier
-implements Closeable, CrawlUriReceiver, Serializable, 
-ApplicationContextAware {
+implements Closeable, 
+           CrawlUriReceiver, 
+           ApplicationContextAware {
     private static final long serialVersionUID = 570384305871965843L;
 
     /** truncate reporting of queues at some large but not unbounded number */
@@ -975,13 +975,11 @@ ApplicationContextAware {
         }
 
         long delay_ms = curi.getPolitenessDelay();
-
-            if (delay_ms > 0) {
-                snoozeQueue(wq,now,delay_ms);
-            } else {
-                reenqueueQueue(wq);
-            }
-
+        if (delay_ms > 0) {
+            snoozeQueue(wq,now,delay_ms);
+        } else {
+            reenqueueQueue(wq);
+        }
 
         curi.stripToMinimal();
         curi.processingCleanup();
@@ -1531,37 +1529,6 @@ ApplicationContextAware {
     protected int getInProcessCount() {
         return inProcessQueues.size();
     }
-    
-    /**
-     * Custom deserialization: bring in snoozed queues as array of
-     * their names (aka 'classKeys').
-     * @param stream
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    private void readObject(java.io.ObjectInputStream stream)
-    throws IOException, ClassNotFoundException {
-        stream.defaultReadObject();
-        DelayedWorkQueue[] snoozed = (DelayedWorkQueue[])stream.readObject();
-        snoozedClassQueues = new DelayQueue<DelayedWorkQueue>(
-                Arrays.asList(snoozed));
-    }
-    
-    /**
-     * Custom serialization: write snoozed queues as array of their
-     * names (aka 'classKeys').
-     * 
-     * @param stream
-     * @throws IOException
-     */
-    private void writeObject(java.io.ObjectOutputStream stream)
-    throws IOException {
-        stream.defaultWriteObject();
-        DelayedWorkQueue[] snoozed = snoozedClassQueues.toArray(
-                new DelayedWorkQueue[0]);
-        stream.writeObject(snoozed);
-    }
-
 
     class DelayedWorkQueue implements Delayed, Serializable {
 

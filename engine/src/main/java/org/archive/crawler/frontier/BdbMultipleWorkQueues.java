@@ -290,12 +290,14 @@ public class BdbMultipleWorkQueues {
             // a queue-beginning cap entry (zero-length value)
             status = cursor.getSearchKey(headKey, result, null);
             if (status != OperationStatus.SUCCESS) {
-                throw new DatabaseException("bdb queue cap missing: " 
+                LOGGER.severe("bdb queue cap missing: " 
                         + status.toString() + " "  + new String(headKey.getData()));
+                return status;
             }
             if (result.getData().length > 0) {
-                throw new DatabaseException("bdb queue has nonzero size: " 
+                LOGGER.severe("bdb queue has nonzero size: " 
                         + result.getData().length);
+                return OperationStatus.KEYEXIST;
             }
             // get next item (real first item of queue)
             status = cursor.getNext(headKey,result,null);

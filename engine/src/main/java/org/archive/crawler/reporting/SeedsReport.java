@@ -22,7 +22,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 
 import com.sleepycat.collections.StoredIterator;
 
@@ -41,7 +41,7 @@ public class SeedsReport extends Report {
 
         long seedsCrawled = 0;
         long seedsTotal = 0;
-        TempStoredSortedMap<Integer, SeedRecord> seedsByCode = stats.calcSeedRecordsSortedByStatusCode();
+        DisposableStoredSortedMap<Integer, SeedRecord> seedsByCode = stats.calcSeedRecordsSortedByStatusCode();
 //        for (Map.Entry<Integer,SeedRecord> entry : seedsByCode.entrySet()) {
         Iterator<Map.Entry<Integer,SeedRecord>> iter = seedsByCode.entrySet().iterator();
         while(iter.hasNext()) {
@@ -65,7 +65,7 @@ public class SeedsReport extends Report {
             writer.print("\n");
         }
         StoredIterator.close(iter);
-        seedsByCode.destroy();
+        seedsByCode.dispose();
         stats.seedsTotal = seedsTotal;
         stats.seedsCrawled = seedsCrawled; 
     }

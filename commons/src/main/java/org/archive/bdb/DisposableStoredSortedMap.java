@@ -34,28 +34,28 @@ import com.sleepycat.je.DatabaseException;
  * @param <K>
  * @param <V>
  */
-public class TempStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
+public class DisposableStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
     Database db; 
     String dbName; 
     
-    public TempStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, boolean arg3) {
+    public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, boolean arg3) {
         super(db, arg1, arg2, arg3);
         this.db = db;
     }
-    public TempStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, PrimaryKeyAssigner arg3) {
+    public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, PrimaryKeyAssigner arg3) {
         super(db, arg1, arg2, arg3);
         this.db = db;
     }
-    public TempStoredSortedMap(Database db, EntryBinding<K> arg1, EntryBinding<V> arg2, boolean arg3) {
+    public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntryBinding<V> arg2, boolean arg3) {
         super(db, arg1, arg2, arg3);
         this.db = db;
     }
-    public TempStoredSortedMap(Database db, EntryBinding<K> arg1, EntryBinding<V> arg2, PrimaryKeyAssigner arg3) {
+    public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntryBinding<V> arg2, PrimaryKeyAssigner arg3) {
         super(db, arg1, arg2, arg3);
         this.db = db;
     }
 
-    public void destroy() {
+    public void dispose() {
         try {
             if(this.db!=null) {
                 String name = this.db.getDatabaseName();
@@ -70,7 +70,7 @@ public class TempStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        destroy();
+        dispose();
     }
     
 }

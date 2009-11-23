@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package org.archive.queue;
+package org.archive.bdb;
 
 import java.io.File;
 import java.util.NoSuchElementException;
@@ -25,6 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
+import org.archive.bdb.StoredQueue;
 import org.archive.util.TmpDirTestCase;
 import org.archive.util.bdbje.EnhancedEnvironment;
 

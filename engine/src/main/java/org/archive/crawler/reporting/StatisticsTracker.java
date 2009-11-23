@@ -39,7 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
@@ -687,9 +687,9 @@ public class StatisticsTracker
      *            Assumes values are wrapped with AtomicLong.
      * @return a sorted set containing the same elements as the map.
      */
-    public TempStoredSortedMap<Long,String> getReverseSortedCopy(
+    public DisposableStoredSortedMap<Long,String> getReverseSortedCopy(
             final Map<String,AtomicLong> mapOfAtomicLongValues) {
-        TempStoredSortedMap<Long,String> sortedMap = 
+        DisposableStoredSortedMap<Long,String> sortedMap = 
             bdb.getStoredMap(
                     null,
                     Long.class,
@@ -716,9 +716,9 @@ public class StatisticsTracker
      *            Assumes values are wrapped with AtomicLong.
      * @return a sorted set containing the same elements as the map.
      */
-    public TempStoredSortedMap<Long,String> getReverseSortedCopy(
+    public DisposableStoredSortedMap<Long,String> getReverseSortedCopy(
             final ObjectIdentityCache<String,AtomicLong> cacheOfAtomicLongValues) {
-        TempStoredSortedMap<Long,String> sortedMap = 
+        DisposableStoredSortedMap<Long,String> sortedMap = 
             bdb.getStoredMap(
                     null,
                     Long.class,
@@ -888,9 +888,9 @@ public class StatisticsTracker
         return processedSeedsRecords.keySet().iterator();
     }
 
-    public TempStoredSortedMap<Integer,SeedRecord> calcSeedRecordsSortedByStatusCode() {
+    public DisposableStoredSortedMap<Integer,SeedRecord> calcSeedRecordsSortedByStatusCode() {
         Iterator<String> i = getSeedsIterator();
-        TempStoredSortedMap<Integer,SeedRecord> sortedMap = 
+        DisposableStoredSortedMap<Integer,SeedRecord> sortedMap = 
             bdb.getStoredMap(
                     null,
                     Integer.class,
@@ -915,7 +915,7 @@ public class StatisticsTracker
      * 
      * @return SortedMap of hosts distribution
      */
-    public TempStoredSortedMap<Long,String> getReverseSortedHostCounts(
+    public DisposableStoredSortedMap<Long,String> getReverseSortedHostCounts(
             Map<String,AtomicLong> hostCounts) {
         synchronized(hostCounts){
             return getReverseSortedCopy(hostCounts);
@@ -927,7 +927,7 @@ public class StatisticsTracker
      * (largest first) order. 
      * @return SortedMap of hosts distribution
      */
-    public TempStoredSortedMap<Long,String> calcReverseSortedHostsDistribution() {
+    public DisposableStoredSortedMap<Long,String> calcReverseSortedHostsDistribution() {
         synchronized(hostsDistribution){
             return getReverseSortedCopy(hostsDistribution);
         }

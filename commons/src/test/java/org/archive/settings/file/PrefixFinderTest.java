@@ -77,8 +77,7 @@ public class PrefixFinderTest extends TmpDirTestCase {
     @SuppressWarnings("unchecked")
     public void testStoredSortedMap() throws Exception {
         EnvironmentConfig config = new EnvironmentConfig();
-        config.setAllowCreate(true);
-        config.setLockTimeout(5000000);        
+        config.setAllowCreate(true);      
         config.setCachePercent(5);
         
         File f = new File(getTmpDir(), "PrefixFinderText");

@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package org.archive.queue;
+package org.archive.bdb;
 
 import java.io.Serializable;
 import java.util.AbstractQueue;
@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import org.archive.bdb.BdbModule;
 
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;

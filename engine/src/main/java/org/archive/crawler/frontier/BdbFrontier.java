@@ -18,9 +18,6 @@
  */
 package org.archive.crawler.frontier;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -34,10 +31,10 @@ import javax.management.openmbean.CompositeData;
 
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
+import org.archive.bdb.StoredQueue;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.CrawlURI;
-import org.archive.queue.StoredQueue;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Supplier;
 import org.json.JSONException;
@@ -55,7 +52,7 @@ import com.sleepycat.je.DatabaseException;
  * @author Gordon Mohr
  */
 public class BdbFrontier extends WorkQueueFrontier 
-implements Serializable, Checkpointable, BeanNameAware {
+implements Checkpointable, BeanNameAware {
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =
@@ -289,11 +286,7 @@ implements Serializable, Checkpointable, BeanNameAware {
 
         inactiveQueuesByPrecedence = new TreeMap<Integer,Queue<String>>();
         
-        Database retiredQueuesDb;
-        retiredQueuesDb = bdb.openManagedDatabase("retiredQueues", 
-                StoredQueue.databaseConfig(), false);
-        retiredQueues = new StoredQueue<String>(retiredQueuesDb,
-                String.class, null);
+        retiredQueues = bdb.getStoredQueue("retiredQueues", String.class, false);
 
         // small risk of OutOfMemoryError: in large crawls with many 
         // unresponsive queues, an unbounded number of snoozed queues 
@@ -310,42 +303,7 @@ implements Serializable, Checkpointable, BeanNameAware {
      */
     @Override
     Queue<String> createInactiveQueueForPrecedence(int precedence) {
-        Database inactiveQueuesDb;
-        try {
-            inactiveQueuesDb = bdb.openManagedDatabase("inactiveQueues-"+precedence,
-                    StoredQueue.databaseConfig(), false);
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-        return new StoredQueue<String>(inactiveQueuesDb,
-                String.class, null);
-    }
-    
-    private void readObject(ObjectInputStream in) 
-    throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-
-        // rehook StoredQueues to their databases
-        for(int precedenceKey : inactiveQueuesByPrecedence.keySet()) {
-            Database inactiveQueuesDb = 
-                bdb.getDatabase("inactiveQueues-"+precedenceKey);
-            ((StoredQueue<String>)inactiveQueuesByPrecedence.get(precedenceKey))
-                .hookupDatabase(inactiveQueuesDb, String.class, null);
-        }
-        
-        // rehook retiredQueues to its database
-        Database retiredQueuesDb = bdb.getDatabase("retiredQueues");
-        retiredQueues.hookupDatabase(retiredQueuesDb, String.class, null);
-
-        try {
-            this.pendingUris = new BdbMultipleWorkQueues(bdb.getDatabase("pending"), 
-                    bdb.getClassCatalog());
-        } catch (DatabaseException e) {
-            IOException io = new IOException();
-            io.initCause(e);
-            throw io;
-        }
-        startManagerThread();
+        return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class, false);
     }
     
     /**

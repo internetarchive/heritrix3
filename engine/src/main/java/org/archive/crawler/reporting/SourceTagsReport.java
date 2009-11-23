@@ -22,7 +22,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 
 /**
  * The "Source Report", tallies of source tags (usually seeds) by host.
@@ -40,7 +40,7 @@ public class SourceTagsReport extends Report {
             Map<String,AtomicLong> hostCounts = 
                 (Map<String,AtomicLong>)stats.sourceHostDistribution.get(sourceKey);
             // sort hosts by #urls
-            TempStoredSortedMap<Long,String> sortedHostCounts = 
+            DisposableStoredSortedMap<Long,String> sortedHostCounts = 
                 stats.getReverseSortedHostCounts(hostCounts);
             // for each host
             for (Map.Entry<Long, String> entry : sortedHostCounts.entrySet()) {
@@ -51,7 +51,7 @@ public class SourceTagsReport extends Report {
                 writer.print(Math.abs(entry.getKey()));
                 writer.print("\n");
             }
-            sortedHostCounts.destroy();
+            sortedHostCounts.dispose();
         }
     }
 

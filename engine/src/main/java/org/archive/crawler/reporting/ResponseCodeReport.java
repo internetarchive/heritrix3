@@ -21,7 +21,7 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 
 /**
  * The "Response Codes Report", tallies by response/disposition code.
@@ -35,7 +35,7 @@ public class ResponseCodeReport extends Report {
         // header
         writer.print("[#urls] [rescode]\n");
         
-        TempStoredSortedMap<Long,String> scd = 
+        DisposableStoredSortedMap<Long,String> scd = 
             stats.getReverseSortedCopy(stats.getStatusCodeDistribution());
         for (Map.Entry<Long,String> entry : scd.entrySet()) {
             writer.print(Math.abs(entry.getKey()));
@@ -43,7 +43,7 @@ public class ResponseCodeReport extends Report {
             writer.print(entry.getValue());
             writer.print("\n");
         }
-        scd.destroy();
+        scd.dispose();
     }
 
     @Override

@@ -22,7 +22,7 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 
 /**
  * The "Mimetypes Report", tallies by MIME type.
@@ -35,7 +35,7 @@ public class MimetypesReport extends Report {
     public void write(PrintWriter writer) {
         // header
         writer.print("[#urls] [#bytes] [mime-types]\n");
-        TempStoredSortedMap<Long,String> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
+        DisposableStoredSortedMap<Long,String> fd = stats.getReverseSortedCopy(stats.getFileDistribution());
         for (Map.Entry<Long,String> entry : fd.entrySet()) {
             // key is -count, value is type
             writer.print(Math.abs(entry.getKey()));
@@ -45,7 +45,7 @@ public class MimetypesReport extends Report {
             writer.print(entry.getValue());
             writer.print("\n");
         }
-        fd.destroy();
+        fd.dispose();
     }
 
     @Override

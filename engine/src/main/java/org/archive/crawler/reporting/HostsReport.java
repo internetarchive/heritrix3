@@ -23,7 +23,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 
 import org.apache.commons.collections.Closure;
-import org.archive.bdb.TempStoredSortedMap;
+import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.modules.net.CrawlHost;
 
 /**
@@ -37,7 +37,7 @@ public class HostsReport extends Report {
     public void write(final PrintWriter writer) {
         // TODO: use CrawlHosts for all stats; only perform sorting on 
         // manageable number of hosts
-        TempStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
+        DisposableStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
         // header
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining] [#novel-urls] [#novel-bytes] [#dup-by-hash-urls] [#dup-by-hash-bytes] [#not-modified-urls] [#not-modified-bytes]\n"); 
         for (Map.Entry<Long,String> entry : hd.entrySet()) {
@@ -57,7 +57,7 @@ public class HostsReport extends Report {
                     host.getSubstats().getNotModifiedUrls(),
                     host.getSubstats().getNotModifiedBytes()); 
         }
-        hd.destroy();
+        hd.dispose();
         // StatisticsTracker doesn't know of zero-completion hosts; 
         // so supplement report with those entries from host cache
         Closure logZeros = new Closure() {
