@@ -710,7 +710,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
          .append(" queued = ")
          .append(total)
          .append(" total");
-         return sb.toString(); 
+        if(snapshot.futureUriCount>0) {
+            sb
+             .append(" (")
+             .append(snapshot.futureUriCount)
+             .append(" future)");
+        }
+        return sb.toString(); 
     }
 
     public String sizeTotalsReport() {

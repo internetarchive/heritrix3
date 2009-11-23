@@ -37,6 +37,7 @@ public class CrawlStatSnapshot {
     
     public long discoveredUriCount;
     public long queuedUriCount;
+    public long futureUriCount; 
     public long finishedUriCount;
     public long downloadedUriCount;
     public long downloadFailures;
@@ -74,6 +75,7 @@ public class CrawlStatSnapshot {
         discoveredUriCount = controller.getFrontier().discoveredUriCount();
         finishedUriCount = controller.getFrontier().finishedUriCount();
         queuedUriCount = controller.getFrontier().queuedUriCount();
+        futureUriCount = controller.getFrontier().futureUriCount(); 
         downloadFailures = controller.getFrontier().failedFetchCount();
         downloadDisregards = controller.getFrontier().disregardedUriCount();
         

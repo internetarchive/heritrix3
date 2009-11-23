@@ -68,6 +68,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 
+import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.DatabaseException;
 
 /**
@@ -210,6 +211,8 @@ implements Closeable,
      * All per-class queues held in snoozed state, sorted by wake time.
      */
     transient protected DelayQueue<DelayedWorkQueue> snoozedClassQueues;
+    
+    protected StoredSortedMap<Long, CrawlURI> futureUris; 
     
     transient protected WorkQueue longestActiveQueue = null;
 
@@ -584,6 +587,8 @@ implements Closeable,
             assert Thread.currentThread() == managerThread;
             // wake any snoozed queues
             wakeQueues();
+            // consider rescheduled URIS
+            checkFutures();
             // activate enough inactive queues to fill outbound
             int activationsWanted = 
                 outbound.remainingCapacity() - readyClassQueues.size();
@@ -671,7 +676,6 @@ implements Closeable,
                         continue findauri;
                     }
                 }
-
             }
                 
             if(inProcessQueues.size()==0) {
@@ -689,7 +693,23 @@ implements Closeable,
             return null; 
     }
 
-
+    /**
+     * Check for any future-scheduled URIs now eligible for reenqueuing
+     */
+    protected void checkFutures() {
+        assert Thread.currentThread() == managerThread;
+        // TODO: consider only checking this every set interval
+        Iterator<CrawlURI> iter = 
+            futureUris.headMap(System.currentTimeMillis())
+                .values().iterator();
+        while(iter.hasNext()) {
+            CrawlURI curi = iter.next();
+            curi.setRescheduleTime(-1); // unless again set elsewhere
+            iter.remove();
+            futureUriCount.decrementAndGet();
+            receive(curi);
+        }
+    }
     
     /**
      * Activate an inactive queue, if any are available. 
@@ -981,12 +1001,18 @@ implements Closeable,
             reenqueueQueue(wq);
         }
 
-        curi.stripToMinimal();
-        curi.processingCleanup();
-
+        if(curi.getRescheduleTime()>0) {
+            // marked up for forced-revisit at a set time
+            curi.processingCleanup();
+            futureUris.put(curi.getRescheduleTime(),curi);
+            futureUriCount.incrementAndGet(); 
+        } else {
+            curi.stripToMinimal();
+            curi.processingCleanup();
+        }
     }
 
-    private boolean includesRetireDirective(CrawlURI curi) {
+    protected boolean includesRetireDirective(CrawlURI curi) {
         return curi.containsDataKey(A_FORCE_RETIRE) 
          && (Boolean)curi.getData().get(A_FORCE_RETIRE);
     }
@@ -1519,7 +1545,8 @@ implements Closeable,
     public boolean isEmpty() {
         return queuedUriCount.get() == 0 
             && (uriUniqFilter == null || uriUniqFilter.pending() == 0)
-            && (inbound == null || inbound.isEmpty());
+            && (inbound == null || inbound.isEmpty())
+            && futureUriCount.get() == 0;
     }
 
     /* (non-Javadoc)

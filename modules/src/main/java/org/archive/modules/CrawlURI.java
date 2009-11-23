@@ -1826,4 +1826,15 @@ implements MultiReporter, Serializable, OverlayContext {
     public CrawlURI getFullVia() {
         return fullVia;
     }
+
+    /**
+     * A future time at which this CrawlURI should be reenqueued.
+     */
+    protected long rescheduleTime = -1;
+    public void setRescheduleTime(long time) {
+        this.rescheduleTime = time;
+    }
+    public long getRescheduleTime() {
+        return this.rescheduleTime;
+    }
 }

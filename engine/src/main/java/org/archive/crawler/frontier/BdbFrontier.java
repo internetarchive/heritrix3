@@ -216,6 +216,7 @@ implements Checkpointable, BeanNameAware {
         JSONObject json = new JSONObject();
         try {
             json.put("queuedUriCount", queuedUriCount.get());
+            json.put("futureUriCount", futureUriCount.get());
             json.put("succeededFetchCount", succeededFetchCount.get());
             json.put("failedFetchCount", failedFetchCount.get());
             json.put("disregardedUriCount", disregardedUriCount.get());
@@ -243,6 +244,7 @@ implements Checkpointable, BeanNameAware {
             JSONObject json = recoveryCheckpoint.loadJson(beanName);
             try {
                 queuedUriCount.set(json.getLong("queuedUriCount"));
+                futureUriCount.set(json.getLong("futureUriCount"));
                 succeededFetchCount.set(json.getLong("succeededFetchCount"));
                 failedFetchCount.set(json.getLong("failedFetchCount"));
                 disregardedUriCount.set(json.getLong("disregardedUriCount"));
@@ -292,6 +294,9 @@ implements Checkpointable, BeanNameAware {
         // unresponsive queues, an unbounded number of snoozed queues 
         // may exist
         snoozedClassQueues = new DelayQueue<DelayedWorkQueue>();
+        
+        this.futureUris = bdb.getStoredMap(
+                "futureUris", Long.class, CrawlURI.class, true, recoveryCheckpoint!=null);
         
         // initialize master map in which other queues live
         this.pendingUris = createMultipleWorkQueues();

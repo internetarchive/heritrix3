@@ -147,7 +147,7 @@ public abstract class AbstractFrontier
     
     /** size of the 'outbound' mediation queue between manager thread 
      * and toethreads */
-    int outboundQueueCapacity = 50; 
+    int outboundQueueCapacity = 200; 
     public int getOutboundQueueCapacity() {
         return this.outboundQueueCapacity;
     }
@@ -156,7 +156,7 @@ public abstract class AbstractFrontier
     }
     
     /** size of the inbound queue as multiple of the outbound queue */
-    int inboundQueueMultiple = 3;
+    int inboundQueueMultiple = 10;
     public int getInboundQueueMultiple() {
         return this.inboundQueueMultiple;
     }
@@ -251,6 +251,8 @@ public abstract class AbstractFrontier
     // top-level stats
     /** total URIs queued to be visited */
     protected AtomicLong queuedUriCount = new AtomicLong(0); 
+
+    protected AtomicLong futureUriCount = new AtomicLong(0); 
 
     protected AtomicLong succeededFetchCount = new AtomicLong(0);
 
@@ -446,7 +448,7 @@ public abstract class AbstractFrontier
             } else {
                 break;
             }
-        }
+        } 
     }
     
     /**
@@ -759,7 +761,14 @@ public abstract class AbstractFrontier
     public long queuedUriCount() {
         return queuedUriCount.get();
     }
-
+    
+    /* (non-Javadoc)
+     * @see org.archive.crawler.framework.Frontier#futureUriCount()
+     */
+    public long futureUriCount() {
+        return futureUriCount.get(); 
+    }
+    
     /**
      * (non-Javadoc)
      * 

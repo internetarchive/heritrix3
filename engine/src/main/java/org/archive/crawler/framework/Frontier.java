@@ -183,6 +183,12 @@ public interface Frontier extends Lifecycle, MultiReporter {
      */
     public long queuedUriCount();
 
+    
+    /**
+     * @return Number of URIs not currently queued/eligible but scheduled for future
+     */
+    public long futureUriCount(); 
+    
     /**
      * Ordinal position of the 'deepest' URI eligible 
      * for crawling. Essentially, the length of the longest
