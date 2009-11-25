@@ -50,9 +50,9 @@
 	<classpathentry kind="var" path="M2_REPO/joda-time/joda-time/1.6/joda-time-1.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-ajp/6.1.11/jetty-ajp-6.1.11.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.14/jetty-sslengine-6.1.14.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/restlet/org.restlet/1.1.2/org.restlet-1.1.2.jar" sourcepath="/M2SRC/restlet-1.1.1/src/org.restlet"/>
-	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.2/com.noelios.restlet-1.1.2.jar" sourcepath="/M2SRC/restlet-1.1.1/src/com.noelios.restlet"/>
-	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.2/com.noelios.restlet.ext.jetty-1.1.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/restlet/org.restlet/1.1.6/org.restlet-1.1.6.jar" sourcepath="/M2_REPO/org/restlet/org.restlet/1.1.6/org.restlet-1.1.6-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.6/com.noelios.restlet-1.1.6.jar" sourcepath="/M2SRC/restlet-1.1.1/src/com.noelios.restlet"/>
+	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.6/com.noelios.restlet.ext.jetty-1.1.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3.jar"/>
 	<classpathentry kind="lib" path="engine/src/main/resources"/>
 	<classpathentry kind="lib" path="modules/src/main/resources"/>
