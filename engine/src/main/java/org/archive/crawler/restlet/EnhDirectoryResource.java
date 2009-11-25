@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.apache.commons.io.FileUtils;
+import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
@@ -81,6 +82,9 @@ public class EnhDirectoryResource extends DirectoryResource {
                     File file = ((FileRepresentation)v).getFile();
                     if(getEnhDirectory().allowsEdit(file)) {
                         iter.remove();
+                        // any editable file for our purposes should 
+                        // be XML/UTF-8
+                        v.setCharacterSet(CharacterSet.UTF_8);
                         iter.add(new EditRepresentation((FileRepresentation)v,this));
                     };
                 }
@@ -125,7 +129,7 @@ public class EnhDirectoryResource extends DirectoryResource {
         EditRepresentation er = (EditRepresentation) getVariants().get(0);
         File file = er.getFileRepresentation().getFile(); 
         try {
-            FileUtils.writeStringToFile(file, newContents);
+            FileUtils.writeStringToFile(file, newContents,"UTF-8");
             Flash.addFlash(getResponse(), "file updated");
         } catch (IOException e) {
             // TODO report error somehow
