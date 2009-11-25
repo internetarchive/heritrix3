@@ -20,6 +20,8 @@ package org.archive.modules.fetcher;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
@@ -231,5 +233,19 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         writer.print(totalBytes);
         writer.print(" "); 
         writer.print(fetchNonResponses);
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+        map.put("totalScheduled", totalScheduled);
+        map.put("fetchSuccesses", fetchSuccesses);
+        map.put("fetchFailures", fetchFailures);
+        map.put("fetchDisregards", fetchDisregards);
+        map.put("fetchResponses", fetchResponses);
+        map.put("robotsDenials", robotsDenials);
+        map.put("successBytes", successBytes);
+        map.put("totalBytes", totalBytes);
+        map.put("fetchNonResponses", fetchNonResponses);
+        return map;
     }
 }

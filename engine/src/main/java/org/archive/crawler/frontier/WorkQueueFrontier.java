@@ -35,6 +35,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.SortedMap;
@@ -1087,6 +1088,40 @@ implements Closeable,
         return REPORTS;
     }
     
+    public Map<String, Object> singleLineReportData() {
+        if (this.allQueues == null) {
+            return null;
+        }
+        
+        int allCount = allQueues.size();
+        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int readyCount = readyClassQueues.size();
+        int snoozedCount = snoozedClassQueues.size();
+        int activeCount = inProcessCount + readyCount + snoozedCount;
+        int inactiveCount = getTotalEligibleInactiveQueues();
+        int ineligibleCount = getTotalIneligibleInactiveQueues();
+        int retiredCount = getRetiredQueues().size();
+        int exhaustedCount = allCount - activeCount - inactiveCount - retiredCount;
+        int inCount = inbound.size();
+        int outCount = outbound.size();
+
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+        map.put("totalQueues", allCount);
+        map.put("inProcessQueues", inProcessCount);
+        map.put("readyQueues", readyCount);
+        map.put("snoozedQueues", snoozedCount);
+        map.put("activeQueues", activeCount);
+        map.put("inactiveQueues", inactiveCount);
+        map.put("ineligibleQueues", ineligibleCount);
+        map.put("retiredQueues", retiredCount);
+        map.put("exhaustedQueues", exhaustedCount);
+        map.put("lastReachedState", lastReachedState);
+        map.put("inboundCount", inCount);
+        map.put("outboundCount", outCount);
+
+        return map;
+    }
+
     /**
      * @param w Where to write to.
      */

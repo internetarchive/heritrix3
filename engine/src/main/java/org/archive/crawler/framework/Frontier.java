@@ -517,6 +517,7 @@ public interface Frontier extends Lifecycle, MultiReporter {
         HOLD, // enter a consistent, stable, checkpointable state ASAP
         PAUSE, // enter a stable state where no URIs are in-progress; unlike
                // HOLD requires all in-process URIs to complete
-        FINISH }; // end and cleanup; may not return to any other state after
+        FINISH  // end and cleanup; may not return to any other state after
                   // this state is requested/reached
+    }
 }

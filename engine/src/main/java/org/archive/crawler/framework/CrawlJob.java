@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -653,6 +654,21 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return cc!=null ? cc.getStatisticsTracker() : null;
     }
 
+    public Map<String,Number> rateReportData() {
+        StatisticsTracker stats = getStats();
+        if (stats == null) {
+            return null;
+        }
+        
+        CrawlStatSnapshot snapshot = stats.getSnapshot();
+        Map<String,Number> map = new LinkedHashMap<String,Number>();
+        map.put("currentDocsPerSecond", snapshot.currentDocsPerSecond);
+        map.put("averageDocsPerSecond", snapshot.docsPerSecond);
+        map.put("currentKiBPerSec", snapshot.currentKiBPerSec);
+        map.put("averageKiBPerSec", snapshot.totalKiBPerSec);
+        return map;
+    }
+
     public Object rateReport() {
         StatisticsTracker stats = getStats();
         if(stats==null) {
@@ -670,6 +686,23 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
          .append(snapshot.totalKiBPerSec)
          .append(" avg)");
         return sb.toString();
+    }
+
+    public Map<String,Number> loadReportData() {
+        StatisticsTracker stats = getStats();
+        if (stats == null) {
+            return null;
+        }
+        
+        CrawlStatSnapshot snapshot = stats.getSnapshot();
+        Map<String,Number> map = new LinkedHashMap<String,Number>();
+        
+        map.put("busyThreads", snapshot.busyThreads);
+        map.put("totalThreads", stats.threadCount());
+        map.put("congestionRatio", snapshot.congestionRatio);
+        map.put("averageQueueDepth", snapshot.averageDepth);
+        map.put("deepestQueueDepth", snapshot.deepestUri);
+        return map;
     }
 
     public Object loadReport() {
@@ -693,30 +726,52 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return sb.toString();
     }
 
-    public String uriTotalsReport() {
+    public Map<String,Long> uriTotalsReportData() {
         StatisticsTracker stats = getStats();
-        if(stats==null) {
+        if (stats == null) {
+            return null;
+        }
+
+        CrawlStatSnapshot snapshot = stats.getSnapshot();
+
+        Map<String,Long> totals = new LinkedHashMap<String,Long>();
+        totals.put("downloadedUriCount", snapshot.downloadedUriCount);
+        totals.put("queuedUriCount", snapshot.queuedUriCount);
+        totals.put("totalUriCount", snapshot.totalCount());
+        totals.put("futureUriCount", snapshot.futureUriCount);
+
+        return totals;
+    }
+    
+    public String uriTotalsReport() {
+        Map<String,Long> uriTotals = uriTotalsReportData();
+        if (uriTotals == null) {
             return "<i>n/a</i>";
         }
-        CrawlStatSnapshot snapshot = stats.getSnapshot();
-        long downloaded = snapshot.downloadedUriCount;
-        long total = snapshot.totalCount();
-        long queued = snapshot.queuedUriCount; 
+
         StringBuilder sb = new StringBuilder(64); 
         sb
-         .append(downloaded)
+         .append(uriTotals.get("downloadedUriCount"))
          .append(" downloaded + ")
-         .append(queued)
+         .append(uriTotals.get("queuedUriCount"))
          .append(" queued = ")
-         .append(total)
+         .append(uriTotals.get("totalUriCount"))
          .append(" total");
-        if(snapshot.futureUriCount>0) {
+        if(uriTotals.get("futureUriCount") >0) {
             sb
              .append(" (")
-             .append(snapshot.futureUriCount)
+             .append(uriTotals.get("futureUriCount"))
              .append(" future)");
         }
         return sb.toString(); 
+    }
+
+    public Map<String,Long> sizeTotalsReportData() {
+        StatisticsTracker stats = getStats();
+        if(stats==null) {
+            return null;
+        }
+        return stats.getCrawledBytes();
     }
 
     public String sizeTotalsReport() {
@@ -725,6 +780,20 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
             return "<i>n/a</i>";
         }
         return stats.crawledBytesSummary();
+    }
+
+    public Map<String,Object> elapsedReportData() {
+        StatisticsTracker stats = getStats();
+        if(stats==null) {
+            return null;
+        }
+        
+        Map<String,Object> map = new LinkedHashMap<String,Object>();
+        long timeElapsed = stats.getCrawlElapsedTime();
+        map.put("elapsedMilliseconds", timeElapsed);
+        map.put("elapsedPretty", ArchiveUtils.formatMillisecondsToConventional(timeElapsed));
+        
+        return map;
     }
 
     public String elapsedReport() {
@@ -736,12 +805,28 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return ArchiveUtils.formatMillisecondsToConventional(timeElapsed,false);
     }
 
+    public Map<String,Object> threadReportData() {
+        CrawlController cc = getCrawlController();
+        if (cc == null) {
+            return null;
+        }
+        return cc.getToeThreadReportShortData();
+    }
+
     public String threadReport() {
         CrawlController cc = getCrawlController();
         if(cc==null) {
             return "<i>n/a</i>";
         }
         return cc.getToeThreadReportShort();
+    }
+
+    public Map<String,Object> frontierReportData() {
+        CrawlController cc = getCrawlController();
+        if (cc == null) {
+            return null;
+        }
+        return cc.getFrontier().singleLineReportData();
     }
 
     public String frontierReport() {

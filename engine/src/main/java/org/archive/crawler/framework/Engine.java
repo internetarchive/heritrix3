@@ -24,6 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -249,6 +250,14 @@ public class Engine {
         return jobsDir;
     }
     
+    public Map<String,Object> heapReportData() {
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+        map.put("usedBytes", Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+        map.put("totalBytes", Runtime.getRuntime().totalMemory());
+        map.put("maxBytes", Runtime.getRuntime().maxMemory());
+        return map;
+    }
+
     public String heapReport() {
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
@@ -348,5 +357,4 @@ public class Engine {
     		LOGGER.log(Level.SEVERE,"job: "+jobName+" not found in jobConfig!");
     	}
 	}
-
 }

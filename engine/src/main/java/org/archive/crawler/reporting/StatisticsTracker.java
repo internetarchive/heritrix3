@@ -306,6 +306,10 @@ public class StatisticsTracker
     /** tally sizes novel, verified (same hash), vouched (not-modified) */ 
     CrawledBytesHistotable crawledBytes = new CrawledBytesHistotable();
     
+    public CrawledBytesHistotable getCrawledBytes() {
+        return crawledBytes;
+    }
+
     // TODO: fortify these against key explosion with bigmaps like other tallies
     /** Keep track of the file types we see (mime type -> count) */
     protected ObjectIdentityCache<String,AtomicLong> mimeTypeDistribution

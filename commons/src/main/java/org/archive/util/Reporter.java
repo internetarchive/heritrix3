@@ -21,6 +21,7 @@ package org.archive.util;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 public interface Reporter {
     /**
@@ -37,6 +38,13 @@ public interface Reporter {
      * @param writer to receive report
      */
     public void singleLineReportTo(PrintWriter pw) throws IOException;
+    
+
+    /**
+     * @return Same data that's in the single line report, as key-value pairs
+     */
+    public Map<String,Object> singleLineReportData();
+
     
     /**
      * Return a legend for the single-line summary report as a String.

@@ -33,9 +33,9 @@ implements CoreAttributeConstants {
     public static final String NOTMODIFIED = "not-modified";
     public static final String DUPLICATE = "dup-by-hash";
     public static final String NOVEL = "novel";
-    public static final String NOTMODIFIEDCOUNT="not-modified-count";  
-    public static final String DUPLICATECOUNT="dup-by-hash-count";
-    public static final String NOVELCOUNT="novel-count";
+    public static final String NOTMODIFIEDCOUNT = "not-modified-count";
+    public static final String DUPLICATECOUNT = "dup-by-hash-count";
+    public static final String NOVELCOUNT = "novel-count";
     
     public CrawledBytesHistotable() {
         super();

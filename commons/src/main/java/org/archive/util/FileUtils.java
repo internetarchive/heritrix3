@@ -698,4 +698,12 @@ public class FileUtils {
     
         return dir;
     } 
+
+    public static File tryToCanonicalize(File file) {
+        try {
+            return file.getCanonicalFile();
+        } catch (IOException e) {
+            return file;
+        }
+    }
 }

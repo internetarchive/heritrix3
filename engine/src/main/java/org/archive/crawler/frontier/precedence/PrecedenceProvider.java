@@ -20,6 +20,8 @@ package org.archive.crawler.frontier.precedence;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
@@ -33,6 +35,8 @@ import org.archive.util.MultiReporter;
  */
 abstract public class PrecedenceProvider implements MultiReporter, 
 FetchStats.CollectsFetchStats, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     abstract public int getPrecedence();
 
@@ -70,6 +74,12 @@ FetchStats.CollectsFetchStats, Serializable {
 
     public String singleLineReport() {
         return ArchiveUtils.singleLineReport(this);
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> data = new LinkedHashMap<String, Object>();
+        data.put("precedence", getPrecedence());
+        return data;
     }
 
     public void singleLineReportTo(PrintWriter writer) {

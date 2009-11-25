@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -311,7 +312,6 @@ implements Serializable,
      * @param newState State change we're to tell listeners' about.
      * @param message Message on state change.
      */
-    @SuppressWarnings("unchecked")
     protected void sendCrawlStateChangeEvent(State newState, 
             CrawlStatus status) {
         if(this.state == newState) {
@@ -596,6 +596,10 @@ implements Serializable,
         return (toePool == null) ? "" : ArchiveUtils.singleLineReport(toePool);
     }
 
+    public Map<String,Object> getToeThreadReportShortData() {
+        return toePool == null ? null : toePool.singleLineReportData();
+        
+    }
 
     public String getFrontierReportShort() {
         return ArchiveUtils.singleLineReport(getFrontier());

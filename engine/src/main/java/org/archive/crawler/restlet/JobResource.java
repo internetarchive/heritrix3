@@ -24,8 +24,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -33,6 +39,7 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.reporting.AlertHandler;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.Report;
@@ -45,6 +52,7 @@ import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
+import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
@@ -53,6 +61,7 @@ import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
+import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource representing a single local CrawlJob inside an
@@ -64,12 +73,15 @@ public class JobResource extends Resource {
     public static final IOFileFilter EDIT_FILTER = 
         FileUtils.getRegexFileFilter(".*\\.((c?xml)|(txt))$");
 
-    CrawlJob cj; 
+    private static final Logger logger = Logger.getLogger(JobResource.class.getName());
+
+    protected CrawlJob cj; 
     
     public JobResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
         setModifiable(true);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
         cj = getEngine().getJob(TextUtils.urlUnescape((String)req.getAttributes().get("job")));
         if(cj==null) {
             throw new ResourceException(404);
@@ -77,17 +89,131 @@ public class JobResource extends Resource {
     }
 
     public Representation represent(Variant variant) throws ResourceException {
-        Representation representation = new WriterRepresentation(
-                MediaType.TEXT_HTML) {
+        Representation representation = null;
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+                public void write(Writer writer) throws IOException {
+                    try {
+                        new XmlMarshaller(writer).marshalDocument("job", presentablify());
+                    } catch (SAXException e) {
+                        throw new IOException(e);
+                    }
+                }
+            };
+        } else {
+            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
             public void write(Writer writer) throws IOException {
                 JobResource.this.writeHtml(writer);
             }
         };
+        }
+        
         // TODO: remove if not necessary in future?
+        // honor requested charset?
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
     }
 
+    protected LinkedHashMap<String,Object> presentablify() {
+        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
+
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if (!baseRef.endsWith("/")) {
+            baseRef += "/";
+        }
+        Reference baseRefRef = new Reference(baseRef);
+        
+        info.put("shortName", cj.getShortName());
+        if (cj.getCrawlController() != null) {
+            info.put("crawlControllerState", cj.getCrawlController().getState());
+            if (cj.getCrawlController().getState() == State.FINISHED) {
+                info.put("crawlExitStatus", cj.getCrawlController().getCrawlExitStatus());
+            }
+        }
+        info.put("statusDescription", getJobStatusDescription());
+        info.put("availableActions", getAvailableActions());
+
+        info.put("launchCount", cj.getLaunchCount());
+        info.put("lastLaunch", cj.getLastLaunch());
+        info.put("isProfile", cj.isProfile());
+        File primaryConfig = FileUtils.tryToCanonicalize(cj.getPrimaryConfig());
+        info.put("primaryConfig", primaryConfig.getAbsolutePath());
+        info.put("primaryConfigUrl", baseRef + "jobdir/" + primaryConfig.getName());
+
+        if (cj.getJobLog().exists()) try {
+            List<String> logLines = new LinkedList<String>();
+            FileUtils.pagedLines(cj.getJobLog(), -1, -5, logLines);
+            info.put("jobLogTail", logLines);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe); 
+        }
+        
+        if (cj.hasApplicationContext()) {
+            info.put("uriTotalsReport", cj.uriTotalsReportData());
+            info.put("sizeTotalsReport", cj.sizeTotalsReportData());
+            info.put("rateReport", cj.rateReportData());
+            info.put("loadReport", cj.loadReportData());
+            info.put("elapsedReport", cj.elapsedReportData());
+            info.put("threadReport", cj.threadReportData());
+            info.put("frontierReport", cj.frontierReportData());
+            info.put("heapReport", getEngine().heapReportData());
+            
+            if(cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable())) {
+                try {
+                    List<String> logLines = new LinkedList<String>();
+                    FileUtils.pagedLines(
+                            cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile(),
+                            -1, -10, logLines);
+                    info.put("crawlLogTail", logLines);
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe); 
+                }
+            }
+        }
+
+        List<Map<String,String>> configFiles = new LinkedList<Map<String,String>>();
+        for(String cppp: cj.getConfigPaths().keySet()) {
+            Map<String,String> configFileInfo = new LinkedHashMap<String,String>();
+            configFileInfo.put("key", cppp);
+            File path = FileUtils.tryToCanonicalize(cj.getConfigPaths().get(cppp).getFile());
+            configFileInfo.put("path", path.getAbsolutePath());
+            Reference urlRef = new Reference(baseRefRef, getHrefPath(path, cj)).getTargetRef();
+            configFileInfo.put("url", urlRef.toString());
+            configFiles.add(configFileInfo);
+        }
+        info.put("configFiles", configFiles);
+
+        return info;
+    }
+
+    protected Set<String> getAvailableActions() {
+        Set<String> actions = new LinkedHashSet<String>();
+        
+        if (!cj.hasApplicationContext()) {
+            actions.add("build");
+        }
+        if (!cj.isProfile() && cj.isLaunchable()) {
+            actions.add("launch");
+        }
+        if (cj.isPausable()) {
+            actions.add("pause");
+        }
+        if (cj.isUnpausable()) {
+            actions.add("unpause");
+        }
+        if (cj.getCheckpointService() != null && cj.isRunning()) {
+            actions.add("checkpoint");
+        }
+        if (cj.isRunning()) {
+            actions.add("terminate");
+        }
+        if (cj.hasApplicationContext()) {
+            actions.add("teardown");
+        }
+        
+        return actions;
+    }
+    
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
         String jobTitle = cj.getShortName() + " - " 
@@ -420,7 +546,9 @@ public class JobResource extends Resource {
     @Override
     public void acceptRepresentation(Representation entity) throws ResourceException {
         // copy op?
-        Form form = getRequest().getEntityAsForm();
+        Form form = null;
+        try {
+            form = getRequest().getEntityAsForm();
         String copyTo = form.getFirstValue("copyTo");
         if(copyTo!=null) {
             copyJob(copyTo,"on".equals(form.getFirstValue("asProfile")));
@@ -460,8 +588,13 @@ public class JobResource extends Resource {
             cj.terminate();
         }
         AlertThreadGroup.setThreadLogger(null);
+            
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
+        } catch (IllegalStateException e) {
+            logger.log(Level.WARNING, "problem accepting input (redirecting to GET self anyway): " + e, e);
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e, "problem accepting input");
+        }
     }
 
     protected void copyJob(String copyTo, boolean asProfile) throws ResourceException {

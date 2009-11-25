@@ -29,6 +29,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -477,6 +479,33 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
             pw.print(ste[i].toString());
             pw.println();
         }
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> data = new LinkedHashMap<String, Object>();
+        data.put("serialNumber", serialNumber);
+        CrawlURI c = currentCuri;
+        if (c != null) {
+            data.put("currentURI", c.toString());
+            data.put("currentProcessor", currentProcessorName);
+            data.put("fetchAttempts", c.getFetchAttempts());
+        } else {
+            data.put("currentURI", null);
+        }
+
+        long now = System.currentTimeMillis();
+        long time = 0;
+        if (lastFinishTime > lastStartTime) {
+            data.put("status", "WAITING");
+            time = now - lastFinishTime;
+        } else if (lastStartTime > 0) {
+            data.put("status", "ACTIVE");
+            time = now - lastStartTime;
+        }
+        data.put("currentStatusElapsedMilliseconds", time);
+        data.put("currentStatusElapsedPretty", ArchiveUtils.formatMillisecondsToConventional(time));
+        data.put("step", step);
+        return data;
     }
 
     /**

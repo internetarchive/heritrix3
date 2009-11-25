@@ -21,9 +21,11 @@ package org.archive.crawler.framework;
 
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Histotable;
@@ -257,6 +259,34 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 }
             }
         }
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Histotable<Object> steps = new Histotable<Object>();
+        Histotable<Object> processors = new Histotable<Object>();
+        Thread[] toes = getToes();
+        for (int i = 0; i < toes.length; i++) {
+            if(!(toes[i] instanceof ToeThread)) {
+                continue;
+            }
+            ToeThread tt = (ToeThread)toes[i];
+            if(tt!=null) {
+                steps.tally(tt.getStep().toString());
+                String currentProcessorName = tt.getCurrentProcessorName();
+                if (StringUtils.isEmpty(currentProcessorName)) {
+                    currentProcessorName = "noActiveProcessor";
+                }
+                processors.tally(currentProcessorName);
+            }
+        }
+
+        Map<String,Object> data = new LinkedHashMap<String, Object>();
+
+        data.put("toeCount", getToeCount());
+        data.put("steps", steps.getSortedByCounts());
+        data.put("processors", processors.getSortedByCounts());
+        
+        return data;
     }
 
     public void singleLineReportTo(PrintWriter w) {

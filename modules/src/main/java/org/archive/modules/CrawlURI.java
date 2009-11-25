@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1489,6 +1490,15 @@ implements MultiReporter, Serializable, OverlayContext {
         return ArchiveUtils.singleLineReport(this);
     }
     
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+        map.put("class", getClass().getName());
+        map.put("uri", getUURI().toString());
+        map.put("pathFromSeed", pathFromSeed);
+        map.put("flattenVia", flattenVia());
+        return map;
+    }
+
     public void singleLineReportTo(PrintWriter w) {
         String className = this.getClass().getName();
         className = className.substring(className.lastIndexOf(".")+1);

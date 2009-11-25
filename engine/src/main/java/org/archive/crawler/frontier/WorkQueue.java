@@ -22,7 +22,10 @@ package org.archive.crawler.frontier;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -524,6 +527,35 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      */
     public void reportTo(PrintWriter writer) {
         reportTo(null,writer);
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+
+        map.put("queueName", classKey);
+        map.put("precedence", getPrecedence());
+        map.put("itemCount", count);
+        map.put("enqueueCount", enqueueCount);
+        map.put("sessionBalance", sessionBalance);
+        map.put("lastCost", lastCost);
+        map.put("averageCost", (double) totalExpenditure / costCount);
+        if (lastDequeueTime != 0) {
+            map.put("lastDequeueTime", new Date(lastDequeueTime));
+        } else {
+            map.put("lastDequeueTime", null);
+        }
+        if (wakeTime != 0) {
+            map.put("lastDequeueTime", new Date(wakeTime));
+        } else {
+            map.put("lastDequeueTime", null);
+        }
+        map.put("totalExpenditure", totalExpenditure);
+        map.put("totalBudget", totalBudget);
+        map.put("errorCount", errorCount);
+        map.put("lastPeeked", lastPeeked);
+        map.put("lastQueued", lastQueued);
+
+        return map;
     }
 
     /* (non-Javadoc)

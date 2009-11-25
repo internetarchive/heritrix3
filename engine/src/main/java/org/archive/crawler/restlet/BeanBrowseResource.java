@@ -26,6 +26,8 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -45,6 +47,7 @@ import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
+import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource which allows browsing the constructed beans in
@@ -59,6 +62,7 @@ public class BeanBrowseResource extends JobRelatedResource {
     public BeanBrowseResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
         setModifiable(true); // accept POSTs
         appCtx = cj.getJobContext();
         beanPath = (String)req.getAttributes().get("beanPath");
@@ -71,9 +75,11 @@ public class BeanBrowseResource extends JobRelatedResource {
         } else {
             beanPath = "";
         }
-        if(appCtx==null) {
+        if (appCtx == null) {
             getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
-            getResponse().setEntity("No beans; crawl not yet built.",MediaType.TEXT_HTML);
+
+            // XXX xml?
+            getResponse().setEntity("No beans; crawl not yet built.", MediaType.TEXT_HTML);
             //throw new ResourceException(404);
         }
     }
@@ -85,7 +91,6 @@ public class BeanBrowseResource extends JobRelatedResource {
         
         String newVal = form.getFirstValue("newVal");
         if(newVal!=null) {
-            
             int i = beanPath.indexOf(".");
             String beanName = i<0?beanPath:beanPath.substring(0,i);
             Object namedBean = appCtx.getBean(beanName);
@@ -93,13 +98,11 @@ public class BeanBrowseResource extends JobRelatedResource {
             String propPath = beanPath.substring(i+1);
             Object coercedVal = bwrap.convertIfNecessary(newVal, bwrap.getPropertyValue(propPath).getClass()); 
             bwrap.setPropertyValue(propPath, coercedVal);
-
         }
         Reference ref = getRequest().getResourceRef();
         ref.setPath(getBeansRefPath());
         ref.addSegment(beanPath);
         getResponse().redirectSeeOther(ref);
-
     }
 
     public String getBeansRefPath() {
@@ -114,20 +117,79 @@ public class BeanBrowseResource extends JobRelatedResource {
         }
         return path; 
     }
-    
 
     public Representation represent(Variant variant) throws ResourceException {
-        Representation representation = new WriterRepresentation(
-                MediaType.TEXT_HTML) {
-            public void write(Writer writer) throws IOException {
-                BeanBrowseResource.this.writeHtml(writer);
-            }
-        };
+        Representation representation;
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+                public void write(Writer writer) throws IOException {
+                    try {
+                        new XmlMarshaller(writer).marshalDocument("script", presentablify());
+                    } catch (SAXException e) {
+                        throw new IOException(e);
+                    }
+                }
+            };
+        } else {
+            representation = new WriterRepresentation(
+                    MediaType.TEXT_HTML) {
+                public void write(Writer writer) throws IOException {
+                    BeanBrowseResource.this.writeHtml(writer);
+                }
+            };
+        }
         // TODO: remove if not necessary in future?
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
     }
     
+    protected LinkedHashMap<String,Object> presentablify() {
+        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
+
+        info.put("crawlJobShortName", cj.getShortName());
+        info.put("crawlJobUrl", new Reference(getRequest().getResourceRef().getBaseRef(), "..").getTargetRef());
+        
+        if (StringUtils.isNotBlank(beanPath)) {
+            info.put("beanPath", beanPath);
+            try {
+                int firstDot = beanPath.indexOf(".");
+                String beanName = firstDot<0?beanPath:beanPath.substring(0,firstDot);
+                Object namedBean = appCtx.getBean(beanName);
+                Object target; 
+                if (firstDot < 0) {
+                    target = namedBean;
+                    info.put("bean", presentablifyObject(null, target, beanPath));
+                } else {
+                    BeanWrapperImpl bwrap = new BeanWrapperImpl(namedBean);
+                    String propPath = beanPath.substring(firstDot+1);
+                    target = bwrap.getPropertyValue(propPath);
+                    
+                    Class<?> type = bwrap.getPropertyType(propPath);
+                    if(bwrap.isWritableProperty(propPath) 
+                            && (bwrap.getDefaultEditor(type)!=null|| type == String.class)
+                            && !Collection.class.isAssignableFrom(type)) {
+                        info.put("editable", true);
+                        info.put("bean", presentablifyObject(null, target));
+                    } else {
+                        info.put("bean", presentablifyObject(null, target, beanPath));
+                    }
+                }     
+            } catch (BeansException e) {
+                info.put("problem", e.toString());
+            }
+        }
+
+        Collection<Object> nestedNames = new LinkedList<Object>();
+        Set<Object> alreadyWritten = new HashSet<Object>();
+        presentablifyNestedNames(appCtx.getBean("crawlController"), getBeansRefPath(), alreadyWritten, nestedNames);
+        for(String name: appCtx.getBeanDefinitionNames()) {
+            presentablifyNestedNames(appCtx.getBean(name), getBeansRefPath(), alreadyWritten, nestedNames);
+        }
+        info.put("allNamedCrawlBeans", nestedNames);
+
+        return info;
+    }
+
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
         pw.println("<head><title>Crawl beans in "+cj.getShortName()+"</title></head>");
@@ -153,7 +215,7 @@ public class BeanBrowseResource extends JobRelatedResource {
                     String propPath = beanPath.substring(i+1);
                     target = bwrap.getPropertyValue(propPath);
                     
-                    Class type = bwrap.getPropertyType(propPath);
+                    Class<?> type = bwrap.getPropertyType(propPath);
                     if(bwrap.isWritableProperty(propPath) 
                             && (bwrap.getDefaultEditor(type)!=null|| type == String.class)
                             && !Collection.class.isAssignableFrom(type)) {

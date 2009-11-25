@@ -24,12 +24,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.crawler.framework.CrawlController.State;
+import org.archive.util.FileUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -41,6 +48,7 @@ import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
+import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource representing an Engine that may be used
@@ -54,15 +62,28 @@ public class EngineResource extends Resource {
         super(ctx, req, res);
         setModifiable(true);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
     }
 
     public Representation represent(Variant variant) throws ResourceException {
-        Representation representation = new WriterRepresentation(
-                MediaType.TEXT_HTML) {
-            public void write(Writer writer) throws IOException {
-                EngineResource.this.writeHtml(writer);
-            }
-        };
+        Representation representation;
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+                public void write(Writer writer) throws IOException {
+                    try {
+                        new XmlMarshaller(writer).marshalDocument("engine", presentablify());
+                    } catch (SAXException e) {
+                        throw new IOException(e);
+                    }
+                }
+            };
+        } else {
+            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
+                public void write(Writer writer) throws IOException {
+                    EngineResource.this.writeHtml(writer);
+                }
+            };
+        }
         // TODO: remove if not necessary in future?
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
@@ -126,6 +147,59 @@ public class EngineResource extends Resource {
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
     }
     
+    protected List<String> getAvailableActions() {
+        List<String> actions = new LinkedList<String>();
+        actions.add("rescan");
+        actions.add("add");
+        actions.add("create");
+        return actions;
+    }
+
+    protected LinkedHashMap<String,Object> presentablify() {
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if(!baseRef.endsWith("/")) {
+            baseRef += "/";
+        }
+
+        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
+        Engine engine = getEngine();
+        info.put("heritrixVersion", engine.getHeritrixVersion());
+        File jobsDir = FileUtils.tryToCanonicalize(engine.getJobsDir());
+        info.put("jobsDir", jobsDir.getAbsolutePath());
+        info.put("jobsDirUrl", baseRef + "jobsdir/");
+        info.put("availableActions", getAvailableActions());
+        info.put("heapReport", getEngine().heapReportData());
+
+        // re-scan job configs on each page load
+        ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
+        engine.findJobConfigs();
+        jobs.addAll(engine.getJobConfigs().values());
+        Collections.sort(jobs);
+        Collection<Map<String,Object>> jobsInfo = new LinkedList<Map<String,Object>>();
+        for (CrawlJob cj: jobs) {
+            // cj.writeHtmlTo(pw,"job/");
+            Map<String,Object> jobInfo = new LinkedHashMap<String, Object>();
+            jobInfo.put("shortName", cj.getShortName());
+            jobInfo.put("url", baseRef + "job/" + cj.getShortName());
+            jobInfo.put("isProfile", cj.isProfile());
+            jobInfo.put("launchCount", cj.getLaunchCount());
+            jobInfo.put("lastLaunch", cj.getLastLaunch());
+            File primaryConfig = FileUtils.tryToCanonicalize(cj.getPrimaryConfig());
+            jobInfo.put("primaryConfig", primaryConfig.getAbsolutePath());
+            jobInfo.put("primaryConfigUrl", baseRef + "job/" + cj.getShortName() + "/jobdir/" + primaryConfig.getName());
+            if (cj.getCrawlController() != null) {
+                jobInfo.put("crawlControllerState", cj.getCrawlController().getState());
+                if (cj.getCrawlController().getState() == State.FINISHED) {
+                    jobInfo.put("crawlExitStatus", cj.getCrawlController().getCrawlExitStatus());
+                }
+            }
+            jobsInfo.add(jobInfo);
+        }
+        info.put("jobs", jobsInfo);
+
+        return info;
+    }
+    
     /**
      * wraps a message in a styled div given messsage type 
      * @param msg message to be displayed
@@ -152,12 +226,7 @@ public class EngineResource extends Resource {
     protected void writeHtml(Writer writer) {
         Engine engine = getEngine();
         String engineTitle = "Heritrix Engine "+engine.getHeritrixVersion();
-        File jobsDir = engine.getJobsDir();
-        try {
-            jobsDir = jobsDir.getCanonicalFile();
-        } catch (IOException ioe) {
-            // live with the noncanonical file
-        }
+        File jobsDir = FileUtils.tryToCanonicalize(engine.getJobsDir());
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";

@@ -24,8 +24,11 @@ import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,7 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.restlet.Context;
+import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.Resource;
@@ -62,6 +66,55 @@ public abstract class JobRelatedResource extends Resource {
     
     protected Engine getEngine() {
         return ((EngineApplication)getApplication()).getEngine();
+    }
+    
+    protected void presentablifyNestedNames(Object obj, String prefix,
+            Set<Object> alreadyWritten, Collection<Object> namedBeans) {
+        if (obj == null || alreadyWritten.contains(obj)
+                || obj.getClass().getName().startsWith("org.springframework.")) {
+            return;
+        }
+
+        Reference baseRef = getRequest().getResourceRef().getBaseRef();
+
+        if (getBeanToNameMap().containsKey(obj)) {
+            // this object is itself a named bean
+            Map<String, Object> bean = new LinkedHashMap<String, Object>();
+            bean.put("name", getBeanToNameMap().get(obj));
+            bean.put("url", new Reference(baseRef, "../beans/" + getBeanToNameMap().get(obj)).getTargetRef());
+
+            bean.put("class", obj.getClass().getName());
+            namedBeans.add(bean);
+
+            // nest children
+            namedBeans = new LinkedList<Object>();
+            bean.put("children", namedBeans);
+        }
+        
+        if (!alreadyWritten.contains(obj)) {
+            alreadyWritten.add(obj);
+
+            BeanWrapperImpl bwrap = new BeanWrapperImpl(obj);
+            for (PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
+                if (pd.getReadMethod() != null) {
+                    String propName = pd.getName();
+                    Object propValue = bwrap.getPropertyValue(propName);
+                    presentablifyNestedNames(propValue, prefix, alreadyWritten, namedBeans);
+                }
+            }
+            if (obj.getClass().isArray()) {
+                List<?> list = Arrays.asList(obj);
+                for (int i = 0; i < list.size(); i++) {
+                    presentablifyNestedNames(list.get(i), prefix,
+                            alreadyWritten, namedBeans);
+                }
+            }
+            if (obj instanceof Iterable<?>) {
+                for (Object next : (Iterable<?>) obj) {
+                    presentablifyNestedNames(next, prefix, alreadyWritten, namedBeans);
+                }
+            }
+        }
     }
     
     /**
@@ -99,7 +152,7 @@ public abstract class JobRelatedResource extends Resource {
                 } 
             }
             if(obj.getClass().isArray()) {
-                List list = Arrays.asList(obj);
+                List<?> list = Arrays.asList(obj);
                 for(int i = 0; i < list.size(); i++) {
                     writeNestedNames(pw, list.get(i), prefix, alreadyWritten);
                 }
@@ -137,6 +190,127 @@ public abstract class JobRelatedResource extends Resource {
         writeObject(pw, field, object, new HashSet<Object>(), beanPath);
     }
 
+    protected Map<String, Object> presentablifyObject(String field, Object object) {
+        return presentablifyObject(field, object, new HashSet<Object>(), null);
+    }
+
+    protected Map<String, Object> presentablifyObject(String field, Object object, String beanPath) {
+        return presentablifyObject(field, object, new HashSet<Object>(), beanPath);
+    }
+
+    protected Map<String, Object> presentablifyObject(String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
+        Map<String,Object> info = new LinkedHashMap<String, Object>();
+        Reference baseRef = getRequest().getResourceRef().getBaseRef();
+
+        String beanPath = beanPathPrefix;
+
+        if(StringUtils.isNotBlank(field)) {
+            info.put("field", field);
+
+            if(StringUtils.isNotBlank(beanPathPrefix)) {
+                if(beanPathPrefix.endsWith(".")) {
+                    beanPath += field;
+                } else if (beanPathPrefix.endsWith("[")) {
+                    beanPath += field + "]";
+                }
+                info.put("url", new Reference(baseRef, "../beans/" + beanPath).getTargetRef());
+            }
+        }
+        String key = getBeanToNameMap().get(object);
+
+        if (object == null) {
+            info.put("propValue", null);
+            return info;
+        }
+        if (object instanceof String || BeanUtils.isSimpleValueType(object.getClass()) || object instanceof File) {
+            info.put("class", object.getClass().getName());
+            info.put("propValue", object);
+            return info;
+        }
+        if (alreadyWritten.contains(object)) {
+            info.put("propValuePreviouslyDescribed", null);
+            return info;
+        }
+
+        alreadyWritten.add(object); // guard against repeats and cycles
+
+        if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(field)) {
+            info.put("key", key);
+            info.put("url", new Reference(baseRef, "../beans/" + key).getTargetRef());
+            return info;
+        }
+        
+        info.put("class", object.getClass().getName());
+
+        Collection<Object> properties = new LinkedList<Object>();
+        BeanWrapperImpl bwrap = new BeanWrapperImpl(object);
+        for (PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
+            if (object instanceof DescriptorUpdater) {
+                ((DescriptorUpdater) object).updateDescriptor(pd);
+            } else {
+                defaultUpdateDescriptor(pd);
+            }
+            if (pd.getReadMethod() != null && !pd.isHidden()) {
+                String propName = pd.getName();
+                if (beanPath != null) {
+                    beanPathPrefix = beanPath + ".";
+                }
+                Object propValue = presentablifyObject(propName, 
+                        bwrap.getPropertyValue(propName), 
+                        alreadyWritten, beanPathPrefix);
+                properties.add(propValue);
+            }
+        }
+        if (properties.size() > 0) {
+            info.put("properties", properties);
+        }
+        
+        Collection<Object> propValues = new LinkedList<Object>();
+        if(object.getClass().isArray()) {
+            Object[] array = (Object[])object;
+            for(int i = 0; i < array.length; i++) {
+                if(beanPath!=null) {
+                    beanPathPrefix = beanPath+"[";
+                }
+                // TODO: protect against overlong content? 
+                propValues.add(presentablifyObject(i + "", array[i],
+                        alreadyWritten, beanPathPrefix));
+            }
+        }
+        if (object instanceof List<?>) {
+            List<?> list = (List<?>) object;
+            for (int i = 0; i < list.size(); i++) {
+                if (beanPath != null) {
+                    beanPathPrefix = beanPath + "[";
+                }
+                // TODO: protect against overlong content?
+                propValues.add(presentablifyObject(i + "", list.get(i),
+                        alreadyWritten, beanPathPrefix));
+            }
+        } else if (object instanceof Iterable<?>) {
+            for (Object next : (Iterable<?>) object) {
+                propValues.add(presentablifyObject("#", next, alreadyWritten,
+                        beanPathPrefix));
+            }
+        }
+        if (object instanceof Map<?,?>) {
+            for (Object next : ((Map<?,?>) object).entrySet()) {
+                // TODO: protect against giant maps?
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>) next;
+                if (beanPath != null) {
+                    beanPathPrefix = beanPath + "[";
+                }
+                propValues.add(presentablifyObject(entry.getKey().toString(),
+                        entry.getValue(), alreadyWritten, beanPathPrefix));
+            }
+        }
+        if (propValues.size() > 0) {
+            info.put("propValue", propValues);
+        }
+
+        return info;
+    }
+
     /**
      * Get a map giving object beanNames.
      * 
@@ -146,7 +320,7 @@ public abstract class JobRelatedResource extends Resource {
         if(beanToNameMap == null) {
             beanToNameMap = new IdentityHashMap<Object, String>();
             for(Object entryObj : cj.getJobContext().getBeansOfType(Object.class).entrySet()) {
-                Map.Entry entry = (Map.Entry)entryObj;
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>)entryObj;
                 beanToNameMap.put(entry.getValue(),(String)entry.getKey());
             }
         }
@@ -242,7 +416,7 @@ public abstract class JobRelatedResource extends Resource {
                 }
             }
             if(object instanceof List) {
-                List list = (List)object;
+                List<?> list = (List<?>)object;
                 for(int i = 0; i < list.size(); i++) {
                     if(beanPath!=null) {
                         beanPathPrefix = beanPath+"[";
@@ -258,7 +432,7 @@ public abstract class JobRelatedResource extends Resource {
             if(object instanceof Map) {
                 for (Object next : ((Map)object).entrySet()) {
                     // TODO: protect against giant maps?
-                    Map.Entry entry = (Map.Entry)next;
+                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>)next;
                     if(beanPath!=null) {
                         beanPathPrefix = beanPath+"[";
                     }

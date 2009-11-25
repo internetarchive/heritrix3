@@ -551,7 +551,7 @@ public class ArchiveUtils {
     /**
      * Convert milliseconds value to a human-readable duration
      * @param time
-     * @param toMs whether to print to the ms
+     * @param toMs ignored
      * @return Human readable string version of passed <code>time</code>
      */
     public static String formatMillisecondsToConventional(long time, boolean toMs) {

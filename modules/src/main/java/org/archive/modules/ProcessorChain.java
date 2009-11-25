@@ -2,7 +2,9 @@ package org.archive.modules;
 
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
@@ -94,6 +96,13 @@ implements Iterable<Processor>,
 
     public String singleLineLegend() {
         return "";
+    }
+
+    public Map<String, Object> singleLineReportData() {
+        Map<String,Object> data = new LinkedHashMap<String, Object>();
+        data.put("processorCount", size());
+        data.put("processors", getProcessors());
+        return data;
     }
 
     public void singleLineReportTo(PrintWriter pw) {

@@ -23,7 +23,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -37,12 +41,14 @@ import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
+import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
+import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
@@ -72,6 +78,7 @@ public class ScriptResource extends JobRelatedResource {
         super(ctx, req, res);
         setModifiable(true);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
     }
     
     @Override
@@ -113,15 +120,108 @@ public class ScriptResource extends JobRelatedResource {
     }
     
     public Representation represent(Variant variant) throws ResourceException {
-        Representation representation = new WriterRepresentation(
-                MediaType.TEXT_HTML) {
-            public void write(Writer writer) throws IOException {
-                ScriptResource.this.writeHtml(writer);
-            }
-        };
+        Representation representation;
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+                public void write(Writer writer) throws IOException {
+                    try {
+                        new XmlMarshaller(writer).marshalDocument("script", presentablify());
+                    } catch (SAXException e) {
+                        throw new IOException(e);
+                    }
+                }
+            };
+        } else {
+            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
+                public void write(Writer writer) throws IOException {
+                    ScriptResource.this.writeHtml(writer);
+                }
+            };
+        }
         // TODO: remove if not necessary in future?
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
+    }
+
+    protected List<String> getAvailableActions() {
+        List<String> actions = new LinkedList<String>();
+        actions.add("rescan");
+        actions.add("add");
+        actions.add("create");
+        return actions;
+    }
+
+    protected Collection<Map<String,String>> getAvailableScriptEngines() {
+        List<Map<String,String>> engines = new LinkedList<Map<String,String>>();
+        for (ScriptEngineFactory f: FACTORIES) {
+            Map<String,String> engine = new LinkedHashMap<String, String>();
+            engine.put("engine", f.getNames().get(0));
+            engine.put("language", f.getLanguageName());
+            engines.add(engine);
+        }
+        return engines;
+    }
+
+    protected Collection<Map<String,String>> getAvailableGlobalVariables() {
+        List<Map<String,String>> vars = new LinkedList<Map<String,String>>();
+        Map<String,String> var;
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "rawOut");
+        var.put("description", "a PrintWriter for arbitrary text output to this page");
+        vars.add(var);
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "htmlOut");
+        var.put("description", "a PrintWriter for HTML output to this page");
+        vars.add(var);
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "job");
+        var.put("description", "the current CrawlJob instance");
+        vars.add(var);
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "appCtx");
+        var.put("description", "current job ApplicationContext, if any");
+        vars.add(var);
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "scriptResource");
+        var.put("description", "the ScriptResource implementing this page, which offers utility methods");
+        vars.add(var);
+        
+        return vars;
+    }
+    
+    protected LinkedHashMap<String,Object> presentablify() {
+        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
+
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if(!baseRef.endsWith("/")) {
+            baseRef += "/";
+        }
+        Reference baseRefRef = new Reference(baseRef);
+
+        info.put("crawlJobShortName", cj.getShortName());
+        info.put("crawlJobUrl", new Reference(baseRefRef, "..").getTargetRef());
+        info.put("availableScriptEngines", getAvailableScriptEngines());
+        info.put("availableGlobalVariables", getAvailableGlobalVariables());
+
+        if(linesExecuted>0) {
+            info.put("linesExecuted", linesExecuted);
+        }
+        if(ex!=null) {
+            info.put("exception", ex);
+        }
+        if(StringUtils.isNotBlank(rawOutput)) {
+            info.put("rawOutput", rawOutput);
+        }
+        if(StringUtils.isNotBlank(htmlOutput)) {
+            info.put("htmlOutput", htmlOutput);
+        }
+
+        return info;
     }
 
     protected void writeHtml(Writer writer) {
