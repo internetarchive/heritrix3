@@ -72,18 +72,6 @@
              <version>${project.version}</version>
              <scope>compile</scope>
         </dependency>
-        <dependency>
-		      <groupId>tomcat</groupId>
-		      <artifactId>jasper-compiler</artifactId>
-		      <version>5.5.15</version>
-		      <scope>compile</scope>
-	    </dependency>
-	    <dependency>
-	      <groupId>tomcat</groupId>
-	      <artifactId>jasper-runtime</artifactId>
-	      <version>5.5.15</version>
-	      <scope>compile</scope>
-	    </dependency>
   </dependencies>
 
   <build>
