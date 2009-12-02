@@ -40,7 +40,6 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
@@ -75,16 +74,13 @@ public class BeanBrowseResource extends JobRelatedResource {
         } else {
             beanPath = "";
         }
-        if (appCtx == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
-
-            // XXX xml?
-            getResponse().setEntity("No beans; crawl not yet built.", MediaType.TEXT_HTML);
-            //throw new ResourceException(404);
-        }
     }
-    
+
     public void acceptRepresentation(Representation entity) throws ResourceException {
+        if (appCtx == null) {
+            throw new ResourceException(404);
+        }
+
         // copy op?
         Form form = getRequest().getEntityAsForm();
         beanPath = form.getFirstValue("beanPath");
@@ -119,6 +115,10 @@ public class BeanBrowseResource extends JobRelatedResource {
     }
 
     public Representation represent(Variant variant) throws ResourceException {
+        if (appCtx == null) {
+            throw new ResourceException(404);
+        }
+
         Representation representation;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {

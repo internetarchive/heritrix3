@@ -83,12 +83,13 @@ public class JobResource extends Resource {
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         cj = getEngine().getJob(TextUtils.urlUnescape((String)req.getAttributes().get("job")));
-        if(cj==null) {
-            throw new ResourceException(404);
-        }
     }
 
     public Representation represent(Variant variant) throws ResourceException {
+        if (cj == null) {
+            throw new ResourceException(404);
+        }
+
         Representation representation = null;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
@@ -545,6 +546,10 @@ public class JobResource extends Resource {
 
     @Override
     public void acceptRepresentation(Representation entity) throws ResourceException {
+        if (cj == null) {
+            throw new ResourceException(404);
+        }
+
         // copy op?
         Form form = null;
         try {
