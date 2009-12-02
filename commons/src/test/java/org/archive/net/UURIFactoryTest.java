@@ -905,6 +905,11 @@ public class UURIFactoryTest extends TestCase {
         String puny2 = "http://www.xn--plse-gra.dk/";
         assertEquals("encoding of " + idn2, puny2, UURIFactory
                 .getInstance(idn2).toString());
+        // http://例子.測試
+        String idn3 = "http://\u4F8B\u5B50.\u6E2C\u8A66";
+        String puny3 = "http://xn--fsqu00a.xn--g6w251d/";
+        assertEquals("encoding of " + idn3, puny3, UURIFactory
+                .getInstance(idn3).toString());
     }
     
     public void testNewLineInURL() throws URIException {
