@@ -358,7 +358,6 @@ public class StatisticsTracker
     public void stop() {
         isRunning = false;
         executor.shutdownNow();
-        dumpReports();
     }
     
     @SuppressWarnings("unchecked")
@@ -567,10 +566,10 @@ public class StatisticsTracker
     }
 
     public void crawlEnded(String sExitMessage) {
-        // Note the time when the crawl stops.
+        logNote("CRAWL ENDED - " + sExitMessage);
         crawlEndTime = System.currentTimeMillis();
         progressStatisticsEvent();
-        logNote("CRAWL ENDED - " + sExitMessage);
+        dumpReports();
     }
 
     /**
@@ -943,13 +942,13 @@ public class StatisticsTracker
     public File writeReportFile(String reportName) {
         for(Class<Report> reportClass : ALL_REPORTS) {
             if(reportClass.getSimpleName().equals(reportName)) {
-             return writeReportFile(reportClass);
+             return writeReportFile(reportClass, false);
             }
         }
         return null; 
     }
     
-    protected File writeReportFile(Class<Report> reportClass) {
+    protected File writeReportFile(Class<Report> reportClass, boolean force) {
         Report r;
         try {
             r = reportClass.newInstance();
@@ -959,8 +958,10 @@ public class StatisticsTracker
         r.setStats(this);
         File f = new File(getReportsDir().getFile(), r.getFilename());
         
-        if(f.exists() && !controller.isRunning() && controller.hasStarted()) {
-            // controller already started and stopped and file exists
+        if(f.exists() && !controller.isRunning() && controller.hasStarted() && !force) {
+            // controller already started and stopped 
+            // and file exists
+            // and force not requested
             // so, don't overwrite
             logger.warning("reusing report: " + f.getAbsolutePath());
             return f;
@@ -996,7 +997,7 @@ public class StatisticsTracker
         
         for(Class<Report> reportClass : END_REPORTS) {
             try {
-                writeReportFile(reportClass);
+                writeReportFile(reportClass, true);
             } catch (RuntimeException re) {
                 logger.log(Level.SEVERE, re.getMessage(), re);
             }

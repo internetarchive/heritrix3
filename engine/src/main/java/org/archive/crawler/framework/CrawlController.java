@@ -371,13 +371,14 @@ implements Serializable,
 
         LOGGER.fine("Finished crawl.");
 
+        // notify before lifecycle beans stopped (closing files/DBs/etc)
+        sendCrawlStateChangeEvent(State.FINISHED, this.sExit);
+
         try {
             appCtx.stop(); 
         } catch (RuntimeException re) {
             LOGGER.log(Level.SEVERE,re.getMessage(),re);
         }
-        // Ok, now we are ready to exit.
-        sendCrawlStateChangeEvent(State.FINISHED, this.sExit);
     }
     
     protected synchronized void completePause() {

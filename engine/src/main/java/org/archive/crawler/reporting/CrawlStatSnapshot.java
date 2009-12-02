@@ -68,7 +68,7 @@ public class CrawlStatSnapshot {
     public void collect(CrawlController controller, StatisticsTracker stats) {
         // TODO: reconsider names of these methods, inline?    
         downloadedUriCount = controller.getFrontier().succeededFetchCount();
-        bytesProcessed = stats.crawledBytes.getTotal();
+        bytesProcessed = stats.crawledBytes.getTotalBytes();
         timestamp = System.currentTimeMillis();
         
         elapsedMilliseconds = stats.getCrawlElapsedTime();

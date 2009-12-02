@@ -56,7 +56,7 @@ implements CoreAttributeConstants {
     
     public String summary() {
         StringBuilder sb = new StringBuilder();
-        sb.append(ArchiveUtils.formatBytesForDisplay(getTotal()));
+        sb.append(ArchiveUtils.formatBytesForDisplay(getTotalBytes()));
         sb.append(" crawled (");
         sb.append(ArchiveUtils.formatBytesForDisplay(get(NOVEL)));
         sb.append(" novel");
@@ -74,5 +74,9 @@ implements CoreAttributeConstants {
         }
         sb.append(")");
         return sb.toString();
+    }
+    
+    public long getTotalBytes() {
+        return get(NOVEL) + get(DUPLICATE) + get(NOTMODIFIED);
     }
 }
