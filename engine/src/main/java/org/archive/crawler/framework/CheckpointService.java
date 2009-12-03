@@ -20,14 +20,15 @@ package org.archive.crawler.framework;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
@@ -200,14 +201,14 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
                 c.startCheckpoint(checkpointInProgress);
             }
             long duration = System.currentTimeMillis() - startMs; 
-            System.err.println("all startCheckpoint() completed in "+duration+"ms");
+//            System.err.println("all startCheckpoint() completed in "+duration+"ms");
             
             // flush/write
             for(Checkpointable c : toCheckpoint.values()) {
                 long doMs = System.currentTimeMillis();
                 c.doCheckpoint(checkpointInProgress);
                 long doDuration = System.currentTimeMillis() - doMs; 
-                System.err.println("doCheckpoint() "+c+" in "+doDuration+"ms");
+//                System.err.println("doCheckpoint() "+c+" in "+doDuration+"ms");
             }
             checkpointInProgress.setSuccess(true); 
             
@@ -259,9 +260,10 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
                 && getAvailableCheckpointDirectories().length > 0);
     }
 
+    @SuppressWarnings("unchecked")
     public File[] getAvailableCheckpointDirectories() {
         File[] dirs = getCheckpointsDir().getFile().listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
-        ArrayUtils.reverse(dirs);
+        Arrays.sort(dirs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
         return dirs;
     }
     
