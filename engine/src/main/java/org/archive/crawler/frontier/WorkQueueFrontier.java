@@ -30,9 +30,8 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -43,6 +42,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections.Bag;
 import org.apache.commons.collections.BagUtils;
 import org.apache.commons.collections.bag.HashBag;
+import org.apache.commons.collections.iterators.ObjectArrayIterator;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
@@ -61,8 +62,6 @@ import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.ObjectIdentityMemCache;
-import org.archive.util.Transform;
-import org.archive.util.Transformer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -212,7 +211,11 @@ implements Closeable,
      * All per-class queues held in snoozed state, sorted by wake time.
      */
     transient protected DelayQueue<DelayedWorkQueue> snoozedClassQueues;
+    protected StoredSortedMap<Long,DelayedWorkQueue> snoozedOverflow; 
+    protected AtomicInteger snoozedOverflowCount = new AtomicInteger(0); 
+    protected static int MAX_SNOOZED_IN_MEMORY = 5000; 
     
+    /** URIs scheduled for reenqueuing at future date*/
     protected StoredSortedMap<Long, CrawlURI> futureUris; 
     
     transient protected WorkQueue longestActiveQueue = null;
@@ -884,9 +887,31 @@ implements Closeable,
     protected void wakeQueues() {
         DelayedWorkQueue waked; 
         while((waked = snoozedClassQueues.poll())!=null) {
-            WorkQueue queue = waked.getWorkQueue();
+            WorkQueue queue = waked.getWorkQueue(this);
             queue.setWakeTime(0);
             reenqueueQueue(queue);
+        }
+        // also consider overflow (usually empty)
+        long now = System.currentTimeMillis();
+        Iterator<DelayedWorkQueue> iter = 
+            snoozedOverflow.values().iterator();
+        while(iter.hasNext()) {
+            DelayedWorkQueue dq = iter.next();
+            if(dq.getWakeTime()<=now) {
+                iter.remove();
+                snoozedOverflowCount.decrementAndGet();
+                WorkQueue queue = dq.getWorkQueue(this);
+                queue.setWakeTime(0);
+                reenqueueQueue(queue);
+                continue; // while
+            }
+            if(snoozedClassQueues.size()<MAX_SNOOZED_IN_MEMORY) {
+                iter.remove();
+                snoozedOverflowCount.decrementAndGet();
+                snoozedClassQueues.add(dq); 
+            } else {
+                break; // while 
+            }
         }
     }
     
@@ -1029,12 +1054,13 @@ implements Closeable,
     private void snoozeQueue(WorkQueue wq, long now, long delay_ms) {
         long nextTime = now + delay_ms;
         wq.setWakeTime(nextTime);
-//        long snoozeToInactiveDelayMs = get(SNOOZE_DEACTIVATE_MS);
-//        if (delay_ms > snoozeToInactiveDelayMs && !inactiveQueues.isEmpty()) {
-//            deactivateQueue(wq);
-//        } else {
-            snoozedClassQueues.add(new DelayedWorkQueue(wq));
-//        }
+        DelayedWorkQueue dq = new DelayedWorkQueue(wq);
+        if(snoozedClassQueues.size()<MAX_SNOOZED_IN_MEMORY) {
+            snoozedClassQueues.add(dq);
+        } else {
+            snoozedOverflow.put(nextTime, dq);
+            snoozedOverflowCount.incrementAndGet();
+        }
     }
 
     /**
@@ -1096,7 +1122,7 @@ implements Closeable,
         int allCount = allQueues.size();
         int inProcessCount = inProcessQueues.uniqueSet().size();
         int readyCount = readyClassQueues.size();
-        int snoozedCount = snoozedClassQueues.size();
+        int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int inactiveCount = getTotalEligibleInactiveQueues();
         int ineligibleCount = getTotalIneligibleInactiveQueues();
@@ -1132,7 +1158,7 @@ implements Closeable,
         int allCount = allQueues.size();
         int inProcessCount = inProcessQueues.uniqueSet().size();
         int readyCount = readyClassQueues.size();
-        int snoozedCount = snoozedClassQueues.size();
+        int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int inactiveCount = getTotalEligibleInactiveQueues();
         int ineligibleCount = getTotalIneligibleInactiveQueues();
@@ -1251,6 +1277,7 @@ implements Closeable,
 
         writer.print("\n -----===== SNOOZED QUEUES =====-----\n");
         queueSingleLinesTo(writer, this.snoozedClassQueues.iterator());
+        queueSingleLinesTo(writer, this.snoozedOverflow.values().iterator());
         
         writer.print("\n -----===== INACTIVE QUEUES =====-----\n");
         for(Queue<String> inactiveQueues : getInactiveQueuesByPrecedence().values()) {
@@ -1288,7 +1315,7 @@ implements Closeable,
             if(obj instanceof WorkQueue) {
                 q = (WorkQueue)obj;
             } else if (obj instanceof DelayedWorkQueue) {
-                q = ((DelayedWorkQueue)obj).getWorkQueue();
+                q = ((DelayedWorkQueue)obj).getWorkQueue(this);
             } else {
                 try {
                     q = this.allQueues.get((String)obj);
@@ -1316,7 +1343,7 @@ implements Closeable,
         int allCount = allQueues.size();
         int inProcessCount = inProcessQueues.uniqueSet().size();
         int readyCount = readyClassQueues.size();
-        int snoozedCount = snoozedClassQueues.size();
+        int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int inactiveCount = getTotalInactiveQueues();
         int retiredCount = getRetiredQueues().size();
@@ -1413,16 +1440,10 @@ implements Closeable,
             this.readyClassQueues.size(), REPORT_MAX_QUEUES);
 
         w.print("\n -----===== SNOOZED QUEUES =====-----\n");
-        Transformer<DelayedWorkQueue,WorkQueue> ter = 
-            new Transformer<DelayedWorkQueue, WorkQueue>() {
-                public WorkQueue transform(DelayedWorkQueue dwq) {
-                    return dwq.getWorkQueue();
-                }
-            };
-        Transform<DelayedWorkQueue, WorkQueue> t = 
-            new Transform<DelayedWorkQueue,WorkQueue>(snoozedClassQueues, ter);
-        copy = extractSome(t, REPORT_MAX_QUEUES);
-        appendQueueReports(w, "SNOOZED", copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
+        Object[] objs = snoozedClassQueues.toArray();
+        DelayedWorkQueue[] qs = Arrays.copyOf(objs,objs.length,DelayedWorkQueue[].class);
+        Arrays.sort(qs);
+        appendQueueReports(w, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), REPORT_MAX_QUEUES);
         
         w.print("\n -----===== INACTIVE QUEUES =====-----\n");
         SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
@@ -1478,22 +1499,28 @@ implements Closeable,
             int total, int max) {
         Object obj;
         WorkQueue q;
-        for(int count = 0; iterator.hasNext() && (count < max); count++) {
+        int count;
+        for(count = 0; iterator.hasNext() && (count < max); count++) {
             obj = iterator.next();
             if (obj ==  null) {
                 continue;
             }
-            q = (obj instanceof WorkQueue)
-            		? (WorkQueue)obj
-            		: this.allQueues.get((String)obj);
+            if(obj instanceof WorkQueue) {
+                q = (WorkQueue)obj;
+            } else if (obj instanceof DelayedWorkQueue) {
+                q = (WorkQueue)((DelayedWorkQueue)obj).getWorkQueue(this);
+            } else {
+                q = this.allQueues.get((String)obj);
+            }
             if(q == null) {
                 w.print("WARNING: No report for queue "+obj);
             }
             w.println(label+"#"+count+":");
             q.reportTo(w);
         }
-        if(total > max) {
-            w.print("...and " + (total - max) + " more "+label+".\n");
+        count++;
+        if(count < total) {
+            w.print("...and " + (total - count) + " more "+label+".\n");
         }
     }
 
@@ -1550,19 +1577,24 @@ implements Closeable,
         }
         int inProcessCount = inProcessQueues.uniqueSet().size();
         int readyCount = readyClassQueues.size();
-        int snoozedCount = snoozedClassQueues.size();
+        int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int inactiveCount = getTotalInactiveQueues();
         int totalQueueCount = (activeCount+inactiveCount);
         return (totalQueueCount == 0) ? 0 : queuedUriCount.get() / totalQueueCount;
     }
+    
+    protected int getSnoozedCount() {
+        return snoozedClassQueues.size() + snoozedOverflowCount.get();
+    }
+    
     public float congestionRatio() {
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
             return 0; 
         }
         int inProcessCount = inProcessQueues.uniqueSet().size();
         int readyCount = readyClassQueues.size();
-        int snoozedCount = snoozedClassQueues.size();
+        int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int eligibleInactiveCount = getTotalEligibleInactiveQueues();
         return (float)(activeCount + eligibleInactiveCount) / (inProcessCount + snoozedCount);
@@ -1590,106 +1622,6 @@ implements Closeable,
     @Override
     protected int getInProcessCount() {
         return inProcessQueues.size();
-    }
-
-    class DelayedWorkQueue implements Delayed, Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public String classKey;
-        public long wakeTime;
-        
-        /**
-         * Something can become a WorkQueue instance.  This can be three things:
-         * 
-         * <ol>
-         * <li>null, if this DelayedWorkQueue instance was recently 
-         *   deserialized;
-         * <li>A SoftReference&lt;WorkQueue&gt;, if the WorkQueue's waitTime
-         *   exceeded SNOOZE_LONG_MS 
-         * <li>A hard WorkQueue reference, if the WorkQueue's waitTime did not
-         *   exceed SNOOZE_LONG_MS.  Idea here is that we thought we 
-         *   needed the WorkQueue soon and didn't want to risk losing the 
-         *   instance.
-         * </ol>
-         * 
-         * The {@link #getWorkQueue()} method figures out what to return in
-         * all three of the above cases.
-         */
-        private transient Object workQueue;
-        
-        public DelayedWorkQueue(WorkQueue queue) {
-            this.classKey = queue.getClassKey();
-            this.wakeTime = queue.getWakeTime();
-            
-            this.workQueue = queue;
-        }
-        
-        private void setWorkQueue(WorkQueue queue) {
-            long wakeTime = queue.getWakeTime();
-            long delay = wakeTime - System.currentTimeMillis();
-            if (delay > getSnoozeLongMs()) {
-                this.workQueue = new SoftReference<WorkQueue>(queue);
-            } else {
-                this.workQueue = queue;
-            }
-        }
-        
-        
-        public WorkQueue getWorkQueue() {
-            if (workQueue == null) {
-                // This is a recently deserialized DelayedWorkQueue instance
-                WorkQueue result = getQueueFor(classKey);
-                setWorkQueue(result);
-                return result;
-            }
-            if (workQueue instanceof SoftReference) {
-                @SuppressWarnings("unchecked")
-                SoftReference<WorkQueue> ref = (SoftReference)workQueue;
-                WorkQueue result = ref.get();
-                if (result == null) {
-                    result = getQueueFor(classKey);
-                }
-                setWorkQueue(result);
-                return result;
-            }
-            return (WorkQueue)workQueue;
-        }
-
-        public long getDelay(TimeUnit unit) {
-            return unit.convert(
-                    wakeTime - System.currentTimeMillis(),
-                    TimeUnit.MILLISECONDS);
-        }
-        
-        public String getClassKey() {
-            return classKey;
-        }
-        
-        public long getWakeTime() {
-            return wakeTime;
-        }
-        
-        public void setWakeTime(long time) {
-            this.wakeTime = time;
-        }
-        
-        public int compareTo(Delayed obj) {
-            if (this == obj) {
-                return 0; // for exact identity only
-            }
-            DelayedWorkQueue other = (DelayedWorkQueue) obj;
-            if (wakeTime > other.getWakeTime()) {
-                return 1;
-            }
-            if (wakeTime < other.getWakeTime()) {
-                return -1;
-            }
-            // at this point, the ordering is arbitrary, but still
-            // must be consistent/stable over time
-            return this.classKey.compareTo(other.getClassKey());        
-        }
-        
     }
 
 }

@@ -290,11 +290,12 @@ implements Checkpointable, BeanNameAware {
         
         retiredQueues = bdb.getStoredQueue("retiredQueues", String.class, false);
 
-        // small risk of OutOfMemoryError: in large crawls with many 
-        // unresponsive queues, an unbounded number of snoozed queues 
-        // may exist
+        // primary snoozed queues
         snoozedClassQueues = new DelayQueue<DelayedWorkQueue>();
-        
+        // just in case: overflow for extreme situations
+        snoozedOverflow = bdb.getStoredMap(
+                "snoozedOverflow", Long.class, DelayedWorkQueue.class, true, false);
+            
         this.futureUris = bdb.getStoredMap(
                 "futureUris", Long.class, CrawlURI.class, true, recoveryCheckpoint!=null);
         
