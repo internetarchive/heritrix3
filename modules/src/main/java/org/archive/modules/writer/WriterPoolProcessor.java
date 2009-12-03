@@ -189,7 +189,7 @@ implements Lifecycle, Checkpointable {
         this.serverCache = serverCache;
     }
 
-    protected ConfigPath directory = new ConfigPath("writer subdirectory", ".");
+    protected ConfigPath directory = new ConfigPath("writer base path", ".");
     public ConfigPath getDirectory() {
         return directory;
     }
