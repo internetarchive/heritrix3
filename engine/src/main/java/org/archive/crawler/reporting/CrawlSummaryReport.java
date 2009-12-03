@@ -34,60 +34,77 @@ public class CrawlSummaryReport extends Report {
     @Override
     public void write(PrintWriter writer) {
         CrawlStatSnapshot snapshot = stats.getLastSnapshot(); 
-        writer.print("Crawl Name: " + stats.getCrawlController().getMetadata().getJobName());
-        writer.print("\nCrawl Status: " + stats.getCrawlController().getCrawlExitStatus().desc);
-        writer.print("\nDuration Time: " +
+        writer.print("crawl name: " + stats.getCrawlController().getMetadata().getJobName());
+        writer.print("\ncrawl status: " + stats.getCrawlController().getCrawlExitStatus().desc);
+        writer.print("\nduration: " +
                 ArchiveUtils.formatMillisecondsToConventional(stats.getCrawlElapsedTime()));
-        stats.tallySeeds();
-        writer.print("\nTotal Seeds Crawled: " + stats.seedsCrawled);
-        writer.print("\nTotal Seeds not Crawled: " + (stats.seedsTotal - stats.seedsCrawled));
-        // hostsDistribution contains all hosts crawled plus an entry for dns.
-        writer.print("\nTotal Hosts Crawled: " + (stats.hostsDistribution.size()-1));
-        writer.print("\nTotal URIs Processed: " + snapshot.finishedUriCount);
-        writer.print("\nURIs Crawled successfully: " + snapshot.downloadedUriCount);
-        writer.print("\nURIs Failed to Crawl: " + snapshot.downloadFailures);
-        writer.print("\nURIs Disregarded: " + snapshot.downloadDisregards);
+        writer.println();
         
-        writer.print("\nNovel URIs: " + stats.crawledBytes.get(
+        // seeds summary
+        stats.tallySeeds();
+        writer.print("\nseeds crawled: " + stats.seedsCrawled);
+        writer.print("\nseeds uncrawled: " + (stats.seedsTotal - stats.seedsCrawled));
+        writer.println();
+
+        // hostsDistribution contains all hosts crawled plus an entry for dns.
+        writer.print("\nhosts visited: " + (stats.hostsDistribution.size()-1));
+        writer.println();
+
+        // URI totals
+        writer.print("\nURIs processed: " + snapshot.finishedUriCount);
+        writer.print("\nURI successes: " + snapshot.downloadedUriCount);
+        writer.print("\nURI failures: " + snapshot.downloadFailures);
+        writer.print("\nURI disregards: " + snapshot.downloadDisregards);
+        writer.println();
+        
+        // novel/duplicate/not-modified URI counts
+        writer.print("\nnovel URIs: " + stats.crawledBytes.get(
                 CrawledBytesHistotable.NOVELCOUNT));
         if(stats.crawledBytes.containsKey(CrawledBytesHistotable.
                 DUPLICATECOUNT)) {
-            writer.print("\nDuplicate-by-hash URIs: " + 
+            writer.print("\nduplicate-by-hash URIs: " + 
                     stats.crawledBytes.get(CrawledBytesHistotable.
                             DUPLICATECOUNT));
         }
         if(stats.crawledBytes.containsKey(CrawledBytesHistotable.
                 NOTMODIFIEDCOUNT)) {
-            writer.print("\nNot-modified URIs: " +
+            writer.print("\nnot-modified URIs: " +
                     stats.crawledBytes.get(CrawledBytesHistotable.
                             NOTMODIFIEDCOUNT)); 
         }
+        writer.println();
         
-        writer.print("\nProcessed docs/sec: " +
-                ArchiveUtils.doubleToString(snapshot.docsPerSecond,2));
-        writer.print("\nBandwidth in Kbytes/sec: " + snapshot.totalKiBPerSec);
-        writer.print("\nTotal Raw Data Size in Bytes: " + snapshot.bytesProcessed +
+        // total bytes 'crawled' (which includes the size of 
+        // refetched-but-unwritten-duplicates and reconsidered-but-not-modified
+        writer.print("\ntotal crawled bytes: " + snapshot.bytesProcessed +
                 " (" + ArchiveUtils.formatBytesForDisplay(snapshot.bytesProcessed) +
                 ") \n");
-        writer.print("Novel Bytes: " 
+        // novel/duplicate/not-modified byte counts
+        writer.print("\nnovel crawled bytes: " 
                 + stats.crawledBytes.get(CrawledBytesHistotable.NOVEL)
                 + " (" + ArchiveUtils.formatBytesForDisplay(
                         stats.crawledBytes.get(CrawledBytesHistotable.NOVEL))
-                +  ") \n");
+                +  ")");
         if(stats.crawledBytes.containsKey(CrawledBytesHistotable.DUPLICATE)) {
-            writer.print("Duplicate-by-hash Bytes: " 
+            writer.print("\nduplicate-by-hash crawled bytes: " 
                     + stats.crawledBytes.get(CrawledBytesHistotable.DUPLICATE)
                     + " (" + ArchiveUtils.formatBytesForDisplay(
                             stats.crawledBytes.get(CrawledBytesHistotable.DUPLICATE))
                     +  ") \n");
         }
         if(stats.crawledBytes.containsKey(CrawledBytesHistotable.NOTMODIFIED)) {
-            writer.print("Not-modified Bytes: " 
+            writer.print("\nnot-modified crawled bytes: " 
                     + stats.crawledBytes.get(CrawledBytesHistotable.NOTMODIFIED)
                     + " (" + ArchiveUtils.formatBytesForDisplay(
                             stats.crawledBytes.get(CrawledBytesHistotable.NOTMODIFIED))
                     +  ") \n");
-        }     
+        }
+        writer.println();
+        
+        // rates
+        writer.print("\nURIs/sec: " +
+                ArchiveUtils.doubleToString(snapshot.docsPerSecond,2));
+        writer.print("\nKB/sec: " + snapshot.totalKiBPerSec);
     }
 
     @Override
