@@ -261,26 +261,29 @@ public class EngineResource extends Resource {
             pw.println("</li>");
         }
         pw.println("</ul>");
-        pw.println(
-            "To create a new job, use the 'copy' functionality on " +
-            "an existing job's detail page. Or, create a new job " +
-            "directory manually the main jobs directory and use the " +
-            "'rescan' button above. Or, supply a full path to another " +
-            "valid job directory at the engine machine below.<br/><br/>");
+        
+        pw.println("<h2>Add Job Directory</h2>");
         
         // create new job with defaults
         pw.println("<form method=\'POST\'>\n"
-        		+ "Create new job with recommended defaults<br />\n"
-        		+ jobsDir.getAbsolutePath() + "/\n"
-        		+ "<input size='16' name='addpath'/>\n"
+        		+ "Create new job directory with recommended starting configuration<br/>\n"
+        		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + "/\n"
+        		+ "<input size='25' name='addpath'/>\n"
         		+ "<input type='submit' name='action' value='create'>\n"
         		+ "</form>\n");
 
         pw.println("<form method=\'POST\'>");
-        pw.println("Add job directory: <input size='50' name='addpath'/>");
+        pw.println("Specify a path to a pre-existing job directory<br/>");
+        pw.println("<b>Path:</b> " + "<input size='53' name='addpath'/>");
         pw.println("<input type='submit' name='action' value='add'>");
         pw.println("</form>");
 
+        pw.println(
+                "You may also compose or copy a valid job directory into " +
+                "the main jobs directory via outside means, then use the " +
+                "'rescan' button above to make it appear in this interface. Or, " +
+                "use the 'copy' functionality at the botton of any existing " +
+                "job's detail page.");
         pw.println("</body>");
         pw.flush();
     }

@@ -274,13 +274,11 @@ public class JobResource extends Resource {
             pw.println(" disabled ");
         }
         pw.println(" type='submit' name='action' value='unpause'/>");
-        if(cj.getCheckpointService()!=null) {
-            pw.println("<input ");
-            if(!cj.isRunning()) { // TODO: not yet implemented
-                pw.println(" disabled ");
-            }
-            pw.println(" type='submit' name='action' value='checkpoint'/>");
+        pw.println("<input ");
+        if(!cj.isRunning()) { 
+            pw.println(" disabled ");
         }
+        pw.println(" type='submit' name='action' value='checkpoint'/>");
         
         // TERMINATE, RESET
         pw.println("&nbsp;&nbsp;&nbsp;<input ");
