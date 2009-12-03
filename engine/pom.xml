@@ -96,12 +96,14 @@
               <version>6.1.14</version>
               <scope>compile</scope>
         </dependency>     
+        <!--  
         <dependency>
               <groupId>tomcat</groupId>
               <artifactId>servlet</artifactId>
               <version>4.1.34</version>
               <scope>compile</scope>
         </dependency>
+        -->
         <dependency>  
           <groupId>org.restlet</groupId>  
           <artifactId>org.restlet</artifactId>  

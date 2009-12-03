@@ -29,7 +29,6 @@
 	</classpathentry>
 	<classpathentry kind="var" path="M2_REPO/net/java/dev/jets3t/jets3t/0.5.0/jets3t-0.5.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-util/6.1.14/jetty-util-6.1.14.jar"/>
-	<classpathentry kind="var" path="M2_REPO/tomcat/servlet/4.1.34/servlet-4.1.34.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-net/commons-net/2.0/commons-net-2.0.jar" sourcepath="/M2_REPO/commons-net/commons-net/2.0/commons-net-2.0-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/poi/poi-scratchpad/2.5.1-final-20040804/poi-scratchpad-2.5.1-final-20040804.jar"/>
