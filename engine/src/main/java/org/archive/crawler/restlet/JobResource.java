@@ -476,7 +476,6 @@ public class JobResource extends Resource {
             "<input id='asProfile' type='checkbox' name='asProfile'/>" +
             "<label for='asProfile'>as profile</label></form>");
         pw.println("<hr/>");
-        pw.close();
     }
     
     public String getJobStatusDescription() {
