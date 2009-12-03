@@ -159,7 +159,8 @@ public class JobResource extends Resource {
             info.put("frontierReport", cj.frontierReportData());
             info.put("heapReport", getEngine().heapReportData());
             
-            if(cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable())) {
+            if ((cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable()))
+                    && cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().exists()) {
                 try {
                     List<String> logLines = new LinkedList<String>();
                     FileUtils.pagedLines(
@@ -392,7 +393,8 @@ public class JobResource extends Resource {
             pw.println("<br/><b>Memory</b><br/>&nbsp;&nbsp;");
             pw.println(getEngine().heapReport());
             
-            if(cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable())) {
+            if ((cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable()))
+                    && cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().exists()) {
                 // show crawl log for running or finished crawls
                 pw.println("<h3>Crawl Log");
                 printLinkedFile(
