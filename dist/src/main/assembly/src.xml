@@ -1,19 +1,27 @@
 <assembly>
-   <id>src</id>
-   <formats>
-      <format>tar.gz</format>
-      <format>zip</format>
-   </formats>
-   <includeBaseDirectory>true</includeBaseDirectory>
-
-   <fileSets>
+  <id>src</id>
+  <formats>
+    <format>tar.gz</format>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
     <fileSet>
       <directory>..</directory>
-      <outputDirectory>/project</outputDirectory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>.classpath</include>
+        <include>.project</include>
+        <include>.settings/**</include>
+        <include>pom.xml</include>
+        <include>commons/**</include>
+        <include>dist/**</include>
+        <include>engine/**</include>
+        <include>modules/**</include>
+      </includes>
       <excludes>
         <exclude>**/target/**</exclude>
       </excludes>
-	</fileSet>
+    </fileSet>
   </fileSets>
-
 </assembly>
