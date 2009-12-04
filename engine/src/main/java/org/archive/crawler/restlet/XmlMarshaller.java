@@ -33,10 +33,10 @@ public class XmlMarshaller {
     
     public XmlMarshaller(Writer writer) throws SAXException {
         xmlWriter = new XmlWriter(writer);
-        // this looks ok, but makes the response much bigger - pipe to 
-        // "xmllint --format -" instead
-        // xmlWriter.setDataFormat(true);
-        // xmlWriter.setIndentStep(2);
+        
+        // https://webarchive.jira.com/browse/HER-1603?focusedCommentId=22558#action_22558
+        xmlWriter.setDataFormat(true);
+        xmlWriter.setIndentStep(2);
     }
 
     public void marshalDocument(String rootTag, Object content) throws SAXException {
