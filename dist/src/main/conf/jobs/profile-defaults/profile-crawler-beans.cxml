@@ -500,7 +500,7 @@ http://example.example/example
  <bean id="bdb" 
   class="org.archive.bdb.BdbModule">
   <!-- <property name="dir" value="state" /> -->
-  <!-- <property name="cachePercentage" value="60" /> -->
+  <!-- <property name="cachePercent" value="60" /> -->
   <!-- <property name="useSharedCache" value="true" /> -->
   <!-- <property name="checkpointCopyLogs" value="true" /> -->
   <!-- <property name="expectedConcurrency" value="25" /> -->
