@@ -802,7 +802,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
             return "<i>n/a</i>";
         }
         long timeElapsed = stats.getCrawlElapsedTime();
-        return ArchiveUtils.formatMillisecondsToConventional(timeElapsed,false);
+        return ArchiveUtils.formatMillisecondsToConventional(timeElapsed);
     }
 
     public Map<String,Object> threadReportData() {

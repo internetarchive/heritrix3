@@ -545,16 +545,6 @@ public class ArchiveUtils {
      * @return Human readable string version of passed <code>time</code>
      */
     public static String formatMillisecondsToConventional(long time) {
-        return formatMillisecondsToConventional(time,true);
-    }
-    
-    /**
-     * Convert milliseconds value to a human-readable duration
-     * @param time
-     * @param toMs ignored
-     * @return Human readable string version of passed <code>time</code>
-     */
-    public static String formatMillisecondsToConventional(long time, boolean toMs) {
         return formatMillisecondsToConventional(time,5);
     }
         

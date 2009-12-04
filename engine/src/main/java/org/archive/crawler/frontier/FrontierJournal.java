@@ -164,8 +164,7 @@ public class FrontierJournal extends CrawlerJournal {
             // wait until at least ENOUGH_TO_START_CRAWLING URIs queued
             recoveredEnough.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING,"interrupted",e);
         }
     }
     
@@ -219,7 +218,7 @@ public class FrontierJournal extends CrawlerJournal {
                             newJournal.writeLine(read);
                         }
                     } catch (URIException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING,"bad hopsViaString: "+read.substring(3),e);
                     }
                 }
                 if((lines%PROGRESS_INTERVAL)==0) {
@@ -328,8 +327,7 @@ public class FrontierJournal extends CrawlerJournal {
         	    br.close(); 
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING,"problem importQueuesFromLog",e);
         }
         LOGGER.info("finished recovering frontier from "+source+" "
                 +qLines+" lines processed");

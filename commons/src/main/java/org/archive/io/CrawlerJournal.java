@@ -28,8 +28,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
@@ -41,7 +44,9 @@ import org.archive.util.FileUtils;
  * @author gojomo
  */
 public class CrawlerJournal implements Closeable {
-
+    private static final Logger LOGGER = Logger.getLogger(
+            CrawlerJournal.class.getName());
+    
     /** prefix for error lines*/
     public static final String LOG_ERROR = "E ";
     /** prefix for timestamp lines */
@@ -103,49 +108,18 @@ public class CrawlerJournal implements Closeable {
      * 
      * @param string String
      */
-    public synchronized void writeLine(String string) {
+    public synchronized void writeLine(String... strs) {
         try {
-            this.out.write(string);
+            for(String s : strs) {
+                this.out.write(s);
+            }
             this.out.write("\n");
             noteLine();
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Write a line of two strings
-     * 
-     * @param s1 String
-     * @param s2 String
-     */
-    public synchronized void writeLine(String s1, String s2) {
-        try {
-            this.out.write(s1);
-            this.out.write(s2);
-            this.out.write("\n");
-            noteLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Write a line of three strings
-     * 
-     * @param s1 String
-     * @param s2 String
-     * @param s3 String
-     */
-    public synchronized void writeLine(String s1, String s2, String s3) {
-        try {
-            this.out.write(s1);
-            this.out.write(s2);
-            this.out.write(s3);
-            this.out.write("\n");
-            noteLine();
-        } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(
+                Level.SEVERE,
+                "problem writing journal line: "+StringUtils.join(strs), 
+                e);
         }
     }
 
@@ -163,7 +137,7 @@ public class CrawlerJournal implements Closeable {
             this.out.write("\n");
             noteLine();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE,"problem writing journal line: "+mstring, e);
         }
     }
 
@@ -202,7 +176,7 @@ public class CrawlerJournal implements Closeable {
             this.out.close();
             this.out = null;
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE,"problem closing journal", e);
         }
     }
 
