@@ -19,6 +19,8 @@
 
 package org.archive.crawler.restlet;
 
+import java.util.List;
+
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Preference;
@@ -44,12 +46,24 @@ public abstract class BaseResource extends Resource {
      * {@link https://webarchive.jira.com/browse/HER-1603}
      */
     public Variant getPreferredVariant() {
+        boolean addExplicitTextHtmlPreference = false;
+
         for (Preference<MediaType> mediaTypePreference: getRequest().getClientInfo().getAcceptedMediaTypes()) {
             if (mediaTypePreference.getMetadata().equals(MediaType.TEXT_HTML)) {
                 mediaTypePreference.setQuality(Float.MAX_VALUE);
+                addExplicitTextHtmlPreference = false;
                 break;
+            } else if (mediaTypePreference.getMetadata().includes(MediaType.TEXT_HTML)) {
+                addExplicitTextHtmlPreference = true;
             }
         }
+        
+        if (addExplicitTextHtmlPreference) {
+            List<Preference<MediaType>> acceptedMediaTypes = getRequest().getClientInfo().getAcceptedMediaTypes();
+            acceptedMediaTypes.add(new Preference<MediaType>(MediaType.TEXT_HTML, Float.MAX_VALUE));
+            getRequest().getClientInfo().setAcceptedMediaTypes(acceptedMediaTypes);
+        }
+        
         
         return super.getPreferredVariant();
     }
