@@ -44,7 +44,6 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.Representation;
-import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
@@ -56,7 +55,7 @@ import org.xml.sax.SAXException;
  * 
  * @contributor gojomo
  */
-public class EngineResource extends Resource {
+public class EngineResource extends BaseResource {
 
     public EngineResource(Context ctx, Request req, Response res) {
         super(ctx, req, res);
