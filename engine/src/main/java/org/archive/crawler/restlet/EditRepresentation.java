@@ -72,7 +72,7 @@ public class EditRepresentation extends CharacterRepresentation {
         viewRef.setQuery(null);
         pw.println("<a href='"+viewRef+"'>view</a>");
         pw.println("<br/>");
-        pw.println("<textarea style='width:100%;height:94%;background-color:#ffc;font-size:small;' name='contents'>");
+        pw.println("<textarea style='width:100%;height:94%;' name='contents'>");
         StringEscapeUtils.escapeHtml(pw,fileRepresentation.getText()); 
         pw.println("</textarea></form>");
         pw.close();
