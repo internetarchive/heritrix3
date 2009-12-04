@@ -263,7 +263,9 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     @SuppressWarnings("unchecked")
     public File[] getAvailableCheckpointDirectories() {
         File[] dirs = getCheckpointsDir().getFile().listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
-        Arrays.sort(dirs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+        if (dirs != null) {
+            Arrays.sort(dirs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+        }
         return dirs;
     }
     
