@@ -170,6 +170,7 @@ public abstract class AbstractFrontier
     
     public void stop() {
         terminate();
+        ArchiveUtils.closeQuietly(this.recover);
     }
 
 
@@ -643,8 +644,6 @@ public abstract class AbstractFrontier
 
     synchronized public void terminate() {
         requestState(State.FINISH);
-        // TODO: move this recover-cleanup to manager thread?
-        ArchiveUtils.closeQuietly(this.recover);
     }
     
     /**
