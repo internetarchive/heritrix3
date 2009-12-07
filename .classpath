@@ -40,7 +40,6 @@
 	<classpathentry kind="var" path="M2_REPO/org/dnsjava/dnsjava/2.0.3/dnsjava-2.0.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-el/commons-el/1.0/commons-el-1.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar"/>
-	<classpathentry kind="var" path="M2_REPO/javax/servlet/jsp-api/2.0/jsp-api-2.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-core/2.5.6/spring-core-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/src"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-beans/2.5.6/spring-beans-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/dist/spring-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-context/2.5.6/spring-context-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/dist/module-sources/spring-context-sources.jar"/>
