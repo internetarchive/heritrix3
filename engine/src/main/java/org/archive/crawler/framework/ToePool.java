@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.reporting.AlertThreadGroup;
@@ -289,24 +290,13 @@ public class ToePool extends ThreadGroup implements MultiReporter {
         return data;
     }
 
+    @SuppressWarnings("unchecked")
     public void shortReportLineTo(PrintWriter w) {
-        Histotable<Object> steps = new Histotable<Object>();
-        Histotable<Object> processors = new Histotable<Object>();
-        Thread[] toes = getToes();
-        for (int i = 0; i < toes.length; i++) {
-
-            if(!(toes[i] instanceof ToeThread)) {
-                continue;
-            }
-            ToeThread tt = (ToeThread)toes[i];
-            if(tt!=null) {
-                steps.tally(tt.getStep().toString());
-                processors.tally(tt.getCurrentProcessorName());
-            }
-        }
-        TreeSet<Map.Entry<Object,Long>> sortedSteps = steps.getSortedByCounts();
-        w.print(getToeCount());
-        w.print(" threads: ");        
+        Map<String, Object> map = shortReportMap();
+        w.print(map.get("toeCount"));
+        w.print(" threads: ");
+        
+        TreeSet<Map.Entry<Object,Long>> sortedSteps = (TreeSet<Entry<Object, Long>>) map.get("steps");
         w.print(Histotable.entryString(sortedSteps.first()));
         if(sortedSteps.size()>1) {
             Iterator<Map.Entry<Object,Long>> iter = sortedSteps.iterator();
@@ -318,7 +308,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
             w.print(", etc...");
         }
         w.print("; ");
-        TreeSet<Map.Entry<Object,Long>> sortedProcessors = processors.getSortedByCounts();
+        TreeSet<Map.Entry<Object,Long>> sortedProcessors = (TreeSet<Entry<Object, Long>>) map.get("processors");
         w.print(Histotable.entryString(sortedProcessors.first()));
         if(sortedProcessors.size()>1) {
             Iterator<Map.Entry<Object,Long>> iter = sortedProcessors.iterator();
@@ -328,6 +318,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 w.print(Histotable.entryString(iter.next()));
             }
         }
+
     }
 
     /* (non-Javadoc)
