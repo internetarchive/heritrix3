@@ -662,15 +662,15 @@ public class ArchiveUtils {
     }
 
     /**
-     * Utility method to get a String singleLineReport from Reporter
-     * @param rep  Reporter to get singleLineReport from
+     * Utility method to get a String shortReportLine from Reporter
+     * @param rep  Reporter to get shortReportLine from
      * @return String of report
      */
-    public static String singleLineReport(Reporter rep) {
+    public static String shortReportLine(Reporter rep) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         try {
-            rep.singleLineReportTo(pw);
+            rep.shortReportLineTo(pw);
         } catch (IOException e) {
             // not really possible
             e.printStackTrace();

@@ -826,7 +826,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if (cc == null) {
             return null;
         }
-        return cc.getFrontier().singleLineReportData();
+        return cc.getFrontier().shortReportMap();
     }
 
     public String frontierReport() {

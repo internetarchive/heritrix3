@@ -37,13 +37,13 @@ public interface Reporter {
      * 
      * @param writer to receive report
      */
-    public void singleLineReportTo(PrintWriter pw) throws IOException;
+    public void shortReportLineTo(PrintWriter pw) throws IOException;
     
 
     /**
      * @return Same data that's in the single line report, as key-value pairs
      */
-    public Map<String,Object> singleLineReportData();
+    public Map<String,Object> shortReportMap();
 
     
     /**
@@ -51,5 +51,5 @@ public interface Reporter {
      * 
      * @return String single-line summary legend
      */
-    public String singleLineLegend();
+    public String shortReportLegend();
 }

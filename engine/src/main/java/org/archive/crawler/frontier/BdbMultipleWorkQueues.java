@@ -167,7 +167,7 @@ public class BdbMultipleWorkQueues {
                     if(pattern.matcher(curi.toString()).matches()) {
                         if (verbose) {
                             results.add("[" + curi.getClassKey() + "] " 
-                                    + curi.singleLineReport());
+                                    + curi.shortReportLine());
                         } else {
                             results.add(curi.toString());
                         }

@@ -57,8 +57,8 @@ FetchStats.CollectsFetchStats, Serializable {
      */
     public void reportTo(String name, PrintWriter writer) {
         // name ignored, only one report
-        writer.println(singleLineLegend());
-        singleLineReportTo(writer);
+        writer.println(shortReportLegend());
+        shortReportLineTo(writer);
     }
 
     /* (non-Javadoc)
@@ -68,21 +68,21 @@ FetchStats.CollectsFetchStats, Serializable {
         reportTo(null,writer);
     }
 
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return getClass().getSimpleName();
     }
 
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
         data.put("precedence", getPrecedence());
         return data;
     }
 
-    public void singleLineReportTo(PrintWriter writer) {
+    public void shortReportLineTo(PrintWriter writer) {
         writer.print(getPrecedence());
     }
 }

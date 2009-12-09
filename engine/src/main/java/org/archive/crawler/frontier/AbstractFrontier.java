@@ -1162,8 +1162,8 @@ public abstract class AbstractFrontier
     //
     // Reporter implementation
     // 
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
 
     public void reportTo(PrintWriter writer) {

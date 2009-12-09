@@ -252,16 +252,16 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 ToeThread tt = (ToeThread) toes[i];
                 if (tt != null) {
                     if(!legendWritten) {
-                        writer.println(tt.singleLineLegend());
+                        writer.println(tt.shortReportLegend());
                         legendWritten = true;
                     }
-                    tt.singleLineReportTo(writer);
+                    tt.shortReportLineTo(writer);
                 }
             }
         }
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Histotable<Object> steps = new Histotable<Object>();
         Histotable<Object> processors = new Histotable<Object>();
         Thread[] toes = getToes();
@@ -289,7 +289,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
         return data;
     }
 
-    public void singleLineReportTo(PrintWriter w) {
+    public void shortReportLineTo(PrintWriter w) {
         Histotable<Object> steps = new Histotable<Object>();
         Histotable<Object> processors = new Histotable<Object>();
         Thread[] toes = getToes();
@@ -333,7 +333,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "total: mostCommonStateTotal secondMostCommonStateTotal";
     }
 

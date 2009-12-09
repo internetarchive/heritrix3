@@ -594,16 +594,16 @@ implements Serializable,
     }
 
     public String getToeThreadReportShort() {
-        return (toePool == null) ? "" : ArchiveUtils.singleLineReport(toePool);
+        return (toePool == null) ? "" : ArchiveUtils.shortReportLine(toePool);
     }
 
     public Map<String,Object> getToeThreadReportShortData() {
-        return toePool == null ? null : toePool.singleLineReportData();
+        return toePool == null ? null : toePool.shortReportMap();
         
     }
 
     public String getFrontierReportShort() {
-        return ArchiveUtils.singleLineReport(getFrontier());
+        return ArchiveUtils.shortReportLine(getFrontier());
     }
 
     /**

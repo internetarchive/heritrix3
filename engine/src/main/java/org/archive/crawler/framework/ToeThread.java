@@ -267,7 +267,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
             currentCuri.getAnnotations().add("err="+err.getClass().getName());
             currentCuri.getAnnotations().add("os"+currentCuri.getFetchStatus());
                         currentCuri.setFetchStatus(S_SERIOUS_ERROR);
-            context = currentCuri.singleLineReport() + " in " + currentProcessorName;
+            context = currentCuri.shortReportLine() + " in " + currentProcessorName;
          }
         String message = "Serious error occured trying " +
             "to process '" + context + "'\n" + extraInfo;
@@ -408,7 +408,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         CrawlURI c = currentCuri;
         if(c != null) {
             pw.print(" ");
-            c.singleLineReportTo(pw);
+            c.shortReportLineTo(pw);
             pw.print("    ");
             pw.print(c.getFetchAttempts());
             pw.print(" attempts");
@@ -481,7 +481,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         }
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
         data.put("serialNumber", serialNumber);
         CrawlURI c = currentCuri;
@@ -511,7 +511,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
     /**
      * @param w PrintWriter to write to.
      */
-    public void singleLineReportTo(PrintWriter w)
+    public void shortReportLineTo(PrintWriter w)
     {
         w.print("#");
         w.print(this.serialNumber);
@@ -558,10 +558,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         w.flush();
     }
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#singleLineLegend()
-     */
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "#serialNumber processorName currentUri (fetchAttempts) threadState threadStep";
     }
     
@@ -577,11 +574,8 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
         reportTo(null, writer);
     }
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#singleLineReport()
-     */
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
 
     public void progressStatisticsLine(PrintWriter writer) {

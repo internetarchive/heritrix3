@@ -1486,11 +1486,11 @@ implements MultiReporter, Serializable, OverlayContext {
     // Reporter implementation
     //
 
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
     
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("class", getClass().getName());
         map.put("uri", getUURI().toString());
@@ -1499,7 +1499,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return map;
     }
 
-    public void singleLineReportTo(PrintWriter w) {
+    public void shortReportLineTo(PrintWriter w) {
         String className = this.getClass().getName();
         className = className.substring(className.lastIndexOf(".")+1);
         w.print(className);
@@ -1514,7 +1514,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "className uri hopsPath viaUri";
     }
     
@@ -1530,7 +1530,7 @@ implements MultiReporter, Serializable, OverlayContext {
      * @see org.archive.util.Reporter#reportTo(java.lang.String, java.io.Writer)
      */
     public void reportTo(String name, PrintWriter writer) {
-        singleLineReportTo(writer);
+        shortReportLineTo(writer);
         writer.print("\n");
     }
 

@@ -641,8 +641,8 @@ implements Closeable,
                         // should not reach
                         logger.severe("No CrawlURI from ready non-empty queue "
                                 + readyQ.classKey + "\n" 
-                                + readyQ.singleLineLegend() + "\n"
-                                + readyQ.singleLineReport() + "\n");
+                                + readyQ.shortReportLegend() + "\n"
+                                + readyQ.shortReportLine() + "\n");
                         break returnauri;
                     }
                     
@@ -1114,7 +1114,7 @@ implements Closeable,
         return REPORTS;
     }
     
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         if (this.allQueues == null) {
             return null;
         }
@@ -1151,7 +1151,7 @@ implements Closeable,
     /**
      * @param w Where to write to.
      */
-    public void singleLineReportTo(PrintWriter w) {
+    public void shortReportLineTo(PrintWriter w) {
         if (this.allQueues == null) {
             return;
         }
@@ -1231,7 +1231,7 @@ implements Closeable,
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "total active in-process ready snoozed inactive retired exhausted";
     }
 
@@ -1329,10 +1329,10 @@ implements Closeable,
                 writer.print(" ERROR: "+obj);
             }
             if(!legendWritten) {
-                writer.println(q.singleLineLegend());
+                writer.println(q.shortReportLegend());
                 legendWritten = true;
             }
-            q.singleLineReportTo(writer);
+            q.shortReportLineTo(writer);
         }       
     }
 

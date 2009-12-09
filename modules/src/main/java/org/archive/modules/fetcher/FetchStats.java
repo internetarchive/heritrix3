@@ -194,8 +194,8 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
      */
     public void reportTo(String name, PrintWriter writer) {
         // name ignored, only one report
-        writer.println(singleLineLegend());
-        singleLineReportTo(writer);
+        writer.println(shortReportLegend());
+        shortReportLineTo(writer);
     }
 
     /* (non-Javadoc)
@@ -205,17 +205,17 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         reportTo(null,writer);
     }
 
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "totalScheduled fetchSuccesses fetchFailures fetchDisregards " +
                 "fetchResponses robotsDenials successBytes totalBytes " +
                 "fetchNonResponses";
     }
 
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
 
-    public void singleLineReportTo(PrintWriter writer) {
+    public void shortReportLineTo(PrintWriter writer) {
         writer.print(totalScheduled);
         writer.print(" ");
         writer.print(fetchSuccesses);
@@ -235,7 +235,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         writer.print(fetchNonResponses);
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("totalScheduled", totalScheduled);
         map.put("fetchSuccesses", fetchSuccesses);

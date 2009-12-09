@@ -285,7 +285,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
         PrintWriter diversionLog = getDiversionLog(target);
         diversionLog.print(cauri.getClassKey());
         diversionLog.print(" ");
-        cauri.singleLineReportTo(diversionLog);
+        cauri.shortReportLineTo(diversionLog);
         diversionLog.println();
     }
     

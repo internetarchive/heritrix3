@@ -529,7 +529,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         reportTo(null,writer);
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
 
         map.put("queueName", classKey);
@@ -558,10 +558,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return map;
     }
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#singleLineReportTo(java.io.Writer)
-     */
-    public void singleLineReportTo(PrintWriter writer) {
+    public void shortReportLineTo(PrintWriter writer) {
         // queue name
         writer.print(classKey);
         writer.print(" ");
@@ -608,20 +605,14 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print("\n");
     }
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#singleLineLegend()
-     */
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "queue precedence currentSize totalEnqueues sessionBalance " +
                 "lastCost (averageCost) lastDequeueTime wakeTime " +
                 "totalSpend/totalBudget errorCount lastPeekUri lastQueuedUri";
     }
     
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#singleLineReport()
-     */
-    public String singleLineReport() {
-        return ArchiveUtils.singleLineReport(this);
+    public String shortReportLine() {
+        return ArchiveUtils.shortReportLine(this);
     }
     
     /**
@@ -659,13 +650,13 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print(ArchiveUtils.doubleToString(
                     ((double) totalExpenditure / costCount), 1));
         writer.print(")\n   ");
-        writer.print(getSubstats().singleLineLegend());
+        writer.print(getSubstats().shortReportLegend());
         writer.print("\n   ");
-        writer.print(getSubstats().singleLineReport());
+        writer.print(getSubstats().shortReportLine());
         writer.print("\n   ");
-        writer.print(getPrecedenceProvider().singleLineLegend());
+        writer.print(getPrecedenceProvider().shortReportLegend());
         writer.print("\n   ");
-        writer.print(getPrecedenceProvider().singleLineReport());
+        writer.print(getPrecedenceProvider().shortReportLine());
         writer.print("\n\n");
     }
     

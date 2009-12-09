@@ -90,13 +90,13 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
             return super.getPrecedence() + delta;
         }
 
-        /* (non-Javadoc)
-         * @see org.archive.crawler.frontier.precedence.PrecedenceProvider#singleLineLegend()
+        /*
+         * @see org.archive.crawler.frontier.precedence.PrecedenceProvider#shortReportLegend()()
          */
         @Override
-        public String singleLineLegend() {
+        public String shortReportLegend() {
             StringBuilder sb = new StringBuilder();
-            sb.append(super.singleLineLegend());
+            sb.append(super.shortReportLegend());
             sb.append(":");
             for(Integer p : enqueuedCounts.keySet()) {
                 sb.append(" p");
@@ -105,11 +105,8 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
             return sb.toString(); 
         }
 
-        /* (non-Javadoc)
-         * @see org.archive.crawler.frontier.precedence.PrecedenceProvider#singleLineReportTo(java.io.PrintWriter)
-         */
         @Override
-        public void singleLineReportTo(PrintWriter writer) {
+        public void shortReportLineTo(PrintWriter writer) {
             boolean betwixt = false; 
             for(Long count : enqueuedCounts.values()) {
                 if(betwixt) writer.print(" ");

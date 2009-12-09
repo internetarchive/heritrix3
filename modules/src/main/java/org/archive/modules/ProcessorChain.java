@@ -94,18 +94,18 @@ implements Iterable<Processor>,
         writer.println();
     }
 
-    public String singleLineLegend() {
+    public String shortReportLegend() {
         return "";
     }
 
-    public Map<String, Object> singleLineReportData() {
+    public Map<String, Object> shortReportMap() {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
         data.put("processorCount", size());
         data.put("processors", getProcessors());
         return data;
     }
 
-    public void singleLineReportTo(PrintWriter pw) {
+    public void shortReportLineTo(PrintWriter pw) {
         pw.print(size());
         pw.print(" processors: ");
         for(Processor p : this) {
