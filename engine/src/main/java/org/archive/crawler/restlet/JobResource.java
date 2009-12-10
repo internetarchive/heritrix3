@@ -30,7 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -73,6 +72,7 @@ public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = 
         FileUtils.getRegexFileFilter(".*\\.((c?xml)|(txt))$");
 
+    @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(JobResource.class.getName());
 
     protected CrawlJob cj; 
@@ -558,8 +558,7 @@ public class JobResource extends BaseResource {
 
         // copy op?
         Form form = null;
-        try {
-            form = getRequest().getEntityAsForm();
+        form = getRequest().getEntityAsForm();
         String copyTo = form.getFirstValue("copyTo");
         if(copyTo!=null) {
             copyJob(copyTo,"on".equals(form.getFirstValue("asProfile")));
@@ -599,13 +598,9 @@ public class JobResource extends BaseResource {
             cj.terminate();
         }
         AlertThreadGroup.setThreadLogger(null);
-            
+
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
-        } catch (IllegalStateException e) {
-            logger.log(Level.WARNING, "problem accepting input (redirecting to GET self anyway): " + e, e);
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e, "problem accepting input");
-        }
     }
 
     protected void copyJob(String copyTo, boolean asProfile) throws ResourceException {
