@@ -67,6 +67,7 @@ import org.xml.sax.SAXException;
  * Engine.
  * 
  * @contributor gojomo
+ * @contributor nlevitt
  */
 public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = 
@@ -94,7 +95,7 @@ public class JobResource extends BaseResource {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     try {
-                        new XmlMarshaller(writer).marshalDocument("job", presentablify());
+                        new XmlMarshaller(writer).marshalDocument("job", makePresentableMap());
                     } catch (SAXException e) {
                         throw new IOException(e);
                     }
@@ -114,7 +115,14 @@ public class JobResource extends BaseResource {
         return representation;
     }
 
-    protected LinkedHashMap<String,Object> presentablify() {
+    /**
+     * Constructs a nested Map data structure with the information represented
+     * by this Resource. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @return the nested Map data structure
+     */
+    protected LinkedHashMap<String,Object> makePresentableMap() {
         LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
 
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();

@@ -53,6 +53,7 @@ import org.xml.sax.SAXException;
  * a hierarchical fashion. 
  * 
  * @contributor gojomo
+ * @contributor nlevitt
  */
 public class BeanBrowseResource extends JobRelatedResource {
     PathSharingContext appCtx; 
@@ -124,7 +125,7 @@ public class BeanBrowseResource extends JobRelatedResource {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     try {
-                        new XmlMarshaller(writer).marshalDocument("script", presentablify());
+                        new XmlMarshaller(writer).marshalDocument("script", makePresentableMap());
                     } catch (SAXException e) {
                         throw new IOException(e);
                     }
@@ -143,7 +144,14 @@ public class BeanBrowseResource extends JobRelatedResource {
         return representation;
     }
     
-    protected LinkedHashMap<String,Object> presentablify() {
+    /**
+     * Constructs a nested Map data structure with the information represented
+     * by this Resource. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @return the nested Map data structure
+     */
+    protected LinkedHashMap<String,Object> makePresentableMap() {
         LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
 
         info.put("crawlJobShortName", cj.getShortName());
@@ -158,7 +166,7 @@ public class BeanBrowseResource extends JobRelatedResource {
                 Object target; 
                 if (firstDot < 0) {
                     target = namedBean;
-                    info.put("bean", presentablifyObject(null, target, beanPath));
+                    info.put("bean", makePresentableMapFor(null, target, beanPath));
                 } else {
                     BeanWrapperImpl bwrap = new BeanWrapperImpl(namedBean);
                     String propPath = beanPath.substring(firstDot+1);
@@ -169,9 +177,9 @@ public class BeanBrowseResource extends JobRelatedResource {
                             && (bwrap.getDefaultEditor(type)!=null|| type == String.class)
                             && !Collection.class.isAssignableFrom(type)) {
                         info.put("editable", true);
-                        info.put("bean", presentablifyObject(null, target));
+                        info.put("bean", makePresentableMapFor(null, target));
                     } else {
-                        info.put("bean", presentablifyObject(null, target, beanPath));
+                        info.put("bean", makePresentableMapFor(null, target, beanPath));
                     }
                 }     
             } catch (BeansException e) {
@@ -181,9 +189,9 @@ public class BeanBrowseResource extends JobRelatedResource {
 
         Collection<Object> nestedNames = new LinkedList<Object>();
         Set<Object> alreadyWritten = new HashSet<Object>();
-        presentablifyNestedNames(appCtx.getBean("crawlController"), getBeansRefPath(), alreadyWritten, nestedNames);
+        addPresentableNestedNames(nestedNames, appCtx.getBean("crawlController"), alreadyWritten);
         for(String name: appCtx.getBeanDefinitionNames()) {
-            presentablifyNestedNames(appCtx.getBean(name), getBeansRefPath(), alreadyWritten, nestedNames);
+            addPresentableNestedNames(nestedNames, appCtx.getBean(name), alreadyWritten);
         }
         info.put("allNamedCrawlBeans", nestedNames);
 

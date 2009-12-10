@@ -125,7 +125,7 @@ public class ScriptResource extends JobRelatedResource {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     try {
-                        new XmlMarshaller(writer).marshalDocument("script", presentablify());
+                        new XmlMarshaller(writer).marshalDocument("script", makePresentableMap());
                     } catch (SAXException e) {
                         throw new IOException(e);
                     }
@@ -193,8 +193,15 @@ public class ScriptResource extends JobRelatedResource {
         
         return vars;
     }
-    
-    protected LinkedHashMap<String,Object> presentablify() {
+
+    /**
+     * Constructs a nested Map data structure with the information represented
+     * by this Resource. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @return the nested Map data structure
+     */
+    protected LinkedHashMap<String,Object> makePresentableMap() {
         LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
 
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();

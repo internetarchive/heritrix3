@@ -50,6 +50,7 @@ import org.springframework.beans.BeanWrapperImpl;
  * of a CrawlJob.
  * 
  * @contributor Gojomo
+ * @contributor nlevitt
  */
 public abstract class JobRelatedResource extends Resource {
     CrawlJob cj; 
@@ -67,9 +68,23 @@ public abstract class JobRelatedResource extends Resource {
     protected Engine getEngine() {
         return ((EngineApplication)getApplication()).getEngine();
     }
-    
-    protected void presentablifyNestedNames(Object obj, String prefix,
-            Set<Object> alreadyWritten, Collection<Object> namedBeans) {
+
+    /**
+     * Starting at (and including) the given object, adds nested Map
+     * representations of named beans to the {@code namedBeans} Collection. The
+     * nested Map representations are particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @param namedBeans
+     *            the Collection to add to
+     * @param obj
+     *            object to make a presentable Map for, if it has a beanName
+     * @param alreadyWritten
+     *            Set of objects already made presentable whose addition to
+     *            {@code namedBeans} should be suppressed
+     */
+    protected void addPresentableNestedNames(Collection<Object> namedBeans, Object obj,
+            Set<Object> alreadyWritten) {
         if (obj == null || alreadyWritten.contains(obj)
                 || obj.getClass().getName().startsWith("org.springframework.")) {
             return;
@@ -82,8 +97,8 @@ public abstract class JobRelatedResource extends Resource {
             Map<String, Object> bean = new LinkedHashMap<String, Object>();
             bean.put("name", getBeanToNameMap().get(obj));
             bean.put("url", new Reference(baseRef, "../beans/" + getBeanToNameMap().get(obj)).getTargetRef());
-
             bean.put("class", obj.getClass().getName());
+
             namedBeans.add(bean);
 
             // nest children
@@ -99,19 +114,19 @@ public abstract class JobRelatedResource extends Resource {
                 if (pd.getReadMethod() != null) {
                     String propName = pd.getName();
                     Object propValue = bwrap.getPropertyValue(propName);
-                    presentablifyNestedNames(propValue, prefix, alreadyWritten, namedBeans);
+                    addPresentableNestedNames(namedBeans, propValue, alreadyWritten);
                 }
             }
             if (obj.getClass().isArray()) {
                 List<?> list = Arrays.asList(obj);
                 for (int i = 0; i < list.size(); i++) {
-                    presentablifyNestedNames(list.get(i), prefix,
-                            alreadyWritten, namedBeans);
+                    addPresentableNestedNames(namedBeans, list.get(i),
+                            alreadyWritten);
                 }
             }
             if (obj instanceof Iterable<?>) {
                 for (Object next : (Iterable<?>) obj) {
-                    presentablifyNestedNames(next, prefix, alreadyWritten, namedBeans);
+                    addPresentableNestedNames(namedBeans, next, alreadyWritten);
                 }
             }
         }
@@ -190,15 +205,55 @@ public abstract class JobRelatedResource extends Resource {
         writeObject(pw, field, object, new HashSet<Object>(), beanPath);
     }
 
-    protected Map<String, Object> presentablifyObject(String field, Object object) {
-        return presentablifyObject(field, object, new HashSet<Object>(), null);
+    /**
+     * Constructs a nested Map data structure of the information represented
+     * by {@code object}. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @param field
+     *            field name for object
+     * @param object
+     *            object to make presentable map for
+     * @return the presentable Map
+     */
+    protected Map<String, Object> makePresentableMapFor(String field, Object object) {
+        return makePresentableMapFor(field, object, new HashSet<Object>(), null);
     }
 
-    protected Map<String, Object> presentablifyObject(String field, Object object, String beanPath) {
-        return presentablifyObject(field, object, new HashSet<Object>(), beanPath);
+    /**
+     * Constructs a nested Map data structure of the information represented
+     * by {@code object}. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @param field
+     *            field name for object
+     * @param object
+     *            object to make presentable map for
+     * @param beanPathPrefix
+     *            beanPath prefix to apply to sub fields browse links
+     * @return the presentable Map
+     */
+    protected Map<String, Object> makePresentableMapFor(String field, Object object, String beanPath) {
+        return makePresentableMapFor(field, object, new HashSet<Object>(), beanPath);
     }
 
-    protected Map<String, Object> presentablifyObject(String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
+    /**
+     * Constructs a nested Map data structure of the information represented
+     * by {@code object}. The result is particularly suitable for use with with
+     * {@link XmlMarshaller}.
+     * 
+     * @param field
+     *            field name for object
+     * @param object
+     *            object to make presentable map for
+     * @param alreadyWritten
+     *            Set of objects already made presentable whose addition to the
+     *            Map should be suppressed
+     * @param beanPathPrefix
+     *            beanPath prefix to apply to sub fields browse links
+     * @return the presentable Map
+     */
+    protected Map<String, Object> makePresentableMapFor(String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
         Map<String,Object> info = new LinkedHashMap<String, Object>();
         Reference baseRef = getRequest().getResourceRef().getBaseRef();
 
@@ -255,7 +310,7 @@ public abstract class JobRelatedResource extends Resource {
                 if (beanPath != null) {
                     beanPathPrefix = beanPath + ".";
                 }
-                Object propValue = presentablifyObject(propName, 
+                Object propValue = makePresentableMapFor(propName, 
                         bwrap.getPropertyValue(propName), 
                         alreadyWritten, beanPathPrefix);
                 properties.add(propValue);
@@ -273,7 +328,7 @@ public abstract class JobRelatedResource extends Resource {
                     beanPathPrefix = beanPath+"[";
                 }
                 // TODO: protect against overlong content? 
-                propValues.add(presentablifyObject(i + "", array[i],
+                propValues.add(makePresentableMapFor(i + "", array[i],
                         alreadyWritten, beanPathPrefix));
             }
         }
@@ -284,12 +339,12 @@ public abstract class JobRelatedResource extends Resource {
                     beanPathPrefix = beanPath + "[";
                 }
                 // TODO: protect against overlong content?
-                propValues.add(presentablifyObject(i + "", list.get(i),
+                propValues.add(makePresentableMapFor(i + "", list.get(i),
                         alreadyWritten, beanPathPrefix));
             }
         } else if (object instanceof Iterable<?>) {
             for (Object next : (Iterable<?>) object) {
-                propValues.add(presentablifyObject("#", next, alreadyWritten,
+                propValues.add(makePresentableMapFor("#", next, alreadyWritten,
                         beanPathPrefix));
             }
         }
@@ -300,7 +355,7 @@ public abstract class JobRelatedResource extends Resource {
                 if (beanPath != null) {
                     beanPathPrefix = beanPath + "[";
                 }
-                propValues.add(presentablifyObject(entry.getKey().toString(),
+                propValues.add(makePresentableMapFor(entry.getKey().toString(),
                         entry.getValue(), alreadyWritten, beanPathPrefix));
             }
         }
