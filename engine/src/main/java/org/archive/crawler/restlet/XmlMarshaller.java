@@ -26,61 +26,100 @@ import org.restlet.util.XmlWriter;
 import org.xml.sax.SAXException;
 
 /**
+ * XmlMarshaller can be used to write data structures as simple xml. See
+ * {@link #marshalDocument(Writer, String, Object)} for more information.
+ * 
  * @contributor nlevitt
  */
 public class XmlMarshaller {
-    protected XmlWriter xmlWriter;
     
-    public XmlMarshaller(Writer writer) throws SAXException {
-        xmlWriter = new XmlWriter(writer);
-        
+    protected static XmlWriter getXmlWriter(Writer writer) {
+        XmlWriter xmlWriter = new XmlWriter(writer);
+
         // https://webarchive.jira.com/browse/HER-1603?focusedCommentId=22558#action_22558
         xmlWriter.setDataFormat(true);
         xmlWriter.setIndentStep(2);
+
+        return xmlWriter;
     }
 
-    public void marshalDocument(String rootTag, Object content) throws SAXException {
-        xmlWriter.startDocument();
-        marshal(rootTag, content);
-        xmlWriter.endDocument(); // calls flush()
+    /**
+     * Writes {@code content} as xml to {@code writer}. Recursively descends
+     * into Maps, using keys as tag names. Iterates over items in arrays and
+     * Iterables, using "value" as the tag name. Marshals simple object values
+     * with {@link #toString()}. The result looks something like this:
+     * 
+     * <pre>
+     * {@literal
+     * <rootTag> <!-- root object is a Map -->
+     *   <key1>simpleObjectValue1</key1>
+     *   <key2>  <!-- /rootTag/key2 is another Map -->
+     *     <subkey1>subvalue1</subkey1>
+     *     <subkey2> <!-- an array or Iterable-->
+     *       <value>item1Value</value>
+     *       <value>item2Value</value>
+     *     </subkey2>
+     *     <subkey3>subvalue3</subkey3>
+     *   </key2>
+     * </rootTag>
+     * }
+     * </pre>
+     * 
+     * @param writer
+     *            output writer
+     * @param rootTag
+     *            xml document root tag name
+     * @param content
+     *            data structure to marshal
+     */
+    public static void marshalDocument(Writer writer, String rootTag, Object content) {
+        XmlWriter xmlWriter = getXmlWriter(writer); 
+        try {
+            xmlWriter.startDocument();
+            marshal(xmlWriter, rootTag, content);
+            xmlWriter.endDocument(); // calls flush()
+        } catch (SAXException e) {
+            // can this happen?
+            throw new RuntimeException(e);
+        }
     }
 
-    protected void marshal(String key, Object value) throws SAXException {
+    protected static void marshal(XmlWriter xmlWriter, String key, Object value) throws SAXException {
         if (value == null) {
             xmlWriter.emptyElement(key);
         } else if (value instanceof Map<?,?>) {
-            marshal(key, (Map<?,?>) value);
+            marshal(xmlWriter, key, (Map<?,?>) value);
         } else if (value instanceof Iterable<?>) {
-            marshal(key, (Iterable<?>) value);
+            marshal(xmlWriter, key, (Iterable<?>) value);
         } else {
             xmlWriter.dataElement(key, value.toString());
         }
     }
 
-    protected void marshal(String key, Map<?,?> map) throws SAXException {
+    protected static void marshal(XmlWriter xmlWriter, String key, Map<?,?> map) throws SAXException {
         xmlWriter.startElement(key);
         for (Map.Entry<?,?> entry: map.entrySet()) {
-            marshal(entry.getKey().toString(), entry.getValue());
+            marshal(xmlWriter, entry.getKey().toString(), entry.getValue());
         }
         xmlWriter.endElement(key);
     }
 
-    protected void marshal(String key, Iterable<?> iterable) throws SAXException {
+    protected static void marshal(XmlWriter xmlWriter, String key, Iterable<?> iterable) throws SAXException {
         xmlWriter.startElement(key);
         for (Object item: iterable) {
-            marshal(item);
+            marshal(xmlWriter, item);
         }
         xmlWriter.endElement(key);
     }
 
     // something we have no name for goes in a <value/> tag
-    protected void marshal(Object item) throws SAXException {
+    protected static void marshal(XmlWriter xmlWriter, Object item) throws SAXException {
         if (item instanceof Map.Entry<?, ?>) {
             // if it happens to have a name, use it
             Map.Entry<?, ?> entry = (Map.Entry<?, ?>) item;
-            marshal(entry.getKey().toString(), entry.getValue());
+            marshal(xmlWriter, entry.getKey().toString(), entry.getValue());
         } else {
-            marshal("value", item);
+            marshal(xmlWriter, "value", item);
         }
     }
 }

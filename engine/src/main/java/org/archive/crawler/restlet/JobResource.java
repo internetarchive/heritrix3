@@ -59,7 +59,6 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
-import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource representing a single local CrawlJob inside an
@@ -94,11 +93,7 @@ public class JobResource extends BaseResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    try {
-                        new XmlMarshaller(writer).marshalDocument("job", makePresentableMap());
-                    } catch (SAXException e) {
-                        throw new IOException(e);
-                    }
+                    XmlMarshaller.marshalDocument(writer, "job", makePresentableMap());
                 }
             };
         } else {

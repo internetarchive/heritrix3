@@ -46,7 +46,6 @@ import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
-import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource which allows browsing the constructed beans in
@@ -124,11 +123,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    try {
-                        new XmlMarshaller(writer).marshalDocument("script", makePresentableMap());
-                    } catch (SAXException e) {
-                        throw new IOException(e);
-                    }
+                    XmlMarshaller.marshalDocument(writer, "script", makePresentableMap());
                 }
             };
         } else {

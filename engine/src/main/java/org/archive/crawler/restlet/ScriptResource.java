@@ -48,7 +48,6 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
-import org.xml.sax.SAXException;
 
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
@@ -124,11 +123,7 @@ public class ScriptResource extends JobRelatedResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    try {
-                        new XmlMarshaller(writer).marshalDocument("script", makePresentableMap());
-                    } catch (SAXException e) {
-                        throw new IOException(e);
-                    }
+                    XmlMarshaller.marshalDocument(writer,"script", makePresentableMap());
                 }
             };
         } else {
