@@ -55,7 +55,10 @@ public class Engine {
     protected File jobsDir;
     /** map of job short names -> CrawlJob instances */ 
     protected HashMap<String,CrawlJob> jobConfigs = new HashMap<String,CrawlJob>();
-       
+
+    protected String profileCxmlPath = 
+        "/org/archive/crawler/restlet/profile-crawler-beans.cxml";
+    
     public Engine(File jobsDir) {
         this.jobsDir = jobsDir;
         this.jobsDir.mkdirs();
@@ -319,6 +322,13 @@ public class Engine {
         return false; 
     }
 
+    /**
+     * @return InputStream resource from defined profile CXML path
+     */
+    protected InputStream getProfileCxmlResource() {
+        return getClass().getResourceAsStream(profileCxmlPath);
+    }
+    
 	public boolean createNewJobWithDefaults(String path) throws IOException {
 
 		File newJobDir = new File(jobsDir,"/"+path);
@@ -327,9 +337,8 @@ public class Engine {
 		}
 		newJobDir.mkdirs();
 
-		// get crawler-beans template from this package into string 
-		InputStream inStream = getClass().getResourceAsStream(
-			"/org/archive/crawler/restlet/profile-crawler-beans.cxml");
+		// get crawler-beans template from this package into string
+		InputStream inStream = getProfileCxmlResource();
 		String defaultCxmlStr = IOUtils.toString(inStream);
 		inStream.close(); 
 		
