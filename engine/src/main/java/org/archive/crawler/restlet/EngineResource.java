@@ -26,13 +26,11 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.framework.CrawlController.State;
@@ -92,56 +90,64 @@ public class EngineResource extends BaseResource {
             getEngine().findJobConfigs(); 
         } else if ("add".equals(action)) {
             String path = form.getFirstValue("addpath");
-            if(path==null) {
-                path = "";
-            }
-            boolean added = false;
-            if(StringUtils.isNotBlank(path)) {
-                added = getEngine().considerAsJobDirectory(new File(path));
-            }
-            if(!added) {
-            	String msg = messageDiv("ERROR! invalid job path: '"+path+"'","ERROR");
-                Flash.addFlash(getResponse(),msg,Flash.Kind.NACK);
+            if (path==null) {
+                Flash.addFlash(getResponse(), "Cannot add <i>null</i> path",
+                        Flash.Kind.NACK);
             } else {
-            	try { 
-            		getEngine().leaveJobPathFile(path);
-            		String msg = messageDiv("Added job path: '"+path+"'","MESSAGE");
-                    Flash.addFlash(getResponse(),msg);
-            	} catch (IOException e) {
-                    String msg = messageDiv(e.getMessage(),"ERROR");
-            		Flash.addFlash(getResponse(),msg,Flash.Kind.NACK); 
-            	}
+                File jobFile = new File(path);
+                String jobName = jobFile.getName();
+                if (!jobFile.isDirectory()) {
+                    Flash.addFlash(getResponse(), "Cannot add non-directory: <i>" 
+                            + path + "</i>", Flash.Kind.NACK);
+                } else if (getEngine().getJobConfigs().containsKey(jobName)) {
+                    Flash.addFlash(getResponse(), "Job exists: <i>" 
+                            + jobName + "</i>", Flash.Kind.NACK);
+                } else if (getEngine().addJobDirectory(new File(path),true)) {
+                    Flash.addFlash(getResponse(), "Added crawl job: "
+                            + "'" + path + "'", Flash.Kind.NACK);
+                } else {
+                    Flash.addFlash(getResponse(), "Could not add job: "
+                            + "'" + path + "'", Flash.Kind.NACK);
+                }
             }
         } else if ("create".equals(action)) {
-        	String path = form.getFirstValue("addpath");
+        	String path = form.getFirstValue("createpath");
         	if (path==null) {
-        		String warn = messageDiv("WARNING! null path given.","WARNING");
-        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
-        	} else if (path.indexOf("/") != -1) {
-        		String warn = messageDiv("WARNING! sub-directories disallowed: <i>" + path + "</i>","WARNING");
-        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
+                // protect against null path
+        		Flash.addFlash(getResponse(), "Cannot create <i>null</i> path.", 
+        		        Flash.Kind.NACK);
+        	} else if (path.indexOf(File.separatorChar) != -1) {
+        	    // prevent specifying sub-directories
+        		Flash.addFlash(getResponse(), "Sub-directories disallowed: "
+        		        + "<i>" + path + "</i>", Flash.Kind.NACK);
         	} else if (getEngine().getJobConfigs().containsKey(path)) {
-        		String warn = messageDiv("ERROR! job exists: <i>" + path + "</i>","ERROR");
-        		Flash.addFlash(getResponse(), warn, Flash.Kind.NACK);
+        	    // protect existing jobs
+        		Flash.addFlash(getResponse(), "Job exists: <i>" + path + "</i>", 
+        		        Flash.Kind.NACK);
         	} else {
-        		boolean created = false;
-        		try {
-        			created = getEngine().createNewJobWithDefaults(path);
-        		} catch (IOException e) {
-        			String err = messageDiv("ERROR! " + e.toString(),"ERROR");
-        			Flash.addFlash(getResponse(), err, Flash.Kind.NACK);
-        		}
-        		if (created) {
-        			String msg = messageDiv("Successfully created job: <i>" + path + "</i>","MESSAGE");
-        			Flash.addFlash(getResponse(), msg, Flash.Kind.ACK);
-        			getEngine().findJobConfigs();
-        		}
+        	    // try to create new job dir
+        	    File newJobDir = new File(getEngine().getJobsDir(),path);
+        	    if (newJobDir.exists()) {
+                    // protect existing directories
+                    Flash.addFlash(getResponse(), "Directory exists: "
+                            + "<i>" + path + "</i>", Flash.Kind.NACK);
+        	    } else {
+        	        if (getEngine().createNewJobWithDefaults(newJobDir)) {
+        	            Flash.addFlash(getResponse(), "Created new crawl job: "
+        	                    + "<i>" + path + "</i>", Flash.Kind.ACK);
+        	            getEngine().findJobConfigs();
+        	        } else {
+                        Flash.addFlash(getResponse(), "Failed to create new job: "
+                                + "<i>" + path + "</i>", Flash.Kind.NACK);
+        	        }
+        	    }
         	}
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
     }
     
+ 
     protected List<String> getAvailableActions() {
         List<String> actions = new LinkedList<String>();
         actions.add("rescan");
@@ -202,29 +208,6 @@ public class EngineResource extends BaseResource {
         return info;
     }
     
-    /**
-     * wraps a message in a styled div given messsage type 
-     * @param msg message to be displayed
-     * @param type message type selector
-     * @return string wrapped in styled <div/>
-     * TODO: put this in a sensible place, and use a stylesheet instead
-     */
-    protected String messageDiv(String message, String type) {
-    	HashMap<String,String> colorMap = new HashMap<String,String>();
-    	colorMap.put("ERROR","pink");
-    	colorMap.put("WARNING","lightyellow");
-    	colorMap.put("MESSAGE","lavender");
-    	String color;
-    	if (colorMap.containsKey(type)) {
-    		color = colorMap.get(type);
-    	} else {
-    		color = "gray";
-    	}
-    	String style = "style=\"margin:1em;padding:0.2em 1em;"
-    		+ "background:" + color + ";\"";
-    	return "<div " + style + ">" + message + "</div>\n";
-    }
-
     protected void writeHtml(Writer writer) {
         Engine engine = getEngine();
         String engineTitle = "Heritrix Engine "+engine.getHeritrixVersion();
@@ -270,7 +253,7 @@ public class EngineResource extends BaseResource {
         pw.println("<form method=\'POST\'>\n"
         		+ "Create new job directory with recommended starting configuration<br/>\n"
         		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + "/\n"
-        		+ "<input size='25' name='addpath'/>\n"
+        		+ "<input name='createpath'/>\n"
         		+ "<input type='submit' name='action' value='create'>\n"
         		+ "</form>\n");
 

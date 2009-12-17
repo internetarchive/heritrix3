@@ -51,7 +51,7 @@ public class Engine {
     final private static Logger LOGGER = 
         Logger.getLogger(Engine.class.getName()); 
         
-    /** directory where job directores are expected */
+    /** directory where job directories are expected */
     protected File jobsDir;
     /** map of job short names -> CrawlJob instances */ 
     protected HashMap<String,CrawlJob> jobConfigs = new HashMap<String,CrawlJob>();
@@ -69,7 +69,8 @@ public class Engine {
     
     /**
      * Find all job configurations in the usual place -- subdirectories
-     * of the jobs directory with files ending '.cxml'.
+     * of the jobs directory with files ending '.cxml', and from jobPathFiles
+     * (previously added by user) found in the jobs directory
      */
     public void findJobConfigs() {
         // TODO: allow other places/paths to be scanned/added as well?
@@ -83,54 +84,63 @@ public class Engine {
             }
         }
         
-        // discover any new job directories
+        // just in case...
         if (! jobsDir.exists()) {
-            LOGGER.log(Level.WARNING,"jobsDir has disappeared: "+jobsDir.toString());
-        } else {
-        	for (File jobFile: jobsDir.listFiles()) {
-        		if (jobFile.isDirectory()) {
-        			considerAsJobDirectory(jobFile);
-        		} else if (jobFile.getName().endsWith(".jobpath")) {
-                    considerAsJobPath(jobFile);
-        		}
-        	}
+            LOGGER.log(Level.SEVERE,"jobsDir has disappeared: "+jobsDir.toString());
+            return;
+        }
+
+        // discover any new job directories
+        for (File jobFile: jobsDir.listFiles()) {
+            if (jobFile.getName().endsWith(".jobpath")) {
+                String jobPath = getJobPathFromFile(jobFile);
+                jobFile = new File(jobPath);
+                if (jobFile.isDirectory()) {
+                    if (!addJobDirectory(jobFile,false)) {
+                        LOGGER.log(Level.WARNING,"invalid job dir: " + jobPath
+                                + " specified in jobpath file: "
+                                + jobFile.getAbsolutePath());
+                    }
+                } else {
+                    LOGGER.log(Level.WARNING,"non-directory: " + jobPath 
+                            + " specified in jobpath file: " 
+                            + jobFile.getAbsolutePath());
+                }
+            }
+            if (jobFile.isDirectory()) {
+                addJobDirectory(jobFile,false);
+            }
         }
     }
 
-    private void considerAsJobPath(File jobpathFile) {
-    	try {
-    		String pathToJob = FileUtils.readFileToString(jobpathFile).trim();
-			File jobPathFromFile = new File(pathToJob);
-			if (jobPathFromFile.isDirectory()) {
-				if (!considerAsJobDirectory(jobPathFromFile)) {
-					LOGGER.log(Level.WARNING,"invalid job path: "
-							+ "'" + jobPathFromFile.toString().trim() + "'"
-							+ " specified in jobpathFile: "
-							+ jobpathFile.toString());
-				}
-			} else {
-				// invalid job path specified
-				LOGGER.log(Level.WARNING,"invalid job path: "
-						+ "'" + jobPathFromFile.toString().trim() + "'"
-						+ " specified in jobpathFile: "
-						+ jobpathFile.toString());
-			}
-		} catch (IOException e) {
-			// problem reading jobpathFile
-			LOGGER.log(Level.WARNING,
-					"could not read jobPath from jobpathFile: "
-					+ jobpathFile.toString());
-			e.printStackTrace();
-		}
+    /*
+     * read path from ".jobpath" file (jobpathFile) and add directory to jobConfig
+     */
+    protected String getJobPathFromFile(File jobPathFile) {
+        try {
+            String pathToJob = FileUtils.readFileToString(jobPathFile).trim();
+            return pathToJob;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"error reading jobPathFile: " 
+                    + jobPathFile.toString());
+            e.printStackTrace();
+            return null;
+        }
 	}
 
-	public boolean considerAsJobDirectory(File dir) {
+    /**
+     * adds a job directory to the Engine jobConfigs if not extant
+     * @param dir directory to be added
+     * @param userRequest calls writeJobPathFile when true
+     * @return true if directory successfully added to jobConfigs
+     */
+	public boolean addJobDirectory(File dir, Boolean userRequest) {
         File[] candidateConfigs = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
             }});
-        if(candidateConfigs==null) {
-            // directory did not exist or did not contain cxml
+        if(candidateConfigs.length == 0) {
+            // no CXML file found!
             return false; 
         }
         for (File cxml : candidateConfigs) {
@@ -138,12 +148,17 @@ public class Engine {
                 CrawlJob cj = new CrawlJob(cxml);
                 if(!jobConfigs.containsKey(cj.getShortName())) {
                     jobConfigs.put(cj.getShortName(),cj);
-                    LOGGER.log(Level.INFO,"added crawl job: " +cj.getShortName());
-                    return true;
+                    if (userRequest) {
+                        writeJobPathFile(dir.getAbsolutePath());
+                    }
+                    LOGGER.log(Level.INFO,"added crawl job: " + cj.getShortName());
                 } else {
-                	// jobConfig exists
-                	return true;
+                    if (userRequest) {
+                        LOGGER.log(Level.INFO,"requested job to add already exists: " 
+                                + cj.getShortName());
+                    }
                 }
+                return true;
             } catch (IllegalArgumentException iae) {
                 LOGGER.log(Level.WARNING,"bad cxml: "+cxml,iae);
             }
@@ -329,41 +344,57 @@ public class Engine {
         return getClass().getResourceAsStream(profileCxmlPath);
     }
     
-	public boolean createNewJobWithDefaults(String path) throws IOException {
+    /**
+     * create a new job dir and copy profile CXML into as non-profile CXML
+     * @param newJobDir new job directory
+     * @throws IOException 
+     */
+	public boolean createNewJobWithDefaults(File newJobDir) {
+        try {
+            // get crawler-beans template into string
+            InputStream inStream = getProfileCxmlResource();
+            String defaultCxmlStr;
+            defaultCxmlStr = IOUtils.toString(inStream);
+            inStream.close();
 
-		File newJobDir = new File(jobsDir,"/"+path);
-		if (newJobDir.exists()) {
-		  throw new IOException("file exists: "+newJobDir);
-		}
-		newJobDir.mkdirs();
+            // write default crawler-beans string to new job dir
+            newJobDir.mkdirs();
+            File newJobCxml = new File(newJobDir,"crawler-beans.cxml");
+            FileUtils.writeStringToFile(newJobCxml, defaultCxmlStr);
 
-		// get crawler-beans template from this package into string
-		InputStream inStream = getProfileCxmlResource();
-		String defaultCxmlStr = IOUtils.toString(inStream);
-		inStream.close(); 
-		
-		// write default crawler-beans string to new job config
-		File newJobCxml = new File(newJobDir,"crawler-beans.cxml");
-		FileUtils.writeStringToFile(newJobCxml, defaultCxmlStr);
+            return true;
 
-		return true;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"failed to create new job: "
+                    + newJobDir.getAbsolutePath());
+            return false;
+        }
 	}
 
-    public void leaveJobPathFile(String path) throws IOException {
-    	String jobName = path.substring(path.lastIndexOf("/")+1,path.length());
+	/**
+	 * writes a .jobpath file for "added" paths
+	 * @param path
+	 * @throws IOException
+	 */
+    public void writeJobPathFile(String path) {
+    	String jobName = path.substring(path.lastIndexOf(File.separatorChar)+1,
+    	        path.length());
     	if (jobConfigs.containsKey(jobName)) {
         	String jobpathFileName = jobName+".jobpath";
         	File jobpathFile = new File(jobsDir,jobpathFileName);
         	try {
-            	FileUtils.writeStringToFile(jobpathFile, path+"\n");
-            	System.out.println("Engine.leaveJobPathFile() wrote file: "
-            			+ jobpathFileName);
+        	    if (!jobpathFile.exists()) {
+        	        FileUtils.writeStringToFile(jobpathFile, path+"\n");
+                    LOGGER.log(Level.INFO, "wrote jobpath file: " 
+                            + jobpathFileName);
+        	    }
         	} catch (IOException e) {
-        		throw new IOException("could not create jobpathFile: "
-        				+ jobpathFile.toString());
+        	    LOGGER.log(Level.SEVERE,"failed to write jobPathFile: "
+        	            + jobpathFileName + "\n"
+        	            + e.getMessage());
         	}
     	} else {
-    		LOGGER.log(Level.SEVERE,"job: "+jobName+" not found in jobConfig!");
+    		LOGGER.log(Level.SEVERE,"added job: " + jobName + " not found!");
     	}
 	}
 }
