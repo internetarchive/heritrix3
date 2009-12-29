@@ -327,6 +327,7 @@ public class Heritrix {
                 }
             }
             component.getClients().add(Protocol.FILE);
+            component.getClients().add(Protocol.CLAP); 
             Guard guard = new RateLimitGuard(null,
                     ChallengeScheme.HTTP_DIGEST, "Authentication Required");
             guard.getSecrets().put(authLogin, authPassword.toCharArray());

@@ -111,6 +111,11 @@ public class EngineApplication extends Application {
         router.attach("/engine/job/{job}/beans/{beanPath}",BeanBrowseResource.class);
         router.attach("/engine/job/{job}/script",ScriptResource.class);
 
+        // static files (won't serve directory, but will serve files in it)
+        String resource = "clap://class/org/archive/crawler/restlet";
+        Directory staticDir = new Directory(getContext(),resource); 
+        router.attach("/engine/static/",staticDir);
+
         return router;
     }
 
