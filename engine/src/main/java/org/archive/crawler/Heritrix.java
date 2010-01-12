@@ -84,7 +84,7 @@ import sun.security.tools.KeyTool;
  * @author gojomo
  * @author Kristinn Sigurdsson
  * @author Stack
- */
+ */ 
 public class Heritrix {
     private static final String ADHOC_PASSWORD = "password";
 
