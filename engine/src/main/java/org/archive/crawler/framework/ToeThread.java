@@ -45,7 +45,6 @@ import org.archive.util.DevUtils;
 import org.archive.util.MultiReporter;
 import org.archive.util.ProgressStatisticsReporter;
 import org.archive.util.Recorder;
-import org.archive.util.RecorderMarker;
 
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
@@ -56,7 +55,7 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * @author Gordon Mohr
  */
 public class ToeThread extends Thread
-implements RecorderMarker, MultiReporter, ProgressStatisticsReporter, 
+implements MultiReporter, ProgressStatisticsReporter, 
            HostResolver, SinkHandlerLogThread, ChainStatusReceiver {
 
     public enum Step {
@@ -123,6 +122,7 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
     public void run() {
         String name = controller.getMetadata().getJobName();
         logger.fine(getName()+" started for order '"+name+"'");
+        Recorder.setHttpRecorder(httpRecorder); 
 
         try {
             while ( true ) {
@@ -302,16 +302,6 @@ implements RecorderMarker, MultiReporter, ProgressStatisticsReporter,
      */
     public int getSerialNumber() {
         return this.serialNumber;
-    }
-
-    /**
-     * Used to get current threads HttpRecorder instance.
-     * Implementation of the HttpRecorderMarker interface.
-     * @return Returns instance of HttpRecorder carried by this thread.
-     * @see org.archive.util.RecorderMarker#getHttpRecorder()
-     */
-    public Recorder getHttpRecorder() {
-        return this.httpRecorder;
     }
     
     /** Get the CrawlController acossiated with this thread.

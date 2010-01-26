@@ -251,6 +251,13 @@ public class Recorder {
         }
     }
 
+    
+    static ThreadLocal<Recorder> currentRecorder = new ThreadLocal<Recorder>();
+    
+    public static void setHttpRecorder(Recorder httpRecorder) {
+        currentRecorder.set(httpRecorder);
+    } 
+    
     /**
      * Get the current threads' HttpRecorder.
      *
@@ -258,12 +265,7 @@ public class Recorder {
      * HttpRecorder in current instance.
      */
     public static Recorder getHttpRecorder() {
-        Recorder recorder = null;
-        Thread thread = Thread.currentThread();
-        if (thread instanceof RecorderMarker) {
-            recorder = ((RecorderMarker)thread).getHttpRecorder();
-        }
-        return recorder;
+        return currentRecorder.get(); 
     }
 
     /**
