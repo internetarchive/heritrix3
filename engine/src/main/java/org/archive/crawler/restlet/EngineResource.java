@@ -253,7 +253,7 @@ public class EngineResource extends BaseResource {
         // create new job with defaults
         pw.println("<form method=\'POST\'>\n"
         		+ "Create new job directory with recommended starting configuration<br/>\n"
-        		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + "/\n"
+        		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + File.pathSeparator + "\n"
         		+ "<input name='createpath'/>\n"
         		+ "<input type='submit' name='action' value='create'>\n"
         		+ "</form>\n");
