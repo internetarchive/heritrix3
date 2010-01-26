@@ -163,8 +163,11 @@ public abstract class ModuleTestBase extends TestCase {
      * 
      * @throws Exception   if the module cannot be serialized
      */
-    public void testSerialization() throws Exception {
+    public void testSerializationIfAppropriate() throws Exception {
         Object first = makeModule();
+        if(!(first instanceof Serializable)) {
+            return; 
+        }
         byte[] firstBytes = SerializationUtils.serialize((Serializable)first); 
          
         Object second = SerializationUtils.deserialize(firstBytes);
@@ -178,7 +181,6 @@ public abstract class ModuleTestBase extends TestCase {
 //        verifySerialization(first, firstBytes, second, secondBytes);
         verifySerialization(first, firstBytes, third, thirdBytes);
     }
-    
 
     /**
      * Verifies that serialization was successful.

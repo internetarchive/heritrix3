@@ -20,7 +20,6 @@ package org.archive.modules;
 
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,8 +48,7 @@ import org.springframework.context.Lifecycle;
  * @author pjack
  */
 public abstract class Processor 
-implements Serializable, 
-           HasKeyedProperties, 
+implements HasKeyedProperties, 
            Lifecycle, 
            BeanNameAware,
            Checkpointable {

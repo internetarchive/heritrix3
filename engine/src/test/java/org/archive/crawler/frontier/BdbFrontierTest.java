@@ -28,17 +28,6 @@ import org.archive.crawler.framework.CrawlerProcessorTestBase;
  */
 public class BdbFrontierTest extends CrawlerProcessorTestBase {
 
-    @Override
-    public void testSerialization() {
-        // FIXME
-    }
-
-    @Override
-    protected void verifySerialization(Object first, byte[] firstBytes, 
-            Object second, byte[] secondBytes) throws Exception {
-    }
-
-
     // TODO TESTME
 
 }
