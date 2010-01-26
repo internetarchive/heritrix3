@@ -219,7 +219,7 @@ public class EngineResource extends BaseResource {
         PrintWriter pw = new PrintWriter(writer); 
         pw.println("<head><title>"+engineTitle+"</title>");
         pw.println("<base href='"+baseRef+"'/>");
-        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"static/Engine.css\"");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"static/engine.css\"");
         pw.println("</head><body>");
         pw.println("<h1>"+engineTitle+"</h1>"); 
         
