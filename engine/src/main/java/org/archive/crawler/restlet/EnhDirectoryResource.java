@@ -32,6 +32,7 @@ import org.restlet.data.Form;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
+import org.restlet.data.Status;
 import org.restlet.resource.FileRepresentation;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
@@ -125,8 +126,14 @@ public class EnhDirectoryResource extends DirectoryResource {
         // TODO: only allowPost on valid targets
         Form form = getRequest().getEntityAsForm();
         String newContents = form.getFirstValue("contents");
-        // TODO: defensive
-        EditRepresentation er = (EditRepresentation) getVariants().get(0);
+        EditRepresentation er;
+        try {
+            er = (EditRepresentation) getVariants().get(0);
+        } catch (ClassCastException cce) {
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
+                    "File modification should use either PUT or " +
+                    "POST with a '?format=textedit' query-string.");
+        }
         File file = er.getFileRepresentation().getFile(); 
         try {
             FileUtils.writeStringToFile(file, newContents,"UTF-8");
