@@ -152,6 +152,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         launchCount = 0; 
         if(!jobLog.exists()) return;
         
+        // protect against scanning "large" job logs, which significantly 
+        // slows the web UI
+        if (jobLog.length() > org.apache.commons.io.FileUtils.ONE_GB) { 
+            launchCount = -1; 
+            return; 
+        } 
+        
         try {
             LineIterator lines = FileUtils.lineIterator(jobLog);
             Pattern launchLine = Pattern.compile("(\\S+) (\\S+) Job launched");
