@@ -88,6 +88,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     File primaryConfig; 
     PathSharingContext ac; 
     int launchCount; 
+    public boolean partialJobLogScan;
     DateTime lastLaunch;
     AlertThreadGroup alertThreadGroup;
     
@@ -96,6 +97,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     
     public CrawlJob(File cxml) {
         primaryConfig = cxml; 
+        partialJobLogScan = false;
         scanJobLog(); 
         alertThreadGroup = new AlertThreadGroup(getShortName());
     }
@@ -159,8 +161,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         try {
             Pattern launchLine = Pattern.compile("(\\S+) (\\S+) Job launched");
             if (jobLog.length() > FileUtils.ONE_KB * 100) {
+                partialJobLogScan = true;
                 // indicate that job log is too big to count launches accurately 
-                launchCount = -1;
                 getJobLogger().log(Level.INFO,"Job log (" + jobLog.toString() 
                     + ") too big (" + NumberFormat.getInstance().format(jobLog.length()) 
                     + " bytes) to efficiently count launches. OK to move aside.");
@@ -172,6 +174,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
                 while ((line = jobLogBfr.readLine()) != null) {
                     Matcher m = launchLine.matcher(line);
                     if (m.matches()) {
+                        launchCount++;
                         lastLaunch = new DateTime(m.group(1));
                     }
                 }
@@ -223,7 +226,12 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if(isProfile()) {
             pw.println("(profile)");
         }
-        pw.println(" " + getLaunchCount() + " launches");
+        if (true == partialJobLogScan) {
+          pw.print(" at least ");
+        } else {
+          pw.print(" ");
+        }
+        pw.println(getLaunchCount() + " launches");            
         pw.println("<br/><span style='color:#666'>");
         pw.println(getPrimaryConfig());
         pw.println("</span><br/>");

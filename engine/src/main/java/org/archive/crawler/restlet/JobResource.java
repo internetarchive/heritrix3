@@ -233,6 +233,9 @@ public class JobResource extends BaseResource {
         pw.println("</head><body>");
         pw.print("<h1>Job <i>"+cj.getShortName()+"</i> (");
         
+        if (cj.partialJobLogScan) {
+          pw.print(" at least ");
+        }
         pw.print(cj.getLaunchCount() + " launches");
         if(cj.getLastLaunch()!=null) {
             long ago = System.currentTimeMillis() - cj.getLastLaunch().getMillis();
