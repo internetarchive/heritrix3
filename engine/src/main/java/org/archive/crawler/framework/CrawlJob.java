@@ -19,9 +19,13 @@
  
 package org.archive.crawler.framework;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -152,25 +156,38 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         launchCount = 0; 
         if(!jobLog.exists()) return;
         
-        // protect against scanning "large" job logs, which significantly 
-        // slows the web UI
-        if (jobLog.length() > org.apache.commons.io.FileUtils.ONE_GB) { 
-            launchCount = -1; 
-            return; 
-        } 
-        
         try {
-            LineIterator lines = FileUtils.lineIterator(jobLog);
             Pattern launchLine = Pattern.compile("(\\S+) (\\S+) Job launched");
-            while(lines.hasNext()) {
-                String line = lines.nextLine();
-                Matcher m = launchLine.matcher(line);
-                if(m.matches()) {
-                    launchCount++;
-                    lastLaunch = new DateTime(m.group(1));
+            if (jobLog.length() > FileUtils.ONE_KB * 100) {
+                // indicate that job log is too big to count launches accurately 
+                launchCount = -1;
+                getJobLogger().log(Level.INFO,"Job log (" + jobLog.toString() 
+                    + ") too big (" + NumberFormat.getInstance().format(jobLog.length()) 
+                    + " bytes) to efficiently count launches. OK to move aside.");
+                // attempt to find last launch near end of file
+                FileInputStream jobLogIn = new FileInputStream(jobLog);
+                jobLogIn.getChannel().position(jobLog.length()-(FileUtils.ONE_KB * 100));
+                BufferedReader jobLogBfr = new BufferedReader(new InputStreamReader(jobLogIn));
+                String line;
+                while ((line = jobLogBfr.readLine()) != null) {
+                    Matcher m = launchLine.matcher(line);
+                    if (m.matches()) {
+                        lastLaunch = new DateTime(m.group(1));
+                    }
                 }
+            } else {
+                // scan the entire job log
+                LineIterator lines = FileUtils.lineIterator(jobLog);
+                while(lines.hasNext()) {
+                    String line = lines.nextLine();
+                    Matcher m = launchLine.matcher(line);
+                    if(m.matches()) {
+                        launchCount++;
+                        lastLaunch = new DateTime(m.group(1));
+                    }
+                }
+                LineIterator.closeQuietly(lines);
             }
-            LineIterator.closeQuietly(lines);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
