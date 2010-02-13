@@ -85,7 +85,7 @@ public class JobResource extends BaseResource {
     }
 
     public Representation represent(Variant variant) throws ResourceException {
-        if (cj == null) {
+        if(cj==null) {
             throw new ResourceException(404);
         }
 
@@ -94,7 +94,7 @@ public class JobResource extends BaseResource {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "job", makePresentableMap());
-                }
+                    }
             };
         } else {
             representation = new WriterRepresentation(MediaType.TEXT_HTML) {
@@ -233,7 +233,7 @@ public class JobResource extends BaseResource {
         pw.println("</head><body>");
         pw.print("<h1>Job <i>"+cj.getShortName()+"</i> (");
         
-        if (cj.partialJobLogScan) {
+        if (cj.isLaunchInfoPartial()) {
           pw.print(" at least ");
         }
         pw.print(cj.getLaunchCount() + " launches");
@@ -556,7 +556,7 @@ public class JobResource extends BaseResource {
 
         // copy op?
         Form form = null;
-        form = getRequest().getEntityAsForm();
+            form = getRequest().getEntityAsForm();
         String copyTo = form.getFirstValue("copyTo");
         if(copyTo!=null) {
             copyJob(copyTo,"on".equals(form.getFirstValue("asProfile")));
@@ -596,10 +596,10 @@ public class JobResource extends BaseResource {
             cj.terminate();
         }
         AlertThreadGroup.setThreadLogger(null);
-
+            
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
-    }
+        }
 
     protected void copyJob(String copyTo, boolean asProfile) throws ResourceException {
         try {

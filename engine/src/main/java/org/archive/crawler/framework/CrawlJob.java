@@ -48,7 +48,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.reporting.AlertThreadGroup;
@@ -88,7 +87,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     File primaryConfig; 
     PathSharingContext ac; 
     int launchCount; 
-    public boolean partialJobLogScan;
+    boolean isLaunchInfoPartial;
     DateTime lastLaunch;
     AlertThreadGroup alertThreadGroup;
     
@@ -97,7 +96,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     
     public CrawlJob(File cxml) {
         primaryConfig = cxml; 
-        partialJobLogScan = false;
+        isLaunchInfoPartial = false;
         scanJobLog(); 
         alertThreadGroup = new AlertThreadGroup(getShortName());
     }
@@ -119,6 +118,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return ac; 
     }
 
+    public boolean isLaunchInfoPartial() {
+        return isLaunchInfoPartial;
+    }
     
     /**
      * Get a logger to a distinguished file, job.log in the job's
@@ -160,37 +162,27 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         
         try {
             Pattern launchLine = Pattern.compile("(\\S+) (\\S+) Job launched");
+            long startPosition = 0; 
             if (jobLog.length() > FileUtils.ONE_KB * 100) {
-                partialJobLogScan = true;
+                isLaunchInfoPartial = true;
+                startPosition = jobLog.length()-(FileUtils.ONE_KB * 100);
                 // indicate that job log is too big to count launches accurately 
                 getJobLogger().log(Level.INFO,"Job log (" + jobLog.toString() 
                     + ") too big (" + NumberFormat.getInstance().format(jobLog.length()) 
                     + " bytes) to efficiently count launches. OK to move aside.");
-                // attempt to find last launch near end of file
-                FileInputStream jobLogIn = new FileInputStream(jobLog);
-                jobLogIn.getChannel().position(jobLog.length()-(FileUtils.ONE_KB * 100));
-                BufferedReader jobLogBfr = new BufferedReader(new InputStreamReader(jobLogIn));
-                String line;
-                while ((line = jobLogBfr.readLine()) != null) {
-                    Matcher m = launchLine.matcher(line);
-                    if (m.matches()) {
-                        launchCount++;
-                        lastLaunch = new DateTime(m.group(1));
-                    }
-                }
-            } else {
-                // scan the entire job log
-                LineIterator lines = FileUtils.lineIterator(jobLog);
-                while(lines.hasNext()) {
-                    String line = lines.nextLine();
-                    Matcher m = launchLine.matcher(line);
-                    if(m.matches()) {
-                        launchCount++;
-                        lastLaunch = new DateTime(m.group(1));
-                    }
-                }
-                LineIterator.closeQuietly(lines);
             }
+            FileInputStream jobLogIn = new FileInputStream(jobLog);
+            jobLogIn.getChannel().position(startPosition);
+            BufferedReader jobLogReader = new BufferedReader(new InputStreamReader(jobLogIn));
+            String line;
+            while ((line = jobLogReader.readLine()) != null) {
+                Matcher m = launchLine.matcher(line);
+                if (m.matches()) {
+                    launchCount++;
+                    lastLaunch = new DateTime(m.group(1));
+                }
+            }
+            jobLogReader.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -226,7 +218,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if(isProfile()) {
             pw.println("(profile)");
         }
-        if (true == partialJobLogScan) {
+        if (true == isLaunchInfoPartial) {
           pw.print(" at least ");
         } else {
           pw.print(" ");
@@ -899,5 +891,4 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
             return null;
         }
     }
-    
 }//EOC
