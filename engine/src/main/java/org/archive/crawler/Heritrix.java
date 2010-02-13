@@ -62,7 +62,7 @@ import sun.security.tools.KeyTool;
 
 /**
  * Main class for Heritrix crawler.
- * 
+ *
  * Heritrix is usually launched by a shell script that backgrounds heritrix
  * that redirects all stdout and stderr emitted by heritrix to a log file.  So
  * that startup messages emitted subsequent to the redirection of stdout and
