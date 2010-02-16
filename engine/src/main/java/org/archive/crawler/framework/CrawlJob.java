@@ -168,12 +168,15 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
                 startPosition = jobLog.length()-(FileUtils.ONE_KB * 100);
                 // indicate that job log is too big to count launches accurately 
                 getJobLogger().log(Level.INFO,"Job log (" + jobLog.toString() 
-                    + ") too big (" + NumberFormat.getInstance().format(jobLog.length()) 
-                    + " bytes) to efficiently count launches. OK to move aside.");
+                    + ") too big (" 
+                    + NumberFormat.getInstance().format(jobLog.length()) 
+                    + " bytes) to efficiently count launches. " 
+                    + "Note: large log files can be safely moved aside.");
             }
             FileInputStream jobLogIn = new FileInputStream(jobLog);
             jobLogIn.getChannel().position(startPosition);
-            BufferedReader jobLogReader = new BufferedReader(new InputStreamReader(jobLogIn));
+            BufferedReader jobLogReader = new BufferedReader(
+                    new InputStreamReader(jobLogIn));
             String line;
             while ((line = jobLogReader.readLine()) != null) {
                 Matcher m = launchLine.matcher(line);
