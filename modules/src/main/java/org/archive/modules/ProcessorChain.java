@@ -119,7 +119,7 @@ implements Iterable<Processor>,
         String skipToProc = null; 
         
         ploop: for(Processor curProc : this ) {
-            if(skipToProc!=null && curProc.getBeanName() != skipToProc) {
+            if(skipToProc!=null && !curProc.getBeanName().equals(skipToProc)) {
                 continue;
             } else {
                 skipToProc = null; 
