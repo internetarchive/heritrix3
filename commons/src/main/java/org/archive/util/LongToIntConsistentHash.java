@@ -76,10 +76,10 @@ public class LongToIntConsistentHash {
        return FPGenerator.std64.fp(bucketNumber+"."+replicaNumber);
     }
     
-    protected long hash(String string) {
+    protected long hash(CharSequence cs) {
 //      return ArchiveUtils.doubleMurmur(string.getBytes());
 //      return (new JenkinsHash()).hash(string.getBytes());
-       return FPGenerator.std64.fp(string);
+       return FPGenerator.std64.fp(cs);
     }
 
     /**
@@ -116,7 +116,7 @@ public class LongToIntConsistentHash {
      * @return
      */
     public int bucketFor(CharSequence cs, int upTo) {
-        return bucketFor(hash(cs.toString()), upTo);
+        return bucketFor(hash(cs), upTo);
     }
 
     public int bucketFor(char[] chars, int upTo) {
