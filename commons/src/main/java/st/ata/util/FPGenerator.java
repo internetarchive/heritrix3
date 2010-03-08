@@ -21,7 +21,7 @@ coefficients in the field <i>Z(2)</i>.  The fingerprint of S is simply
 the value <i>f(g(S))</i> modulo <i>P</i>.  Because polynomials are
 represented with the least significant coefficient in the most
 significant bit, fingerprints of degree <i>d</i> are stored in the
-<code>d</code> <strong>most</code> significant bits of a long word.
+<code>d</code> <strong>most</strong> significant bits of a long word.
 
 <p> Fingerprints can be used as a probably unique id for the input
 string.  More precisely, if <i>P</i> is chosen at random among
