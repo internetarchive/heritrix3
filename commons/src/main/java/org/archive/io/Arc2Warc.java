@@ -135,14 +135,14 @@ public class Arc2Warc {
    }
    
 protected void write(final WARCWriter writer, final ARCRecord r)
-   throws IOException, URISyntaxException {
+throws IOException, URISyntaxException {
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
        String warcDateString = DateTimeFormat.forPattern("yyyyMMddHHmmss")
-       .withZone(DateTimeZone.UTC)
-       .parseDateTime(arcDateString)
-       .toString(ISODateTimeFormat.dateTimeNoMillis());
+           .withZone(DateTimeZone.UTC)
+               .parseDateTime(arcDateString)
+                   .toString(ISODateTimeFormat.dateTimeNoMillis());
 
        ANVLRecord ar = new ANVLRecord();
        String ip = (String)r.getHeader()
@@ -152,13 +152,13 @@ protected void write(final WARCWriter writer, final ARCRecord r)
            r.getMetaData();
            // enable reconstruction of ARC from WARC 
            ar.addLabelValue("ARC-Header-Line", 
-                   r.getHeaderString());
+               r.getHeaderString());
            ar.addLabelValue("ARC-File", 
-                   r.getMetaData().getArc());
+               r.getMetaData().getArc());
            ar.addLabelValue("ARC-Offset", 
-                   String.valueOf(r.getHeader().getOffset()));
+               String.valueOf(r.getHeader().getOffset()));
            ar.addLabelValue("ARC-Length", 
-                   String.valueOf(r.getHeader().getLength()));
+               String.valueOf(r.getHeader().getLength()));
        }
 
        // If contentBody > 0, assume http headers.  Make the mimetype
@@ -167,12 +167,12 @@ protected void write(final WARCWriter writer, final ARCRecord r)
        if (r.getHeader().getContentBegin() > 0) {
            warcMimeTypeString = WARCConstants.HTTP_RESPONSE_MIMETYPE;
            writer.writeResponseRecord(r.getHeader().getUrl(), warcDateString,
-                   warcMimeTypeString, WARCWriter.getRecordID(), ar, r, 
+               warcMimeTypeString, WARCWriter.getRecordID(), ar, r, 
                    r.getHeader().getLength());
        } else {
            warcMimeTypeString = r.getHeader().getMimetype();
            writer.writeResourceRecord(r.getHeader().getUrl(), warcDateString,
-                   warcMimeTypeString, ar, r, r.getHeader().getLength());
+               warcMimeTypeString, ar, r, r.getHeader().getLength());
        }
 
    }
