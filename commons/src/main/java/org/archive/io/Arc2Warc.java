@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -66,7 +67,7 @@ public class Arc2Warc {
    }
    
    public void transform(final File arc, final File warc, final boolean force)
-   throws IOException {
+   throws IOException, URISyntaxException {
        FileUtils.assertReadable(arc);
        if (warc.exists() && !force) {
     	   throw new IOException("Target WARC already exists. " +
@@ -78,7 +79,7 @@ public class Arc2Warc {
    }
    
    protected void transform(final ARCReader reader, final File warc)
-   throws IOException {
+   throws IOException, URISyntaxException {
 	   WARCWriter writer = null;
 	   // No point digesting. Digest is available after reading of ARC which
 	   // is too late for inclusion in WARC.
@@ -133,8 +134,8 @@ public class Arc2Warc {
 	   }
    }
    
-   protected void write(final WARCWriter writer, final ARCRecord r)
-   throws IOException {
+protected void write(final WARCWriter writer, final ARCRecord r)
+   throws IOException, URISyntaxException {
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
@@ -143,21 +144,37 @@ public class Arc2Warc {
        .parseDateTime(arcDateString)
        .toString(ISODateTimeFormat.dateTimeNoMillis());
 
-       // If contentBody > 0, assume http headers.  Make the mimetype
-       // be application/http.  Otherwise, give it ARC mimetype.
-       String warcMimeTypeString = (r.getHeader().getContentBegin() > 0) ? 
-               WARCConstants.HTTP_RESPONSE_MIMETYPE : 
-                   r.getHeader().getMimetype();
-
        ANVLRecord ar = new ANVLRecord();
-       String ip = (String)r.getHeader().
-       getHeaderValue((ARCConstants.IP_HEADER_FIELD_KEY));
+       String ip = (String)r.getHeader()
+           .getHeaderValue((ARCConstants.IP_HEADER_FIELD_KEY));
        if (ip != null && ip.length() > 0) {
            ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
+           r.getMetaData();
+           // enable reconstruction of ARC from WARC 
+           ar.addLabelValue("ARC-Header-Line", 
+                   r.getHeaderString());
+           ar.addLabelValue("ARC-File", 
+                   r.getMetaData().getArc());
+           ar.addLabelValue("ARC-Offset", 
+                   String.valueOf(r.getHeader().getOffset()));
+           ar.addLabelValue("ARC-Length", 
+                   String.valueOf(r.getHeader().getLength()));
        }
 
-       writer.writeResourceRecord(r.getHeader().getUrl(), warcDateString,
-               warcMimeTypeString, ar, r, r.getHeader().getLength());
+       // If contentBody > 0, assume http headers.  Make the mimetype
+       // be application/http.  Otherwise, give it ARC mimetype.
+       String warcMimeTypeString;
+       if (r.getHeader().getContentBegin() > 0) {
+           warcMimeTypeString = WARCConstants.HTTP_RESPONSE_MIMETYPE;
+           writer.writeResponseRecord(r.getHeader().getUrl(), warcDateString,
+                   warcMimeTypeString, WARCWriter.getRecordID(), ar, r, 
+                   r.getHeader().getLength());
+       } else {
+           warcMimeTypeString = r.getHeader().getMimetype();
+           writer.writeResourceRecord(r.getHeader().getUrl(), warcDateString,
+                   warcMimeTypeString, ar, r, r.getHeader().getLength());
+       }
+
    }
 
    /**
@@ -167,10 +184,11 @@ public class Arc2Warc {
     * @throws ParseException Failed parse of the command line.
     * @throws IOException
     * @throws java.text.ParseException
+    * @throws URISyntaxException 
     */
    @SuppressWarnings("unchecked")
 public static void main(String [] args)
-   throws ParseException, IOException, java.text.ParseException {
+   throws ParseException, IOException, java.text.ParseException, URISyntaxException {
        Options options = new Options();
        options.addOption(new Option("h","help", false,
            "Prints this message and exits."));

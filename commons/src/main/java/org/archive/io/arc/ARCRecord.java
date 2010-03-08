@@ -36,6 +36,7 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.util.EncodingUtil;
+import org.apache.commons.lang.StringUtils;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.RecoverableIOException;
@@ -128,6 +129,14 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
      * errors encountered reading record
      */
     public List<ArcRecordErrors> errors = new ArrayList<ArcRecordErrors>();
+
+    /**
+     * verbatim ARC record header string
+     */
+    private String headerString;
+    public String getHeaderString() {
+        return this.headerString;
+    }
     
     /**
      * Constructor.
@@ -332,6 +341,9 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
             throw new IOException("Unparseable header line: " + list);
         }
 
+        // save verbatim header String
+        this.headerString = StringUtils.join(list," ");
+        
         return read;
     }
     
