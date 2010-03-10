@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -67,7 +66,7 @@ public class Arc2Warc {
    }
    
    public void transform(final File arc, final File warc, final boolean force)
-   throws IOException, URISyntaxException {
+   throws IOException {
        FileUtils.assertReadable(arc);
        if (warc.exists() && !force) {
     	   throw new IOException("Target WARC already exists. " +
@@ -79,7 +78,7 @@ public class Arc2Warc {
    }
    
    protected void transform(final ARCReader reader, final File warc)
-   throws IOException, URISyntaxException {
+   throws IOException {
 	   WARCWriter writer = null;
 	   // No point digesting. Digest is available after reading of ARC which
 	   // is too late for inclusion in WARC.
@@ -135,7 +134,7 @@ public class Arc2Warc {
    }
    
 protected void write(final WARCWriter writer, final ARCRecord r)
-throws IOException, URISyntaxException {
+throws IOException {
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
@@ -150,16 +149,16 @@ throws IOException, URISyntaxException {
        if (ip != null && ip.length() > 0) {
            ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
            r.getMetaData();
-           // enable reconstruction of ARC from WARC 
-           ar.addLabelValue("ARC-Header-Line", 
-               r.getHeaderString());
-           ar.addLabelValue("ARC-File", 
-               r.getMetaData().getArc());
-           ar.addLabelValue("ARC-Offset", 
-               String.valueOf(r.getHeader().getOffset()));
-           ar.addLabelValue("ARC-Length", 
-               String.valueOf(r.getHeader().getLength()));
        }
+       // enable reconstruction of ARC from WARC 
+       ar.addLabelValue("ARC-Header-Line", 
+           r.getHeaderString());
+       ar.addLabelValue("ARC-File", 
+           r.getMetaData().getArc());
+       ar.addLabelValue("ARC-Offset", 
+           String.valueOf(r.getHeader().getOffset()));
+       ar.addLabelValue("ARC-Length", 
+           String.valueOf(r.getHeader().getLength()));
 
        // If contentBody > 0, assume http headers.  Make the mimetype
        // be application/http.  Otherwise, give it ARC mimetype.
@@ -184,11 +183,10 @@ throws IOException, URISyntaxException {
     * @throws ParseException Failed parse of the command line.
     * @throws IOException
     * @throws java.text.ParseException
-    * @throws URISyntaxException 
     */
    @SuppressWarnings("unchecked")
 public static void main(String [] args)
-   throws ParseException, IOException, java.text.ParseException, URISyntaxException {
+   throws ParseException, IOException, java.text.ParseException {
        Options options = new Options();
        options.addOption(new Option("h","help", false,
            "Prints this message and exits."));
