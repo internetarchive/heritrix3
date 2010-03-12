@@ -150,15 +150,10 @@ throws IOException {
            ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
            r.getMetaData();
        }
-       // enable reconstruction of ARC from WARC 
-       ar.addLabelValue("ARC-Header-Line", 
-           r.getHeaderString());
-       ar.addLabelValue("ARC-File", 
-           r.getMetaData().getArc());
-       ar.addLabelValue("ARC-Gzip-Offset", 
-           String.valueOf(r.getHeader().getOffset()));
-       ar.addLabelValue("ARC-Length", 
-           String.valueOf(r.getHeader().getLength()));
+
+       // enable reconstruction of ARC from transformed WARC
+       // TODO: deferred for further analysis (see HER-1750) 
+       // ar.addLabelValue("ARC-Header-Line", r.getHeaderString());
 
        // If contentBody > 0, assume http headers.  Make the mimetype
        // be application/http.  Otherwise, give it ARC mimetype.
