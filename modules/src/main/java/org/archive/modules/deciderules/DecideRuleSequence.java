@@ -48,15 +48,16 @@ public class DecideRuleSequence extends DecideRule  {
                 DecideResult r = rule.decisionFor(uri);
                 if (LOGGER.isLoggable(Level.FINEST)) {
                     LOGGER.finest("DecideRule #" + i + " " + 
-                            rule.getClass().getName() + " returned " + r);
+                            rule.getClass().getName() + " returned " + r + " for url: " + uri);
                 }
                 if (r != DecideResult.NONE) {
                     result = r;
                 }
             }
         }
+        
         if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("DecideRuleSequence returned " + result);
+            LOGGER.finest("DecideRuleSequence returned " + result + " for url: " + uri);
         }
         return result;
     }
