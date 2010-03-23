@@ -59,6 +59,7 @@ public class EnhancedEnvironment extends Environment {
         if(classCatalog == null) {
             DatabaseConfig dbConfig = new DatabaseConfig();
             dbConfig.setAllowCreate(true);
+            dbConfig.setReadOnly(this.getConfig().getReadOnly());
             try {
                 classCatalogDB = openDatabase(null, "classCatalog", dbConfig);
                 classCatalog = new StoredClassCatalog(classCatalogDB);

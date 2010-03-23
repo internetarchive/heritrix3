@@ -52,6 +52,7 @@ import com.sleepycat.bind.tuple.StringBinding;
 import com.sleepycat.collections.StoredIterator;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
 
@@ -142,8 +143,10 @@ public abstract class PersistProcessor extends Processor {
         // open the source env history DB, copying entries to target env
         EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir, true);
         StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
+        DatabaseConfig historyDbConfig = HISTORY_DB_CONFIG.toDatabaseConfig();
+        historyDbConfig.setReadOnly(true);
         Database sourceHistoryDB = sourceEnv.openDatabase(
-                null, URI_HISTORY_DBNAME, HISTORY_DB_CONFIG.toDatabaseConfig());
+                null, URI_HISTORY_DBNAME, historyDbConfig);
         StoredSortedMap<String,Map> sourceHistoryMap = new StoredSortedMap<String,Map>(sourceHistoryDB,
                 new StringBinding(), new SerialBinding<Map>(sourceClassCatalog,
                         Map.class), true);
@@ -351,6 +354,7 @@ public abstract class PersistProcessor extends Processor {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setReadOnly(readOnly); 
+        envConfig.setConfigParam("je.log.faultReadSize", "6144");
         return new EnhancedEnvironment(env, envConfig);
     }
 }

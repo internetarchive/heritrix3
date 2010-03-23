@@ -74,6 +74,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
         	(Map<String,Object>) store.get(pkey);
         if(prior!=null) {
             // merge in keys
+            prior.keySet().removeAll(curi.getData().keySet());
             curi.getData().putAll(prior); 
         }
     }
