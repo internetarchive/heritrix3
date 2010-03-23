@@ -154,7 +154,7 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale,
             <id>website</id>
             <name>Website</name>
             <!--Pass as command-line system property to maven-->
-            <url>${website.url}/projects/${pom.artifactId}</url>
+            <url>${website.url}/projects/${project.artifactId}</url>
         </site>
     </distributionManagement>
 
@@ -346,6 +346,7 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale,
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.6.1</version>
         <configuration>
           <source>
                 ${basedir}/src/java
