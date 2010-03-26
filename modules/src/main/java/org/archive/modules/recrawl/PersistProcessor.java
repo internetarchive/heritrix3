@@ -141,7 +141,7 @@ public abstract class PersistProcessor extends Processor {
         int count = 0;
 
         // open the source env history DB, copying entries to target env
-        EnhancedEnvironment sourceEnv = setupEnvironment(sourceDir, true);
+        EnhancedEnvironment sourceEnv = setupCopyEnvironment(sourceDir, true);
         StoredClassCatalog sourceClassCatalog = sourceEnv.getClassCatalog();
         DatabaseConfig historyDbConfig = HISTORY_DB_CONFIG.toDatabaseConfig();
         historyDbConfig.setReadOnly(true);
@@ -249,7 +249,7 @@ public abstract class PersistProcessor extends Processor {
             if (!envFile.exists()) {
                 envFile.mkdirs();
             }
-            targetEnv = setupEnvironment(envFile);
+            targetEnv = setupCopyEnvironment(envFile);
             classCatalog = targetEnv.getClassCatalog();
             historyDB = targetEnv.openDatabase(null, URI_HISTORY_DBNAME, 
                     HISTORY_DB_CONFIG.toDatabaseConfig());
@@ -346,15 +346,18 @@ public abstract class PersistProcessor extends Processor {
         }
     }
 
-    public static EnhancedEnvironment setupEnvironment(File env) throws DatabaseException {
-        return setupEnvironment(env, false);
+    public static EnhancedEnvironment setupCopyEnvironment(File env) throws DatabaseException {
+        return setupCopyEnvironment(env, false);
     }
     
-    public static EnhancedEnvironment setupEnvironment(File env, boolean readOnly) throws DatabaseException {
+    public static EnhancedEnvironment setupCopyEnvironment(File env, boolean readOnly) throws DatabaseException {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setReadOnly(readOnly); 
-        envConfig.setConfigParam("je.log.faultReadSize", "6144");
-        return new EnhancedEnvironment(env, envConfig);
+        try {
+            return new EnhancedEnvironment(env, envConfig);
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("problem with specified environment "+env+"; is it already open?", iae);
+        }
     }
 }

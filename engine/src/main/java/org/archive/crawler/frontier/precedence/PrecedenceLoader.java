@@ -105,7 +105,7 @@ public class PrecedenceLoader {
         }
         
         // setup target environment
-        EnhancedEnvironment targetEnv = PersistProcessor.setupEnvironment(env);
+        EnhancedEnvironment targetEnv = PersistProcessor.setupCopyEnvironment(env);
         StoredClassCatalog classCatalog = targetEnv.getClassCatalog();
         Database historyDB = targetEnv.openDatabase(
                 null,

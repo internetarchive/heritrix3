@@ -97,9 +97,11 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
                         null, preloadSource.getFile().getAbsolutePath(),store);
                 logger.info("Loaded deduplication information for " + count + " previously fetched urls from " + preloadSource.getFile());
             } catch (IOException ioe) {
-                logger.log(Level.WARNING, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication! " + ioe);
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + ioe);
             } catch(DatabaseException de) {
-                logger.log(Level.WARNING, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication! " + de);
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + de);
+            } catch(IllegalArgumentException iae) {
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + iae);
             }
         }
     }
