@@ -104,7 +104,7 @@ public class EngineResource extends BaseResource {
                             + jobName + "</i>", Flash.Kind.NACK);
                 } else if (getEngine().addJobDirectory(new File(path),true)) {
                     Flash.addFlash(getResponse(), "Added crawl job: "
-                            + "'" + path + "'", Flash.Kind.NACK);
+                            + "'" + path + "'", Flash.Kind.ACK);
                 } else {
                     Flash.addFlash(getResponse(), "Could not add job: "
                             + "'" + path + "'", Flash.Kind.NACK);
