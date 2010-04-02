@@ -18,6 +18,10 @@
  */
 package org.archive.modules.net;
 
+import static org.archive.modules.CrawlURI.FetchType.HTTP_GET;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,11 +31,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.Checksum;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
+import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
-
-import static org.archive.modules.CrawlURI.FetchType.*;
-
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.credential.CredentialAvatar;
@@ -54,7 +58,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
     public static final long ROBOTS_NOT_FETCHED = -1;
     /** only check if robots-fetch is perhaps superfluous 
      * after this many tries */
-    public static final long MIN_ROBOTS_RETRIES = 2;
+    public static final long MIN_ROBOTS_RETRIES = 3;
 
     private final String server; // actually, host+port in the https case
     private int port;
@@ -143,27 +147,43 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
     public synchronized void updateRobots(RobotsHonoringPolicy honoringPolicy, 
             CrawlURI curi) {
 
-        CrawlURI.FetchType ft = curi.getFetchType();
-        boolean gotSomething = curi.getFetchStatus() > 0
-                && (ft == HTTP_GET || ft == HTTP_POST);
+        robotsFetched = System.currentTimeMillis();
+        
+        boolean gotSomething = curi.getFetchType() == HTTP_GET 
+            && (curi.getFetchStatus() > 0 || curi.getFetchStatus() == S_DEEMED_NOT_FOUND );
+        
+        
         if (!gotSomething && curi.getFetchAttempts() < MIN_ROBOTS_RETRIES) {
-            // robots.txt lookup failed, no reason to consider IGNORE yet
+            // robots.txt lookup failed, still trying, no reason to consider IGNORE yet
             validRobots = false;
             return;
         }
         
-        robotsFetched = System.currentTimeMillis();
 
         RobotsHonoringPolicy.Type type = honoringPolicy.getType();
         if (type == RobotsHonoringPolicy.Type.IGNORE) {
             // IGNORE = ALLOWALL
             robots = RobotsExclusionPolicy.ALLOWALL;
             validRobots = true;
+            if(curi.getFetchStatus() < 0) {
+                // prevent the rest of the usual retries
+                curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+            }
             return;
         }
         
-        if(!gotSomething) {
-            // robots.txt lookup failed and policy not IGNORE
+        // special deeming for a particular kind of connection-lost (empty server response)
+        if(curi.getFetchStatus() == S_CONNECT_LOST && CollectionUtils.exists(curi.getNonFatalFailures(),new Predicate() {
+            public boolean evaluate(Object obj) {
+                return obj instanceof NoHttpResponseException;
+            }
+        })) {
+            curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+            gotSomething = true; 
+        }
+        
+        if (!gotSomething) {
+            // robots.txt fetch failed and exceptions (ignore/deeming) don't apply; no valid robots info yet
             validRobots = false;
             return;
         }

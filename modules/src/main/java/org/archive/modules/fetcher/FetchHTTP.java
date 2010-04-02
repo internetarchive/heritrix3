@@ -779,7 +779,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     private void failedExecuteCleanup(final HttpMethod method,
             final CrawlURI curi, final Exception exception) {
-        cleanup(curi, exception, "executeMethod", S_CONNECT_FAILED);
+        cleanup(curi, exception, "executeMethod", (method.isRequestSent() ? S_CONNECT_LOST : S_CONNECT_FAILED));
         method.releaseConnection();
     }
 

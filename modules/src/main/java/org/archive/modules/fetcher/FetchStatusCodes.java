@@ -64,6 +64,10 @@ public interface FetchStatusCodes {
     /** DNS prerequisite failed, precluding attempt */
     public static final int S_PREREQUISITE_UNSCHEDULABLE_FAILURE = -63; //
     
+    /** synthetic status, used when some other status (such as connection-lost)
+     * is considered by policy the same as a document-not-found */
+    public static final int S_DEEMED_NOT_FOUND = -404; //
+    
     /** severe java 'Error' conditions (OutOfMemoryError, StackOverflowError,
      *  etc.) during URI processing */
     public static final int S_SERIOUS_ERROR = -3000;     //

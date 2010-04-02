@@ -22,6 +22,7 @@ package org.archive.crawler.postprocessor;
 
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 
 import java.util.Map;
 import java.util.logging.Logger;
@@ -160,7 +161,7 @@ public class DispositionProcessor extends Processor {
         if (scheme.equals("http") || scheme.equals("https") &&
                 server != null) {
             // Update connection problems counter
-            if(curi.getFetchStatus() == S_CONNECT_FAILED) {
+            if(curi.getFetchStatus() == S_CONNECT_FAILED || curi.getFetchStatus() == S_CONNECT_LOST ) {
                 server.incrementConsecutiveConnectionErrors();
             } else if (curi.getFetchStatus() > 0){
                 server.resetConsecutiveConnectionErrors();
@@ -168,9 +169,9 @@ public class DispositionProcessor extends Processor {
 
             // Update robots info
             try {
-                if (curi.getUURI().getPath() != null &&
-                        curi.getUURI().getPath().equals("/robots.txt")) {
+                if ("/robots.txt".equals(curi.getUURI().getPath())) {
                     // Update server with robots info
+                	// NOTE: in some cases the curi's status can be changed here
                     server.updateRobots(metadata.getRobotsHonoringPolicy(),  curi);
                 }
             }
