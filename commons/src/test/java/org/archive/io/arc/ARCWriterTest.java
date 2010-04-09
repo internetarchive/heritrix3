@@ -547,6 +547,21 @@ extends TmpDirTestCase implements ARCConstants {
         }
     }
     
+    // available should always be >= 0; extra read()s should all give EOF
+    public void testArchiveRecordAvailableConsistent() throws Exception {
+        // first test reading byte-at-a-time via no-param read()
+        ARCRecord record = getSingleRecord("testArchiveRecordAvailableConsistent");
+        int c = record.read(); 
+        while(c>=0) {
+            c = record.read(); 
+        }
+        // consecutive reads after EOR should always give -1, still show zero available()
+        for (int i=0; i<5; i++) {
+            assertTrue("available negative:"+record.available(), record.available()>=0);
+            assertEquals(-1, record.read());            
+        }
+    }
+    
     // should always give -1 on repeated reads past EOR
     public void testArchiveRecordEORConsistent() throws Exception {
         ARCRecord record = getSingleRecord("testArchiveRecordEORConsistent");
