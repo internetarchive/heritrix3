@@ -19,11 +19,13 @@
 
 package org.archive.io.arc;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Date;
@@ -531,28 +533,67 @@ extends TmpDirTestCase implements ARCConstants {
     }
     
     public void testArcRecordOffsetReads() throws Exception {
-    	// Get an ARC with one record.
-		WriterPoolMember w =
-			createArcWithOneRecord("testArcRecordInBufferStream", true);
-		w.close();
-		// Get reader on said ARC.
-		ARCReader r = ARCReaderFactory.get(w.getFile());
-		final Iterator<ArchiveRecord> i = r.iterator();
-		// Skip first ARC meta record.
-		ARCRecord ar = (ARCRecord) i.next();
-		i.hasNext();
-		// Now we're at first and only record in ARC.
-		ar = (ARCRecord) i.next();
-		// Now try getting some random set of bytes out of it 
-		// at an odd offset (used to fail because we were
-		// doing bad math to find where in buffer to read).
-		final byte[] buffer = new byte[17];
-		final int maxRead = 4;
-		int totalRead = 0;
-		while (totalRead < maxRead) {
-			totalRead = totalRead
-			    + ar.read(buffer, 13 + totalRead, maxRead - totalRead);
-			assertTrue(totalRead > 0);
-		}
-	}
+        ARCRecord ar = getSingleRecord("testArcRecordInBufferStream");
+        // Now try getting some random set of bytes out of it 
+        // at an odd offset (used to fail because we were
+        // doing bad math to find where in buffer to read).
+        final byte[] buffer = new byte[17];
+        final int maxRead = 4;
+        int totalRead = 0;
+        while (totalRead < maxRead) {
+            totalRead = totalRead
+                + ar.read(buffer, 13 + totalRead, maxRead - totalRead);
+            assertTrue(totalRead > 0);
+        }
+    }
+    
+    // should always give -1 on repeated reads past EOR
+    public void testArchiveRecordEORConsistent() throws Exception {
+        ARCRecord record = getSingleRecord("testArchiveRecordEORConsistent");
+        this.readToEOS(record);
+        // consecutive reads after EOR should always give -1
+        for (int i=0; i<5; i++) {
+            assertEquals(-1, record.read(new byte[1]));            
+        }
+    }
+    
+    // should not throw premature EOF when wrapped with BufferedInputStream
+    // [HER-1450] showed this was the case using Apache Tika
+    public void testArchiveRecordMarkSupport() throws Exception {
+        ARCRecord record = getSingleRecord("testArchiveRecordMarkSupport");
+        record.setStrict(true);
+        // ensure mark support
+        InputStream stream = new BufferedInputStream(record);
+        if (stream.markSupported()) {
+            for (int i=0; i<3; i++) {
+                this.readToEOS(stream);
+                stream.mark(stream.available());
+                stream.reset();
+            }
+            stream.close();
+        }
+    }
+
+    protected void readToEOS(InputStream in) throws Exception {
+        byte [] buf = new byte[1024];
+        int read = 0;
+        while (read >= 0) {
+            read = in.read(buf);
+            // System.out.println("readToEOS read " + read + " bytes");
+        }
+    }
+    
+    protected ARCRecord getSingleRecord(String name) throws Exception {
+        // Get an ARC with one record.
+        WriterPoolMember w = createArcWithOneRecord(name, true);
+        w.close();
+        // Get reader on said ARC.
+        ARCReader r = ARCReaderFactory.get(w.getFile());
+        final Iterator<ArchiveRecord> i = r.iterator();
+        // Skip first ARC meta record.
+        i.next();
+        i.hasNext();
+        // Now we're at first and only record in ARC.
+        return (ARCRecord) i.next();
+    }
 }
