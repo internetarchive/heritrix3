@@ -94,6 +94,13 @@ public class Robotstxt implements Serializable {
                         continue;
                     }
                     String path = read.substring(9).trim();
+                    // tolerate common error of ending path with '*' character
+                    // (not allowed by original spec; redundant but harmless with 
+                    // Google's wildcarding extensions -- which we don't yet fully
+                    // support). 
+                    if(path.endsWith("*")) {
+                        path = path.substring(0,path.length()-1); 
+                    }
                     current.addDisallow(path);
                     hasDirectivesYet = true; 
                     continue;
@@ -124,6 +131,13 @@ public class Robotstxt implements Serializable {
                         continue;
                     }
                     String path = read.substring(6).trim();
+                    // tolerate common error of ending path with '*' character
+                    // (not allowed by original spec; redundant but harmless with 
+                    // Google's wildcarding extensions -- which we don't yet fully
+                    // support). 
+                    if(path.endsWith("*")) {
+                        path = path.substring(0,path.length()-1); 
+                    }
                     current.addAllow(path);
                     hasDirectivesYet = true;
                     continue;
