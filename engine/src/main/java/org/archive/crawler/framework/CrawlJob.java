@@ -114,7 +114,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return new File(getJobDir(),"job.log");
     }
     
-    public PathSharingContext getJobContext() {
+    public synchronized PathSharingContext getJobContext() {
         return ac; 
     }
 
@@ -288,7 +288,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     /**
      * Can the configuration yield an assembled ApplicationContext? 
      */
-    public void instantiateContainer() {
+    public synchronized void instantiateContainer() {
         checkXML(); 
         if(ac==null) {
             try {
@@ -353,7 +353,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return ex.getMessage().replace('\n', ' ');
     }
 
-    public boolean hasApplicationContext() {
+    public synchronized boolean hasApplicationContext() {
         return ac!=null;
     }
     
@@ -363,7 +363,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * 
      * TODO: make these severe? 
      */
-    public void validateConfiguration() {
+    public synchronized void validateConfiguration() {
         instantiateContainer();
         if(ac==null) {
             // fatal errors already encountered and reported
@@ -379,10 +379,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     }
 
     /**
-     * Ddid the ApplicationContext self-validate? 
+     * Did the ApplicationContext self-validate? 
      * return true if validation passed without errors
      */
-    public boolean hasValidApplicationContext() {
+    public synchronized boolean hasValidApplicationContext() {
         if(ac==null) {
             return false;
         }
@@ -452,7 +452,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     /**
      * Start the context, catching and reporting any BeansExceptions.
      */
-    protected void startContext() {
+    protected synchronized void startContext() {
         try {
             ac.start(); 
         } catch (BeansException be) {
@@ -485,11 +485,11 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         return Math.max(getPrimaryConfig().lastModified(), getJobLog().lastModified());
     }
     
-    public boolean isRunning() {
+    public synchronized boolean isRunning() {
         return this.ac != null && this.ac.isActive() && this.ac.isRunning();
     }
 
-    public CrawlController getCrawlController() {
+    public synchronized CrawlController getCrawlController() {
         if(ac==null) {
             return null;
         }
@@ -519,7 +519,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * @return Checkpointer
      */
     @SuppressWarnings("unchecked")
-    public CheckpointService getCheckpointService() {
+    public synchronized CheckpointService getCheckpointService() {
         if(ac==null) {
             return null;
         }
@@ -531,7 +531,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * Ensure a fresh start for any configuration changes or relaunches,
      * by stopping and discarding an existing ApplicationContext.
      */
-    public boolean teardown() {
+    public synchronized boolean teardown() {
         if(ac!=null) {
             CrawlController cc = getCrawlController();
             if(cc!=null) {
@@ -609,7 +609,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * map by name, or an empty map if no ApplicationContext
      */
     @SuppressWarnings("unchecked")
-    public Map<String, ConfigPath> getConfigPaths() {
+    public synchronized Map<String, ConfigPath> getConfigPaths() {
         if(ac==null) {
             return MapUtils.EMPTY_MAP;
         }
