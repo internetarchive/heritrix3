@@ -181,7 +181,13 @@ implements Checkpointable, BeanNameAware {
         }
     }
     
-    protected void closeQueue() {
+    
+    /* (non-Javadoc)
+     * @see org.archive.crawler.frontier.AbstractFrontier#finalTasks()
+     */
+    @Override
+    protected void finalTasks() {
+        super.finalTasks();
         // before closing/releasing, dump if requested
         if (getDumpPendingAtClose()) {
             try {
@@ -190,7 +196,15 @@ implements Checkpointable, BeanNameAware {
                 logger.log(Level.WARNING, "dump pending problem", e);
             }
         }
+    }
+    
+    /* (non-Javadoc)
+     * @see org.archive.crawler.frontier.WorkQueueFrontier#close()
+     */
+    @Override 
+    public void close() {
         ArchiveUtils.closeQuietly(pendingUris);
+        super.close(); 
     }
         
     protected BdbMultipleWorkQueues getWorkQueues() {

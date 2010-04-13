@@ -312,8 +312,7 @@ implements Closeable,
      * Release resources only needed when running
      */
     public void close() {
-        ArchiveUtils.closeQuietly(uriUniqFilter);
-        closeQueue();        
+        ArchiveUtils.closeQuietly(uriUniqFilter);     
         ArchiveUtils.closeQuietly(allQueues);
     }
     
@@ -1550,8 +1549,6 @@ implements Closeable,
             KeyedProperties.clearOverridesFrom(curi); 
         }
     }
-    
-    protected abstract void closeQueue();
     
     /**
      * Returns <code>true</code> if the WorkQueue implementation of this

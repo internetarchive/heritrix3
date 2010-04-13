@@ -408,6 +408,7 @@ public abstract class AbstractFrontier
                             // continue to process discovered and finished URIs
                             inbound.take().process();
                         }
+                        finalTasks(); 
                         // TODO: more cleanup?
                         reachedState(State.FINISH);
                         break loop;
@@ -435,6 +436,14 @@ public abstract class AbstractFrontier
     }
 
 
+    /**
+     * Perform any tasks necessary before entering 
+     * FINISH frontier state/FINISHED crawl state
+     */
+    protected void finalTasks() {
+        // by default; nothing
+    }
+    
     /**
      * Fill the outbound queue with eligible CrawlURIs, to capacity
      * or as much as possible. 
