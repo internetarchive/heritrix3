@@ -424,8 +424,8 @@ public class StatisticsTracker
     }
 
     /**
-     * Start thread.  Will call logActivity() at intervals specified by
-     * logInterval
+     * Do activity. Is called by ScheduledExecutorService at intervals specified by
+     * intervalSeconds
      *
      */
     public void run() {
