@@ -304,7 +304,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     }
     
     /**
-     * Info to log, if at FINE level
+     * Summary to log, if at FINE level
      */
     private void logCacheSummary() {
         if (logger.isLoggable((Level.FINE))) {
@@ -371,10 +371,10 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
         // Sync. memory and disk.
         useStatsSyncUsed.incrementAndGet();
         long startTime = 0;
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.FINE)) {
             dbName = getDatabaseName();
             startTime = System.currentTimeMillis();
-            logger.info(dbName + " start sizes: disk " + this.diskMap.size() +
+            logger.fine(dbName + " start sizes: disk " + this.diskMap.size() +
                 ", mem " + this.memMap.size());
         }
         
@@ -398,8 +398,8 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
             throw new RuntimeException(e);
         }
         
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(dbName + " sync took " +
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(dbName + " sync took " +
                 (System.currentTimeMillis() - startTime) + "ms. " +
                 "Finish sizes: disk " +
                 this.diskMap.size() + ", mem " + this.memMap.size());

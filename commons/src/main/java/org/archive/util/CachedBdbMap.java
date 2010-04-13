@@ -88,7 +88,7 @@ import com.sleepycat.je.LockConflictException;
  * @author stack
  * @author gojomo
  * @author paul baclace (conversion to ConcurrentMap)
- *  
+ * @deprecated
  */
 public class CachedBdbMap<K,V> extends AbstractMap<K,V> 
 implements ConcurrentMap<K,V>, ObjectIdentityCache<K,V>, Serializable, Closeable {

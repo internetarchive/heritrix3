@@ -21,14 +21,10 @@ package org.archive.util;
 import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.commons.lang.math.RandomUtils;
-import org.archive.util.bdbje.EnhancedEnvironment;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.math.RandomUtils;
+import org.archive.util.bdbje.EnhancedEnvironment;
 
 /**
  * @contributor stack
@@ -39,7 +35,6 @@ public class ObjectIdentityBdbCacheTest extends TmpDirTestCase {
     EnhancedEnvironment env; 
     private ObjectIdentityBdbCache<HashMap<String,String>> cache;
     
-    @SuppressWarnings("unchecked")
     protected void setUp() throws Exception {
         super.setUp();
         File envDir = new File(getTmpDir(),"ObjectIdentityBdbCacheTest");
@@ -123,14 +118,6 @@ public class ObjectIdentityBdbCacheTest extends TmpDirTestCase {
     }
     
     public void testBackingDbGetsUpdated() {
-        // Enable all logging. Up the level on the handlers and then
-        // on the big map itself.
-        Handler [] handlers = Logger.getLogger("").getHandlers();
-        for (int index = 0; index < handlers.length; index++) {
-            handlers[index].setLevel(Level.FINEST);
-        }
-        Logger.getLogger(ObjectIdentityBdbCache.class.getName()).
-            setLevel(Level.FINEST);
         // Set up values.
         final String value = "value";
         final String key = "key";
@@ -148,10 +135,8 @@ public class ObjectIdentityBdbCacheTest extends TmpDirTestCase {
         for (int i = 0; i < upperbound; i++) {
             HashMap<String,String> m = this.cache.get(key + Integer.toString(i));
             String v = m.get(key);
-            if (v == null || !v.equals(value)) {
-                Logger.getLogger(CachedBdbMap.class.getName()).
-                    warning("Wrong value " + i);
-            }
+            assertNotNull("value should not be null",v);
+            assertEquals("value incorrect", value, v);
         }
     }
     

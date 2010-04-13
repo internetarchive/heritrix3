@@ -78,7 +78,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         private static final long serialVersionUID = 1L;
         public transient Database database;
         public String name;
-        public String primaryName;
         public BdbConfig config;
     }
     
@@ -222,7 +221,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 doRecover(); 
             }
    
-            setup(getDir().getFile(), getCachePercent(), !isRecovery, getUseSharedCache());
+            setup(getDir().getFile(), !isRecovery);
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         } catch (IOException e) {
@@ -244,36 +243,34 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         close();
     }
     
-    protected void setup(File f, int cachePercent, boolean create, boolean sharedCache) 
+    protected void setup(File f, boolean create) 
     throws DatabaseException {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
         config.setLockTimeout(75, TimeUnit.MINUTES); // set to max
-        if(cachePercent>0) {
-            config.setCachePercent(cachePercent);
+        if(getCachePercent()>0) {
+            config.setCachePercent(getCachePercent());
         }
-        config.setSharedCache(sharedCache);
+        config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
         // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
-        long nLockTables = expectedConcurrency-1;
+        long nLockTables = getExpectedConcurrency()-1;
         while(!BigInteger.valueOf(nLockTables).isProbablePrime(Integer.MAX_VALUE)) {
             nLockTables--;
         }
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
         
         // triple this value to 6K because stats show many faults
-        config.setConfigParam("je.log.faultReadSize", "6144");
-        f.mkdirs();
-        
+        config.setConfigParam("je.log.faultReadSize", "6144"); 
+
         // to support checkpoints, prevent BDB's cleaner from deleting log files
         config.setConfigParam("je.cleaner.expunge", "false");
 
+        f.mkdirs();
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
-        
         this.classCatalog = this.bdbEnvironment.getClassCatalog();
     }
-
 
     public void closeDatabase(Database db) {
         try {
@@ -384,6 +381,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @param value
      * @return
      * @throws DatabaseException
+     * @deprecated use ObjectIdentityBdbCache instead
      */
     public <K,V> CachedBdbMap<K,V> getCBMMap(String dbName, boolean recycle,
             Class<? super K> key, Class<? super V> value) 
