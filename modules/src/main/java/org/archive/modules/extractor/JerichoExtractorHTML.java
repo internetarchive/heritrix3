@@ -42,7 +42,6 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
-import org.archive.util.UriUtils;
 
 import au.id.jericho.lib.html.Attribute;
 import au.id.jericho.lib.html.Attributes;
@@ -236,12 +235,19 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         // VALUE
         if (((attr = attributes.get("value")) != null) &&
                  ((attrValue = attr.getValue()) != null)) {
-            if (UriUtils.isLikelyUri(attrValue) && overlyEagerLinkDetection) {
-                CharSequence context = elementContext(elementName, attr
-                        .getKey());
-                processLink(curi, attrValue, context);
+            CharSequence valueContext = elementContext(elementName, attr.getKey());
+            if("PARAM".equalsIgnoreCase(elementName) 
+                    && "flashvars".equalsIgnoreCase(attributes.get("name").getValue())) {
+                // special handling for <PARAM NAME='flashvars" VALUE="">
+                String queryStringLike = attrValue.toString();
+                // treat value as query-string-like "key=value[;key=value]*" pairings
+                considerQueryStringValues(curi, queryStringLike, valueContext,Hop.SPECULATIVE);
+            } else {
+                // regular VALUE handling
+                if (overlyEagerLinkDetection) {
+                    considerIfLikelyUri(curi,attrValue,valueContext,Hop.NAVLINK);
+                }
             }
-
         }
         // STYLE
         if (((attr = attributes.get("style")) != null) &&
@@ -251,6 +257,14 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
                     this, curi, attrValue));
         }
+        
+        // FLASHVARS
+        if (((attr = attributes.get("flashvars")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            // FLASHVARS inline attribute
+            CharSequence valueContext = elementContext(elementName, attr.getKey());
+            considerQueryStringValues(curi, attrValue, valueContext,Hop.SPECULATIVE);
+       }
 
         // handle codebase/resources
         if (resources == null)

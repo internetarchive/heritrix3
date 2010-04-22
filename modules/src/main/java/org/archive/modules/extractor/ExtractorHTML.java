@@ -34,11 +34,11 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsHonoringPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 import org.archive.util.UriUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -330,6 +330,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         CharSequence actionContext = null;
         CharSequence method = null; 
         
+        // Just in case it's a VALUE whose interpretation depends on accompanying NAME
+        CharSequence valueVal = null; 
+        CharSequence valueContext = null;
+        CharSequence nameVal = null; 
+        
         final boolean framesAsEmbeds = 
             getTreatFramesAsEmbedLinks();
 
@@ -349,6 +354,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             assert start >= 0: "Start is: " + start + ", " + curi;
             assert end >= 0: "End is :" + end + ", " + curi;
             CharSequence value = cs.subSequence(start, end);
+            CharSequence attrName = cs.subSequence(attr.start(1),attr.end(1));
             value = TextUtils.unescapeHtml(value);
             if (attr.start(2) > -1) {
                 // HREF
@@ -430,22 +436,28 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
             } else if (attr.start(10) > -1) {
                 // VALUE, with possibility of URI
-                if (extractValueAttributes && UriUtils.isLikelyUri(value)) {
-                    CharSequence context = elementContext(element, attr.group(10));
-                    processLink(curi,value, context);
-                }
-
+                // store value, context for handling at end
+                valueVal = value; 
+                valueContext = elementContext(element,attr.group(10));
             } else if (attr.start(11) > -1) {
                 // STYLE inline attribute
                 // then, parse for URIs
                 numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
-                        this, curi, value));
-                
+                        this, curi, value));        
             } else if (attr.start(12) > -1) {
                 // METHOD
                 method = value;
                 // form processing finished at end (after ACTION also collected)
             } else if (attr.start(13) > -1) {
+                if("NAME".equalsIgnoreCase(attrName.toString())) {
+                    // remember 'name' for end-analysis
+                    nameVal = value; 
+                }
+                if("FLASHVARS".equalsIgnoreCase(attrName.toString())) {
+                    // consider FLASHVARS attribute immediately
+                    valueContext = elementContext(element,attr.group(13));
+                    considerQueryStringValues(curi, value, valueContext,Hop.SPECULATIVE);
+                }
                 // any other attribute
                 // ignore for now
                 // could probe for path- or script-looking strings, but
@@ -490,6 +502,56 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 processLink(curi, action, actionContext);
             }
         }
+        
+        // finish handling VALUE
+        if(valueVal != null) {
+            if("PARAM".equalsIgnoreCase(elementStr) && "flashvars".equalsIgnoreCase(nameVal.toString())) {
+                // special handling for <PARAM NAME='flashvars" VALUE="">
+                String queryStringLike = valueVal.toString();
+                // treat value as query-string-like "key=value[;key=value]*" pairings
+                considerQueryStringValues(curi, queryStringLike, valueContext,Hop.SPECULATIVE);
+            } else {
+                // regular VALUE handling
+                if (extractValueAttributes) {
+                    considerIfLikelyUri(curi,valueVal,valueContext,Hop.NAVLINK);
+                }
+            }
+        }
+    }
+
+    /**
+     * Consider a query-string-like collections of key=value[;key=value]
+     * pairs for URI-like strings in the values. Where URI-like strings are
+     * found, add as discovered outlink. 
+     * 
+     * @param curi origin CrawlURI
+     * @param queryString query-string-like string
+     * @param valueContext page context where found
+     */
+    protected void considerQueryStringValues(CrawlURI curi,
+            CharSequence queryString, CharSequence valueContext, Hop hop) {
+        for(String pairString : queryString.toString().split(";")) {
+            String[] keyVal = pairString.split("=");
+            if(keyVal.length==2) {
+                considerIfLikelyUri(curi,keyVal[1],valueContext, hop);
+            }
+        }
+    }
+
+    /**
+     * Consider whether a given string is URI-like. If so, add as discovered 
+     * outlink. 
+     * 
+     * @param curi origin CrawlURI
+     * @param queryString query-string-like string
+     * @param valueContext page context where found
+
+     */
+    protected void considerIfLikelyUri(CrawlURI curi, CharSequence candidate, 
+            CharSequence valueContext, Hop hop) {
+        if(UriUtils.isLikelyUri(candidate)) {
+            addLinkFromString(curi,candidate,valueContext,hop);
+        }
     }
 
 
@@ -523,15 +585,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("link: " + value.toString() + " from " + curi);
             }
-            addLinkFromString(curi,
-                (value instanceof String)?
-                    (String)value: value.toString(),
-                context, Hop.NAVLINK);
+            addLinkFromString(curi, value, context, Hop.NAVLINK);
             numberOfLinksExtracted.incrementAndGet();
         }
     }
 
-    private void addLinkFromString(CrawlURI curi, String uri,
+    protected void addLinkFromString(CrawlURI curi, CharSequence uri,
             CharSequence context, Hop hop) {
         try {
             // We do a 'toString' on context because its a sequence from
@@ -540,7 +599,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             // ReplayCharSequence.
             HTMLLinkContext hc = new HTMLLinkContext(context.toString());
             int max = getExtractorParameters().getMaxOutlinks();
-            Link.addRelativeToBase(curi, max, uri, hc, hop);
+            Link.addRelativeToBase(curi, max, uri.toString(), hc, hop);
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
         }

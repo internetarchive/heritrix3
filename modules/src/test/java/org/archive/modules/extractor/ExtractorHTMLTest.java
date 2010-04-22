@@ -300,7 +300,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
         extractor.extract(curi, cs);
         assertTrue("outlinks should be empty",curi.getOutLinks().isEmpty());
-                
     }
 
     public void testOutLinksWithBaseHref() throws URIException {
@@ -322,6 +321,64 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 links[1].getDestination().toString());
         assertEquals("outlink2 from base href",dest2,
                 links[2].getDestination().toString());
+    }
+    
+    protected Predicate destinationContainsPredicate(final String fragment) {
+        return new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((Link) object).getDestination().toString().indexOf(fragment) >= 0;
+            }
+        };
+    }
+    
+    protected Predicate destinationsIsPredicate(final String value) {
+        return new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((Link) object).getDestination().toString().equals(value);
+            }
+        };
+    }
+    
+    /**
+     * HER-1728 
+     * @throws URIException 
+     */
+    public void testFlashvarsParamValue() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
+        CharSequence cs = 
+            "<object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" codebase=\"http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,28,0\" id=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
+            "    <param name=\"flashvars\" value=\"zoomifyXMLPath=ParamZoomifySlideshowViewer.xml\">\n" + 
+            "    <param name=\"menu\" value=\"false\">\n" + 
+            "    <param name=\"bgcolor\" value=\"#000000\">\n" + 
+            "    <param name=\"src\" value=\"ZoomifySlideshowViewer.swf\">\n" + 
+            "    <embed flashvars=\"zoomifyXMLPath=EmbedZoomifySlideshowViewer.xml\" src=\"ZoomifySlideshowViewer.swf\" menu=\"false\" bgcolor=\"#000000\" pluginspage=\"http://www.adobe.com/go/getflashplayer\" type=\"application/x-shockwave-flash\" name=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
+            "</object> ";
+        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+        extractor.extract(curi, cs);
+        String expected = "http://www.example.com/ParamZoomifySlideshowViewer.xml";
+        assertTrue("outlinks should contain: "+expected,
+                CollectionUtils.exists(curi.getOutLinks(),destinationsIsPredicate(expected)));
+    }
+    
+    /**
+     * HER-1728 
+     * @throws URIException 
+     */
+    public void testFlashvarsEmbedAttribute() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
+        CharSequence cs = 
+            "<object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" codebase=\"http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,28,0\" id=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
+            "    <param name=\"flashvars\" value=\"zoomifyXMLPath=ParamZoomifySlideshowViewer.xml\">\n" + 
+            "    <param name=\"menu\" value=\"false\">\n" + 
+            "    <param name=\"bgcolor\" value=\"#000000\">\n" + 
+            "    <param name=\"src\" value=\"ZoomifySlideshowViewer.swf\">\n" + 
+            "    <embed flashvars=\"zoomifyXMLPath=EmbedZoomifySlideshowViewer.xml\" src=\"ZoomifySlideshowViewer.swf\" menu=\"false\" bgcolor=\"#000000\" pluginspage=\"http://www.adobe.com/go/getflashplayer\" type=\"application/x-shockwave-flash\" name=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
+            "</object> ";
+        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+        extractor.extract(curi, cs);
+        String expected = "http://www.example.com/EmbedZoomifySlideshowViewer.xml";
+        assertTrue("outlinks should contain: "+expected,
+                CollectionUtils.exists(curi.getOutLinks(),destinationsIsPredicate(expected)));
     }
         
 }
