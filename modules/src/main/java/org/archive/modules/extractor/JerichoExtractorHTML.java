@@ -42,6 +42,7 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
+import org.archive.util.UriUtils;
 
 import au.id.jericho.lib.html.Attribute;
 import au.id.jericho.lib.html.Attributes;
@@ -235,8 +236,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         // VALUE
         if (((attr = attributes.get("value")) != null) &&
                  ((attrValue = attr.getValue()) != null)) {
-            if (TextUtils.matches(LIKELY_URI_PATH, attrValue)
-                    && overlyEagerLinkDetection) {
+            if (UriUtils.isLikelyUri(attrValue) && overlyEagerLinkDetection) {
                 CharSequence context = elementContext(elementName, attr
                         .getKey());
                 processLink(curi, attrValue, context);

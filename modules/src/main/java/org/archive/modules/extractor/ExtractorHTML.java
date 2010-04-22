@@ -38,6 +38,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
+import org.archive.util.UriUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -181,13 +182,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // 15: single-quote delimited attr value
     // 16: space-delimited attr value
 
-
-    // much like the javascript likely-URI extractor, but
-    // without requiring quotes -- this can indicate whether
-    // an HTML tag attribute that isn't definitionally a
-    // URI might be one anyway, as in form-tag VALUE attributes
-    static final String LIKELY_URI_PATH =
-     "(\\.{0,2}[^\\.\\n\\r\\s\"']*(\\.[^\\.\\n\\r\\s\"']+)+)";
+    
     static final String WHITESPACE = "\\s";
     static final String CLASSEXT =".class";
     static final String APPLET = "applet";
@@ -435,10 +430,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
             } else if (attr.start(10) > -1) {
                 // VALUE, with possibility of URI
-                if (extractValueAttributes
-                        && TextUtils.matches(LIKELY_URI_PATH, value)) {
-                    CharSequence context = elementContext(element,
-                        attr.group(10));
+                if (extractValueAttributes && UriUtils.isLikelyUri(value)) {
+                    CharSequence context = elementContext(element, attr.group(10));
                     processLink(curi,value, context);
                 }
 

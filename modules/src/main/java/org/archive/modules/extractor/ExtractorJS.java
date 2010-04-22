@@ -18,23 +18,21 @@
  */
 package org.archive.modules.extractor;
 
+import static org.archive.modules.extractor.Hop.SPECULATIVE;
+import static org.archive.modules.extractor.LinkContext.JS_MISC;
+
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
-import org.archive.net.LaxURLCodec;
 import org.archive.net.UURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
-
-import static org.archive.modules.extractor.Hop.SPECULATIVE;
-import static org.archive.modules.extractor.LinkContext.JS_MISC;
+import org.archive.util.UriUtils;
 
 /**
  * Processes Javascript files for strings that are likely to be
@@ -47,12 +45,9 @@ public class ExtractorJS extends ContentExtractor {
 
     private static final long serialVersionUID = 2L;
 
+    @SuppressWarnings("unused")
     private static Logger LOGGER =
         Logger.getLogger("org.archive.crawler.extractor.ExtractorJS");
-
-    static final String AMP = "&";
-    static final String ESCAPED_AMP = "&amp;";
-    static final String WHITESPACE = "\\s";
 
     // finds whitespace-free strings in Javascript
     // (areas between paired ' or " characters, possibly backslash-quoted
@@ -63,22 +58,9 @@ public class ExtractorJS extends ContentExtractor {
     // (G1) ' or " with optional leading backslashes
     // (G2) whitespace-free string delimited on boths ends by G1
 
-    // determines whether a string is likely URI
-    // (no whitespace or '<' '>',  has an internal dot or some slash,
-    // begins and ends with either '/' or a word-char)
-    static final String STRING_URI_DETECTOR =
-        "(?:\\w|[\\.]{0,2}/)[\\S&&[^<>]]*(?:\\.|/)[\\S&&[^<>]]*(?:\\w|/)";
-
     protected long numberOfCURIsHandled = 0;
     protected static long numberOfLinksExtracted = 0;
 
-    // strings that STRING_URI_DETECTOR picks up as URIs,
-    // which are known to be problematic, and NOT to be 
-    // added to outLinks
-    protected final static String[] STRING_URI_DETECTOR_EXCEPTIONS = {
-        "text/javascript"
-        };
-    
     // URIs known to produce false-positives with the current JS extractor.
     // e.g. currently (2.0.3) the JS extractor produces 13 false-positive 
     // URIs from http://www.google-analytics.com/urchin.js and only 2 
@@ -142,8 +124,7 @@ public class ExtractorJS extends ContentExtractor {
         try {
             cs = curi.getRecorder().getReplayCharSequence();
             try {
-                numberOfLinksExtracted += considerStrings(this, curi, cs, 
-                        true);
+                numberOfLinksExtracted += considerStrings(this, curi, cs, true);
             } catch (StackOverflowError e) {
                 DevUtils.warnHandle(e, "ExtractorJS StackOverflowError");
             }
@@ -165,16 +146,9 @@ public class ExtractorJS extends ContentExtractor {
         while(strings.find()) {
             CharSequence subsequence =
                 cs.subSequence(strings.start(2), strings.end(2));
-            Matcher uri =
-                TextUtils.getMatcher(STRING_URI_DETECTOR, subsequence);
-            if(uri.matches()) {
-                String string = uri.group();
-                // protect against adding outlinks for known problematic matches
-                if (isUriMatchException(string,cs)) {
-                    TextUtils.recycleMatcher(uri);
-                    continue;
-                }
-                string = speculativeFixup(string, curi);
+            if(UriUtils.isLikelyUri(subsequence)) {
+                String string = subsequence.toString();
+                string = UriUtils.speculativeFixup(string, curi.getUURI());
                 foundLinks++;
                 try {
                     int max = ext.getExtractorParameters().getMaxOutlinks();
@@ -192,75 +166,8 @@ public class ExtractorJS extends ContentExtractor {
                foundLinks += considerStrings(ext, curi, subsequence, 
                        handlingJSFile);
             }
-            TextUtils.recycleMatcher(uri);
         }
         TextUtils.recycleMatcher(strings);
         return foundLinks;
-    }
-    
-    /**
-     * checks to see if URI match is a special case 
-     * @param string matched by <code>STRING_URI_DETECTOR</code>
-     * @param cs 
-     * @return true if string is one of <code>STRING_URI_EXCEPTIONS</code>
-     */
-    private static boolean isUriMatchException(String string,CharSequence cs) {
-        for (String s : STRING_URI_DETECTOR_EXCEPTIONS) {
-            if (s.equals(string)) 
-                return true;
-        }
-        return false;
-    }
-
-
-    /**
-     * Perform additional fixup of likely-URI Strings
-     * 
-     * @param string detected candidate String
-     * @return String changed/decoded to increase liklihood it is a 
-     * meaningful non-404 URI
-     */
-    public static String speculativeFixup(String string, CrawlURI puri) {
-        String retVal = string;
-        
-        // unescape ampersands
-        retVal = TextUtils.replaceAll(ESCAPED_AMP, retVal, AMP);
-        
-        // uri-decode if begins with encoded 'http(s)?%3A'
-        Matcher m = TextUtils.getMatcher("(?i)^https?%3A.*",retVal); 
-        if(m.matches()) {
-            try {
-                retVal = LaxURLCodec.DEFAULT.decode(retVal);
-            } catch (DecoderException e) {
-                LOGGER.log(Level.INFO,"unable to decode",e);
-            }
-        }
-        TextUtils.recycleMatcher(m);
-        
-        // TODO: more URI-decoding if there are %-encoded parts?
-        
-        // detect scheme-less intended-absolute-URI
-        // intent: "opens with what looks like a dotted-domain, and 
-        // last segment is a top-level-domain (eg "com", "org", etc)" 
-        m = TextUtils.getMatcher(
-                "^[^\\./:\\s%]+\\.[^/:\\s%]+\\.([^\\./:\\s%]+)(/.*|)$", 
-                retVal);
-        if(m.matches()) {
-            if(ArchiveUtils.isTld(m.group(1))) { 
-                String schemePlus = "http://";       
-                // if on exact same host preserve scheme (eg https)
-                try {
-                    if (retVal.startsWith(puri.getUURI().getHost())) {
-                        schemePlus = puri.getUURI().getScheme() + "://";
-                    }
-                } catch (URIException e) {
-                    // error retrieving source host - ignore it
-                }
-                retVal = schemePlus + retVal; 
-            }
-        }
-        TextUtils.recycleMatcher(m);
-        
-        return retVal; 
     }
 }

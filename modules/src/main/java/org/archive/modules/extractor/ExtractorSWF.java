@@ -21,10 +21,9 @@ package org.archive.modules.extractor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 
 import org.archive.modules.CrawlURI;
-import org.archive.util.TextUtils;
+import org.archive.util.UriUtils;
 
 import com.anotherbigidea.flash.interfaces.SWFActions;
 import com.anotherbigidea.flash.interfaces.SWFTagTypes;
@@ -326,15 +325,12 @@ public class ExtractorSWF extends ContentExtractor {
         }
 
         public void considerStringAsUri(String str) throws IOException {
-            Matcher uri = TextUtils.getMatcher(ExtractorJS.STRING_URI_DETECTOR,
-                    str);
-
-            if (uri.matches()) {
+            if (UriUtils.isLikelyUri(str)) {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToVia(curi, max, uri.group(), LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                Link.addRelativeToVia(curi, max, str, 
+                        LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
                 linkCount++;
             }
-            TextUtils.recycleMatcher(uri);
         }
 
 
