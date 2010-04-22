@@ -54,7 +54,6 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
@@ -230,6 +229,7 @@ public class JobResource extends BaseResource {
         // TODO: replace with use a templating system (FreeMarker?)
         pw.println("<head><title>"+jobTitle+"</title>");
         pw.println("<base href='"+baseRef+"'/>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"../../static/engine.css\"");
         pw.println("</head><body>");
         pw.print("<h1>Job <i>"+cj.getShortName()+"</i> (");
         
@@ -599,13 +599,15 @@ public class JobResource extends BaseResource {
             
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
-        }
+    }
 
     protected void copyJob(String copyTo, boolean asProfile) throws ResourceException {
         try {
             getEngine().copy(cj, copyTo, asProfile);
         } catch (IOException e) {
-            throw new ResourceException(Status.CLIENT_ERROR_CONFLICT,e);
+            Flash.addFlash(getResponse(), "Job not copied: "+e.getMessage(), Flash.Kind.NACK);
+            getResponse().redirectSeeOther(getRequest().getOriginalRef());
+            return;
         }
         // redirect to destination job page
         getResponse().redirectSeeOther(copyTo);
