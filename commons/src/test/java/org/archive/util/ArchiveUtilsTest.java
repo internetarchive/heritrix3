@@ -398,5 +398,10 @@ public class ArchiveUtilsTest extends TestCase {
         allDone.acquire(); // wait for all threads to finish
         assertEquals(failures.get()+" format mismatches",0,failures.get()); 
     }
+    
+    public void testIsTld() {
+        assertTrue("TLD test problem", ArchiveUtils.isTld("com"));
+        assertTrue("TLD test problem", ArchiveUtils.isTld("COM"));
+    }
 }
 
