@@ -629,8 +629,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             curi.setContentDigest(algorithm, 
                 rec.getRecordedInput().getDigestValue());
         }
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(((curi.getFetchType() == HTTP_POST) ? "POST" : "GET")
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(((curi.getFetchType() == HTTP_POST) ? "POST" : "GET")
                     + " " + curi.getUURI().toString() + " "
                     + method.getStatusCode() + " "
                     + rec.getRecordedInput().getSize() + " "
@@ -1155,16 +1155,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
                     HttpAuthenticationCredential.class, server.getName());
             if (storeRfc2617Credentials == null
                     || storeRfc2617Credentials.size() <= 0) {
-                logger.info("No rfc2617 credentials for " + curi);
+                logger.fine("No rfc2617 credentials for " + curi);
             } else {
                 HttpAuthenticationCredential found = HttpAuthenticationCredential.getByRealm(
                         storeRfc2617Credentials, realm, curi);
                 if (found == null) {
-                    logger.info("No rfc2617 credentials for realm " + realm
+                    logger.fine("No rfc2617 credentials for realm " + realm
                             + " in " + curi);
                 } else {
                     found.attach(curi, authscheme.getRealm());
-                    logger.info("Found credential for realm " + realm
+                    logger.fine("Found credential for realm " + realm
                             + " in store for " + curi.toString());
                 }
             }
@@ -1183,7 +1183,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             final CrawlURI curi) {
         Header[] headers = method.getResponseHeaders("WWW-Authenticate");
         if (headers == null || headers.length <= 0) {
-            logger.info("We got a 401 but no WWW-Authenticate challenge: "
+            logger.fine("We got a 401 but no WWW-Authenticate challenge: "
                     + curi.toString());
             return null;
         }
@@ -1192,10 +1192,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
         try {
             authschemes = AuthChallengeParser.parseChallenges(headers);
         } catch (MalformedChallengeException e) {
-            logger.info("Failed challenge parse: " + e.getMessage());
+            logger.fine("Failed challenge parse: " + e.getMessage());
         }
         if (authschemes == null || authschemes.size() <= 0) {
-            logger.info("We got a 401 and WWW-Authenticate challenge"
+            logger.fine("We got a 401 and WWW-Authenticate challenge"
                     + " but failed parse of the header " + curi.toString());
             return null;
         }
@@ -1217,24 +1217,24 @@ public class FetchHTTP extends Processor implements Lifecycle {
             } else if (key.equals("digest")) {
                 authscheme = new DigestScheme();
             } else {
-                logger.info("Unsupported scheme: " + key);
+                logger.fine("Unsupported scheme: " + key);
                 continue;
             }
 
             try {
                 authscheme.processChallenge(challenge);
             } catch (MalformedChallengeException e) {
-                logger.info(e.getMessage() + " " + curi + " " + headers);
+                logger.fine(e.getMessage() + " " + curi + " " + headers);
                 continue;
             }
             if (authscheme.isConnectionBased()) {
-                logger.info("Connection based " + authscheme);
+                logger.fine("Connection based " + authscheme);
                 continue;
             }
 
             if (authscheme.getRealm() == null
                     || authscheme.getRealm().length() <= 0) {
-                logger.info("Empty realm " + authscheme + " for " + curi);
+                logger.fine("Empty realm " + authscheme + " for " + curi);
                 continue;
             }
             result = authscheme;

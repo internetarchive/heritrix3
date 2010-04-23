@@ -146,7 +146,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
             ReplayInputStream contentReplayInputStream, String backingFilename,
             String charsetName) throws IOException {
         super();
-        logger.info("new GenericReplayCharSequence() characterEncoding="
+        logger.fine("new GenericReplayCharSequence() characterEncoding="
                 + charsetName + " backingFilename=" + backingFilename);
         Charset charset;
         try {
@@ -157,7 +157,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
             charset = Charset.forName(FALLBACK_CHARSET_NAME);
         }
         if (charset.newEncoder().maxBytesPerChar() == 1.0) {
-            logger.info("charset=" + charsetName
+            logger.fine("charset=" + charsetName
                     + ": supports random access, using backing file directly");
             this.bytesPerChar = 1;
             this.backingFileIn = new FileInputStream(backingFilename);
@@ -165,7 +165,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
             this.prefixBuffer = this.decoder.decode(
                     ByteBuffer.wrap(contentReplayInputStream.getBuffer()));
         } else {
-            logger.info("charset=" + charsetName
+            logger.fine("charset=" + charsetName
                             + ": may not support random access, decoding to separate file");
 
             // decodes only up to Integer.MAX_VALUE characters
@@ -239,7 +239,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
 
         this.decodedFile = new File(backingFilename + "." + WRITE_ENCODING);
 
-        logger.info("decodeToFile: backingFilename=" + backingFilename
+        logger.fine("decodeToFile: backingFilename=" + backingFilename
                 + " encoding=" + encoding + " decodedFile=" + decodedFile);
 
         FileOutputStream fos;
@@ -340,13 +340,13 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
                     + e.toString());
         }
         if (fileToDelete != null && fileToDelete.exists()) {
-            logger.info("deleting file: " + fileToDelete);
+            logger.fine("deleting file: " + fileToDelete);
             fileToDelete.delete();
         }
     }
 
     public void close() throws IOException {
-        logger.info("closing");
+        logger.fine("closing");
 
         if (this.backingFileChannel != null && this.backingFileChannel.isOpen()) {
             this.backingFileChannel.close();

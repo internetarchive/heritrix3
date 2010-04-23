@@ -257,8 +257,8 @@ public class FetchFTP extends Processor  {
         Recorder recorder = curi.getRecorder();
         
         try {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("attempting to fetch ftp uri: " + curi);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("attempting to fetch ftp uri: " + curi);
             }
             fetch(curi, client, recorder);
         } catch (IOException e) {
@@ -366,8 +366,8 @@ public class FetchFTP extends Processor  {
                     curi.setContentType("application/octet-stream");
                 }
                 
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info("read " + recorder.getRecordedInput().getSize()
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("read " + recorder.getRecordedInput().getSize()
                             + " bytes from ftp data socket");
                 }
 

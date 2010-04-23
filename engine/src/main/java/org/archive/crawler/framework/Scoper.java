@@ -128,7 +128,6 @@ public abstract class Scoper extends Processor implements Lifecycle {
      */
     protected boolean isInScope(CrawlURI caUri) {
         boolean result = false;
-// FIXME!:        getController().setStateProvider(caUri);
         DecideResult dr = scope.decisionFor(caUri);
         if (dr == DecideResult.ACCEPT) {
             result = true;
@@ -147,10 +146,10 @@ public abstract class Scoper extends Processor implements Lifecycle {
      * @param caUri CrawlURI that is out of scope.
      */
     protected void outOfScope(CrawlURI caUri) {
-        if (!LOGGER.isLoggable(Level.INFO)) {
+        if (!LOGGER.isLoggable(Level.FINE)) {
             return;
         }
-        LOGGER.info(caUri.getUURI().toString());
+        LOGGER.fine(caUri.getUURI().toString());
     }
 
 
