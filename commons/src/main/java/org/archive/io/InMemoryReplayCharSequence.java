@@ -87,6 +87,7 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
         ByteBuffer bb = ByteBuffer.wrap(buffer);
         // Move past the HTTP header if present.
         bb.position((int) responseBodyStart);
+        bb.mark();
         // Set the end-of-buffer to be end-of-content.
         bb.limit((int) size);
         Charset charset;
@@ -103,6 +104,7 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
                    .onUnmappableCharacter(CodingErrorAction.REPORT)
                    .decode(bb).asReadOnlyBuffer();
         } catch (CharacterCodingException cce) {
+            bb.reset(); 
             decodingExceptionsCount++;
             return charset.decode(bb).asReadOnlyBuffer();
         }
