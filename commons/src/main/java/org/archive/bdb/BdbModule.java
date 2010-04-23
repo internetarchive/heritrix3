@@ -172,14 +172,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         this.useSharedCache = useSharedCache;
     }
     
-    boolean checkpointCopyLogs = true; 
-    public boolean getCheckpointCopyLogs() {
-        return checkpointCopyLogs;
-    }
-    public void setCheckpointCopyLogs(boolean checkpointCopyLogs) {
-        this.checkpointCopyLogs = checkpointCopyLogs;
-    }
-    
     /**
      * Expected number of concurrent threads; used to tune nLockTables
      * according to JE FAQ

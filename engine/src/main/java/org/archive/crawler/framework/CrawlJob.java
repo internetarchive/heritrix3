@@ -652,6 +652,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if(event instanceof CrawlStateEvent) {
             getJobLogger().log(Level.INFO, ((CrawlStateEvent)event).getState().toString());
         }
+        if(event instanceof CheckpointSuccessEvent) {
+            getJobLogger().log(Level.INFO, "CHECKPOINTED "+((CheckpointSuccessEvent)event).getCheckpoint().getName());
+        }
     }
 
     /**

@@ -63,9 +63,9 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     
     CrawlStatSnapshot lastCheckpointSnapshot = null;
     
-    /**Setup in constructor or on a call to recovery */
-    protected transient Timer timerThread = null;
-
+    /** service for auto-checkpoint tasks at an interval */
+    protected Timer timer = new Timer(true);;
+    protected TimerTask checkpointTask = null; 
     /**
      * Checkpoints directory
      */
@@ -86,8 +86,12 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     public int getCheckpointIntervalMinutes() {
         return checkpointIntervalMinutes;
     }
-    public void setCheckpointIntervalMinutes(int checkpointIntervalMinutes) {
-        this.checkpointIntervalMinutes = checkpointIntervalMinutes;
+    public void setCheckpointIntervalMinutes(int interval) {
+        int oldVal = checkpointIntervalMinutes; 
+        this.checkpointIntervalMinutes = interval;
+        if(checkpointIntervalMinutes!=oldVal) {
+            setupCheckpointTask();
+        }
     }
     
     Checkpoint recoveryCheckpoint;
@@ -121,17 +125,33 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     public CheckpointService() {
     }
     
-    public void start() { 
+    public synchronized void start() { 
         if (isRunning) {
             return;
         }
         this.isRunning = true; 
-        // Convert period from hours to milliseconds.
+        setupCheckpointTask();
+    }
+    
+    /**
+     * Setup checkpointTask according to current interval. (An already-scheduled
+     * task, if any, is canceled.)
+     */
+    protected synchronized void setupCheckpointTask() {
+        if(checkpointTask!=null) {
+            checkpointTask.cancel();
+        }
+        if(!isRunning) {
+            // don't setup before start (or after finish), even if
+            // triggered by interval change
+            return; 
+        }
+        // Convert period from minutes to milliseconds.
         long periodMs = getCheckpointIntervalMinutes() * (60 * 1000);
         if(periodMs<=0) {
             return;
         }
-        TimerTask tt = new TimerTask() {
+        checkpointTask = new TimerTask() {
             public void run() {
                 if (isCheckpointing()) {
                     LOGGER.info("CheckpointTimerThread skipping checkpoint, " +
@@ -143,24 +163,20 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
                 requestCrawlCheckpoint();
             }
         };
-        this.timerThread = new Timer(true);
-        this.timerThread.schedule(tt, periodMs, periodMs);
-        LOGGER.info("Installed Checkpoint TimerThread to checkpoint every " +
+        this.timer.schedule(checkpointTask, periodMs, periodMs);
+        LOGGER.info("Installed Checkpoint TimerTask to checkpoint every " +
                 periodMs + " milliseconds.");
     }
     
     boolean isRunning = false; 
-    public boolean isRunning() {
+    public synchronized boolean isRunning() {
         return isRunning; 
     }
     
     
-    public void stop() {
-        if (this.timerThread != null) {
-            LOGGER.info("Cleaned up Checkpoint TimerThread.");
-            this.timerThread.cancel();
-            this.timerThread = null;
-        }
+    public synchronized void stop() {
+        LOGGER.info("Cleaned up Checkpoint TimerThread.");
+        this.timer.cancel();
         this.isRunning = false; 
     }
     
@@ -196,22 +212,22 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
         
         try {
             // pre (incl. acquire necessary locks)
-            long startMs = System.currentTimeMillis();
+//            long startMs = System.currentTimeMillis();
             for(Checkpointable c : toCheckpoint.values()) {
                 c.startCheckpoint(checkpointInProgress);
             }
-            long duration = System.currentTimeMillis() - startMs; 
+//            long duration = System.currentTimeMillis() - startMs; 
 //            System.err.println("all startCheckpoint() completed in "+duration+"ms");
             
             // flush/write
             for(Checkpointable c : toCheckpoint.values()) {
-                long doMs = System.currentTimeMillis();
+//                long doMs = System.currentTimeMillis();
                 c.doCheckpoint(checkpointInProgress);
-                long doDuration = System.currentTimeMillis() - doMs; 
+//                long doDuration = System.currentTimeMillis() - doMs; 
 //                System.err.println("doCheckpoint() "+c+" in "+doDuration+"ms");
             }
             checkpointInProgress.setSuccess(true); 
-            
+            appCtx.publishEvent(new CheckpointSuccessEvent(this,checkpointInProgress));
         } catch (Exception e) {
             checkpointFailed(e);
         } finally {
