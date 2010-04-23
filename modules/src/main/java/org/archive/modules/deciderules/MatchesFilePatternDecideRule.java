@@ -89,7 +89,7 @@ public class MatchesFilePatternDecideRule extends MatchesRegexDecideRule {
     public Pattern getRegex() {
         Preset preset = getUsePreset();
         if (preset == Preset.CUSTOM) {
-            return getRegex();
+            return super.getRegex();
         }
         return preset.getPattern();
     }
