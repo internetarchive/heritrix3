@@ -22,7 +22,9 @@ package org.archive.io;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +40,8 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
      */
     private CharBuffer charBuffer = null;
 
+    protected long decodingExceptionsCount = 0;
+    
     /**
      * Constructor for all in-memory operation.
      *
@@ -93,7 +97,15 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
             // TODO: better detection or default
             charset = Charset.forName(FALLBACK_CHARSET_NAME);
         }
-        return charset.decode(bb).asReadOnlyBuffer();
+        try {
+            return charset.newDecoder()
+                   .onMalformedInput(CodingErrorAction.REPORT)
+                   .onUnmappableCharacter(CodingErrorAction.REPORT)
+                   .decode(bb).asReadOnlyBuffer();
+        } catch (CharacterCodingException cce) {
+            decodingExceptionsCount++;
+            return charset.decode(bb).asReadOnlyBuffer();
+        }
     }
 
     public void close() {
@@ -122,5 +134,15 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
         StringBuffer sb = new StringBuffer(length());
         sb.append(this);
         return sb.toString();
+    }
+    
+    /**
+     * Return 1 if there were decoding problems (a full count isn't possible).
+     * 
+     * @see org.archive.io.ReplayCharSequence#getDecodeExceptionCount()
+     */
+    @Override
+    public long getDecodeExceptionCount() {
+        return decodingExceptionsCount;
     }
 }

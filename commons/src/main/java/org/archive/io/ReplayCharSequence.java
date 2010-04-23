@@ -46,4 +46,12 @@ public interface ReplayCharSequence extends CharSequence, Closeable {
      * @throws IOException Problem cleaning up file system resources.
      */
     public void close() throws IOException;
+    
+    /**
+     * Report count of decoder errors silently eaten during ReplayCharSequence
+     * use. May be less than the number of individual decoding anomalies in 
+     * underlying content (if decoding method doesn't allow counting individual
+     * errors). 
+     */
+    public long getDecodeExceptionCount(); 
 }
