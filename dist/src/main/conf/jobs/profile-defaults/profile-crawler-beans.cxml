@@ -348,9 +348,7 @@ http://example.example/example
   <!-- <property name="pauseAtFinish" value="false" /> -->
   <!-- <property name="recorderInBufferBytes" value="524288" /> -->
   <!-- <property name="recorderOutBufferBytes" value="16384" /> -->
-  <!-- <property name="checkpointerPeriod" value="-1" /> -->
   <!-- <property name="scratchDir" value="scratch" /> -->
-  <!-- <property name="checkpointsDir" value="checkpoints" /> -->
  </bean>
  
  <!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
@@ -502,7 +500,6 @@ http://example.example/example
   <!-- <property name="dir" value="state" /> -->
   <!-- <property name="cachePercent" value="60" /> -->
   <!-- <property name="useSharedCache" value="true" /> -->
-  <!-- <property name="checkpointCopyLogs" value="true" /> -->
   <!-- <property name="expectedConcurrency" value="25" /> -->
  </bean>
  
