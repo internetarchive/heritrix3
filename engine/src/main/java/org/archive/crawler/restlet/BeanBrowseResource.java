@@ -247,6 +247,5 @@ public class BeanBrowseResource extends JobRelatedResource {
             writeNestedNames(pw, appCtx.getBean(name), getBeansRefPath(), alreadyWritten);
         }
         pw.println("</ul>");
-        pw.close();
     }
 }
