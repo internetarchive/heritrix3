@@ -94,7 +94,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
     
     /** counter of decoding exceptions for report at end */
     protected long decodingExceptions = 0; 
-    
+    protected CharacterCodingException codingException = null; 
+
     /**
      * Byte offset into the file where the memory mapped portion begins.
      */
@@ -321,6 +322,9 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         } catch (CharacterCodingException e) {
             logger.log(Level.FINE,"unable to get character at index=" + index + " (fileIndex=" + fileIndex + "): " + e, e);
             decodingExceptions++; 
+            if(codingException==null) {
+                codingException = e; 
+            }
             // U+FFFD REPLACEMENT CHARACTER --
             // "used to replace an incoming character whose value is unknown or unrepresentable in Unicode"
             return (char) 0xfffd;
@@ -403,5 +407,14 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
     @Override
     public long getDecodeExceptionCount() {
         return decodingExceptions;
+    }
+    
+
+    /* (non-Javadoc)
+     * @see org.archive.io.ReplayCharSequence#getCodingException()
+     */
+    @Override
+    public CharacterCodingException getCodingException() {
+        return codingException;
     }
 }

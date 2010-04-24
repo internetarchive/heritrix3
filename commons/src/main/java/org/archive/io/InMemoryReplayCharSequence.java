@@ -41,6 +41,7 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
     private CharBuffer charBuffer = null;
 
     protected long decodingExceptionsCount = 0;
+    protected CharacterCodingException codingException = null; 
     
     /**
      * Constructor for all in-memory operation.
@@ -106,6 +107,7 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
         } catch (CharacterCodingException cce) {
             bb.reset(); 
             decodingExceptionsCount++;
+            codingException = cce; 
             return charset.decode(bb).asReadOnlyBuffer();
         }
     }
@@ -146,5 +148,13 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
     @Override
     public long getDecodeExceptionCount() {
         return decodingExceptionsCount;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.archive.io.ReplayCharSequence#getCodingException()
+     */
+    @Override
+    public CharacterCodingException getCodingException() {
+        return codingException;
     }
 }

@@ -21,6 +21,7 @@ package org.archive.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 
 
 /**
@@ -54,4 +55,10 @@ public interface ReplayCharSequence extends CharSequence, Closeable {
      * errors). 
      */
     public long getDecodeExceptionCount(); 
+    
+    /**
+     * Return the first coding-exception encountered, if the count > 0. 
+     * @return CharacterCodingException
+     */
+    public CharacterCodingException getCodingException();
 }

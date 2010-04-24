@@ -654,11 +654,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
            // Extract all links from the charsequence
            extract(curi, cs);
            if(cs.getDecodeExceptionCount()>0) {
-               logger.log(Level.WARNING,
-                       "decoding problem: "+ cs.getDecodeExceptionCount()
-                       + " errors (or more) using "
-                       + curi.getRecorder().getCharacterEncoding() 
-                       + " on CrawlURI "+curi.getURI());
+               curi.getNonFatalFailures().add(cs.getCodingException()); 
            }
            // Set flag to indicate that link extraction is completed.
            return true;
