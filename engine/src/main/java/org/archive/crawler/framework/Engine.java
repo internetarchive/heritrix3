@@ -91,50 +91,42 @@ public class Engine {
         }
 
         // discover any new job directories
-        for (File jobFile: jobsDir.listFiles()) {
-            if (jobFile.getName().endsWith(".jobpath")) {
-                String jobPath = getJobPathFromFile(jobFile);
-                jobFile = new File(jobPath);
-                if (jobFile.isDirectory()) {
-                    if (!addJobDirectory(jobFile,false)) {
-                        LOGGER.log(Level.WARNING,"invalid job dir: " + jobPath
-                                + " specified in jobpath file: "
-                                + jobFile.getAbsolutePath());
-                    }
-                } else {
-                    LOGGER.log(Level.WARNING,"non-directory: " + jobPath 
-                            + " specified in jobpath file: " 
-                            + jobFile.getAbsolutePath());
-                }
+        for (File candidateFile: jobsDir.listFiles()) {
+            File jobFile = candidateFile; 
+            if (candidateFile.getName().endsWith(".jobpath")) {
+                // convert .jobpaths to the referenced external directory
+                jobFile = getJobDirectoryFrom(candidateFile);
             }
-            if (jobFile.isDirectory()) {
-                addJobDirectory(jobFile,false);
+            if(!addJobDirectory(jobFile)) {
+                LOGGER.log(Level.WARNING,"invalid job directory: " + jobFile 
+                        + " where job expected from: " + candidateFile);
             }
         }
     }
 
-    /*
-     * read path from ".jobpath" file (jobpathFile) and add directory to jobConfig
+    /**
+     * Return the job directory File read from the supplied ".jobpath" file,
+     * or null on any error. 
      */
-    protected String getJobPathFromFile(File jobPathFile) {
+    protected File getJobDirectoryFrom(File jobPathFile) {
         try {
-            String pathToJob = FileUtils.readFileToString(jobPathFile).trim();
-            return pathToJob;
+            return new File(FileUtils.readFileToString(jobPathFile).trim());
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE,"error reading jobPathFile: " 
-                    + jobPathFile.toString());
-            e.printStackTrace();
-            return null;
+            LOGGER.log(Level.SEVERE,"bad .jobpath: "+jobPathFile, e);
+            return null; 
         }
 	}
 
     /**
-     * adds a job directory to the Engine jobConfigs if not extant
+     * Adds a job directory to the Engine known jobConfigs if not extant.
+     * 
      * @param dir directory to be added
-     * @param userRequest calls writeJobPathFile when true
-     * @return true if directory successfully added to jobConfigs
+     * @return true if directory successfully added, false for any failure
      */
-	public boolean addJobDirectory(File dir, Boolean userRequest) {
+	public boolean addJobDirectory(File dir) {
+	    if(dir==null) {
+	        return false; 
+	    }
         File[] candidateConfigs = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
@@ -143,24 +135,23 @@ public class Engine {
             // no CXML file found!
             return false; 
         }
+        if(jobConfigs.containsKey(dir.getName())) {
+            // same-name job already exists
+            return false; 
+        }
         for (File cxml : candidateConfigs) {
             try {
-                CrawlJob cj = new CrawlJob(cxml);
-                if(!jobConfigs.containsKey(cj.getShortName())) {
-                    jobConfigs.put(cj.getShortName(),cj);
-                    if (userRequest) {
-                        writeJobPathFile(dir.getAbsolutePath());
-                    }
-                    LOGGER.log(Level.INFO,"added crawl job: " + cj.getShortName());
-                } else {
-                    if (userRequest) {
-                        LOGGER.log(Level.INFO,"requested job to add already exists: " 
-                                + cj.getShortName());
-                    }
+                CrawlJob cj = new CrawlJob(cxml);            
+                if(!cj.getJobDir().getParentFile().equals(getJobsDir())) {
+                    writeJobPathFile(cj);
                 }
+                jobConfigs.put(cj.getShortName(),cj);
+                LOGGER.log(Level.INFO,"added crawl job: " + cj.getShortName());
                 return true;
+            } catch (IOException iae) {
+                LOGGER.log(Level.SEVERE,"unable to add job directory"+dir,iae);
             } catch (IllegalArgumentException iae) {
-                LOGGER.log(Level.WARNING,"bad cxml: "+cxml,iae);
+                LOGGER.log(Level.SEVERE,"bad cxml: "+cxml,iae);
             }
         }
         // path rejected for some reason
@@ -372,29 +363,16 @@ public class Engine {
 	}
 
 	/**
-	 * writes a .jobpath file for "added" paths
-	 * @param path
-	 * @throws IOException
+	 * Writes a .jobpath file for the new CrawlJob, whose directory is
+	 * outside the main Engine jobs directory. 
+	 * 
+	 * @param job CrawlJob whose main directory the .jobpath should point to
+	 * @throws IOException for any IO error
 	 */
-    public void writeJobPathFile(String path) {
-    	String jobName = path.substring(path.lastIndexOf(File.separatorChar)+1,
-    	        path.length());
-    	if (jobConfigs.containsKey(jobName)) {
-        	String jobpathFileName = jobName+".jobpath";
-        	File jobpathFile = new File(jobsDir,jobpathFileName);
-        	try {
-        	    if (!jobpathFile.exists()) {
-        	        FileUtils.writeStringToFile(jobpathFile, path+"\n");
-                    LOGGER.log(Level.INFO, "wrote jobpath file: " 
-                            + jobpathFileName);
-        	    }
-        	} catch (IOException e) {
-        	    LOGGER.log(Level.SEVERE,"failed to write jobPathFile: "
-        	            + jobpathFileName + "\n"
-        	            + e.getMessage());
-        	}
-    	} else {
-    		LOGGER.log(Level.SEVERE,"added job: " + jobName + " not found!");
-    	}
-	}
+    public void writeJobPathFile(CrawlJob job) throws IOException {
+    	String jobpathFileName = job.getShortName()+".jobpath";
+    	File jobpathFile = new File(jobsDir,jobpathFileName);
+    	FileUtils.writeStringToFile(jobpathFile, job.getJobDir().getAbsolutePath()+"\n");
+    	LOGGER.log(Level.INFO, "wrote jobpath file: " + jobpathFileName);
+    }
 }

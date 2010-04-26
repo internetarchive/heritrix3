@@ -102,7 +102,7 @@ public class EngineResource extends BaseResource {
                 } else if (getEngine().getJobConfigs().containsKey(jobName)) {
                     Flash.addFlash(getResponse(), "Job exists: <i>" 
                             + jobName + "</i>", Flash.Kind.NACK);
-                } else if (getEngine().addJobDirectory(new File(path),true)) {
+                } else if (getEngine().addJobDirectory(new File(path))) {
                     Flash.addFlash(getResponse(), "Added crawl job: "
                             + "'" + path + "'", Flash.Kind.ACK);
                 } else {
