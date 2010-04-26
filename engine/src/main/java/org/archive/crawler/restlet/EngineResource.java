@@ -180,7 +180,7 @@ public class EngineResource extends BaseResource {
 
         // re-scan job configs on each page load
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
-        engine.findJobConfigs();
+
         jobs.addAll(engine.getJobConfigs().values());
         Collections.sort(jobs);
         Collection<Map<String,Object>> jobsInfo = new LinkedList<Map<String,Object>>();
