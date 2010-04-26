@@ -123,10 +123,10 @@ public class Engine {
      * @param dir directory to be added
      * @return true if directory successfully added, false for any failure
      */
-	public boolean addJobDirectory(File dir) {
-	    if(dir==null) {
-	        return false; 
-	    }
+    public boolean addJobDirectory(File dir) {
+        if(dir==null) {
+            return false; 
+        }
         File[] candidateConfigs = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
@@ -360,19 +360,19 @@ public class Engine {
                     + newJobDir.getAbsolutePath());
             return false;
         }
-	}
+    }
 
-	/**
-	 * Writes a .jobpath file for the new CrawlJob, whose directory is
-	 * outside the main Engine jobs directory. 
-	 * 
-	 * @param job CrawlJob whose main directory the .jobpath should point to
-	 * @throws IOException for any IO error
-	 */
+    /**
+     * Writes a .jobpath file for the new CrawlJob, whose directory is
+     * outside the main Engine jobs directory. 
+     * 
+     * @param job CrawlJob whose main directory the .jobpath should point to
+     * @throws IOException for any IO error
+     */
     public void writeJobPathFile(CrawlJob job) throws IOException {
-    	String jobpathFileName = job.getShortName()+".jobpath";
-    	File jobpathFile = new File(jobsDir,jobpathFileName);
-    	FileUtils.writeStringToFile(jobpathFile, job.getJobDir().getAbsolutePath()+"\n");
-    	LOGGER.log(Level.INFO, "wrote jobpath file: " + jobpathFileName);
+        String jobpathFileName = job.getShortName()+".jobpath";
+        File jobpathFile = new File(jobsDir,jobpathFileName);
+        FileUtils.writeStringToFile(jobpathFile, job.getJobDir().getAbsolutePath()+"\n");
+        LOGGER.log(Level.INFO, "wrote jobpath file: " + jobpathFileName);
     }
 }
