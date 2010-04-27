@@ -131,7 +131,7 @@ public class Engine {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".cxml");
             }});
-        if(candidateConfigs.length == 0) {
+        if(candidateConfigs==null || candidateConfigs.length == 0) {
             // no CXML file found!
             return false; 
         }
