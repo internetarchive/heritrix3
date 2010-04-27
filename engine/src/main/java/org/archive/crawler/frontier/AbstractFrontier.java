@@ -568,6 +568,12 @@ public abstract class AbstractFrontier
     /**
      * Arrange for the given CrawlURI to be visited, if it is not
      * already scheduled/completed.
+     * 
+     * This implementation defers uniqueness-testing into the frontier 
+     * managerThread with a ScheduleIfUnique InEvent; this may cause 
+     * unnecessary contention/single-threading. WorkQueueFrontier currently
+     * overrides as an experiment in decreasing contention. TODO: settle on
+     * one approach. 
      *
      * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */

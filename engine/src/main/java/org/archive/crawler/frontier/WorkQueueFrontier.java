@@ -333,6 +333,32 @@ implements Closeable,
         sendToQueue(curi);
     }
     
+    
+    /**
+     * Arrange for the given CrawlURI to be visited, if it is not
+     * already enqueued/completed. 
+     * 
+     * Differs from superclass in that it operates in calling thread, rather 
+     * than deferring operations via in-queue to managerThread. TODO: settle
+     * on either defer or in-thread approach after testing. 
+     *
+     * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
+     */
+    @Override
+    public void schedule(CrawlURI curi) {
+        sheetOverlaysManager.applyOverridesTo(curi);
+        try {
+            KeyedProperties.loadOverridesFrom(curi);
+            if(curi.getClassKey()==null) {
+                // remedial processing
+                preparer.prepare(curi);
+            }
+            processScheduleIfUnique(curi);
+        } finally {
+            KeyedProperties.clearOverridesFrom(curi); 
+        }
+    }
+
     /**
      * Arrange for the given CrawlURI to be visited, if it is not
      * already scheduled/completed.
@@ -340,7 +366,7 @@ implements Closeable,
      * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
     protected void processScheduleIfUnique(CrawlURI curi) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         assert KeyedProperties.overridesActiveFrom(curi); 
         
         // Canonicalization may set forceFetch flag.  See
