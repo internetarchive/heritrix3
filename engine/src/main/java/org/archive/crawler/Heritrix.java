@@ -123,6 +123,12 @@ public class Heritrix {
     private static Options options() {
         Options options = new Options();
         options.addOption("h", "help", true, "Usage information." );
+        options.addOption("a", "web-admin", true,  "REQUIRED. Specifies the " +
+                "authorization username and password which must be supplied to " +
+                "access the web interface. This may be of the form " +
+                "\"password\" (which leaves username as the default 'admin'), " +
+                "\"username:password\", or \"@filename\" for a file that " +
+                "includes the single line \"username:password\". ");
         options.addOption("j", "jobs-dir", true, "The jobs directory.  " +
                         "Defaults to ./jobs");
         options.addOption("l", "logging-properties", true, 
@@ -130,18 +136,11 @@ public class Heritrix {
                 "(eg, conf/logging.properties).  If present, this file " +
                 "will be used to configure Java logging.  Defaults to " +
                 "./conf/logging.properties");
-        options.addOption("a", "webui-admin", true,  "Specifies the " +
-        		"authorization password which must be supplied to " +
-        		"access the webui. Required if launching the webui.");
-        options.addOption("b", "webui-bind-hosts", true, 
-                "A comma-separated list of hostnames for the " +
-                "webui to bind to.");
-        options.addOption("p", "webui-port", true, "The port the webui " +
+        options.addOption("b", "web-bind-hosts", true, 
+                "A comma-separated list of addresses/hostnames for the " +
+                "web interface to bind to.");
+        options.addOption("p", "web-port", true, "The port the web interface " +
                 "should listen on.");
-        options.addOption("r", "run-job", true,  "Specify a ready job or a " +
-        	"profile name to launch at launch.  If you specify a profile " +
-        	"name, the profile will first be copied to a new ready job, " +
-        	"and that ready job will be launched.");
         options.addOption("s", "ssl-params", true,  "Specify a keystore " +
                 "path, keystore password, and key password for HTTPS use. " +
                 "Separate with commas, no whitespace.");
@@ -235,7 +234,7 @@ public class Heritrix {
         int port = 8443;
         Set<String> bindHosts = new HashSet<String>();
         String authLogin = "admin";
-        String authPassword;
+        String authPassword = null;
         String keystorePath;
         String keystorePassword;
         String keyPassword;
@@ -243,16 +242,27 @@ public class Heritrix {
 
         if (cl.hasOption('a')) {
             String aOption = cl.getOptionValue('a');
-            int colonIndex = aOption.indexOf(':');
-            if(colonIndex>-1) {
-                authLogin = aOption.substring(0,colonIndex);
-                authPassword = aOption.substring(colonIndex+1);
-            } else {
-                authPassword = aOption;
+            String usernameColonPassword = aOption; 
+            try {
+                if(aOption.startsWith("@")) {
+                    usernameColonPassword = FileUtils.readFileToString(new File(aOption.substring(1))).trim();
+                }
+                int colonIndex = usernameColonPassword.indexOf(':');
+                if(colonIndex>-1) {
+                    authLogin = usernameColonPassword.substring(0,colonIndex);
+                    authPassword = usernameColonPassword.substring(colonIndex+1);
+                } else {
+                    authPassword = usernameColonPassword;
+                }
+            } catch (IOException e) {
+                // only if @filename read had problems
+                System.err.println("Unable to read [username:]password from "+aOption);
             }
-        } else {
+        } 
+        if(authPassword==null) {
             System.err.println(
-                "You must specify a password for the web interface using -a.");
+"You must specify a valid [username:]password for the web interface using -a."
+            );
             System.exit(1);
             authPassword = ""; // suppresses uninitialized warning
         }
@@ -337,7 +347,12 @@ public class Heritrix {
             startupOut.println("engine listening at port "+port);
             startupOut.println("operator login is '"+authLogin
                                +"' password '"+authPassword+"'");
-           
+            if(authPassword.length()<8 || authPassword.matches("[a-zA-Z]{0,10}")
+                    ||authPassword.matches("\\d{0,10}")) {
+                startupOut.println(
+"NOTE: We recommend a longer, stronger password, especially if your web \n" +
+"interface will be internet-accessible.");
+            }
             if (cl.hasOption('r')) {
                 engine.requestLaunch(cl.getOptionValue('r'));
             } 
