@@ -97,6 +97,9 @@ public class Engine {
                 // convert .jobpaths to the referenced external directory
                 jobFile = getJobDirectoryFrom(candidateFile);
             }
+            if (jobConfigs.containsKey(jobFile.getName())) {
+                continue;
+            }
             if(!addJobDirectory(jobFile)) {
                 LOGGER.log(Level.WARNING,"invalid job directory: " + jobFile 
                         + " where job expected from: " + candidateFile);

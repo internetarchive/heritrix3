@@ -232,8 +232,6 @@ public class EngineResource extends BaseResource {
         
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
         
-        // re-scan job configs on each page load
-        engine.findJobConfigs();
         jobs.addAll(engine.getJobConfigs().values());
          
         pw.println("<form method=\'POST\'><h2>Job Directories ("+jobs.size()+")");
