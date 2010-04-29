@@ -90,7 +90,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 // version w/ less unnecessary backtracking
     
     {
-        setMaxElementLength(1024); // no limit
+        setMaxElementLength(64); 
     }
     public int getMaxElementLength() {
         return (Integer) kp.get("maxElementLength");
@@ -121,7 +121,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 //     "(?is)(\\w+)\\s+.*?(?:(robots))\\s*=(?:(?:\\s*\"(.+)\")|(?:\\s*'(.+)')|(\\S+))");
 
     {
-        setMaxAttributeNameLength(1024); // 1K
+        setMaxAttributeNameLength(64); // 64 chars
     }
 
     public int getMaxAttributeNameLength() {
@@ -134,7 +134,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
 
     {
-        setMaxAttributeValLength(16384); // 16K
+        setMaxAttributeValLength(2048); // 2K
     }
 
     public int getMaxAttributeValLength() {
