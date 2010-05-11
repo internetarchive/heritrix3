@@ -505,7 +505,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         
         // finish handling VALUE
         if(valueVal != null) {
-            if("PARAM".equalsIgnoreCase(elementStr) && "flashvars".equalsIgnoreCase(nameVal.toString())) {
+            if ("PARAM".equalsIgnoreCase(elementStr) && nameVal != null
+                    && "flashvars".equalsIgnoreCase(nameVal.toString())) {
                 // special handling for <PARAM NAME='flashvars" VALUE="">
                 String queryStringLike = valueVal.toString();
                 // treat value as query-string-like "key=value[;key=value]*" pairings
