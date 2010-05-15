@@ -20,6 +20,8 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -509,7 +511,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     && "flashvars".equalsIgnoreCase(nameVal.toString())) {
                 // special handling for <PARAM NAME='flashvars" VALUE="">
                 String queryStringLike = valueVal.toString();
-                // treat value as query-string-like "key=value[;key=value]*" pairings
+                // treat value as query-string-like "key=value[&key=value]*" pairings
                 considerQueryStringValues(curi, queryStringLike, valueContext,Hop.SPECULATIVE);
             } else {
                 // regular VALUE handling
@@ -521,7 +523,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     /**
-     * Consider a query-string-like collections of key=value[;key=value]
+     * Consider a query-string-like collections of key=value[&key=value]
      * pairs for URI-like strings in the values. Where URI-like strings are
      * found, add as discovered outlink. 
      * 
@@ -531,13 +533,17 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      */
     protected void considerQueryStringValues(CrawlURI curi,
             CharSequence queryString, CharSequence valueContext, Hop hop) {
-        for(String pairString : queryString.toString().split(";")) {
-            String[] keyVal = pairString.split("=");
-            if(keyVal.length==2) {
-                considerIfLikelyUri(curi,keyVal[1],valueContext, hop);
+        for (String pairString : queryString.toString().split("&")) {
+            String[] encodedKeyVal = pairString.split("=");
+            if (encodedKeyVal.length == 2) try {
+                String value = URLDecoder.decode(encodedKeyVal[1], "UTF-8");
+                considerIfLikelyUri(curi, value, valueContext, hop);
+            } catch (UnsupportedEncodingException e) {
+                throw new AssertionError("all jvms must support UTF-8, and yet somehow this happened: " + e);
             }
         }
     }
+
 
     /**
      * Consider whether a given string is URI-like. If so, add as discovered 
