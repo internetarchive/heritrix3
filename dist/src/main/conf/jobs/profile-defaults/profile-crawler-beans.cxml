@@ -365,7 +365,6 @@ http://example.example/example
   <!-- <property name="snoozeLongMs" value="300000" /> -->
   <!-- <property name="retryDelaySeconds" value="900" /> -->
   <!-- <property name="maxRetries" value="30" /> -->
-  <!-- <property name="recoveryDir" value="logs" /> -->
   <!-- <property name="recoveryLogEnabled" value="true" /> -->
   <!-- <property name="maxOutlinks" value="6000" /> -->
   <!-- <property name="outboundQueueCapacity" value="50" /> -->
