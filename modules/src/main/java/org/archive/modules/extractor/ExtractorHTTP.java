@@ -52,8 +52,12 @@ public class ExtractorHTTP extends Extractor {
     @Override
     protected void extract(CrawlURI curi) {
         HttpMethod method = curi.getHttpMethod();
+        // discover headers if present
         addHeaderLink(curi, method.getResponseHeader("Location"));
         addHeaderLink(curi, method.getResponseHeader("Content-Location"));
+        
+        // try /favicon.ico for every HTTP(S) URI
+        addOutlink(curi, "/favicon.ico", LinkContext.EMBED_MISC, Hop.EMBED);
     }
 
     protected void addHeaderLink(CrawlURI curi, Header loc) {
