@@ -35,7 +35,7 @@ public class CharsetSelfTest extends SelfTestBase
 {
     final private static Set<String> EXPECTED = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList(new String[] {
-            "index.html", "link.html", "robots.txt"
+            "index.html", "link.html", "robots.txt", "favicon.ico"
     })));
     
     @Override

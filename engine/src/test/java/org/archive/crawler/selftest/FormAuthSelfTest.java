@@ -47,7 +47,7 @@ public class FormAuthSelfTest
      */
     final private static Set<String> EXPECTED = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList(new String[] {
-            "login/login.html", "success.html", "robots.txt"
+            "login/login.html", "success.html", "robots.txt", "favicon.ico"
     })));
 
     @Override

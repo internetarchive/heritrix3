@@ -41,7 +41,8 @@ public class BackgroundImageExtractionSelfTestCase
      */
     final private static Set<String> EXPECTED = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList(new String[] {
-            "index.html", "example-background-image.jpeg", "robots.txt"
+            "index.html", "example-background-image.jpeg", "robots.txt", 
+            "favicon.ico"
     })));
     
     @Override

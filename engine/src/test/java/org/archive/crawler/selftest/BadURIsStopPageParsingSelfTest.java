@@ -42,7 +42,7 @@ public class BadURIsStopPageParsingSelfTest extends SelfTestBase
     final private static Set<String> EXPECTED = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList(new String[] {
             "index.html", "goodone.html", "goodthree.html", "one.html", 
-            "two.html", "three.html", "robots.txt",
+            "two.html", "three.html", "robots.txt", "favicon.ico",
             "cata;pgs-new.html", "www.loc.gov/rr/european/egw/polishex.html"
     })));
     

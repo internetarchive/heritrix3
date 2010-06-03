@@ -133,6 +133,7 @@ public class Precedence1SelfTest extends SelfTestBase {
     final private static String EXPECTED =
         "http://127.0.0.1:7777/robots.txt\n" + 
         "http://127.0.0.1:7777/seed.html\n" + 
+        "http://127.0.0.1:7777/favicon.ico\n" + 
         "http://127.0.0.1:7777/one/a.html\n" + 
         "http://127.0.0.1:7777/one/b.html\n" + 
         "http://127.0.0.1:7777/one/c.html\n" + 

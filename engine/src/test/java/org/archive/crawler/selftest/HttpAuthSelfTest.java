@@ -52,7 +52,7 @@ public class HttpAuthSelfTest
             new HashSet<String>(Arrays.asList(new String[] {
             "index.html", "link1.html", "link2.html", "link3.html", 
             "basic/index.html", "basic/link1.html", "basic/link2.html", "basic/link3.html", 
-            "robots.txt"
+            "robots.txt", "favicon.ico"
     })));
     
     @Override
