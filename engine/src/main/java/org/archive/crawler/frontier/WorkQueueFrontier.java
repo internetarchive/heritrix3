@@ -907,6 +907,33 @@ implements Closeable,
     }
 
     /**
+     * Utility method for advanced users/experimentation: force wake all snoozed
+     * queues -- for example to kick a crawl where connectivity problems have
+     * put all queues in slow-retry-snoozes back to busy-ness. 
+     */
+    public void forceWakeQueues() {
+        enqueueOrDo(new InEvent() {
+            
+            @Override
+            public void process() {
+                Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
+                while(iterSnoozed.hasNext()) {
+                    WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
+                    queue.setWakeTime(0);
+                    reenqueueQueue(queue);
+                    iterSnoozed.remove(); 
+                }
+                Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
+                while(iterOverflow.hasNext()) {
+                    WorkQueue queue = iterOverflow.next().getWorkQueue(WorkQueueFrontier.this);
+                    queue.setWakeTime(0);
+                    reenqueueQueue(queue);
+                    iterOverflow.remove(); 
+                }
+            }
+        });
+    }
+    /**
      * Wake any queues sitting in the snoozed queue whose time has come.
      */
     protected void wakeQueues() {
