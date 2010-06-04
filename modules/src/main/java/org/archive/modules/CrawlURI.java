@@ -1811,7 +1811,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     public String getCanonicalString() {
         if(StringUtils.isEmpty(canonicalString)){
-            System.err.println("not canonicalized");
+            System.err.println("not canonicalized "+this);
             return getURI();
         }
         return canonicalString;
@@ -1823,7 +1823,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     public long getPolitenessDelay() {
         if(politenessDelay<0) {
-            System.err.println("not politeness-calc");
+            System.err.println("not politeness-calc "+this);
             return 5000;
         }
         return this.politenessDelay;
