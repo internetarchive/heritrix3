@@ -43,7 +43,7 @@ import java.security.SecureRandom;
  * <li>Adapted to allow long bit indices so long as the index/64 (used 
  * an array index in bit vector) fits within Integer.MAX_VALUE. (Thus
  * it supports filters up to 64*Integer.MAX_VALUE bits in size, or 
- * 16GiB.</li>
+ * 16GiB.)</li>
  * </ul>
  * 
  * <hr>
@@ -80,10 +80,10 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
     final public long m;
     /** The number of hash functions used by this filter. */
     final public int d;
-    /** The underlying bit vector. */
-    final private long[] bits;
+    /** The underlying bit vector. package access for testing */
+    final long[] bits;
     /** The random integers used to generate the hash functions. */
-    final private long[][] weight;
+    final long[][] weight;
 
     /** The number of elements currently in the filter. It may be
      * smaller than the actual number of additions of distinct character
@@ -107,7 +107,7 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
         int len = (int)Math.ceil( ( (long)n * (long)d / NATURAL_LOG_OF_2 ) / 64L );
         if ( len/64 > Integer.MAX_VALUE ) throw new IllegalArgumentException( "This filter would require " + len * 64L + " bits" );
         bits = new long[ len ];
-        m = bits.length * 64;
+        m = bits.length * 64L;
 
         if ( DEBUG ) System.err.println( "Number of bits: " + m );
 
@@ -179,8 +179,10 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
         long h;
         while( i-- != 0 ) {
             h = hash( s, l, i );
-            if ( ! getBit( h ) ) result = true;
-            setBit( h );
+            if ( ! getBit( h ) ) {
+                result = true;
+                setBit( h );
+            }
         }
         if ( result ) size++;
         return result;
