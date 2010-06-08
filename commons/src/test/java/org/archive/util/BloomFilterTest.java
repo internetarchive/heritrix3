@@ -48,4 +48,10 @@ public abstract class BloomFilterTest extends TestCase {
         assertFalse(bloom.add("buckaroobanzai"));
         assertFalse(bloom.add("scheherazade"));
     }
+    
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        bloom = null; 
+    }
 }
