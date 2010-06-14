@@ -92,13 +92,13 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
         int specCount = 0; 
         for (int i = hopsPath.length() - 1; i >= 0; i--) {
             char c = hopsPath.charAt(i);
-            if (c != Hop.NAVLINK.getHopChar()) {
+            if (c == Hop.NAVLINK.getHopChar()) {
+                break;
+            } else if (c != Hop.REFER.getHopChar()) {
                 count++;
-                if(c == Hop.SPECULATIVE.getHopChar()) {
+                if (c == Hop.SPECULATIVE.getHopChar()) {
                     specCount++;
                 }
-            } else {
-                break;
             }
         }
         if (count <= 0) {
