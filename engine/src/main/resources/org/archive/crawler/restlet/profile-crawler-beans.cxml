@@ -138,6 +138,7 @@ http://example.example/example
     </bean>
     <!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
     <bean class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
+          <property name="decision" value="REJECT"/>
      <!-- <property name="listLogicalOr" value="true" /> -->
      <!-- <property name="regexList">
            <list>
