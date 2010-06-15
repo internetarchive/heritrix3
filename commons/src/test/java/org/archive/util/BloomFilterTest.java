@@ -19,7 +19,6 @@
 
 package org.archive.util;
 
-import java.security.SecureRandom;
 import java.util.Random;
 
 import junit.framework.TestCase;
