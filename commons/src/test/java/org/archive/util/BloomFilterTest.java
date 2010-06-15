@@ -71,7 +71,7 @@ public abstract class BloomFilterTest extends TestCase {
      * Renamed to non-'test' name so not automatically run, because can 
      * take 15+ minutes to complete.
      */
-    public void testOversized() {
+    public void xestOversized() {
         trialWithParameters(200000000,22,200000000,32000000);
     }
     
@@ -82,7 +82,7 @@ public abstract class BloomFilterTest extends TestCase {
      * Renamed to non-'test' name so not automatically run, because can 
      * take 15+ minutes to complete.
      */
-    public void testDefaultFull() {
+    public void xestDefaultFull() {
         trialWithParameters(125000000,22,125000000,34000000);
     }
   
