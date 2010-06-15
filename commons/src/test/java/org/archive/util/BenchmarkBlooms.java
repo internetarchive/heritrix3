@@ -49,35 +49,34 @@ public class BenchmarkBlooms {
 		int d_hashes = 
 			(args.length > 2) ? Integer.parseInt(args[2]) : 22;
 		int adds = 
-		    	(args.length > 3) ? Integer.parseInt(args[3]) : 5000000;
+		    	(args.length > 3) ? Integer.parseInt(args[3]) : 10000000;
+		int contains = 
+		        (args.length > 4) ? Integer.parseInt(args[4]) : 8000000;
 	    String prefix = 
-	    	(args.length > 4) ? args[4] : "http://www.archive.org/";
+	    	(args.length > 5) ? args[5] : "http://www.archive.org/";
 	    
 	    System.out.println(
 	    		"reps="+reps+" n_expected="+n_expected+
-				" d_hashes="+d_hashes+" adds="+adds+" prefix="+prefix);
+				" d_hashes="+d_hashes+" adds="+adds+
+				" contains="+contains+" prefix="+prefix);
 	    
-	    BloomFilter bloom64;
-	    BloomFilter bloom32;
-        BloomFilter bloom32split;
-	    BloomFilter bloom32p2;
-        BloomFilter bloom32p2split;
+	    BloomFilter64bit bloom64;
+//	    BloomFilter bloom32;
+//      BloomFilter bloom32split;
 		for (int r=0;r<reps;r++) {
-			bloom32 = new BloomFilter32bit(n_expected,d_hashes);
-			testBloom(bloom32,adds,prefix);
-			bloom32=null;
-            bloom32split = new BloomFilter32bitSplit(n_expected,d_hashes);
-            testBloom(bloom32split,adds,prefix);
-            bloom32split=null;
-			bloom64 = new BloomFilter64bit(n_expected,d_hashes);
-			testBloom(bloom64,adds,prefix);
-			bloom64=null;
-			bloom32p2 = new BloomFilter32bp2(n_expected,d_hashes);
-			testBloom(bloom32p2,adds,prefix);
-			bloom32p2=null;
-            bloom32p2split = new BloomFilter32bp2Split(n_expected,d_hashes);
-            testBloom(bloom32p2split,adds,prefix);
-            bloom32p2split=null;
+//			bloom32 = new BloomFilter32bit(n_expected,d_hashes);
+//			testBloom(bloom32,adds,contains,prefix);
+//			bloom32=null;
+//            bloom32split = new BloomFilter32bitSplit(n_expected,d_hashes);
+//            testBloom(bloom32split,adds,contains,prefix);
+//            bloom32split=null;
+            bloom64 = new BloomFilter64bit(n_expected,d_hashes);
+            testBloom(null, bloom64,adds,contains,prefix);
+            bloom64=null;
+            // rounded up to power-of-2 bits size
+            bloom64 = new BloomFilter64bit(n_expected,d_hashes,true);
+            testBloom("bitsize rounded up",bloom64,adds,contains,prefix);
+            bloom64=null;  
 		}
 	}
 	
@@ -87,19 +86,29 @@ public class BenchmarkBlooms {
 	 * @param adds
 	 * @param d_hashes
 	 */
-	private void testBloom(BloomFilter bloom, int adds, String prefix) {
+	private void testBloom(String note, BloomFilter bloom, int adds, int contains, String prefix) {
 		System.gc();
 		long startTime = System.currentTimeMillis();
-		long falsePositives = 0;
-		for(int i = 0; i<adds; i++) {
+		long falsePositivesAdds = 0;
+		int i = 0; 
+		for(; i<adds; i++) {
 			if(!bloom.add(prefix+Integer.toString(i))) {
-				falsePositives++;
+				falsePositivesAdds++;
 			}
 		}
+		long falsPositivesContains = 0; 
+        for(; i<(adds+contains); i++) {
+            if(bloom.contains(prefix+Integer.toString(i))) {
+                falsPositivesContains++;
+            }
+        }
 		long finishTime = System.currentTimeMillis();
-		System.out.println(bloom.getClass().getName()+": "
+		System.out.println(bloom.getClass().getName()
+		        +((note!=null)?" ("+note+")" : "")
+		        +":\n "
 				+(finishTime-startTime)+"ms "
 				+bloom.getSizeBytes()+"bytes "
-				+falsePositives+"false");
+				+falsePositivesAdds+" falseDuringAdds "
+				+falsPositivesContains+" falseDuringContains ");
 	}
 }

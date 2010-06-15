@@ -19,7 +19,7 @@
 
 package org.archive.util;
 
-
+import java.util.Random;
 
 /**
  * BloomFilter64 tests
@@ -28,32 +28,8 @@ package org.archive.util;
  * @version $Date: 2009-11-19 14:39:53 -0800 (Thu, 19 Nov 2009) $, $Revision: 6674 $
  */
 public class BloomFilter64bitTest extends BloomFilterTest {
-    
-    protected void setUp() throws Exception {
-        // test at default size of BloomUriUniqFilter -- but don't depend on that 
-        // 'engine'-subproject class for values
-        bloom = new BloomFilter64bit(125000000,22); 
-    }
-    
-    public void testDistributionOfSetBits() {
-        // prelaod
-        testBasics(); 
-        
-        BloomFilter64bit bloom64 = (BloomFilter64bit)bloom; 
-        for(int i = 0; i<bloom64.bits.length; i++) {
-            // verify that first set bit is in first 20% of bitfield
-            if(bloom64.bits[i]>0) {
-                assertTrue("set bits not as expected in early positions",(i/(double)bloom64.bits.length)<0.2d); 
-                break; 
-            }
-        }
-        for(int i = bloom64.bits.length-1; i>=0; i--) {
-            // verify that first set bit is in first 20% of bitfield
-            if(bloom64.bits[i]>0) {
-                assertTrue("set bits not as expected in late positions",(i/(double)bloom64.bits.length)>0.8d); 
-                break; 
-            }
-        }
-
+    @Override
+    BloomFilter createBloom(long n, int d, Random weightsGenerator) {
+        return new BloomFilter64bit(n, d, weightsGenerator, false);
     }
 }

@@ -32,6 +32,7 @@ import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.BloomFilter64bit;
 
 
 /**
@@ -53,8 +54,7 @@ implements UriUniqFilter.CrawlUriReceiver {
     protected void setUp() throws Exception {
         super.setUp();
         this.filter = new BloomUriUniqFilter();
-        this.filter.setExpectedInserts(2000);
-        this.filter.setHashCount(24); 
+        this.filter.setBloomFilter(new BloomFilter64bit(2000, 24));
         this.filter.afterPropertiesSet();
         this.filter.setDestination(this);
     }

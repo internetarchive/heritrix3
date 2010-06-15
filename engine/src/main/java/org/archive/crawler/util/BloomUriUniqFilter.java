@@ -47,25 +47,8 @@ import org.springframework.beans.factory.InitializingBean;
  * through 125 million unique inserts, which creates a filter structure 
  * about 495MB in size. 
  * 
- * You may use the following system properties to tune the size and 
- * false-positive rate of the bloom filter structure used by this class:
- * 
- *  org.archive.crawler.util.BloomUriUniqFilter.expected-size (default 125000000)
- *  org.archive.crawler.util.BloomUriUniqFilter.hash-count (default 22)
- * 
- * The resulting filter will take up approximately...
- * 
- *    1.44 * expected-size * hash-count / 8 
- *    
- * ...bytes. 
- * 
- * The BloomFilter64bit implementation class supports filters up to 
- * 16GiB in size. 
- * 
- * (If you only need a filter up to 512MiB in size, the 
- * BloomFilter32bitSplit *might* offer better performance, on 32bit
- * JVMs or with respect to heap-handling of giant arrays. The only 
- * current way to swap in this class is by editing the source.)
+ * You may swap in an differently-configured BloomFilter class to alter
+ * these tradeoffs. 
  * 
  * @author gojomo
  * @version $Date$, $Revision$
@@ -78,28 +61,13 @@ implements Serializable, InitializingBean {
         Logger.getLogger(BloomUriUniqFilter.class.getName());
 
     BloomFilter bloom; // package access for testing convenience
-    
-    // these defaults create a bloom filter that is
-    // 1.44*125mil*22/8 ~= 495MB in size, and at full
-    // capacity will give a false contained indication
-    // 1/(2^22) ~= 1 in every 4 million probes
-    protected int expectedInserts= 125000000; // default 125 million;
-    public int getExpectedInserts() {
-        return expectedInserts;
+    public BloomFilter getBloomFilter() {
+        return bloom; 
     }
-    public void setExpectedInserts(int expectedInserts) {
-        this.expectedInserts = expectedInserts;
+    public void setBloomFilter(BloomFilter filter) {
+        bloom = filter; 
     }
 
-    protected int hashCount = 22; // 1 in 4 million false pos
-    public int getHashCount() {
-        return hashCount;
-    }
-    public void setHashCount(int hashCount) {
-        this.hashCount = hashCount;
-    }
-    
-    
     /**
      * Default constructor
      */
@@ -109,14 +77,17 @@ implements Serializable, InitializingBean {
 
     /**
      * Initializer.
-     *
-     * @param n the expected number of elements.
-     * @param d the number of hash functions; if the filter adds not more
-     * than <code>n</code> elements, false positives will happen with
-     * probability 2<sup>-<var>d</var></sup>.
      */
     public void afterPropertiesSet() {
-        bloom = new BloomFilter64bit(expectedInserts,hashCount);
+        if(bloom==null) {
+            // configure default bloom filter if operator hasn't already
+
+            // these defaults create a bloom filter that is
+            // 1.44*125mil*22/8 ~= 495MB in size, and at full
+            // capacity will give a false contained indication
+            // 1/(2^22) ~= 1 in every 4 million probes
+            bloom = new BloomFilter64bit(125000000,22);
+        }
     }
 
     public void forget(String canonical, CrawlURI item) {
@@ -128,8 +99,11 @@ implements Serializable, InitializingBean {
         boolean added = bloom.add(uri);
         // warn if bloom has reached its expected size (and its false-pos
         // rate will now exceed the theoretical/designed level)
-        if( added && (count() == expectedInserts)) {
-            LOGGER.warning("Bloom has reached expected limit "+expectedInserts);
+        if( added && (count() == bloom.getExpectedInserts())) {
+            LOGGER.warning(
+                "Bloom has reached expected limit "+bloom.getExpectedInserts()+
+                "; false-positive rate will now rise above goal of "+
+                "1-in-(2^"+bloom.getHashCount());
         }
         return added;
     }

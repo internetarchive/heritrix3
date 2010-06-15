@@ -1,15 +1,11 @@
 /* BloomFilter
 *
-* $Id$
-*
-* Created on Jun 30, 2005
-*
-* Copyright (C) 2005 Internet Archive; an adaptation of
+* Copyright (C) 2010 Internet Archive; an adaptation of
 * LGPL work (C) Sebastiano Vigna
 *
 * This file is part of the Heritrix web crawler (crawler.archive.org).
 *
-* Heritrix is free software; you can redistribute it and/or modify
+* This class is free software; you can redistribute it and/or modify
 * it under the terms of the GNU Lesser Public License as published by
 * the Free Software Foundation; either version 2.1 of the License, or
 * any later version.
@@ -27,13 +23,13 @@
 package org.archive.util;
 
 /**
- * Common interface for different Bloom filter 
- * implementations
+ * Common interface for different Bloom filter implementations
  * 
  * @author Gordon Mohr
  */
 public interface BloomFilter {
-	/** The number of character sequences in the filter.
+	/** The number of character sequences in the filter (considered to be the 
+	 * number of add()s that returned 'true')
 	 *
 	 * @return the number of character sequences in the filter (but see {@link #contains(CharSequence)}).
 	 */
@@ -67,4 +63,23 @@ public interface BloomFilter {
 	 * @return memory used by bloom bitfield, in bytes
 	 */
 	public abstract long getSizeBytes();
+	
+	/**
+	 * Report the number of expected inserts used at instantiation time to 
+	 * calculate the bitfield size. 
+	 * 
+	 * @return long number of inserts expected at instantiation
+	 */
+    public abstract long getExpectedInserts();
+    
+    /**
+     * Report the number of internal independent hash function (and thus the
+     * number of bits set/checked for each item presented). 
+     * 
+     * @return long count of hash functions
+     */
+    public abstract long getHashCount(); 
+    
+    // public for white-box unit testing
+    public boolean getBit(long bitIndex);
 }
