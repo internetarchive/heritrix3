@@ -214,19 +214,22 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     }
     public void writeHtmlTo(PrintWriter pw, String uriPrefix) {
         pw.println("<span class='job'>");
-        if(isRunning()) {
-            pw.println("ACTIVE; "+getCrawlController().getState()+":");
-        }
+//        if(isRunning()) {
+//            pw.println("ACTIVE; "+getCrawlController().getState()+":");
+//        }
         pw.println("<a href='"+uriPrefix+TextUtils.urlEscape(getShortName())+"'>"+getShortName()+"</a>");
         if(isProfile()) {
             pw.println("(profile)");
+        }
+        if(hasApplicationContext()) {
+            pw.println("&laquo;"+getJobStatusDescription()+"&raquo;");
         }
         if (true == isLaunchInfoPartial) {
           pw.print(" at least ");
         } else {
           pw.print(" ");
         }
-        pw.println(getLaunchCount() + " launches");            
+        pw.println(getLaunchCount() + " launches");      
         pw.println("<br/><span style='color:#666'>");
         pw.println(getPrimaryConfig());
         pw.println("</span><br/>");
@@ -895,6 +898,18 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
             }       
         } catch (BeansException e) {
             return null;
+        }
+    }
+    
+    public String getJobStatusDescription() {
+        if(!hasApplicationContext()) {
+            return "Unbuilt";
+        } else if(isRunning()) {
+            return "Active: "+getCrawlController().getState();
+        } else if(isLaunchable()){
+            return "Ready";
+        } else {
+            return "Finished: "+getCrawlController().getCrawlExitStatus();
         }
     }
 }//EOC

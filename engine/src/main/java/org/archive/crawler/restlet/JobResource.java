@@ -132,7 +132,7 @@ public class JobResource extends BaseResource {
                 info.put("crawlExitStatus", cj.getCrawlController().getCrawlExitStatus());
             }
         }
-        info.put("statusDescription", getJobStatusDescription());
+        info.put("statusDescription", cj.getJobStatusDescription());
         info.put("availableActions", getAvailableActions());
 
         info.put("launchCount", cj.getLaunchCount());
@@ -220,7 +220,7 @@ public class JobResource extends BaseResource {
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
         String jobTitle = cj.getShortName() + " - " 
-                          + getJobStatusDescription() 
+                          + cj.getJobStatusDescription() 
                           + " - Job main page";
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
@@ -360,7 +360,7 @@ public class JobResource extends BaseResource {
         }
         pw.println("</div>");
          
-        pw.println("<h2>Job is "+getJobStatusDescription()+"</h2>");
+        pw.println("<h2>Job is "+cj.getJobStatusDescription()+"</h2>");
 
         if(cj.hasApplicationContext()) {
             pw.println("<b>Totals</b><br/>&nbsp;&nbsp;");
@@ -479,18 +479,6 @@ public class JobResource extends BaseResource {
             "<input id='asProfile' type='checkbox' name='asProfile'/>" +
             "<label for='asProfile'>as profile</label></form>");
         pw.println("<hr/>");
-    }
-    
-    public String getJobStatusDescription() {
-        if(!cj.hasApplicationContext()) {
-            return "Unbuilt";
-        } else if(cj.isRunning()) {
-            return "Active: "+cj.getCrawlController().getState();
-        } else if(cj.isLaunchable()){
-            return "Ready";
-        } else {
-            return "Finished: "+cj.getCrawlController().getCrawlExitStatus();
-        }
     }
 
     /**

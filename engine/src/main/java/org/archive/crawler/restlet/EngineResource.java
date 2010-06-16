@@ -26,6 +26,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -142,12 +143,45 @@ public class EngineResource extends BaseResource {
         	        }
         	    }
         	}
+        } else if ("Exit Java Process".equals(action)) { 
+            boolean cancel = false; 
+            if(!"on".equals(form.getFirstValue("I'm sure"))) {
+                Flash.addFlash(
+                        getResponse(),
+                        "You must tick \"I'm sure\" to trigger exit", 
+                        Flash.Kind.NACK);
+                cancel = true; 
+            }
+            for(Map.Entry<String,CrawlJob> entry : getBuiltJobs().entrySet()) {
+                if(!"on".equals(form.getFirstValue("ignore__"+entry.getKey()))) {
+                    Flash.addFlash(
+                            getResponse(),
+                            "Job '"+entry.getKey()+"' still &laquo;"
+                                +entry.getValue().getJobStatusDescription()
+                                +"&raquo;", 
+                            Flash.Kind.NACK);
+                    cancel = true; 
+                }
+            }
+            if(!cancel) {
+                System.exit(0); 
+            }
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
     }
     
  
+    protected HashMap<String, CrawlJob> getBuiltJobs() {
+        HashMap<String,CrawlJob> builtJobs = new HashMap<String,CrawlJob>(); 
+        for(Map.Entry<String,CrawlJob> entry : getEngine().getJobConfigs().entrySet()) {
+            if(entry.getValue().hasApplicationContext()) {
+                builtJobs.put(entry.getKey(),entry.getValue());
+            }
+        }
+        return builtJobs;
+    }
+
     protected List<String> getAvailableActions() {
         List<String> actions = new LinkedList<String>();
         actions.add("rescan");
@@ -268,6 +302,26 @@ public class EngineResource extends BaseResource {
                 "'rescan' button above to make it appear in this interface. Or, " +
                 "use the 'copy' functionality at the botton of any existing " +
                 "job's detail page.");
+        
+        pw.println("<h2>Exit Java</h2>");
+
+        pw.println(
+                "This exits the Java process running Heritrix. To restart " +
+                "will then require access to the hosting machine. You should " +
+                "cleanly terminate and teardown any jobs in progress first.<br/>");
+        pw.println("<form method=\'POST\'>");
+        for(Map.Entry<String,CrawlJob> entry : getBuiltJobs().entrySet()) {
+            pw.println("<br/>Job '"+entry.getKey()+"' still &laquo;"
+                            +entry.getValue().getJobStatusDescription()
+                            +"&raquo;<br>");
+            String checkName = "ignore__"+entry.getKey();
+            pw.println("<input type='checkbox' id='"+checkName+"' name='"
+                    +checkName+"'><label for='"+checkName+"'> Ignore job '"
+                    +entry.getKey()+"' and exit anyway</label><br/>"); 
+        }
+        pw.println("<br/><input type='submit' name='action' value='Exit Java Process'>");
+        pw.println("<input type='checkbox' name=\"I'm sure\" id=\"I'm sure\"><label for=\"I'm sure\"> I'm sure</label>");
+        pw.println("</form>");
         pw.println("</body>");
         pw.flush();
     }

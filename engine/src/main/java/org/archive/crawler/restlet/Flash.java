@@ -62,18 +62,29 @@ public class Flash {
     public static void addFlash(Response response, String message, Kind kind) {
         dropboxes.put(nextdrop,new Flash(message, kind));
         Series<CookieSetting> cookies = response.getCookieSettings();
-        cookies.add(new CookieSetting("flashdrop",Long.toString(nextdrop)));
+        CookieSetting flashdrop = null; 
+        for(CookieSetting cs : cookies) {
+            if(cs.getName().equals("flashdrop")) {
+                flashdrop = cs; 
+            }
+        }
+        if(flashdrop == null) {
+            cookies.add(new CookieSetting("flashdrop",Long.toString(nextdrop)));
+        } else {
+            flashdrop.setValue(flashdrop.getValue()+","+Long.toString(nextdrop));
+        }
         nextdrop++;
     }
     
     public static List<Flash> getFlashes(Request request) {
         List<Flash> flashes = new LinkedList<Flash>();
         Series<Cookie> cookies = request.getCookies();
-        String dropbox = cookies.getFirstValue("flashdrop");
-        if(dropbox!=null) {
-            Flash flash = dropboxes.remove(Long.parseLong(dropbox));
-            if(flash!=null) {
-                flashes.add(flash); 
+        for (String dropbox : cookies.getFirstValue("flashdrop").split(",")) {
+            if(dropbox!=null) {
+                Flash flash = dropboxes.remove(Long.parseLong(dropbox));
+                if(flash!=null) {
+                    flashes.add(flash); 
+                }
             }
         }
         return flashes;
