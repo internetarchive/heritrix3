@@ -34,7 +34,7 @@ import org.archive.modules.extractor.Hop;
  * <p>Thus, it allows things like embedded resources (frames/images/media) 
  * and redirects to be transitively included ('transcluded') in a crawl, 
  * even if they otherwise would not, for some reasonable number of hops
- * (1-4).
+ * (usually 1-5).
  *
  * @see <a href="http://www.google.com/search?q=define%3Atransclusion&sourceid=mozilla&start=0&start=0&ie=utf-8&oe=utf-8">Transclusion</a>
  *
@@ -77,7 +77,7 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
     }
 
     /**
-     * Evaluate whether given object is within the threshold number of
+     * Evaluate whether given object is within the acceptable thresholds of
      * transitive hops.
      * 
      * @param object Object to make decision on.
@@ -88,28 +88,35 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
         if (hopsPath == null || hopsPath.length() == 0) {
             return false; 
         }
-        int count = 0;
+        int allCount = 0;
+        int nonrefCount = 0; 
         int specCount = 0; 
         for (int i = hopsPath.length() - 1; i >= 0; i--) {
             char c = hopsPath.charAt(i);
             if (c == Hop.NAVLINK.getHopChar()) {
+                // end of hops counted here
                 break;
-            } else if (c != Hop.REFER.getHopChar()) {
-                count++;
-                if (c == Hop.SPECULATIVE.getHopChar()) {
-                    specCount++;
-                }
+            } 
+            allCount++; 
+            if (c != Hop.REFER.getHopChar()) {
+                nonrefCount++;
+            }
+            if (c == Hop.SPECULATIVE.getHopChar()) {
+                specCount++;
             }
         }
-        if (count <= 0) {
+        // transclusion doesn't apply if there isn't at least one non-nav-hop
+        if (allCount <= 0) {
             return false;
         }
         
+        // too many speculative hops disqualify from transclusion
         if (specCount > getMaxSpeculativeHops()) {
             return false;
         }
         
-        return count <= getMaxTransHops();
+        // transclusion applies as long as non-ref hops less than max
+        return nonrefCount <= getMaxTransHops();
     }
 
 
