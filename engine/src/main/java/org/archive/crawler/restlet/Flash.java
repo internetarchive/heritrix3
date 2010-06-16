@@ -79,6 +79,9 @@ public class Flash {
     public static List<Flash> getFlashes(Request request) {
         List<Flash> flashes = new LinkedList<Flash>();
         Series<Cookie> cookies = request.getCookies();
+        if (cookies.getFirstValue("flashdrop") == null) {
+            return flashes;
+        }
         for (String dropbox : cookies.getFirstValue("flashdrop").split(",")) {
             if(dropbox!=null) {
                 Flash flash = dropboxes.remove(Long.parseLong(dropbox));
