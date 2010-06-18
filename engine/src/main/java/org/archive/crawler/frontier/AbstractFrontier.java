@@ -43,6 +43,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -145,23 +146,23 @@ public abstract class AbstractFrontier
         kp.put("maxOutlinks", max);
     }
     
-    /** size of the 'outbound' mediation queue between manager thread 
-     * and toethreads */
-    int outboundQueueCapacity = 200; 
-    public int getOutboundQueueCapacity() {
-        return this.outboundQueueCapacity;
-    }
-    public void setOutboundQueueCapacity(int capacity) {
-        this.outboundQueueCapacity = capacity; 
-    }
     
-    /** size of the inbound queue as multiple of the outbound queue */
-    int inboundQueueMultiple = 10;
-    public int getInboundQueueMultiple() {
-        return this.inboundQueueMultiple;
+    /** inbound updates: URIs to be scheduled, finished; requested state changes */
+    transient protected BlockingQueue<InEvent> inbound;
+    public BlockingQueue<InEvent> getInbound() {
+        return inbound;
     }
-    public void setInboundQueueMultiple(int multiple) {
-        this.inboundQueueMultiple = multiple;
+    public void setInbound(BlockingQueue<InEvent> inbound) {
+        this.inbound = inbound;
+    }
+
+    /** outbound URIs */ 
+    transient protected BlockingQueue<CrawlURI> outbound;
+    public BlockingQueue<CrawlURI> getOutbound() {
+        return outbound;
+    }
+    public void setOutbound(BlockingQueue<CrawlURI> outbound) {
+        this.outbound = outbound;
     }
     
     public boolean isRunning() {
@@ -286,17 +287,6 @@ public abstract class AbstractFrontier
     /** reusable no-op inbound event, to force reeval of state/eligible URIs */
     transient protected InEvent NOOP = new InEvent() { public void process() {} };
     
-    /** inbound updates: URIs to be scheduled, finished; requested state changes */
-    transient protected ArrayBlockingQueue<InEvent> inbound;
-    /** outbound URIs */ 
-    transient protected ArrayBlockingQueue<CrawlURI> outbound;
-    
-    /** Capacity of the inbound queue. */
-    private int inboundCapacity;
-    
-    /** Capacity of the outbound queue. */
-    private int outboundCapacity;
-    
     /** 
      * lock to allow holding all worker ToeThreads from taking URIs already
      * on the outbound queue; they acquire read permission before take()ing;
@@ -343,11 +333,12 @@ public abstract class AbstractFrontier
             throw new IllegalStateException(e);
         }
         
-        this.outboundCapacity = getOutboundQueueCapacity();
-        this.inboundCapacity = outboundCapacity * 
-            getInboundQueueMultiple();
-        outbound = new ArrayBlockingQueue<CrawlURI>(outboundCapacity, true);
-        inbound = new ArrayBlockingQueue<InEvent>(inboundCapacity, true);
+        if(outbound==null) {
+            outbound = new ArrayBlockingQueue<CrawlURI>(200, true);
+        }
+        if(inbound==null) {
+            inbound = new ArrayBlockingQueue<InEvent>(40000, true);
+        }
         pause();
         startManagerThread();
     }

@@ -368,8 +368,18 @@ http://example.example/example
   <!-- <property name="maxRetries" value="30" /> -->
   <!-- <property name="recoveryLogEnabled" value="true" /> -->
   <!-- <property name="maxOutlinks" value="6000" /> -->
-  <!-- <property name="outboundQueueCapacity" value="50" /> -->
-  <!-- <property name="inboundQueueMultiple" value="3" /> -->
+  <!-- <property name="outbound">
+        <bean class="java.util.concurrent.ArrayBlockingQueue">
+         <constructor-arg value="200"/>
+         <constructor-arg value="true"/>
+        </bean>
+       </property> -->
+  <!-- <property name="inbound">
+        <bean class="java.util.concurrent.ArrayBlockingQueue">
+         <constructor-arg value="40000"/>
+         <constructor-arg value="true"/>
+        </bean>
+       </property> -->
   <!-- <property name="dumpPendingAtClose" value="false" /> -->
  </bean>
  
