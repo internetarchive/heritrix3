@@ -56,13 +56,15 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
      * @return discovered override, or local value
      */
     public Object get(String key) {
-        for(OverlayContext ocontext: threadOverrides.get()) {
-            for(String name: ocontext.getOverlayNames()) {
-                Map<String,Object> m = ocontext.getOverlayMap(name);
-                for(String ok : getOverrideKeys(key)) {
-                    Object val = m.get(ok);
-                    if(val!=null) {
-                        return val;
+        if(!threadOverrides.get().isEmpty()) {
+            for(OverlayContext ocontext: threadOverrides.get()) {
+                for(String name: ocontext.getOverlayNames()) {
+                    Map<String,Object> m = ocontext.getOverlayMap(name);
+                    for(String ok : getOverrideKeys(key)) {
+                        Object val = m.get(ok);
+                        if(val!=null) {
+                            return val;
+                        }
                     }
                 }
             }
