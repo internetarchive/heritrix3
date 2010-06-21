@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.restlet.data.Cookie;
 import org.restlet.data.CookieSetting;
@@ -79,10 +80,11 @@ public class Flash {
     public static List<Flash> getFlashes(Request request) {
         List<Flash> flashes = new LinkedList<Flash>();
         Series<Cookie> cookies = request.getCookies();
-        if (cookies.getFirstValue("flashdrop") == null) {
+        String flashdrops = cookies.getFirstValue("flashdrop");
+        if (StringUtils.isBlank(flashdrops)) {
             return flashes;
         }
-        for (String dropbox : cookies.getFirstValue("flashdrop").split(",")) {
+        for (String dropbox : flashdrops.split(",")) {
             if(dropbox!=null) {
                 Flash flash = dropboxes.remove(Long.parseLong(dropbox));
                 if(flash!=null) {
