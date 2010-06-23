@@ -143,6 +143,7 @@
           <excludes>
             <exclude>**/TestAll.java</exclude>
           </excludes>
+          <argLine>-server -Xmx256m</argLine>
         </configuration>
       </plugin>
     </plugins>
