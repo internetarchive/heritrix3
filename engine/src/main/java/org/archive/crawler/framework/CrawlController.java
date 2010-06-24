@@ -254,7 +254,7 @@ implements Serializable,
     // emergency reserve of memory to allow some progress/reporting after OOM
     private transient LinkedList<char[]> reserveMemory;
     private static final int RESERVE_BLOCKS = 1;
-    private static final int RESERVE_BLOCK_SIZE = 6*2^20; // 6MB
+    private static final int RESERVE_BLOCK_SIZE = 6*1024*1024; // 6MB
 
     /**
      * Crawl exit status.
@@ -291,7 +291,7 @@ implements Serializable,
         Lookup.getDefaultCache(DClass.IN).setMaxEntries(1);
         
         reserveMemory = new LinkedList<char[]>();
-        for(int i = 1; i < RESERVE_BLOCKS; i++) {
+        for(int i = 0; i < RESERVE_BLOCKS; i++) {
             reserveMemory.add(new char[RESERVE_BLOCK_SIZE]);
         }
         isRunning = true; 
