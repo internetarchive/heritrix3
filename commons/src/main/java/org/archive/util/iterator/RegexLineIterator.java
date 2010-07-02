@@ -44,7 +44,7 @@ extends TransformingIteratorWrapper<String,String> {
 
     public static final String COMMENT_LINE = "\\s*(#.*)?";
     public static final String NONWHITESPACE_ENTRY_TRAILING_COMMENT = 
-        "^\\s*(\\S+)\\s*(#.*)?$";
+        "^[\\s\ufeff]*(\\S+)\\s*(#.*)?$";
     public static final String TRIMMED_ENTRY_TRAILING_COMMENT = 
         "^\\s*([^#]+?)\\s*(#.*)?$";
 
