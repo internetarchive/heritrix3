@@ -695,10 +695,10 @@ public abstract class AbstractFrontier
         }
     }
 
-    protected void doJournalRescheduled(CrawlURI c) {
+    protected void doJournalReenqueued(CrawlURI c) {
         tally(c,Stage.RETRIED);
         if (this.recover != null) {
-            this.recover.rescheduled(c);
+            this.recover.reenqueued(c);
         }
     }
 

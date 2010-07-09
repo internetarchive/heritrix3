@@ -1019,7 +1019,7 @@ implements Closeable,
             // Let everyone interested know that it will be retried.
             appCtx.publishEvent(
                 new CrawlURIDispositionEvent(this,curi,DEFERRED_FOR_RETRY));
-            doJournalRescheduled(curi);
+            doJournalReenqueued(curi);
             return;
         }
 
@@ -1082,6 +1082,7 @@ implements Closeable,
         if(curi.getRescheduleTime()>0) {
             // marked up for forced-revisit at a set time
             curi.processingCleanup();
+            curi.resetForRescheduling(); 
             futureUris.put(curi.getRescheduleTime(),curi);
             futureUriCount.incrementAndGet(); 
         } else {

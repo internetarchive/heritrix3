@@ -493,26 +493,31 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     /**
-     * Get the number of attempts at getting the document referenced by this
-     * URI.
+     * Get the count of attempts (trips through the processing 
+     * loop) at getting the document referenced by this URI. 
+     * Compared against a configured maximum to determine when
+     * to stop retrying. 
+     * 
+     * TODO: Consider renaming as something more generic, as all
+     * processing-loops do not necessarily include an attempted
+     * network-fetch (for example, when processing is aborted 
+     * early to enqueue a prerequisite), and this counter may be 
+     * reset if a URI is starting a fresh series of tries (as when
+     * rescheduled at a future time). Perhaps simply 'tryCount'
+     * or 'attempts'?
      *
-     * @return the number of attempts at getting the document referenced by this
-     *         URI.
+     * @return attempts count
      */
     public int getFetchAttempts() {
         return fetchAttempts;
     }
 
     /**
-     * Increment the number of attempts at getting the document referenced by
-     * this URI.
-     *
-     * @return the number of attempts at getting the document referenced by this
-     *         URI.
+     * Increment the count of attempts (trips through the processing 
+     * loop) at getting the document referenced by this URI.
      */
-    public int incrementFetchAttempts() {
-        // TODO: rename, this is actually processing-loop-attempts
-        return fetchAttempts++;
+    public void incrementFetchAttempts() {
+        fetchAttempts++;
     }
 
     /**
@@ -1846,5 +1851,16 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     public long getRescheduleTime() {
         return this.rescheduleTime;
+    }
+
+    /**
+     * Reset state that that should not persist when a URI is
+     * rescheduled for a specific future time.
+     */
+    public void resetForRescheduling() {
+        // retries from now don't count against future try
+        resetFetchAttempts();
+        // deferrals from now don't count against future try
+        resetDeferrals();
     }
 }

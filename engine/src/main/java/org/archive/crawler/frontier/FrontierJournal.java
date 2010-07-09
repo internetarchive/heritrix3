@@ -55,7 +55,7 @@ public class FrontierJournal extends CrawlerJournal {
     public final static String F_EMIT = "Fe ";
     public final static String F_INCLUDE = "Fi ";
     public final static String F_DISREGARD = "Fd ";
-    public final static String F_RESCHEDULE = "Fr ";
+    public final static String F_REENQUEUED = "Fr ";
     public final static String F_SUCCESS = "Fs ";
     public final static String F_FAILURE = "Ff ";
     
@@ -117,8 +117,8 @@ public class FrontierJournal extends CrawlerJournal {
         writeLine(F_DISREGARD, curi.toString());
     }
 
-    public void rescheduled(CrawlURI curi) {
-        writeLine(F_RESCHEDULE, curi.toString());
+    public void reenqueued(CrawlURI curi) {
+        writeLine(F_REENQUEUED, curi.toString());
     }
 
     
