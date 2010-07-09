@@ -28,8 +28,9 @@ import java.io.Serializable;
  * @author pjack
  */
 public abstract class LinkContext implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    
+
     /** Class for representing handy default LinkContext values. */
     private static class SimpleLinkContext extends LinkContext {
 
@@ -65,6 +66,12 @@ public abstract class LinkContext implements Serializable {
     final public static LinkContext SPECULATIVE_MISC
      = new SimpleLinkContext("=SPECULATIVE_MISC");
 
+    /** 
+     * Stand-in value for inferred urls without  other context. 
+     */
+    final public static LinkContext INFERRED_MISC
+        = new SimpleLinkContext("=INFERRED_MISC");
+    
     /** Stand-in value for prerequisite urls without other context. */
     final public static LinkContext PREREQ_MISC
      = new SimpleLinkContext("=PREREQ_MISC");

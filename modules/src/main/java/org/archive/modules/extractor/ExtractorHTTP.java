@@ -39,6 +39,16 @@ public class ExtractorHTTP extends Extractor {
     public ExtractorHTTP() {
     }
 
+    /** should all HTTP URIs be used to infer a link to the site's root? */
+    boolean inferRootPage = false; 
+    public boolean getInferRootPage() {
+        return inferRootPage;
+    }
+    public void setInferRootPage(boolean inferRootPage) {
+        this.inferRootPage = inferRootPage;
+    }
+
+
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         if (uri.getFetchStatus() <= 0) {
@@ -57,7 +67,10 @@ public class ExtractorHTTP extends Extractor {
         addHeaderLink(curi, method.getResponseHeader("Content-Location"));
         
         // try /favicon.ico for every HTTP(S) URI
-        addOutlink(curi, "/favicon.ico", LinkContext.EMBED_MISC, Hop.EMBED);
+        addOutlink(curi, "/favicon.ico", LinkContext.INFERRED_MISC, Hop.INFERRED);
+        if(getInferRootPage()) {
+            addOutlink(curi, "/", LinkContext.INFERRED_MISC, Hop.INFERRED);
+        }
     }
 
     protected void addHeaderLink(CrawlURI curi, Header loc) {

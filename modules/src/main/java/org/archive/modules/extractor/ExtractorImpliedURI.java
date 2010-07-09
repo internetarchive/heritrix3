@@ -132,8 +132,8 @@ public class ExtractorImpliedURI extends Extractor {
                 try {
                     UURI src = curi.getUURI();
                     UURI target = UURIFactory.getInstance(implied);
-                    LinkContext lc = LinkContext.SPECULATIVE_MISC;
-                    Hop hop = Hop.SPECULATIVE;
+                    LinkContext lc = LinkContext.INFERRED_MISC;
+                    Hop hop = Hop.INFERRED;
                     Link out = new Link(src, target, lc, hop);
                     curi.getOutLinks().add(out);
                     numberOfLinksExtracted.incrementAndGet();

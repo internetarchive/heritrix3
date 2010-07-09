@@ -48,8 +48,13 @@ public enum Hop {
     /** 
      * Referral/redirect links, like header 'Location:' on a 301/302 response. 
      */
-    REFER('R');
+    REFER('R'),
 
+    /** 
+     * Inferred/implied links -- not necessarily literally in the source 
+     * material, but deduced by convention.
+     */
+    INFERRED('I');
     
     /** The hop character for logs. */
     private char hopChar;
