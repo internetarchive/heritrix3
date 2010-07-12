@@ -52,8 +52,11 @@ public class DispositionChain extends ProcessorChain implements Checkpointable {
     @Override
     public void process(CrawlURI curi, ChainStatusReceiver thread) throws InterruptedException {
         dispositionInProgressLock.readLock().lock();
-        super.process(curi, thread);
-        dispositionInProgressLock.readLock().unlock();
+        try {
+            super.process(curi, thread);
+        } finally {
+            dispositionInProgressLock.readLock().unlock();
+        }
     }
 
     
