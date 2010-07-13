@@ -31,13 +31,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.Lifecycle;
 
 /**
  * Represents a single checkpoint, by its name and main store directory.
  * 
  * @contributor gojomo
  */
-public class Checkpoint implements InitializingBean {
+public class Checkpoint implements InitializingBean, Lifecycle {
     private final static Logger LOGGER =
         Logger.getLogger(Checkpoint.class.getName());
 
@@ -51,7 +52,9 @@ public class Checkpoint implements InitializingBean {
     boolean success = false;
     
     /**
-     * Checkpoints directory
+     * Checkpoints directory; either an absolute path, or relative to the 
+     * CheckpointService's checkpointsDirectory (which will be inserted as
+     * the COnfigPath base before the Checkpoint is consulted). 
      */
     protected ConfigPath checkpointDir = 
         new ConfigPath("checkpoint directory","");
@@ -88,6 +91,24 @@ public class Checkpoint implements InitializingBean {
         name = checkpointDir.getFile().getName();
         shortName = name.substring(0, name.indexOf("-"));
     }
+    
+    boolean isRunning = false; 
+    public boolean isRunning() {
+        return isRunning;
+    }
+    public void start() {
+        if(isRunning) {
+            return; 
+        }
+        isRunning = true; 
+        if(!Checkpoint.hasValidStamp(checkpointDir.getFile())) {
+            throw new RuntimeException("checkpoint '"+checkpointDir.getFile().getAbsolutePath()+"' missing validity stamp file");
+        }
+    }
+    public void stop() {
+        isRunning = false; 
+    }
+    
     
     public void setSuccess(boolean b) {
         success = b; 
@@ -136,5 +157,9 @@ public class Checkpoint implements InitializingBean {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static boolean hasValidStamp(File checkpointDirectory) {
+        return (new File(checkpointDirectory,Checkpoint.VALIDITY_STAMP_FILENAME)).exists();
     }
 }

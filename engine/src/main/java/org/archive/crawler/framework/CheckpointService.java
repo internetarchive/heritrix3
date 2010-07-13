@@ -298,7 +298,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
         Iterator<File> iter = dirsList.iterator();
         while(iter.hasNext()) {
             File cpDir = iter.next();
-            if(! (new File(cpDir,Checkpoint.VALIDITY_STAMP_FILENAME)).exists()) {
+            if(!Checkpoint.hasValidStamp(cpDir)) {
                 LOGGER.warning("checkpoint '"+cpDir+"' missing validity stamp file; ignoring");
                 iter.remove();
             }
