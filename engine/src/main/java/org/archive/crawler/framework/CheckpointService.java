@@ -21,6 +21,10 @@ package org.archive.crawler.framework;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -261,7 +265,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
      * @param e Exception checkpoint failed on.
      */
     protected void checkpointFailed(Exception e) {
-        LOGGER.log(Level.WARNING, " Checkpoint failed", e);
+        LOGGER.log(Level.SEVERE, " Checkpoint failed", e);
     }
     
     protected void checkpointFailed(final String message) {
@@ -273,16 +277,33 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
             return false;
         }
         return (getAvailableCheckpointDirectories() != null 
-                && getAvailableCheckpointDirectories().length > 0);
+                && getAvailableCheckpointDirectories().size() > 0);
     }
 
+    /**
+     * Returns a list of available, valid (contains 'valid' file) 
+     * checkpoint directories, as File instances, with the more 
+     * recently-written appearing first. 
+     * 
+     * @return List of valid checkpoint directory File instances
+     */
     @SuppressWarnings("unchecked")
-    public File[] getAvailableCheckpointDirectories() {
+    public List<File> getAvailableCheckpointDirectories() {
         File[] dirs = getCheckpointsDir().getFile().listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
-        if (dirs != null) {
-            Arrays.sort(dirs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+        if (dirs == null) {
+            return Collections.EMPTY_LIST;
         }
-        return dirs;
+        Arrays.sort(dirs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+        LinkedList<File> dirsList = new LinkedList<File>(Arrays.asList(dirs));
+        Iterator<File> iter = dirsList.iterator();
+        while(iter.hasNext()) {
+            File cpDir = iter.next();
+            if(! (new File(cpDir,Checkpoint.VALIDITY_STAMP_FILENAME)).exists()) {
+                LOGGER.warning("checkpoint '"+cpDir+"' missing validity stamp file; ignoring");
+                iter.remove();
+            }
+        }
+        return dirsList;
     }
     
     /**
