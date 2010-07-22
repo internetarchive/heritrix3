@@ -240,8 +240,8 @@ public class Heritrix {
         String keyPassword;
         File properties = getDefaultPropertiesFile();
 
+        String aOption = cl.getOptionValue('a');
         if (cl.hasOption('a')) {
-            String aOption = cl.getOptionValue('a');
             String usernameColonPassword = aOption; 
             try {
                 if(aOption.startsWith("@")) {
@@ -345,8 +345,8 @@ public class Heritrix {
             guard.setNext(new EngineApplication(engine));
             component.start();
             startupOut.println("engine listening at port "+port);
-            startupOut.println("operator login is '"+authLogin
-                               +"' password '"+authPassword+"'");
+            startupOut.println("operator login set per " +
+                    ((aOption.startsWith("@")) ? "file "+aOption : "command-line"));
             if(authPassword.length()<8 || authPassword.matches("[a-zA-Z]{0,10}")
                     ||authPassword.matches("\\d{0,10}")) {
                 startupOut.println(
