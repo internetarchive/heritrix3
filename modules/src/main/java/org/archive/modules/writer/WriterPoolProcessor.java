@@ -427,7 +427,8 @@ implements Lifecycle, Checkpointable {
         
         String sfx = getSuffix();
         sfx = sfx.trim();
-        if (sfx.contains(WriterPoolMember.HOSTNAME_VARIABLE)) {            String str = "localhost.localdomain";
+        if (sfx.contains(WriterPoolMember.HOSTNAME_VARIABLE)) {
+            String str = "localhost.localdomain";
             try {
                 str = InetAddress.getLocalHost().getCanonicalHostName();
             } catch (UnknownHostException ue) {
