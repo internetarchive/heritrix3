@@ -127,5 +127,5 @@ implements
         return path.substring(1,i);
     }
 
-    abstract String getCoreKey(UURI basis);
+    protected abstract String getCoreKey(UURI basis);
 }

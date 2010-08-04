@@ -29,7 +29,7 @@ extends URIAuthorityBasedQueueAssignmentPolicy {
     private static final long serialVersionUID = 3L;
     
     @Override
-    String getCoreKey(UURI basis) {
+    protected String getCoreKey(UURI basis) {
         String candidate = getSurtAuthority(basis.getSurtForm());
         return candidate.replace(':','#');
     }

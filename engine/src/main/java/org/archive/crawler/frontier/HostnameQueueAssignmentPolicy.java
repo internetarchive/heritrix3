@@ -35,7 +35,7 @@ extends URIAuthorityBasedQueueAssignmentPolicy {
     private static final long serialVersionUID = 3L;
 
     @Override
-    String getCoreKey(UURI basis) {
+    protected String getCoreKey(UURI basis) {
         String scheme = basis.getScheme();
         String candidate = null;
         try {
