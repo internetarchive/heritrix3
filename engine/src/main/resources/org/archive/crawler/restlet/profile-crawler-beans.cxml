@@ -425,14 +425,16 @@ http://example.example/example
  <!--
  <bean id="canonicalizationPolicy" 
    class="org.archive.modules.canonicalize.RulesCanonicalizationPolicy">
-  <list>
-   <bean class="org.archive.modules.canonicalize.LowercaseRule" />
-   <bean class="org.archive.modules.canonicalize.StripUserinfoRule" />
-   <bean class="org.archive.modules.canonicalize.StripWWWNRule" />
-   <bean class="org.archive.modules.canonicalize.StripSessionIDs" />
-   <bean class="org.archive.modules.canonicalize.StripSessionCFIDs" />
-   <bean class="org.archive.modules.canonicalize.FixupQueryString" />
-  </list>
+  <property name="rules">
+   <list>
+    <bean class="org.archive.modules.canonicalize.LowercaseRule" />
+    <bean class="org.archive.modules.canonicalize.StripUserinfoRule" />
+    <bean class="org.archive.modules.canonicalize.StripWWWNRule" />
+    <bean class="org.archive.modules.canonicalize.StripSessionIDs" />
+    <bean class="org.archive.modules.canonicalize.StripSessionCFIDs" />
+    <bean class="org.archive.modules.canonicalize.FixupQueryString" />
+   </list>
+  </property>
  </bean>
  -->
  
