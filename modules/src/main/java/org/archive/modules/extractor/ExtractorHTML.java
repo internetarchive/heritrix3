@@ -538,6 +538,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             if (encodedKeyVal.length == 2) try {
                 String value = URLDecoder.decode(encodedKeyVal[1], "UTF-8");
                 considerIfLikelyUri(curi, value, valueContext, hop);
+            } catch (IllegalArgumentException e) {
+                // still consider values rejected by URLDecoder
+                considerIfLikelyUri(curi, encodedKeyVal[1], valueContext, hop);
             } catch (UnsupportedEncodingException e) {
                 throw new AssertionError("all jvms must support UTF-8, and yet somehow this happened: " + e);
             }
