@@ -470,6 +470,20 @@ http://example.example/example
  </bean>
  -->
  
+ <!-- DISK SPACE MONITOR: 
+      Pauses the crawl if disk space at monitored paths falls below minimum threshold -->
+ <!-- 
+ <bean id="diskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
+   <property name="pauseThresholdMiB" value="500" />
+   <property name="monitorConfigPaths" value="true" />
+   <property name="monitorPaths">
+     <list>
+       <value>PATH</value>
+     </list>
+   </property>
+ </bean>
+ -->
+ 
  <!-- 
    REQUIRED STANDARD BEANS
     It will be very rare to replace or reconfigure the following beans.

@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.framework.CrawlController;
+import org.archive.crawler.framework.DiskSpaceMonitor;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.CrawlURI;
@@ -38,7 +39,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  * the expected output format (on Linux), to monitor available 
  * disk space and pause the crawl if free space on  monitored 
  * filesystems falls below certain thresholds.
+ * 
+ * @deprecated Is highly system dependant. 
+ *             Use {@link DiskSpaceMonitor} instead.
  */
+@Deprecated
 public class LowDiskPauseProcessor extends Processor {
 
     private static final long serialVersionUID = 3L;
