@@ -231,7 +231,7 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      */
     private byte [] generateARCFileMetaData(String date)
     throws IOException {
-        if(date.length()>14) {
+        if(date!=null && date.length()>14) {
             date = date.substring(0,14);
         }
         int metadataBodyLength = getMetadataLength();
