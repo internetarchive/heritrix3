@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.framework.CrawlController;
-import org.archive.crawler.framework.DiskSpaceMonitor;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.CrawlURI;
@@ -41,7 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * filesystems falls below certain thresholds.
  * 
  * @deprecated Is highly system dependant. 
- *             Use {@link DiskSpaceMonitor} instead.
+ *             Use {@link org.archive.crawler.monitor.DiskSpaceMonitor} instead.
  */
 @Deprecated
 public class LowDiskPauseProcessor extends Processor {
