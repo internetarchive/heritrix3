@@ -16,41 +16,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package org.archive.util;
 
+
+import java.io.IOException;
+import java.util.Properties;
+
+import junit.framework.TestCase;
+
+
 /**
- * Immutable data structure that holds a timestamp and an accompanying
- * serial number.
+ * PropertyUtils tests. 
  * 
- * For Igor!
- *
- * @author stack
+ * @contributor gojomo
+ * @version $Date: 2009-11-19 14:39:53 -0800 (Thu, 19 Nov 2009) $, $Revision: 6674 $
  */
-public class TimestampSerialno {
-	private final String ts;
-	private final int serialNumber;
-
-	public TimestampSerialno(String ts, int serialNo) {
-		this.ts = ts;
-		this.serialNumber = serialNo;
-	}
+public class PropertyUtilsTest extends TestCase {
     
-    public TimestampSerialno(int serialNo) {
-        this.ts = ArchiveUtils.get14DigitDate();
-        this.serialNumber = serialNo;
+    public void testSimpleInterpolate() throws IOException {
+        Properties props = new Properties(); 
+        props.put("foo", "OOF");
+        props.put("bar","RAB");
+        String original = "FOO|${foo}  BAR|${bar}";
+        String expected = "FOO|OOF  BAR|RAB";
+        assertEquals("interpalation problem",expected,PropertyUtils.interpolateWithProperties(original,props));
     }
-
-	/**
-	 * @return Returns the now.
-	 */
-	public String getTimestamp() {
-		return this.ts;
-	}
-
-	/**
-	 * @return Returns the serialNumber.
-	 */
-	public int getSerialNumber() {
-		return this.serialNumber;
-	}
 }

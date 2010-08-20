@@ -28,10 +28,10 @@ import java.util.List;
  * @version $Date$, $Revision$
  */
 public interface WriterPoolSettings {
-    public long getMaxSize();
+    public long getMaxFileSizeBytes();
     public String getPrefix();
-    public String getSuffix(); 
+    public String getTemplate(); 
     public List<File> getOutputDirs();
-    public boolean isCompressed();
+    public boolean getCompress();
     public List<String> getMetadata();
 }

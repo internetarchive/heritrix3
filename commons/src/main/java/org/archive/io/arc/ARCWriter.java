@@ -186,7 +186,7 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
     protected String createFile()
     throws IOException {
         String name = super.createFile();
-        writeFirstRecord(getCreateTimestamp());
+        writeFirstRecord(currentTimestamp);
         return name;
     }
     
@@ -223,13 +223,17 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      * <p>We do things in this roundabout manner because the java
      * GZIPOutputStream does not give access to GZIP header fields.
      *
-     * @param date Date to put into the ARC metadata.
+     * @param date Date to put into the ARC metadata; if 17-digit will be 
+     * truncated to traditional 14-digits
      *
      * @return Byte array filled w/ the arc header.
 	 * @throws IOException
      */
     private byte [] generateARCFileMetaData(String date)
     throws IOException {
+        if(date.length()>14) {
+            date = date.substring(0,14);
+        }
         int metadataBodyLength = getMetadataLength();
         // If metadata body, then the minor part of the version is '1' rather
         // than '0'.

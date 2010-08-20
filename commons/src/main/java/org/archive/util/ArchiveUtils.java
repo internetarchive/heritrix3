@@ -123,6 +123,31 @@ public class ArchiveUtils {
     public static String get17DigitDate(){
         return TIMESTAMP17.get().format(new Date());
     }
+    
+    static long LAST_UNIQUE_NOW17 = 0;
+    static String LAST_TIMESTAMP17 = ""; 
+    /**
+     * Utility function for creating UNIQUE-from-this-class 
+     * arc-style date stamps in the format yyyMMddHHmmssSSS.
+     * Rather than giving a duplicate datestamp on a 
+     * subsequent call, will increment the milliseconds until a 
+     * unique value is returned. 
+     * 
+     * Date stamps are in the UTC time zone
+     * @return the date stamp
+     */
+    public synchronized static String getUnique17DigitDate(){
+        long effectiveNow = System.currentTimeMillis(); 
+        effectiveNow = Math.max(effectiveNow, LAST_UNIQUE_NOW17+1);
+        String candidate = get17DigitDate(effectiveNow);
+        while(candidate.equals(LAST_TIMESTAMP17)) {
+            effectiveNow++;
+            candidate = get17DigitDate(effectiveNow);
+        }
+        LAST_UNIQUE_NOW17 = effectiveNow;
+        LAST_TIMESTAMP17 = candidate; 
+        return candidate;
+    }
 
     /**
      * Utility function for creating arc-style date stamps
@@ -132,6 +157,31 @@ public class ArchiveUtils {
      */
     public static String get14DigitDate(){
         return TIMESTAMP14.get().format(new Date());
+    }
+    
+    static long LAST_UNIQUE_NOW14 = 0;
+    static String LAST_TIMESTAMP14 = ""; 
+    /**
+     * Utility function for creating UNIQUE-from-this-class 
+     * arc-style date stamps in the format yyyMMddHHmmss.
+     * Rather than giving a duplicate datestamp on a 
+     * subsequent call, will increment the seconds until a 
+     * unique value is returned. 
+     * 
+     * Date stamps are in the UTC time zone
+     * @return the date stamp
+     */
+    public synchronized static String getUnique14DigitDate(){
+        long effectiveNow = System.currentTimeMillis(); 
+        effectiveNow = Math.max(effectiveNow, LAST_UNIQUE_NOW14+1);
+        String candidate = get14DigitDate(effectiveNow);
+        while(candidate.equals(LAST_TIMESTAMP14)) {
+            effectiveNow += 1000;
+            candidate = get14DigitDate(effectiveNow);
+        }
+        LAST_UNIQUE_NOW14 = effectiveNow;
+        LAST_TIMESTAMP14 = candidate; 
+        return candidate;
     }
 
     /**

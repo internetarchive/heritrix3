@@ -70,7 +70,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
-import org.archive.io.WriterPoolSettings;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.modules.CrawlMetadata;
@@ -166,8 +165,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
 
     @Override
     protected void setupPool(final AtomicInteger serialNo) {
-        WriterPoolSettings wps = getWriterPoolSettings();
-        setPool(new WARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWaitMs()));
+        setPool(new WARCWriterPool(serialNo, this, getPoolMaxActive(), getPoolMaxWaitMs()));
     }
 
     /**

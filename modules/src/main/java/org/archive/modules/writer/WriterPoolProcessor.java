@@ -25,7 +25,6 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +32,6 @@ import java.util.logging.Logger;
 
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.io.DefaultWriterPoolSettings;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
@@ -57,8 +55,9 @@ import org.springframework.context.Lifecycle;
  * @author stack
  */
 public abstract class WriterPoolProcessor extends Processor 
-implements Lifecycle, Checkpointable {
+implements Lifecycle, Checkpointable, WriterPoolSettings {
     private static final long serialVersionUID = 1L;
+    @SuppressWarnings("unused")
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
 
@@ -76,9 +75,9 @@ implements Lifecycle, Checkpointable {
     
     /**
      * File prefix. The text supplied here will be used as a prefix naming
-     * writer files. For example if the prefix is 'IAH', then file names will
-     * look like IAH-20040808101010-0001-HOSTNAME.arc.gz ...if writing ARCs (The
-     * prefix will be separated from the date by a hyphen).
+     * writer files. For example if the prefix is 'WEB', then file names will
+     * look like WEB-20040808101010-0001-PID@HOSTNAME#PORT.arc.gz ...if 
+     * writing ARCs (The prefix will be separated from the date by a hyphen).
      */
     String prefix = WriterPoolMember.DEFAULT_PREFIX; 
     public String getPrefix() {
@@ -90,15 +89,23 @@ implements Lifecycle, Checkpointable {
 
 
     /**
-     * Suffix to tag onto files. If value is '${HOSTNAME}', will use hostname
-     * for suffix. If empty, no suffix will be added.
+     * Template from which a filename is interpolated. Expressions of the
+     * form ${key} will be replaced by values from a local map of useful 
+     * values (including 'prefix', 'timestamp17', and 'serialno') or 
+     * global system properties (which includes the local hostname/port/pid). 
+     *
+     * The default pattern will generate unique names under reasonable 
+     * assumptions; be sure you know what you're doing before customizing,
+     * as you could easily create filename collisions with a poorly-designed
+     * filename template.
+     * 
      */
-    String suffix = WriterPoolMember.DEFAULT_SUFFIX; 
-    public String getSuffix() {
-        return suffix;
+    String template = WriterPoolMember.DEFAULT_TEMPLATE; 
+    public String getTemplate() {
+        return template;
     }
-    public void setSuffix(String suffix) {
-        this.suffix = suffix;
+    public void setTemplate(String template) {
+        this.template = template;
     }
     
     /**
@@ -224,7 +231,6 @@ implements Lifecycle, Checkpointable {
      */
     private long totalBytesWritten = 0;
 
-    private WriterPoolSettings settings;
     private AtomicInteger serial = new AtomicInteger();
     
 
@@ -242,7 +248,6 @@ implements Lifecycle, Checkpointable {
             return;
         }
         super.start(); 
-        this.settings = makeWriterPoolSettings();
         setupPool(serial);
     }
     
@@ -252,7 +257,6 @@ implements Lifecycle, Checkpointable {
         }
         super.stop(); 
         this.pool.close();
-        this.settings = null; 
     }
     
     
@@ -391,9 +395,9 @@ implements Lifecycle, Checkpointable {
         this.totalBytesWritten = totalBytesWritten;
     }
 	
-    protected abstract List<String> getMetadata();
+    public abstract List<String> getMetadata();
     
-    private List<File> getOutputDirs() {
+    public List<File> getOutputDirs() {
         List<String> list = getStorePaths();
         ArrayList<File> results = new ArrayList<File>();
         for (String path: list) {
@@ -411,35 +415,6 @@ implements Lifecycle, Checkpointable {
             results.add(f);
         }
         return results;        
-    }
-    
-    
-    protected WriterPoolSettings getWriterPoolSettings() {
-        return settings;
-    }
-    
-    private WriterPoolSettings makeWriterPoolSettings() {
-        DefaultWriterPoolSettings result = new DefaultWriterPoolSettings();
-        result.setMaxSize(getMaxFileSizeBytes());
-        result.setMetadata(getMetadata());
-        result.setOutputDirs(getOutputDirs());
-        result.setPrefix(getPrefix());
-        
-        String sfx = getSuffix();
-        sfx = sfx.trim();
-        if (sfx.contains(WriterPoolMember.HOSTNAME_VARIABLE)) {
-            String str = "localhost.localdomain";
-            try {
-                str = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException ue) {
-                logger.severe("Failed getHostAddress for this host: " + ue);
-            }
-            sfx = sfx.replace(WriterPoolMember.HOSTNAME_VARIABLE, str);
-        }
-        
-        result.setSuffix(sfx);
-        result.setCompressed(getCompress());
-        return result;
     }
 
     @Override

@@ -27,6 +27,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
@@ -90,7 +93,6 @@ public class Heritrix {
 
     private static final String ADHOC_KEYSTORE = "adhoc.keystore";
 
-    @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(Heritrix.class.getName());
     
     /** Name of configuration directory */
@@ -322,6 +324,8 @@ public class Heritrix {
         // inside in a container.
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
+        setupGlobalProperties(port); 
+        
         // Start Heritrix.
         try {
             engine = new Engine(jobsDir);
@@ -371,6 +375,39 @@ public class Heritrix {
                     ArchiveUtils.VERSION);
         }
     }
+
+    /**
+     * Setup global system properties that may be of use elsewhere.
+     * 
+     * @param port
+     */
+    protected void setupGlobalProperties(int port) {
+        if (System.getProperty("heritrix.port") == null) {
+            System.setProperty("heritrix.port", port + "");
+        }
+
+        String hostname = "localhost.localdomain";
+        if (System.getProperty("heritrix.hostname") == null) {
+            try {
+                hostname = InetAddress.getLocalHost().getCanonicalHostName();
+            } catch (UnknownHostException ue) {
+                logger.warning("Failed getHostAddress for this host: " + ue);
+            }
+            System.setProperty("heritrix.hostname", hostname);
+        }
+        
+        // while not guaranteed, on our platforms of interest this name
+        // always seems to be PID@HOSTNAME
+        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
+        if(System.getProperty("heritrix.runtimeName") == null) {
+            System.setProperty("heritrix.runtimeName", runtimeName);
+        }
+        if (System.getProperty("heritrix.pid") == null
+                && runtimeName.matches("\\d+@\\S+")) {
+            System.setProperty("heritrix.pid", runtimeName.substring(0,runtimeName.indexOf("@")));
+        }
+    }
+
 
     /**
      * Perform preparation to use an ad-hoc, created-as-necessary 

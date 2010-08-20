@@ -18,8 +18,16 @@
  */
 package org.archive.util;
 
+import java.util.Properties;
+import java.util.regex.Matcher;
+
+import org.apache.commons.lang.StringUtils;
+
 /**
- * @author stack
+ * Utilities for dealing with Java Properties (incl. System Properties)
+ * 
+ * @contributor stack
+ * @contributor gojomo
  * @version $Date$ $Revision$
  */
 public class PropertyUtils {
@@ -50,5 +58,57 @@ public class PropertyUtils {
     public static int getIntProperty(final String key, final int fallback) {
         return getPropertyOrNull(key) == null?
                 fallback: Integer.parseInt(getPropertyOrNull(key));
+    }
+    
+    /**
+     * Given a string which may contain expressions of the form 
+     * ${key}, replace each expression with the value corresponding to the
+     * given key in System Properties. If no value is present, 
+     * the expression is replaced with the empty-string. 
+     * 
+     * @param original String
+     * @param properties Properties to try in order; first value found (if any) is used
+     * @return modified String
+     */
+    public static String interpolateWithProperties(String original) {
+        return interpolateWithProperties(original,System.getProperties());
+    }
+
+    static String propRefPattern = "\\$\\{([^{}]+)\\}";
+    
+    /**
+     * Given a string which may contain expressions of the form 
+     * ${key}, replace each expression with the value corresponding to the
+     * given key in the supplied Properties instance. If no value is present, 
+     * the expression is replaced with the empty-string. 
+     * 
+     * @param original String
+     * @param properties Properties to try in order; first value found (if any) is used
+     * @return modified String
+     */
+    public static String interpolateWithProperties(String original,
+            Properties... props) {
+        String result = original;
+        // cap number of interpolations as guard against unending loop
+        inter: for(int i =0; i < original.length()*2; i++) {
+            Matcher m = TextUtils.getMatcher(propRefPattern, result);
+            while(m.find()) {
+                String key = m.group(1); 
+                String value = "";
+                for(Properties properties : props) {
+                    value = properties.getProperty(key, "");
+                    if(StringUtils.isNotEmpty(value)) {
+                        break;
+                    }
+                }
+                result = result.substring(0,m.start()) 
+                            + value
+                            + result.substring(m.end());
+                continue inter;
+            }
+            // we only hit here if there were no interpolations last while loop
+            break;
+        }
+        return result; 
     }
 }

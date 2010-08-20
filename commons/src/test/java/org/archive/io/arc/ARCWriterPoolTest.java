@@ -129,7 +129,7 @@ public class ARCWriterPoolTest extends TmpDirTestCase {
     
     private WriterPoolSettings getSettings(final boolean isCompressed) {
         return new WriterPoolSettings() {
-            public long getMaxSize() {
+            public long getMaxFileSizeBytes() {
                 return ARCConstants.DEFAULT_MAX_ARC_FILE_SIZE;
             }
             
@@ -137,8 +137,8 @@ public class ARCWriterPoolTest extends TmpDirTestCase {
                 return PREFIX;
             }
             
-            public String getSuffix() {
-                return "";
+            public String getTemplate() {
+                return "${prefix}-${timestamp17}-${serialno}-${heritrix.hostname}";
             }
             
             public List<File> getOutputDirs() {
@@ -146,7 +146,7 @@ public class ARCWriterPoolTest extends TmpDirTestCase {
                 return Arrays.asList(files);
             }
             
-            public boolean isCompressed() {
+            public boolean getCompress() {
                 return isCompressed;
             }
             

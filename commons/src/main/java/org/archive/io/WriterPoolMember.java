@@ -30,13 +30,14 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
-import org.archive.util.TimestampSerialno;
+import org.archive.util.PropertyUtils;
 
 
 /**
@@ -53,21 +54,22 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     public static final String UTF8 = "UTF-8";
     
     /**
-     * Default file prefix.
+     * Default archival-aggregate filename template. 
+     * 
+     * Under usual assumptions -- hostnames aren't shared among crawling hosts; 
+     * processes have unique PIDs and admin ports; timestamps inside one process
+     * don't repeat (see UniqueTimestampService); clocks are generally 
+     * accurate -- will generate a unique name.
      * 
      * Stands for Internet Archive Heritrix.
      */
-    public static final String DEFAULT_PREFIX = "IAH";
+    public static final String DEFAULT_TEMPLATE = 
+        "${prefix}-${timestamp17}-${serialno}-${heritrix.pid}@${heritrix.hostname}#${heritrix.port}";
     
     /**
-     * Value to interpolate with actual hostname.
+     * Default for file prefix.
      */
-    public static final String HOSTNAME_VARIABLE = "${HOSTNAME}";
-    
-    /**
-     * Default for file suffix.
-     */
-    public static final String DEFAULT_SUFFIX = HOSTNAME_VARIABLE;
+    public static final String DEFAULT_PREFIX = "WEB";
 
     /**
      * Reference to file we're currently writing.
@@ -87,8 +89,8 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     
     private final boolean compressed;
     private List<File> writeDirs = null;
+    private String template = DEFAULT_TEMPLATE;
     private String prefix = DEFAULT_PREFIX;
-    private String suffix = DEFAULT_SUFFIX;
     private final long maxSize;
     private final String extension;
 
@@ -96,8 +98,10 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * Creation date for the current file.
      * Set by {@link #createFile()}.
      */
-	private String createTimestamp = "UNSET!!!";
+	protected String currentTimestamp = "UNSET!!!";
     
+	protected String currentBasename; 
+	
     /**
      * A running sequence used making unique file names.
      */
@@ -172,9 +176,9 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     public WriterPoolMember(AtomicInteger serialNo,
             final List<File> dirs, final String prefix, 
-            final String suffix, final boolean cmprs,
+            final String template, final boolean cmprs,
             final long maxSize, final String extension) {
-        this.suffix = suffix;
+        this.template = template;
         this.prefix = prefix;
         this.maxSize = maxSize;
         this.writeDirs = dirs;
@@ -211,13 +215,10 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * @throws IOException
      */
     protected String createFile() throws IOException {
-        TimestampSerialno tsn = getTimestampSerialNo();
-        String name = this.prefix + '-' + getUniqueBasename(tsn) +
-            ((this.suffix == null || this.suffix.length() <= 0)?
-                "": "-" + this.suffix) + '.' + this.extension  +
+        generateNewBasename();
+        String name = currentBasename + '.' + this.extension  +
             ((this.compressed)? DOT_COMPRESSED_FILE_EXTENSION: "") +
             OCCUPIED_SUFFIX;
-        this.createTimestamp = tsn.getTimestamp();
         File dir = getNextDirectory(this.writeDirs);
         return createFile(new File(dir, name));
     }
@@ -277,39 +278,28 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         }
         return d;
     }
-    
-    protected synchronized TimestampSerialno getTimestampSerialNo() {
-        return getTimestampSerialNo(null);
-    }
-    
+ 
     /**
-     * Do static synchronization around getting of counter and timestamp so
-     * no chance of a thread getting in between the getting of timestamp and
-     * allocation of serial number throwing the two out of alignment.
-     * 
-     * @param timestamp If non-null, use passed timestamp (must be 14 digit
-     * ARC format), else if null, timestamp with now.
-     * @return Instance of data structure that has timestamp and serial no.
+     * Generate a new basename by interpolating values in the configured
+     * template. Values come from local state, other configured values, and 
+     * global system properties. The recommended default template will 
+     * generate a unique basename under reasonable assumptions. 
      */
-    protected synchronized TimestampSerialno
-            getTimestampSerialNo(final String timestamp) {
-        return new TimestampSerialno((timestamp != null)?
-                timestamp: ArchiveUtils.get14DigitDate(),
-                serialNo.getAndIncrement());
-    }
-
-    /**
-     * Return a unique basename.
-     *
-     * Name is timestamp + an every increasing sequence number.
-     *
-     * @param tsn Structure with timestamp and serial number.
-     *
-     * @return Unique basename.
-     */
-    private String getUniqueBasename(TimestampSerialno tsn) {
-        return tsn.getTimestamp() + "-" +
-           WriterPoolMember.serialNoFormatter.format(tsn.getSerialNumber());
+    protected void generateNewBasename() {
+        Properties localProps = new Properties(); 
+        localProps.setProperty("prefix", prefix);
+        synchronized(this.getClass()) {
+            // ensure that serialNo and timestamp are minted together (never inverted sort order)
+            String paddedSerialNumber = WriterPoolMember.serialNoFormatter.format(serialNo.getAndIncrement());
+            String timestamp17 = ArchiveUtils.getUnique17DigitDate(); 
+            String timestamp14 = ArchiveUtils.getUnique14DigitDate(); 
+            currentTimestamp = timestamp17;
+            localProps.setProperty("serialno", paddedSerialNumber);
+            localProps.setProperty("timestamp17", timestamp17);
+            localProps.setProperty("timestamp14", timestamp14);
+        }
+        currentBasename = PropertyUtils.interpolateWithProperties(template, 
+                localProps, System.getProperties());
     }
 
 
@@ -384,7 +374,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     }
     
 	/**
-     * Postion in current physical file.
+     * Position in current physical file.
      * Used making accounting of bytes written.
 	 * @return Position in underlying file.  Call before or after writing
      * records *only* to be safe.
@@ -482,12 +472,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     protected OutputStream getOutputStream() {
     	return this.out;
     }
-    
-	protected String getCreateTimestamp() {
-		return createTimestamp;
-	}
-    
-    
+
     /**
      * An override so we get access to underlying output stream.
      * and offer an end() that does not accompany closing underlying

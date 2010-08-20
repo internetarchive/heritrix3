@@ -35,7 +35,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
-import org.archive.io.WriterPoolSettings;
 import org.archive.io.arc.ARCWriter;
 import org.archive.io.arc.ARCWriterPool;
 import org.archive.modules.ProcessResult;
@@ -54,7 +53,7 @@ import org.archive.util.ArchiveUtils;
  */
 public class ARCWriterProcessor extends WriterPoolProcessor {
 
-    final static private String TEMPLATE = readTemplate();
+    final static private String METADATA_TEMPLATE = readMetadataTemplate();
     
     private static final long serialVersionUID = 3L;
 
@@ -77,8 +76,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
 
     @Override
     protected void setupPool(AtomicInteger serialNo) {
-        WriterPoolSettings wps = getWriterPoolSettings();
-        setPool(new ARCWriterPool(serialNo, wps, getPoolMaxActive(), getPoolMaxWaitMs()));
+        setPool(new ARCWriterPool(serialNo, this, getPoolMaxActive(), getPoolMaxWaitMs()));
     }
 
     /**
@@ -160,8 +158,8 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         return checkBytesWritten();
     }
 
-    protected List<String> getMetadata() {
-        if (TEMPLATE == null) {
+    public List<String> getMetadata() {
+        if (METADATA_TEMPLATE == null) {
             return null;
         }
         
@@ -169,7 +167,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             return cachedMetadata;
         }
                 
-        String meta = TEMPLATE;
+        String meta = METADATA_TEMPLATE;
         meta = replace(meta, "${VERSION}", ArchiveUtils.VERSION);
         meta = replace(meta, "${HOST}", getHostName());
         meta = replace(meta, "${IP}", getHostAddress());
@@ -225,7 +223,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
         }        
     }
 
-    private static String readTemplate() {
+    private static String readMetadataTemplate() {
         InputStream input = ARCWriterProcessor.class.getResourceAsStream(
                 "arc_metadata_template.xml");
         if (input == null) {

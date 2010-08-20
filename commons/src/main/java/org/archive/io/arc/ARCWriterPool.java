@@ -58,8 +58,8 @@ public class ARCWriterPool extends WriterPool {
     	super(serial, new BasePoolableObjectFactory() {
             public Object makeObject() throws Exception {
                 return new ARCWriter(serial, settings.getOutputDirs(),
-                        settings.getPrefix(), settings.getSuffix(),
-                        settings.isCompressed(), settings.getMaxSize(),
+                        settings.getPrefix(), settings.getTemplate(),
+                        settings.getCompress(), settings.getMaxFileSizeBytes(),
                         settings.getMetadata());
             }
 

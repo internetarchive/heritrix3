@@ -102,9 +102,9 @@ public abstract class WriterPool {
             final int poolMaximumActive, final int poolMaximumWait) {
         logger.info("Initial configuration:" +
                 " prefix=" + settings.getPrefix() +
-                ", suffix=" + settings.getSuffix() +
-                ", compress=" + settings.isCompressed() +
-                ", maxSize=" + settings.getMaxSize() +
+                ", suffix=" + settings.getTemplate() +
+                ", compress=" + settings.getCompress() +
+                ", maxSize=" + settings.getMaxFileSizeBytes() +
                 ", maxActive=" + poolMaximumActive +
                 ", maxWait=" + poolMaximumWait);
         this.settings = settings;
