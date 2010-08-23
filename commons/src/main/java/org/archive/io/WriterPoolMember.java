@@ -64,7 +64,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * Stands for Internet Archive Heritrix.
      */
     public static final String DEFAULT_TEMPLATE = 
-        "${prefix}-${timestamp17}-${serialno}-${heritrix.pid}@${heritrix.hostname}#${heritrix.port}";
+        "${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}";
     
     /**
      * Default for file prefix.
