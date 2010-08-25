@@ -201,10 +201,16 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
 	 * @exception IOException
 	 */
     public void checkSize() throws IOException {
-        if (this.out == null ||
-                (this.maxSize != -1 && (this.f.length() > this.maxSize))) {
+        if (this.out == null || isOversize()) {
             createFile();
         }
+    }
+
+    /** Check if underlying file has already reached its target size.
+     * @return boolean true if file has reached target size and due to be closed
+     */
+    public boolean isOversize() {
+        return this.maxSize != -1 && (this.f.length() > this.maxSize);
     }
 
     /**
@@ -337,7 +343,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     /**
      * Post write tasks.
      * 
-     * Has side effects.  Will open new file if we're at the upperbound.
+     * Has side effects.  Will open new file if we're at the upper bound.
      * If we're writing compressed files, it will wrap output stream with a
      * GZIP writer with side effect that GZIP header is written out on the
      * stream.
@@ -346,7 +352,6 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected void preWriteRecordTasks()
     throws IOException {
-        checkSize();
         if (this.compressed) {
             // Wrap stream in GZIP Writer.
             // The below construction immediately writes the GZIP 'default'

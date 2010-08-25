@@ -133,15 +133,15 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     }
 
     /**
-     * Maximum time to wait on pool element (milliseconds). This setting cannot
-     * be varied over the life of a crawl.
+     * Maximum time to wait on idle writer before (possibly) creating an
+     * additional instance. 
      */
-    int poolMaxWaitMs = WriterPool.DEFAULT_MAXIMUM_WAIT;
-    public int getPoolMaxWaitMs() {
-        return poolMaxWaitMs;
+    int maxWaitForIdleMs = WriterPool.DEFAULT_MAX_WAIT_FOR_IDLE;
+    public int getMaxWaitForIdleMs() {
+        return maxWaitForIdleMs;
     }
-    public void setPoolMaxWaitMs(int poolMaxWait) {
-        this.poolMaxWaitMs = poolMaxWait;
+    public void setMaxWaitForIdleMs(int maxWaitForIdle) {
+        this.maxWaitForIdleMs = maxWaitForIdle;
     }
     
     /**

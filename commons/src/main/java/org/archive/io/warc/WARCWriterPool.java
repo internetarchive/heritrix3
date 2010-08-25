@@ -20,7 +20,6 @@ package org.archive.io.warc;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
@@ -28,7 +27,8 @@ import org.archive.io.WriterPoolSettings;
 
 /**
  * A pool of WARCWriters.
- * @author stack
+ * @contributor stack
+ * @contributor gojomo
  * @version $Revision: 4566 $ $Date: 2006-08-31 09:51:41 -0700 (Thu, 31 Aug 2006) $
  */
 public class WARCWriterPool extends WriterPool {
@@ -53,20 +53,16 @@ public class WARCWriterPool extends WriterPool {
     public WARCWriterPool(final AtomicInteger serial,
     		final WriterPoolSettings settings,
             final int poolMaximumActive, final int poolMaximumWait) {
-    	super(serial, new BasePoolableObjectFactory() {
-            public Object makeObject() throws Exception {
-                return new WARCWriter(serial,
-                		settings.getOutputDirs(),
-                        settings.getPrefix(), settings.getTemplate(),
-                        settings.getCompress(), settings.getMaxFileSizeBytes(),
-                        settings.getMetadata());
-            }
-
-            public void destroyObject(Object writer)
-            throws Exception {
-                ((WriterPoolMember)writer).close();
-                super.destroyObject(writer);
-            }
-    	}, settings, poolMaximumActive, poolMaximumWait);
+    	super(serial, settings, poolMaximumActive, poolMaximumWait);
+    }
+    
+    /* (non-Javadoc)
+     * @see org.archive.io.WriterPool#makeWriter()
+     */
+    protected WriterPoolMember makeWriter() {
+        return new WARCWriter(serialNo, settings.getOutputDirs(),
+                settings.getPrefix(), settings.getTemplate(),
+                settings.getCompress(), settings.getMaxFileSizeBytes(),
+                settings.getMetadata());
     }
 }

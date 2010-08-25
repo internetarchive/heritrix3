@@ -76,7 +76,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
 
     @Override
     protected void setupPool(AtomicInteger serialNo) {
-        setPool(new ARCWriterPool(serialNo, this, getPoolMaxActive(), getPoolMaxWaitMs()));
+        setPool(new ARCWriterPool(serialNo, this, getPoolMaxActive(), getMaxWaitForIdleMs()));
     }
 
     /**
@@ -116,7 +116,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     throws IOException {
         WriterPoolMember writer = getPool().borrowFile();
         long position = writer.getPosition();
-        // See if we need to open a new file because we've exceeed maxBytes.
+        // See if we need to open a new file because we've exceeded maxBytes.
         // Call to checkFileSize will open new file if we're at maximum for
         // current file.
         writer.checkSize();

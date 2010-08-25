@@ -20,7 +20,6 @@ package org.archive.io.arc;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
@@ -55,19 +54,19 @@ public class ARCWriterPool extends WriterPool {
     public ARCWriterPool(final AtomicInteger serial,
     		final WriterPoolSettings settings,
             final int poolMaximumActive, final int poolMaximumWait) {
-    	super(serial, new BasePoolableObjectFactory() {
-            public Object makeObject() throws Exception {
-                return new ARCWriter(serial, settings.getOutputDirs(),
-                        settings.getPrefix(), settings.getTemplate(),
-                        settings.getCompress(), settings.getMaxFileSizeBytes(),
-                        settings.getMetadata());
-            }
-
-            public void destroyObject(Object arcWriter)
-            throws Exception {
-                ((WriterPoolMember)arcWriter).close();
-                super.destroyObject(arcWriter);
-            }
-    	}, settings, poolMaximumActive, poolMaximumWait);
+    	super(serial, settings, poolMaximumActive, poolMaximumWait);
     }
+    
+    /* (non-Javadoc)
+     * @see org.archive.io.WriterPool#makeWriter()
+     */
+    protected WriterPoolMember makeWriter() {
+        return new ARCWriter(serialNo, settings.getOutputDirs(),
+                settings.getPrefix(), settings.getTemplate(),
+                settings.getCompress(), settings.getMaxFileSizeBytes(),
+                settings.getMetadata());
+    }
+    
+
+        
 }

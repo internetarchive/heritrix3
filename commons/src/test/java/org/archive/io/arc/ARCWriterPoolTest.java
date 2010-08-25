@@ -22,12 +22,10 @@ package org.archive.io.arc;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.NoSuchElementException;
 
-import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPool;
+import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
 import org.archive.util.TmpDirTestCase;
 
@@ -57,25 +55,10 @@ public class ARCWriterPoolTest extends TmpDirTestCase {
             	"0.0.0.0", 1234567890, CONTENT.length(), baos);
         }
 
-        // Pool is maxed out.  Try and get a new ARCWriter.  We'll block for
-        // MAX_WAIT_MILLISECONDS.  Should get exception.
-        long start = (new Date()).getTime();
-        boolean isException = false;
-        try {
-            pool.borrowFile();
-        } catch(NoSuchElementException e) {
-            isException = true;
-            long end = (new Date()).getTime();
-            // This test can fail on a loaded machine if the wait period is
-            // only MAX_WAIT_MILLISECONDS.  Up the time to wait.
-            final int WAIT = MAX_WAIT_MILLISECONDS * 100;
-            if ((end - start) > (WAIT)) {
-                fail("More than " + MAX_WAIT_MILLISECONDS + " elapsed: "
-                    + WAIT);
-            }
-        }
-        assertTrue("Did not get NoSuchElementException", isException);
-
+        // Pool is maxed out.  New behavior is that additional requests
+        // block as long as necessary -- so no longer testing for timeout/
+        // exception
+        
         for (int i = (MAX_ACTIVE - 1); i >= 0; i--) {
             pool.returnFile(writers[i]);
             assertEquals("Number active", i, pool.getNumActive());

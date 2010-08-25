@@ -21,14 +21,12 @@ package org.archive.io;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.NoSuchElementException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.impl.FairGenericObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
 
 /**
  * Pool of Writers.
@@ -44,7 +42,7 @@ public abstract class WriterPool {
     /**
      * Used to generate unique filename sequences.
      */
-    final private AtomicInteger serialNo;
+    final protected AtomicInteger serialNo;
     
     /**
      * Don't enforce a maximum number of idle instances in pool.
@@ -52,41 +50,36 @@ public abstract class WriterPool {
      */
     protected static final int NO_MAX_IDLE = -1;
     
-    /**
-     * Retry getting a file on fail the below arbitrary amount of times.
-     * This facility is not configurable.  If we fail this many times
-     * getting a file, something is seriously wrong.
-     */
-    private final int arbitraryRetryMax = 10;
-    
 	/**
 	 * Default maximum active number of files in the pool.
 	 */
 	public static final int DEFAULT_MAX_ACTIVE = 1;
 
 	/**
-	 * Maximum time to wait on a free file..
+	 * Maximum time to wait on a free file before considering
+	 * making a new one (if not already at max)
 	 */
-	public static final int DEFAULT_MAXIMUM_WAIT = 1000 * 60 * 5;
-    
-    /**
-     * Pool instance.
-     */
-    private GenericObjectPool pool = null;
+	public static final int DEFAULT_MAX_WAIT_FOR_IDLE = 500;
     
     /**
      * File settings.
      * Keep in data structure rather than as individual values.
      */
-    private final WriterPoolSettings settings;
-    
-    /**
-     * Shutdown default constructor.
-     */
-    @SuppressWarnings("unused")
-    private WriterPool() {
-    	this(null, null, null, -1, -1);
-    }
+    protected final WriterPoolSettings settings;
+
+    /** maximum number of writers to create at a time*/
+    protected int maxActive;
+    /** maximum ms to wait before considering creation of a writer */ 
+    protected int maxWait;
+    /** current count of active writers; only read/mutated in synchronized blocks */
+    protected int currentActive = 0; 
+    /** round-robin queue of available writers */ 
+    BlockingQueue<WriterPoolMember> availableWriters;
+
+    /** system time when writer was last wanted (because one was not ready in time) */     
+    protected long lastWriterNeededTime;
+    /** system time when writer was last 'rolled over' (imminent creation of new file) */ 
+    protected long lastWriterRolloverTime; 
     
     /**
      * Constructor
@@ -97,7 +90,6 @@ public abstract class WriterPool {
      * @param poolMaximumWait
      */
     public WriterPool(final AtomicInteger serial,
-    		final BasePoolableObjectFactory factory,
     		final WriterPoolSettings settings,
             final int poolMaximumActive, final int poolMaximumWait) {
         logger.info("Initial configuration:" +
@@ -108,80 +100,109 @@ public abstract class WriterPool {
                 ", maxActive=" + poolMaximumActive +
                 ", maxWait=" + poolMaximumWait);
         this.settings = settings;
-        this.pool = new FairGenericObjectPool(factory, poolMaximumActive,
-            GenericObjectPool.WHEN_EXHAUSTED_BLOCK, poolMaximumWait,
-            NO_MAX_IDLE);
+        this.maxActive = poolMaximumActive;
+        this.maxWait = poolMaximumWait;
+        availableWriters = new ArrayBlockingQueue<WriterPoolMember>(maxActive, true);
         this.serialNo = serial;
     }
 
 	/**
 	 * Check out a {@link WriterPoolMember}.
 	 * 
-	 * This method must be answered by a call to
-	 * {@link #returnFile(WriterPoolMember)} else pool starts leaking.
+	 * This method should be followed by a call to
+	 * {@link #returnFile(WriterPoolMember)} or 
+	 * {@link #invalidateFile(WriterPoolMember)} else pool starts leaking.
 	 * 
-	 * @return Writer checked out of a pool of files.
+	 * @return Writer checked out of a pool of files or created
 	 * @throws IOException Problem getting Writer from pool (Converted
 	 * from Exception to IOException so this pool can live as a good citizen
 	 * down in depths of ARCSocketFactory).
-	 * @throws NoSuchElementException If we time out waiting on a pool member.
 	 */
     public WriterPoolMember borrowFile()
     throws IOException {
-        WriterPoolMember f = null;
-        for (int i = 0; f == null; i++) {
-            long waitStart = System.currentTimeMillis();
+        WriterPoolMember writer = null;
+        while(writer == null) {
             try {
-                f = (WriterPoolMember)this.pool.borrowObject();
-                if (logger.getLevel() == Level.FINE) {
-                    logger.fine("Borrowed " + f + " (Pool State: "
-                        + getPoolState(waitStart) + ").");
-                }
-            } catch (NoSuchElementException e) {
-                // Let this exception out. Unit test at least depends on it.
-                // Log current state of the pool.
-                logger.warning(e.getMessage() + ": Retry #" + i + " of "
-                    + " max of " + arbitraryRetryMax
-                    + ": NSEE Pool State: " + getPoolState(waitStart));
-                if (i >= arbitraryRetryMax) {
-                    logger.log(Level.SEVERE,
-                    	"maximum retries exceeded; rethrowing",e);
-                    throw e;
-                }
-            } catch (Exception e) {
-                // Convert.
-                logger.log(Level.SEVERE,"E Pool State: " +
-                    getPoolState(waitStart), e);
-                throw new IOException("Failed getting writer from pool: " +
-                    e.getMessage());
+                writer = availableWriters.poll(maxWait,TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                // nothing to do but proceed
+            }
+            if(writer==null) {
+                writer = makeNewWriterIfAppropriate(); 
             }
         }
-        return f;
+        return writer;
     }
 
 	/**
+	 * Create a new writer instance, if still below maxActive count. 
+	 * Remember times to help make later decision when writer should 
+	 * be discarded. 
+	 * 
+	 * @return WriterPoolMember or null if already at max
+	 */
+	protected synchronized WriterPoolMember makeNewWriterIfAppropriate() {
+	    long now = System.currentTimeMillis();
+	    lastWriterNeededTime = now; 
+        if(currentActive < maxActive) {
+            currentActive++;
+            lastWriterRolloverTime = now; 
+            return makeWriter(); 
+        }
+        return null; 
+    }
+
+    /**
+     * @return new WriterPoolMember of appropriate type
+     */
+    protected abstract WriterPoolMember makeWriter();
+    
+    /**
+     * Discard a previously-used writer, cleanly closing it and leaving it out
+     * of the pool. 
+     * @param writer
+     * @throws IOException
+     */
+    public synchronized void destroyWriter(WriterPoolMember writer) throws IOException {
+        currentActive--; 
+        writer.close();
+    }
+    /**
+     * Return a writer, for likely reuse unless (1) writer's current file has 
+     * reached its target size; and (2) there's been no demand for additional 
+     * writers since the last time a new writer-file was rolled-over. In that
+     * case, the possibly-superfluous writer instance is discarded. 
 	 * @param writer Writer to return to the pool.
 	 * @throws IOException Problem returning File to pool.
 	 */
     public void returnFile(WriterPoolMember writer)
     throws IOException {
-        try {
-            if (logger.getLevel() == Level.FINE) {
-                logger.fine("Returned " + writer);
+        synchronized(this) {
+            if(writer.isOversize()) {
+            // maybe retire writer rather than recycle
+                if(lastWriterNeededTime<=lastWriterRolloverTime) {
+                    // no timeouts waiting for recycled writer since last writer rollover
+                    destroyWriter(writer);
+                    return;
+                } else {
+                    // reuse writer instance, causing new file to be created
+                    lastWriterRolloverTime = System.currentTimeMillis();
+                }
             }
-            this.pool.returnObject(writer);
         }
-        catch(Exception e)
-        {
-            throw new IOException("Failed restoring writer to pool: " +
-                    e.getMessage());
-        }
+        availableWriters.offer(writer); 
     }
 
-    public void invalidateFile(WriterPoolMember f)
+    /**
+     * Close and discard a writer that experienced a potentially-corrupting
+     * error. 
+     * @param f writer with problem 
+     * @throws IOException
+     */
+    public synchronized void invalidateFile(WriterPoolMember f)
     throws IOException {
         try {
-            this.pool.invalidateObject(f);
+            destroyWriter(f);
         } catch (Exception e) {
             // Convert exception.
             throw new IOException(e.getMessage());
@@ -197,9 +218,9 @@ public abstract class WriterPool {
 	 * @return Number of {@link WriterPoolMember}s checked out of pool.
 	 * @throws java.lang.UnsupportedOperationException
 	 */
-    public int getNumActive()
+    public synchronized int getNumActive()
     throws UnsupportedOperationException {
-        return this.pool.getNumActive();
+        return currentActive - getNumIdle();
     }
 
 	/**
@@ -208,14 +229,22 @@ public abstract class WriterPool {
 	 */
     public int getNumIdle()
     throws UnsupportedOperationException {
-        return this.pool.getNumIdle();
+        return availableWriters.size();
     }
     
 	/**
 	 * Close all {@link WriterPoolMember}s in pool.
 	 */
     public void close() {
-        this.pool.clear();
+        WriterPoolMember writer = availableWriters.poll(); 
+        while (writer!=null) {
+            try {
+                destroyWriter(writer);
+            } catch (IOException e) {
+                logger.log(Level.WARNING,"problem closing writer",e); 
+            }
+            writer = availableWriters.poll();
+        }
     }
 
 	/**
@@ -224,34 +253,17 @@ public abstract class WriterPool {
     public WriterPoolSettings getSettings() {
         return this.settings;
     }
-    
+
     /**
      * @return State of the pool string
      */
     protected String getPoolState() {
-        return getPoolState(-1);
-    }
-    
-    /**
-     * @param startTime If we are passed a start time, we'll add difference
-     * between it and now to end of string.  Pass -1 if don't want this
-     * added to end of state string.
-     * @return State of the pool string
-     */
-    protected String getPoolState(long startTime) {
         StringBuffer buffer = new StringBuffer("Active ");
         buffer.append(getNumActive());
         buffer.append(" of max ");
-        buffer.append(this.pool.getMaxActive());
+        buffer.append(maxActive);
         buffer.append(", idle ");
-        buffer.append(this.pool.getNumIdle());
-        if (startTime != -1) {
-            buffer.append(", time ");
-            buffer.append(System.currentTimeMillis() - startTime);
-            buffer.append("ms of max ");
-            buffer.append(this.pool.getMaxWait());
-            buffer.append("ms");
-        }
+        buffer.append(getNumIdle());
         return buffer.toString();
     }
     
