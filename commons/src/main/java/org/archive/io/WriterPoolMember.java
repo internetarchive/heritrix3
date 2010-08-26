@@ -352,6 +352,9 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected void preWriteRecordTasks()
     throws IOException {
+        if (this.out == null) {
+            createFile();
+        }
         if (this.compressed) {
             // Wrap stream in GZIP Writer.
             // The below construction immediately writes the GZIP 'default'
