@@ -354,6 +354,10 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         List<ArchiveRecordHeader> headers = headersInArcs();
         HashSet<String> result = new HashSet<String>();
         for (ArchiveRecordHeader arh: headers) {
+            // ignore 'filedesc:' record
+            if(arh.getUrl().startsWith("filedesc:")) {
+                continue; 
+            }
             UURI uuri = UURIFactory.getInstance(arh.getUrl());
             String path = uuri.getPath();
             if (path.startsWith("/")) {
