@@ -50,6 +50,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
 import org.archive.crawler.restlet.RateLimitGuard;
@@ -118,7 +119,7 @@ public class Heritrix {
     private static void usage(PrintStream out, String[] args) {
         HelpFormatter hf = new HelpFormatter();
         hf.printHelp("Heritrix", options());
-        out.print("Your arguments were: "+args);
+        out.print("Your arguments were: "+StringUtils.join(args, ' '));
     }
     
     
