@@ -234,12 +234,12 @@ public class JobResource extends BaseResource {
         pw.print("<h1>Job <i>"+cj.getShortName()+"</i> (");
         
         if (cj.isLaunchInfoPartial()) {
-          pw.print(" at least ");
+          pw.print("at least ");
         }
         pw.print(cj.getLaunchCount() + " launches");
         if(cj.getLastLaunch()!=null) {
             long ago = System.currentTimeMillis() - cj.getLastLaunch().getMillis();
-            pw.println(", last "+ArchiveUtils.formatMillisecondsToConventional(ago, 2)+" ago");
+            pw.print(", last "+ArchiveUtils.formatMillisecondsToConventional(ago, 2)+" ago");
         }
         pw.println(")</h1>");
         
