@@ -37,12 +37,14 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
 import org.archive.spring.ConfigPath;
+import org.archive.spring.HasValidator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.validation.Validator;
 
 /**
  * Executes checkpoints, and offers convenience methods for enumerating 
@@ -56,7 +58,7 @@ import org.springframework.context.support.AbstractApplicationContext;
  * @contributor gojomo
  * @contributor pjack
  */
-public class CheckpointService implements Lifecycle, ApplicationContextAware {
+public class CheckpointService implements Lifecycle, ApplicationContextAware, HasValidator {
     private final static Logger LOGGER =
         Logger.getLogger(CheckpointService.class.getName());
         
@@ -132,6 +134,16 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
     public synchronized void start() { 
         if (isRunning) {
             return;
+        }
+        // report if checkpoint incomplete/invalid
+        if(getRecoveryCheckpoint()!=null) {
+            File cpDir = getRecoveryCheckpoint().getCheckpointDir().getFile();
+            if(!Checkpoint.hasValidStamp(cpDir)) {
+                LOGGER.severe(
+                    "checkpoint '"+cpDir.getAbsolutePath()
+                    +"' missing validity stamp file; checkpoint data "
+                    +"may be missing or otherwise corrupt.");
+            }
         }
         this.isRunning = true; 
         setupCheckpointTask();
@@ -315,6 +327,9 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
      */
     @SuppressWarnings("unchecked")
     public void setRecoveryCheckpointByName(String selectedCheckpoint) {
+        if(isRunning) {
+            throw new RuntimeException("may not set recovery Checkpoint after launch");
+        }
         Checkpoint recoveryCheckpoint = new Checkpoint();
         recoveryCheckpoint.getCheckpointDir().setBase(getCheckpointsDir());
         recoveryCheckpoint.getCheckpointDir().setPath(selectedCheckpoint);
@@ -325,5 +340,11 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware {
         for(Checkpointable c : toSetRecovery.values()) {
             c.setRecoveryCheckpoint(recoveryCheckpoint);
         }
+    }
+    
+    static Validator VALIDATOR = new CheckpointValidator();
+    @Override
+    public Validator getValidator() {
+        return VALIDATOR;
     }
 } //EOC

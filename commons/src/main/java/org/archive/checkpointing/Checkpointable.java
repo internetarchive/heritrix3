@@ -21,6 +21,8 @@ package org.archive.checkpointing;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 /**
  * Interface for objects that can checkpoint their state, possibly
@@ -72,5 +74,6 @@ public interface Checkpointable {
      * 
      * @param recoveryCheckpoint Checkpoint
      */
+    @Autowired(required=false)
     void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint);
 }

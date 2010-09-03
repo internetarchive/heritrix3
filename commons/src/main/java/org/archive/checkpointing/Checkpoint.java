@@ -31,14 +31,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.Lifecycle;
 
 /**
  * Represents a single checkpoint, by its name and main store directory.
  * 
  * @contributor gojomo
  */
-public class Checkpoint implements InitializingBean, Lifecycle {
+public class Checkpoint implements InitializingBean {
     private final static Logger LOGGER =
         Logger.getLogger(Checkpoint.class.getName());
 
@@ -91,24 +90,6 @@ public class Checkpoint implements InitializingBean, Lifecycle {
         name = checkpointDir.getFile().getName();
         shortName = name.substring(0, name.indexOf("-"));
     }
-    
-    boolean isRunning = false; 
-    public boolean isRunning() {
-        return isRunning;
-    }
-    public void start() {
-        if(isRunning) {
-            return; 
-        }
-        isRunning = true; 
-        if(!Checkpoint.hasValidStamp(checkpointDir.getFile())) {
-            throw new RuntimeException("checkpoint '"+checkpointDir.getFile().getAbsolutePath()+"' missing validity stamp file");
-        }
-    }
-    public void stop() {
-        isRunning = false; 
-    }
-    
     
     public void setSuccess(boolean b) {
         success = b; 
