@@ -273,7 +273,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         }
         writer.close();
 
-        logger.info("decodeToFile: wrote " + count + " characters to "
+        logger.fine("decodeToFile: wrote " + count + " characters to "
                 + decodedFile);
     }
 
@@ -378,7 +378,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
      */
     protected void finalize() throws Throwable {
         super.finalize();
-        logger.info("finalizing");
+        logger.fine("finalizing");
         close();
     }
 

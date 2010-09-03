@@ -228,9 +228,7 @@ implements Lifecycle, Checkpointable, BeanNameAware {
     }
     
     public synchronized void close() {
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info("Count of alreadyseen on close " + count.get());
-        }
+        logger.fine("Count of alreadyseen on close " + count.get());
         Environment env = null;
         if (this.alreadySeen != null) {
             try {
@@ -331,10 +329,10 @@ implements Lifecycle, Checkpointable, BeanNameAware {
         }
         if (status == OperationStatus.SUCCESS) {
             count.incrementAndGet();
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.FINE)) {
                 final int logAt = 10000;
                 if (count.get() > 0 && ((count.get() % logAt) == 0)) {
-                    logger.info("Average lookup " +
+                    logger.fine("Average lookup " +
                         (aggregatedLookupTime / logAt) + "ms.");
                     aggregatedLookupTime = 0;
                 }
