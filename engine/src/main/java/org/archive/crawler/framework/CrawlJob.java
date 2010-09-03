@@ -25,7 +25,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -166,12 +165,6 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
             if (jobLog.length() > FileUtils.ONE_KB * 100) {
                 isLaunchInfoPartial = true;
                 startPosition = jobLog.length()-(FileUtils.ONE_KB * 100);
-                // indicate that job log is too big to count launches accurately 
-                getJobLogger().log(Level.INFO,"Job log (" + jobLog.toString() 
-                    + ") too big (" 
-                    + NumberFormat.getInstance().format(jobLog.length()) 
-                    + " bytes) to efficiently count launches. " 
-                    + "Note: large log files can be safely moved aside.");
             }
             FileInputStream jobLogIn = new FileInputStream(jobLog);
             jobLogIn.getChannel().position(startPosition);
@@ -376,7 +369,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         HashMap<String,Errors> allErrors = ac.getAllErrors();
         for(String name : allErrors.keySet()) {
             for(Object err : allErrors.get(name).getAllErrors()) {
-                getJobLogger().log(Level.WARNING,err.toString());
+               LOGGER.log(Level.WARNING,err.toString());
             }
         }
     }
