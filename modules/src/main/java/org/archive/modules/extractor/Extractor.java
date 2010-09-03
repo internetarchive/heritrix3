@@ -146,10 +146,6 @@ public abstract class Extractor extends Processor {
     
     public void logUriError(URIException e, UURI uuri, 
             CharSequence l) {
-        if (e.getReasonCode() == UURIFactory.IGNORED_SCHEME) {
-            // don't log those that are intentionally ignored
-            return; 
-        }
         loggerModule.logUriError(e, uuri, l);
     }
     
