@@ -23,7 +23,6 @@ import gnu.inet.encoding.IDNAException;
 import it.unimi.dsi.mg4j.util.MutableString;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -124,7 +123,7 @@ public class UURIFactory extends URI {
      * (3) scheme is limited to legal scheme characters 
      */
     final public static Pattern RFC2396REGEX = Pattern.compile(
-        "^(([a-zA-Z][a-zA-Z\\+\\-\\.]*):)?((//([^/?#]*))?([^?#]*)(\\?([^#]*))?)?(#(.*))?");
+        "^(([a-zA-Z][a-zA-Z0-9\\+\\-\\.]*):)?((//([^/?#]*))?([^?#]*)(\\?([^#]*))?)?(#(.*))?");
     //    12                             34  5          6       7   8          9 A
     //                                2 1             54        6          87 3      A9    // 1: scheme
     // 2: scheme:
@@ -220,35 +219,10 @@ public class UURIFactory extends URI {
     final static Pattern MULTIPLE_SLASHES = Pattern.compile("//+");
     
     /**
-     * System property key for list of supported schemes.
-     */
-    private static final String SCHEMES_KEY = ".schemes";
-    
-    /**
-     * System property key for list of purposefully-ignored schemes.
-     */
-    public static final String IGNORED_SCHEMES_KEY = ".ignored-schemes";
-
-    private String[] schemes = null;
-    private String[] ignoredSchemes = null;
-
-    public static final int IGNORED_SCHEME = 9999999;
-    
-    /**
      * Protected constructor.
      */
     private UURIFactory() {
         super();
-        String s = System.getProperty(this.getClass().getName() + SCHEMES_KEY);
-        if (s != null && s.length() > 0) {
-            schemes = s.split("[, ]+");
-            Arrays.sort(schemes);
-        }
-        String ignored = System.getProperty(this.getClass().getName() + IGNORED_SCHEMES_KEY);
-        if (ignored != null && ignored.length() > 0) {
-            ignoredSchemes  = ignored.split("[, ]+");
-            Arrays.sort(ignoredSchemes);
-        }
     }
     
     /**
@@ -279,23 +253,8 @@ public class UURIFactory extends URI {
      */
     public static UURI getInstance(UURI base, String relative)
     		throws URIException {
+//      return base.resolve(relative);
         return UURIFactory.factory.create(base, relative);
-    }
-    
-    /**
-     * Test of whether passed String has an allowed URI scheme.
-     * First tests if likely scheme suffix.  If so, we then test if its one of
-     * the supported schemes.
-     * @param possibleUrl URL string to examine.
-     * @return True if passed string looks like it could be an URL.
-     */
-    public static boolean hasSupportedScheme(String possibleUrl) {
-        boolean hasScheme = UURI.hasScheme(possibleUrl);
-        if (!hasScheme || UURIFactory.factory.schemes == null) {
-            return hasScheme;
-        }
-        String tmpStr = possibleUrl.substring(0, possibleUrl.indexOf(':'));
-        return Arrays.binarySearch(UURIFactory.factory.schemes, tmpStr) >= 0;
     }
 
     /**
@@ -422,7 +381,7 @@ public class UURIFactory extends URI {
         uri = escapeWhitespace(uri);
         
         // For further processing, get uri elements.  See the RFC2396REGEX
-        // comment above for explaination of group indices used in the below.
+        // comment above for explanation of group indices used in the below.
         matcher = RFC2396REGEX.matcher(uri);
         if (!matcher.matches()) {
             throw new URIException("Failed parse of " + uri);
@@ -433,20 +392,6 @@ public class UURIFactory extends URI {
         String uriPath = checkUriElement(matcher.group(6));
         String uriQuery = checkUriElement(matcher.group(8));
         // UNUSED String uriFragment = checkUriElement(matcher.group(10));
-        
-        // If a scheme, is it a supported scheme?
-        if (uriScheme != null && uriScheme.length() > 0 &&
-                this.schemes != null) {
-            if (!(Arrays.binarySearch(schemes,uriScheme)>=0)) {
-                // unsupported; see if silently ignored
-                if((Arrays.binarySearch(ignoredSchemes,uriScheme)>=0)) {
-                    throw new URIException(
-                            IGNORED_SCHEME, "Ignored scheme: " + uriScheme);
-                } else {
-                    throw new URIException("Unsupported scheme: " + uriScheme);
-                }
-            }
-        }
         
         // Test if relative URI. If so, need a base to resolve against.
         if (uriScheme == null || uriScheme.length() <= 0) {

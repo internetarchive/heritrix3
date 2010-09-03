@@ -43,7 +43,6 @@ import org.archive.crawler.util.Logs;
 import org.archive.io.GenerationFileHandler;
 import org.archive.modules.extractor.UriErrorLoggerModule;
 import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -418,10 +417,6 @@ public class CrawlerLoggerModule
      * @param l String which could not be interpreted as URI without exception
      */
     public void logUriError(URIException e, UURI u, CharSequence l) {
-        if (e.getReasonCode() == UURIFactory.IGNORED_SCHEME) {  
-            // don't log those that are intentionally ignored
-            return;
-        }
         Object[] array = {u, l};
         uriErrors.log(Level.INFO, e.getMessage(), array);
     }

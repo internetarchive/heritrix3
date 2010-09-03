@@ -156,6 +156,9 @@ http://example.example/example
     <!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
     <bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
     </bean>
+    <!-- ...but always REJECT those with unsupported URI schemes -->
+    <bean class="org.archive.modules.deciderules.SchemeNotInSetDecideRule">
+    </bean>
    </list>
   </property>
  </bean>

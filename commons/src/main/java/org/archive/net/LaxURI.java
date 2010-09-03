@@ -53,6 +53,13 @@ public class LaxURI extends URI {
         lax_abs_path.set('|'); // tests indicate Firefox (1.0.6) doesn't escape.
     }
     
+    protected static final BitSet lax_rel_path = new BitSet(256);
+    // Static initializer for rel_path
+    static {
+        lax_rel_path.or(lax_rel_segment);
+        lax_rel_path.or(lax_abs_path);
+    }
+    
     protected static final BitSet lax_query = new BitSet(256);
     static {
         lax_query.or(query);
@@ -153,6 +160,9 @@ public class LaxURI extends URI {
         }
         if (generous == query) {
             return lax_query;
+        }
+        if (generous == rel_path) {
+            return lax_rel_path; 
         }
         // otherwise, leave as is
         return generous;

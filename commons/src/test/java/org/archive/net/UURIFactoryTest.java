@@ -1123,6 +1123,24 @@ public class UURIFactoryTest extends TestCase {
 //        uuri2 = UURIFactory.getInstance(uuri.toCustomString());
 //        assertEquals("Not equal", uuri.toString(), uuri2.toString());
     }
+    
+    /**
+     * A UURI's string representation should be same after a 
+     * toCustomString-getInstance roundtrip. 
+     *  
+     * @throws URIException
+     */
+    public final void testHostnamePortRoundtrip() throws URIException {
+        UURI base = UURIFactory.
+            getInstance("http://www.example.com/path?query#anchor");
+        UURI test = UURIFactory.getInstance(base,"boom1.hostname.com:9999");
+        System.out.println("scheme:"+test.getScheme());
+        System.out.println(test.toCustomString());
+        UURI roundtrip = UURIFactory.getInstance(test.toCustomString());
+        assertEquals("Not equal", test.toString(), roundtrip.toString());
+    }
+    
+    
     /**
      * Test bad port throws URIException not NumberFormatException
      */
@@ -1134,5 +1152,18 @@ public class UURIFactoryTest extends TestCase {
         } catch (URIException ue){
             // expected
         }
+    }
+    
+    /**
+     * Bars ('|') in path-segments aren't encoded by FF, preferred by some
+     * RESTful-URI-ideas guides, so should work without error.
+     * 
+     * @throws URIException
+     */
+    public void testBarsInRelativePath() throws URIException {
+        UURI base = UURIFactory.getInstance("http://www.example.com");
+        String relative = "foo/bar|baz|yorple";
+        base.resolve(relative);
+        UURIFactory.getInstance(base,relative); 
     }
 }
