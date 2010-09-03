@@ -1134,8 +1134,8 @@ public abstract class AbstractFrontier
             // loaded in FetchHTTP on expectation that we're to go around
             // again. If no rfc2617 loaded, we should not be here.
             boolean loaded = curi.hasRfc2617CredentialAvatar();
-            if (!loaded && logger.isLoggable(Level.INFO)) {
-                logger.info("Have 401 but no creds loaded " + curi);
+            if (!loaded && logger.isLoggable(Level.FINE)) {
+                logger.fine("Have 401 but no creds loaded " + curi);
             }
             return loaded;
         case S_DEFERRED:
@@ -1311,4 +1311,34 @@ public abstract class AbstractFrontier
             }
         }
     }
-}
+    
+    /** lock allowing steps of outside processing that need to complete 
+     * all-or-nothing to signal their in-progress status */
+    protected ReentrantReadWriteLock dispositionInProgressLock = 
+        new ReentrantReadWriteLock(true);
+    /** remembers a disposition-in-progress, so that extra endDisposition()
+     *  calls are harmless */
+    protected ThreadLocal<CrawlURI> dispositionPending = new ThreadLocal<CrawlURI>(); 
+    
+    /* (non-Javadoc)
+     * @see org.archive.crawler.framework.Frontier#beginDisposition(org.archive.modules.CrawlURI)
+     */
+    @Override
+    public void beginDisposition(CrawlURI curi) {
+        dispositionPending.set(curi); 
+        dispositionInProgressLock.readLock().lock();
+    }
+    
+    /* (non-Javadoc)
+     * @see org.archive.crawler.framework.Frontier#endDisposition()
+     */
+    @Override
+    public void endDisposition() {
+        // avoid a mismatched unlock; allows callers to be less complicated, 
+        // calling endDisposition 'just in case' a begin happened
+        if(dispositionPending.get()!=null) {
+            dispositionInProgressLock.readLock().unlock();
+            dispositionPending.set(null); 
+        }
+    }
+} //EOC

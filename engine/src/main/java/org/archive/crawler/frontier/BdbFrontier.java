@@ -219,7 +219,9 @@ implements Checkpointable, BeanNameAware {
         super();
     }
     
-    public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+        dispositionInProgressLock.writeLock().lock();
+    }
 
     public void doCheckpoint(Checkpoint checkpointInProgress) {
         // An explicit sync on the any deferred write dbs is needed to make the
@@ -242,7 +244,9 @@ implements Checkpointable, BeanNameAware {
         }
     }
 
-    public void finishCheckpoint(Checkpoint checkpointInProgress) {}
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        dispositionInProgressLock.writeLock().unlock();
+    }
 
     Checkpoint recoveryCheckpoint;
     @Autowired(required=false)

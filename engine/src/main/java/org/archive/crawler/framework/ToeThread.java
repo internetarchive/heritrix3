@@ -123,7 +123,7 @@ implements MultiReporter, ProgressStatisticsReporter,
         String name = controller.getMetadata().getJobName();
         logger.fine(getName()+" started for order '"+name+"'");
         Recorder.setHttpRecorder(httpRecorder); 
-
+        
         try {
             while ( true ) {
                 ArchiveUtils.continueCheck();
@@ -131,6 +131,7 @@ implements MultiReporter, ProgressStatisticsReporter,
                 setStep(Step.ABOUT_TO_GET_URI, null);
 
                 CrawlURI curi = controller.getFrontier().next();
+                
                 
                 synchronized(this) {
                     ArchiveUtils.continueCheck();
@@ -144,9 +145,9 @@ implements MultiReporter, ProgressStatisticsReporter,
                     KeyedProperties.loadOverridesFrom(curi);
                     
                     controller.getFetchChain().process(curi,this);
-                    // TODO: insert barrier here to support checkpointing
-                    // only checkpoint when all URIs have finished
-                    // disposition chain
+                    
+                    controller.getFrontier().beginDisposition(curi);
+                    
                     controller.getDispositionChain().process(curi,this);
   
                 } catch (RuntimeExceptionWrapper e) {
@@ -175,6 +176,7 @@ implements MultiReporter, ProgressStatisticsReporter,
 
                 synchronized(this) {
                     controller.getFrontier().finished(currentCuri);
+                    controller.getFrontier().endDisposition();
                     setCurrentCuri(null);
                 }
                 
@@ -186,13 +188,16 @@ implements MultiReporter, ProgressStatisticsReporter,
             }
         } catch (InterruptedException e) {
             // thread interrupted, ok to end
-            logger.log(Level.FINE,this.getName()+ " ended with Interruption");
+            logger.log(Level.INFO,this.getName()+ " ended with Interruption");
         } catch (Exception e) {
             // everything else (including interruption)
             logger.log(Level.SEVERE,"Fatal exception in "+getName(),e);
         } catch (OutOfMemoryError err) {
             seriousError(err);
-        } 
+        } finally {
+            controller.getFrontier().endDisposition();
+
+        }
 
         setCurrentCuri(null);
         // Do cleanup so that objects can be GC.

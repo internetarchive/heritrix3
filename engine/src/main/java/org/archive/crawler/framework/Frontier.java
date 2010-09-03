@@ -520,4 +520,21 @@ public interface Frontier extends Lifecycle, MultiReporter {
         FINISH  // end and cleanup; may not return to any other state after
                   // this state is requested/reached
     }
+
+    /**
+     * Inform frontier that a block of processing that should complete atomically
+     * with respect to checkpoints is about to begin. Callers should ensure an
+     * endDisposition() call soon follows; a mismatch risks freezing the frontier
+     * if a checkpoint is requested. 
+     * @param curi
+     */
+    public void beginDisposition(CrawlURI curi);
+
+    /**
+     * Inform frontier the processing signalled by an earlier pending 
+     * beginDisposition() call has finished. Implementors should be resilient 
+     * against extra endDisposition calls, as callers dealing with exceptional
+     * conditions need to be free to call this 'just in case'. 
+     */
+    public void endDisposition();
 }
