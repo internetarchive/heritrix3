@@ -28,7 +28,7 @@ import java.io.Serializable;
  * @author pjack
  */
 public abstract class LinkContext implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4117965561244539334L;
 
 
     /** Class for representing handy default LinkContext values. */
