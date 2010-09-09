@@ -337,7 +337,7 @@ public class BdbMultipleWorkQueues {
         }
         
         if (status!=OperationStatus.SUCCESS) {
-            LOGGER.severe("URI enqueueing failed; "+status+ " "+curi);
+            LOGGER.log(Level.SEVERE,"URI enqueueing failed; "+status+ " "+curi, new RuntimeException());
         }
     }
     
