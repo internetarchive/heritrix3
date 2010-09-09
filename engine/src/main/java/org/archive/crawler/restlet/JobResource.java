@@ -578,7 +578,7 @@ public class JobResource extends BaseResource {
             if(StringUtils.isNotEmpty(cp)) {
                 Flash.addFlash(getResponse(), "Checkpoint <i>"+cp+"</i> saved",Flash.Kind.ACK);
             } else {
-                Flash.addFlash(getResponse(), "Checkpoint not made; check logs",Flash.Kind.NACK);
+                Flash.addFlash(getResponse(), "Checkpoint not made -- perhaps no progress since last? (see logs)",Flash.Kind.NACK);
             }
         } else if("terminate".equals(action)) {
             cj.terminate();
