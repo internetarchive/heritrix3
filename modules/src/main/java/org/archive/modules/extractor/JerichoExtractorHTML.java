@@ -37,7 +37,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.net.RobotsHonoringPolicy;
+import org.archive.modules.net.RobotsPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.DevUtils;
@@ -304,13 +304,11 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
         if ("robots".equals(name) && content != null) {
             curi.getData().put(A_META_ROBOTS, content);
-            RobotsHonoringPolicy policy = metadata.getRobotsHonoringPolicy();
+            RobotsPolicy policy = metadata.getRobotsPolicy();
             String contentLower = content.toLowerCase();
-            if ((policy == null || (!policy.isType(
-                    RobotsHonoringPolicy.Type.IGNORE) && !policy.isType(
-                    RobotsHonoringPolicy.Type.CUSTOM)))
-                    && (contentLower.indexOf("nofollow") >= 0 || contentLower
-                            .indexOf("none") >= 0)) {
+            if (policy.obeyMetaRobotsNofollow()
+                 && (contentLower.indexOf("nofollow") >= 0 
+                 || contentLower.indexOf("none") >= 0)) {
                 // if 'nofollow' or 'none' is specified and the
                 // honoring policy is not IGNORE or CUSTOM, end html extraction
                 logger.fine("HTML extraction skipped due to robots meta-tag " +

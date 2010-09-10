@@ -33,7 +33,7 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.net.RobotsHonoringPolicy;
+import org.archive.modules.net.RobotsPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
@@ -825,11 +825,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         // Look for the 'robots' meta-tag
         if("robots".equalsIgnoreCase(name) && content != null ) {
             curi.getData().put(A_META_ROBOTS, content);
-            RobotsHonoringPolicy policy = metadata.getRobotsHonoringPolicy();
+            RobotsPolicy policy = metadata.getRobotsPolicy();
             String contentLower = content.toLowerCase();
-            if ((policy == null
-                || (!policy.isType(RobotsHonoringPolicy.Type.IGNORE)
-                    && !policy.isType(RobotsHonoringPolicy.Type.CUSTOM)))
+            if (policy.obeyMetaRobotsNofollow()
                 && (contentLower.indexOf("nofollow") >= 0
                     || contentLower.indexOf("none") >= 0)) {
                 // if 'nofollow' or 'none' is specified and the

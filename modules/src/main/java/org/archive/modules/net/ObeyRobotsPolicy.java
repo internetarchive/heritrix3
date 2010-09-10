@@ -16,16 +16,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.archive.modules.net;
 
-import org.archive.state.ModuleTestBase;
+import org.archive.modules.CrawlURI;
 
 /**
- * @author pjack
+ * Classic obey-robots-as-declared policy. 
+ * 
+ * @contributor gojomo
  */
-public class RobotsHonoringPolicyTest extends ModuleTestBase {
-
-    // TODO TESTME
+public class ObeyRobotsPolicy extends RobotsPolicy {
+    public static RobotsPolicy INSTANCE = new ObeyRobotsPolicy(); 
     
+    @Override
+    public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
+        return robotstxt.getDirectivesFor(userAgent).allows(getPath(curi));
+    }
+
+    @Override
+    public boolean obeyMetaRobotsNofollow() {
+        return true;
+    }
+
 }

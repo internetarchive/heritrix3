@@ -45,10 +45,6 @@ crawlController.pauseAtStart=false
   </property>
  </bean>
  
- <!-- Policy to use when deciding to honor robots.txt and similar -->
- <bean name="robotsHonoringPolicy" class="org.archive.modules.net.RobotsHonoringPolicy">
- </bean>
- 
  <!-- Scope: what discovered URIs to crawl -->
  <bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
   <property name="rules">

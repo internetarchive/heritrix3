@@ -25,6 +25,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.io.IOUtils;
+import org.archive.io.ReadSource;
 
 /**
  * Utility class for parsing and representing 'robots.txt' format 
@@ -33,7 +38,9 @@ import java.util.Map;
  */
 public class Robotstxt implements Serializable {
     static final long serialVersionUID = 7025386509301303890L;
-    
+    private static final Logger logger =
+        Logger.getLogger(Robotstxt.class.getName());
+
     // all user agents contained in this robots.txt
     // may be thinned of irrelevant entries
     LinkedList<String> userAgents = new LinkedList<String>();
@@ -44,8 +51,30 @@ public class Robotstxt implements Serializable {
     boolean hasErrors = false;
     
     static RobotsDirectives NO_DIRECTIVES = new RobotsDirectives();
+    /** empty, reusable instance for all sites providing no rules */
+    public static Robotstxt NO_ROBOTS = new Robotstxt();
     
+    public Robotstxt() {
+    }
+
     public Robotstxt(BufferedReader reader) throws IOException {
+        initializeFromReader(reader);
+    }
+
+    public Robotstxt(ReadSource customRobots) {
+        BufferedReader reader = new BufferedReader(customRobots.obtainReader());
+        try {
+            initializeFromReader(reader);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE,
+                    "robots ReadSource problem: potential for inadvertent overcrawling",
+                    e);
+        } finally {
+            IOUtils.closeQuietly(reader); 
+        }
+    }
+
+    protected void initializeFromReader(BufferedReader reader) throws IOException {
         String read;
         // current is the disallowed paths for the preceding User-Agent(s)
         RobotsDirectives current = null;
@@ -150,7 +179,6 @@ public class Robotstxt implements Serializable {
             userAgents.addLast(catchall);
         }
     }
-
 
     /**
      * Does this policy effectively allow everything? (No 

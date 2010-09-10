@@ -26,9 +26,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.Checksum;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -52,7 +53,8 @@ import org.archive.net.UURIFactory;
  * @author gojomo
  */
 public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
-
+    private static final Logger logger =
+        Logger.getLogger(CrawlServer.class.getName());
     private static final long serialVersionUID = 3L;
 
     public static final long ROBOTS_NOT_FETCHED = -1;
@@ -62,7 +64,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
 
     private final String server; // actually, host+port in the https case
     private int port;
-    private RobotsExclusionPolicy robots;
+    protected Robotstxt robotstxt;
     long robotsFetched = ROBOTS_NOT_FETCHED;
     boolean validRobots = false;
     Checksum robotstxtChecksum;
@@ -98,22 +100,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
         }
     }
 
-    /** Get the robots exclusion policy for this server.
-     *
-     * @return the robots exclusion policy for this server.
-     */
-    public RobotsExclusionPolicy getRobots() {
-        return robots;
-    }
-
-    /** Set the robots exclusion policy for this server.
-     *
-     * @param policy the policy to set.
-     */
-    public void setRobots(RobotsExclusionPolicy policy) {
-        robots = policy;
-    }
-
     public String toString() {
         return "CrawlServer("+server+")";
     }
@@ -139,96 +125,78 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
         return true;
     }
     
-    /** Update the robots exclusion policy.
-     *
-     * @param curi the crawl URI containing the fetched robots.txt
-     * @throws IOException
-     */
-    public synchronized void updateRobots(RobotsHonoringPolicy honoringPolicy, 
-            CrawlURI curi) {
-
-        robotsFetched = System.currentTimeMillis();
-        
-        boolean gotSomething = curi.getFetchType() == HTTP_GET 
-            && (curi.getFetchStatus() > 0 || curi.getFetchStatus() == S_DEEMED_NOT_FOUND );
-        
-        
-        if (!gotSomething && curi.getFetchAttempts() < MIN_ROBOTS_RETRIES) {
-            // robots.txt lookup failed, still trying, no reason to consider IGNORE yet
-            validRobots = false;
-            return;
-        }
-        
-
-        RobotsHonoringPolicy.Type type = honoringPolicy.getType();
-        if (type == RobotsHonoringPolicy.Type.IGNORE) {
-            // IGNORE = ALLOWALL
-            robots = RobotsExclusionPolicy.ALLOWALL;
-            validRobots = true;
-            if(curi.getFetchStatus() < 0) {
-                // prevent the rest of the usual retries
-                curi.setFetchStatus(S_DEEMED_NOT_FOUND);
-            }
-            return;
-        }
-        
-        // special deeming for a particular kind of connection-lost (empty server response)
-        if(curi.getFetchStatus() == S_CONNECT_LOST && CollectionUtils.exists(curi.getNonFatalFailures(),new Predicate() {
-            public boolean evaluate(Object obj) {
-                return obj instanceof NoHttpResponseException;
-            }
-        })) {
-            curi.setFetchStatus(S_DEEMED_NOT_FOUND);
-            gotSomething = true; 
-        }
-        
-        if (!gotSomething) {
-            // robots.txt fetch failed and exceptions (ignore/deeming) don't apply; no valid robots info yet
-            validRobots = false;
-            return;
-        }
-        
-        int fetchStatus = curi.getFetchStatus();
-        if (fetchStatus < 200 || fetchStatus >= 300) {
-            // Not found or anything but a status code in the 2xx range is
-            // treated as giving access to all of a sites' content.
-            // This is the prevailing practice of Google, since 4xx
-            // responses on robots.txt are usually indicative of a 
-            // misconfiguration or blanket-block, not an intentional
-            // indicator of partial blocking. 
-            // TODO: consider handling server errors, redirects differently
-            robots = RobotsExclusionPolicy.ALLOWALL;
-            validRobots = true;
-            return;
-        }
-
-        ReplayInputStream contentBodyStream = null;
-        try {
-            try {
-                BufferedReader reader;
-                if (type == RobotsHonoringPolicy.Type.CUSTOM) {
-                    reader = new BufferedReader(new StringReader(honoringPolicy
-                            .getCustomRobots()));
-                } else {
-                    contentBodyStream = curi.getRecorder()
-                            .getRecordedInput().getContentReplayInputStream();
-
-                    contentBodyStream.setToResponseBodyStart();
-                    reader = new BufferedReader(new InputStreamReader(
-                            contentBodyStream));
-                }
-                robots = RobotsExclusionPolicy.policyFor(
-                        reader, honoringPolicy);
-                validRobots = true;
-            } finally {
-                IOUtils.closeQuietly(contentBodyStream);
-            }
-        } catch (IOException e) {
-            robots = RobotsExclusionPolicy.ALLOWALL;
-            validRobots = true;
-            curi.getNonFatalFailures().add(e);
-        }
+    public Robotstxt getRobotstxt() {
+        return robotstxt;
     }
+    
+    /** Update the robotstxt
+    *
+    * @param curi the crawl URI containing the fetched robots.txt
+    * @throws IOException
+    */
+   public synchronized void updateRobots(CrawlURI curi) {
+
+       robotsFetched = System.currentTimeMillis();
+       
+       boolean gotSomething = curi.getFetchType() == HTTP_GET 
+           && (curi.getFetchStatus() > 0 || curi.getFetchStatus() == S_DEEMED_NOT_FOUND );
+       
+       
+       if (!gotSomething && curi.getFetchAttempts() < MIN_ROBOTS_RETRIES) {
+           // robots.txt lookup failed, still trying, no reason to consider IGNORE yet
+           validRobots = false;
+           return;
+       }
+              
+       // special deeming for a particular kind of connection-lost (empty server response)
+       if(curi.getFetchStatus() == S_CONNECT_LOST && CollectionUtils.exists(curi.getNonFatalFailures(),new Predicate() {
+           public boolean evaluate(Object obj) {
+               return obj instanceof NoHttpResponseException;
+           }
+       })) {
+           curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+           gotSomething = true; 
+       }
+       
+       if (!gotSomething) {
+           // robots.txt fetch failed and exceptions (ignore/deeming) don't apply; no valid robots info yet
+           validRobots = false;
+           return;
+       }
+       
+       int fetchStatus = curi.getFetchStatus();
+       if (fetchStatus < 200 || fetchStatus >= 300) {
+           // Not found or anything but a status code in the 2xx range is
+           // treated as giving access to all of a sites' content.
+           // This is the prevailing practice of Google, since 4xx
+           // responses on robots.txt are usually indicative of a 
+           // misconfiguration or blanket-block, not an intentional
+           // indicator of partial blocking. 
+           // TODO: consider handling server errors, redirects differently
+           robotstxt = Robotstxt.NO_ROBOTS;
+           validRobots = true;
+           return;
+       }
+
+       ReplayInputStream contentBodyStream = null;
+       try {
+           BufferedReader reader;
+           contentBodyStream = curi.getRecorder()
+                   .getRecordedInput().getContentReplayInputStream();
+
+           contentBodyStream.setToResponseBodyStart();
+           reader = new BufferedReader(new InputStreamReader(contentBodyStream));
+           robotstxt = new Robotstxt(reader); 
+           validRobots = true;
+       } catch (IOException e) {
+           robotstxt = Robotstxt.NO_ROBOTS;
+           logger.log(Level.WARNING,"problem reading robots.txt for "+curi,e);
+           validRobots = true;
+           curi.getNonFatalFailures().add(e);
+       } finally {
+           IOUtils.closeQuietly(contentBodyStream);
+       }
+   }    
 
     /**
      * @return The server string which might include a port number.

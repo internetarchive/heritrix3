@@ -23,6 +23,7 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
 
 import java.util.Map;
 import java.util.logging.Logger;
@@ -34,7 +35,8 @@ import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
-import org.archive.modules.net.RobotsExclusionPolicy;
+import org.archive.modules.net.IgnoreRobotsPolicy;
+import org.archive.modules.net.Robotstxt;
 import org.archive.modules.net.ServerCache;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -172,7 +174,17 @@ public class DispositionProcessor extends Processor {
                 if ("/robots.txt".equals(curi.getUURI().getPath())) {
                     // Update server with robots info
                 	// NOTE: in some cases the curi's status can be changed here
-                    server.updateRobots(metadata.getRobotsHonoringPolicy(),  curi);
+//                    server.updateRobots(metadata.getRobotsHonoringPolicy(),  curi);
+                    
+                    server.updateRobots(curi);
+                    
+                    // shortcut retries  w/ DEEMED when ignore-all
+                    if (metadata.getRobotsPolicy() instanceof IgnoreRobotsPolicy) {
+                        if(curi.getFetchStatus() < 0) {
+                            // prevent the rest of the usual retries
+                            curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+                        }
+                    }
                 }
             }
             catch (URIException e) {
@@ -226,9 +238,9 @@ public class DispositionProcessor extends Processor {
                 if (ua == null) {
                     ua = metadata.getUserAgent();
                 }
-                RobotsExclusionPolicy rep = s.getRobots();
+                Robotstxt rep = s.getRobotstxt();
                 if (rep != null) {
-                    long crawlDelay = (long)(1000 * s.getRobots().getCrawlDelay(ua));
+                    long crawlDelay = (long)(1000 * rep.getDirectivesFor(ua).getCrawlDelay());
                     crawlDelay = 
                         (crawlDelay > respectThreshold) 
                             ? respectThreshold 

@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
@@ -39,9 +40,9 @@ import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
-import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
+import org.archive.modules.net.RobotsPolicy;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -105,12 +106,17 @@ public class PreconditionEnforcer extends Processor  {
         kp.put("calculateRobotsOnly",calcOnly);
     }   
     
-    public UserAgentProvider getUserAgentProvider() {
-        return (UserAgentProvider) kp.get("userAgentProvider");
+    /**
+     * Auto-discovered module providing configured (or overridden)
+     * User-Agent value and RobotsHonoringPolicy
+     */
+    CrawlMetadata metadata;
+    public CrawlMetadata getMetadata() {
+        return metadata;
     }
     @Autowired
-    public void setUserAgentProvider(UserAgentProvider provider) {
-        kp.put("userAgentProvider",provider);
+    public void setMetadata(CrawlMetadata provider) {
+        this.metadata = provider;
     }
     
     {
@@ -237,8 +243,9 @@ public class PreconditionEnforcer extends Processor  {
         }
         // test against robots.txt if available
         if (cs.isValidRobots()) {
-            String ua = getUserAgentProvider().getUserAgent();
-            if(cs.getRobots().disallows(curi, ua)) {
+            String ua = metadata.getUserAgent();
+            RobotsPolicy robots = metadata.getRobotsPolicy();
+            if(!robots.allows(ua, curi, cs.getRobotstxt())) {
                 if(getCalculateRobotsOnly()) {
                     // annotate URI as excluded, but continue to process normally
                     curi.getAnnotations().add("robotExcluded");

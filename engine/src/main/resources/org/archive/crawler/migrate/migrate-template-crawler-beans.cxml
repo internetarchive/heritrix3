@@ -57,6 +57,7 @@
        <property name="operatorContactUrl" value="[see override above]"/>
        <property name="jobName" value="[see override above]"/>
        <property name="description" value="[see override above]"/>
+  <!-- <property name="robotsPolicyName" value="obey"/> -->
   <!-- <property name="operator" value=""/> -->
   <!-- <property name="operatorFrom" value=""/> -->
   <!-- <property name="organization" value=""/> -->
@@ -144,8 +145,11 @@
     <bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
      <!-- <property name="maxPathDepth" value="20" /> -->
     </bean>
-    <!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
+    <!-- ...but always ACCEPT those marked as prerequisites for another URI... -->
     <bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
+    </bean>
+    <!-- ...but always REJECT those with unsupported URI schemes -->
+    <bean class="org.archive.modules.deciderules.SchemeNotInSetDecideRule">
     </bean>
    </list>
   </property>
@@ -336,9 +340,7 @@
   <!-- <property name="pauseAtFinish" value="false" /> -->
   <!-- <property name="recorderInBufferBytes" value="524288" /> -->
   <!-- <property name="recorderOutBufferBytes" value="16384" /> -->
-  <!-- <property name="checkpointerPeriod" value="-1" /> -->
   <!-- <property name="scratchDir" value="scratch" /> -->
-  <!-- <property name="checkpointsDir" value="checkpoints" /> -->
  </bean>
  
  <!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
@@ -355,11 +357,20 @@
   <!-- <property name="snoozeLongMs" value="300000" /> -->
   <!-- <property name="retryDelaySeconds" value="900" /> -->
   <!-- <property name="maxRetries" value="30" /> -->
-  <!-- <property name="recoveryDir" value="logs" /> -->
   <!-- <property name="recoveryLogEnabled" value="true" /> -->
   <!-- <property name="maxOutlinks" value="6000" /> -->
-  <!-- <property name="outboundQueueCapacity" value="50" /> -->
-  <!-- <property name="inboundQueueMultiple" value="3" /> -->
+  <!-- <property name="outbound">
+        <bean class="java.util.concurrent.ArrayBlockingQueue">
+         <constructor-arg value="200"/>
+         <constructor-arg value="true"/>
+        </bean>
+       </property> -->
+  <!-- <property name="inbound">
+        <bean class="java.util.concurrent.ArrayBlockingQueue">
+         <constructor-arg value="40000"/>
+         <constructor-arg value="true"/>
+        </bean>
+       </property> -->
   <!-- <property name="dumpPendingAtClose" value="false" /> -->
  </bean>
  
@@ -489,7 +500,6 @@
   <!-- <property name="dir" value="state" /> -->
   <!-- <property name="cachePercent" value="60" /> -->
   <!-- <property name="useSharedCache" value="true" /> -->
-  <!-- <property name="checkpointCopyLogs" value="true" /> -->
   <!-- <property name="expectedConcurrency" value="25" /> -->
  </bean>
  

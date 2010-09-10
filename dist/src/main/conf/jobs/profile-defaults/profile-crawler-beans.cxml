@@ -66,6 +66,7 @@ http://example.example/example
        <property name="operatorContactUrl" value="[see override above]"/>
        <property name="jobName" value="[see override above]"/>
        <property name="description" value="[see override above]"/>
+  <!-- <property name="robotsPolicyName" value="obey"/> -->
   <!-- <property name="operator" value=""/> -->
   <!-- <property name="operatorFrom" value=""/> -->
   <!-- <property name="organization" value=""/> -->
@@ -201,7 +202,6 @@ http://example.example/example
     <!-- apply scoping rules to each individual candidate URI... -->
     <ref bean="candidateScoper"/>
     <!-- ...then prepare those ACCEPTed for enqueuing to frontier. -->
-    <ref bean="preparer"/>
    </list>
   </property>
  </bean>

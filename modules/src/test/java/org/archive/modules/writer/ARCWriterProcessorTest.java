@@ -24,8 +24,6 @@ import java.io.File;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.fetcher.DefaultServerCache;
-import org.archive.modules.net.RobotsHonoringPolicy;
-import org.archive.modules.writer.ARCWriterProcessor;
 import org.archive.spring.ConfigPath;
 import org.archive.util.TmpDirTestCase;
 
@@ -47,7 +45,7 @@ public class ARCWriterProcessorTest extends ProcessorTestBase {
         result.setDirectory(new ConfigPath("test",tmp.getAbsolutePath()));
         result.setServerCache(new DefaultServerCache());
         CrawlMetadata metadata = new CrawlMetadata();
-        metadata.setRobotsHonoringPolicy(new RobotsHonoringPolicy());
+        metadata.afterPropertiesSet();
         result.setMetadataProvider(metadata);
         result.start();
         return result;

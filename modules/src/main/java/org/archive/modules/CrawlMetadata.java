@@ -20,10 +20,12 @@
 package org.archive.modules;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import org.archive.modules.fetcher.UserAgentProvider;
-import org.archive.modules.net.RobotsHonoringPolicy;
+import org.archive.modules.net.RobotsPolicy;
 import org.archive.spring.BeanFieldsPatternValidator;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.HasValidator;
@@ -53,18 +55,45 @@ implements UserAgentProvider,
     }
     
     /**
-     * Robots honoring 
+     * Robots policy name
      */
     {
-        setRobotsHonoringPolicy(new RobotsHonoringPolicy());
+        setRobotsPolicyName("obey");
     }
-    public RobotsHonoringPolicy getRobotsHonoringPolicy() {
-        return (RobotsHonoringPolicy) kp.get("robotsHonoringPolicy");
+    public String getRobotsPolicyName() {
+        return (String) kp.get("robotsPolicyName");
     }
     @Autowired(required=false)
-    public void setRobotsHonoringPolicy(RobotsHonoringPolicy policy) {
-        kp.put("robotsHonoringPolicy",policy);
+    public void setRobotsPolicyName(String policy) {
+        kp.put("robotsPolicyName",policy);
     }
+    
+    /** Map of all available RobotsPolicies, by name, to choose from. 
+     * assembled from declared instances in configuration plus the standard
+     * 'obey' (aka 'classic') and 'ignore' policies. */
+    Map<String,RobotsPolicy> availableRobotsPolicies = new HashMap<String,RobotsPolicy>();
+    public Map<String,RobotsPolicy> getAvailableRobotsPolicies() {
+        return availableRobotsPolicies;
+    }
+    @Autowired(required=false)
+    public void setAvailableRobotsPolicies(Map<String,RobotsPolicy> policies) {
+        availableRobotsPolicies = policies;
+        ensureStandardPoliciesAvailable();
+    }
+    protected void ensureStandardPoliciesAvailable() {
+        availableRobotsPolicies.putAll(RobotsPolicy.STANDARD_POLICIES);
+    }
+    
+    /**
+     * Get the currently-effective RobotsPolicy, as specified by the
+     * string name and chosen from the full available map. (Setting 
+     * a different policy for some sites/URL patterns is best acheived
+     * by establishing a setting overlay for the robotsPolicyName 
+     * property.)
+     */ 
+    public RobotsPolicy getRobotsPolicy() {
+        return availableRobotsPolicies.get(getRobotsPolicyName());
+    } 
 
     String operator = "";
     public String getOperator() {
@@ -159,17 +188,14 @@ implements UserAgentProvider,
         this.jobName = jobName;
     }
 
-    public String getRobotsPolicyName() {
-        return getRobotsHonoringPolicy().getType().toString();
-    }
-
     public String getFrom() {
         return getOperatorFrom();
     }
 
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         // force revalidation, throwing exception if invalid
         setOperatorContactUrl(getOperatorContactUrl());
+        ensureStandardPoliciesAvailable();
     }
 
     static Validator VALIDATOR = new BeanFieldsPatternValidator(
@@ -193,5 +219,5 @@ implements UserAgentProvider,
     
     public Validator getValidator() {
         return VALIDATOR;
-    } 
+    }
 }
