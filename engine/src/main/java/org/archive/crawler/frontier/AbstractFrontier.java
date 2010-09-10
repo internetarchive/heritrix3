@@ -39,7 +39,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -86,8 +85,7 @@ import org.springframework.context.ApplicationListener;
  * @author gojomo
  */
 public abstract class AbstractFrontier 
-    implements Frontier, 
-               Serializable, 
+    implements Frontier,
                SeedListener, 
                HasKeyedProperties,
                ExtractorParameters,
@@ -148,7 +146,7 @@ public abstract class AbstractFrontier
     
     
     /** inbound updates: URIs to be scheduled, finished; requested state changes */
-    transient protected BlockingQueue<InEvent> inbound;
+    protected BlockingQueue<InEvent> inbound;
     public BlockingQueue<InEvent> getInbound() {
         return inbound;
     }
@@ -157,7 +155,7 @@ public abstract class AbstractFrontier
     }
 
     /** outbound URIs */ 
-    transient protected BlockingQueue<CrawlURI> outbound;
+    protected BlockingQueue<CrawlURI> outbound;
     public BlockingQueue<CrawlURI> getOutbound() {
         return outbound;
     }
@@ -274,7 +272,7 @@ public abstract class AbstractFrontier
      * Currently captures Frontier/URI transitions.
      * Can be null if user chose not to run a recovery.log.
      */
-    private transient FrontierJournal recover = null;
+    private FrontierJournal recover = null;
     
     /**
      * @param name Name of this frontier.
@@ -285,7 +283,7 @@ public abstract class AbstractFrontier
     }
 
     /** reusable no-op inbound event, to force reeval of state/eligible URIs */
-    transient protected InEvent NOOP = new InEvent() { public void process() {} };
+    protected InEvent NOOP = new InEvent() { public void process() {} };
     
     /** 
      * lock to allow holding all worker ToeThreads from taking URIs already
@@ -300,7 +298,7 @@ public abstract class AbstractFrontier
      * of URI queues and queues/maps of queues for proper ordering/delay of
      * URI processing. 
      */
-    transient Thread managerThread;
+    Thread managerThread;
     
     /** last Frontier.State reached; used to suppress duplicate notifications */
     State lastReachedState = null;
