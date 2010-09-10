@@ -188,7 +188,7 @@ implements MultiReporter, ProgressStatisticsReporter,
             }
         } catch (InterruptedException e) {
             // thread interrupted, ok to end
-            logger.log(Level.INFO,this.getName()+ " ended with Interruption");
+            logger.log(Level.FINE,this.getName()+ " ended with Interruption");
         } catch (Exception e) {
             // everything else (including interruption)
             logger.log(Level.SEVERE,"Fatal exception in "+getName(),e);
