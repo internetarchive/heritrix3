@@ -275,7 +275,8 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     public void closeDatabase(String name) {
         DatabasePlusConfig dpc = databases.remove(name);
         if (dpc == null) {
-            throw new IllegalStateException("No such database: " + name);
+            LOGGER.warning("No such database: " + name);
+            return; 
         }
         Database db = dpc.database;
         try {
@@ -553,7 +554,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
     }
-    
+
     public void close() {
         close2();
         if(shutdownHook!=null) {
