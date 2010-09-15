@@ -425,12 +425,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     @Override
     protected abstract ProcessResult innerProcessResult(CrawlURI uri);
 
-    protected boolean shouldProcess(CrawlURI uri) {
-        if (!(uri instanceof CrawlURI)) {
-            return false;
-        }
-        
-        CrawlURI curi = (CrawlURI)uri;
+    protected boolean shouldProcess(CrawlURI curi) {
         // If failure, or we haven't fetched the resource yet, return
         if (curi.getFetchStatus() <= 0) {
             return false;
