@@ -21,6 +21,7 @@ package org.archive.util;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -402,6 +403,19 @@ public class ArchiveUtilsTest extends TestCase {
     public void testIsTld() {
         assertTrue("TLD test problem", ArchiveUtils.isTld("com"));
         assertTrue("TLD test problem", ArchiveUtils.isTld("COM"));
+    }
+    
+    public void testUnique17() {
+        HashSet<String> uniqueTimestamps = new HashSet<String>();
+        for(int i = 0; i<10; i++) {
+            assertTrue("timestamp17 repeated",uniqueTimestamps.add(ArchiveUtils.getUnique17DigitDate()));
+        }
+    }
+    public void testUnique14() {
+        HashSet<String> uniqueTimestamps = new HashSet<String>();
+        for(int i = 0; i<10; i++) {
+            assertTrue("timestamp14 repeated",uniqueTimestamps.add(ArchiveUtils.getUnique14DigitDate()));
+        }
     }
 }
 
