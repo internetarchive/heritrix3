@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections.SetUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
@@ -110,7 +111,7 @@ public abstract class JobRelatedResource extends Resource {
             alreadyWritten.add(obj);
 
             BeanWrapperImpl bwrap = new BeanWrapperImpl(obj);
-            for (PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
+            for (PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
                 if (pd.getReadMethod() != null) {
                     String propName = pd.getName();
                     Object propValue = bwrap.getPropertyValue(propName);
@@ -299,12 +300,8 @@ public abstract class JobRelatedResource extends Resource {
 
         Collection<Object> properties = new LinkedList<Object>();
         BeanWrapperImpl bwrap = new BeanWrapperImpl(object);
-        for (PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
-            if (object instanceof DescriptorUpdater) {
-                ((DescriptorUpdater) object).updateDescriptor(pd);
-            } else {
-                defaultUpdateDescriptor(pd);
-            }
+        for (PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
+
             if (pd.getReadMethod() != null && !pd.isHidden()) {
                 String propName = pd.getName();
                 if (beanPath != null) {
@@ -364,6 +361,23 @@ public abstract class JobRelatedResource extends Resource {
         }
 
         return info;
+    }
+
+    /**
+     * Get and modify the PropertyDescriptors associated with the BeanWrapper.
+     * @param bwrap
+     * @return
+     */
+    protected PropertyDescriptor[] getPropertyDescriptors(BeanWrapperImpl bwrap) {
+        PropertyDescriptor[] descriptors = bwrap.getPropertyDescriptors();
+        for(PropertyDescriptor pd : descriptors) {
+            if (DescriptorUpdater.class.isAssignableFrom(bwrap.getWrappedClass()) ) {
+                ((DescriptorUpdater) bwrap.getWrappedInstance()).updateDescriptor(pd);
+            } else {
+                defaultUpdateDescriptor(pd);
+            }
+        }
+        return descriptors;
     }
 
     /**
@@ -446,12 +460,7 @@ public abstract class JobRelatedResource extends Resource {
             pw.println(object.getClass().getName()+"</legend>");
             pw.println("<table>");
             BeanWrapperImpl bwrap = new BeanWrapperImpl(object); 
-            for(PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
-                if(object instanceof DescriptorUpdater) {
-                    ((DescriptorUpdater)object).updateDescriptor(pd);
-                } else {
-                    defaultUpdateDescriptor(pd);
-                }
+            for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
                 if(pd.getReadMethod()!=null && !pd.isHidden()) {
                     String propName = pd.getName();
                     if(beanPath!=null) {
@@ -499,13 +508,13 @@ public abstract class JobRelatedResource extends Resource {
             pw.write(close);
         }
 
-
+    /** suppress problematic properties */
     static HashSet<String> HIDDEN_PROPS = new HashSet<String>(
             Arrays.asList(new String[]
-             {"class","declaringClass","keyedProperties","running","first","last","empty"}
+             {"class","declaringClass","keyedProperties","running","first","last","empty", "inbound", "outbound", "cookiesMap"}
             ));
     protected void defaultUpdateDescriptor(PropertyDescriptor pd) {
-        // make noneditable
+        // make non-editable
         try {
             pd.setWriteMethod(null);
         } catch (IntrospectionException e) {
