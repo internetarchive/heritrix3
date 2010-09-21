@@ -52,7 +52,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * 
  * @contributor gojomo
  */
-@SuppressWarnings("unchecked")
 public class SheetOverlaysManager implements 
 BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     private static final Logger logger = Logger.getLogger(SheetOverlaysManager.class.getName());
@@ -110,7 +109,6 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * from the set of all DecideRuledSheetAssociation instances. 
      * @param ruleSheets
      */
-    @SuppressWarnings("unchecked")
     @Autowired(required=false)
     public void addRuleAssociations(Set<DecideRuledSheetAssociation> associations) {
         // always keep sorted by order
@@ -164,32 +162,6 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         }
     }
     
-    /**
-     * Apply the proper overlays (by Sheet beanName) to the given CrawlURI. 
-     * 
-     * TODO: add guard against redundant application more than once? 
-     * TODO: add mechanism for reapplying overlays after settings change? 
-     * @param curi
-     */
-    public void applyOverlays(CrawlURI curi) {
-        // apply SURT-based overlays
-        String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getPolicyBasisUURI());
-        List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
-        for(String prefix : foundPrefixes) {
-            for(String name : sheetNamesBySurt.get(prefix)) {
-                curi.getOverlayNames().push(name);
-            }
-        }
-        // apply deciderule-based overlays
-        for(DecideRuledSheetAssociation assoc : ruleAssociations) {
-            if(assoc.getRules().accepts(curi)) {
-                curi.getOverlayNames().addAll(assoc.getTargetSheetNames());
-            }
-        }
-        // even if no overlays set, let creation of empty list signal
-        // step has occurred -- helps ensure overlays added once-only
-        curi.getOverlayNames();
-    }
 
     /**
      * Retrieve the named overlay Map.
@@ -327,10 +299,32 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         return sheet;
     }
     
-    public void applyOverridesTo(CrawlURI curi) {
+    /**
+     * Apply the proper overlays (by Sheet beanName) to the given CrawlURI,
+     * according to configured associations.  
+     * 
+     * TODO: add guard against redundant application more than once? 
+     * TODO: add mechanism for reapplying overlays after settings change? 
+     * @param curi
+     */
+    public void applyOverlaysTo(CrawlURI curi) {
         curi.setOverlayMapsSource(this); 
-        if(!curi.haveOverlayNamesBeenSet()) {
-            applyOverlays(curi);
+        // apply SURT-based overlays
+        String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getPolicyBasisUURI());
+        List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
+        for(String prefix : foundPrefixes) {
+            for(String name : sheetNamesBySurt.get(prefix)) {
+                curi.getOverlayNames().push(name);
+            }
         }
+        // apply deciderule-based overlays
+        for(DecideRuledSheetAssociation assoc : ruleAssociations) {
+            if(assoc.getRules().accepts(curi)) {
+                curi.getOverlayNames().addAll(assoc.getTargetSheetNames());
+            }
+        }
+        // even if no overlays set, let creation of empty list signal
+        // step has occurred -- helps ensure overlays added once-only
+        curi.getOverlayNames();
     }
 }

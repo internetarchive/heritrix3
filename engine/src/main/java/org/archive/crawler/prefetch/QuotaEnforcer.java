@@ -380,10 +380,13 @@ public class QuotaEnforcer extends Processor {
     protected boolean applyQuota(CrawlURI curi, String key, long actual) {
         long quota = (Long)kp.get(key);
         if (quota >= 0 && actual >= quota) {
-            curi.setFetchStatus(S_BLOCKED_BY_QUOTA);
             curi.getAnnotations().add("Q:"+key);
             if (getForceRetire()) {
+                // retire queue without disposing URI
                 curi.setForceRetire(true);
+            } else {
+                // overquota without retire option means treat as if 'failed'
+                curi.setFetchStatus(S_BLOCKED_BY_QUOTA);
             }
             return true;
         }

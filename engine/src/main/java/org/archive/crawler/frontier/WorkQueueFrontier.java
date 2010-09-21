@@ -23,7 +23,6 @@ import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.DEF
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.DISREGARDED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
-import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 
@@ -215,7 +214,7 @@ implements Closeable,
     protected AtomicInteger snoozedOverflowCount = new AtomicInteger(0); 
     protected static int MAX_SNOOZED_IN_MEMORY = 5000; 
     
-    /** URIs scheduled for reenqueuing at future date*/
+    /** URIs scheduled to be re-enqueued at future date */
     protected StoredSortedMap<Long, CrawlURI> futureUris; 
     
     transient protected WorkQueue longestActiveQueue = null;
@@ -346,7 +345,7 @@ implements Closeable,
      */
     @Override
     public void schedule(CrawlURI curi) {
-        sheetOverlaysManager.applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverlaysTo(curi);
         try {
             KeyedProperties.loadOverridesFrom(curi);
             if(curi.getClassKey()==null) {
@@ -391,6 +390,11 @@ implements Closeable,
         int originalPrecedence = wq.getPrecedence();
         
         wq.enqueue(this, curi);
+        // always take budgeting values from current curi
+        // (whose overlay settings should be active here)
+        wq.setSessionBudget(getBalanceReplenishAmount());
+        wq.setTotalBudget(getQueueTotalBudget());
+        
         // Update recovery log.
         doJournalAdded(curi);
         
@@ -428,7 +432,7 @@ implements Closeable,
             if(getHoldQueues()) {
                 deactivateQueue(wq);
             } else {
-                replenishSessionBalance(wq);
+                wq.startActiveSession();
                 readyQueue(wq);
             }
         }
@@ -468,7 +472,6 @@ implements Closeable,
     protected void deactivateQueue(WorkQueue wq) {
         assert Thread.currentThread() == managerThread;
         
-        wq.setSessionBalance(0); // zero out session balance
         int precedence = wq.getPrecedence();
         if(!wq.getOnInactiveQueues().contains(precedence)) {
             // not already on target, add
@@ -548,7 +551,11 @@ implements Closeable,
     abstract Queue<String> getRetiredQueues();
 
     /** 
-     * Accomodate any changes in settings.
+     * Accommodate any changes in retirement-determining settings (like
+     * total-budget or force-retire changes/overlays. 
+     * 
+     * (Essentially, exists to be called from tools like the UI 
+     * Scripting Console when the operator knows it's necessary.)
      */
     public void reconsiderRetiredQueues() {
 
@@ -558,7 +565,7 @@ implements Closeable,
         // be re-retired; if not, they'll get a chance to become
         // active under the new rules.
         
-        // TODO: Only do this when necessary.
+        // TODO: Do this automatically, only when necessary.
         
         String key = getRetiredQueues().poll();
         while (key != null) {
@@ -800,7 +807,7 @@ implements Closeable,
             deactivateQueue(candidateQ);
             return; 
         }
-        replenishSessionBalance(candidateQ);
+        candidateQ.startActiveSession();
         if (candidateQ.isOverBudget()) {
             // if still over-budget after an activation & replenishing,
             // retire
@@ -834,44 +841,6 @@ implements Closeable,
         }
         // nothing waiting
         highestPrecedenceWaiting = Integer.MAX_VALUE;
-    }
-
-    /**
-     * Replenish the budget of the given queue by the appropriate amount.
-     * 
-     * @param queue queue to replenish
-     */
-    private void replenishSessionBalance(WorkQueue queue) {
-        assert queue.peekItem == null : "unexpected peekItem set";
-        // get a CrawlURI for override context purposes
-        CrawlURI contextUri = queue.peek(this); 
-        if(contextUri == null) {
-            // use globals TODO: fix problems this will cause if 
-            // global total budget < override on empty queue
-            queue.setSessionBalance(getBalanceReplenishAmount());
-            queue.setTotalBudget(getQueueTotalBudget());
-            return;
-        }
-        // TODO: consider confusing cross-effects of this and IP-based politeness
-
-        contextUri.setOverlayMapsSource(sheetOverlaysManager);
-        try {
-            // TODO:SPRINGY set override
-            KeyedProperties.loadOverridesFrom(contextUri);
-  
-            //queue.setSessionBalance(contextUri.get(this, BALANCE_REPLENISH_AMOUNT));
-            queue.setSessionBalance(getBalanceReplenishAmount());
-            
-            // reset total budget (it may have changed)
-            // TODO: is this the best way to be sensitive to potential mid-crawl changes
-            // TODO:SPRINGY set override
-            //long totalBudget = contextUri.get(this, QUEUE_TOTAL_BUDGET);
-            long totalBudget = getQueueTotalBudget();
-            queue.setTotalBudget(totalBudget);
-            queue.unpeek(contextUri); // don't insist on that URI being next released
-        } finally {
-            KeyedProperties.clearOverridesFrom(contextUri); 
-        }
     }
 
     /**
@@ -975,7 +944,11 @@ implements Closeable,
      * and other related URIs may become eligible for release
      * via the next next() call, as a result of finished().
      *
-     *  (non-Javadoc)
+     * TODO: make as many decisions about what happens to the CrawlURI
+     * (success, failure, retry) and queue (retire, snooze, ready) as 
+     * possible elsewhere, such as in DispositionProcessor. Then, break
+     * this into simple branches or focused methods for each case. 
+     *  
      * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     protected void processFinish(CrawlURI curi) {
@@ -985,42 +958,31 @@ implements Closeable,
 
         curi.incrementFetchAttempts();
         logNonfatalErrors(curi);
+        
         WorkQueue wq = (WorkQueue) curi.getHolder();
+        // always refresh budgeting values from current curi
+        // (whose overlay settings should be active here)
+        wq.setSessionBudget(getBalanceReplenishAmount());
+        wq.setTotalBudget(getQueueTotalBudget());
+        
         assert (wq.peek(this) == curi) : "unexpected peek " + wq;
         inProcessQueues.remove(wq, 1);
+        int holderCost = curi.getHolderCost();
 
-        if(includesRetireDirective(curi)) {
-            // CrawlURI is marked to trigger retirement of its queue
-            curi.processingCleanup();
+        if (needsReenqueuing(curi)) {
+            // codes/errors which don't consume the URI, leaving it atop queue
+            if(curi.getFetchStatus()!=S_DEFERRED) {
+                wq.expend(holderCost); // all retries but DEFERRED cost
+            }
+            long delay_ms = retryDelayFor(curi) * 1000;
+            curi.processingCleanup(); // lose state that shouldn't burden retry
             wq.unpeek(curi);
             wq.update(this, curi); // rewrite any changes
-            retireQueue(wq);
-            return;
-        }
-        
-        if (needsRetrying(curi)) {
-            // Consider errors which can be retried, leaving uri atop queue
-            if(curi.getFetchStatus()!=S_DEFERRED) {
-                wq.expend(curi.getHolderCost()); // all retries but DEFERRED cost
-            }
-            long delay_sec = retryDelayFor(curi);
-            curi.processingCleanup(); // lose state that shouldn't burden retry
-
-                wq.unpeek(curi);
-                // TODO: consider if this should happen automatically inside unpeek()
-                wq.update(this, curi); // rewrite any changes
-                if (delay_sec > 0) {
-                    long delay_ms = delay_sec * 1000;
-                    snoozeQueue(wq, now, delay_ms);
-                } else {
-                    reenqueueQueue(wq);
-                }
-
-            // Let everyone interested know that it will be retried.
-            appCtx.publishEvent(
-                new CrawlURIDispositionEvent(this,curi,DEFERRED_FOR_RETRY));
+            handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
+            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,DEFERRED_FOR_RETRY));
             doJournalReenqueued(curi);
-            return;
+            
+            return; // no further dequeueing, logging, rescheduling to occur
         }
 
         // Curi will definitely be disposed of without retry, so remove from queue
@@ -1028,56 +990,45 @@ implements Closeable,
         decrementQueuedCount(1);
         log(curi);
 
+        
         if (curi.isSuccess()) {
-            totalProcessedBytes.addAndGet(curi.getRecordedSize());
+            // codes deemed 'success' 
             incrementSucceededFetchCount();
-            // Let everyone know in case they want to do something before we strip the curi.
-            appCtx.publishEvent(
-                new CrawlURIDispositionEvent(this,curi,SUCCEEDED));
+            totalProcessedBytes.addAndGet(curi.getRecordedSize());
+            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,SUCCEEDED));
             doJournalFinishedSuccess(curi);
-            wq.expend(curi.getHolderCost()); // successes cost
+           
         } else if (isDisregarded(curi)) {
-            // Check for codes that mean that while we the crawler did
-            // manage to schedule it, it must be disregarded for some reason.
+            // codes meaning 'undo' (even though URI was enqueued, 
+            // we now want to disregard it from normal success/failure tallies)
+            // (eg robots-excluded, operator-changed-scope, etc)
             incrementDisregardedUriCount();
-            // Let interested listeners know of disregard disposition.
-            appCtx.publishEvent(
-                new CrawlURIDispositionEvent(this,curi,DISREGARDED));
+            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,DISREGARDED));
+            holderCost = 0; // no charge for disregarded URIs
+            // TODO: consider reinstating forget-URI capability, so URI could be
+            // re-enqueued if discovered again
             doJournalDisregarded(curi);
+            
+        } else {
+            // codes meaning 'failure'
+            incrementFailedFetchCount();
+            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,FAILED));
             // if exception, also send to crawlErrors
             if (curi.getFetchStatus() == S_RUNTIME_EXCEPTION) {
                 Object[] array = { curi };
                 loggerModule.getRuntimeErrors().log(Level.WARNING, curi.getUURI()
                         .toString(), array);
-            }
-            // TODO: consider reinstating forget-uri
-        } else {
-            // In that case FAILURE, note & log
-            //Let interested listeners know of failed disposition.
-            appCtx.publishEvent(
-                new CrawlURIDispositionEvent(this,curi,FAILED));
-            // if exception, also send to crawlErrors
-            if (curi.getFetchStatus() == S_RUNTIME_EXCEPTION) {
-                Object[] array = { curi };
-                this.loggerModule.getRuntimeErrors().log(Level.WARNING, curi.getUURI()
-                        .toString(), array);
-            }
-            incrementFailedFetchCount();
-            // let queue note error
-            //TODO:SPRINGY set overrides by curi or wq?
-            assert KeyedProperties.overridesActiveFrom(curi);
-            
+            }        
+            // charge queue any extra error penalty
             wq.noteError(getErrorPenaltyAmount());
             doJournalFinishedFailure(curi);
-            wq.expend(curi.getHolderCost()); // failures cost
+            
         }
 
+        wq.expend(holderCost); // successes & failures charge cost to queue
+        
         long delay_ms = curi.getPolitenessDelay();
-        if (delay_ms > 0) {
-            snoozeQueue(wq,now,delay_ms);
-        } else {
-            reenqueueQueue(wq);
-        }
+        handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
 
         if(curi.getRescheduleTime()>0) {
             // marked up for forced-revisit at a set time
@@ -1090,10 +1041,24 @@ implements Closeable,
             curi.processingCleanup();
         }
     }
-
-    protected boolean includesRetireDirective(CrawlURI curi) {
-        return curi.containsDataKey(A_FORCE_RETIRE) 
-         && (Boolean)curi.getData().get(A_FORCE_RETIRE);
+    
+    /**
+     * Send an active queue to its next state, based on the supplied 
+     * parameters.
+     * 
+     * @param wq
+     * @param forceRetire
+     * @param now
+     * @param delay_ms
+     */
+    protected void handleQueue(WorkQueue wq, boolean forceRetire, long now, long delay_ms) {
+        if(forceRetire) {
+            retireQueue(wq);
+        } else if (delay_ms > 0) {
+            snoozeQueue(wq, now, delay_ms);
+        } else {
+            reenqueueQueue(wq);
+        }
     }
 
     /**
@@ -1594,7 +1559,7 @@ implements Closeable,
 
     public void considerIncluded(CrawlURI curi) {
         this.uriUniqFilter.note(curi.getCanonicalString());
-        sheetOverlaysManager.applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverlaysTo(curi);
         try {
             KeyedProperties.loadOverridesFrom(curi);
             curi.setClassKey(getClassKey(curi));
@@ -1675,5 +1640,5 @@ implements Closeable,
         return inProcessQueues.size();
     }
 
-}
+} // TODO: slim class! Suspect it should be < 800 lines, shedding budgeting/reporting
 

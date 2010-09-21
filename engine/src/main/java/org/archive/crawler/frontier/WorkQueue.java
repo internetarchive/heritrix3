@@ -58,56 +58,59 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     protected final String classKey;
 
     /** whether queue is active (ready/in-process/snoozed) or on a waiting queue */
-    private boolean active = true;
+    protected boolean active = true;
 
     /** Total number of stored items */
-    private long count = 0;
+    protected long count = 0;
 
     /** Total number of items ever enqueued */
-    private long enqueueCount = 0;
+    protected long enqueueCount = 0;
     
     /** Whether queue is already in lifecycle stage */
-    private boolean isHeld = false;
+    protected boolean isHeld = false;
 
     /** Time to wake, if snoozed */
-    private long wakeTime = 0;
+    protected long wakeTime = 0;
 
     /** assigned precedence */
-    private PrecedenceProvider precedenceProvider = new SimplePrecedenceProvider(1);
+    protected PrecedenceProvider precedenceProvider = new SimplePrecedenceProvider(1);
         
     /** set of by-precedence inactive-queues on which WorkQueue is waiting */
-    private Set<Integer> onInactiveQueues = new HashSet<Integer>();
+    protected Set<Integer> onInactiveQueues = new HashSet<Integer>();
     
-    /** Running 'budget' indicating whether queue should stay active */
-    private int sessionBalance = 0;
+    /** Per-session 'budget' controlling activity duration */
+    protected int sessionBudget = 0;
 
     /** Cost of the last item to be charged against queue */
-    private int lastCost = 0;
+    protected int lastCost = 0;
 
     /** Total number of items charged against queue; with totalExpenditure
      * can be used to calculate 'average cost'. */
-    private long costCount = 0;
+    protected long costCount = 0;
 
     /** Running tally of total expenditures on this queue */
-    private long totalExpenditure = 0;
+    protected long totalExpenditure = 0;
 
+    /** Record of expenditures at last activation (session start) */
+    protected long expenditureAtLastActivation = 0;
+    
     /** Total to spend on this queue over its lifetime */
-    private long totalBudget = 0;
+    protected long totalBudget = 0;
 
     /** The next item to be returned */
     transient protected CrawlURI peekItem = null;
 
     /** Last URI enqueued */
-    private String lastQueued;
+    protected String lastQueued;
 
     /** Last URI peeked */
-    private String lastPeeked;
+    protected String lastPeeked;
 
     /** time of last dequeue (disposition of some URI) **/ 
-    private long lastDequeueTime;
+    protected long lastDequeueTime;
     
     /** count of errors encountered */
-    private long errorCount = 0;
+    protected long errorCount = 0;
     
     /** Substats for all CrawlURIs in this group */
     protected FetchStats substats = new FetchStats();
@@ -202,12 +205,16 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
 
     /**
-     * Set the session 'activity budget balance' to the given value
+     * Set the session 'activity budget' to the given value. Automatically
+     * reset continually as new CrawlURIs are enqueued; a direct change
+     * here by operator will not persist. Instead, change the 'balanceReplenishAmount' 
+     * (or overlay its value with a URI/queue-specific value) to affect this
+     * value.
      * 
      * @param balance to use
      */
-    public void setSessionBalance(int balance) {
-        this.sessionBalance = balance;
+    void setSessionBudget(int budget) {
+        this.sessionBudget = budget;
     }
 
     /**
@@ -215,30 +222,39 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @return session balance
      */
-    public int getSessionBalance() {
-        return this.sessionBalance;
+    public int getSessionBudget() {
+        return this.sessionBudget;
     }
 
+    public void startActiveSession() {
+        expenditureAtLastActivation = totalExpenditure;
+    }
+    
     /**
      * Set the total expenditure level allowable before queue is 
      * considered inherently 'over-budget'. 
      * 
+     * Automatically reset continually as new CrawlURIs are enqueued; a direct change
+     * here by operator will not persist. Instead, change the 'queueTotalBudget' 
+     * (or overlay its value with a URI/queue-specific value) to affect this
+     * value.
+     * 
      * @param budget
      */
-    public void setTotalBudget(long budget) {
+    void setTotalBudget(long budget) {
         this.totalBudget = budget;
     }
 
     /**
-     * Check whether queue has temporarily or permanently exceeded
-     * its budget. 
+     * Check whether queue has temporarily (session) or permanently (total) 
+     * exceeded its budgets.
      * 
-     * @return true if queue is over its set budget(s)
+     * @return true if queue is over either of its set budget(s)
      */
     public boolean isOverBudget() {
-        // check whether running balance is depleted 
+        // check whether session budget exceeded
         // or totalExpenditure exceeds totalBudget
-        return this.sessionBalance <= 0
+        return (sessionBudget > 0 && (totalExpenditure - expenditureAtLastActivation) > sessionBudget)
             || (this.totalBudget >= 0 && this.totalExpenditure >= this.totalBudget);
     }
 
@@ -252,49 +268,28 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
 
     /**
-     * Increase the internal running budget to be used before 
-     * deactivating the queue
+     * Decrease the internal running budget by the given amount. (Use
+     * negative value to effect 'refund'/undo.)
      * 
-     * @param amount amount to increment
-     * @return updated budget value
-     */
-    public int incrementSessionBalance(int amount) {
-        this.sessionBalance = this.sessionBalance + amount;
-        return this.sessionBalance;
-    }
-
-    /**
-     * Decrease the internal running budget by the given amount. 
      * @param amount tp decrement
      * @return updated budget value
      */
-    public int expend(int amount) {
-        this.sessionBalance = this.sessionBalance - amount;
+    public void expend(int amount) {
         this.totalExpenditure = this.totalExpenditure + amount;
-        this.lastCost = amount;
-        this.costCount++;
-        return this.sessionBalance;
+        if(amount >= 0) {
+            this.lastCost = amount;
+            this.costCount++;
+        } else {
+            this.costCount--; 
+        }
     }
 
-    /**
-     * A URI should not have been charged against queue (eg
-     * it was disregarded); return the amount expended 
-     * @param amount to return
-     * @return updated budget value
-     */
-    public int refund(int amount) {
-        this.sessionBalance = this.sessionBalance + amount;
-        this.totalExpenditure = this.totalExpenditure - amount;
-        this.costCount--;
-        return this.sessionBalance;
-    }
     
     /**
      * Note an error and assess an extra penalty. 
      * @param penalty additional amount to deduct
      */
     public void noteError(int penalty) {
-        this.sessionBalance = this.sessionBalance - penalty;
         this.totalExpenditure = this.totalExpenditure + penalty;
         errorCount++;
     }
@@ -395,12 +390,10 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @param frontier Work queues manager.
      * @param curi CrawlURI to update.
      */
-    public void update(final WorkQueueFrontier frontier, CrawlURI curi) {
+    protected void update(final WorkQueueFrontier frontier, CrawlURI curi) {
         try {
             insert(frontier, curi, true);
         } catch (IOException e) {
-            //FIXME better exception handling
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -536,7 +529,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         map.put("precedence", getPrecedence());
         map.put("itemCount", count);
         map.put("enqueueCount", enqueueCount);
-        map.put("sessionBalance", sessionBalance);
+        map.put("sessionBalance", getSessionBalance());
         map.put("lastCost", lastCost);
         map.put("averageCost", (double) totalExpenditure / costCount);
         if (lastDequeueTime != 0) {
@@ -558,6 +551,10 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return map;
     }
 
+    protected long getSessionBalance() {
+        return sessionBudget - (totalExpenditure-expenditureAtLastActivation);
+    }
+
     public void shortReportLineTo(PrintWriter writer) {
         // queue name
         writer.print(classKey);
@@ -571,7 +568,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         // enqueue count
         writer.print(Long.toString(enqueueCount));
         writer.print(" ");
-        writer.print(sessionBalance);
+        writer.print(getSessionBalance());
         writer.print(" ");
         writer.print(lastCost);
         writer.print("(");
@@ -643,7 +640,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print(Long.toString(totalBudget));
         writer.print(")\n");
         writer.print("   active balance: ");
-        writer.print(sessionBalance);
+        writer.print(getSessionBalance());
         writer.print("\n   last(avg) cost: ");
         writer.print(lastCost);
         writer.print("(");
@@ -669,7 +666,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param b new value for retired status
      */
-    public void setRetired(boolean b) {
+    void setRetired(boolean b) {
         this.retired = b;
     }
     

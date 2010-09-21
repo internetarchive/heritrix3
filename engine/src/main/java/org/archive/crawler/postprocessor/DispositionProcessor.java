@@ -131,6 +131,22 @@ public class DispositionProcessor extends Processor {
     }
     
     /**
+     * Whether to set a CrawlURI's force-retired directive, retiring
+     * its queue when it finishes. Mainly intended for URI-specific 
+     * overlay settings; setting true globally will just retire all queues 
+     * after they offer one URI, rapidly ending a crawl. 
+     */
+    {
+        setForceRetire(false);
+    }
+    public boolean getForceRetire() {
+        return (Boolean) kp.get("forceRetire");
+    }
+    public void setForceRetire(boolean force) {
+        kp.put("forceRetire",force);
+    }
+    
+    /**
      * Auto-discovered module providing configured (or overridden)
      * User-Agent value and RobotsHonoringPolicy
      */
@@ -194,6 +210,11 @@ public class DispositionProcessor extends Processor {
         
         // set politeness delay
         curi.setPolitenessDelay(politenessDelayFor(curi));
+        
+        // consider operator-set force-retire
+        if (getForceRetire()) {
+            curi.setForceRetire(true);
+        }
         
         // TODO: set other disposition decisions
         // success, failure, retry(retry-delay)

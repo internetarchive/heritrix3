@@ -288,7 +288,6 @@ implements Checkpointable, BeanNameAware {
             for (String key : allQueues.keySet()) {
                 WorkQueue q = allQueues.get(key);
                 q.getOnInactiveQueues().clear();
-                q.setSessionBalance(0); 
                 if(q.isRetired()) {
                     getRetiredQueues().add(key); 
                 } else {

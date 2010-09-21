@@ -21,6 +21,7 @@ package org.archive.crawler.frontier;
 
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
@@ -494,6 +495,9 @@ public abstract class AbstractFrontier
         
         
         CrawlURI retval = outbound.take();
+        // TODO: consider optimizations avoiding this recalc of
+        // overrides when not necessary
+        sheetOverlaysManager.applyOverlaysTo(retval);
 //      // TODO: consider if following necessary for maintaining throughput
 //        if(outbound.size()<=1) {
 //            doOrEnqueue(NOOP);
@@ -567,7 +571,7 @@ public abstract class AbstractFrontier
      * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
     public void schedule(CrawlURI curi) {
-        sheetOverlaysManager.applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverlaysTo(curi);
         if(curi.getClassKey()==null) {
             // remedial processing
             try {
@@ -590,7 +594,7 @@ public abstract class AbstractFrontier
      * @param caUri CrawlURI.
      */
     public void receive(CrawlURI curi) {
-        sheetOverlaysManager.applyOverridesTo(curi);
+        sheetOverlaysManager.applyOverlaysTo(curi);
         // prefer doing asap if already in manager thread
         doOrEnqueue(new ScheduleAlways(curi));
     }
@@ -956,7 +960,7 @@ public abstract class AbstractFrontier
                         String uriHopsViaString = read.substring(3).trim();
                         CrawlURI curi = CrawlURI.fromHopsViaString(uriHopsViaString);
                         if(scope!=null) {
-                            sheetOverlaysManager.applyOverridesTo(curi);
+                            sheetOverlaysManager.applyOverlaysTo(curi);
                             try {
                                 KeyedProperties.loadOverridesFrom(curi);
                                 if(!scope.accepts(curi)) {
@@ -1111,14 +1115,15 @@ public abstract class AbstractFrontier
     }
 
     /**
-     * Checks if a recently completed CrawlURI that did not finish successfully
-     * needs to be retried (processed again after some time elapses)
+     * Checks if a recently processed CrawlURI that did not finish successfully
+     * needs to be reenqueued (and thus possibly, processed again after some 
+     * time elapses)
      * 
      * @param curi
      *            The CrawlURI to check
      * @return True if we need to retry.
      */
-    protected boolean needsRetrying(CrawlURI curi) {
+    protected boolean needsReenqueuing(CrawlURI curi) {
         if (overMaxRetries(curi)) {
             return false;
         }
@@ -1144,6 +1149,10 @@ public abstract class AbstractFrontier
             // TODO: consider if any others (S_TIMEOUT in some cases?) deserve
             // retry
             return true;
+        case S_UNATTEMPTED:
+            if(curi.includesRetireDirective()) {
+                return true;
+            } // otherwise, fall-through: no status is an error without queue-directive
         default:
             return false;
         }

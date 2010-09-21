@@ -1863,4 +1863,9 @@ implements MultiReporter, Serializable, OverlayContext {
         // deferrals from now don't count against future try
         resetDeferrals();
     }
+
+    public boolean includesRetireDirective() {
+        return containsDataKey(A_FORCE_RETIRE) 
+         && (Boolean)getData().get(A_FORCE_RETIRE);
+    }
 }

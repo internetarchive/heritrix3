@@ -136,7 +136,7 @@ public class CandidatesProcessor extends Processor {
         if (curi.hasPrerequisiteUri() && curi.getFetchStatus() == S_DEFERRED) {
             CrawlURI prereq = curi.getPrerequisiteUri();
             prereq.setFullVia(curi); 
-            sheetOverlaysManager.applyOverridesTo(prereq);
+            sheetOverlaysManager.applyOverlaysTo(prereq);
             try {
                 KeyedProperties.clearOverridesFrom(curi); 
                 KeyedProperties.loadOverridesFrom(prereq);
@@ -172,7 +172,7 @@ public class CandidatesProcessor extends Processor {
                         wref.getDestination().toString());
                 continue;
             }
-            sheetOverlaysManager.applyOverridesTo(candidate);
+            sheetOverlaysManager.applyOverlaysTo(candidate);
             try {
                 KeyedProperties.clearOverridesFrom(curi); 
                 KeyedProperties.loadOverridesFrom(candidate);
