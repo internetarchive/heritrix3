@@ -310,6 +310,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     public void applyOverlaysTo(CrawlURI curi) {
         curi.setOverlayMapsSource(this); 
         // apply SURT-based overlays
+        curi.getOverlayNames().clear(); // clear previous info
         String effectiveSurt = SurtPrefixSet.getCandidateSurt(curi.getPolicyBasisUURI());
         List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
         for(String prefix : foundPrefixes) {
