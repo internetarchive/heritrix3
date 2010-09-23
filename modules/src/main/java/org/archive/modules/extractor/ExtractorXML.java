@@ -24,10 +24,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.TextUtils;
 
 /**
  * A simple extractor which finds HTTP URIs inside XML/RSS files,
@@ -44,8 +44,6 @@ public class ExtractorXML extends ContentExtractor {
 
     private static Logger logger =
         Logger.getLogger(ExtractorXML.class.getName());
-
-    private static String ESCAPED_AMP = "&amp";
 
     static final Pattern XML_URI_EXTRACTOR = Pattern.compile(    
     "(?i)[\"\'>]\\s*(http:[^\\s\"\'<>]+)\\s*[\"\'<]"); 
@@ -101,9 +99,7 @@ public class ExtractorXML extends ContentExtractor {
         String xmlUri;
         uris = XML_URI_EXTRACTOR.matcher(cs);
         while (uris.find()) {
-            xmlUri = uris.group(1);
-            // TODO: Escape more HTML Entities.
-            xmlUri = TextUtils.replaceAll(ESCAPED_AMP, xmlUri, "&");
+            xmlUri = StringEscapeUtils.unescapeXml(uris.group(1));
             foundLinks++;
             try {
                 // treat as speculative, as whether context really 
