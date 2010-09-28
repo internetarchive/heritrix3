@@ -56,6 +56,7 @@ import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.ToeThread;
 import org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy;
 import org.archive.crawler.frontier.precedence.QueuePrecedencePolicy;
+import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
@@ -85,9 +86,6 @@ implements Closeable,
            ApplicationContextAware {
     private static final long serialVersionUID = 570384305871965843L;
 
-    /** truncate reporting of queues at some large but not unbounded number */
-    private static final int REPORT_MAX_QUEUES = 2000;
-    
     /**
      * If we know that only a small amount of queues is held in memory,
      * we can avoid using a disk-based BigMap.
@@ -189,7 +187,14 @@ implements Closeable,
         this.precedenceFloor = floor;
     }
 
-
+    /** truncate reporting of queues at this large but not unbounded number */
+    protected int maxQueuesPerReportCategory = 2000; 
+    public int getMaxQueuesPerReportCategory() {
+        return this.maxQueuesPerReportCategory;
+    }
+    public void setMaxQueuesPerReportCategory(int max) {
+        this.maxQueuesPerReportCategory = max;
+    }
 
     /** All known queues.
      */
@@ -217,8 +222,19 @@ implements Closeable,
     /** URIs scheduled to be re-enqueued at future date */
     protected StoredSortedMap<Long, CrawlURI> futureUris; 
     
-    transient protected WorkQueue longestActiveQueue = null;
-
+    /** remember keys of small number of largest queues for reporting */
+    transient protected TopNSet largestQueues = new TopNSet(20);
+    /** remember this many largest queues for reporting's sake; actual tracking
+     *  can be somewhat approximate when some queues shrink before others' 
+     *  sizes are again noted, or if the size is adjusted mid-crawl. */
+    public int getLargestQueuesCount() {
+        return largestQueues.getMaxSize();
+    }
+    public void setLargestQueuesCount(int count) {
+        largestQueues.setMaxSize(count);
+    }
+    
+    
     protected int highestPrecedenceWaiting = Integer.MAX_VALUE;
 
     /** The UriUniqFilter to use, tracking those UURIs which are 
@@ -436,11 +452,7 @@ implements Closeable,
                 readyQueue(wq);
             }
         }
-        WorkQueue laq = longestActiveQueue;
-        if(((laq==null) || wq.getCount() > laq.getCount())) {
-            longestActiveQueue = wq; 
-        }
-
+        largestQueues.update(wq.getClassKey(), wq.getCount());
     }
 
     /**
@@ -1441,39 +1453,36 @@ implements Closeable,
         w.print("\n -----===== MANAGER THREAD =====-----\n");
         ToeThread.reportThread(managerThread, w);
         
-        WorkQueue longest = longestActiveQueue;
-        if (longest != null) {
-            w.print("\n -----===== LONGEST QUEUE =====-----\n");
-            longest.reportTo(w);
-        }
+        w.print("\n -----===== "+largestQueues.size()+" LONGEST QUEUES =====-----\n");
+        appendQueueReports(w, "LONGEST", largestQueues.getEntriesDescending().iterator(), largestQueues.size(), largestQueues.size());
         
         w.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
         @SuppressWarnings("unchecked")
         Collection<WorkQueue> inProcess = inProcessQueues;
-        ArrayList<WorkQueue> copy = extractSome(inProcess, REPORT_MAX_QUEUES);
-        appendQueueReports(w, "IN-PROCESS", copy.iterator(), copy.size(), REPORT_MAX_QUEUES);
+        ArrayList<WorkQueue> copy = extractSome(inProcess, maxQueuesPerReportCategory);
+        appendQueueReports(w, "IN-PROCESS", copy.iterator(), copy.size(), maxQueuesPerReportCategory);
         
         w.print("\n -----===== READY QUEUES =====-----\n");
         appendQueueReports(w, "READY", this.readyClassQueues.iterator(),
-            this.readyClassQueues.size(), REPORT_MAX_QUEUES);
+            this.readyClassQueues.size(), maxQueuesPerReportCategory);
 
         w.print("\n -----===== SNOOZED QUEUES =====-----\n");
         Object[] objs = snoozedClassQueues.toArray();
         DelayedWorkQueue[] qs = Arrays.copyOf(objs,objs.length,DelayedWorkQueue[].class);
         Arrays.sort(qs);
-        appendQueueReports(w, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), REPORT_MAX_QUEUES);
+        appendQueueReports(w, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), maxQueuesPerReportCategory);
         
         w.print("\n -----===== INACTIVE QUEUES =====-----\n");
         SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
         for(Integer prec : sortedInactives.keySet()) {
             Queue<String> inactiveQueues = sortedInactives.get(prec);
             appendQueueReports(w, "INACTIVE-p"+prec, inactiveQueues.iterator(),
-                    inactiveQueues.size(), REPORT_MAX_QUEUES);
+                    inactiveQueues.size(), maxQueuesPerReportCategory);
         }
         
         w.print("\n -----===== RETIRED QUEUES =====-----\n");
         appendQueueReports(w, "RETIRED", getRetiredQueues().iterator(),
-            getRetiredQueues().size(), REPORT_MAX_QUEUES);
+            getRetiredQueues().size(), maxQueuesPerReportCategory);
 
         w.flush();
     }
@@ -1513,6 +1522,7 @@ implements Closeable,
      * @param total
      * @param max
      */
+    @SuppressWarnings("unchecked")
     protected void appendQueueReports(PrintWriter w, String label, Iterator<?> iterator,
             int total, int max) {
         Object obj;
@@ -1527,6 +1537,8 @@ implements Closeable,
                 q = (WorkQueue)obj;
             } else if (obj instanceof DelayedWorkQueue) {
                 q = (WorkQueue)((DelayedWorkQueue)obj).getWorkQueue(this);
+            } else if (obj instanceof Map.Entry) {
+                q = this.allQueues.get((String)((Map.Entry)obj).getKey());
             } else {
                 q = this.allQueues.get((String)obj);
             }
@@ -1616,7 +1628,7 @@ implements Closeable,
         return (float)(activeCount + eligibleInactiveCount) / (inProcessCount + snoozedCount);
     }
     public long deepestUri() {
-        return longestActiveQueue==null ? -1 : longestActiveQueue.getCount();
+        return largestQueues.getTopSet().size()==0 ? -1 : largestQueues.getTopSet().get(largestQueues.getLargest());
     }
     
     /** 
@@ -1641,4 +1653,3 @@ implements Closeable,
     }
 
 } // TODO: slim class! Suspect it should be < 800 lines, shedding budgeting/reporting
-

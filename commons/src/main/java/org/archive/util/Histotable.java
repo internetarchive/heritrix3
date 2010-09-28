@@ -32,7 +32,12 @@ import java.util.TreeSet;
  * 
  * Assumes external synchronization.
  * 
- * @author gojomo
+ * TODO: Histotable and TopNSet that they could possibly
+ * have a closer relationship and share some code (even though Histotable 
+ * tracks 'all' keys, and handles increments, while TopNSet only remembers
+ * a small subset of keys, and requires a fresh full value on each update.)
+ * 
+ * @contributor gojomo
  */
 public class Histotable<K> extends TreeMap<K,Long> {    
     private static final long serialVersionUID = 310306238032568623L;
@@ -62,32 +67,46 @@ public class Histotable<K> extends TreeMap<K,Long> {
     }
     
     /**
-     * @return Return an up-to-date sorted version of the totalled info.
+     * Get a SortedSet that, when filled with (String key)->(long count) 
+     * Entry instances, sorts them by (count, key) descending, as is useful 
+     * for most-frequent displays. 
+     * 
+     * Static to allow reuse elsewhere (TopNSet) until a better home for
+     * this utility method is found. 
+     * 
+     * @return TreeSet with suitable Comparator
      */
-    public TreeSet<Map.Entry<K,Long>> getSortedByCounts() {
+    public static TreeSet<Map.Entry<?,Long>> getEntryByFrequencySortedSet() {
         // sorted by count
-        TreeSet<Map.Entry<K,Long>> sorted = 
-          new TreeSet<Map.Entry<K,Long>>(
-           new Comparator<Map.Entry<K,Long>>() {
-            public int compare(Map.Entry<K,Long> e1, 
-                    Map.Entry<K,Long> e2) {
+        TreeSet<Map.Entry<?,Long>> sorted = 
+          new TreeSet<Map.Entry<?,Long>>(
+           new Comparator<Map.Entry<?,Long>>() {
+            public int compare(Map.Entry<?,Long> e1, 
+                    Map.Entry<?,Long> e2) {
                 long firstVal = e1.getValue();
                 long secondVal = e2.getValue();
                 if (firstVal < secondVal) { return 1; }
                 if (secondVal < firstVal) { return -1; }
                 // If the values are the same, sort by keys.
-                String firstKey = ((Map.Entry<K,Long>) e1).getKey().toString();
-                String secondKey = ((Map.Entry<K,Long>) e2).getKey().toString();
+                String firstKey = ((Map.Entry<?,Long>) e1).getKey().toString();
+                String secondKey = ((Map.Entry<?,Long>) e2).getKey().toString();
                 return firstKey.compareTo(secondKey);
             }
         });
-        
-        sorted.addAll(entrySet());
         return sorted;
     }
     
     /**
-     * @return Return an up-to-date sorted version of the totalled info.
+     * @return Return an up-to-date count-descending sorted version of the totaled info.
+     */
+    public TreeSet<Map.Entry<?,Long>> getSortedByCounts() {
+        TreeSet<java.util.Map.Entry<?, Long>> sorted = getEntryByFrequencySortedSet();
+        sorted.addAll(entrySet());
+        return sorted; 
+    }
+    
+    /**
+     * @return Return an up-to-date sorted version of the totaled info.
      */
     public Set<Map.Entry<K,Long>> getSortedByKeys() {
         return entrySet();
