@@ -1000,6 +1000,7 @@ implements Closeable,
         // Curi will definitely be disposed of without retry, so remove from queue
         wq.dequeue(this,curi);
         decrementQueuedCount(1);
+        largestQueues.update(wq.getClassKey(), wq.getCount());
         log(curi);
 
         
