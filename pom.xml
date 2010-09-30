@@ -20,7 +20,7 @@
   <groupId>org.archive</groupId>
   <!--This project is parent to all under 'projects' subdirectory-->
   <artifactId>heritrix</artifactId>
-  <version>3.1.1-SNAPSHOT</version>
+  <version>3.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Heritrix 3</name>
   <description>
