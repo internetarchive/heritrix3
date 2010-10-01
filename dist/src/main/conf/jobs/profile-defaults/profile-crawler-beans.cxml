@@ -472,28 +472,11 @@ http://example.example/example
  <property name='targetSheetNames'>
   <list>
    <value>veryPolite</value>
-   <value>highPrecedence</value>
-  </list>
- </property>
-</bean>
--->
-
-<!--
-<bean class='org.archive.crawler.spring.SurtPrefixesSheetAssociation'>
- <property name='surtPrefixes'>
-  <list>
-  <value>http://(com,example,</value>
-  <value>http://(org,example,</value>
-  </list>
- </property>
- <property name='targetSheetNames'>
-  <list>
-   <value>veryPolite</value>
    <value>smallBudget</value>
   </list>
  </property>
 </bean>
-  -->
+-->
 
  <!-- 
    OPTIONAL BUT RECOMMENDED BEANS
