@@ -60,18 +60,19 @@ public class ExtractorXML extends ContentExtractor {
     @Override
     protected boolean shouldExtract(CrawlURI curi) {
         String mimeType = curi.getContentType();
-        if (mimeType == null) {
+
+        try {
+            return mimeType != null
+                    && (mimeType.toLowerCase().indexOf("xml") >= 0
+                            || curi.toString().toLowerCase().endsWith(".rss")
+                            || curi.toString().toLowerCase().endsWith(".xml") 
+                            || curi.getRecorder().getReplayCharSequence()
+                                .subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*"));
+        } catch (IOException e) {
+            logger.severe(curi + " - failed getting ReplayCharSequence: " + e);
             return false;
-        }
-        if ((mimeType.toLowerCase().indexOf("xml") < 0) 
-                && (!curi.toString().toLowerCase().endsWith(".rss"))
-                && (!curi.toString().toLowerCase().endsWith(".xml"))) {
-            return false;
-        }
-        
-        return true;
+        } 
     }
-    
     
     /**
      * @param curi Crawl URI to process.
