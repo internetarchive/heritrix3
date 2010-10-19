@@ -42,17 +42,14 @@ public abstract class ContentExtractor extends Extractor {
 
     /**
      * Determines if links should be extracted from the given URI.  This 
-     * method performs three checks.  The first is to check the URI's
-     * {@link ExtractorURI#hasBeenLinkExtracted()} result.  If that
-     * result is true, then this method returns false, as some other 
-     * extractor has claimed that links are already extracted.
+     * method performs two checks. 
      * 
-     * <p>Next, this method checks that the content length of the URI is
+     * <p>First, this method checks that the content length of the URI is
      * greater than zero (in other words, that there is actually content
      * for links to be extracted from).  If the content length of the URI
      * is zero or less, then this method returns false.
      * 
-     * <p>Finally, this method delegates to {@link #innerExtract(ExtractorURI)}
+     * <p>Finally, this method delegates to {@link #shouldExtract(CrawlURI))}
      * and returns that result.
      *
      * @param uri   the URI to check
@@ -60,9 +57,6 @@ public abstract class ContentExtractor extends Extractor {
      *   false otherwise
      */
     final protected boolean shouldProcess(CrawlURI uri) {
-        if (uri.hasBeenLinkExtracted()) {
-            return false;
-        }
         if (uri.getContentLength() <= 0) {
             return false;
         }
@@ -72,19 +66,16 @@ public abstract class ContentExtractor extends Extractor {
         return true;
     }
 
-
     /**
      * Determines if otherwise valid URIs should have links extracted or not.
-     * The given URI will not have its 
-     * {@link ExtractorURI#hasBeenLinkExtracted()} flag set, and its
-     * content length will be greater than zero.  Subclasses should 
-     * implement this method to perform additional checks.  For instance,
-     * the {@link ExtractorHTML} implementation checks that the content-type
-     * of the given URI is text/html.
+     * The given URI will have content length greater than zero. Subclasses
+     * should implement this method to perform additional checks. For instance,
+     * the {@link ExtractorHTML} implementation checks that the content-type of
+     * the given URI is text/html.
      * 
-     * @param uri   the URI to check
-     * @return   true if links should be extracted from that URI, false
-     *   otherwise
+     * @param uri
+     *            the URI to check
+     * @return true if links should be extracted from that URI, false otherwise
      */
     protected abstract boolean shouldExtract(CrawlURI uri);
 

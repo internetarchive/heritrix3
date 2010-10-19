@@ -802,16 +802,10 @@ implements MultiReporter, Serializable, OverlayContext {
      * If true then a link extractor has already claimed this CrawlURI and
      * performed link extraction on the document content. This does not
      * preclude other link extractors that may have an interest in this
-     * CrawlURI from also doing link extraction but default behavior should
-     * be to not run if link extraction has already been done.
+     * CrawlURI from also doing link extraction.
      * 
      * <p>There is an onus on link extractors to set this flag if they have
      * run.
-     * 
-     * <p>The only extractor of the default Heritrix set that does not
-     * respect this flag is
-     * {@link org.archive.crawler.extractor.ExtractorHTTP}.
-     * It runs against HTTP headers, not the document content.
      * 
      * @return True if a processor has performed link extraction on this
      * CrawlURI
