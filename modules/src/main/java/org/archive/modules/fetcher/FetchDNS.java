@@ -158,20 +158,21 @@ public class FetchDNS extends Processor {
 
         // Try to get the records for this host (assume domain name)
         // TODO: Bug #935119 concerns potential hang here
+        String lookupName = dnsName.endsWith(".") ? dnsName : dnsName + ".";
         try {
-            rrecordSet = (new Lookup(dnsName, TypeType, ClassType)).run();
+            rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
         } catch (TextParseException e) {
             rrecordSet = null;
         }
         curi.setContentType("text/dns");
         if (rrecordSet != null) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Found recordset for " + dnsName);
+                logger.fine("Found recordset for " + lookupName);
             }
         	storeDNSRecord(curi, dnsName, targetHost, rrecordSet);
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Failed find of recordset for " + dnsName);
+                logger.fine("Failed find of recordset for " + lookupName);
             }
             if (getAcceptNonDnsResolves()||"localhost".equals(dnsName)) {
                 // Do lookup that bypasses javadns.
