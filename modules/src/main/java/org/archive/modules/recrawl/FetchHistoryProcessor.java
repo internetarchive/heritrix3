@@ -131,8 +131,8 @@ public class FetchHistoryProcessor extends Processor {
 
 
     @Override
-    protected boolean shouldProcess(CrawlURI uri) {
-        // TODO evaluate if any pre-eligibility testing should occur
-        return true;
+    protected boolean shouldProcess(CrawlURI curi) {
+        // only process if curi contains evidence of fetch attempt
+        return curi.containsDataKey(A_FETCH_BEGAN_TIME);
     }
 }
