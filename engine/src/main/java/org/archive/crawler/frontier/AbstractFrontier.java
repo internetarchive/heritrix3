@@ -145,6 +145,15 @@ public abstract class AbstractFrontier
         kp.put("maxOutlinks", max);
     }
     
+    {
+        setIndependentExtractors(false);
+    }
+    public boolean isIndependentExtractors() {
+        return (Boolean) kp.get("independentExtractors");
+    }
+    public void setIndependentExtractors(boolean enabled) {
+        kp.put("independentExtractors", enabled);
+    }
     
     /** inbound updates: URIs to be scheduled, finished; requested state changes */
     protected BlockingQueue<InEvent> inbound;

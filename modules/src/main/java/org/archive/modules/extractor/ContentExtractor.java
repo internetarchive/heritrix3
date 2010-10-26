@@ -39,24 +39,33 @@ public abstract class ContentExtractor extends Extractor {
         }
     }
 
-
     /**
-     * Determines if links should be extracted from the given URI.  This 
-     * method performs two checks. 
+     * Determines if links should be extracted from the given URI. This method
+     * performs three checks. The first check runs only if
+     * {@link ExtractorParameters#isIndependentExtractors()} is false. It checks
+     * {@link ExtractorURI#hasBeenLinkExtracted()} result. If that result is
+     * true, then this method returns false, as some other extractor has claimed
+     * that links are already extracted.
      * 
-     * <p>First, this method checks that the content length of the URI is
-     * greater than zero (in other words, that there is actually content
-     * for links to be extracted from).  If the content length of the URI
-     * is zero or less, then this method returns false.
+     * <p>
+     * Next, this method checks that the content length of the URI is greater
+     * than zero (in other words, that there is actually content for links to be
+     * extracted from). If the content length of the URI is zero or less, then
+     * this method returns false.
      * 
-     * <p>Finally, this method delegates to {@link #shouldExtract(CrawlURI))}
-     * and returns that result.
-     *
-     * @param uri   the URI to check
-     * @return   true if links should be extracted from the URI, 
-     *   false otherwise
+     * <p>
+     * Finally, this method delegates to {@link #innerExtract(ExtractorURI)} and
+     * returns that result.
+     * 
+     * @param uri
+     *            the URI to check
+     * @return true if links should be extracted from the URI, false otherwise
      */
     final protected boolean shouldProcess(CrawlURI uri) {
+        if (!getExtractorParameters().isIndependentExtractors()
+                && uri.hasBeenLinkExtracted()) {
+            return false;
+        }
         if (uri.getContentLength() <= 0) {
             return false;
         }

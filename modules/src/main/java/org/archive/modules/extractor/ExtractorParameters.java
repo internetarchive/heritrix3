@@ -29,4 +29,5 @@ package org.archive.modules.extractor;
  */
 public interface ExtractorParameters {
     public int getMaxOutlinks();
+    public boolean isIndependentExtractors();
 }

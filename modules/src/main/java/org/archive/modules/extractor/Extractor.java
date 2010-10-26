@@ -55,6 +55,9 @@ public abstract class Extractor extends Processor {
             public int getMaxOutlinks() {
                 return 6000;
             }
+            public boolean isIndependentExtractors() {
+                return false;
+            }
         };
 
     transient protected UriErrorLoggerModule loggerModule;

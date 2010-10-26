@@ -373,6 +373,7 @@ http://example.example/example
   <!-- <property name="maxRetries" value="30" /> -->
   <!-- <property name="recoveryLogEnabled" value="true" /> -->
   <!-- <property name="maxOutlinks" value="6000" /> -->
+  <!-- <property name="independentExtractors" value="false" /> -->
   <!-- <property name="outbound">
         <bean class="java.util.concurrent.ArrayBlockingQueue">
          <constructor-arg value="200"/>
