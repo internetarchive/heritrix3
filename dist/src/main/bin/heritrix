@@ -64,9 +64,7 @@ fi
 if [ -z "$JAVACMD" ] 
 then 
    # It may be defined in env - including flags!!
-   # See '[ 1482761 ] BDB Adler32 gc-lock OOME risk' for why we include the
-   # 'je.disable.java.adler32'.
-   JAVACMD="$JAVA_HOME/bin/java -Dje.disable.java.adler32=true"
+   JAVACMD="$JAVA_HOME/bin/java"
 fi
 
 # Ignore previous classpath.  Build one that contains heritrix jar and content
