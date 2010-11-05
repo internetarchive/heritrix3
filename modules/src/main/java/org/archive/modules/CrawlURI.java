@@ -77,6 +77,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
+import org.archive.bdb.AutoKryo;
 import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
@@ -116,7 +117,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * The URI being crawled.  It's transient to save space when storing to BDB.
      */
-    private transient UURI uuri;
+    private UURI uuri;
 
     
     /** Seed status */
@@ -138,7 +139,7 @@ implements MultiReporter, Serializable, OverlayContext {
      * Where this URI was (presently) discovered. . Transient to allow
      * more efficient custom serialization
      */
-    private transient UURI via;
+    private UURI via;
 
     /**
      * Context of URI's discovery, as per the 'context' in Link
@@ -199,7 +200,7 @@ implements MultiReporter, Serializable, OverlayContext {
      * 
      * Package-protected so CrawlURI can access it directly.
      */
-    transient Map<String,Object> data;
+    Map<String,Object> data;
 
     
 //    private transient SheetManager manager;
@@ -646,7 +647,7 @@ implements MultiReporter, Serializable, OverlayContext {
      * This methods removes the attribute list.
      */
     public void stripToMinimal() {
-    	data = null;
+        data = null;
     }
 
     /**
@@ -670,13 +671,13 @@ implements MultiReporter, Serializable, OverlayContext {
      * @return the annotations set for this uri.
      */
     public Collection<String> getAnnotations() {
-    	@SuppressWarnings("unchecked")
-    	List<String> list = (List<String>)getData().get(A_ANNOTATIONS);
+        @SuppressWarnings("unchecked")
+        List<String> list = (List<String>)getData().get(A_ANNOTATIONS);
         if (list == null) {
             list = new ArrayList<String>();
             getData().put(A_ANNOTATIONS, list);
         }
-    	return list;
+        return list;
     }
 
     /**
@@ -867,20 +868,20 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     
     public Map<String,Object> getPersistentDataMap() {
-    	if (data == null) {
-    		return null;
-    	}
-    	Map<String,Object> result = new HashMap<String,Object>(getData());
-    	Set<String> retain = new HashSet<String>(persistentKeys);
-    	
-    	if (containsDataKey(A_HERITABLE_KEYS)) {
-    	    @SuppressWarnings("unchecked")
+        if (data == null) {
+            return null;
+        }
+        Map<String,Object> result = new HashMap<String,Object>(getData());
+        Set<String> retain = new HashSet<String>(persistentKeys);
+        
+        if (containsDataKey(A_HERITABLE_KEYS)) {
+            @SuppressWarnings("unchecked")
             HashSet<String> heritable = (HashSet<String>)getData().get(A_HERITABLE_KEYS);
             retain.addAll(heritable);
-    	}
-    	
-    	result.keySet().retainAll(retain);
-    	return result;
+        }
+        
+        result.keySet().retainAll(retain);
+        return result;
     }
 
     /**
@@ -954,26 +955,26 @@ implements MultiReporter, Serializable, OverlayContext {
      * @see #isSuccess()
      */
     public boolean is2XXSuccess() {
-    	return this.fetchStatus >= 200 && this.fetchStatus < 300;
+        return this.fetchStatus >= 200 && this.fetchStatus < 300;
     }
 
     /**
-	 * @return True if we have an rfc2617 payload.
-	 */
-	public boolean hasRfc2617CredentialAvatar() {
-	    boolean result = false;
-	    Set<CredentialAvatar> avatars = getCredentialAvatars();
-	    if (avatars != null && avatars.size() > 0) {
-	        for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
-	            if (((CredentialAvatar)i.next()).
-	                match(HttpAuthenticationCredential.class)) {
-	                result = true;
-	                break;
-	            }
-	        }
-	    }
+     * @return True if we have an rfc2617 payload.
+     */
+    public boolean hasRfc2617CredentialAvatar() {
+        boolean result = false;
+        Set<CredentialAvatar> avatars = getCredentialAvatars();
+        if (avatars != null && avatars.size() > 0) {
+            for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
+                if (((CredentialAvatar)i.next()).
+                    match(HttpAuthenticationCredential.class)) {
+                    result = true;
+                    break;
+                }
+            }
+        }
         return result;
-	}
+    }
 
 
     /**
@@ -1153,7 +1154,7 @@ implements MultiReporter, Serializable, OverlayContext {
      * @param key Key to add.
      */
     public static Collection<String> getPersistentDataKeys() {
-    	return persistentKeys;
+        return persistentKeys;
     }
 
     public void addPersistentDataMapKey(String s) {
@@ -1180,49 +1181,21 @@ implements MultiReporter, Serializable, OverlayContext {
         return persistentKeys.remove(key);
     }
 
-    /**
-     * Custom serialization writing an empty 'outLinks' as null. Estimated
-     * to save ~20 bytes in serialized form. 
-     * 
-     * @param stream
-     * @throws IOException
-     */
     private void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
-        stream.writeUTF(uuri.toCustomString()); //
-        stream.writeObject((via == null) ? null : via.getURI());
         stream.writeObject((data==null || data.isEmpty()) ? null : data);
-        stream.writeObject((outLinks.isEmpty()) ? null : outLinks);
-        stream.writeObject((outCandidates.isEmpty()) ? null : outCandidates);
-    }
-
-    /**
-     * Custom deserialization recreating empty HashSet from null in 'outLinks'
-     * slot. 
-     * 
-     * @param stream
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
+      }
+    
     private void readObject(ObjectInputStream stream) throws IOException,
-            ClassNotFoundException {
+    ClassNotFoundException {
         stream.defaultReadObject();
-        uuri = readUuri(stream.readUTF());
-        via = readUuri((String)stream.readObject());
         @SuppressWarnings("unchecked")
         Map<String,Object> temp = (Map<String,Object>)stream.readObject();
         this.data = temp;
-        
-        @SuppressWarnings("unchecked")
-        HashSet<Link> ol = (HashSet<Link>) stream.readObject();
-        outLinks = (ol == null) ? new HashSet<Link>() : ol;
-        @SuppressWarnings("unchecked")
-        HashSet<CrawlURI> oc = (HashSet<CrawlURI>)stream.readObject();
-        outCandidates = (oc == null) ? new HashSet<CrawlURI>() : oc;
+        outLinks = new HashSet<Link>();
+        outCandidates = new HashSet<CrawlURI>();
     }
 
-    
-    
     /**
      * Read a UURI from a String, handling a null or URIException
      * 
@@ -1295,15 +1268,15 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     
     public Collection<Throwable> getNonFatalFailures() {
-    	@SuppressWarnings("unchecked")
-    	List<Throwable> list = (List)getData().get(A_NONFATAL_ERRORS);
-    	if (list == null) {
-    		list = new ArrayList<Throwable>();
-    		getData().put(A_NONFATAL_ERRORS, list);
-    	}
-    	
-    	// FIXME: Previous code automatically added annotation when "localized error"
-    	// was added, override collection to implement that?
+        @SuppressWarnings("unchecked")
+        List<Throwable> list = (List)getData().get(A_NONFATAL_ERRORS);
+        if (list == null) {
+            list = new ArrayList<Throwable>();
+            getData().put(A_NONFATAL_ERRORS, list);
+        }
+        
+        // FIXME: Previous code automatically added annotation when "localized error"
+        // was added, override collection to implement that?
         return list;
     }
 
@@ -1318,7 +1291,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     public void setFetchBeginTime(long time) {
-    	getData().put(ModuleAttributeConstants.A_FETCH_BEGAN_TIME, time);
+        getData().put(ModuleAttributeConstants.A_FETCH_BEGAN_TIME, time);
     }
 
     public void setFetchCompletedTime(long time) {
@@ -1836,5 +1809,21 @@ implements MultiReporter, Serializable, OverlayContext {
     public boolean includesRetireDirective() {
         return containsDataKey(A_FORCE_RETIRE) 
          && (Boolean)getData().get(A_FORCE_RETIRE);
+    }
+    
+    // Kryo support
+    @SuppressWarnings("unused")
+    private CrawlURI() {}
+    public static void autoregisterTo(AutoKryo kryo) {
+//        kryo.register(CrawlURI.class,new DeflateCompressor(kryo.newSerializer(CrawlURI.class)));
+        kryo.register(CrawlURI.class);
+        kryo.autoregister(byte[].class); 
+        kryo.autoregister(java.util.HashSet.class); 
+        kryo.autoregister(java.util.HashMap.class); 
+        kryo.autoregister(org.archive.net.UURI.class); 
+        kryo.autoregister(org.archive.modules.extractor.HTMLLinkContext.class); 
+        kryo.autoregister(org.archive.modules.extractor.LinkContext.SimpleLinkContext.class);
+        kryo.autoregister(java.util.HashMap[].class); 
+        kryo.setRegistrationOptional(true);
     }
 }

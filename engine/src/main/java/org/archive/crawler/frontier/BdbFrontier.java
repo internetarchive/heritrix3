@@ -153,9 +153,9 @@ implements Checkpointable, BeanNameAware {
         WorkQueue wq = allQueues.getOrUse(
                 classKey,
                 new Supplier<WorkQueue>() {
-                    public WorkQueue get() {
+                    public BdbWorkQueue get() {
                         String qKey = new String(classKey); // ensure private minimal key
-                        WorkQueue q = new BdbWorkQueue(qKey, BdbFrontier.this);
+                        BdbWorkQueue q = new BdbWorkQueue(qKey, BdbFrontier.this);
                         q.setTotalBudget(getQueueTotalBudget()); 
                         getQueuePrecedencePolicy().queueCreated(q);
                         return q;
@@ -257,7 +257,7 @@ implements Checkpointable, BeanNameAware {
     @Override
     protected void initAllQueues() throws DatabaseException {
         boolean isRecovery = (recoveryCheckpoint != null);
-        this.allQueues = bdb.getObjectCache("allqueues", isRecovery, WorkQueue.class);
+        this.allQueues = bdb.getObjectCache("allqueues", isRecovery, WorkQueue.class, BdbWorkQueue.class);
         if(isRecovery) {
             JSONObject json = recoveryCheckpoint.loadJson(beanName);
             try {

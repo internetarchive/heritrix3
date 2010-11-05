@@ -331,8 +331,9 @@ public class StatisticsTracker
         new ObjectIdentityMemCache<AtomicLong>(); // temp dummy
 
     /** Keep track of URL counts per host per seed */
-    protected ObjectIdentityCache<String,ConcurrentMap<String,AtomicLong>> sourceHostDistribution = 
-        new ObjectIdentityMemCache<ConcurrentMap<String,AtomicLong>>(); // temp dummy;
+    @SuppressWarnings("unchecked")
+    protected ObjectIdentityCache<String,ConcurrentMap> sourceHostDistribution = 
+        new ObjectIdentityMemCache<ConcurrentMap>(); // temp dummy;
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -501,6 +502,10 @@ public class StatisticsTracker
         CrawlStatSnapshot snapshot = new CrawlStatSnapshot();
         snapshot.collect(controller,this); 
         return snapshot;
+    }
+    
+    public LinkedList<CrawlStatSnapshot> getSnapshots() {
+        return snapshots;
     }
     
     public CrawlStatSnapshot getLastSnapshot() {
@@ -840,12 +845,13 @@ public class StatisticsTracker
         }
     }
          
+    @SuppressWarnings("unchecked")
     protected void saveSourceStats(String source, String hostname) {
         synchronized(sourceHostDistribution) {
             ConcurrentMap<String,AtomicLong> hostUriCount = 
                 sourceHostDistribution.getOrUse(
                         source,
-                        new Supplier<ConcurrentMap<String,AtomicLong>>() {
+                        new Supplier<ConcurrentMap>() {
                             public ConcurrentMap<String, AtomicLong> get() {
                                 return new ConcurrentHashMap<String,AtomicLong>();
                             }});
@@ -1121,6 +1127,7 @@ public class StatisticsTracker
     // CrawlController's only interest is in knowing that a Checkpoint is
     // being recovered
     public void startCheckpoint(Checkpoint checkpointInProgress) {}
+    @SuppressWarnings("unchecked")
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         JSONObject json = new JSONObject();
         try {

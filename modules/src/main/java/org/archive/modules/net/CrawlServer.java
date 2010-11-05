@@ -37,6 +37,7 @@ import org.apache.commons.collections.Predicate;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.archive.bdb.AutoKryo;
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.credential.CredentialAvatar;
@@ -62,7 +63,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
      * after this many tries */
     public static final long MIN_ROBOTS_RETRIES = 3;
 
-    private final String server; // actually, host+port in the https case
+    private String server; // actually, host+port in the https case
     private int port;
     protected Robotstxt robotstxt;
     long robotsFetched = ROBOTS_NOT_FETCHED;
@@ -323,5 +324,18 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
             return true;
         }
         return false;
+    }
+    
+    // Kryo support
+//    public CrawlServer() {}
+    public static void autoregisterTo(AutoKryo kryo) {
+        kryo.register(CrawlServer.class);
+        kryo.autoregister(FetchStats.class); 
+        kryo.autoregister(org.archive.modules.net.Robotstxt.class);
+        kryo.autoregister(java.util.HashMap.class);
+        kryo.autoregister(org.archive.modules.net.RobotsDirectives.class);
+        kryo.autoregister(org.archive.util.PrefixSet.class);
+        kryo.autoregister(java.util.LinkedList.class);
+        kryo.setRegistrationOptional(true); 
     }
 }

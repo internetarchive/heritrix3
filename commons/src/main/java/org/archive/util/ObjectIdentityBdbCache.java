@@ -33,6 +33,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.bdb.BenchmarkingBinding;
+import org.archive.bdb.KryoBinding;
+import org.archive.crawler.frontier.RecyclingSerialBinding;
+
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
@@ -173,7 +177,13 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
         EntryBinding keyBinding = TupleBinding.getPrimitiveBinding(String.class);
         EntryBinding valueBinding = TupleBinding.getPrimitiveBinding(valueClass);
         if(valueBinding == null) {
-            valueBinding = new SerialBinding(classCatalog, valueClass);
+            valueBinding = 
+                new KryoBinding<V>(valueClass);
+//                new SerialBinding(classCatalog, valueClass);
+//                new BenchmarkingBinding<V>(new EntryBinding[] {
+//                      new KryoBinding<V>(valueClass),                   
+//                      new RecyclingSerialBinding<V>(classCatalog, valueClass),
+//                  }, valueClass);
         }
         return new StoredSortedMap<String,V>(database, keyBinding, valueBinding, true);
     }

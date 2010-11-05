@@ -32,7 +32,7 @@ public abstract class LinkContext implements Serializable {
 
 
     /** Class for representing handy default LinkContext values. */
-    private static class SimpleLinkContext extends LinkContext {
+    public static class SimpleLinkContext extends LinkContext {
 
         private static final long serialVersionUID = 1L;
 

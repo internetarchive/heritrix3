@@ -31,9 +31,11 @@ import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
 import org.apache.commons.collections.Closure;
+import org.archive.bdb.KryoBinding;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
+import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
@@ -65,7 +67,7 @@ public class BdbMultipleWorkQueues {
     private Database pendingUrisDB = null;
     
     /**  Supporting bdb serialization of CrawlURIs */
-    private RecyclingSerialBinding<CrawlURI> crawlUriBinding;
+    private EntryBinding<CrawlURI> crawlUriBinding;
 
     /**
      * Create the multi queue in the given environment. 
@@ -80,7 +82,14 @@ public class BdbMultipleWorkQueues {
     throws DatabaseException {
         this.pendingUrisDB = db;
         crawlUriBinding =
-            new RecyclingSerialBinding<CrawlURI>(classCatalog, CrawlURI.class);
+              new KryoBinding<CrawlURI>(CrawlURI.class);
+//            new RecyclingSerialBinding<CrawlURI>(classCatalog, CrawlURI.class);
+//            new BenchmarkingBinding<CrawlURI>(new EntryBinding[] {
+//                new KryoBinding<CrawlURI>(CrawlURI.class,true),
+//                new KryoBinding<CrawlURI>(CrawlURI.class,false),                    
+//                new RecyclingSerialBinding<CrawlURI>(classCatalog, CrawlURI.class),
+//            });
+            
     }
 
     /**

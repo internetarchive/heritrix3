@@ -51,5 +51,9 @@
 	<classpathentry kind="lib" path="commons/src/main/resources"/>
 	<classpathentry kind="lib" path="commons/src/test/resources"/>
 	<classpathentry kind="var" path="M2_REPO/org/json/json/20090211/json-20090211.jar" sourcepath="/M2SRC/json.zip"/>
+	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/kryo/1.01/kryo-1.01.jar" sourcepath="/M2SRC/kryo/src"/>
+	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/minlog/1.2/minlog-1.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/reflectasm/0.8/reflectasm-0.8.jar"/>
+	<classpathentry kind="var" path="M2_REPO/asm/asm/3.2/asm-3.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

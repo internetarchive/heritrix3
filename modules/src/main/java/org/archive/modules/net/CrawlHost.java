@@ -20,10 +20,12 @@
 package org.archive.modules.net;
 
 import java.io.Serializable;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.bdb.AutoKryo;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.util.InetAddressUtil;
 
@@ -222,5 +224,14 @@ public class CrawlHost implements Serializable, FetchStats.HasFetchStats {
      */
     public FetchStats getSubstats() {
         return substats;
+    }
+    
+    // Kryo support
+//    public CrawlHost() {}
+    public static void autoregisterTo(AutoKryo kryo) {
+        kryo.register(CrawlHost.class);
+        kryo.autoregister(FetchStats.class);
+        kryo.autoregister(Inet4Address.class);
+        kryo.setRegistrationOptional(true);
     }
 }

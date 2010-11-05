@@ -21,10 +21,14 @@ package org.archive.crawler.frontier;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.bdb.AutoKryo;
+import org.archive.crawler.frontier.precedence.SimplePrecedenceProvider;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.fetcher.FetchStats;
 import org.archive.util.ArchiveUtils;
 
 import com.sleepycat.je.DatabaseEntry;
@@ -165,5 +169,15 @@ implements Serializable {
             e.printStackTrace();
             return e.getMessage();
         }
+    }
+    
+    // Kryo support
+    public static void autoregisterTo(AutoKryo kryo) {
+        kryo.register(BdbWorkQueue.class);
+        kryo.autoregister(FetchStats.class); 
+        kryo.autoregister(HashSet.class);
+        kryo.autoregister(SimplePrecedenceProvider.class);
+        kryo.autoregister(byte[].class);
+        kryo.setRegistrationOptional(true); 
     }
 }

@@ -43,7 +43,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
-import org.archive.util.CachedBdbMap;
 import org.archive.util.ObjectIdentityBdbCache;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
@@ -77,7 +76,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     private static class DatabasePlusConfig implements Serializable {
         private static final long serialVersionUID = 1L;
         public transient Database database;
-        public String name;
         public BdbConfig config;
     }
     
@@ -189,6 +187,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         
     private transient StoredClassCatalog classCatalog;
     
+    @SuppressWarnings("unchecked")
     private Map<String,ObjectIdentityCache> oiCaches = 
         new ConcurrentHashMap<String,ObjectIdentityCache>();
 
@@ -337,7 +336,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
             }
         }
         dpc.database = bdbEnvironment.openDatabase(null, name, config.toDatabaseConfig());
-        dpc.name = name;
         dpc.config = config;
         databases.put(name, dpc);
         return dpc.database;
@@ -358,39 +356,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         }
         
     }
-    
-    
-    /**
-     * Get a CachedBdbMap, backed by a BDB Database of the given name, 
-     * with the given key and value class types. If 'recycle' is true,
-     * reuse values already in the database; otherwise start with an 
-     * empty map.  
-     * 
-     * @param <K>
-     * @param <V>
-     * @param dbName
-     * @param recycle
-     * @param key
-     * @param value
-     * @return
-     * @throws DatabaseException
-     * @deprecated use ObjectIdentityBdbCache instead
-     */
-    public <K,V> CachedBdbMap<K,V> getCBMMap(String dbName, boolean recycle,
-            Class<? super K> key, Class<? super V> value) 
-    throws DatabaseException {
-        if (!recycle) {
-            try {
-                bdbEnvironment.truncateDatabase(null, dbName, false);
-            } catch (DatabaseNotFoundException e) {
-                // ignored
-            }
-        }
-        CachedBdbMap<K, V> r = new CachedBdbMap<K,V>(dbName);     
-        r.initialize(bdbEnvironment, key, value, classCatalog);
-        oiCaches.put(dbName, r);
-        return r;
-    }
+
 
     /**
      * Get an ObjectIdentityBdbCache, backed by a BDB Database of the 
@@ -406,7 +372,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @throws DatabaseException
      */
     public <V> ObjectIdentityBdbCache<V> getOIBCCache(String dbName, boolean recycle,
-            Class<? super V> valueClass) 
+            Class<? extends V> valueClass) 
     throws DatabaseException {
         if (!recycle) {
             try {
@@ -420,11 +386,12 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         oiCaches.put(dbName, oic);
         return oic;
     }
-
-    /** controls which alternate ObjectIdentityCache implementation to use */
-    private static boolean USE_OIBC = true;
-    
-
+  
+    public <V> ObjectIdentityCache<String, V> getObjectCache(String dbName, boolean recycle,
+            Class<V> valueClass) 
+    throws DatabaseException {
+        return getObjectCache(dbName, recycle, valueClass, valueClass);
+    }
     
     /**
      * Get an ObjectIdentityCache, backed by a BDB Database of the given 
@@ -440,18 +407,14 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @throws DatabaseException
      */
     public <V> ObjectIdentityCache<String, V> getObjectCache(String dbName, boolean recycle,
-            Class<? super V> valueClass) 
+            Class<V> declaredClass, Class<? extends V> valueClass) 
     throws DatabaseException {
         @SuppressWarnings("unchecked")
         ObjectIdentityCache<String,V> oic = oiCaches.get(dbName);
         if(oic!=null) {
             return oic; 
         }
-        if(USE_OIBC) {
-            oic =  getOIBCCache(dbName, recycle, valueClass);
-        } else {
-            oic =  getCBMMap(dbName, recycle, String.class, valueClass);
-        }
+        oic =  getOIBCCache(dbName, recycle, valueClass);
         return oic; 
     }
     
