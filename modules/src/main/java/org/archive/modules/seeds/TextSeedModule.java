@@ -100,11 +100,16 @@ implements ReadSource {
                     RegexLineIterator.NONWHITESPACE_ENTRY_TRAILING_COMMENT,
                     RegexLineIterator.ENTRY);
 
+        int count = 0; 
         while (iter.hasNext()) {
             s = (String) iter.next();
             if(Character.isLetterOrDigit(s.charAt(0))) {
                 // consider a likely URI
                 seedLine(s);
+                count++;
+                if(count%20000==0) {
+                    System.runFinalization();
+                }
             } else {
                 // report just in case it's a useful directive
                 nonseedLine(s);
