@@ -46,6 +46,6 @@ public class StripUserinfoRule extends BaseRule {
     }
 
     public String canonicalize(String url) {
-        return doStripRegexMatch(url, REGEX.matcher(url));
+        return doStripRegexMatch(url, REGEX.pattern());
     }
 }

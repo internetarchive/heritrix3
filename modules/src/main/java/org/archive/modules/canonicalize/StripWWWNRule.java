@@ -53,6 +53,6 @@ public class StripWWWNRule extends BaseRule {
     }
 
     public String canonicalize(String url) {
-        return doStripRegexMatch(url, REGEX.matcher(url));
+        return doStripRegexMatch(url, REGEX.pattern());
     }
 }

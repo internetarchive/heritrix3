@@ -21,7 +21,6 @@
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,19 +55,21 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
      * @return discovered override, or local value
      */
     public Object get(String key) {
-        if(!threadOverrides.get().isEmpty()) {
-            for(OverlayContext ocontext: threadOverrides.get()) {
-                for(String name: ocontext.getOverlayNames()) {
-                    Map<String,Object> m = ocontext.getOverlayMap(name);
-                    for(String ok : getOverrideKeys(key)) {
-                        Object val = m.get(ok);
-                        if(val!=null) {
-                            return val;
-                        }
+        ArrayList<OverlayContext> overlays = threadOverrides.get();
+        for(int i = overlays.size()-1; i>=0; i--) {
+            OverlayContext ocontext = overlays.get(i); 
+            for(int j = ocontext.getOverlayNames().size()-1; j>=0; j--) {
+                String name = ocontext.getOverlayNames().get(j);
+                Map<String,Object> m = ocontext.getOverlayMap(name);
+                for(String ok : getOverrideKeys(key)) {
+                    Object val = m.get(ok);
+                    if(val!=null) {
+                        return val;
                     }
                 }
             }
         }
+
         return super.get(key);
     }
 
@@ -95,10 +96,10 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
     /**
      * ThreadLocal (contextual) collection of pushed override maps
      */
-    static ThreadLocal<LinkedList<OverlayContext>> threadOverrides = 
-        new ThreadLocal<LinkedList<OverlayContext>>() {
-        protected LinkedList<OverlayContext> initialValue() {
-            return new LinkedList<OverlayContext>();
+    static ThreadLocal<ArrayList<OverlayContext>> threadOverrides = 
+        new ThreadLocal<ArrayList<OverlayContext>>() {
+        protected ArrayList<OverlayContext> initialValue() {
+            return new ArrayList<OverlayContext>();
         }
     };
     /**
@@ -106,7 +107,7 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
      * @param m Map to add
      */
     static public void pushOverrideContext(OverlayContext ocontext) {
-        threadOverrides.get().addFirst(ocontext);
+        threadOverrides.get().add(ocontext);
     }
     
     /**
@@ -115,7 +116,7 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
      */
     static public OverlayContext popOverridesContext() {
         // TODO maybe check that pop is as expected
-        return threadOverrides.get().removeFirst();
+        return threadOverrides.get().remove(threadOverrides.get().size()-1);
     }
     
     static public void clearAllOverrideContexts() {

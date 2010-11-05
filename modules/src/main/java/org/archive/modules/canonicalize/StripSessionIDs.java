@@ -70,9 +70,9 @@ extends BaseRule {
     }
 
     public String canonicalize(String url) {
-        url = doStripRegexMatch(url, BASE_PATTERN.matcher(url));
-        url = doStripRegexMatch(url, SID_PATTERN.matcher(url));
-        url = doStripRegexMatch(url, ASPSESSION_PATTERN.matcher(url));
+        url = doStripRegexMatch(url, BASE_PATTERN.pattern());
+        url = doStripRegexMatch(url, SID_PATTERN.pattern());
+        url = doStripRegexMatch(url, ASPSESSION_PATTERN.pattern());
         return url;
     }
 }

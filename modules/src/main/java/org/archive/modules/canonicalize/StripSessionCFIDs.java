@@ -58,7 +58,7 @@ extends BaseRule {
     }
 
     public String canonicalize(String url) {
-        return doStripRegexMatch(url, COLDFUSION_PATTERN.matcher(url));
+        return doStripRegexMatch(url, COLDFUSION_PATTERN.pattern());
     }
 
 }

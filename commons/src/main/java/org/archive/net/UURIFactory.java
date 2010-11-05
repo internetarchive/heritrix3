@@ -372,17 +372,20 @@ public class UURIFactory extends URI {
         // Test for the case of more than two slashes after the http(s) scheme.
         // Replace with two slashes as mozilla does if found.
         // See [ 788219 ] URI Syntax Errors stop page parsing.
-        Matcher matcher = HTTP_SCHEME_SLASHES.matcher(uri);
+//        Matcher matcher = HTTP_SCHEME_SLASHES.matcher(uri);
+        Matcher matcher = TextUtils.getMatcher(HTTP_SCHEME_SLASHES.pattern(), uri);
         if (matcher.matches()) {
             uri = matcher.group(1) + matcher.group(2);
         }
+        TextUtils.recycleMatcher(matcher); 
 
         // now, minimally escape any whitespace
         uri = escapeWhitespace(uri);
         
         // For further processing, get uri elements.  See the RFC2396REGEX
         // comment above for explanation of group indices used in the below.
-        matcher = RFC2396REGEX.matcher(uri);
+//        matcher = RFC2396REGEX.matcher(uri);
+        matcher = TextUtils.getMatcher(RFC2396REGEX.pattern(), uri);
         if (!matcher.matches()) {
             throw new URIException("Failed parse of " + uri);
         }
@@ -392,6 +395,7 @@ public class UURIFactory extends URI {
         String uriPath = checkUriElement(matcher.group(6));
         String uriQuery = checkUriElement(matcher.group(8));
         // UNUSED String uriFragment = checkUriElement(matcher.group(10));
+        TextUtils.recycleMatcher(matcher); matcher = null;
         
         // Test if relative URI. If so, need a base to resolve against.
         if (uriScheme == null || uriScheme.length() <= 0) {
@@ -701,7 +705,8 @@ public class UURIFactory extends URI {
      */
     private String checkPort(String uriAuthority)
     throws URIException {
-        Matcher m = PORTREGEX.matcher(uriAuthority);
+//        Matcher m = PORTREGEX.matcher(uriAuthority);
+        Matcher m = TextUtils.getMatcher(PORTREGEX.pattern(), uriAuthority);
         if (m.matches()) {
             String no = m.group(2);
             if (no != null && no.length() > 0) {
@@ -726,6 +731,7 @@ public class UURIFactory extends URI {
                 }
             }
         }
+        TextUtils.recycleMatcher(m); 
         return uriAuthority;
     }
 

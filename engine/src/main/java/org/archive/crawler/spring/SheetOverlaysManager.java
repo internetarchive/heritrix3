@@ -315,7 +315,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
         List<String> foundPrefixes = PrefixFinder.findKeys(sheetNamesBySurt, effectiveSurt);       
         for(String prefix : foundPrefixes) {
             for(String name : sheetNamesBySurt.get(prefix)) {
-                curi.getOverlayNames().push(name);
+                curi.getOverlayNames().add(name);
             }
         }
         // apply deciderule-based overlays

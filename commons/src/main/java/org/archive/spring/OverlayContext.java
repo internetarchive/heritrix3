@@ -19,7 +19,7 @@
  
  package org.archive.spring;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -32,7 +32,7 @@ public interface OverlayContext {
      * (even if in fact no overlays were added) */
     public boolean haveOverlayNamesBeenSet();
     /** return a list of the names of overlay maps to consider */ 
-    LinkedList<String> getOverlayNames();
+    ArrayList<String> getOverlayNames();
     /** get the map corresponding to the overlay name */ 
     Map<String,Object> getOverlayMap(String name);
 }

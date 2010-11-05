@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
@@ -297,8 +296,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         this.metadata = provider;
     }
     
-    private Pattern relevantTagExtractor;
-    private Pattern eachAttributeExtractor;
+    // TODO: convert to Strings
+    private String relevantTagPattern;
+    private String eachAttributePattern;
  
     public ExtractorHTML() {
     }
@@ -307,21 +307,21 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         String regex = RELEVANT_TAG_EXTRACTOR;
         regex = regex.replace(MAX_ELEMENT_REPLACE, 
                     Integer.toString(getMaxElementLength()));
-        this.relevantTagExtractor = Pattern.compile(regex);
+        this.relevantTagPattern = regex;
         
         regex = EACH_ATTRIBUTE_EXTRACTOR;
         regex = regex.replace(MAX_ATTR_NAME_REPLACE, 
                     Integer.toString(getMaxAttributeNameLength()));
         regex = regex.replace(MAX_ATTR_VAL_REPLACE,
                     Integer.toString(getMaxAttributeValLength()));
-        this.eachAttributeExtractor = Pattern.compile(regex);
+        this.eachAttributePattern = regex;
     }
     
 
     protected void processGeneralTag(CrawlURI curi, CharSequence element,
             CharSequence cs) {
 
-        Matcher attr = eachAttributeExtractor.matcher(cs);
+        Matcher attr = TextUtils.getMatcher(eachAttributePattern,cs);
 
         // Just in case it's an OBJECT or APPLET tag
         String codebase = null;
@@ -687,7 +687,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * of this extractors' lifetime.
      */
     void extract(CrawlURI curi, CharSequence cs) {
-        Matcher tags = relevantTagExtractor.matcher(cs);
+        Matcher tags = TextUtils.getMatcher(relevantTagPattern,cs);
         while(tags.find()) {
             if(Thread.interrupted()){
                 break;
@@ -801,7 +801,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @return True robots exclusion metatag.
      */
     protected boolean processMeta(CrawlURI curi, CharSequence cs) {
-        Matcher attr = eachAttributeExtractor.matcher(cs);
+        Matcher attr = TextUtils.getMatcher(eachAttributePattern,cs);
         String name = null;
         String httpEquiv = null;
         String content = null;

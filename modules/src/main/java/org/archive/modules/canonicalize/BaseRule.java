@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
+import org.archive.util.TextUtils;
 
 /**
  * Base of all rules applied canonicalizing a URL that are configurable
@@ -36,6 +37,7 @@ import org.archive.spring.KeyedProperties;
  */
 public abstract class BaseRule
 implements CanonicalizationRule, Serializable, HasKeyedProperties {
+    private static final long serialVersionUID = 1L;
     protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
@@ -69,10 +71,13 @@ implements CanonicalizationRule, Serializable, HasKeyedProperties {
      * @return Original <code>url</code> else concatenization of group 1
      * and group 2.
      */
-    protected String doStripRegexMatch(String url, Matcher matcher) {
-        return (matcher != null && matcher.matches())?
+    protected String doStripRegexMatch(String url, String pat) {
+        Matcher matcher = TextUtils.getMatcher(pat, url);
+        String retVal = (matcher != null && matcher.matches())?
             checkForNull(matcher.group(1)) + checkForNull(matcher.group(2)):
             url;
+        TextUtils.recycleMatcher(matcher); 
+        return retVal;
     }
 
     /**

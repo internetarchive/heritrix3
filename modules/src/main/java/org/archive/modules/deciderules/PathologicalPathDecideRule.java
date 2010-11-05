@@ -18,10 +18,10 @@
  */
 package org.archive.modules.deciderules;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.archive.modules.CrawlURI;
+import org.archive.util.TextUtils;
 
 
 /**
@@ -48,8 +48,6 @@ public class PathologicalPathDecideRule extends DecideRule {
     public void setMaxRepetitions(int maxRepetitions) {
         kp.put("maxRepetitions", maxRepetitions);
     }
-
-    private AtomicReference<Pattern> pattern = new AtomicReference<Pattern>();
     
     /** Constructs a new PathologicalPathFilter.
      *
@@ -62,31 +60,19 @@ public class PathologicalPathDecideRule extends DecideRule {
     @Override
     protected DecideResult innerDecide(CrawlURI uri) {
         int maxRep = getMaxRepetitions();
-        Pattern p = getPattern(maxRep);
-        if (p.matcher(uri.getUURI().toString()).matches()) {
-            return DecideResult.REJECT;
-        } else {
-            return DecideResult.NONE;
+//        Pattern p = getPattern(maxRep);
+        Matcher m = TextUtils.getMatcher(constructRegex(maxRep), uri.getUURI().toString());
+        try {
+            if (m.matches()) {
+                return DecideResult.REJECT;
+            } else {
+                return DecideResult.NONE;
+            }
+        } finally {
+            TextUtils.recycleMatcher(m);
         }
     }
-
-    /** 
-     * Construct the regex string to be matched against the URI.
-     * @param o an object to extract a URI from.
-     * @return the regex pattern.
-     */
-    private Pattern getPattern(int maxRep) {
-        // race no concern: assignment is atomic, happy with any last value
-        Pattern p = pattern.get();
-        if (p != null) {
-            return p;
-        }
-        String regex = constructRegex(maxRep);
-        p = Pattern.compile(regex);
-        pattern.set(p);
-        return p;
-    }
-    
+ 
     protected String constructRegex(int rep) {
         return (rep == 0) ? null : ".*?/(.*?/)\\1{" + rep + ",}.*";
     }
