@@ -33,12 +33,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.bdb.BenchmarkingBinding;
 import org.archive.bdb.KryoBinding;
-import org.archive.crawler.frontier.RecyclingSerialBinding;
 
 import com.sleepycat.bind.EntryBinding;
-import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.collections.StoredSortedMap;
@@ -154,6 +151,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
      * @param classCatalog
      * @throws DatabaseException
      */
+    @SuppressWarnings("unchecked")
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
@@ -375,7 +373,6 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
     /**
      * Sync all in-memory map entries to backing disk store.
      */
-    @SuppressWarnings("unchecked")
     public synchronized void sync() {
         String dbName = null;
         // Sync. memory and disk.
