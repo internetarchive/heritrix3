@@ -97,7 +97,7 @@
         <dependency>
               <groupId>com.sleepycat</groupId>
               <artifactId>je</artifactId>
-              <version>4.0.71</version>
+              <version>4.1.6</version>
         </dependency> 
         <dependency>
              <groupId>commons-lang</groupId>
@@ -240,6 +240,32 @@
           <artifactId>json</artifactId>
           <version>20090211</version>
         </dependency>
+        
+<dependency>
+    <groupId>asm</groupId>
+    <artifactId>asm</artifactId>
+    <version>3.2</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.esotericsoftware</groupId>
+    <artifactId>kryo</artifactId>
+    <version>1.01</version>
+    <scope>compile</scope>
+</dependency>
+<dependency>
+    <groupId>com.esotericsoftware</groupId>
+    <artifactId>reflectasm</artifactId>
+    <version>0.8</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.esotericsoftware</groupId>
+    <artifactId>minlog</artifactId>
+    <version>1.2</version>
+    <scope>runtime</scope>
+</dependency>
+
   </dependencies>
   <build>
     <resources>
