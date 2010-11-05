@@ -66,7 +66,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -249,14 +248,6 @@ implements MultiReporter, Serializable, OverlayContext {
      * buggy
      */
     protected long ordinal;
-
-    /**
-     * Cache of this candidate uuri as a string.
-     *
-     * Profiling shows us spending about 1-2% of total elapsed time in
-     * toString.
-     */
-    private String cachedCrawlURIString = null;
     
     /**
      * Array to hold keys of data members that persist across URI processings.
@@ -591,22 +582,6 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public void setPrerequisite(boolean prerequisite) {
         this.prerequisite = prerequisite;
-    }
-
-    /**
-     * @return This crawl URI as a string wrapped with 'CrawlURI(' +
-     * ')'.
-     */
-    public String getCrawlURIString() {
-        if (this.cachedCrawlURIString == null) {
-            synchronized (this) {
-                if (this.cachedCrawlURIString == null) {
-                    this.cachedCrawlURIString =
-                        "CrawlURI(" + toString() + ")";
-                }
-            }
-        }
-        return this.cachedCrawlURIString;
     }
 
     /**
@@ -1783,15 +1758,15 @@ implements MultiReporter, Serializable, OverlayContext {
     //
     // OverridesSource implementation
     //
-    protected LinkedList<String> overlayNames = null;
+    transient protected ArrayList<String> overlayNames = null;
     transient protected OverlayMapsSource overlayMapsSource; 
     public boolean haveOverlayNamesBeenSet() {
         return overlayNames != null;
     }
     
-    public LinkedList<String> getOverlayNames() {
+    public ArrayList<String> getOverlayNames() {
         if(overlayNames == null) {
-            overlayNames = new LinkedList<String>(); 
+            overlayNames = new ArrayList<String>(); 
         }
         return overlayNames;
     }
