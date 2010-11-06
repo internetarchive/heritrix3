@@ -341,7 +341,7 @@ implements Closeable,
      * @param caUri CrawlURI.
      */
     protected void processScheduleAlways(CrawlURI curi) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         assert KeyedProperties.overridesActiveFrom(curi); 
         
         prepForFrontier(curi);
@@ -400,7 +400,7 @@ implements Closeable,
      * @param curi
      */
     protected void sendToQueue(CrawlURI curi) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         
         WorkQueue wq = getQueueFor(curi);
         int originalPrecedence = wq.getPrecedence();
@@ -460,7 +460,7 @@ implements Closeable,
      * @param wq
      */
     private void readyQueue(WorkQueue wq) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
 
         try {
             wq.setActive(this, true);
@@ -482,7 +482,7 @@ implements Closeable,
      * @param wq
      */
     protected void deactivateQueue(WorkQueue wq) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         
         int precedence = wq.getPrecedence();
         if(!wq.getOnInactiveQueues().contains(precedence)) {
@@ -543,7 +543,7 @@ implements Closeable,
      * @param wq
      */
     protected void retireQueue(WorkQueue wq) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
 
         getRetiredQueues().add(wq.getClassKey());
         decrementQueuedCount(wq.getCount());
@@ -594,7 +594,7 @@ implements Closeable,
      * @param q
      */
     private void unretireQueue(WorkQueue q) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
 
         deactivateQueue(q);
         q.setRetired(false); 
@@ -631,8 +631,8 @@ implements Closeable,
      *
      * @see org.archive.crawler.framework.Frontier#next()
      */
-    protected CrawlURI findEligibleURI() {
-            assert Thread.currentThread() == managerThread;
+    protected synchronized CrawlURI findEligibleURI() {
+//            assert Thread.currentThread() == managerThread;
             // wake any snoozed queues
             wakeQueues();
             // consider rescheduled URIS
@@ -692,6 +692,9 @@ implements Closeable,
                     
                     // from queues, override names persist but not map source
                     curi.setOverlayMapsSource(sheetOverlaysManager);
+                    // TODO: consider optimizations avoiding this recalc of
+                    // overrides when not necessary
+                    sheetOverlaysManager.applyOverlaysTo(curi);
                     // check if curi belongs in different queue
                     String currentQueueKey;
                     try {
@@ -745,7 +748,7 @@ implements Closeable,
      * Check for any future-scheduled URIs now eligible for reenqueuing
      */
     protected void checkFutures() {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         // TODO: consider only checking this every set interval
         Iterator<CrawlURI> iter = 
             futureUris.headMap(System.currentTimeMillis())
@@ -763,7 +766,7 @@ implements Closeable,
      * Activate an inactive queue, if any are available. 
      */
     private void activateInactiveQueue() {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
 
         SortedMap<Integer,Queue<String>> inactiveQueuesByPrecedence = 
             getInactiveQueuesByPrecedence();
@@ -964,7 +967,7 @@ implements Closeable,
      * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     protected void processFinish(CrawlURI curi) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         
         long now = System.currentTimeMillis();
 
@@ -1450,6 +1453,11 @@ implements Closeable,
         w.print("          Exhausted queues: ");
         w.print(exhaustedCount);
         w.print("\n");
+        
+        int inCount = inbound.size();
+        int outCount = outbound.size();
+        State last = lastReachedState;
+        w.print("\n               Threadbound: "+last+ ": "+inCount+" in, "+outCount+" out");        
         
         w.print("\n -----===== MANAGER THREAD =====-----\n");
         ToeThread.reportThread(managerThread, w);

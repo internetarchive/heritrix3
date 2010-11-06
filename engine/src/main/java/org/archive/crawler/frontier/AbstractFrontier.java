@@ -396,7 +396,9 @@ public abstract class AbstractFrontier
                                 reachedState(State.PAUSE);
                             }
                             // continue to process discovered and finished URIs
-                            inbound.take().process();
+                            synchronized(this) {
+                                inbound.take().process();
+                            }
                         }
                         break;
                     case FINISH:
@@ -405,7 +407,9 @@ public abstract class AbstractFrontier
                         // process all inbound
                         while (outbound.size() != getInProcessCount()) {
                             // continue to process discovered and finished URIs
-                            inbound.take().process();
+                            synchronized(this) {
+                                inbound.take().process();
+                            }
                         }
                         finalTasks(); 
                         // TODO: more cleanup?
@@ -469,14 +473,19 @@ public abstract class AbstractFrontier
     protected void drainInbound() throws InterruptedException {
         int batch = inbound.size();
         for(int i = 0; i < batch; i++) {
-            inbound.take().process();
+            InEvent ev = inbound.take();
+            synchronized(this) {
+                ev.process();
+            }
         }
         if(batch==0) {
             // always do at least one timed try
-            InEvent toProcess = inbound.poll(getMaxInWait(),
+            InEvent ev = inbound.poll(getMaxInWait(),
                     TimeUnit.MILLISECONDS);
-            if (toProcess != null) {
-                toProcess.process();
+            if (ev != null) {
+                synchronized(this) {
+                    ev.process();
+                }
             }
         }
     }
@@ -503,10 +512,12 @@ public abstract class AbstractFrontier
         outboundLock.readLock().unlock();
         
         
-        CrawlURI retval = outbound.take();
-        // TODO: consider optimizations avoiding this recalc of
-        // overrides when not necessary
-        sheetOverlaysManager.applyOverlaysTo(retval);
+        CrawlURI retval = outbound.poll();
+        if(retval==null) {
+            fillOutbound();
+            retval = outbound.take();
+        }
+        
 //      // TODO: consider if following necessary for maintaining throughput
 //        if(outbound.size()<=1) {
 //            doOrEnqueue(NOOP);
@@ -647,7 +658,7 @@ public abstract class AbstractFrontier
      * managerThread, as by an InEvent. 
      */
     protected void processSetTargetState(State target) {
-        assert Thread.currentThread() == managerThread;
+//        assert Thread.currentThread() == managerThread;
         targetState = target;
     }
     
@@ -750,8 +761,7 @@ public abstract class AbstractFrontier
     }
 
     /**
-     * Increment the running count of queued URIs. Synchronized because
-     * operations on longs are not atomic.
+     * Increment the running count of queued URIs.
      * 
      * @param increment
      *            amount to increment the queued count
@@ -1198,21 +1208,44 @@ public abstract class AbstractFrontier
      * and this is the managerThread. 
      * @param ev InEvent to be done
      */
-    protected void enqueueOrDo(InEvent ev) {
-        if(!inbound.offer(ev)) {
-            // if can't defer, 
-            if(Thread.currentThread()==managerThread) {
-                // if can't enqueue, ok to just do
-                ev.process();
-                return; 
-            } else {
-                try {
-                    inbound.put(ev);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+    protected void enqueue(InEvent ev) {
+        if(!inbound.offer(ev)) {      
+            try {
+                drainInbound();
+                inbound.put(ev);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
+    }
+    
+    /**
+     * Arrange for the given InEvent to be done by the managerThread, via
+     * enqueueing with other events if possible, but directly if not possible
+     * and this is the managerThread. 
+     * @param ev InEvent to be done
+     */
+    protected void enqueueOrDo(InEvent ev) {
+        // for now, treat same as enqueue
+        // TODO: reevaluate
+        enqueue(ev); 
+//        if(!inbound.offer(ev)) {      
+//            // if can't defer, 
+//            if(Thread.currentThread()==managerThread) {
+//                // if can't enqueue, ok to just do
+//                synchronized(this) {
+//                    ev.process();
+//                }
+//                return; 
+//            } else {
+//                try {
+//                    drainInbound();
+//                    inbound.put(ev);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        }
     }
     
     /**
@@ -1224,14 +1257,12 @@ public abstract class AbstractFrontier
     protected void doOrEnqueue(InEvent ev) {
         if (Thread.currentThread() == managerThread) {
             // if can't enqueue, ok to just do
-            ev.process();
+            synchronized(this) {
+                ev.process();
+            }
             return;
         } else {
-            try {
-                inbound.put(ev);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            enqueue(ev);
         }
     }
     
