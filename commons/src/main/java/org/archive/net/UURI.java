@@ -18,11 +18,11 @@
  */
 package org.archive.net;
 
-import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -59,7 +59,7 @@ import com.esotericsoftware.kryo.serialize.StringSerializer;
  * @see org.apache.commons.httpclient.URI
  */
 public class UURI extends LaxURI
-implements CharSequence, Externalizable, CustomSerialization {
+implements CharSequence, Serializable, CustomSerialization {
 
     private static final long serialVersionUID = -1277570889914647093L;
 
@@ -460,21 +460,12 @@ implements CharSequence, Externalizable, CustomSerialization {
         }
     }
 
-    @Override
-    public void readExternal(ObjectInput in) throws IOException,
-            ClassNotFoundException {
-        try {
-            parseUriReference(in.readUTF(),true);
-        } catch (URIException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeUTF(toCustomString());
-    }
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        stream.writeUTF(toCustomString());
+      }
     
-    
+    private void readObject(ObjectInputStream stream) throws IOException,
+    ClassNotFoundException {
+        parseUriReference(stream.readUTF(),true);
+    }
 }

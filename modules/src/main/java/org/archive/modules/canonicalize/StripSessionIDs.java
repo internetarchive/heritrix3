@@ -43,9 +43,8 @@ extends BaseRule {
      * Example: jsessionid=999A9EF028317A82AC83F0FDFE59385A.
      * Example: PHPSESSID=9682993c8daa2c5497996114facdc805.
      */
-    private static final Pattern BASE_PATTERN = Pattern.compile("^(.+)" +
-            "(?:(?:(?:jsessionid)|(?:phpsessid))=" +
-                 "[0-9a-zA-Z]{32})(?:&(.*))?$",  Pattern.CASE_INSENSITIVE);
+    private static final String BASE_PATTERN = 
+        "(?i)^(.+)(?:(?:(?:jsessionid)|(?:phpsessid))=[0-9a-zA-Z]{32})(?:&(.*))?$";
     
     /**
      * Example: sid=9682993c8daa2c5497996114facdc805. 
@@ -54,25 +53,22 @@ extends BaseRule {
      * like the BASE_PATTERN only 'sid' is the tail of 'phpsessid'
      * so have to have it run after the phpsessid elimination.
      */
-    private static final Pattern SID_PATTERN =
-        Pattern.compile("^(.+)" +
-            "(?:sid=[0-9a-zA-Z]{32})(?:&(.*))?$", Pattern.CASE_INSENSITIVE);
+    private static final String SID_PATTERN =
+        "(?i)^(.+)(?:sid=[0-9a-zA-Z]{32})(?:&(.*))?$";
     
     /**
      * Example:ASPSESSIONIDAQBSDSRT=EOHBLBDDPFCLHKPGGKLILNAM.
      */
-    private static final Pattern ASPSESSION_PATTERN =
-        Pattern.compile("^(.+)" +
-            "(?:ASPSESSIONID[a-zA-Z]{8}=[a-zA-Z]{24})(?:&(.*))?$",
-                Pattern.CASE_INSENSITIVE);
+    private static final String ASPSESSION_PATTERN =
+        "(?i)^(.+)(?:ASPSESSIONID[a-zA-Z]{8}=[a-zA-Z]{24})(?:&(.*))?$";
 
     public StripSessionIDs() {
     }
 
     public String canonicalize(String url) {
-        url = doStripRegexMatch(url, BASE_PATTERN.pattern());
-        url = doStripRegexMatch(url, SID_PATTERN.pattern());
-        url = doStripRegexMatch(url, ASPSESSION_PATTERN.pattern());
+        url = doStripRegexMatch(url, BASE_PATTERN);
+        url = doStripRegexMatch(url, SID_PATTERN);
+        url = doStripRegexMatch(url, ASPSESSION_PATTERN);
         return url;
     }
 }

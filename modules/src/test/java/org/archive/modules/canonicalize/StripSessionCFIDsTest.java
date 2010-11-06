@@ -32,7 +32,7 @@ public class StripSessionCFIDsTest extends ModuleTestBase {
         for (int i = 0; i < INPUTS.length; i++) {
             String result = (new StripSessionCFIDs().
                 canonicalize(INPUTS[i]));
-            assertEquals(result, OUTPUTS[i]);
+            assertEquals(OUTPUTS[i],result);
         }
     }
 }
