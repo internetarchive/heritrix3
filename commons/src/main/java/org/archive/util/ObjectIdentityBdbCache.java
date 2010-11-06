@@ -549,6 +549,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
          *  new 'canary' insertion. */
         public void finalize() {
             ObjectIdentityBdbCache.this.pageOutStaleEntries();
+            System.err.println("CANARY KILLED - "+ObjectIdentityBdbCache.this);
             // only install new canary if map still 'open' with db reference
             if(ObjectIdentityBdbCache.this.db !=null) {
                 ObjectIdentityBdbCache.this.canary = 
