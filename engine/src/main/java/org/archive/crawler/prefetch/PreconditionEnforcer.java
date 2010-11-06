@@ -35,7 +35,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
-import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.Link;
@@ -447,22 +446,19 @@ public class PreconditionEnforcer extends Processor  {
      * @param curi CrawlURI.
      * @return True if already run.
      */
-    private boolean authenticated(final Credential credential,
-            final CrawlURI curi) {
-        boolean result = false;
+    private boolean authenticated(final Credential credential, final CrawlURI curi) {
         CrawlServer server = serverCache.getServerFor(curi.getUURI());
-        if (!server.hasCredentialAvatars()) {
-            return result;
+        if (!server.hasCredentials()) {
+            return false;
         }
-        Set<CredentialAvatar> avatars = server.getCredentialAvatars();
-        for (CredentialAvatar ca: avatars) {
-            String key = null;
-            key = credential.getKey();
-            if (ca.match(credential.getClass(), key)) {
-                result = true;
+        Set<Credential> credentials = server.getCredentials();
+        for (Credential cred: credentials) {
+            if (cred.getKey().equals(credential.getKey()) 
+                    && cred.getClass().isInstance(credential)) {
+                return true; 
             }
         }
-        return result;
+        return false;
     }
 
 

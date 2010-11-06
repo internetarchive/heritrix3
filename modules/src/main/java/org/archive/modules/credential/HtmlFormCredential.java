@@ -133,10 +133,8 @@ public class HtmlFormCredential extends Credential {
         return false;
     }
 
-    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
-            String payload) {
-        // http is not used.
-        // payload is not used.
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method) {
+        // http is not used
         boolean result = false;
         Map<String,String> formItems = getFormItems();
         if (formItems == null || formItems.size() <= 0) {

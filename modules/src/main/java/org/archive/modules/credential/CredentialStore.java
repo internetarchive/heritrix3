@@ -54,6 +54,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
 
     private static final long serialVersionUID = 3L;
 
+    @SuppressWarnings("unused")
     private static Logger logger = Logger.getLogger(
         "org.archive.crawler.datamodel.CredentialStore");
 
@@ -178,36 +179,5 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
             result.add(c);
         }
         return result;
-    }
-    
-    
-    public Credential getCredential(CrawlURI curi, CredentialAvatar ca) {
-        Credential result = null;
-
-        Collection<Credential> all = getAll();
-        if (all == null) {
-            logger.severe("Have CredentialAvatar " + toString() +
-                " but no collection: " + curi);
-            return result;
-        }
-
-        for (Credential c: all) {
-            if (!ca.getType().isInstance(c)) {
-                continue;
-            }
-            String credKey = c.getKey();
-            if (credKey != null && credKey.equals(ca.getKey())) {
-                result = c;
-                break;
-            }
-        }
-
-        if (result == null) {
-            logger.severe("Have CredentialAvatar " + toString() +
-                " but no corresponding credential: " + curi);
-        }
-
-        return result;
-
     }
 }

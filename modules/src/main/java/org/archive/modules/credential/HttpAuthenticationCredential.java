@@ -104,14 +104,9 @@ public class HttpAuthenticationCredential extends Credential {
         return true;
     }
 
-    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
-            String payload) {
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method) {
         boolean result = false;
-        String authRealm = payload;
-        if (authRealm == null) {
-            logger.severe("No authscheme though creds: " + curi);
-            return result;
-        }
+
 
         // Always add the credential to HttpState. Doing this because no way of
         // removing the credential once added AND there is a bug in the
@@ -130,8 +125,8 @@ public class HttpAuthenticationCredential extends Credential {
         	upc = new UsernamePasswordCredentials(getLogin(),
         	    getPassword());
         	http.getState().setCredentials(new AuthScope(curi.getUURI().getHost(),
-        	    curi.getUURI().getPort(), authRealm), upc);
-        	logger.fine("Credentials for realm " + authRealm +
+        	    curi.getUURI().getPort(), getRealm()), upc);
+        	logger.fine("Credentials for realm " + getRealm() +
         	    " for CrawlURI " + curi.toString() + " added to request: " +
 				result);
         	result = true;

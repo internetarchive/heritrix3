@@ -1155,7 +1155,7 @@ public abstract class AbstractFrontier
             // rfc2617 credential present and if there, assume it got
             // loaded in FetchHTTP on expectation that we're to go around
             // again. If no rfc2617 loaded, we should not be here.
-            boolean loaded = curi.hasRfc2617CredentialAvatar();
+            boolean loaded = curi.hasRfc2617Credential();
             if (!loaded && logger.isLoggable(Level.FINE)) {
                 logger.fine("Have 401 but no creds loaded " + curi);
             }

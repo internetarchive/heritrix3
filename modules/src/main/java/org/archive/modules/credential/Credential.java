@@ -20,7 +20,6 @@ package org.archive.modules.credential;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.management.AttributeNotFoundException;
@@ -96,20 +95,7 @@ public abstract class Credential implements Serializable {
      * @param curi CrawlURI to load with credentials.
      */
     public void attach(CrawlURI curi) {
-        attach(curi, null);
-    }
-
-    /**
-     * Attach this credentials avatar to the passed <code>curi</code> .
-     *
-     * @param curi CrawlURI to load with credentials.
-     * @param payload Payload to carry in avatar.  Usually credentials.
-     */
-    public void attach(CrawlURI curi, String payload) {
-        CredentialAvatar ca = (payload == null )?
-                new CredentialAvatar(this.getClass(), getKey()):
-                new CredentialAvatar(this.getClass(), getKey(), payload);
-        curi.getCredentialAvatars().add(ca);
+        curi.getCredentials().add(this);
     }
 
     /**
@@ -119,22 +105,7 @@ public abstract class Credential implements Serializable {
      * @return True if we detached a Credential reference.
      */
     public boolean detach(CrawlURI curi) {
-        boolean result = false;
-        Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
-        if (avatars.isEmpty()) {
-            logger.severe("This curi " + curi + " has no cred when it should");
-        } 
-
-        Iterator<CredentialAvatar> iter = avatars.iterator();
-        while (iter.hasNext()) {            
-            CredentialAvatar ca = iter.next();
-            if (ca.match(getClass(), getKey())) {
-                iter.remove();
-                result = true;
-            }
-        }
-        
-        return result;
+        return curi.getCredentials().remove(this);
     }
 
     /**
@@ -145,15 +116,10 @@ public abstract class Credential implements Serializable {
      */
     public boolean detachAll(CrawlURI curi) {
         boolean result = false;
-        Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
-        if (avatars.isEmpty()) {
-            logger.severe("This curi " + curi +" has no creds when it should.");
-            return false;
-        }
-        Iterator<CredentialAvatar> iter = avatars.iterator();
+        Iterator<Credential> iter = curi.getCredentials().iterator();
         while (iter.hasNext()) {
-            CredentialAvatar ca = iter.next();
-            if (ca.match(getClass())) {
+            Credential cred = iter.next();
+            if (cred.getClass() ==  this.getClass()) {
                 iter.remove();
                 result = true;
             }
@@ -201,11 +167,10 @@ public abstract class Credential implements Serializable {
      * @param curi CrawlURI to as for context.
      * @param http Instance of httpclient.
      * @param method Method to populate.
-     * @param payload Avatar payload to use populating the method.
      * @return True if added a credentials.
      */
     public abstract boolean populate(CrawlURI curi, HttpClient http,
-        HttpMethod method, String payload);
+        HttpMethod method);
 
     /**
      * @param curi CrawlURI to look at.

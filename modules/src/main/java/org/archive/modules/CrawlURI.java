@@ -20,7 +20,7 @@
 package org.archive.modules;
 
 import static org.archive.modules.CoreAttributeConstants.A_ANNOTATIONS;
-import static org.archive.modules.CoreAttributeConstants.A_CREDENTIAL_AVATARS_KEY;
+import static org.archive.modules.CoreAttributeConstants.A_CREDENTIALS_KEY;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
@@ -64,7 +64,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +77,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
 import org.archive.bdb.AutoKryo;
-import org.archive.modules.credential.CredentialAvatar;
+import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
 import org.archive.modules.extractor.Hop;
@@ -257,7 +256,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIAL_AVATARS_KEY});
+            new String [] {A_CREDENTIALS_KEY});
 
     /**
      * A digest (hash, usually SHA1) of retrieved content-body. 
@@ -903,12 +902,12 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * @return Credential avatars.  Null if none set.
      */
-    public Set<CredentialAvatar> getCredentialAvatars() {
+    public Set<Credential> getCredentials() {
         @SuppressWarnings("unchecked")
-        Set<CredentialAvatar> r = (Set)getData().get(A_CREDENTIAL_AVATARS_KEY);
+        Set<Credential> r = (Set)getData().get(A_CREDENTIALS_KEY);
         if (r == null) {
-            r = new HashSet<CredentialAvatar>();
-            getData().put(A_CREDENTIAL_AVATARS_KEY, r);
+            r = new HashSet<Credential>();
+            getData().put(A_CREDENTIALS_KEY, r);
         }
         return r;
     }
@@ -916,8 +915,8 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * @return True if there are avatars attached to this instance.
      */
-    public boolean hasCredentialAvatars() {
-        return containsDataKey(A_CREDENTIAL_AVATARS_KEY);
+    public boolean hasCredentials() {
+        return containsDataKey(A_CREDENTIALS_KEY);
     }
 
 
@@ -942,7 +941,7 @@ implements MultiReporter, Serializable, OverlayContext {
         boolean result = false;
         int statusCode = this.fetchStatus;
         if (statusCode == HttpStatus.SC_UNAUTHORIZED &&
-            hasRfc2617CredentialAvatar()) {
+            hasRfc2617Credential()) {
             result = false;
         } else {
             result = (statusCode > 0);
@@ -961,21 +960,17 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * @return True if we have an rfc2617 payload.
      */
-    public boolean hasRfc2617CredentialAvatar() {
-        boolean result = false;
-        Set<CredentialAvatar> avatars = getCredentialAvatars();
-        if (avatars != null && avatars.size() > 0) {
-            for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
-                if (((CredentialAvatar)i.next()).
-                    match(HttpAuthenticationCredential.class)) {
-                    result = true;
-                    break;
+    public boolean hasRfc2617Credential() {
+        Set<Credential> credentials = getCredentials();
+        if (credentials != null && credentials.size() > 0) {
+            for (Credential credential : credentials) {
+                if(credential instanceof HttpAuthenticationCredential) {
+                    return true; 
                 }
             }
         }
-        return result;
+        return false; 
     }
-
 
     /**
      * Set the retained content-digest value (usu. SHA1). 
@@ -1824,6 +1819,8 @@ implements MultiReporter, Serializable, OverlayContext {
         kryo.autoregister(org.archive.modules.extractor.HTMLLinkContext.class); 
         kryo.autoregister(org.archive.modules.extractor.LinkContext.SimpleLinkContext.class);
         kryo.autoregister(java.util.HashMap[].class); 
+        kryo.autoregister(org.archive.modules.credential.HttpAuthenticationCredential.class);
+        kryo.autoregister(org.archive.modules.credential.HtmlFormCredential.class);
         kryo.setRegistrationOptional(true);
     }
 }

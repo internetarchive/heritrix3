@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.httpclient.HttpStatus;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
-import org.archive.modules.credential.CredentialAvatar;
+import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
 import org.archive.modules.deciderules.DecideResult;
@@ -211,7 +211,7 @@ implements HasKeyedProperties,
         boolean result = false;
         int statusCode = puri.getFetchStatus();
         if (statusCode == HttpStatus.SC_UNAUTHORIZED &&
-            hasHttpAuthenticationCredentialAvatar(puri)) {
+            hasHttpAuthenticationCredential(puri)) {
             result = false;
         } else {
             result = (statusCode > 0);
@@ -232,10 +232,10 @@ implements HasKeyedProperties,
     /**
      * @return True if we have an HttpAuthentication (rfc2617) payload.
      */
-    public static boolean hasHttpAuthenticationCredentialAvatar(CrawlURI puri) {
-        Set<CredentialAvatar> avatars = puri.getCredentialAvatars();
-        for (CredentialAvatar ca: avatars) {
-            if (ca.match(HttpAuthenticationCredential.class)) {
+    public static boolean hasHttpAuthenticationCredential(CrawlURI puri) {
+        Set<Credential> credentials = puri.getCredentials();
+        for (Credential ca: credentials) {
+            if (ca instanceof HttpAuthenticationCredential) {
                 return true;
             }
         }

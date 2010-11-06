@@ -72,8 +72,8 @@ public interface CoreAttributeConstants {
     /**
      * Key to get credential avatars from A_LIST.
      */
-    public static final String A_CREDENTIAL_AVATARS_KEY =
-        "credential-avatars";
+    public static final String A_CREDENTIALS_KEY =
+        "credentials";
     
     /** a 'source' (usu. URI) that's inherited by discovered URIs */
     public static String A_SOURCE_TAG = ModuleAttributeConstants.A_SOURCE_TAG;

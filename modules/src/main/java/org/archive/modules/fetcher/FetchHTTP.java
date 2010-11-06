@@ -93,7 +93,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
-import org.archive.modules.credential.CredentialAvatar;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
@@ -1043,11 +1042,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return false;
         }
         CrawlServer server = serverCache.getServerFor(serverKey);
-        if (server.hasCredentialAvatars()) {
-            for (CredentialAvatar ca : server.getCredentialAvatars()) {
-                Credential c = ca.getCredential(getCredentialStore(), curi);
-                if (c.isEveryTime()) {
-                    c.populate(curi, this.http, method, ca.getPayload());
+        if (server.hasCredentials()) {
+            for (Credential cred : server.getCredentials()) {
+                if (cred.isEveryTime()) {
+                    cred.populate(curi, this.http, method);
                 }
             }
         }
@@ -1057,9 +1055,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         // Now look in the curi. The Curi will have credentials loaded either
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
-        for (CredentialAvatar ca : curi.getCredentialAvatars()) {
-            Credential c = ca.getCredential(getCredentialStore(), curi);
-            if (c.populate(curi, this.http, method, ca.getPayload())) {
+        for (Credential c: curi.getCredentials()) {
+            if (c.populate(curi, this.http, method)) {
                 result = true;
             }
         }
@@ -1074,21 +1071,20 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            CrawlURI whose credentials we are to promote.
      */
     private void promoteCredentials(final CrawlURI curi) {
-        Set<CredentialAvatar> avatars = curi.getCredentialAvatars();
-        for (Iterator<CredentialAvatar> i = avatars.iterator(); i.hasNext();) {
-            CredentialAvatar ca = i.next();
+        Set<Credential> credentials = curi.getCredentials();
+        for (Iterator<Credential> i = credentials.iterator(); i.hasNext();) {
+            Credential c = i.next();
             i.remove();
             // The server to attach too may not be the server that hosts
             // this passed curi. It might be of another subdomain.
             // The avatar needs to be added to the server that is dependent
             // on this precondition. Find it by name. Get the name from
             // the credential this avatar represents.
-            Credential c = getCredentialStore().getCredential(curi, ca);
             String cd = c.getDomain();
             if (cd != null) {
                 CrawlServer cs = serverCache.getServerFor(cd);
                 if (cs != null) {
-                    cs.addCredentialAvatar(ca);
+                    cs.addCredential(c);
                 }
             }
         }
@@ -1163,7 +1159,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
                     logger.fine("No rfc2617 credentials for realm " + realm
                             + " in " + curi);
                 } else {
-                    found.attach(curi, authscheme.getRealm());
+                    found.attach(curi);
                     logger.fine("Found credential for realm " + realm
                             + " in store for " + curi.toString());
                 }
@@ -1253,15 +1249,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
     private Set<Credential> getCredentials(CrawlURI curi, Class<?> type) {
         Set<Credential> result = null;
 
-        if (curi.hasCredentialAvatars()) {
-            for (Iterator<CredentialAvatar> i = curi.getCredentialAvatars().iterator(); i
-                    .hasNext();) {
-                CredentialAvatar ca = (CredentialAvatar) i.next();
-                if (ca.match(type)) {
+        if (curi.hasCredentials()) {
+            for (Credential c : curi.getCredentials()) {
+                if (type.isInstance(c)) {
                     if (result == null) {
                         result = new HashSet<Credential>();
                     }
-                    result.add(ca.getCredential(getCredentialStore(), curi));
+                    result.add(c);
                 }
             }
         }

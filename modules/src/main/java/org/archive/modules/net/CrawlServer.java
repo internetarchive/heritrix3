@@ -40,7 +40,7 @@ import org.apache.commons.io.IOUtils;
 import org.archive.bdb.AutoKryo;
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.credential.CredentialAvatar;
+import org.archive.modules.credential.Credential;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -77,9 +77,9 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
     protected int consecutiveConnectionErrors = 0;
 
     /**
-     * Set of credential avatars.
+     * Set of credentials.
      */
-    private transient Set<CredentialAvatar> avatars =  null;
+    private transient Set<Credential> credentials =  null;
 
     /**
      * Creates a new CrawlServer object.
@@ -226,15 +226,15 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
     /**
      * @return Credential avatars for this server.  Returns null if none.
      */
-    public Set<CredentialAvatar> getCredentialAvatars() {
-        return this.avatars;
+    public Set<Credential> getCredentials() {
+        return this.credentials;
     }
 
     /**
      * @return True if there are avatars attached to this instance.
      */
-    public boolean hasCredentialAvatars() {
-        return this.avatars != null && this.avatars.size() > 0;
+    public boolean hasCredentials() {
+        return this.credentials != null && this.credentials.size() > 0;
     }
 
     /**
@@ -242,11 +242,11 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
      *
      * @param ca Credential avatar to add to set of avatars.
      */
-    public void addCredentialAvatar(CredentialAvatar ca) {
-        if (this.avatars == null) {
-            this.avatars = new HashSet<CredentialAvatar>();
+    public void addCredential(Credential cred) {
+        if (this.credentials == null) {
+            this.credentials = new HashSet<Credential>();
         }
-        this.avatars.add(ca);
+        this.credentials.add(cred);
     }
     
 	/**
