@@ -473,7 +473,10 @@ public abstract class AbstractFrontier
     protected void drainInbound() throws InterruptedException {
         int batch = inbound.size();
         for(int i = 0; i < batch; i++) {
-            InEvent ev = inbound.take();
+            InEvent ev = inbound.poll();
+            if(ev==null) {
+                break;
+            }
             synchronized(this) {
                 ev.process();
             }
