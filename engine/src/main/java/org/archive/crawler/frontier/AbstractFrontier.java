@@ -345,7 +345,7 @@ public abstract class AbstractFrontier
             outbound = new ArrayBlockingQueue<CrawlURI>(200, true);
         }
         if(inbound==null) {
-            inbound = new ArrayBlockingQueue<InEvent>(40000, true);
+            inbound = new ArrayBlockingQueue<InEvent>(4000, true);
         }
         pause();
         startManagerThread();
