@@ -3,6 +3,8 @@ package org.archive.bdb;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import sun.reflect.ReflectionFactory;
 
@@ -13,6 +15,10 @@ import com.esotericsoftware.kryo.SerializationException;
  * Extensions to Kryo to let classes control their own registration, suggest
  * other classes to register together, and use the same (Sun-JVM-only) trick
  * for deserializing classes without no-arg constructors.
+ * 
+ * newInstance technique and constructor caching inspired by the 
+ * KryoReflectionFactorySupport class of Martin Grotzke's kryo-serializers 
+ * project. <https://github.com/magro/kryo-serializers>
  * 
  * TODO: more comments!
  * 
@@ -44,6 +50,9 @@ public class AutoKryo extends Kryo {
         }
     }
 
+    protected static final ReflectionFactory REFLECTION_FACTORY = ReflectionFactory.getReflectionFactory();
+    protected static final Object[] INITARGS = new Object[0];
+    protected static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<Class<?>, Constructor<?>>();
     
     @Override
     public <T> T newInstance(Class<T> type) {
@@ -54,12 +63,14 @@ public class AutoKryo extends Kryo {
             ex = se;
         }
         try {
-            final Constructor<?> constructor = 
-            ReflectionFactory.getReflectionFactory().newConstructorForSerialization( 
-                    type, 
-                    Object.class.getDeclaredConstructor( new Class[0] ) );
-            constructor.setAccessible( true );
-            Object inst = constructor.newInstance( new Object[0] );
+            Constructor<?> constructor = CONSTRUCTOR_CACHE.get(type);
+            if(constructor == null) {
+                constructor = REFLECTION_FACTORY.newConstructorForSerialization( 
+                        type, Object.class.getDeclaredConstructor( new Class[0] ) );
+                constructor.setAccessible( true );
+                CONSTRUCTOR_CACHE.put(type, constructor);
+            }
+            Object inst = constructor.newInstance( INITARGS );
             return (T) inst;
         } catch (SecurityException e) {
             e.printStackTrace();
