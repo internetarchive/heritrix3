@@ -396,8 +396,9 @@ public abstract class AbstractFrontier
                                 reachedState(State.PAUSE);
                             }
                             // continue to process discovered and finished URIs
+                            InEvent ev = inbound.take(); 
                             synchronized(this) {
-                                inbound.take().process();
+                                ev.process();
                             }
                         }
                         break;
@@ -407,8 +408,9 @@ public abstract class AbstractFrontier
                         // process all inbound
                         while (outbound.size() != getInProcessCount()) {
                             // continue to process discovered and finished URIs
+                            InEvent ev = inbound.take(); 
                             synchronized(this) {
-                                inbound.take().process();
+                                ev.process();
                             }
                         }
                         finalTasks(); 
