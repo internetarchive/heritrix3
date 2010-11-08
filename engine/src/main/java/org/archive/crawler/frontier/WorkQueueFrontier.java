@@ -737,12 +737,27 @@ implements Closeable,
             
             // never return null if there are any eligible inactives
             if(getTotalEligibleInactiveQueues()>0) {
-                return findEligibleURI();
+                if(depthFindEligibleURI>0) {
+                    System.err.println("FRONTIER.findEligibleURIs depth: "+ depthFindEligibleURI);
+                    System.err.println(shortReportLine()); 
+                }
+                if(depthFindEligibleURI>5) {
+                    System.err.println("RETURNING null");
+                    return null; 
+                }
+                try {
+                    depthFindEligibleURI++;
+                    return findEligibleURI();
+                } finally {
+                    depthFindEligibleURI = 0; 
+                }
             }
             
             // nothing eligible
             return null; 
     }
+    
+    int depthFindEligibleURI = 0; 
 
     /**
      * Check for any future-scheduled URIs now eligible for reenqueuing
