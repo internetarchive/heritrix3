@@ -637,15 +637,6 @@ implements Closeable,
             wakeQueues();
             // consider rescheduled URIS
             checkFutures();
-            // activate enough inactive queues to fill outbound
-            int activationsWanted = 
-                outbound.remainingCapacity() - readyClassQueues.size();
-            while(activationsWanted > 0 
-                    && !getInactiveQueuesByPrecedence().isEmpty() 
-                    && highestPrecedenceWaiting < getPrecedenceFloor()) {
-                activateInactiveQueue();
-                activationsWanted--;
-            }
                    
             // find a non-empty ready queue, if any 
             // TODO: refactor to untangle these loops, early-exits, etc!
@@ -653,9 +644,16 @@ implements Closeable,
             findauri: while(true) {
                 findaqueue: do {
                     String key = readyClassQueues.poll();
-                    if(key== null) {
-                        // no ready queues
-                        break;
+                    if(key==null) {
+                        // no ready queues; try to activate one
+                        if(!getInactiveQueuesByPrecedence().isEmpty() 
+                            && highestPrecedenceWaiting < getPrecedenceFloor()) {
+                            activateInactiveQueue();
+                            continue findaqueue;
+                        } else {
+                            // nothing ready or readyable
+                            break findaqueue;
+                        }
                     }
                     readyQ = getQueueFor(key);
                     if(readyQ==null) {
@@ -737,12 +735,13 @@ implements Closeable,
             
             // never return null if there are any eligible inactives
             if(getTotalEligibleInactiveQueues()>0) {
-                if(depthFindEligibleURI>0) {
-                    System.err.println("FRONTIER.findEligibleURIs depth: "+ depthFindEligibleURI);
-                    System.err.println(shortReportLine()); 
+                if(depthFindEligibleURI>1) {
+                    logger.warning(
+                        "FRONTIER.findEligibleURIs depth: "+ depthFindEligibleURI
+                        +"\n"+shortReportLine());
                 }
-                if(depthFindEligibleURI>5) {
-                    System.err.println("RETURNING null");
+                if(depthFindEligibleURI>=5) {
+                    logger.severe("RETURNING null");
                     return null; 
                 }
                 try {
@@ -757,6 +756,7 @@ implements Closeable,
             return null; 
     }
     
+    // temporary debugging support
     int depthFindEligibleURI = 0; 
 
     /**

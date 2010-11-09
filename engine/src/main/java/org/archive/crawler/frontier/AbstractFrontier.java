@@ -518,9 +518,17 @@ public abstract class AbstractFrontier
         
         
         CrawlURI retval = outbound.poll();
-        if(retval==null) {
-            fillOutbound();
-            retval = outbound.take();
+        while(retval==null) {
+            // try filling outbound until we get something to work on
+            CrawlURI crawlable = findEligibleURI();
+            if (crawlable != null) {
+                outbound.put(crawlable);
+                retval = outbound.poll();
+            } else {
+                // or if nothing ready, wait for other threads to fill for us
+                // (no busy spin) 
+                retval = outbound.take();
+            } 
         }
         
 //      // TODO: consider if following necessary for maintaining throughput
