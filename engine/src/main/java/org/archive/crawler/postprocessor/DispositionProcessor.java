@@ -21,6 +21,7 @@ package org.archive.crawler.postprocessor;
 
 
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
@@ -31,7 +32,6 @@ import java.util.logging.Logger;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ModuleAttributeConstants;
 import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
@@ -232,7 +232,7 @@ public class DispositionProcessor extends Processor {
     protected long politenessDelayFor(CrawlURI curi) {
         long durationToWait = 0;
         Map<String,Object> cdata = curi.getData();
-        if (cdata.containsKey(ModuleAttributeConstants.A_FETCH_BEGAN_TIME)
+        if (cdata.containsKey(A_FETCH_BEGAN_TIME)
                 && cdata.containsKey(A_FETCH_COMPLETED_TIME)) {
 
             long completeTime = curi.getFetchCompletedTime();

@@ -37,13 +37,13 @@ import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST
 import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_NOT_MODIFIED;
 import static org.archive.io.warc.WARCConstants.REQUEST;
 import static org.archive.io.warc.WARCConstants.TYPE;
-import static org.archive.modules.ModuleAttributeConstants.A_DNS_SERVER_IP_LABEL;
-import static org.archive.modules.ModuleAttributeConstants.A_FTP_CONTROL_CONVERSATION;
-import static org.archive.modules.ModuleAttributeConstants.A_FTP_FETCH_STATUS;
-import static org.archive.modules.ModuleAttributeConstants.A_SOURCE_TAG;
-import static org.archive.modules.ModuleAttributeConstants.HEADER_TRUNC;
-import static org.archive.modules.ModuleAttributeConstants.LENGTH_TRUNC;
-import static org.archive.modules.ModuleAttributeConstants.TIMER_TRUNC;
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
+import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
+import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
+import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
+import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
+import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
+import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
 

@@ -19,7 +19,7 @@
 
 package org.archive.modules.writer;
 
-import static org.archive.modules.ModuleAttributeConstants.A_DNS_SERVER_IP_LABEL;
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 
 import java.io.File;

@@ -20,11 +20,11 @@ package org.archive.modules;
 
 
 /**
- * CrawlURI attribute keys used by the core crawler
+ * Attribute keys and constant strings used by the core crawler
  * classes.
  *
- * @author gojomo
- *
+ * @contributor gojomo
+ * @contributor pjack
  */
 public interface CoreAttributeConstants {
 
@@ -49,13 +49,14 @@ public interface CoreAttributeConstants {
 
     public static String A_RRECORD_SET_LABEL = "dns-records";
     public static String A_DNS_FETCH_TIME    = "dns-fetch-time";
-    public static String A_DNS_SERVER_IP_LABEL = ModuleAttributeConstants.A_DNS_SERVER_IP_LABEL;
+    public static String A_DNS_SERVER_IP_LABEL = "dns-server-ip";
+    public static final String A_FETCH_BEGAN_TIME= "fetch-began-time";
     public static String A_FETCH_COMPLETED_TIME = "fetch-completed-time";
 
     public static String A_RUNTIME_EXCEPTION = "runtime-exception";
     public static String A_NONFATAL_ERRORS = "nonfatal-errors";
 
-    /** shorthand string tokens indicating notable occurences,
+    /** shorthand string tokens indicating notable occurrences,
      * separated by commas */
     public static String A_ANNOTATIONS = "annotations";
 
@@ -72,11 +73,10 @@ public interface CoreAttributeConstants {
     /**
      * Key to get credential avatars from A_LIST.
      */
-    public static final String A_CREDENTIALS_KEY =
-        "credentials";
+    public static final String A_CREDENTIALS_KEY = "credentials";
     
     /** a 'source' (usu. URI) that's inherited by discovered URIs */
-    public static String A_SOURCE_TAG = ModuleAttributeConstants.A_SOURCE_TAG;
+    public static String A_SOURCE_TAG = "source";
     
     /**
      * Key to (optional) attribute specifying a list of keys that
@@ -88,7 +88,7 @@ public interface CoreAttributeConstants {
     /** flag indicating the containing queue should be retired */ 
     public static final String A_FORCE_RETIRE = "force-retire";
     
-    /** key to atribute containing precalculated precedence */
+    /** key to attribute containing pre-calculated precedence */
     public static final String A_PRECALC_PRECEDENCE = "precalc-precedence";
     
     /** local override of proxy host */ 
@@ -102,13 +102,14 @@ public interface CoreAttributeConstants {
      * Make for-sure unique or redo truncation so definitive flag marked
      * against {@link CrawlURI}).
      */
-    public static final String TRUNC_SUFFIX = ModuleAttributeConstants.TRUNC_SUFFIX;
+    public static final String TRUNC_SUFFIX = "Trunc";
     // headerTrunc
-    public static final String HEADER_TRUNC = ModuleAttributeConstants.HEADER_TRUNC; 
+    public static final String HEADER_TRUNC = "header" + TRUNC_SUFFIX; 
     // timeTrunc
-    public static final String TIMER_TRUNC = ModuleAttributeConstants.TIMER_TRUNC;
+    public static final String TIMER_TRUNC = "time" + TRUNC_SUFFIX;
     // lenTrunc
-    public static final String LENGTH_TRUNC = ModuleAttributeConstants.LENGTH_TRUNC;
+    public static final String LENGTH_TRUNC = "len" + TRUNC_SUFFIX;
 
-
+    public static final String A_FTP_CONTROL_CONVERSATION = "ftp-control-conversation";
+    public static final String A_FTP_FETCH_STATUS = "ftp-fetch-status";
 }

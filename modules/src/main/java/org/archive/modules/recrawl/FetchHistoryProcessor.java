@@ -27,7 +27,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.*;
-import static org.archive.modules.ModuleAttributeConstants.A_FETCH_BEGAN_TIME;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
 
 /**
  * Maintain a history of fetch information inside the CrawlURI's attributes. 

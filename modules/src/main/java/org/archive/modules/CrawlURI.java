@@ -1233,8 +1233,8 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     public long getFetchBeginTime() {
-        if (containsDataKey(ModuleAttributeConstants.A_FETCH_BEGAN_TIME)) {
-            return (Long)getData().get(ModuleAttributeConstants.A_FETCH_BEGAN_TIME);
+        if (containsDataKey(CoreAttributeConstants.A_FETCH_BEGAN_TIME)) {
+            return (Long)getData().get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
         } else {
             return 1L;
         }
@@ -1286,7 +1286,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     public void setFetchBeginTime(long time) {
-        getData().put(ModuleAttributeConstants.A_FETCH_BEGAN_TIME, time);
+        getData().put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, time);
     }
 
     public void setFetchCompletedTime(long time) {

@@ -18,8 +18,8 @@
  */
 package org.archive.modules.fetcher;
 
-import static org.archive.modules.ModuleAttributeConstants.A_FTP_CONTROL_CONVERSATION;
-import static org.archive.modules.ModuleAttributeConstants.A_FTP_FETCH_STATUS;
+import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
+import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
