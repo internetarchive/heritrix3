@@ -110,7 +110,6 @@ implements Serializable {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     public E peek() {
         synchronized (headIndex) {
             if(peekItem != null) {
@@ -133,7 +132,6 @@ implements Serializable {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public E poll() {
         synchronized (headIndex) {
             E head = peek();
