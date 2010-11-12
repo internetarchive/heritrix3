@@ -84,15 +84,8 @@ public class FrontierJournal extends CrawlerJournal {
         writeLongUriLine(F_ADD, curi);
     }
     
-    public synchronized void writeLongUriLine(String tag, CrawlURI curi) {
-        accumulatingBuffer.length(0);
-        this.accumulatingBuffer.append(tag).
-            append(curi.toString()).
-            append(" "). 
-            append(curi.getPathFromSeed()).
-            append(" ").
-            append(curi.flattenVia());
-        writeLine(accumulatingBuffer);
+    public void writeLongUriLine(String tag, CrawlURI curi) {
+        writeLine(tag, curi.toString(), " ",curi.getPathFromSeed(), " ", curi.flattenVia());
     }
 
     public void finishedSuccess(CrawlURI curi) {

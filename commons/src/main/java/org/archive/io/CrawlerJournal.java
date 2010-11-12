@@ -92,15 +92,10 @@ public class CrawlerJournal implements Closeable {
         this.out = initialize(gzipFile);
     }
     
-    /**
-     * Allocate a buffer for accumulating lines to write and reuse it.
-     */
-    protected MutableString accumulatingBuffer = new MutableString(1024);
-
     protected Writer initialize(final File f) throws FileNotFoundException, IOException {
         FileUtils.moveAsideIfExists(f);
         return new OutputStreamWriter(new GZIPOutputStream(
-            new FastBufferedOutputStream(new FileOutputStream(f))));
+            new FastBufferedOutputStream(new FileOutputStream(f),32*1024)));
     }
 
     /**
