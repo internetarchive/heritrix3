@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.SortedMap; // <- IA/HERITRIX CHANGE
 import java.util.TreeMap;   // <- IA/HERITRIX CHANGE
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.apache.commons.httpclient.cookie.CookieSpec;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
@@ -91,7 +92,7 @@ public class HttpState {
     /**
      * SortedMap of {@link Cookie cookies} that this HTTP state contains.
      */
-    private SortedMap cookiesMap = new TreeMap();
+    private SortedMap cookiesMap = new ConcurrentSkipListMap();
 // END IA/HERITRIX CHANGES
 
     private boolean preemptive = false;
@@ -133,10 +134,10 @@ public class HttpState {
      * @see #addCookies(Cookie[])
      * 
      */
-    public synchronized void addCookie(Cookie cookie) {
+ // BEGIN IA/HERITRIX CHANGES
+    public /*synchronized*/ void addCookie(Cookie cookie) {
         LOG.trace("enter HttpState.addCookie(Cookie)");
 
-// BEGIN IA/HERITRIX CHANGES
 // PRIOR IMPL & COMPARISON HARNESS LEFT COMMENTED OUT FOR TEMPORARY REFERENCE
 //        Cookie removed1 = null;
 //        Cookie removed2 = null;
@@ -225,7 +226,7 @@ public class HttpState {
      * 
      * @return sorter map of {@link Cookie cookies}
      */
-    public synchronized SortedMap getCookiesMap() {
+    public SortedMap getCookiesMap() {
         return cookiesMap;
     }
     
@@ -235,7 +236,7 @@ public class HttpState {
      * 
      * @param map alternate sorted map to use to store cookies
      */
-    public synchronized void setCookiesMap(SortedMap map) {
+    public void setCookiesMap(SortedMap map) {
         this.cookiesMap = map;
     }
 // END IA/HERITRIX ADDITIONS
