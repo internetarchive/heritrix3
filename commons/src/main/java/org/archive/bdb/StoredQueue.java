@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.AbstractQueue;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -123,9 +124,11 @@ implements Serializable {
                     return head;
                 }
                 // ERROR; should never be null with headIndex < tailIndex
-                logger.severe("unexpected empty index of StoredQueue: "
+                logger.log(Level.SEVERE,
+                        "unexpected empty index of StoredQueue("
+                        + queueDb.getDatabaseName()+"): "
                         + headIndex.get() + " (tailIndex: " 
-                        + tailIndex.get());
+                        + tailIndex.get(),new Exception());
                 headIndex.incrementAndGet();
             }
             return head;
