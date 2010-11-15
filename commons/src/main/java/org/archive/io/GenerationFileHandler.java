@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.FileHandler;
+import java.util.logging.LogRecord;
 
 import org.archive.util.FileUtils;
 
@@ -134,4 +135,14 @@ public class GenerationFileHandler extends FileHandler {
         FileUtils.moveAsideIfExists(new File(filename));
         return new GenerationFileHandler(filename, append, shouldManifest);
     }
+
+    @Override
+    public void publish(LogRecord record) {
+        // preformat outside synchronized superclass method
+        // (our most involved UriProcessingFormatter will cache result for LogRecord)
+        getFormatter().format(record);
+        super.publish(record);
+    }
+    
+    
 }

@@ -18,8 +18,6 @@
  */
 package org.archive.crawler.io;
 
-import it.unimi.dsi.mg4j.util.MutableString;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Formatter;
@@ -49,12 +47,23 @@ extends Formatter implements CoreAttributeConstants {
         14 + 1 + 32 + 4 + 128 + 1;
     
     /**
-     * Reuseable assembly buffer.
+     * Reusable assembly buffer.
      */
-    private final MutableString buffer =
-        new MutableString(GUESS_AT_LOG_LENGTH);
+    protected final ThreadLocal<StringBuilder> bufLocal =
+        new ThreadLocal<StringBuilder>() {
+            @Override
+            protected StringBuilder initialValue() {
+                return new StringBuilder(GUESS_AT_LOG_LENGTH);
+            }
+    };
+    
+    protected final ThreadLocal<LogRecord> cachedRecord = new ThreadLocal<LogRecord>(); 
+    protected final ThreadLocal<String> cachedFormat = new ThreadLocal<String>(); 
     
     public String format(LogRecord lr) {
+        if(lr==cachedRecord.get()) {
+            return cachedFormat.get();
+        }
         CrawlURI curi = (CrawlURI)lr.getParameters()[0];
         String length = NA;
         String mime = null;
@@ -74,15 +83,6 @@ extends Formatter implements CoreAttributeConstants {
         mime = MimetypeUtils.truncate(mime);
 
         long time = System.currentTimeMillis();
-        String arcTimeAndDuration;
-        if(curi.containsDataKey(A_FETCH_COMPLETED_TIME)) {
-            long completedTime = curi.getFetchCompletedTime();
-            long beganTime = curi.getFetchBeginTime();
-            arcTimeAndDuration = ArchiveUtils.get17DigitDate(beganTime) + "+"
-                    + Long.toString(completedTime - beganTime);
-        } else {
-            arcTimeAndDuration = NA;
-        }
 
         String via = curi.flattenVia();
         
@@ -91,9 +91,10 @@ extends Formatter implements CoreAttributeConstants {
         String sourceTag = curi.containsDataKey(A_SOURCE_TAG) 
                 ? curi.getSourceTag()
                 : null;
-                
-        this.buffer.length(0);
-        this.buffer.append(ArchiveUtils.getLog17Date(time))
+             
+        StringBuilder buffer = bufLocal.get();
+        buffer.setLength(0);
+        buffer.append(ArchiveUtils.getLog17Date(time))
             .append(" ")
             .append(ArchiveUtils.padTo(curi.getFetchStatus(), 5))
             .append(" ")
@@ -111,9 +112,20 @@ extends Formatter implements CoreAttributeConstants {
             // Pad threads to be 3 digits.  For Igor.
             .append(ArchiveUtils.padTo(
                 Integer.toString(curi.getThreadNumber()), 3, '0'))
-            .append(" ")
-            .append(arcTimeAndDuration)
-            .append(" ")
+            .append(" ");
+        
+        // arcTimeAndDuration
+        if(curi.containsDataKey(A_FETCH_COMPLETED_TIME)) {
+            long completedTime = curi.getFetchCompletedTime();
+            long beganTime = curi.getFetchBeginTime();
+            buffer.append(ArchiveUtils.get17DigitDate(beganTime))
+                    .append("+")
+                    .append(Long.toString(completedTime - beganTime));
+        } else {
+            buffer.append(NA);
+        }
+        
+        buffer.append(" ")
             .append(checkForNull(digest))
             .append(" ")
             .append(checkForNull(sourceTag))
@@ -127,8 +139,11 @@ extends Formatter implements CoreAttributeConstants {
             	buffer.append(iter.next());
             }
         }
-            
-        return buffer.append("\n").toString();
+        buffer.append("\n");
+        cachedRecord.set(lr); 
+        String formatted = buffer.toString(); 
+        cachedFormat.set(formatted);
+        return formatted;
     }
     
     /**
