@@ -162,6 +162,13 @@ implements MultiReporter, ProgressStatisticsReporter,
                     recoverableProblem(ae);
                 } catch (RuntimeException e) {
                     recoverableProblem(e);
+                } catch (InterruptedException e) {
+                    if(currentCuri!=null) {
+                        recoverableProblem(e);
+                        Thread.interrupted(); // clear interrupt status
+                    } else {
+                        throw e;
+                    }
                 } catch (StackOverflowError err) {
                     recoverableProblem(err);
                 } catch (Error err) {
@@ -187,6 +194,9 @@ implements MultiReporter, ProgressStatisticsReporter,
                 }
             }
         } catch (InterruptedException e) {
+            if(currentCuri!=null){
+                logger.log(Level.SEVERE,"Interrupt leaving unfinished CrawlURI "+getName()+" - job may hang",e);
+            }
             // thread interrupted, ok to end
             logger.log(Level.FINE,this.getName()+ " ended with Interruption");
         } catch (Exception e) {
@@ -288,7 +298,7 @@ implements MultiReporter, ProgressStatisticsReporter,
     private void recoverableProblem(Throwable e) {
         Object previousStep = step;
         setStep(Step.HANDLING_RUNTIME_EXCEPTION, null);
-        e.printStackTrace(System.err);
+        //e.printStackTrace(System.err);
         currentCuri.setFetchStatus(S_RUNTIME_EXCEPTION);
         // store exception temporarily for logging
         currentCuri.getAnnotations().add("err="+e.getClass().getName());

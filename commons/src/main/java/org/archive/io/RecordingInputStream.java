@@ -219,6 +219,10 @@ public class RecordingInputStream
                 if (logger.isLoggable(Level.FINE)) {
                     logger.log(Level.FINE, "socket timeout", e); 
                 }
+                // check for interrupt
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Interrupted during IO");
+                }
                 // check for overall timeout
                 recordingOutputStream.checkLimits();
             } catch (SocketException se) {

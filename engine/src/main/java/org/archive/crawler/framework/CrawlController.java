@@ -398,6 +398,10 @@ implements Serializable,
      * Operator requested for crawl to stop.
      */
     public synchronized void requestCrawlStop() {
+        if(state == State.STOPPING) {
+            // second stop request; nudge the threads with interrupts
+            getToePool().cleanup();
+        }
         requestCrawlStop(CrawlStatus.ABORTED);
     }
     

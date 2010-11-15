@@ -70,7 +70,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 toe.interrupt();
             }
         }
-        this.controller = null;
+//        this.controller = null;
     }
 
     /**
@@ -297,6 +297,9 @@ public class ToePool extends ThreadGroup implements MultiReporter {
         w.print(" threads: ");
         
         TreeSet<Map.Entry<Object,Long>> sortedSteps = (TreeSet<Entry<Object, Long>>) map.get("steps");
+        if(sortedSteps.size()==0) {
+            return;
+        }
         w.print(Histotable.entryString(sortedSteps.first()));
         if(sortedSteps.size()>1) {
             Iterator<Map.Entry<Object,Long>> iter = sortedSteps.iterator();
