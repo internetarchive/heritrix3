@@ -191,17 +191,21 @@ public class CrawlerJournal implements Closeable {
      * @param checkpointDir
      * @throws IOException
      */
-    public synchronized void rotateForCheckpoint(Checkpoint checkpointInProgress) throws IOException {
+    public synchronized void rotateForCheckpoint(Checkpoint checkpointInProgress) {
         if (this.out == null || !this.gzipFile.exists()) {
             return;
         }
         close();
         // Rename gzipFile with the checkpoint name as suffix.
         File newName = new File(this.gzipFile.getParentFile(),
-                this.gzipFile.getName() + "." + checkpointInProgress.getShortName());
-        FileUtils.moveAsideIfExists(newName); 
-        this.gzipFile.renameTo(newName);
-        // Open new gzip file.
-        this.out = initialize(this.gzipFile);
+                this.gzipFile.getName() + "." + checkpointInProgress.getName());
+        try {
+            FileUtils.moveAsideIfExists(newName); 
+            this.gzipFile.renameTo(newName);
+            // Open new gzip file.
+            this.out = initialize(this.gzipFile);
+        } catch (IOException ioe) {
+            LOGGER.log(Level.SEVERE,"Problem rotating recovery journal", ioe);
+        }
     }
 }

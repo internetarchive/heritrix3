@@ -28,10 +28,9 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -261,6 +260,12 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         f.mkdirs();
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
         this.classCatalog = this.bdbEnvironment.getClassCatalog();
+        if(!create) {
+            // freeze last log file -- so that originating checkpoint isn't fouled
+            DbBackup dbBackup = new DbBackup(bdbEnvironment);
+            dbBackup.startBackup();
+            dbBackup.endBackup();
+        }
     }
 
     public void closeDatabase(Database db) {
@@ -345,7 +350,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         return classCatalog;
     }
 
-    public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz, boolean b) {
+    public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz) {
         try {
             Database queueDb;
             queueDb = openDatabase(dbname,
@@ -465,8 +470,12 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 File envCpDir = new File(dir.getFile(),checkpointInProgress.getName());
                 envCpDir.mkdirs();
                 File logfilesList = new File(envCpDir,"jdbfiles.manifest");
-                FileUtils.writeLines(logfilesList, 
-                        Arrays.asList(dbBackup.getLogFilesInBackupSet()));
+                String[] filedata = dbBackup.getLogFilesInBackupSet();
+                for (int i=0; i<filedata.length;i++) {
+                    File f = new File(dir.getFile(),filedata[i]);
+                    filedata[i] += " "+f.length();
+                }
+                FileUtils.writeLines(logfilesList,Arrays.asList(filedata));
                 LOGGER.fine("Finished processing bdb log files.");
             } finally {
                 dbBackup.endBackup();
@@ -481,23 +490,36 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         File logfilesList = new File(
                 new File(dir.getFile(),recoveryCheckpoint.getName()),
                 "jdbfiles.manifest");
-        Set<String> retainLogfiles = new HashSet<String>(FileUtils.readLines(logfilesList));
+        List<String> filesAndLengths = FileUtils.readLines(logfilesList);
+        HashMap<String,Long> retainLogfiles = new HashMap<String,Long>();
+        for(String line : filesAndLengths) {
+            String[] fileAndLength = line.split(" ");
+            retainLogfiles.put(fileAndLength[0],Long.valueOf(fileAndLength[1]));
+        }
         IOFileFilter filter = FileFilterUtils.orFileFilter(
                 FileFilterUtils.suffixFileFilter(".jdb"), 
                 FileFilterUtils.suffixFileFilter(".del"));
         filter = FileFilterUtils.makeFileOnly(filter);
         for(File f : dir.getFile().listFiles((FileFilter)filter)) {
-            if(retainLogfiles.contains(f.getName())) {
+            if(retainLogfiles.containsKey(f.getName())) {
+                long expectedLength = retainLogfiles.get(f.getName());
+                if(f.length()!=expectedLength) {
+                    LOGGER.warning(f.getName()+" expected "+expectedLength+" actual "+f.length());
+                }
                 retainLogfiles.remove(f.getName()); 
                 continue;
             }
             String undelName = f.getName().replace(".del", ".jdb");
-            if(retainLogfiles.contains(undelName)) {
+            if(retainLogfiles.containsKey(undelName)) {
+                long expectedLength = retainLogfiles.get(undelName);
+                if(f.length()!=expectedLength) {
+                    LOGGER.warning(f.getName()+" expected "+expectedLength+" actual "+f.length());
+                }
                 if(!f.renameTo(new File(f.getParentFile(),undelName))) {
                     throw new IOException("Unable to rename " + f + " to " +
                             undelName);
                 }
-                retainLogfiles.remove(f.getName()); 
+                retainLogfiles.remove(undelName); 
             }
             // not needed; move aside
             org.archive.util.FileUtils.moveAsideIfExists(f);
