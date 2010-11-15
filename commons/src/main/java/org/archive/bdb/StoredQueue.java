@@ -22,9 +22,12 @@ package org.archive.bdb;
 import java.io.Serializable;
 import java.util.AbstractQueue;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
 
 
 import com.sleepycat.bind.EntryBinding;
@@ -106,7 +109,8 @@ implements Serializable {
 
     public boolean offer(E o) {
         synchronized (tailIndex) {
-            queueMap.put(tailIndex.getAndIncrement(), o);
+            queueMap.put(tailIndex.get(), o);
+            tailIndex.getAndIncrement();
         }
         return true;
     }
@@ -128,7 +132,8 @@ implements Serializable {
                         "unexpected empty index of StoredQueue("
                         + queueDb.getDatabaseName()+"): "
                         + headIndex.get() + " (tailIndex: " 
-                        + tailIndex.get(),new Exception());
+                        + tailIndex.get() +") ", //+StringUtils.join(rememberedOps, ","),
+                        new Exception());
                 headIndex.incrementAndGet();
             }
             return head;
@@ -139,7 +144,9 @@ implements Serializable {
         synchronized (headIndex) {
             E head = peek();
             if(head!=null) {
-                queueMap.remove(headIndex.getAndIncrement());
+                long hi = headIndex.getAndIncrement();
+                queueMap.remove(hi);
+//                debugRemember(-hi);
                 peekItem = null;
                 return head;
             } else {
@@ -147,6 +154,14 @@ implements Serializable {
             }
         }
     }
+
+//    LinkedList<Long> rememberedOps = new LinkedList<Long>(); 
+//    protected void debugRemember(long l) {
+//        rememberedOps.addFirst(l);
+//        if(rememberedOps.size()>20) {
+//            rememberedOps.removeLast();
+//        }
+//    }
 
     /**
      * A suitable DatabaseConfig for the Database backing a StoredQueue. 
