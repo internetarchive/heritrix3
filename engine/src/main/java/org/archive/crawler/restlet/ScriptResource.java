@@ -278,6 +278,6 @@ public class ScriptResource extends JobRelatedResource {
                 "page, which offers utility methods</li>\n" +
                 "</ul>");
 
-        pw.close();
+        pw.flush();
     }
 }
