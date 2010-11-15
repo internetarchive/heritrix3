@@ -21,7 +21,6 @@ package org.archive.crawler.frontier;
 
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
@@ -32,6 +31,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PRECLUDED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_EMBED_HOPS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -42,9 +42,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -153,24 +150,6 @@ public abstract class AbstractFrontier
     }
     public void setIndependentExtractors(boolean enabled) {
         kp.put("independentExtractors", enabled);
-    }
-    
-    /** inbound updates: URIs to be scheduled, finished; requested state changes */
-    protected BlockingQueue<InEvent> inbound;
-    public BlockingQueue<InEvent> getInbound() {
-        return inbound;
-    }
-    public void setInbound(BlockingQueue<InEvent> inbound) {
-        this.inbound = inbound;
-    }
-
-    /** outbound URIs */ 
-    protected BlockingQueue<CrawlURI> outbound;
-    public BlockingQueue<CrawlURI> getOutbound() {
-        return outbound;
-    }
-    public void setOutbound(BlockingQueue<CrawlURI> outbound) {
-        this.outbound = outbound;
     }
     
     public boolean isRunning() {
@@ -282,7 +261,7 @@ public abstract class AbstractFrontier
      * Currently captures Frontier/URI transitions.
      * Can be null if user chose not to run a recovery.log.
      */
-    private FrontierJournal recover = null;
+    protected FrontierJournal recover = null;
     
     /**
      * @param name Name of this frontier.
@@ -292,9 +271,6 @@ public abstract class AbstractFrontier
 
     }
 
-    /** reusable no-op inbound event, to force reeval of state/eligible URIs */
-    protected InEvent NOOP = new InEvent() { public void process() {} };
-    
     /** 
      * lock to allow holding all worker ToeThreads from taking URIs already
      * on the outbound queue; they acquire read permission before take()ing;
@@ -313,12 +289,11 @@ public abstract class AbstractFrontier
     /** last Frontier.State reached; used to suppress duplicate notifications */
     State lastReachedState = null;
     /** Frontier.state that manager thread should seek to reach */
-    State targetState = State.PAUSE;
+    volatile State targetState = State.PAUSE;
 
     /**
-     * Start the manager thread.  Subclasses should invoke this in a custom
-     * readObject() method so that the manager thread begins after checkpoint
-     * recovery.
+     * Start the dedicated thread with an independent view of the frontier's
+     * state. 
      */
     protected void startManagerThread() {
         managerThread = new Thread(this+".managerThread") {
@@ -339,13 +314,6 @@ public abstract class AbstractFrontier
             initJournal(loggerModule.getPath().getFile().getAbsolutePath());
         } catch (IOException e) {
             throw new IllegalStateException(e);
-        }
-        
-        if(outbound==null) {
-            outbound = new ArrayBlockingQueue<CrawlURI>(200, true);
-        }
-        if(inbound==null) {
-            inbound = new ArrayBlockingQueue<InEvent>(4000, true);
         }
         pause();
         startManagerThread();
@@ -372,10 +340,9 @@ public abstract class AbstractFrontier
                             outboundLock.writeLock().unlock();
                         }
                         reachedState(State.RUN);
-                        // fill to-do 'on-deck' queue
-                        fillOutbound();
-                        // process discovered and finished URIs
-                        drainInbound();
+                        
+                        Thread.sleep(1000);
+                        
                         if(isEmpty()) {
                             // pause when frontier exhausted; controller will
                             // determine if this means to finish or not
@@ -390,29 +357,21 @@ public abstract class AbstractFrontier
                         outboundLock.writeLock().lock();
                         // process all inbound
                         while (targetState == State.PAUSE) {
-                            if (outbound.size() == getInProcessCount()) {
-                                // if all 'in-process' URIs are actually 
-                                // waiting in outbound, we are at PAUSE
+                            if (getInProcessCount()==0) {
                                 reachedState(State.PAUSE);
                             }
-                            // continue to process discovered and finished URIs
-                            InEvent ev = inbound.take(); 
-                            synchronized(this) {
-                                ev.process();
-                            }
+                            
+                            Thread.sleep(1000);
                         }
                         break;
                     case FINISH:
                         // prevent all outbound takes
                         outboundLock.writeLock().lock();
                         // process all inbound
-                        while (outbound.size() != getInProcessCount()) {
-                            // continue to process discovered and finished URIs
-                            InEvent ev = inbound.take(); 
-                            synchronized(this) {
-                                ev.process();
-                            }
+                        while (getInProcessCount()>0) {
+                            Thread.sleep(1000);
                         }
+
                         finalTasks(); 
                         // TODO: more cleanup?
                         reachedState(State.FINISH);
@@ -448,52 +407,6 @@ public abstract class AbstractFrontier
     protected void finalTasks() {
         // by default; nothing
     }
-    
-    /**
-     * Fill the outbound queue with eligible CrawlURIs, to capacity
-     * or as much as possible. 
-     * 
-     * @throws InterruptedException
-     */
-    protected void fillOutbound() throws InterruptedException {
-        while (outbound.remainingCapacity() > 0) {
-            CrawlURI crawlable = findEligibleURI();
-            if (crawlable != null) {
-                outbound.put(crawlable);
-            } else {
-                break;
-            }
-        } 
-    }
-    
-    /**
-     * Drain the inbound queue of update events, or at the very least
-     * wait until some additional delayed-queue URI becomes available. 
-     * 
-     * @throws InterruptedException
-     */
-    protected void drainInbound() throws InterruptedException {
-        int batch = inbound.size();
-        for(int i = 0; i < batch; i++) {
-            InEvent ev = inbound.poll();
-            if(ev==null) {
-                break;
-            }
-            synchronized(this) {
-                ev.process();
-            }
-        }
-        if(batch==0) {
-            // always do at least one timed try
-            InEvent ev = inbound.poll(getMaxInWait(),
-                    TimeUnit.MILLISECONDS);
-            if (ev != null) {
-                synchronized(this) {
-                    ev.process();
-                }
-            }
-        }
-    }
 
     /**
      * The given state has been reached; if it is a new state, generate
@@ -512,30 +425,14 @@ public abstract class AbstractFrontier
      * @see org.archive.crawler.framework.Frontier#next()
      */
     public CrawlURI next() throws InterruptedException {
-        // perhaps hold without taking ready outbound items
-        outboundLock.readLock().lockInterruptibly();
-        outboundLock.readLock().unlock();
-        
-        
-        CrawlURI retval = outbound.poll();
-        while(retval==null) {
+        CrawlURI crawlable = null;
+        while(crawlable==null) {
+            outboundLock.readLock().lockInterruptibly();
             // try filling outbound until we get something to work on
-            CrawlURI crawlable = findEligibleURI();
-            if (crawlable != null) {
-                outbound.put(crawlable);
-                retval = outbound.poll();
-            } else {
-                // or if nothing ready, wait for other threads to fill for us
-                // (no busy spin) 
-                retval = outbound.take();
-            } 
+            crawlable = findEligibleURI();
+            outboundLock.readLock().unlock();
         }
-        
-//      // TODO: consider if following necessary for maintaining throughput
-//        if(outbound.size()<=1) {
-//            doOrEnqueue(NOOP);
-//        }
-        return retval;
+        return crawlable;
     }
 
     /**
@@ -610,11 +507,11 @@ public abstract class AbstractFrontier
             try {
                 KeyedProperties.loadOverridesFrom(curi);
                 preparer.prepare(curi);
+                processScheduleIfUnique(curi);
             } finally {
                 KeyedProperties.clearOverridesFrom(curi); 
             }
         }
-        enqueueOrDo(new ScheduleIfUnique(curi));
     }
 
     /**
@@ -629,7 +526,12 @@ public abstract class AbstractFrontier
     public void receive(CrawlURI curi) {
         sheetOverlaysManager.applyOverlaysTo(curi);
         // prefer doing asap if already in manager thread
-        doOrEnqueue(new ScheduleAlways(curi));
+        try {
+            KeyedProperties.loadOverridesFrom(curi);
+            processScheduleAlways(curi);
+        } finally {
+            KeyedProperties.clearOverridesFrom(curi); 
+        }
     }
     
     /**
@@ -644,7 +546,12 @@ public abstract class AbstractFrontier
      * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     public void finished(CrawlURI curi) {
-        enqueueOrDo(new Finish(curi));
+        try {
+            KeyedProperties.loadOverridesFrom(curi);
+            processFinish(curi);
+        } finally {
+            KeyedProperties.clearOverridesFrom(curi); 
+        }
     }
     
     private void initJournal(String logsDisk) throws IOException {
@@ -663,15 +570,6 @@ public abstract class AbstractFrontier
      * @see org.archive.crawler.framework.Frontier#requestState(org.archive.crawler.framework.Frontier.State)
      */
     public void requestState(State target) {
-        enqueueOrDo(new SetTargetState(target));
-    }
-    
-    /**
-     * Actually set a new target Frontier.State. Should only be called in
-     * managerThread, as by an InEvent. 
-     */
-    protected void processSetTargetState(State target) {
-//        assert Thread.currentThread() == managerThread;
         targetState = target;
     }
     
@@ -683,7 +581,7 @@ public abstract class AbstractFrontier
         requestState(State.RUN);
     }
 
-    synchronized public void terminate() {
+    public void terminate() {
         requestState(State.FINISH);
     }
     
@@ -1213,150 +1111,6 @@ public abstract class AbstractFrontier
 
     public void reportTo(PrintWriter writer) {
         reportTo(null, writer);
-    }
-    
-    /**
-     * Arrange for the given InEvent to be done by the managerThread, via
-     * enqueueing with other events if possible, but directly if not possible
-     * and this is the managerThread. 
-     * @param ev InEvent to be done
-     */
-    protected void enqueue(InEvent ev) {
-        if(!inbound.offer(ev)) {      
-            try {
-                drainInbound();
-                inbound.put(ev);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    
-    /**
-     * Arrange for the given InEvent to be done by the managerThread, via
-     * enqueueing with other events if possible, but directly if not possible
-     * and this is the managerThread. 
-     * @param ev InEvent to be done
-     */
-    protected void enqueueOrDo(InEvent ev) {
-        // for now, treat same as enqueue
-        // TODO: reevaluate
-        enqueue(ev); 
-//        if(!inbound.offer(ev)) {      
-//            // if can't defer, 
-//            if(Thread.currentThread()==managerThread) {
-//                // if can't enqueue, ok to just do
-//                synchronized(this) {
-//                    ev.process();
-//                }
-//                return; 
-//            } else {
-//                try {
-//                    drainInbound();
-//                    inbound.put(ev);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        }
-    }
-    
-    /**
-     * Arrange for the given InEvent to be done by the managerThread, 
-     * immediately if this is the managerThread, of via enqueueing with
-     * other inbound events otherwise.  
-     * @param ev InEvent to be done
-     */
-    protected void doOrEnqueue(InEvent ev) {
-        if (Thread.currentThread() == managerThread) {
-            // if can't enqueue, ok to just do
-            synchronized(this) {
-                ev.process();
-            }
-            return;
-        } else {
-            enqueue(ev);
-        }
-    }
-    
-    /**
-     * An event/update for the managerThread to process from the inbound queue.
-     */
-    public abstract class InEvent {
-        abstract public void process();
-    }
-    
-    /**
-     * A CrawlURI to be scheduled by the managerThread without regard to 
-     * whether the CrawlURI was already-seen. 
-     */
-    public class ScheduleAlways extends InEvent {
-        CrawlURI curi;
-        public ScheduleAlways(CrawlURI c) {
-            this.curi = c;
-        }
-        public void process() {
-            try {
-                KeyedProperties.loadOverridesFrom(curi);
-                processScheduleAlways(curi);
-            } finally {
-                KeyedProperties.clearOverridesFrom(curi); 
-            }
-        } 
-    }
-    
-    /**
-     * A CrawlURI to be scheduled by the managerThread if it has not been
-     * already-seen. (That is, if it passes the UriUniqFilter.)
-     */
-    public class ScheduleIfUnique extends InEvent {
-        CrawlURI curi;
-        public ScheduleIfUnique(CrawlURI c) {
-            this.curi = c;
-        }
-        public void process() {
-            try {
-                KeyedProperties.loadOverridesFrom(curi);
-                processScheduleIfUnique(curi);
-            } finally {
-                KeyedProperties.clearOverridesFrom(curi); 
-            }
-        }   
-    }
-    
-    /**
-     * A CrawlURI, previously issued via the outbound queue,  that has finished 
-     * its processing chain with update implications for the frontier state.
-     */
-    public class Finish extends InEvent {
-        CrawlURI caUri;
-        public Finish(CrawlURI c) {
-            this.caUri = c;
-        }
-        public void process() {
-            try {
-                KeyedProperties.loadOverridesFrom(caUri);
-                processFinish(caUri);
-            } finally {
-                KeyedProperties.clearOverridesFrom(caUri); 
-            }
-        }   
-    }
-    
-    /**
-     * An request that the frontier enter a new Frontier.State. 
-     */
-    public class SetTargetState extends InEvent {
-        State target;
-        public SetTargetState(State target) {
-            this.target = target;
-        }
-        @Override
-        public void process() {
-            processSetTargetState(target);
-            // TODO: perhaps null reachedState, because until new state is 
-            // reached it's misleading?
-        }
     }
 
     public void onApplicationEvent(ApplicationEvent event) {

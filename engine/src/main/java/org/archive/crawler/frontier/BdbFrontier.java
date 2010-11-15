@@ -20,7 +20,8 @@ package org.archive.crawler.frontier;
 
 import java.util.Queue;
 import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -31,6 +32,7 @@ import javax.management.openmbean.CompositeData;
 
 import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
+import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.bdb.StoredQueue;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
@@ -231,6 +233,7 @@ implements Checkpointable, BeanNameAware {
         
         JSONObject json = new JSONObject();
         try {
+            json.put("nextOrdinal", nextOrdinal.get());
             json.put("queuedUriCount", queuedUriCount.get());
             json.put("futureUriCount", futureUriCount.get());
             json.put("succeededFetchCount", succeededFetchCount.get());
@@ -241,6 +244,9 @@ implements Checkpointable, BeanNameAware {
         } catch (JSONException e) {
             // impossible
             throw new RuntimeException(e);
+        }
+        if(this.recover!=null) {
+            recover.rotateForCheckpoint(checkpointInProgress);
         }
     }
 
@@ -261,6 +267,7 @@ implements Checkpointable, BeanNameAware {
         if(isRecovery) {
             JSONObject json = recoveryCheckpoint.loadJson(beanName);
             try {
+                nextOrdinal.set(json.getLong("nextOrdinal"));
                 queuedUriCount.set(json.getLong("queuedUriCount"));
                 futureUriCount.set(json.getLong("futureUriCount"));
                 succeededFetchCount.set(json.getLong("succeededFetchCount"));
@@ -271,41 +278,31 @@ implements Checkpointable, BeanNameAware {
                 throw new RuntimeException(e);
             }            
             // restore WorkQueues to internal management queues
-            enqueueOrDo(new Recover());
-        }
-    }
-    
-    /**
-     * Frontier managerThread action to restore the placement of
-     * all queues to either the 'retired' collection or one of the
-     * inactive tiers (from which they will become ready/active as
-     * necessary). 
-     */
-    public class Recover extends InEvent {
-        @Override
-        public void process() {
-            // restore WorkQueues to internal management queues
+            // either retired or inactive tiers
             for (String key : allQueues.keySet()) {
                 WorkQueue q = allQueues.get(key);
-                q.getOnInactiveQueues().clear();
                 if(q.isRetired()) {
                     getRetiredQueues().add(key); 
-                } else {
+                } else if (q.getCount()>0){
                     deactivateQueue(q);
+                } else {
+                    // ensure quques that were empty-but-not-yet-recognized
+                    // (ready/snoozed) at time of checkpoint are reset
+                    q.noteDeactivated();
                 }
             }
         }
     }
-    
+
     @Override
     protected void initOtherQueues() throws DatabaseException {
-        // small risk of OutOfMemoryError: if 'hold-queues' is false,
-        // readyClassQueues may grow in size without bound
+        // tiny risk of OutOfMemoryError: if giant number of snoozed
+        // queues all wake-to-ready at once
         readyClassQueues = new LinkedBlockingQueue<String>();
 
-        inactiveQueuesByPrecedence = new TreeMap<Integer,Queue<String>>();
+        inactiveQueuesByPrecedence = new ConcurrentSkipListMap<Integer,Queue<String>>();
         
-        retiredQueues = bdb.getStoredQueue("retiredQueues", String.class, false);
+        retiredQueues = bdb.getStoredQueue("retiredQueues", String.class);
 
         // primary snoozed queues
         snoozedClassQueues = new DelayQueue<DelayedWorkQueue>();
@@ -326,7 +323,7 @@ implements Checkpointable, BeanNameAware {
      */
     @Override
     Queue<String> createInactiveQueueForPrecedence(int precedence) {
-        return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class, false);
+        return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class);
     }
     
     /**
@@ -343,5 +340,85 @@ implements Checkpointable, BeanNameAware {
             }
         };
         pendingUris.forAllPendingDo(tolog);
+    }
+    
+    /**
+     * Run a self-consistency check over queue collections, queues-of-queues, 
+     * etc. for testing purposes. Requires one of the same locks as for PAUSE, 
+     * so should only be run while crawl is running. 
+     */
+    public void consistencyCheck() {
+//        outboundLock.writeLock().lock(); 
+        dispositionInProgressLock.writeLock().lock();
+        System.err.println("<<<CHECKING FRONTIER CONSISTENCY");
+        DisposableStoredSortedMap<String,String> queueSummaries = 
+            bdb.getStoredMap(
+                    null,
+                    String.class,
+                    String.class,
+                    false,
+                    false);
+        // mark every queue with the 'managed' collections it's in
+        consistencyMarkup(queueSummaries, inProcessQueues, "i");
+        consistencyMarkup(queueSummaries,readyClassQueues, "r");
+        consistencyMarkup(queueSummaries,snoozedClassQueues, "s");
+        consistencyMarkup(queueSummaries,snoozedOverflow.values(), "S");
+        for( Entry<Integer, Queue<String>> entry : getInactiveQueuesByPrecedence().entrySet()) {
+            consistencyMarkup(queueSummaries,entry.getValue(),Integer.toString(entry.getKey()));
+        }
+        consistencyMarkup(queueSummaries,retiredQueues, "R");
+        
+        // report problems where a queue isn't as expected or ideal
+        int anomalies = 0; 
+        for(String q : allQueues.keySet()) {
+            WorkQueue wq = allQueues.get(q); 
+            String summary = queueSummaries.get(q);
+            if(wq.getCount()>0 && summary == null) {
+                // every non-empty queue should have been in at least one collection
+                System.err.println("FRONTIER ANOMALY: "+q+" "+wq.getCount()+" "+wq.isManaged()+" but not in managed collections");
+//                System.err.println(wq.shortReportLegend()+"\n"+inactiveByClass.get(q)+"\n"+wq.shortReportLine());
+                anomalies++;
+            }
+            if(wq.getCount()==0 && summary == null && wq.isManaged()) {
+                // any empty queue should only report isManaged if in a collection
+                System.err.println("FRONTIER ANOMALY: "+q+" "+wq.getCount()+" "+wq.isManaged()+" but not in managed collections");
+//                System.err.println(wq.shortReportLegend()+"\n"+inactiveByClass.get(q)+"\n"+wq.shortReportLine());
+                anomalies++;
+            }
+        }
+        System.err.println(anomalies+" ANOMALIES");
+        int concerns = 0; 
+        for(String q : queueSummaries.keySet()) {
+            String summary = queueSummaries.get(q);
+            if(summary != null && summary.split(",").length>1) {
+                // ideally queues won't be more than one place (though frontier
+                // should operate if they are, and changing precedence values 
+                // will cause multiple entries by design)
+                WorkQueue wq = allQueues.get(q); 
+                System.err.println("FRONTIER CONCERN: "+q+" "+wq.getCount()+" multiple places: "+summary);
+                System.err.println("\n"+wq.shortReportLegend()+"\n"+wq.shortReportLine());
+                concerns++;
+            }
+        }
+        System.err.println(concerns+" CONCERNS");
+        System.err.println("END CHECKING FRONTIER>>>");
+        
+        queueSummaries.dispose();
+        dispositionInProgressLock.writeLock().unlock();
+//        outboundLock.writeLock().unlock(); 
+    }
+    protected void consistencyMarkup(
+            DisposableStoredSortedMap<String, String> queueSummaries,
+            Iterable<?> queues, String mark) {
+        for(Object qq : queues) {
+            String key = (qq instanceof String) 
+                         ? (String)qq 
+                         : (qq instanceof WorkQueue) 
+                           ? ((WorkQueue)qq).getClassKey()
+                           : ((DelayedWorkQueue)qq).getClassKey();
+            String val = queueSummaries.get(key);
+            val = (val==null) ? mark : val+","+mark;
+            queueSummaries.put(key, val);
+        }
     }
 }

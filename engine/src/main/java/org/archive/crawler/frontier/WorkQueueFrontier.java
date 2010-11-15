@@ -32,12 +32,16 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedMap;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +50,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.apache.commons.collections.Bag;
-import org.apache.commons.collections.BagUtils;
-import org.apache.commons.collections.bag.HashBag;
 import org.apache.commons.collections.iterators.ObjectArrayIterator;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
@@ -114,23 +115,6 @@ implements Closeable,
     AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
-    }
-    
-    /**
-     * Whether queues should start INACTIVE (only becoming active 
-     * when needed to keep the crawler busy), or if queues should 
-     * start out ready (which means all nonempty queues are 
-     * considered in a round-robin fashion)
-     * 
-     * @return true if new queues should held inactive
-     */
-    boolean holdQueues = true; 
-    public boolean getHoldQueues() {
-        return holdQueues;
-    }
-    public void setHoldQueues(boolean holdQueues) {
-        this.holdQueues = holdQueues;
-        
     }
 
     /** amount to replenish budget on each activation (duty cycle) */
@@ -208,8 +192,8 @@ implements Closeable,
     protected BlockingQueue<String> readyClassQueues;
     
     /** all per-class queues from whom a URI is outstanding */
-    protected Bag inProcessQueues = 
-        BagUtils.synchronizedBag(new HashBag()); // of ClassKeyQueue
+    protected Set<WorkQueue> inProcessQueues = 
+        Collections.newSetFromMap(new ConcurrentHashMap<WorkQueue, Boolean>()); // of ClassKeyQueue
     
     /**
      * All per-class queues held in snoozed state, sorted by wake time.
@@ -233,7 +217,6 @@ implements Closeable,
     public void setLargestQueuesCount(int count) {
         largestQueues.setMaxSize(count);
     }
-    
     
     protected int highestPrecedenceWaiting = Integer.MAX_VALUE;
 
@@ -285,6 +268,7 @@ implements Closeable,
      */
     protected void initInternalQueues() 
     throws IOException, DatabaseException {
+        this.initOtherQueues();
         if (workQueueDataOnDisk()
                 && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
                 && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
@@ -294,7 +278,6 @@ implements Closeable,
         } else {
             this.initAllQueues();
         }
-        this.initOtherQueues();
     }
     
     /**
@@ -403,55 +386,26 @@ implements Closeable,
 //        assert Thread.currentThread() == managerThread;
         
         WorkQueue wq = getQueueFor(curi);
-        int originalPrecedence = wq.getPrecedence();
-        
-        wq.enqueue(this, curi);
-        // always take budgeting values from current curi
-        // (whose overlay settings should be active here)
-        wq.setSessionBudget(getBalanceReplenishAmount());
-        wq.setTotalBudget(getQueueTotalBudget());
-        
-        // Update recovery log.
-        doJournalAdded(curi);
-        
-        if(wq.isRetired()) {
-            return; 
-        }
-        incrementQueuedUriCount();
-        if(wq.isHeld()) {
-            if(wq.isActive()) {
-                // queue active -- promote will be handled ok by normal cycling
-                // do nothing
-            } else {
-                // queue is already in a waiting inactive queue; update
+        synchronized(wq) {
+            int originalPrecedence = wq.getPrecedence();
+            wq.enqueue(this, curi);
+            // always take budgeting values from current curi
+            // (whose overlay settings should be active here)
+            wq.setSessionBudget(getBalanceReplenishAmount());
+            wq.setTotalBudget(getQueueTotalBudget());
+            
+            if(!wq.isRetired()) {
+                incrementQueuedUriCount();
                 int currentPrecedence = wq.getPrecedence();
-                if(currentPrecedence < originalPrecedence ) {
-                    // queue bumped up; adjust ordering
+                if(!wq.isManaged() || currentPrecedence < originalPrecedence) {
+                    // queue newly filled or bumped up in precedence; ensure enqueuing
+                    // at precedence level (perhaps duplicate; if so that's handled elsewhere)
                     deactivateQueue(wq);
-                    // this intentionally places queue in duplicate inactiveQueue\
-                    // only when it comes off the right queue will it activate;
-                    // otherwise it reenqueues to right inactive queue, if not
-                    // already there (see activateInactiveQueue())
-                    if(logger.isLoggable(Level.FINE)) {
-                        logger.log(Level.FINE,
-                                "queue re-deactivated to p" +currentPrecedence 
-                                + ": " + wq.getClassKey());
-                    }
-                } else {
-                    // queue bumped down or stayed same; 
-                    // do nothing until it comes up
                 }
-            } 
-        } else {
-            // begin juggling queue between internal ordering structures
-            wq.setHeld();
-            if(getHoldQueues()) {
-                deactivateQueue(wq);
-            } else {
-                wq.startActiveSession();
-                readyQueue(wq);
             }
         }
+        // Update recovery log.
+        doJournalAdded(curi);
         largestQueues.update(wq.getClassKey(), wq.getCount());
     }
 
@@ -459,11 +413,10 @@ implements Closeable,
      * Put the given queue on the readyClassQueues queue
      * @param wq
      */
-    private void readyQueue(WorkQueue wq) {
+    protected void readyQueue(WorkQueue wq) {
 //        assert Thread.currentThread() == managerThread;
 
         try {
-            wq.setActive(this, true);
             readyClassQueues.put(wq.getClassKey());
             if(logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
@@ -477,20 +430,28 @@ implements Closeable,
         }
     }
 
+//    ConcurrentHashMap<String, String> inactiveByClass = new ConcurrentHashMap<String, String>();
     /**
      * Put the given queue on the inactiveQueues queue
      * @param wq
      */
     protected void deactivateQueue(WorkQueue wq) {
-//        assert Thread.currentThread() == managerThread;
-        
         int precedence = wq.getPrecedence();
-        if(!wq.getOnInactiveQueues().contains(precedence)) {
-            // not already on target, add
-            Queue<String> inactiveQueues = 
-                getInactiveQueuesForPrecedence(precedence);
+
+        Queue<String> inactiveQueues = 
+            getInactiveQueuesForPrecedence(precedence);
+        
+        synchronized(wq) {
+            wq.noteDeactivated();
+            inProcessQueues.remove(wq);
+            if(wq.getCount()==0) {
+                System.err.println("deactivate empty queue?");
+            }
+//            String prev = inactiveByClass.put(wq.getClassKey(), wq.shortReportLine());
+//            if(prev!=null) {
+//                logger.log(Level.WARNING,"duplicate add: "+wq.getClassKey()+"\n"+wq.shortReportLegend()+"\n"+prev+wq.shortReportLine(), new Exception());
+//            }
             inactiveQueues.add(wq.getClassKey());
-            wq.getOnInactiveQueues().add(precedence);
             if(wq.getPrecedence() < highestPrecedenceWaiting ) {
                 highestPrecedenceWaiting = wq.getPrecedence();
             }
@@ -499,13 +460,7 @@ implements Closeable,
                         "queue deactivated to p" + precedence 
                         + ": " + wq.getClassKey());
             }
-        } else {
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE,
-                        "queue already p" + precedence+": " + wq.getClassKey());
-            }
         }
-        wq.setActive(this, false);
     }
     
     /**
@@ -545,6 +500,7 @@ implements Closeable,
     protected void retireQueue(WorkQueue wq) {
 //        assert Thread.currentThread() == managerThread;
 
+        inProcessQueues.remove(wq);
         getRetiredQueues().add(wq.getClassKey());
         decrementQueuedCount(wq.getCount());
         wq.setRetired(true);
@@ -552,7 +508,6 @@ implements Closeable,
             logger.log(Level.FINE,
                     "queue retired: " + wq.getClassKey());
         }
-        wq.setActive(this, false);
     }
     
     /**
@@ -631,8 +586,7 @@ implements Closeable,
      *
      * @see org.archive.crawler.framework.Frontier#next()
      */
-    protected synchronized CrawlURI findEligibleURI() {
-//            assert Thread.currentThread() == managerThread;
+    protected CrawlURI findEligibleURI() {
             // wake any snoozed queues
             wakeQueues();
             // consider rescheduled URIS
@@ -664,18 +618,38 @@ implements Closeable,
                     }
                     if(readyQ.getCount()==0) {
                         // readyQ is empty and ready: it's exhausted
-                        // release held status, allowing any subsequent 
-                        // enqueues to again put queue in ready
-                        readyQ.clearHeld();
+                        readyQ.noteDeactivated(); 
                         readyQ = null;
+                        continue; 
+                    }
+                    if(!inProcessQueues.add(readyQ)) {
+                        // double activation; discard this and move on
+                        // (this guard allows other enqueuings to ready or 
+                        // the various inactive-by-precedence queues to 
+                        // sometimes redundantly enqueue a queue key)
+                        readyQ = null; 
+                        continue;
+                    }
+                    // queue has gone 'in process' 
+                    readyQ.considerActive();
+                    readyQ.setWakeTime(0); // clear obsolete wake time, if any
+                    if (readyQ.isOverSessionBudget()) {
+                        deactivateQueue(readyQ);
+                        readyQ = null;
+                        continue; 
+                    }
+                    if (readyQ.isOverTotalBudget()) {
+                        retireQueue(readyQ);
+                        readyQ = null;
+                        continue; 
                     }
                 } while (readyQ == null);
                 
                 if (readyQ == null) {
+                    // no queues left in ready or readiable
                     break findauri; 
                 }
-               
-                assert !inProcessQueues.contains(readyQ) : "double activation";
+           
                 returnauri: while(true) { // loop left by explicit return or break on empty
                     CrawlURI curi = null;
                     curi = readyQ.peek(this);   
@@ -704,12 +678,12 @@ implements Closeable,
                     if (currentQueueKey.equals(curi.getClassKey())) {
                         // curi was in right queue, emit
                         noteAboutToEmit(curi, readyQ);
-                        inProcessQueues.add(readyQ);
                         return curi;
                     }
                     // URI's assigned queue has changed since it
                     // was queued (eg because its IP has become
                     // known). Requeue to new queue.
+                    // TODO: consider synchronization on readyQ
                     readyQ.dequeue(this,curi);
                     doJournalRelocated(curi);
                     curi.setClassKey(currentQueueKey);
@@ -720,7 +694,10 @@ implements Closeable,
                         // readyQ is empty and ready: it's exhausted
                         // release held status, allowing any subsequent 
                         // enqueues to again put queue in ready
-                        readyQ.clearHeld();
+                        // FIXME: tiny window here where queue could 
+                        // receive new URI, be readied, fail not-in-process?
+                        inProcessQueues.remove(readyQ);
+                        readyQ.noteDeactivated();
                         readyQ = null;
                         continue findauri;
                     }
@@ -733,23 +710,15 @@ implements Closeable,
                 uriUniqFilter.requestFlush();
             }
             
-            // never return null if there are any eligible inactives
-            if(getTotalEligibleInactiveQueues()>0) {
-                if(depthFindEligibleURI>1) {
-                    logger.warning(
-                        "FRONTIER.findEligibleURIs depth: "+ depthFindEligibleURI
-                        +"\n"+shortReportLine());
-                }
-                if(depthFindEligibleURI>=5) {
-                    logger.severe("RETURNING null");
-                    return null; 
-                }
+            // if truly nothing ready, wait a moment before returning null
+            // so that loop in surrounding next() has a chance of getting something
+            // next time
+            if(getTotalEligibleInactiveQueues()==0) {
                 try {
-                    depthFindEligibleURI++;
-                    return findEligibleURI();
-                } finally {
-                    depthFindEligibleURI = 0; 
-                }
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // 
+                } 
             }
             
             // nothing eligible
@@ -780,79 +749,31 @@ implements Closeable,
     /**
      * Activate an inactive queue, if any are available. 
      */
-    private void activateInactiveQueue() {
-//        assert Thread.currentThread() == managerThread;
+    protected boolean activateInactiveQueue() {
 
-        SortedMap<Integer,Queue<String>> inactiveQueuesByPrecedence = 
-            getInactiveQueuesByPrecedence();
-        
-        int targetPrecedence = highestPrecedenceWaiting;
-        Queue<String> inactiveQueues = inactiveQueuesByPrecedence.get(
-                targetPrecedence);
+        for( Entry<Integer, Queue<String>> entry : getInactiveQueuesByPrecedence().entrySet()) {
+            for (String key = entry.getValue().poll(); key!=null; key = entry.getValue().poll() ) {
+//                inactiveByClass.remove(key);
+                int expectedPrecedence = entry.getKey();
+                if(key!=null) {
+                    WorkQueue candidateQ = (WorkQueue) this.allQueues.get(key);
+                    if(candidateQ.getPrecedence() > expectedPrecedence) {
+                        // queue demoted since placed; re-deactivate
+                        deactivateQueue(candidateQ);
+                        continue; 
+                    }
+                    updateHighestWaiting(expectedPrecedence);
+                    try {
+                        readyClassQueues.put(key);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e); 
+                    } 
+                    return true; 
+                }
+            }
+        }
 
-        String key = inactiveQueues.poll();
-        assert key != null : "empty precedence queue in map";
-        
-        if(inactiveQueues.isEmpty()) {
-            updateHighestWaiting(targetPrecedence+1);
-        }
-        
-        WorkQueue candidateQ = (WorkQueue) this.allQueues.get(key);
-        
-        assert candidateQ != null : "missing uri work queue";
-        
-        boolean was = candidateQ.getOnInactiveQueues().remove(targetPrecedence);
-        
-        assert was : "queue didn't know it was in "+targetPrecedence+" inactives";
-        
-        if(candidateQ.isActive()) {
-            // queue had been multiply-scheduled due to changing precedence
-            // already active, so ignore this activation
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE,
-                        "queue activated+ignored/active from p" + targetPrecedence
-                        + ": " + candidateQ.getClassKey());
-            }
-            return; 
-        }
-        
-        if(candidateQ.getPrecedence() < targetPrecedence) {
-            // queue moved up; do nothing (already handled)
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE,
-                        "queue activated+ignored/higher from p" 
-                        + targetPrecedence 
-                        + ": " + candidateQ.getClassKey() 
-                        + " ("+candidateQ.getPrecedence() + ") ");
-            }
-            return; 
-        }
-        if(candidateQ.getPrecedence() > targetPrecedence) {
-            // queue moved down; deactivate to new level
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE,
-                        "queue activated+deactivated from p" + targetPrecedence
-                        + ": " + candidateQ.getClassKey());
-            }
-            deactivateQueue(candidateQ);
-            return; 
-        }
-        candidateQ.startActiveSession();
-        if (candidateQ.isOverBudget()) {
-            // if still over-budget after an activation & replenishing,
-            // retire
-            retireQueue(candidateQ);
-            return;
-        }
-//        long now = System.currentTimeMillis();
-//        long delay_ms = candidateQ.getWakeTime() - now;
-//        if (delay_ms > 0) {
-//            // queue still due for snoozing
-//            snoozeQueue(candidateQ, now, delay_ms);
-//            return;
-//        }
-        candidateQ.setWakeTime(0); // clear obsolete wake time, if any
-        readyQueue(candidateQ);
+        return false;
     }
 
     /**
@@ -879,7 +800,7 @@ implements Closeable,
      * 
      * @param wq
      */
-    private void reenqueueQueue(WorkQueue wq) { 
+    protected void reenqueueQueue(WorkQueue wq) { 
         //TODO:SPRINGY set overrides by queue? 
         getQueuePrecedencePolicy().queueReevaluate(wq);
         if (logger.isLoggable(Level.FINE)) {
@@ -887,7 +808,6 @@ implements Closeable,
                 wq.getClassKey());
         }
         if(highestPrecedenceWaiting < wq.getPrecedence() 
-            || (wq.isOverBudget() && highestPrecedenceWaiting <= wq.getPrecedence())
             || wq.getPrecedence() >= getPrecedenceFloor()) {
             // if still over budget, deactivate
             deactivateQueue(wq);
@@ -911,27 +831,22 @@ implements Closeable,
      * put all queues in slow-retry-snoozes back to busy-ness. 
      */
     public void forceWakeQueues() {
-        enqueueOrDo(new InEvent() {
-            
-            @Override
-            public void process() {
-                Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
-                while(iterSnoozed.hasNext()) {
-                    WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
-                    queue.setWakeTime(0);
-                    reenqueueQueue(queue);
-                    iterSnoozed.remove(); 
-                }
-                Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
-                while(iterOverflow.hasNext()) {
-                    WorkQueue queue = iterOverflow.next().getWorkQueue(WorkQueueFrontier.this);
-                    queue.setWakeTime(0);
-                    reenqueueQueue(queue);
-                    iterOverflow.remove(); 
-                }
-            }
-        });
+        Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
+        while(iterSnoozed.hasNext()) {
+            WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
+            queue.setWakeTime(0);
+            reenqueueQueue(queue);
+            iterSnoozed.remove(); 
+        }
+        Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
+        while(iterOverflow.hasNext()) {
+            WorkQueue queue = iterOverflow.next().getWorkQueue(WorkQueueFrontier.this);
+            queue.setWakeTime(0);
+            reenqueueQueue(queue);
+            iterOverflow.remove(); 
+        }
     }
+    
     /**
      * Wake any queues sitting in the snoozed queue whose time has come.
      */
@@ -943,26 +858,15 @@ implements Closeable,
             reenqueueQueue(queue);
         }
         // also consider overflow (usually empty)
-        long now = System.currentTimeMillis();
         Iterator<DelayedWorkQueue> iter = 
-            snoozedOverflow.values().iterator();
+            snoozedOverflow.headMap(System.currentTimeMillis()).values().iterator();
         while(iter.hasNext()) {
             DelayedWorkQueue dq = iter.next();
-            if(dq.getWakeTime()<=now) {
-                iter.remove();
-                snoozedOverflowCount.decrementAndGet();
-                WorkQueue queue = dq.getWorkQueue(this);
-                queue.setWakeTime(0);
-                reenqueueQueue(queue);
-                continue; // while
-            }
-            if(snoozedClassQueues.size()<MAX_SNOOZED_IN_MEMORY) {
-                iter.remove();
-                snoozedOverflowCount.decrementAndGet();
-                snoozedClassQueues.add(dq); 
-            } else {
-                break; // while 
-            }
+            iter.remove();
+            snoozedOverflowCount.decrementAndGet();
+            WorkQueue queue = dq.getWorkQueue(this);
+            queue.setWakeTime(0);
+            reenqueueQueue(queue);
         }
     }
     
@@ -996,7 +900,7 @@ implements Closeable,
         wq.setTotalBudget(getQueueTotalBudget());
         
         assert (wq.peek(this) == curi) : "unexpected peek " + wq;
-        inProcessQueues.remove(wq, 1);
+
         int holderCost = curi.getHolderCost();
 
         if (needsReenqueuing(curi)) {
@@ -1083,6 +987,7 @@ implements Closeable,
      * @param delay_ms
      */
     protected void handleQueue(WorkQueue wq, boolean forceRetire, long now, long delay_ms) {
+        inProcessQueues.remove(wq);
         if(forceRetire) {
             retireQueue(wq);
         } else if (delay_ms > 0) {
@@ -1169,7 +1074,7 @@ implements Closeable,
         }
         
         int allCount = allQueues.size();
-        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
@@ -1177,8 +1082,6 @@ implements Closeable,
         int ineligibleCount = getTotalIneligibleInactiveQueues();
         int retiredCount = getRetiredQueues().size();
         int exhaustedCount = allCount - activeCount - inactiveCount - retiredCount;
-        int inCount = inbound.size();
-        int outCount = outbound.size();
 
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("totalQueues", allCount);
@@ -1191,8 +1094,6 @@ implements Closeable,
         map.put("retiredQueues", retiredCount);
         map.put("exhaustedQueues", exhaustedCount);
         map.put("lastReachedState", lastReachedState);
-        map.put("inboundCount", inCount);
-        map.put("outboundCount", outCount);
 
         return map;
     }
@@ -1205,7 +1106,7 @@ implements Closeable,
             return;
         }
         int allCount = allQueues.size();
-        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
@@ -1214,9 +1115,9 @@ implements Closeable,
         int retiredCount = getRetiredQueues().size();
         int exhaustedCount = 
             allCount - activeCount - inactiveCount - retiredCount;
-        int inCount = inbound.size();
-        int outCount = outbound.size();
         State last = lastReachedState;
+        w.print(last);
+        w.print(" - ");
         w.print(allCount);
         w.print(" URI queues: ");
         w.print(activeCount);
@@ -1234,8 +1135,7 @@ implements Closeable,
         w.print(retiredCount);
         w.print(" retired; ");
         w.print(exhaustedCount);
-        w.print(" exhausted");
-        w.print(" ["+last+ ": "+inCount+" in, "+outCount+" out]");        
+        w.print(" exhausted");        
         w.flush();
     }
 
@@ -1314,7 +1214,6 @@ implements Closeable,
         ArrayList<WorkQueue> inProcessQueuesCopy;
         synchronized(this.inProcessQueues) {
             // grab a copy that will be stable against mods for report duration 
-            @SuppressWarnings("unchecked")
             Collection<WorkQueue> inProcess = this.inProcessQueues;
             inProcessQueuesCopy = new ArrayList<WorkQueue>(inProcess);
         }
@@ -1390,7 +1289,7 @@ implements Closeable,
      */
     private void standardReportTo(PrintWriter w) {
         int allCount = allQueues.size();
-        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
@@ -1469,10 +1368,8 @@ implements Closeable,
         w.print(exhaustedCount);
         w.print("\n");
         
-        int inCount = inbound.size();
-        int outCount = outbound.size();
         State last = lastReachedState;
-        w.print("\n               Threadbound: "+last+ ": "+inCount+" in, "+outCount+" out");        
+        w.print("\n             Last state: "+last);        
         
         w.print("\n -----===== MANAGER THREAD =====-----\n");
         ToeThread.reportThread(managerThread, w);
@@ -1481,7 +1378,6 @@ implements Closeable,
         appendQueueReports(w, "LONGEST", largestQueues.getEntriesDescending().iterator(), largestQueues.size(), largestQueues.size());
         
         w.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
-        @SuppressWarnings("unchecked")
         Collection<WorkQueue> inProcess = inProcessQueues;
         ArrayList<WorkQueue> copy = extractSome(inProcess, maxQueuesPerReportCategory);
         appendQueueReports(w, "IN-PROCESS", copy.iterator(), copy.size(), maxQueuesPerReportCategory);
@@ -1627,7 +1523,7 @@ implements Closeable,
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
             return 0; 
         }
-        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
@@ -1644,7 +1540,7 @@ implements Closeable,
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
             return 0; 
         }
-        int inProcessCount = inProcessQueues.uniqueSet().size();
+        int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
         int activeCount = inProcessCount + readyCount + snoozedCount;
@@ -1664,7 +1560,6 @@ implements Closeable,
     public boolean isEmpty() {
         return queuedUriCount.get() == 0 
             && (uriUniqFilter == null || uriUniqFilter.pending() == 0)
-            && (inbound == null || inbound.isEmpty())
             && futureUriCount.get() == 0;
     }
 
@@ -1675,5 +1570,4 @@ implements Closeable,
     protected int getInProcessCount() {
         return inProcessQueues.size();
     }
-
 } // TODO: slim class! Suspect it should be < 800 lines, shedding budgeting/reporting

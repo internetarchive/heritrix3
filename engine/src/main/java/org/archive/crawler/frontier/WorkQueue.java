@@ -23,10 +23,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -58,7 +56,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     protected final String classKey;
 
     /** whether queue is active (ready/in-process/snoozed) or on a waiting queue */
-    protected boolean active = true;
+    protected boolean active = false;
 
     /** Total number of stored items */
     protected long count = 0;
@@ -67,17 +65,14 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     protected long enqueueCount = 0;
     
     /** Whether queue is already in lifecycle stage */
-    protected boolean isHeld = false;
+    protected boolean isManaged = false;
 
     /** Time to wake, if snoozed */
     protected long wakeTime = 0;
 
     /** assigned precedence */
     protected PrecedenceProvider precedenceProvider = new SimplePrecedenceProvider(1);
-        
-    /** set of by-precedence inactive-queues on which WorkQueue is waiting */
-    protected Set<Integer> onInactiveQueues = new HashSet<Integer>();
-    
+            
     /** Per-session 'budget' controlling activity duration */
     protected int sessionBudget = 0;
 
@@ -127,7 +122,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @param match
      * @return count of deleted URIs
      */
-    public long deleteMatching(final WorkQueueFrontier frontier, String match) {
+    public synchronized long deleteMatching(final WorkQueueFrontier frontier, String match) {
         try {
             final long deleteCount = deleteMatchingFromQueue(frontier, match);
             this.count -= deleteCount;
@@ -146,7 +141,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @param frontier Work queues manager.
      * @param curi CrawlURI to insert.
      */
-    protected void enqueue(final WorkQueueFrontier frontier,
+    protected synchronized long enqueue(final WorkQueueFrontier frontier,
         CrawlURI curi) {
         try {
             insert(frontier, curi, false);
@@ -157,6 +152,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         }
         count++;
         enqueueCount++;
+        return count;
     }
 
     /**
@@ -169,7 +165,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @return topmost queue item, or null
      */
-    public CrawlURI peek(final WorkQueueFrontier frontier) {
+    public synchronized CrawlURI peek(final WorkQueueFrontier frontier) {
         if(peekItem == null && count > 0) {
             try {
                 peekItem = peekItem(frontier);
@@ -191,7 +187,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param frontier  Work queues manager.
      */
-    protected void dequeue(final WorkQueueFrontier frontier, CrawlURI expected) {
+    protected synchronized void dequeue(final WorkQueueFrontier frontier, CrawlURI expected) {
         try {
             deleteItem(frontier, peekItem);
         } catch (IOException e) {
@@ -226,7 +222,16 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return this.sessionBudget;
     }
 
-    public void startActiveSession() {
+    /**
+     * Begin an 'active' session, which begins when a queue first offers a
+     * URI for crawling, and continues until it is deactivated (for example, 
+     * for session-budget reasons). 
+     */
+    public void considerActive() {
+        if(active) {
+            return; 
+        }
+        active=true; 
         expenditureAtLastActivation = totalExpenditure;
     }
     
@@ -246,18 +251,27 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
 
     /**
-     * Check whether queue has temporarily (session) or permanently (total) 
-     * exceeded its budgets.
+     * Check whether queue has temporarily (session) exceeded its budget.
      * 
      * @return true if queue is over either of its set budget(s)
      */
-    public boolean isOverBudget() {
+    public boolean isOverSessionBudget() {
         // check whether session budget exceeded
         // or totalExpenditure exceeds totalBudget
-        return (sessionBudget > 0 && (totalExpenditure - expenditureAtLastActivation) > sessionBudget)
-            || (this.totalBudget >= 0 && this.totalExpenditure >= this.totalBudget);
+        return (sessionBudget > 0 && (totalExpenditure - expenditureAtLastActivation) > sessionBudget);
     }
 
+    /**
+     * Check whether queue has permanently (total) exceeded its budget.
+     * 
+     * @return true if queue is over either of its set budget(s)
+     */
+    public boolean isOverTotalBudget() {
+        // check whether session budget exceeded
+        // or totalExpenditure exceeds totalBudget
+        return (this.totalBudget >= 0 && this.totalExpenditure >= this.totalBudget);
+    }
+    
     /**
      * Return the tally of all expenditures on this queue
      * 
@@ -316,39 +330,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
 
     /**
-     * Clear isHeld to false
-     */
-    public void clearHeld() {
-        isHeld = false;
-        if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE,
-                    "queue unheld: " + getClassKey());
-        }
-    }
-
-    /**
-     * Whether the queue is already in a lifecycle stage --
-     * such as ready, in-progress, snoozed -- and thus should
-     * not be redundantly inserted to readyClassQueues
-     * 
-     * @return isHeld
-     */
-    public boolean isHeld() {
-        return isHeld;
-    }
-
-    /**
-     * Set isHeld to true
-     */
-    public void setHeld() {
-        isHeld = true;
-        if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE,
-                    "queue held: " + getClassKey());
-        }
-    }
-
-    /**
      * Forgive the peek, allowing a subsequent peek to 
      * return a different item. 
      * 
@@ -404,7 +385,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @return Returns the count.
      */
-    public long getCount() {
+    public synchronized long getCount() {
         return this.count;
     }
 
@@ -464,46 +445,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     protected abstract CrawlURI peekItem(final WorkQueueFrontier frontier)
         throws IOException;
 
-    /**
-     * Suspends this WorkQueue. Closes all connections to resources etc.
-     * 
-     * @param frontier
-     * @throws IOException
-     */
-    protected void suspend(final WorkQueueFrontier frontier) throws IOException {
-    }
-
-    /**
-     * Resumes this WorkQueue. Eventually opens connections to resources etc.
-     * 
-     * @param frontier
-     * @throws IOException
-     */
-    protected void resume(final WorkQueueFrontier frontier) throws IOException {
-    }
-
-    public void setActive(final WorkQueueFrontier frontier, final boolean b) {
-        if(active != b) {
-            active = b;
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE,
-                        (active ? "queue set active: " : "queue unset active: ") + 
-                        this.getClassKey());
-            }
-            try {
-                if(active) {
-                    resume(frontier);
-                } else {
-                    suspend(frontier);
-                }
-            } catch (IOException e) {
-                //FIXME better exception handling
-                e.printStackTrace();
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    
     // 
     // Reporter
     //
@@ -522,7 +463,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         reportTo(null,writer);
     }
 
-    public Map<String, Object> shortReportMap() {
+    public synchronized Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
 
         map.put("queueName", classKey);
@@ -555,7 +496,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return sessionBudget - (totalExpenditure-expenditureAtLastActivation);
     }
 
-    public void shortReportLineTo(PrintWriter writer) {
+    public synchronized void shortReportLineTo(PrintWriter writer) {
         // queue name
         writer.print(classKey);
         writer.print(" ");
@@ -616,7 +557,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @param writer
      * @throws IOException
      */
-    public void reportTo(String name, PrintWriter writer) {
+    public synchronized void reportTo(String name, PrintWriter writer) {
         // name is ignored: only one kind of report for now
         writer.print("Queue ");
         writer.print(classKey);
@@ -695,13 +636,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return precedenceProvider.getPrecedence();
     }
 
-    /**
-     * @return the onInactiveQueues
-     */
-    public Set<Integer> getOnInactiveQueues() {
-        return onInactiveQueues;
-    }
-
     /* (non-Javadoc)
      * @see org.archive.modules.fetcher.FetchStats.HasFetchStats#tally(org.archive.modules.CrawlURI, org.archive.modules.fetcher.FetchStats.Stage)
      */
@@ -710,7 +644,26 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         precedenceProvider.tally(curi, stage);
     }
 
-    public boolean isActive() {
-        return active;
+    public synchronized void noteDeactivated() {
+        active = false;
+        isManaged = true; 
+    }
+
+    /**
+     * Whether the queue is already in a lifecycle stage --
+     * such as ready, in-progress, snoozed -- and thus should
+     * not be redundantly inserted to readyClassQueues
+     * 
+     * @return isManaged
+     */
+    public boolean isManaged() {
+        return isManaged;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        return super.toString()+"("+getClassKey()+")";
     }
 }
