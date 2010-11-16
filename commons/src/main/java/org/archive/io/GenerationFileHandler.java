@@ -143,6 +143,25 @@ public class GenerationFileHandler extends FileHandler {
         getFormatter().format(record);
         super.publish(record);
     }
-    
+
+    /**
+     * Flush only 1/100th of the usual once-per-record, to reduce the time
+     * spent holding the synchronization lock. (Flush is primarily called in
+     * a superclass's synchronized publish()). 
+     * 
+     * The eventual close calls a direct flush on the target writer, so all 
+     * rotates/ends will ultimately be fully flushed. 
+     * 
+     * @see java.util.logging.StreamHandler#flush()
+     */
+    @Override
+    public synchronized void flush() {
+        flushCount++;
+        if(flushCount==100) {
+            super.flush();
+            flushCount=0; 
+        }
+    }
+    int flushCount;     
     
 }
