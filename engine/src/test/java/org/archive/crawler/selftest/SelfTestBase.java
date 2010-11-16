@@ -89,6 +89,8 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         File profileTemplate = new File(src, "profile");
         if(profileTemplate.exists()) {
             org.apache.commons.io.FileUtils.copyDirectory(profileTemplate, tmpDefProfile);
+        } else {
+            tmpDefProfile.mkdirs();
         }
         
         // Start up a Jetty that serves the selftest's content directory.
