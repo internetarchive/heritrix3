@@ -86,7 +86,10 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         // Copy the selftest's profile in the project directory to the
         // default profile in the temporary Heritrix directory.
         File tmpDefProfile = new File(tmpJobs, "selftest-job");
-        org.apache.commons.io.FileUtils.copyDirectory(new File(src, "profile"), tmpDefProfile);
+        File profileTemplate = new File(src, "profile");
+        if(profileTemplate.exists()) {
+            org.apache.commons.io.FileUtils.copyDirectory(profileTemplate, tmpDefProfile);
+        }
         
         // Start up a Jetty that serves the selftest's content directory.
         startHttpServer();
