@@ -132,17 +132,25 @@ public class EngineApplication extends Application {
         public Representation getRepresentation(Status status, Request request, Response response) {
             StringWriter st = new StringWriter();
             PrintWriter pw = new PrintWriter(st);
-            pw.append("<h1>An error occured</h1>\n");
-            pw.append(
-                "You may be able to recover and try something " +
-                "else by going <a href='javascript:history.back();void(0);'>" +
-                "back</a>.\n");
-            if(status.getThrowable()!=null) {
-                pw.append("<h2>Cause: "+
-                    status.getThrowable().toString()+"</h2>\n");
-                pw.append("<pre>");
-                status.getThrowable().printStackTrace(pw);
-                pw.append("</pre>");
+            if(status.getCode()==404){
+                pw.append("<h1>Page not found</h1>\n");
+                pw.append("The page you are looking for does not exist.  "+
+                        "You may be able to recover by going " +
+                "<a href='javascript:history.back();void(0);'>back</a>.\n");
+            }
+            else{
+                pw.append("<h1>An error occured</h1>\n");
+                pw.append(
+                        "You may be able to recover and try something " +
+                        "else by going " +
+                "<a href='javascript:history.back();void(0);'>back</a>.\n");
+                if(status.getThrowable()!=null) {
+                    pw.append("<h2>Cause: "+
+                            status.getThrowable().toString()+"</h2>\n");
+                    pw.append("<pre>");
+                    status.getThrowable().printStackTrace(pw);
+                    pw.append("</pre>");
+                }
             }
             pw.flush();
             return new StringRepresentation(st.toString(),MediaType.TEXT_HTML);
