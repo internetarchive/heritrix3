@@ -70,7 +70,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     CrawlStatSnapshot lastCheckpointSnapshot = null;
     
     /** service for auto-checkpoint tasks at an interval */
-    protected Timer timer = new Timer(true);;
+    protected Timer timer = new Timer(true);
     protected TimerTask checkpointTask = null; 
     /**
      * Checkpoints directory
@@ -88,12 +88,12 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * Period at which to create automatic checkpoints; -1 means
      * no auto checkpointing. 
      */
-    int checkpointIntervalMinutes = -1;
-    public int getCheckpointIntervalMinutes() {
+    long checkpointIntervalMinutes = -1;
+    public long getCheckpointIntervalMinutes() {
         return checkpointIntervalMinutes;
     }
     public void setCheckpointIntervalMinutes(int interval) {
-        int oldVal = checkpointIntervalMinutes; 
+        long oldVal = checkpointIntervalMinutes; 
         this.checkpointIntervalMinutes = interval;
         if(checkpointIntervalMinutes!=oldVal) {
             setupCheckpointTask();
@@ -163,7 +163,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
             return; 
         }
         // Convert period from minutes to milliseconds.
-        long periodMs = getCheckpointIntervalMinutes() * (60 * 1000);
+        long periodMs = getCheckpointIntervalMinutes() * (60L * 1000L);
         if(periodMs<=0) {
             return;
         }
