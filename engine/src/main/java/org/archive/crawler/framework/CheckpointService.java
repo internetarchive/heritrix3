@@ -92,7 +92,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     public long getCheckpointIntervalMinutes() {
         return checkpointIntervalMinutes;
     }
-    public void setCheckpointIntervalMinutes(int interval) {
+    public void setCheckpointIntervalMinutes(long interval) {
         long oldVal = checkpointIntervalMinutes; 
         this.checkpointIntervalMinutes = interval;
         if(checkpointIntervalMinutes!=oldVal) {
