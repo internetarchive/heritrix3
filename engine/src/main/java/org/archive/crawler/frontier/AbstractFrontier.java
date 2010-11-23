@@ -907,7 +907,6 @@ public abstract class AbstractFrontier
                         } else {
                             curi.setForceFetch(forceFetch);
                             schedule(curi);
-                            newJournal.added(curi);
                         }
                     } catch (URIException e) {
                         logger.log(Level.WARNING,"Problem line: "+read, e);
