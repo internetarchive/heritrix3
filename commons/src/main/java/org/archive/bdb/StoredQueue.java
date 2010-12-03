@@ -22,13 +22,8 @@ package org.archive.bdb;
 import java.io.Serializable;
 import java.util.AbstractQueue;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
-
 
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
@@ -45,17 +40,15 @@ import com.sleepycat.je.DatabaseException;
  *
  * @param <E>
  */
-public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  
-implements Serializable {
-    private static final long serialVersionUID = 3L;
+public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
+    @SuppressWarnings("unused")
     private static final Logger logger =
         Logger.getLogger(StoredQueue.class.getName());
 
     transient StoredSortedMap<Long,E> queueMap; // Long -> E
     transient Database queueDb; // Database
     AtomicLong tailIndex; // next spot for insert
-    AtomicLong headIndex; // next spot for read
-    transient E peekItem = null;
+    transient volatile E peekItem = null;
     
     /**
      * Create a StoredQueue backed by the given Database. 
@@ -70,7 +63,6 @@ implements Serializable {
      */
     public StoredQueue(Database db, Class<E> clsOrNull, StoredClassCatalog classCatalog) {
         tailIndex = new AtomicLong(0);
-        headIndex = new AtomicLong(0);
         hookupDatabase(db, clsOrNull, classCatalog);
     }
 
@@ -99,69 +91,38 @@ implements Serializable {
 
     @Override
     public int size() {
-        synchronized(tailIndex) {
-            synchronized(headIndex) {
-                return (int)(tailIndex.get()-headIndex.get());
-            }
+        return queueMap.size();  
+    }
+    
+    @Override
+    public boolean isEmpty() {
+        if(peekItem!=null) {
+            return false;
         }
-        
+        return queueMap.isEmpty();
     }
 
     public boolean offer(E o) {
-        synchronized (tailIndex) {
-            queueMap.put(tailIndex.get(), o);
-            tailIndex.getAndIncrement();
-        }
+        long targetIndex = tailIndex.getAndIncrement();
+        queueMap.put(targetIndex, o);
         return true;
     }
 
-    public E peek() {
-        synchronized (headIndex) {
-            if(peekItem != null) {
-                return peekItem;
+    public synchronized E peek() {
+        if(peekItem == null) {
+            if(queueMap.isEmpty()) {
+                return null; 
             }
-            E head = null;
-            while(head == null && headIndex.get() < tailIndex.get()) {
-                head = (E) queueMap.get(headIndex.get());
-                if(head != null) {
-                    peekItem = head;
-                    return head;
-                }
-                // ERROR; should never be null with headIndex < tailIndex
-                logger.log(Level.SEVERE,
-                        "unexpected empty index of StoredQueue("
-                        + queueDb.getDatabaseName()+"): "
-                        + headIndex.get() + " (tailIndex: " 
-                        + tailIndex.get() +") ", //+StringUtils.join(rememberedOps, ","),
-                        new Exception());
-                headIndex.incrementAndGet();
-            }
-            return head;
+            peekItem = queueMap.remove(queueMap.firstKey());
         }
+        return peekItem; 
     }
 
-    public E poll() {
-        synchronized (headIndex) {
-            E head = peek();
-            if(head!=null) {
-                long hi = headIndex.getAndIncrement();
-                queueMap.remove(hi);
-//                debugRemember(-hi);
-                peekItem = null;
-                return head;
-            } else {
-                return null;
-            }
-        }
+    public synchronized E poll() {
+        E head = peek();
+        peekItem = null;
+        return head; 
     }
-
-//    LinkedList<Long> rememberedOps = new LinkedList<Long>(); 
-//    protected void debugRemember(long l) {
-//        rememberedOps.addFirst(l);
-//        if(rememberedOps.size()>20) {
-//            rememberedOps.removeLast();
-//        }
-//    }
 
     /**
      * A suitable DatabaseConfig for the Database backing a StoredQueue. 
@@ -176,24 +137,6 @@ implements Serializable {
         return dbConfig;
     }
     
-    /**
-     * Save the state to a stream (that is, serialize it).
-     *
-     * @serialData The capacity is emitted (int), followed by all of
-     * its elements (each an <tt>Object</tt>) in the proper order,
-     * followed by a null
-     * @param s the stream
-     */
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        try {
-            queueDb.sync();
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e); 
-        } 
-        s.defaultWriteObject();
-    }
-
     public void close() {
         try {
             queueDb.sync();
