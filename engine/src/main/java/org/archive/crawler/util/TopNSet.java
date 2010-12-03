@@ -20,12 +20,14 @@
 package org.archive.crawler.util;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentMap;
 
 import org.archive.util.Histotable;
+
+import com.google.common.collect.MapMaker;
 
 /**
  * Counting Set which only remembers the 'top N' of all String values 
@@ -46,15 +48,15 @@ public class TopNSet implements Serializable {
     private static final long serialVersionUID = 1L;
 
     int maxsize;
-    HashMap<String, Long> set;
-    long smallestKnownValue;
-    String smallestKnownKey;
-    long largestKnownValue;
-    String largestKnownKey; 
+    ConcurrentMap<String, Long> set;
+    volatile long smallestKnownValue;
+    volatile String smallestKnownKey;
+    volatile long largestKnownValue;
+    volatile String largestKnownKey; 
     
     public TopNSet(int size){
         maxsize = size;
-        set = new HashMap<String, Long>(size);
+        set = new MapMaker().concurrencyLevel(64).makeMap();
     }
     
     /**
@@ -65,9 +67,20 @@ public class TopNSet implements Serializable {
      * @param key String key to update
      * @param value long new total value (*not* increment/decrement)
      */
-    public synchronized void update(String key, long value){
-        if(set.containsKey(key) || set.size() < maxsize || value > smallestKnownValue) {
-            set.put(key,value); 
+    public void update(String key, long value){
+        // handle easy cases without synchronization
+        if(set.size()<maxsize) {
+            // need to reach maxsize before any eviction
+            set.put(key, value);
+            updateBounds(); 
+            return; 
+        }
+        if(value<smallestKnownValue && !set.containsKey(key)) {
+            // not in the running for top-N
+            return; 
+        }
+        set.put(key,value); 
+        synchronized(this) {
             if(set.size() > maxsize) {
                 set.remove(smallestKnownKey);
                 updateBounds();
@@ -92,7 +105,7 @@ public class TopNSet implements Serializable {
      * After an operation invalidating the previous largest/smallest entry,
      * find the new largest/smallest. 
      */
-    protected void updateBounds(){
+    public synchronized void updateBounds(){
         // freshly determine 
         smallestKnownValue = Long.MAX_VALUE;
         largestKnownValue = Long.MIN_VALUE;
@@ -113,7 +126,7 @@ public class TopNSet implements Serializable {
      * Make internal map available (for checkpoint/restore purposes). 
      * @return HashMap<String,Long>
      */
-    public HashMap<String,Long> getTopSet() {
+    public ConcurrentMap<String, Long> getTopSet() {
         return set;
     }
     
