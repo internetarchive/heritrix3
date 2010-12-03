@@ -266,6 +266,12 @@
     <scope>runtime</scope>
 </dependency>
 
+<dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+    <version>r07</version>
+</dependency>
+
   </dependencies>
   <build>
     <resources>
