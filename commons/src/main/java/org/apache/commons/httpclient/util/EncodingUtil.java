@@ -30,12 +30,19 @@
 package org.apache.commons.httpclient.util;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset; // IA CHANGE
+import java.util.concurrent.ConcurrentMap; // IA CHANGE
 
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.httpclient.HttpClientError;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.google.common.base.Charsets; // IA CHANGE
+import com.google.common.base.Function; // IA CHANGE
+import com.google.common.collect.ComputationException; // IA CHANGE
+import com.google.common.collect.MapMaker; // IA CHANGE
 
 /**
  * The home for utility methods that handle various encoding tasks.
@@ -53,6 +60,15 @@ public class EncodingUtil {
     /** Log object for this class. */
     private static final Log LOG = LogFactory.getLog(EncodingUtil.class);
 
+// BEGIN IA CHANGES
+    private static final ConcurrentMap<String, Charset> cachedCharsets =
+        new MapMaker().concurrencyLevel(64).makeComputingMap(new Function<String, Charset>() {
+            @Override
+            public Charset apply(String charsetName) {
+                return Charset.forName(charsetName);
+            }
+        });
+// END IA CHANGES
     /**
      * Form-urlencoding routine.
      *
@@ -160,15 +176,18 @@ public class EncodingUtil {
             throw new IllegalArgumentException("charset may not be null or empty");
         }
 
+// BEGIN IA CHANGES
         try {
-            return new String(data, offset, length, charset);
-        } catch (UnsupportedEncodingException e) {
+            Charset cs = cachedCharsets.get(charset); 
+            return new String(data, offset, length, cs);
+        } catch (ComputationException e) {
 
             if (LOG.isWarnEnabled()) {
                 LOG.warn("Unsupported encoding: " + charset + ". System encoding used");
             }
             return new String(data, offset, length);
         }
+// END IA CHANGES
     }
 
 
@@ -207,9 +226,11 @@ public class EncodingUtil {
             throw new IllegalArgumentException("charset may not be null or empty");
         }
 
+// BEGIN IA CHANGES
         try {
-            return data.getBytes(charset);
-        } catch (UnsupportedEncodingException e) {
+            Charset cs = cachedCharsets.get(charset); 
+            return data.getBytes(cs);
+        } catch (ComputationException e) {
 
             if (LOG.isWarnEnabled()) {
                 LOG.warn("Unsupported encoding: " + charset + ". System encoding used.");
@@ -217,6 +238,7 @@ public class EncodingUtil {
             
             return data.getBytes();
         }
+// END IA CHANGES
     }    
     
     /**
@@ -233,11 +255,13 @@ public class EncodingUtil {
             throw new IllegalArgumentException("Parameter may not be null");
         }
 
-        try {
-            return data.getBytes("US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new HttpClientError("HttpClient requires ASCII support");
-        }
+// BEGIN IA CHANGES
+//        try {
+            return data.getBytes(Charsets.US_ASCII);
+//        } catch (UnsupportedEncodingException e) {
+//            throw new HttpClientError("HttpClient requires ASCII support");
+//        }
+// END IA CHANGES
     }
 
     /**
@@ -258,11 +282,13 @@ public class EncodingUtil {
             throw new IllegalArgumentException("Parameter may not be null");
         }
 
-        try {
-            return new String(data, offset, length, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new HttpClientError("HttpClient requires ASCII support");
-        }
+// BEGIN IA CHANGES
+//        try {
+            return new String(data, offset, length, Charsets.US_ASCII);
+//        } catch (UnsupportedEncodingException e) {
+//            throw new HttpClientError("HttpClient requires ASCII support");
+//        }
+// END IA CHANGES
     }
 
     /**

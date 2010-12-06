@@ -35,6 +35,7 @@ import org.archive.bdb.KryoBinding;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
+import com.google.common.base.Charsets;
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.je.Cursor;
@@ -424,13 +425,8 @@ public class BdbMultipleWorkQueues {
     static DatabaseEntry calculateInsertKey(CrawlURI curi) {
         byte[] classKeyBytes = null;
         int len = 0;
-        try {
-            classKeyBytes = curi.getClassKey().getBytes("UTF-8");
-            len = classKeyBytes.length;
-        } catch (UnsupportedEncodingException e) {
-            // should be impossible; all JVMs must support UTF-8
-            e.printStackTrace();
-        }
+        classKeyBytes = curi.getClassKey().getBytes(Charsets.UTF_8);
+        len = classKeyBytes.length;
         byte[] keyData = new byte[len+9];
         System.arraycopy(classKeyBytes,0,keyData,0,len);
         keyData[len]=0;

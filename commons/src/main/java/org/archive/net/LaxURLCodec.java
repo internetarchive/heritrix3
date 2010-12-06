@@ -24,6 +24,8 @@ import java.util.BitSet;
 
 import org.apache.commons.codec.net.URLCodec;
 
+import com.google.common.base.Charsets;
+
 /**
  * @author gojomo
  */
@@ -153,6 +155,6 @@ public class LaxURLCodec extends URLCodec {
         if (pString == null) {
             return null;
         }
-        return new String(encodeUrl(safe,pString.getBytes(cs)), "US-ASCII");
+        return new String(encodeUrl(safe,pString.getBytes(cs)), Charsets.US_ASCII);
     }
 }
