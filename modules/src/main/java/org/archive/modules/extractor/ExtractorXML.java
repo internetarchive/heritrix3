@@ -66,8 +66,8 @@ public class ExtractorXML extends ContentExtractor {
                     && (mimeType.toLowerCase().indexOf("xml") >= 0
                             || curi.toString().toLowerCase().endsWith(".rss")
                             || curi.toString().toLowerCase().endsWith(".xml") 
-                            || curi.getRecorder().getReplayCharSequence()
-                                .subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*"));
+                            || (curi.getRecorder().getReplayCharSequence().length() >= 8 
+                                    && curi.getRecorder().getReplayCharSequence().subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*")));
         } catch (IOException e) {
             logger.severe(curi + " - failed getting ReplayCharSequence: " + e);
             return false;
