@@ -23,12 +23,40 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.modules.CrawlURI;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.annotation.Autowired;
 
-public class DecideRuleSequence extends DecideRule  {
+public class DecideRuleSequence extends DecideRule implements BeanNameAware{
     final private static Logger LOGGER = 
         Logger.getLogger(DecideRuleSequence.class.getName());
     private static final long serialVersionUID = 3L;
+    
+    protected Logger fileLogger = null; 
+    
+    /**
+     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format is:
+     * [timestamp] [decisive-rule-num] [decisive-rule-class] [decision] [uri]
+     */
+    {
+        setLogToFile(false);
+    }
+    public boolean getLogToFile() {
+        return (Boolean) kp.get("logToFile");
+    }
+    public void setLogToFile(boolean enabled) {
+        kp.put("logToFile",enabled);
+    }
+
+    protected CrawlerLoggerModule loggerModule;
+    public CrawlerLoggerModule getLoggerModule() {
+        return this.loggerModule;
+    }
+    @Autowired
+    public void setLoggerModule(CrawlerLoggerModule loggerModule) {
+        this.loggerModule = loggerModule;
+    }
     
     @SuppressWarnings("unchecked")
     public List<DecideRule> getRules() {
@@ -39,9 +67,12 @@ public class DecideRuleSequence extends DecideRule  {
     }
 
     public DecideResult innerDecide(CrawlURI uri) {
+        DecideRule decisiveRule = null;
+        int decisiveRuleNumber = -1;
         DecideResult result = DecideResult.NONE;
         List<DecideRule> rules = getRules();
         int max = rules.size();
+        
         for (int i = 0; i < max; i++) {
             DecideRule rule = rules.get(i);
             if (rule.onlyDecision(uri) != result) {
@@ -52,13 +83,32 @@ public class DecideRuleSequence extends DecideRule  {
                 }
                 if (r != DecideResult.NONE) {
                     result = r;
+                    decisiveRule = rule;
+                    decisiveRuleNumber = i;
                 }
             }
         }
-        
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("DecideRuleSequence returned " + result + " for url: " + uri);
+
+        if (fileLogger != null) {
+            fileLogger.info(decisiveRuleNumber + " " + decisiveRule.getClass().getSimpleName() + " " + result + " " + uri);
         }
+
         return result;
     }
+    
+    public void start() {
+        if (getLogToFile() && fileLogger == null) {
+            fileLogger = loggerModule.setupSimpleLog(getBeanName());
+        }
+    }
+    
+    protected String beanName;
+    public String getBeanName() {
+        return this.beanName;
+    }
+    @Override
+    public void setBeanName(String name) {
+        this.beanName = name;
+    }
+
 }

@@ -22,6 +22,8 @@ package org.archive.crawler.reporting;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.FileHandler;
@@ -271,7 +273,29 @@ public class CrawlerLoggerModule
         this.fileHandlers.put(logger, fh);
     }
     
-    
+    public Logger setupSimpleLog(String logName) {
+        Logger logger = Logger.getLogger(logName + ".log");
+        
+        Formatter f = new Formatter() {
+            private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd+HH:mm:ss.SSS");
+            
+            public String format(java.util.logging.LogRecord record) {
+                String timestamp = dateFmt.format(new Date(record.getMillis()));
+                return timestamp + " " + record.getMessage() + '\n';
+            }
+        };
+
+        ConfigPath logPath = new ConfigPath(logName + ".log", logName + ".log");
+        logPath.setBase(getPath());
+        try {
+            setupLogFile(logger, logPath.getFile().getAbsolutePath(), f, true);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        
+        return logger;
+    }
+
     private void setupAlertLog(String logsPath) throws IOException {
         Logger logger = Logger.getLogger(LOGNAME_ALERTS + "." + logsPath);
         String filename = getAlertsLogPath().getFile().getAbsolutePath();

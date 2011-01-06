@@ -77,4 +77,9 @@ public abstract class DecideRule implements Serializable, HasKeyedProperties {
         return DecideResult.ACCEPT == decisionFor(uri);
     }
     
+    public void start() {
+    }
+    public void stop() {
+    }
+
 }
