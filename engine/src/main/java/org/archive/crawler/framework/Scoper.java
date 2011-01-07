@@ -19,12 +19,9 @@
 
 package org.archive.crawler.framework;
 
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.crawler.reporting.CrawlerLoggerModule;
-import org.archive.crawler.util.LogUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.deciderules.DecideResult;
@@ -40,8 +37,6 @@ import org.springframework.context.Lifecycle;
  * @version $Date$, $Revision$
  */
 public abstract class Scoper extends Processor implements Lifecycle {
-    private static Logger LOGGER =
-        Logger.getLogger(Scoper.class.getName());
     
     protected DecideRule scope;
     public DecideRule getScope() {
@@ -52,18 +47,14 @@ public abstract class Scoper extends Processor implements Lifecycle {
         this.scope = scope;
     }
     
-    FileHandler fileLogger = null; 
-    
+    protected Logger fileLogger = null;
+
     /**
-     * If enabled, override default logger for this class (Default logger writes
-     * the console). Override logger will instead send all logging to a file
-     * named for this class in the job log directory. Set the logging level and
-     * other characteristics of the override logger such as rotation size,
-     * suffix pattern, etc. in heritrix.properties. This attribute is only
-     * checked once, on startup of a job.
+     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
+     * is "[timestamp] [decision] [uri]" where decision is 'ACCEPT' or 'REJECT'.
      */
     {
-        setLogToFile(true);
+        setLogToFile(false);
     }
     public boolean getLogToFile() {
         return (Boolean) kp.get("logToFile");
@@ -81,13 +72,6 @@ public abstract class Scoper extends Processor implements Lifecycle {
         this.loggerModule = loggerModule;
     }
     
-    // FIXME: Weirdo log overriding might not work on a per-subclass basis,
-    // we may need to cut and paste it to the three subclasses, or eliminate
-    // it in favor of java.util.logging best practice.
-    //
-    // Also, eliminating weirdo log overriding would mean we wouldn't need to
-    // tie into the CrawlController; we'd just need the scope.
-    
     /**
      * Constructor.
      */
@@ -100,23 +84,15 @@ public abstract class Scoper extends Processor implements Lifecycle {
         if(isRunning) {
             return; 
         }
-        if (getLogToFile()) {
-            // Set up logger for this instance.  May have special directives
-            // since this class can log scope-rejected URLs.
-            fileLogger = LogUtils.createFileLogger(loggerModule.getPath().getFile(),
-                this.getClass().getName(),
-                Logger.getLogger(this.getClass().getName()));
+        if (getLogToFile() && fileLogger == null) {
+            fileLogger = loggerModule.setupSimpleLog(getBeanName());
         }
         isRunning = true; 
     }
-    
     public boolean isRunning() {
         return this.isRunning;
     }
     public void stop() {
-        if(fileLogger!=null) {
-            fileLogger.close();
-        }
         isRunning = false; 
     }
 
@@ -131,8 +107,8 @@ public abstract class Scoper extends Processor implements Lifecycle {
         DecideResult dr = scope.decisionFor(caUri);
         if (dr == DecideResult.ACCEPT) {
             result = true;
-            if (LOGGER.isLoggable(Level.FINER)) {
-                LOGGER.finer("Accepted: " + caUri);
+            if (fileLogger != null) {
+                fileLogger.info("ACCEPT " + caUri); 
             }
         } else {
             outOfScope(caUri);
@@ -146,12 +122,8 @@ public abstract class Scoper extends Processor implements Lifecycle {
      * @param caUri CrawlURI that is out of scope.
      */
     protected void outOfScope(CrawlURI caUri) {
-        if (!LOGGER.isLoggable(Level.FINE)) {
-            return;
+        if (fileLogger != null) {
+            fileLogger.info("REJECT " + caUri); 
         }
-        LOGGER.fine(caUri.getUURI().toString());
     }
-
-
-
 }
