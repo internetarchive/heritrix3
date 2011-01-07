@@ -107,7 +107,6 @@ public abstract class Scoper extends Processor implements Lifecycle {
                 this.getClass().getName(),
                 Logger.getLogger(this.getClass().getName()));
         }
-        scope.start();
         isRunning = true; 
     }
     
@@ -118,7 +117,6 @@ public abstract class Scoper extends Processor implements Lifecycle {
         if(fileLogger!=null) {
             fileLogger.close();
         }
-        scope.stop();
         isRunning = false; 
     }
 

@@ -43,6 +43,7 @@ import org.archive.crawler.io.UriErrorFormatter;
 import org.archive.crawler.io.UriProcessingFormatter;
 import org.archive.crawler.util.Logs;
 import org.archive.io.GenerationFileHandler;
+import org.archive.modules.SimpleFileLoggerProvider;
 import org.archive.modules.extractor.UriErrorLoggerModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
@@ -60,7 +61,7 @@ import org.springframework.context.Lifecycle;
 public class CrawlerLoggerModule 
     implements 
         UriErrorLoggerModule, Lifecycle, InitializingBean,
-        Checkpointable {
+        Checkpointable, SimpleFileLoggerProvider {
     private static final long serialVersionUID = 1L;
 
     protected ConfigPath path = new ConfigPath(Engine.LOGS_DIR_NAME,"logs"); 
@@ -277,7 +278,7 @@ public class CrawlerLoggerModule
         Logger logger = Logger.getLogger(logName + ".log");
         
         Formatter f = new Formatter() {
-            private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd+HH:mm:ss.SSS");
+            private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
             
             public String format(java.util.logging.LogRecord record) {
                 String timestamp = dateFmt.format(new Date(record.getMillis()));

@@ -23,21 +23,28 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.SimpleFileLoggerProvider;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.Lifecycle;
 
-public class DecideRuleSequence extends DecideRule implements BeanNameAware{
+public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lifecycle {
     final private static Logger LOGGER = 
         Logger.getLogger(DecideRuleSequence.class.getName());
     private static final long serialVersionUID = 3L;
     
-    protected Logger fileLogger = null; 
-    
+    protected Logger fileLogger = null;
+
     /**
-     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format is:
-     * [timestamp] [decisive-rule-num] [decisive-rule-class] [decision] [uri]
+     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
+     * is: [timestamp] [decisive-rule-num] [decisive-rule-class] [decision]
+     * [uri]
+     * 
+     * Relies on Spring Lifecycle to initialize the log. Only top-level
+     * beans get the Lifecycle treatment from Spring, so bean must be top-level
+     * for logToFile to work. (This is true of other modules that support
+     * logToFile, and anything else that uses Lifecycle, as well.)
      */
     {
         setLogToFile(false);
@@ -49,12 +56,14 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware{
         kp.put("logToFile",enabled);
     }
 
-    protected CrawlerLoggerModule loggerModule;
-    public CrawlerLoggerModule getLoggerModule() {
+    // provided by CrawlerLoggerModule which is in heritrix-engine, inaccessible
+    // from here, thus the need for the SimpleFileLoggerProvider interface
+    protected SimpleFileLoggerProvider loggerModule;
+    public SimpleFileLoggerProvider getLoggerModule() {
         return this.loggerModule;
     }
     @Autowired
-    public void setLoggerModule(CrawlerLoggerModule loggerModule) {
+    public void setLoggerModule(SimpleFileLoggerProvider loggerModule) {
         this.loggerModule = loggerModule;
     }
     
@@ -96,12 +105,6 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware{
         return result;
     }
     
-    public void start() {
-        if (getLogToFile() && fileLogger == null) {
-            fileLogger = loggerModule.setupSimpleLog(getBeanName());
-        }
-    }
-    
     protected String beanName;
     public String getBeanName() {
         return this.beanName;
@@ -110,5 +113,21 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware{
     public void setBeanName(String name) {
         this.beanName = name;
     }
-
+    
+    protected boolean isRunning = false;
+    @Override
+    public boolean isRunning() {
+        return isRunning;
+    }
+    @Override
+    public void start() {
+        if (getLogToFile() && fileLogger == null) {
+            fileLogger = loggerModule.setupSimpleLog(getBeanName());
+        }
+        isRunning = true;
+    }
+    @Override
+    public void stop() {
+        isRunning = false;
+    }
 }
