@@ -22,8 +22,6 @@ package org.archive.crawler.reporting;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.FileHandler;
@@ -278,11 +276,8 @@ public class CrawlerLoggerModule
         Logger logger = Logger.getLogger(logName + ".log");
         
         Formatter f = new Formatter() {
-            private SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-            
             public String format(java.util.logging.LogRecord record) {
-                String timestamp = dateFmt.format(new Date(record.getMillis()));
-                return timestamp + " " + record.getMessage() + '\n';
+                return ArchiveUtils.getLog17Date(record.getMillis()) + " " + record.getMessage() + '\n';
             }
         };
 
