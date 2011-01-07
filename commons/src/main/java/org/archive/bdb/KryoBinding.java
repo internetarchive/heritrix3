@@ -53,6 +53,8 @@ public class KryoBinding<K> implements EntryBinding<K> {
     public KryoBinding(Class baseClass) {
         this.baseClass = baseClass;
         kryo.autoregister(baseClass);
+        // TODO: reevaluate if explicit registration should be required
+        kryo.setRegistrationOptional(true);
     }
 
     public Kryo getKryo() {

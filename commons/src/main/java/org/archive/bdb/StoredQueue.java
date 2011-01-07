@@ -91,7 +91,11 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
 
     @Override
     public int size() {
-        return queueMap.size();  
+        try {
+            return queueMap.size();  
+        } catch (IllegalStateException ise) {
+            return 0; 
+        }
     }
     
     @Override

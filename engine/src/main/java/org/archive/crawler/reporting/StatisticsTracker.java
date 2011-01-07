@@ -332,8 +332,8 @@ public class StatisticsTracker
 
     /** Keep track of URL counts per host per seed */
     @SuppressWarnings("unchecked")
-    protected ObjectIdentityCache<String,ConcurrentMap> sourceHostDistribution = 
-        new ObjectIdentityMemCache<ConcurrentMap>(); // temp dummy;
+    protected ObjectIdentityCache<String,ConcurrentHashMap> sourceHostDistribution = 
+        new ObjectIdentityMemCache<ConcurrentHashMap>(); // temp dummy;
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -367,7 +367,7 @@ public class StatisticsTracker
         boolean isRecover = (recoveryCheckpoint != null); 
         try {
             this.sourceHostDistribution = bdb.getObjectCache("sourceHostDistribution",
-            	    isRecover, ConcurrentMap.class);
+            	    isRecover, ConcurrentHashMap.class);
             this.hostsDistribution = bdb.getObjectCache("hostsDistribution",
                     isRecover, AtomicLong.class);
             this.hostsBytes = bdb.getObjectCache("hostsBytes", 
@@ -851,8 +851,8 @@ public class StatisticsTracker
             ConcurrentMap<String,AtomicLong> hostUriCount = 
                 sourceHostDistribution.getOrUse(
                         source,
-                        new Supplier<ConcurrentMap>() {
-                            public ConcurrentMap<String, AtomicLong> get() {
+                        new Supplier<ConcurrentHashMap>() {
+                            public ConcurrentHashMap<String, AtomicLong> get() {
                                 return new ConcurrentHashMap<String,AtomicLong>();
                             }});
             incrementMapCount(hostUriCount, hostname);
