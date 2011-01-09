@@ -10,11 +10,11 @@
    behavior, uncomment AND alter the shown values.)   
  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns:context="http://www.springframework.org/schema/context"
-         xmlns:aop="http://www.springframework.org/schema/aop"
-         xmlns:tx="http://www.springframework.org/schema/tx"
-         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	     xmlns:aop="http://www.springframework.org/schema/aop"
+	     xmlns:tx="http://www.springframework.org/schema/tx"
+	     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
@@ -110,6 +110,7 @@ http://example.example/example
  <!-- SCOPE: rules for which discovered URIs to crawl; order is very 
       important because last decision returned other than 'NONE' wins. -->
  <bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
+  <!-- <property name="logToFile" /> -->
   <property name="rules">
    <list>
     <!-- Begin by REJECTing all... -->
@@ -121,6 +122,17 @@ http://example.example/example
      <!-- <property name="alsoCheckVia" value="false" /> -->
      <!-- <property name="surtsSourceFile" value="" /> -->
      <!-- <property name="surtsDumpFile" value="surts.dump" /> -->
+     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+           <bean class="org.archive.spring.ConfigString">
+            <property name="value">
+             <value>
+              # example.com
+              # http://www.example.edu/path1/
+              # +http://(org,example,
+             </value>
+            </property> 
+           </bean>
+          </property> -->
     </bean>
     <!-- ...but REJECT those more than a configured link-hop-count from start... -->
     <bean class="org.archive.modules.deciderules.TooManyHopsDecideRule">
@@ -136,7 +148,11 @@ http://example.example/example
           <property name="decision" value="REJECT"/>
           <property name="seedsAsSurtPrefixes" value="false"/>
           <property name="surtsDumpFile" value="negative-surts.dump" /> 
-     <!-- <property name="surtsSourceFile" value="" /> -->
+     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+           <bean class="org.archive.spring.ConfigFile">
+            <property name="path" value="negative-surts.txt" />
+           </bean>
+          </property> -->
     </bean>
     <!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
     <bean class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
@@ -373,6 +389,7 @@ http://example.example/example
   <!-- <property name="maxRetries" value="30" /> -->
   <!-- <property name="recoveryLogEnabled" value="true" /> -->
   <!-- <property name="maxOutlinks" value="6000" /> -->
+  <!-- <property name="independentExtractors" value="false" /> -->
   <!-- <property name="outbound">
         <bean class="java.util.concurrent.ArrayBlockingQueue">
          <constructor-arg value="200"/>
