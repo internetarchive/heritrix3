@@ -122,6 +122,17 @@ http://example.example/example
      <!-- <property name="alsoCheckVia" value="false" /> -->
      <!-- <property name="surtsSourceFile" value="" /> -->
      <!-- <property name="surtsDumpFile" value="surts.dump" /> -->
+     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+           <bean class="org.archive.spring.ConfigString">
+            <property name="value">
+             <value>
+              # example.com
+              # http://www.example.edu/path1/
+              # +http://(org,example,
+             </value>
+            </property> 
+           </bean>
+          </property> -->
     </bean>
     <!-- ...but REJECT those more than a configured link-hop-count from start... -->
     <bean class="org.archive.modules.deciderules.TooManyHopsDecideRule">
@@ -137,7 +148,11 @@ http://example.example/example
           <property name="decision" value="REJECT"/>
           <property name="seedsAsSurtPrefixes" value="false"/>
           <property name="surtsDumpFile" value="negative-surts.dump" /> 
-     <!-- <property name="surtsSourceFile" value="" /> -->
+     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+           <bean class="org.archive.spring.ConfigFile">
+            <property name="path" value="negative-surts.txt" />
+           </bean>
+          </property> -->
     </bean>
     <!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
     <bean class="org.archive.modules.deciderules.MatchesListRegexDecideRule">

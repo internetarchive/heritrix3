@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
+import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
@@ -62,13 +63,13 @@ implements
     private static final Logger logger =
         Logger.getLogger(SurtPrefixedDecideRule.class.getName());
 
-
     /**
      * Source file from which to infer SURT prefixes. Any URLs in file will be
      * converted to the implied SURT prefix, and literal SURT prefixes may be
      * listed on lines beginning with a '+' character.
-     * TODO: consider changing to ReadSource, analogous to TextSeedModule, 
-     * allowing inline specification? 
+     * 
+     * @deprecated redundant now that we have
+     *             {@link SurtPrefixedDecideRule#textSource}
      */
     protected ConfigFile surtsSourceFile = 
         new ConfigFile("surtsSourceFile","");
@@ -78,7 +79,18 @@ implements
     public void setSurtsSourceFile(ConfigFile cp) {
         this.surtsSourceFile.merge(cp);
     }
-    boolean sourceWasRead = false; 
+    boolean sourceFileWasRead = false;
+    
+    /**
+     * Text from which to infer SURT prefixes.
+     */
+    protected ReadSource textSource = null;
+    public ReadSource getTextSource() {
+        return textSource;
+    }
+    public void setTextSource(ReadSource seedsSource) {
+        this.textSource = seedsSource;
+    }
 
     /**
      * Should seeds also be interpreted as SURT prefixes.
@@ -226,6 +238,11 @@ implements
                 logger.log(Level.SEVERE,"Problem reading SURTs source file: "+e,e);
                 // continue: operator will see severe log message or alert
             }
+        }
+        
+        // read SURTs from textSource if appropriate
+        if (getTextSource() != null) {
+            surtPrefixes.importFromMixed(getTextSource().obtainReader(), true);
         }
     }
 
