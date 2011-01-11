@@ -20,11 +20,8 @@
 package org.archive.modules.deciderules.surt;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
@@ -69,27 +66,31 @@ implements
      * listed on lines beginning with a '+' character.
      * 
      * @deprecated redundant now that we have
-     *             {@link SurtPrefixedDecideRule#textSource}
+     *             {@link SurtPrefixedDecideRule#surtsSource}
      */
-    protected ConfigFile surtsSourceFile = 
-        new ConfigFile("surtsSourceFile","");
     public ConfigFile getSurtsSourceFile() {
-        return surtsSourceFile;
+        if (getSurtsSource() instanceof ConfigFile) {
+            return (ConfigFile) getSurtsSource();
+        } else {
+            return null;
+        }
     }
+    /** @deprecated */
     public void setSurtsSourceFile(ConfigFile cp) {
-        this.surtsSourceFile.merge(cp);
+        setSurtsSource(cp);
     }
-    boolean sourceFileWasRead = false;
-    
+
     /**
-     * Text from which to infer SURT prefixes.
+     * Text from which to infer SURT prefixes. Any URLs will be converted to the
+     * implied SURT prefix, and literal SURT prefixes may be listed on lines
+     * beginning with a '+' character.
      */
-    protected ReadSource textSource = null;
-    public ReadSource getTextSource() {
-        return textSource;
+    protected ReadSource surtsSource = null;
+    public ReadSource getSurtsSource() {
+        return surtsSource;
     }
-    public void setTextSource(ReadSource seedsSource) {
-        this.textSource = seedsSource;
+    public void setSurtsSource(ReadSource surtsSource) {
+        this.surtsSource = surtsSource;
     }
 
     /**
@@ -221,28 +222,9 @@ implements
      * which may include both URIs and '+'-prefixed directives).
      */
     protected void buildSurtPrefixSet() {
-        Reader fr = null;
-
-        // read SURTs from file, if appropriate
-        String sourcePath = getSurtsSourceFile().getPath();        
-        if (!StringUtils.isEmpty(sourcePath)) {
-            File source = getSurtsSourceFile().getFile();
-            try {
-                fr = new FileReader(source);
-                try {
-                    surtPrefixes.importFromMixed(fr, true);
-                } finally {
-                    fr.close();
-                }
-            } catch (IOException e) {
-                logger.log(Level.SEVERE,"Problem reading SURTs source file: "+e,e);
-                // continue: operator will see severe log message or alert
-            }
-        }
-        
         // read SURTs from textSource if appropriate
-        if (getTextSource() != null) {
-            surtPrefixes.importFromMixed(getTextSource().obtainReader(), true);
+        if (getSurtsSource() != null) {
+            surtPrefixes.importFromMixed(getSurtsSource().obtainReader(), true);
         }
     }
 
@@ -295,7 +277,5 @@ implements
         }
         throw new IllegalArgumentException("decision must be ACCEPT or REJECT");
     }
-    
-
 
 }//EOC

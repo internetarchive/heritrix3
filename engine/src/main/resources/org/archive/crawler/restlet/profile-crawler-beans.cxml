@@ -122,7 +122,7 @@ http://example.example/example
      <!-- <property name="alsoCheckVia" value="false" /> -->
      <!-- <property name="surtsSourceFile" value="" /> -->
      <!-- <property name="surtsDumpFile" value="surts.dump" /> -->
-     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+     <!-- <property name="surtsSource">
            <bean class="org.archive.spring.ConfigString">
             <property name="value">
              <value>
@@ -148,7 +148,7 @@ http://example.example/example
           <property name="decision" value="REJECT"/>
           <property name="seedsAsSurtPrefixes" value="false"/>
           <property name="surtsDumpFile" value="negative-surts.dump" /> 
-     <!-- <property name="textSource" class="org.archive.modules.seeds.TextSeedModule">
+     <!-- <property name="surtsSource">
            <bean class="org.archive.spring.ConfigFile">
             <property name="path" value="negative-surts.txt" />
            </bean>
