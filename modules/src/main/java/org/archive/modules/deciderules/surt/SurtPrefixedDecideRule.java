@@ -22,8 +22,10 @@ package org.archive.modules.deciderules.surt;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
@@ -222,9 +224,13 @@ implements
      * which may include both URIs and '+'-prefixed directives).
      */
     protected void buildSurtPrefixSet() {
-        // read SURTs from textSource if appropriate
         if (getSurtsSource() != null) {
-            surtPrefixes.importFromMixed(getSurtsSource().obtainReader(), true);
+            Reader reader = getSurtsSource().obtainReader();
+            try {
+                surtPrefixes.importFromMixed(reader, true);
+            } finally {
+                IOUtils.closeQuietly(reader);
+            }
         }
     }
 
