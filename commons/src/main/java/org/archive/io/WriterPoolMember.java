@@ -406,21 +406,33 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         return compressed;
     }
     
-    protected void write(final byte [] b) throws IOException {
-    	this.out.write(b);
+    /**
+     * @return number of bytes written, which is always {@code b.length}
+     */
+    protected int write(final byte[] b) throws IOException {
+        this.out.write(b);
+        return b.length;
     }
-    
-	protected void flush() throws IOException {
-		this.out.flush();
-	}
 
-	protected void write(byte[] b, int off, int len) throws IOException {
-		this.out.write(b, off, len);
-	}
+    protected void flush() throws IOException {
+        this.out.flush();
+    }
 
-	protected void write(int b) throws IOException {
-		this.out.write(b);
-	}
+    /**
+     * @return number of bytes written, which is always {@code len}
+     */
+    protected int write(byte[] b, int off, int len) throws IOException {
+        this.out.write(b, off, len);
+        return len;
+    }
+
+    /**
+     * @return number of bytes written, which is always {@code 1}
+     */
+    protected int write(int b) throws IOException {
+        this.out.write(b);
+        return 1;
+    }
 
     /**
      * Copy bytes from the provided InputStream to the target file/stream being
@@ -433,9 +445,10 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * @param enforceLength
      *            whether to throw an exception if too many/too few bytes are
      *            available from stream
+     * @return number of bytes written (normally equal to {@code enforceLength})
      * @throws IOException
      */
-    protected void copyFrom(final InputStream is, final long recordLength,
+    protected long copyFrom(final InputStream is, final long recordLength,
             boolean enforceLength) throws IOException {
         int read = scratchbuffer.length;
         long tot = 0;
@@ -452,6 +465,8 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
             throw new IOException("Read " + tot + " but expected "
                     + recordLength);
         }
+        
+        return tot;
     }
 
     public void close() throws IOException {
