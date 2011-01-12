@@ -644,9 +644,22 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         precedenceProvider.tally(curi, stage);
     }
 
+    /**
+     * Update queue state to recognize it has been sent to one of the
+     * inactive (by-precedence) queues, waiting for a turn. 
+     */
     public synchronized void noteDeactivated() {
         active = false;
         isManaged = true; 
+    }
+    
+    /**
+     * Update queue state to recognize it has been completely exhausted,
+     * and is no longer on any of the ready/inactive queues-of-queues
+     */
+    public synchronized void noteExhausted() {
+        active = false;
+        isManaged = false; 
     }
 
     /**
