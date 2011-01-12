@@ -269,19 +269,24 @@ implements WARCConstants {
             startPosition = getPosition();
             preWriteRecordTasks();
 
-            // TODO: Revisit endcoding of header.
-            totalBytes += write(header.getBytes(WARC_HEADER_ENCODING));
+            // TODO: Revisit encoding of header.
+            
+            byte[] bytes = header.getBytes(WARC_HEADER_ENCODING);
+            write(bytes);
+            totalBytes += bytes.length;
 
             if (contentStream != null && contentLength > 0) {
                 // Write out the header/body separator.
-                totalBytes += write(CRLF_BYTES); // TODO: should this be written even for zero-length?
+                write(CRLF_BYTES); // TODO: should this be written even for zero-length?
+                totalBytes += CRLF_BYTES.length;
                 contentBytes += copyFrom(contentStream, contentLength, enforceLength);
                 totalBytes += contentBytes;
             }
 
             // Write out the two blank lines at end of all records.
-            totalBytes += write(CRLF_BYTES);
-            totalBytes += write(CRLF_BYTES);
+            write(CRLF_BYTES);
+            write(CRLF_BYTES);
+            totalBytes += 2 * CRLF_BYTES.length;
         } finally {
             postWriteRecordTasks();
         }

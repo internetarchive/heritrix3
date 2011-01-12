@@ -406,38 +406,27 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         return compressed;
     }
     
-    /**
-     * @return number of bytes written, which is always {@code b.length}
-     */
-    protected int write(final byte[] b) throws IOException {
-        this.out.write(b);
-        return b.length;
+    protected void write(final byte [] b) throws IOException {
+    	this.out.write(b);
     }
+    
+	protected void flush() throws IOException {
+		this.out.flush();
+	}
 
-    protected void flush() throws IOException {
-        this.out.flush();
-    }
+	protected void write(byte[] b, int off, int len) throws IOException {
+		this.out.write(b, off, len);
+	}
 
-    /**
-     * @return number of bytes written, which is always {@code len}
-     */
-    protected int write(byte[] b, int off, int len) throws IOException {
-        this.out.write(b, off, len);
-        return len;
-    }
-
-    /**
-     * @return number of bytes written, which is always {@code 1}
-     */
-    protected int write(int b) throws IOException {
-        this.out.write(b);
-        return 1;
-    }
+	protected void write(int b) throws IOException {
+		this.out.write(b);
+	}
 
     /**
      * Copy bytes from the provided InputStream to the target file/stream being
      * written.
      * 
+     * @return number of bytes written (normally equal to {@code enforceLength})
      * @param is
      *            InputStream to copy bytes from
      * @param recordLength
@@ -445,7 +434,6 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * @param enforceLength
      *            whether to throw an exception if too many/too few bytes are
      *            available from stream
-     * @return number of bytes written (normally equal to {@code enforceLength})
      * @throws IOException
      */
     protected long copyFrom(final InputStream is, final long recordLength,
