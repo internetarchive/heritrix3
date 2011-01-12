@@ -79,8 +79,38 @@ public class RobotstxtTest extends TestCase {
         return new Robotstxt(reader); 
     }
     
-    public void testDirectives() throws IOException {
+    Robotstxt whitespaceFlawedRobots() throws IOException {
+        BufferedReader reader = new BufferedReader(
+            new StringReader(
+                "  User-agent: *\n" +
+                " Disallow: /cgi-bin/\n" +
+                "  Disallow: /details/software\n" +
+                " User-agent: denybot\n" +
+                " Disallow: /\n" +
+                "  User-agent: allowbot1\n" +
+                "  Disallow: \n" +
+                " User-agent: allowbot2\n" +
+                " Disallow: /foo\n" +
+                " Allow: /\n"+
+                " User-agent: delaybot\n" +
+                "  Disallow: /\n" +
+                " Crawl-Delay: 20\n"+
+                " Allow: /images/\n"
+            ));
+        return new Robotstxt(reader); 
+    }
+    
+    public void testValidRobots() throws IOException {
         Robotstxt r = sampleRobots1();
+        evalRobots(r); 
+    }
+    
+    public void testWhitespaceFlawedRobots() throws IOException {
+        Robotstxt r = whitespaceFlawedRobots();
+        evalRobots(r); 
+    }
+    
+    public void evalRobots(Robotstxt r) throws IOException {
         // bot allowed with empty disallows
         assertTrue(r.getDirectivesFor("Mozilla allowbot1 99.9").allows("/path"));
         assertTrue(r.getDirectivesFor("Mozilla allowbot1 99.9").allows("/"));
