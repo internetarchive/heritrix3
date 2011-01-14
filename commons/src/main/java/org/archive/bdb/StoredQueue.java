@@ -103,7 +103,11 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
         if(peekItem!=null) {
             return false;
         }
-        return queueMap.isEmpty();
+        try {
+            return queueMap.isEmpty();
+        } catch (IllegalStateException de) {
+            return true;
+        }
     }
 
     public boolean offer(E o) {
