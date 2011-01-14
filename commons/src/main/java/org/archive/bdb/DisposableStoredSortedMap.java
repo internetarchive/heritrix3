@@ -19,6 +19,9 @@
 
 package org.archive.bdb;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.collections.PrimaryKeyAssigner;
@@ -28,15 +31,19 @@ import com.sleepycat.je.DatabaseException;
 
 /**
  * TempStoredSortedMap remembers its backing Database, and offers
- * a destroy() method for closing/discarding the underlying Database. 
+ * a dispose() method for closing/discarding the underlying Database. 
+ * 
+ * You *must* call dispose() when done with the map; otherwise temporary data
+ * will remain in a temporary Database in the BDB environment indefinitely. 
  * 
  * @contributor gojomo
  * @param <K>
  * @param <V>
  */
 public class DisposableStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
+    final private static Logger LOGGER = 
+        Logger.getLogger(DisposableStoredSortedMap.class.getName()); 
     Database db; 
-    String dbName; 
     
     public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, boolean arg3) {
         super(db, arg1, arg2, arg3);
@@ -56,21 +63,16 @@ public class DisposableStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
     }
 
     public void dispose() {
+        String name = null;
         try {
             if(this.db!=null) {
-                String name = this.db.getDatabaseName();
+                name = this.db.getDatabaseName();
                 this.db.close();
                 this.db.getEnvironment().removeDatabase(null, name);
                 this.db = null; 
             }
         } catch (DatabaseException e) {
-            throw new RuntimeException(e); 
+            LOGGER.log(Level.WARNING, "Error closing db " + name, e);
         } 
     }
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        dispose();
-    }
-    
 }
