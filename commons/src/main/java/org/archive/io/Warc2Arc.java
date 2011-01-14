@@ -36,6 +36,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.archive.io.arc.ARCWriter;
+import org.archive.io.arc.WriterPoolSettingsData;
 import org.archive.io.warc.WARCConstants;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
@@ -83,9 +84,16 @@ public class Warc2Arc {
        List<String> metadata =  new ArrayList<String>();
        metadata.add("Made from " + reader.getReaderIdentifier() + " by " +
            this.getClass().getName() + "/" + getRevision());
-       ARCWriter writer = new ARCWriter(new AtomicInteger(),
-            Arrays.asList(new File [] {dir}), prefix, suffix,
-            reader.isCompressed(), -1, metadata);
+       ARCWriter writer = 
+           new ARCWriter(
+                   new AtomicInteger(),
+                   new WriterPoolSettingsData(
+                           prefix, 
+                           suffix, 
+                           -12, 
+                           reader.isCompressed(), 
+                           Arrays.asList(new File [] {dir}), 
+                           metadata));
        transform(reader, writer);
    }
 

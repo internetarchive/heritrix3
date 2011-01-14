@@ -40,6 +40,7 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
+import org.archive.io.WriterPoolSettings;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
@@ -61,9 +62,8 @@ extends TmpDirTestCase implements ARCConstants {
     public class CorruptibleARCWriter extends ARCWriter {
         byte[] endJunk = null;
 
-        public CorruptibleARCWriter(AtomicInteger serial_no, List<File> name,
-                String name2, boolean compress, long default_max_arc_file_size) {
-            super(serial_no, name, name2, compress, default_max_arc_file_size);
+        public CorruptibleARCWriter(AtomicInteger serial_no, WriterPoolSettings settings) {
+            super(serial_no, settings);
         }
 
         @Override
@@ -142,8 +142,16 @@ extends TmpDirTestCase implements ARCConstants {
     throws IOException {
         cleanUpOldFiles(baseName);
         File [] files = {getTmpDir()};
-        ARCWriter arcWriter = new ARCWriter(SERIAL_NO, Arrays.asList(files),
-            baseName + '-' + SUFFIX, compress, maxSize);
+        ARCWriter arcWriter = 
+            new ARCWriter(
+                SERIAL_NO,
+                new WriterPoolSettingsData(
+                        baseName + '-' + SUFFIX, 
+                        "", 
+                        maxSize, 
+                        compress, 
+                        Arrays.asList(files), 
+                        null));
         assertNotNull(arcWriter);
         for (int i = 0; i < recordCount; i++) {
             writeRandomHTTPRecord(arcWriter, i);
@@ -250,9 +258,18 @@ extends TmpDirTestCase implements ARCConstants {
     
     public void testWriteGiantRecord() throws IOException {
         PrintStream dummyStream = new PrintStream(new NullOutputStream());
-        ARCWriter arcWriter = new ARCWriter(SERIAL_NO, dummyStream,
-                new File("dummy"),
-                false, null, null);
+        ARCWriter arcWriter = 
+            new ARCWriter(
+                    SERIAL_NO,
+                    dummyStream,
+                    new File("dummy"),
+                    new WriterPoolSettingsData(
+                            "", 
+                            "", 
+                            -1, 
+                            false, 
+                            null, 
+                            null));
         assertNotNull(arcWriter);
 
         // Start the record with an arbitrary 14-digit date per RFC2540
@@ -276,8 +293,15 @@ extends TmpDirTestCase implements ARCConstants {
     
     protected CorruptibleARCWriter createARCWriter(String NAME, boolean compress) {
         File [] files = {getTmpDir()};
-        return new CorruptibleARCWriter(SERIAL_NO, Arrays.asList(files), NAME,
-            compress, DEFAULT_MAX_ARC_FILE_SIZE);
+        return new CorruptibleARCWriter(
+                    SERIAL_NO, 
+                    new WriterPoolSettingsData(
+                            NAME, 
+                            "", 
+                            DEFAULT_MAX_ARC_FILE_SIZE, 
+                            compress, 
+                            Arrays.asList(files), 
+                            null));
     }
     
     protected static ByteArrayInputStream getBais(String str)
@@ -495,8 +519,14 @@ extends TmpDirTestCase implements ARCConstants {
     public static File createARCFile(File arcdir, boolean compress)
     throws IOException {
         File [] files = {arcdir};
-        ARCWriter writer = new ARCWriter(SERIAL_NO, Arrays.asList(files),
-            "test", compress, DEFAULT_MAX_ARC_FILE_SIZE);
+        ARCWriter writer = new ARCWriter(SERIAL_NO, 
+                new WriterPoolSettingsData(
+                        "", 
+                        "test", 
+                        DEFAULT_MAX_ARC_FILE_SIZE, 
+                        compress, 
+                        Arrays.asList(files), 
+                        null));
         String content = getContent();
         writeRecord(writer, SOME_URL, "text/html", content.length(),
             getBais(content));

@@ -24,27 +24,25 @@ import java.util.Map;
 
 /**
  * A <code>record-id</code> generator.
- * {@link GeneratorFactory} assumes implementations have a no-arg Constructor.
- * @see GeneratorFactory
- * @author stack
+ *
+ * @contributor stack
+ * @contributor gojomo
  * @version $Revision$ $Date$
  */
-public interface Generator {
+public interface RecordIDGenerator {
 	/**
 	 * @return A URI that can serve as a record-id.
 	 * @throws URISyntaxException
 	 */
-	public URI getRecordID() throws URISyntaxException;
+	public URI getRecordID();
 	
 	/**
 	 * @param qualifiers Qualifiers to add.
 	 * @return A URI qualified with passed <code>qualifiers</code> that can
 	 * serve as a record-id, or, a new, unique record-id without qualifiers
 	 * (if qualifiers not easily implemented using passed URI scheme).
-	 * @throws URISyntaxException
 	 */
-	public URI getQualifiedRecordID(final Map<String, String> qualifiers)
-	throws URISyntaxException;
+	public URI getQualifiedRecordID(final Map<String, String> qualifiers);
 	
 	/**
 	 * @param key Name of qualifier
@@ -52,10 +50,8 @@ public interface Generator {
 	 * @return A URI qualified with passed <code>qualifiers</code> that can
 	 * serve as a record-id, or, a new, unique record-id without qualifiers
 	 * (if qualifiers not easily implemented using passed URI scheme).
-	 * @throws URISyntaxException
 	 */
-	public URI getQualifiedRecordID(final String key, final String value)
-	throws URISyntaxException;
+	public URI getQualifiedRecordID(final String key, final String value);
 	
 	/**
 	 * Append (or if already present, update) qualifiers to passed
@@ -70,10 +66,7 @@ public interface Generator {
 	 * @param recordId URI to append qualifier to.
 	 * @param qualifiers Map of qualifier values keyed by qualifier name.
 	 * @return New URI based off passed <code>uri</code> and passed qualifier.
-	 * @throws URISyntaxException if probably constructing URI OR if the
-	 * resultant UUID does not differ from the one passed.
 	 */
 	public URI qualifyRecordID(final URI recordId,
-	    final Map<String, String>  qualifiers)
-	throws URISyntaxException;
+	    final Map<String, String>  qualifiers);
 }

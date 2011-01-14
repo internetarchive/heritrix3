@@ -61,10 +61,7 @@ public class ARCWriterPool extends WriterPool {
      * @see org.archive.io.WriterPool#makeWriter()
      */
     protected WriterPoolMember makeWriter() {
-        return new ARCWriter(serialNo, settings.getOutputDirs(),
-                settings.getPrefix(), settings.getTemplate(),
-                settings.getCompress(), settings.getMaxFileSizeBytes(),
-                settings.getMetadata());
+        return new ARCWriter(serialNo, settings);
     }
     
 

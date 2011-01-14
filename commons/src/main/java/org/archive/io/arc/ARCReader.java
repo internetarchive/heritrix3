@@ -264,9 +264,11 @@ implements ARCConstants {
                 listOfMetadata.add(baos.toString(WriterPoolMember.UTF8));
                 // Assume getArc returns full path to file.  ARCWriter
                 // or new File will complain if it is otherwise.
+                List<File> outDirs = new ArrayList<File>(); 
+                WriterPoolSettingsData settings = 
+                    new WriterPoolSettingsData("","",-1L,compress,outDirs,listOfMetadata); 
                 writer = new ARCWriter(new AtomicInteger(), System.out,
-                    new File(meta.getArc()),
-                    compress, meta.getDate(), listOfMetadata);
+                    new File(meta.getArc()), settings);
                 continue;
             }
             

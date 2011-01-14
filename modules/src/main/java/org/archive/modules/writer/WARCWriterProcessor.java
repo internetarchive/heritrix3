@@ -51,7 +51,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,12 +71,14 @@ import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
+import org.archive.io.warc.WARCWriterPoolSettings;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.extractor.Link;
-import org.archive.uid.GeneratorFactory;
+import org.archive.uid.RecordIDGenerator;
+import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 
@@ -90,7 +91,7 @@ import org.archive.util.anvl.ANVLRecord;
  * 
  * @contributor stack
  */
-public class WARCWriterProcessor extends WriterPoolProcessor {
+public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWriterPoolSettings {
     private static final long serialVersionUID = 6182850087635847443L;
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
@@ -160,6 +161,17 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     public void setWriteRevisitForNotModified(boolean writeRevisits) {
         kp.put("writeRevisitForNotModified",writeRevisits);
     }
+    
+    /**
+     * Generator for record IDs
+     */
+    RecordIDGenerator generator = new UUIDGenerator();
+    public RecordIDGenerator getRecordIDGenerator() {
+        return generator; 
+    }
+    public void setRecordIDGenerator(RecordIDGenerator generator) {
+        this.generator = generator;
+    }
 
     private transient List<String> cachedMetadata;
 
@@ -203,6 +215,19 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             final CrawlURI curi)
     throws IOException {
         WriterPoolMember writer = getPool().borrowFile();
+        long position = writer.getPosition();
+        // See if we need to open a new file because we've exceeded maxBytes.
+        // Call to checkFileSize will open new file if we're at maximum for
+        // current file.
+        writer.checkSize();
+        if (writer.getPosition() != position) {
+            // We just closed the file because it was larger than maxBytes.
+            // Add to the totalBytesWritten the size of the first record
+            // in the file, if any.
+            setTotalBytesWritten(getTotalBytesWritten() +
+            	(writer.getPosition() - position));
+            position = writer.getPosition();
+        }
         
         WARCWriter w = (WARCWriter)writer;
         w.resetStats();
@@ -232,12 +257,13 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
             throw e;
         } finally {
             if (writer != null) {
-                if (WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0) {
+               if (WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0) {
                     addStats(w.getStats());
                     urlsWritten++;
                 }
                 logger.fine("wrote " + WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
-                setTotalBytesWritten(getTotalBytesWritten() + WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK));
+            	setTotalBytesWritten(getTotalBytesWritten() +
+            	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
             }
         }
@@ -579,28 +605,15 @@ public class WARCWriterProcessor extends WriterPoolProcessor {
     }
     
     protected URI getRecordID() throws IOException {
-        URI result;
-        try {
-            result = GeneratorFactory.getFactory().getRecordID();
-        } catch (URISyntaxException e) {
-            throw new IOException(e.toString());
-        }
-        return result;
+        return generator.getRecordID();
     }
     
     protected URI qualifyRecordID(final URI base, final String key,
             final String value)
     throws IOException {
-        URI result;
         Map<String, String> qualifiers = new HashMap<String, String>(1);
         qualifiers.put(key, value);
-        try {
-            result = GeneratorFactory.getFactory().
-                qualifyRecordID(base, qualifiers);
-        } catch (URISyntaxException e) {
-            throw new IOException(e.toString());
-        }
-        return result;
+        return generator.qualifyRecordID(base, qualifiers);
     }  
 
     public List<String> getMetadata() {

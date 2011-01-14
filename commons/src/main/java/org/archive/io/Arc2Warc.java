@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +42,9 @@ import org.archive.io.arc.ARCReaderFactory;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCConstants;
 import org.archive.io.warc.WARCWriter;
+import org.archive.io.warc.WARCWriterPoolSettingsData;
+import org.archive.uid.RecordIDGenerator;
+import org.archive.uid.UUIDGenerator;
 import org.archive.util.FileUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.joda.time.DateTimeZone;
@@ -54,6 +58,8 @@ import org.joda.time.format.ISODateTimeFormat;
  * @version $Date$ $Revision$
  */
 public class Arc2Warc {
+    RecordIDGenerator generator = new UUIDGenerator();
+    
    private static void usage(HelpFormatter formatter, Options options,
            int exitCode) {
        formatter.printHelp("java org.archive.io.arc.Arc2Warc " +
@@ -101,8 +107,12 @@ public class Arc2Warc {
 	       metadata.add(ar.toString());
 	       // Now create the writer.  If reader was compressed, lets write
 	       // a compressed WARC.
-		   writer = new WARCWriter(null, bos, warc,
-		       reader.isCompressed(), null, metadata);
+		   writer = new WARCWriter(
+		               new AtomicInteger(),
+		               bos, 
+		               warc, 
+		               new WARCWriterPoolSettingsData(
+		                       "", "", -1, reader.isCompressed(), null, metadata, generator));
 		   // Write a warcinfo record with description about how this WARC
 		   // was made.
 		   writer.writeWarcinfoRecord(warc.getName(),
@@ -133,8 +143,8 @@ public class Arc2Warc {
 	   }
    }
    
-protected void write(final WARCWriter writer, final ARCRecord r)
-throws IOException {
+   protected void write(final WARCWriter writer, final ARCRecord r)
+   throws IOException {
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
@@ -161,7 +171,7 @@ throws IOException {
        if (r.getHeader().getContentBegin() > 0) {
            warcMimeTypeString = WARCConstants.HTTP_RESPONSE_MIMETYPE;
            writer.writeResponseRecord(r.getHeader().getUrl(), warcDateString,
-               warcMimeTypeString, WARCWriter.getRecordID(), ar, r, 
+               warcMimeTypeString, generator.getRecordID(), ar, r, 
                    r.getHeader().getLength());
        } else {
            warcMimeTypeString = r.getHeader().getMimetype();

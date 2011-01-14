@@ -16,24 +16,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.archive.io;
+package org.archive.io.warc;
 
 import java.io.File;
 import java.util.List;
 
-/**
- * Settings object for a {@link WriterPool}.
- * Used creating {@link WriterPoolMember}s.
- * @author stack
- * @version $Date$, $Revision$
- */
-public interface WriterPoolSettings {
-    public long getMaxFileSizeBytes();
-    public String getPrefix();
-    public String getTemplate(); 
-    public List<File> getOutputDirs();
-    public boolean getCompress();
-    public List<String> getMetadata();
-    public boolean getFrequentFlushes();
-    public int getWriteBufferSize();
+import org.archive.io.arc.WriterPoolSettingsData;
+import org.archive.uid.RecordIDGenerator;
+
+public class WARCWriterPoolSettingsData extends WriterPoolSettingsData implements WARCWriterPoolSettings {
+    RecordIDGenerator generator;
+    
+    public WARCWriterPoolSettingsData(String prefix, String template,
+            long maxFileSizeBytes, boolean compress, List<File> outputDirs,
+            List<String> metadata, RecordIDGenerator generator) {
+        super(prefix,template,maxFileSizeBytes,compress,outputDirs,metadata);
+        this.generator = generator;
+    }
+    @Override
+    public RecordIDGenerator getRecordIDGenerator() {
+        return generator; 
+    }
 }

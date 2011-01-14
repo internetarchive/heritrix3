@@ -26,10 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -37,7 +35,6 @@ import java.util.logging.Logger;
 
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
-import org.archive.uid.GeneratorFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
@@ -78,21 +75,7 @@ implements WARCConstants {
         }
     };
     
-    /**
-     * Metadata.
-     * TODO: Exploit writing warcinfo record.  Currently unused.
-     */
-    private final List<String> fileMetadata;
-    
     private Map<String,Map<String,Long>> stats; 
-    
-    /**
-     * Shutdown Constructor
-     * Has default access so can make instance to test utility methods.
-     */
-    WARCWriter() {
-        this(null, null, "", "", true, -1, null);
-    }
     
     /**
      * Constructor.
@@ -107,11 +90,9 @@ implements WARCConstants {
      */
     public WARCWriter(final AtomicInteger serialNo,
     		final OutputStream out, final File f,
-    		final boolean cmprs, final String a14DigitDate,
-            final List<String> warcinfoData)
+    		final WARCWriterPoolSettings settings)
     throws IOException {
-        super(serialNo, out, f, cmprs, a14DigitDate);
-        this.fileMetadata = warcinfoData;
+        super(serialNo, out, f, settings);
     }
             
     /**
@@ -125,12 +106,8 @@ implements WARCConstants {
      * @param warcinfoData File metadata for warcinfo record.
      */
     public WARCWriter(final AtomicInteger serialNo,
-    		final List<File> dirs, final String prefix, 
-            final String suffix, final boolean cmprs,
-            final long maxSize, final List<String> warcinfoData) {
-        super(serialNo, dirs, prefix, suffix, cmprs, maxSize,
-        	WARC_FILE_EXTENSION);
-        this.fileMetadata = warcinfoData;
+            final WARCWriterPoolSettings settings) {
+        super(serialNo, settings, WARC_FILE_EXTENSION);
     }
     
     @Override
@@ -264,17 +241,16 @@ implements WARCConstants {
         long totalBytes = 0;
         long startPosition;
 
-        try {
-            checkSize(); // may start a new output file
-            startPosition = getPosition();
+    	try {
+    	    startPosition = getPosition();
             preWriteRecordTasks();
 
             // TODO: Revisit encoding of header.
-            
             byte[] bytes = header.getBytes(WARC_HEADER_ENCODING);
             write(bytes);
             totalBytes += bytes.length;
 
+            
             if (contentStream != null && contentLength > 0) {
                 // Write out the header/body separator.
                 write(CRLF_BYTES); // TODO: should this be written even for zero-length?
@@ -349,28 +325,12 @@ implements WARCConstants {
 
     protected URI generateRecordId(final Map<String, String> qualifiers)
     throws IOException {
-    	URI rid = null;
-    	try {
-    		rid = GeneratorFactory.getFactory().
-    			getQualifiedRecordID(qualifiers);
-    	} catch (URISyntaxException e) {
-    		// Convert to IOE so can let it out.
-    		throw new IOException(e.getMessage());
-    	}
-    	return rid;
+        return ((WARCWriterPoolSettings)settings).getRecordIDGenerator().getQualifiedRecordID(qualifiers);
     }
     
     protected URI generateRecordId(final String key, final String value)
     throws IOException {
-    	URI rid = null;
-    	try {
-    		rid = GeneratorFactory.getFactory().
-    			getQualifiedRecordID(key, value);
-    	} catch (URISyntaxException e) {
-    		// Convert to IOE so can let it out.
-    		throw new IOException(e.getMessage());
-    	}
-    	return rid;
+    	return ((WARCWriterPoolSettings)settings).getRecordIDGenerator().getQualifiedRecordID(key, value);
     }
     
     public URI writeWarcinfoRecord(String filename)
@@ -392,12 +352,12 @@ implements WARCConstants {
         }
         // Add warcinfo body.
         byte [] warcinfoBody = null;
-        if (this.fileMetadata == null) {
+        if (settings.getMetadata() == null) {
         	// TODO: What to write into a warcinfo?  What to associate?
         	warcinfoBody = "TODO: Unimplemented".getBytes();
         } else {
         	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        	for (final Iterator<String> i = this.fileMetadata.iterator();
+        	for (final Iterator<String> i = settings.getMetadata().iterator();
         			i.hasNext();) {
         		baos.write(i.next().toString().getBytes(UTF8Bytes.UTF8));
         	}
@@ -467,7 +427,8 @@ implements WARCConstants {
             final ANVLRecord namedFields, final InputStream response,
             final long responseLength)
     throws IOException {
-    	writeResourceRecord(url, create14DigitDate, mimetype, getRecordID(),
+    	writeResourceRecord(url, create14DigitDate, mimetype, 
+    	        ((WARCWriterPoolSettings)settings).getRecordIDGenerator().getRecordID(),
     			namedFields, response, responseLength);
     }
     
@@ -514,21 +475,8 @@ implements WARCConstants {
             mimetype, recordId, namedFields, metadata,
             metadataLength, true);
     }
-    
-    /**
-     * Convenience method for getting Record-Ids.
-     * @return A record ID.
-     * @throws IOException
-     */
-    public static URI getRecordID() throws IOException {
-        URI result;
-        try {
-            result = GeneratorFactory.getFactory().getRecordID();
-        } catch (URISyntaxException e) {
-            throw new IOException(e.toString());
-        }
-        return result;
-    }
+
+
 
     public void resetStats() {
         if (stats != null) {

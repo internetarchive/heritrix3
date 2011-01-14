@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -38,6 +37,7 @@ import java.util.regex.Pattern;
 import org.archive.io.GzippedInputStream;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
+import org.archive.io.WriterPoolSettings;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.MimetypeUtils;
@@ -120,9 +120,7 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
     private static final Pattern METADATA_LINE_PATTERN =
         Pattern.compile("^\\S+ \\S+ \\S+ \\S+ \\S+(" + LINE_SEPARATOR + "?)$");
     
-    private List<String> metadata = null;
-    
-    
+      
     /**
      * Constructor.
      * Takes a stream. Use with caution. There is no upperbound check on size.
@@ -138,31 +136,12 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      * @throws IOException
      */
     public ARCWriter(final AtomicInteger serialNo, final PrintStream out,
-    	final File arc, final boolean cmprs, String a14DigitDate,
-    	final List<String> metadata)
+    	final File arc, final WriterPoolSettings settings)
     throws IOException {
-        super(serialNo, out, arc, cmprs, a14DigitDate);
-        this.metadata = metadata;
-        writeFirstRecord(a14DigitDate);
+        super(serialNo, out, arc, settings);
+        writeFirstRecord(ArchiveUtils.get14DigitDate());
     }
-    
-    /**
-     * Constructor.
-     *
-     * @param serialNo  used to generate unique file name sequences
-     * @param dirs Where to drop the ARC files.
-     * @param prefix ARC file prefix to use.  If null, we use
-     * DEFAULT_ARC_FILE_PREFIX.
-     * @param cmprs Compress the ARC files written.  The compression is done
-     * by individually gzipping each record added to the ARC file: i.e. the
-     * ARC file is a bunch of gzipped records concatenated together.
-     * @param maxSize Maximum size for ARC files written.
-     */
-    public ARCWriter(final AtomicInteger serialNo, final List<File> dirs,
-    		final String prefix, final boolean cmprs, final long maxSize) {
-        this(serialNo, dirs, prefix, "", cmprs, maxSize, null);
-    }
-            
+          
     /**
      * Constructor.
      *
@@ -175,12 +154,9 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      * @param meta File meta data.  Can be null.  Is list of File and/or
      * String objects.
      */
-    public ARCWriter(final AtomicInteger serialNo, final List<File> dirs,
-    		final String prefix, final String suffix, final boolean cmprs,
-            final long maxSize, final List<String> meta) {
-        super(serialNo, dirs, prefix, suffix, cmprs, maxSize,
-        	ARC_FILE_EXTENSION);
-        this.metadata = meta;
+    public ARCWriter(final AtomicInteger serialNo, final WriterPoolSettings settings) {
+        super(serialNo, settings, ARC_FILE_EXTENSION);
+
     }
 
     protected String createFile()
@@ -315,11 +291,11 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      */
     private void writeMetaData(ByteArrayOutputStream baos)
             throws UnsupportedEncodingException, IOException {
-        if (this.metadata == null) {
+        if (settings.getMetadata() == null) {
             return;
         }
 
-        for (Iterator<String> i = this.metadata.iterator();
+        for (Iterator<String> i = settings.getMetadata().iterator();
                 i.hasNext();) {
             Object obj = i.next();
             if (obj instanceof String) {
@@ -352,10 +328,10 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
     private int getMetadataLength()
     throws UnsupportedEncodingException {
         int result = -1;
-        if (this.metadata == null) {
+        if (settings.getMetadata()  == null) {
             result = 0;
         } else {
-            for (Iterator<String> i = this.metadata.iterator();
+            for (Iterator<String> i = settings.getMetadata().iterator();
                     i.hasNext();) {
                 Object obj = i.next();
                 if (obj instanceof String) {

@@ -35,17 +35,16 @@ import java.util.UUID;
  * @version $Revision$ $Date$
  * @see <a href="http://ietf.org/rfc/rfc4122.txt">RFC4122</a>
  */
-class UUIDGenerator implements Generator {
+public class UUIDGenerator implements RecordIDGenerator {
 	private static final String SCHEME = "urn:uuid";
 	private static final String SCHEME_COLON = SCHEME + ":";
 	
-	UUIDGenerator() {
+	public UUIDGenerator() {
 		super();
 	}
 
-	public synchronized URI qualifyRecordID(URI recordId,
-			final Map<String, String> qualifiers)
-	throws URISyntaxException {
+	public URI qualifyRecordID(URI recordId,
+			final Map<String, String> qualifiers) {
 		return getRecordID();
 	}
 
@@ -53,18 +52,21 @@ class UUIDGenerator implements Generator {
 		return UUID.randomUUID().toString();
 	}
 	
-	public URI getRecordID() throws URISyntaxException {
-		return new URI(SCHEME_COLON + getUUID());
+	public URI getRecordID() {
+		try {
+            return new URI(SCHEME_COLON + getUUID());
+        } catch (URISyntaxException e) {
+            // should be impossible
+            throw new RuntimeException(e); 
+        }
 	}
 	
 	public URI getQualifiedRecordID(
-			final String key, final String value)
-	throws URISyntaxException {
+			final String key, final String value){
 		return getRecordID();
 	}
 
-	public URI getQualifiedRecordID(Map<String, String> qualifiers)
-	throws URISyntaxException {
+	public URI getQualifiedRecordID(Map<String, String> qualifiers){
 		return getRecordID();
 	}
 }

@@ -31,7 +31,7 @@ import junit.framework.TestCase;
  */
 public class UUIDGeneratorTest extends TestCase {
 	public void testQualifyRecordID() throws URISyntaxException {
-		Generator g = new UUIDGenerator();
+		RecordIDGenerator g = new UUIDGenerator();
 		URI uri = g.getRecordID();
 		Map<String, String> qualifiers = new HashMap<String, String>();
 		qualifiers.put("a", "b");

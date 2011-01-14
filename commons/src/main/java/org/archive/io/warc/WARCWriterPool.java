@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
-import org.archive.io.WriterPoolSettings;
 
 
 /**
@@ -38,7 +37,7 @@ public class WARCWriterPool extends WriterPool {
      * @param poolMaximumActive
      * @param poolMaximumWait
      */
-    public WARCWriterPool(final WriterPoolSettings settings,
+    public WARCWriterPool(final WARCWriterPoolSettings settings,
             final int poolMaximumActive, final int poolMaximumWait) {
     	this(new AtomicInteger(), settings, poolMaximumActive, poolMaximumWait);
     }
@@ -51,7 +50,7 @@ public class WARCWriterPool extends WriterPool {
      * @param poolMaximumWait
      */
     public WARCWriterPool(final AtomicInteger serial,
-    		final WriterPoolSettings settings,
+    		final WARCWriterPoolSettings settings,
             final int poolMaximumActive, final int poolMaximumWait) {
     	super(serial, settings, poolMaximumActive, poolMaximumWait);
     }
@@ -60,9 +59,6 @@ public class WARCWriterPool extends WriterPool {
      * @see org.archive.io.WriterPool#makeWriter()
      */
     protected WriterPoolMember makeWriter() {
-        return new WARCWriter(serialNo, settings.getOutputDirs(),
-                settings.getPrefix(), settings.getTemplate(),
-                settings.getCompress(), settings.getMaxFileSizeBytes(),
-                settings.getMetadata());
+        return new WARCWriter(serialNo, (WARCWriterPoolSettings)settings);
     }
 }

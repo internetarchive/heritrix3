@@ -22,7 +22,6 @@ package org.archive.io.arc;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Arrays;
-import java.util.List;
 
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
@@ -111,31 +110,13 @@ public class ARCWriterPoolTest extends TmpDirTestCase {
     }
     
     private WriterPoolSettings getSettings(final boolean isCompressed) {
-        return new WriterPoolSettings() {
-            public long getMaxFileSizeBytes() {
-                return ARCConstants.DEFAULT_MAX_ARC_FILE_SIZE;
-            }
-            
-            public String getPrefix() {
-                return PREFIX;
-            }
-            
-            public String getTemplate() {
-                return "${prefix}-${timestamp17}-${serialno}-${heritrix.hostname}";
-            }
-            
-            public List<File> getOutputDirs() {
-                File [] files = {getTmpDir()};
-                return Arrays.asList(files);
-            }
-            
-            public boolean getCompress() {
-                return isCompressed;
-            }
-            
-            public List<String> getMetadata() {
-            	return null;
-            }
-        };
+        File [] files = {getTmpDir()};
+        return new WriterPoolSettingsData(
+                PREFIX,
+                "${prefix}-${timestamp17}-${serialno}-${heritrix.hostname}",
+                ARCConstants.DEFAULT_MAX_ARC_FILE_SIZE,
+                isCompressed,
+                Arrays.asList(files),
+                null);
     }
 }

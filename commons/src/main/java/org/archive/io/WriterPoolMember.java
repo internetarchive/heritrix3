@@ -19,8 +19,6 @@
 
 package org.archive.io;
 
-import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,6 +36,7 @@ import java.util.zip.GZIPOutputStream;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.PropertyUtils;
+
 
 
 /**
@@ -74,24 +73,17 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     /**
      * Reference to file we're currently writing.
      */
-    private File f = null;
+    protected File f = null;
 
-    /**
-     *  Output stream for file.
-     */
-    private OutputStream out = null;
+    /**  Output stream for file. */
+    protected OutputStream out = null;
+    /** Counting stream for metering */
+    protected MiserOutputStream countOut = null; 
     
-    /**
-     * File output stream.
-     * This is needed so can get at channel to find current position in file.
-     */
-    private FileOutputStream fos;
+    /** reusable buffer for recycling scenarios */ 
+    protected byte[] rebuf; 
     
-    private final boolean compressed;
-    private List<File> writeDirs = null;
-    private String template = DEFAULT_TEMPLATE;
-    private String prefix = DEFAULT_PREFIX;
-    private final long maxSize;
+    protected WriterPoolSettings settings; 
     private final String extension;
 
     /**
@@ -110,20 +102,20 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     /**
      * Directories round-robin index.
      */
-    private static int roundRobinIndex = 0;
+    protected static int roundRobinIndex = 0;
 
     /**
      * NumberFormat instance for formatting serial number.
      *
      * Pads serial number with zeros.
      */
-    private static NumberFormat serialNoFormatter = new DecimalFormat("00000");
+    protected static NumberFormat serialNoFormatter = new DecimalFormat("00000");
     
     
     /**
      * Buffer to reuse writing streams.
      */
-    private final byte [] scratchbuffer = new byte[4 * 1024];
+    protected final byte [] scratchbuffer = new byte[4 * 1024];
  
     
     /**
@@ -140,13 +132,16 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected WriterPoolMember(AtomicInteger serialNo, 
             final OutputStream out, final File file,
-            final boolean cmprs, String a14DigitDate)
+            final WriterPoolSettings settings)
     throws IOException {
-        this(serialNo, null, null, cmprs, -1, null);
-        this.out = out;
+        this(serialNo, settings, null);
+        this.countOut = (out instanceof MiserOutputStream) 
+                    ? (MiserOutputStream)out 
+                    : new MiserOutputStream(out, settings.getFrequentFlushes());
+        this.out = this.countOut; 
         this.f = file;
     }
-    
+          
     /**
      * Constructor.
      *
@@ -155,34 +150,12 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * @param prefix File prefix to use.
      * @param cmprs Compress the records written. 
      * @param maxSize Maximum size for ARC files written.
-     * @param extension Extension to give file.
-     */
-    public WriterPoolMember(AtomicInteger serialNo, 
-            final List<File> dirs, final String prefix, 
-            final boolean cmprs, final long maxSize, final String extension) {
-        this(serialNo, dirs, prefix, "", cmprs, maxSize, extension);
-    }
-            
-    /**
-     * Constructor.
-     *
-     * @param serialNo  used to create unique filename sequences
-     * @param dirs Where to drop files.
-     * @param prefix File prefix to use.
-     * @param cmprs Compress the records written. 
-     * @param maxSize Maximum size for ARC files written.
-     * @param suffix File tail to use.  If null, unused.
+     * @param template filenaming template to use
      * @param extension Extension to give file.
      */
     public WriterPoolMember(AtomicInteger serialNo,
-            final List<File> dirs, final String prefix, 
-            final String template, final boolean cmprs,
-            final long maxSize, final String extension) {
-        this.template = template;
-        this.prefix = prefix;
-        this.maxSize = maxSize;
-        this.writeDirs = dirs;
-        this.compressed = cmprs;
+            final WriterPoolSettings settings, final String extension) {
+        this.settings = settings; 
         this.extension = extension;
         this.serialNo = serialNo;
     }
@@ -210,7 +183,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      * @return boolean true if file has reached target size and due to be closed
      */
     public boolean isOversize() {
-        return this.maxSize != -1 && (this.f.length() > this.maxSize);
+        return settings.getMaxFileSizeBytes() != -1 && (this.getPosition() > settings.getMaxFileSizeBytes());
     }
 
     /**
@@ -223,17 +196,21 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     protected String createFile() throws IOException {
         generateNewBasename();
         String name = currentBasename + '.' + this.extension  +
-            ((this.compressed)? DOT_COMPRESSED_FILE_EXTENSION: "") +
+            ((settings.getCompress())? DOT_COMPRESSED_FILE_EXTENSION: "") +
             OCCUPIED_SUFFIX;
-        File dir = getNextDirectory(this.writeDirs);
+        File dir = getNextDirectory(settings.getOutputDirs());
         return createFile(new File(dir, name));
     }
     
     protected String createFile(final File file) throws IOException {
     	close();
         this.f = file;
-        this.fos = new FileOutputStream(this.f);
-        this.out = new FastBufferedOutputStream(this.fos);
+        FileOutputStream fos = new FileOutputStream(this.f);
+        if(rebuf==null) {
+            rebuf = new byte[settings.getWriteBufferSize()]; 
+        }
+        this.countOut = new MiserOutputStream(new RecyclingFastBufferedOutputStream(fos,rebuf),settings.getFrequentFlushes());
+        this.out = this.countOut; 
         logger.fine("Opened " + this.f.getAbsolutePath());
         return this.f.getName();
     }
@@ -293,7 +270,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected void generateNewBasename() {
         Properties localProps = new Properties(); 
-        localProps.setProperty("prefix", prefix);
+        localProps.setProperty("prefix", settings.getPrefix());
         synchronized(this.getClass()) {
             // ensure that serialNo and timestamp are minted together (never inverted sort order)
             String paddedSerialNumber = WriterPoolMember.serialNoFormatter.format(serialNo.getAndIncrement());
@@ -304,7 +281,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
             localProps.setProperty("timestamp17", timestamp17);
             localProps.setProperty("timestamp14", timestamp14);
         }
-        currentBasename = PropertyUtils.interpolateWithProperties(template, 
+        currentBasename = PropertyUtils.interpolateWithProperties(settings.getTemplate(), 
                 localProps, System.getProperties());
     }
 
@@ -316,9 +293,9 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected String getBaseFilename() {
         String name = this.f.getName();
-        if (this.compressed && name.endsWith(DOT_COMPRESSED_FILE_EXTENSION)) {
+        if (settings.getCompress() && name.endsWith(DOT_COMPRESSED_FILE_EXTENSION)) {
             return name.substring(0,name.length() - 3);
-        } else if(this.compressed &&
+        } else if(settings.getCompress() &&
                 name.endsWith(DOT_COMPRESSED_FILE_EXTENSION +
                     OCCUPIED_SUFFIX)) {
             return name.substring(0, name.length() -
@@ -355,7 +332,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         if (this.out == null) {
             createFile();
         }
-        if (this.compressed) {
+        if (settings.getCompress()) {
             // Wrap stream in GZIP Writer.
             // The below construction immediately writes the GZIP 'default'
             // header out on the underlying stream.
@@ -372,7 +349,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
      */
     protected void postWriteRecordTasks()
     throws IOException {
-        if (this.compressed) {
+        if (settings.getCompress()) {
             CompressedStream o = (CompressedStream)this.out;
             o.finish();
             o.flush();
@@ -382,28 +359,17 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
     }
     
 	/**
-     * Position in current physical file.
+     * Position in raw output (typically, physical file).
      * Used making accounting of bytes written.
-	 * @return Position in underlying file.  Call before or after writing
-     * records *only* to be safe.
+	 * @return Position in final media (assuming all flushing completes)
 	 * @throws IOException
 	 */
-    public long getPosition() throws IOException {
-        long position = 0;
-        if (this.out != null) {
-            this.out.flush();
-        }
-        if (this.fos != null) {
-            // Call flush on underlying file though probably not needed assuming
-            // above this.out.flush called through to this.fos.
-            this.fos.flush();
-            position = this.fos.getChannel().position();
-        }
-        return position;
+    public long getPosition() {
+        return (countOut==null)? 0L : this.countOut.getCount();
     }
 
     public boolean isCompressed() {
-        return compressed;
+        return settings.getCompress();
     }
     
     protected void write(final byte [] b) throws IOException {
@@ -463,7 +429,6 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         }
         this.out.close();
         this.out = null;
-        this.fos = null;
         if (this.f != null && this.f.exists()) {
             String path = this.f.getAbsolutePath();
             if (path.endsWith(OCCUPIED_SUFFIX)) {

@@ -178,6 +178,29 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     public void setMaxTotalBytesToWrite(long maxTotalBytesToWrite) {
         this.maxTotalBytesToWrite = maxTotalBytesToWrite;
     }
+    
+    /**
+     * Whether to flush to underlying file frequently (at least after each 
+     * record), or not. Default is true. 
+     */
+    protected boolean frequentFlushes = true; 
+    public boolean getFrequentFlushes() {
+        return frequentFlushes; 
+    }
+    public void setFrequentFlushes(boolean frequentFlushes) {
+        this.frequentFlushes = frequentFlushes;
+    }
+    
+    /**
+     * Size of buffer in front of disk-writing. Default is 256K.
+     */
+    protected int writeBufferSize = 256*1024; 
+    public int getWriteBufferSize() {
+        return writeBufferSize; 
+    }
+    public void setWriteBufferSize(int writeBufferSize) {
+        this.writeBufferSize = writeBufferSize;
+    }
 
     public CrawlMetadata getMetadataProvider() {
         return (CrawlMetadata) kp.get("metadataProvider");

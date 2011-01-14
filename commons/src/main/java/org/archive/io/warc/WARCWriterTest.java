@@ -25,8 +25,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,8 +35,8 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
-import org.archive.io.warc.WARCConstants;
-import org.archive.uid.GeneratorFactory;
+import org.archive.uid.RecordIDGenerator;
+import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.TmpDirTestCase;
 import org.archive.util.anvl.ANVLRecord;
@@ -48,7 +48,10 @@ import org.archive.util.anvl.ANVLRecord;
  */
 public class WARCWriterTest
 extends TmpDirTestCase implements WARCConstants {
+    
     private static final AtomicInteger SERIAL_NO = new AtomicInteger();
+    
+    RecordIDGenerator generator = new UUIDGenerator();
     
     /**
      * Prefix to use for ARC files made by JUNIT.
@@ -58,7 +61,7 @@ extends TmpDirTestCase implements WARCConstants {
     private static final String SOME_URL = "http://www.archive.org/test/";
     
     public void testCheckHeaderLineValue() throws Exception {
-        WARCWriter writer = new WARCWriter();
+        WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderValue("one");
         IllegalArgumentException exception = null;
         try {
@@ -77,7 +80,7 @@ extends TmpDirTestCase implements WARCConstants {
     }
 
     public void testMimetypes() throws IOException {
-        WARCWriter writer = new WARCWriter();
+        WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderLineMimetypeParameter("text/xml");
         writer.checkHeaderLineMimetypeParameter("text/xml+rdf");
         assertEquals(writer.checkHeaderLineMimetypeParameter(
@@ -89,16 +92,16 @@ extends TmpDirTestCase implements WARCConstants {
     
     public void testWriteRecord() throws IOException {
     	File [] files = {getTmpDir()};
-        
+
     	// Write uncompressed.
         WARCWriter writer =
-        	new WARCWriter(SERIAL_NO, Arrays.asList(files),
-        			this.getClass().getName(), "suffix", false, -1, null);
+        	new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(this.getClass().getName(), "template", -1, false, Arrays.asList(files), null, generator));
+
         writeFile(writer);
         
         // Write compressed.
-        writer = new WARCWriter(SERIAL_NO, Arrays.asList(files),
-        		this.getClass().getName(), "suffix", true, -1, null);
+        writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(this.getClass().getName(), "template", -1, true, Arrays.asList(files), null, generator));
+
         writeFile(writer);
     }
     
@@ -129,14 +132,7 @@ extends TmpDirTestCase implements WARCConstants {
     	headerFields.addLabelValue("x", "y");
     	headerFields.addLabelValue("a", "b");
     	
-    	URI rid = null;
-    	try {
-    		rid = GeneratorFactory.getFactory().
-    			getQualifiedRecordID(TYPE, METADATA);
-    	} catch (URISyntaxException e) {
-    		// Convert to IOE so can let it out.
-    		throw new IOException(e.getMessage());
-    	}
+    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, METADATA);
     	final String content = "Any old content.";
     	for (int i = 0; i < 10; i++) {
     		String body = i + ". " + content;
@@ -211,9 +207,8 @@ extends TmpDirTestCase implements WARCConstants {
     throws IOException {
         cleanUpOldFiles(baseName);
         File [] files = {getTmpDir()};
-        WARCWriter w = new WARCWriter(SERIAL_NO,
-            Arrays.asList(files), baseName + '-' + PREFIX, "", compress,
-            maxSize, null);
+        WARCWriter w = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(baseName + '-' + PREFIX, "", maxSize, compress, Arrays.asList(files), null, generator));
+            
         assertNotNull(w);
         for (int i = 0; i < recordCount; i++) {
             writeRandomHTTPRecord(w, i);
@@ -320,9 +315,14 @@ extends TmpDirTestCase implements WARCConstants {
     protected WARCWriter createWARCWriter(String NAME,
             boolean compress) {
         File [] files = {getTmpDir()};
-        return new WARCWriter(SERIAL_NO,
-        	Arrays.asList(files), NAME, "",
-            compress, DEFAULT_MAX_WARC_FILE_SIZE, null);
+        return new WARCWriter(SERIAL_NO, 
+                              new WARCWriterPoolSettingsData(
+                                      NAME, 
+                                      "", DEFAULT_MAX_WARC_FILE_SIZE, 
+                                      compress, 
+                                      Arrays.asList(files), 
+                                      null, 
+                                      generator));
     }
     
     protected static ByteArrayOutputStream getBaos(String str)
@@ -403,8 +403,14 @@ extends TmpDirTestCase implements WARCConstants {
     throws IOException {
         File [] files = {arcdir};
         WARCWriter writer =
-            new WARCWriter(SERIAL_NO, Arrays.asList(files),
-            "test", "", compress, DEFAULT_MAX_WARC_FILE_SIZE, null);
+            new WARCWriter(SERIAL_NO, 
+                    new WARCWriterPoolSettingsData(
+                            "test", 
+                            "", DEFAULT_MAX_WARC_FILE_SIZE, 
+                            compress, 
+                            Arrays.asList(files), 
+                            null, 
+                            new UUIDGenerator()));
         String content = getContent();
         writeRecord(writer, SOME_URL, "text/html", content.length(),
             getBaos(content));
