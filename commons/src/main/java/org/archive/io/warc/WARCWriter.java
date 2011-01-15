@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
+import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
@@ -77,8 +78,14 @@ implements WARCConstants {
             e.printStackTrace();
         }
     };
-    
-    private ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> stats; 
+
+    /**
+     * Temporarily accumulates stats managed externally by
+     * {@link WARCWriterProcessor}. WARCWriterProcessor will call
+     * {@link #resetTmpStats()}, write some records, then add
+     * {@link #getTmpStats()} into its long-term running totals.
+     */
+    private ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> tmpStats; 
     
     /**
      * Constructor.
@@ -277,23 +284,23 @@ implements WARCConstants {
     // if compression is enabled, sizeOnDisk means compressed bytes; if not, it
     // should be the same as totalBytes (right?)
     protected void tally(String recordType, long contentBytes, long totalBytes, long sizeOnDisk) {
-        if (stats == null) {
-            stats = new ConcurrentHashMap<String,ConcurrentMap<String,AtomicLong>>();
+        if (tmpStats == null) {
+            tmpStats = new ConcurrentHashMap<String,ConcurrentMap<String,AtomicLong>>();
         }
 
         // add to stats for this record type
-        ConcurrentMap<String, AtomicLong> substats = stats.get(recordType);
+        ConcurrentMap<String, AtomicLong> substats = tmpStats.get(recordType);
         if (substats == null) {
             substats = new ConcurrentHashMap<String, AtomicLong>();
-            stats.put(recordType, substats);
+            tmpStats.put(recordType, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
         
         // add to totals
-        substats = stats.get(TOTALS);
+        substats = tmpStats.get(TOTALS);
         if (substats == null) {
             substats = new ConcurrentHashMap<String, AtomicLong>();
-            stats.put(TOTALS, substats);
+            tmpStats.put(TOTALS, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
     }
@@ -479,9 +486,12 @@ implements WARCConstants {
             metadataLength, true);
     }
 
-    public void resetStats() {
-        if (stats != null) {
-            for (ConcurrentMap<String, AtomicLong> substats : stats.values()) {
+    /**
+     * @see WARCWriter#tmpStats for usage model
+     */
+    public void resetTmpStats() {
+        if (tmpStats != null) {
+            for (ConcurrentMap<String, AtomicLong> substats : tmpStats.values()) {
                 for (Entry<String, AtomicLong> entry : substats.entrySet()) {
                     entry.getValue().set(0l);
                 }
@@ -489,8 +499,8 @@ implements WARCConstants {
         }
     }
 
-    public ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> getStats() {
-        return stats;
+    public ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> getTmpStats() {
+        return tmpStats;
     }
 
     public static long getStat(

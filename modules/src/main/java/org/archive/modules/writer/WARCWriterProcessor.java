@@ -233,7 +233,11 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
         
         WARCWriter w = (WARCWriter)writer;
-        w.resetStats();
+        
+        // Reset writer temp stats so they reflect only this set of records.
+        // They'll be added to totals below, in finally block, after records
+        // have been written.
+        w.resetTmpStats();
 
         try {
             // Write a request, response, and metadata all in the one
@@ -260,11 +264,11 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             throw e;
         } finally {
             if (writer != null) {
-               if (WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
-                    addStats(w.getStats());
+               if (WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
+                    addStats(w.getTmpStats());
                     urlsWritten.incrementAndGet();
                 }
-                logger.fine("wrote " + WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
+                logger.fine("wrote " + WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
             	setTotalBytesWritten(getTotalBytesWritten() +
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
