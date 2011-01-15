@@ -26,10 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +78,7 @@ implements WARCConstants {
         }
     };
     
-    private Map<String,Map<String,Long>> stats; 
+    private ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> stats; 
     
     /**
      * Constructor.
@@ -275,13 +278,13 @@ implements WARCConstants {
     // should be the same as totalBytes (right?)
     protected void tally(String recordType, long contentBytes, long totalBytes, long sizeOnDisk) {
         if (stats == null) {
-            stats = new HashMap<String,Map<String,Long>>();
+            stats = new ConcurrentHashMap<String,ConcurrentMap<String,AtomicLong>>();
         }
 
         // add to stats for this record type
-        Map<String,Long> substats = stats.get(recordType);
+        ConcurrentMap<String, AtomicLong> substats = stats.get(recordType);
         if (substats == null) {
-            substats = new HashMap<String,Long>();
+            substats = new ConcurrentHashMap<String, AtomicLong>();
             stats.put(recordType, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
@@ -289,37 +292,37 @@ implements WARCConstants {
         // add to totals
         substats = stats.get(TOTALS);
         if (substats == null) {
-            substats = new HashMap<String,Long>();
+            substats = new ConcurrentHashMap<String, AtomicLong>();
             stats.put(TOTALS, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
     }
 
-    protected void subtally(Map<String,Long> substats, long contentBytes,
+    protected void subtally(ConcurrentMap<String, AtomicLong> substats, long contentBytes,
             long totalBytes, long sizeOnDisk) {
         
         if (substats.get(NUM_RECORDS) == null) {
-            substats.put(NUM_RECORDS, 1l);
+            substats.put(NUM_RECORDS, new AtomicLong(1l));
         } else {
-            substats.put(NUM_RECORDS, substats.get(CONTENT_BYTES) + 1l);
+            substats.get(NUM_RECORDS).incrementAndGet();
         }
         
         if (substats.get(CONTENT_BYTES) == null) {
-            substats.put(CONTENT_BYTES, contentBytes);
+            substats.put(CONTENT_BYTES, new AtomicLong(contentBytes));
         } else {
-            substats.put(CONTENT_BYTES, substats.get(CONTENT_BYTES) + contentBytes);
+            substats.get(CONTENT_BYTES).addAndGet(contentBytes);
         }
         
         if (substats.get(TOTAL_BYTES) == null) {
-            substats.put(TOTAL_BYTES, totalBytes);
+            substats.put(TOTAL_BYTES, new AtomicLong(totalBytes));
         } else {
-            substats.put(TOTAL_BYTES, substats.get(TOTAL_BYTES) + totalBytes);
+            substats.get(TOTAL_BYTES).addAndGet(totalBytes);
         }
         
         if (substats.get(SIZE_ON_DISK) == null) {
-            substats.put(SIZE_ON_DISK, sizeOnDisk);
+            substats.put(SIZE_ON_DISK, new AtomicLong(sizeOnDisk));
         } else {
-            substats.put(SIZE_ON_DISK, substats.get(SIZE_ON_DISK) + sizeOnDisk);
+            substats.get(SIZE_ON_DISK).addAndGet(sizeOnDisk);
         }
     }
 
@@ -476,27 +479,27 @@ implements WARCConstants {
             metadataLength, true);
     }
 
-
-
     public void resetStats() {
         if (stats != null) {
-            for (Map<String,Long> substats : stats.values()) {
-                for (Map.Entry<String,Long> entry : substats.entrySet()) {
-                    entry.setValue(0l);
+            for (ConcurrentMap<String, AtomicLong> substats : stats.values()) {
+                for (Entry<String, AtomicLong> entry : substats.entrySet()) {
+                    entry.getValue().set(0l);
                 }
             }
         }
     }
 
-    public Map<String,Map<String,Long>> getStats() {
+    public ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> getStats() {
         return stats;
     }
 
-    public static long getStat(Map<String,Map<String,Long>> statz, String key, String subkey) {
-        if (statz != null && statz.get(key) != null && statz.get(key).get(subkey) != null) {
-            return statz.get(key).get(subkey);
+    public static long getStat(
+            ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> map,
+            String key, String subkey) {
+        if (map != null && map.get(key) != null && map.get(key).get(subkey) != null) {
+            return map.get(key).get(subkey).get();
         } else {
-            return 0;
+            return 0l;
         }
     }
 }

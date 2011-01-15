@@ -58,7 +58,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,8 +99,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
-    private HashMap<String,Map<String,Long>> stats;
-    private int urlsWritten;
+    private ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> stats;
+    private AtomicLong urlsWritten;
     
     public long getDefaultMaxFileSize() {
         return 1000000000L; // 1 SI giga-byte (10^9 bytes), per WARC appendix A
@@ -243,7 +246,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             } else if (lowerCaseScheme.equals("dns")) {
                 writeDnsRecords(curi, w, baseid, timestamp);
             } else if (lowerCaseScheme.equals("ftp")) {
-                writeFtpRecords(w, curi, baseid, timestamp); 
+                writeFtpRecords(w, curi, baseid, timestamp);
             } else {
                 logger.warning("No handler for scheme " + lowerCaseScheme);
             }
@@ -257,9 +260,9 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             throw e;
         } finally {
             if (writer != null) {
-               if (WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0) {
+               if (WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
                     addStats(w.getStats());
-                    urlsWritten++;
+                    urlsWritten.incrementAndGet();
                 }
                 logger.fine("wrote " + WARCWriter.getStat(w.getStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
             	setTotalBytesWritten(getTotalBytesWritten() +
@@ -270,20 +273,20 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         return checkBytesWritten();
     }
 
-    protected void addStats(Map<String,Map<String,Long>> statz) {
+    protected void addStats(ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> statz) {
         if (stats == null) {
-            stats = new HashMap<String,Map<String,Long>>();
+            stats = new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>();
         }
 
         for (String key: statz.keySet()) {
             if (stats.get(key) == null) {
-                stats.put(key, new HashMap<String,Long>());
+                stats.put(key, new ConcurrentHashMap<String,AtomicLong>());
             }
             for (String subkey: statz.get(key).keySet()) {
                 if (stats.get(key).get(subkey) == null) {
                     stats.get(key).put(subkey, statz.get(key).get(subkey));
                 } else {
-                    stats.get(key).put(subkey, stats.get(key).get(subkey) + statz.get(key).get(subkey));
+                    stats.get(key).get(subkey).addAndGet(statz.get(key).get(subkey).get());
                 }
             }
         }
