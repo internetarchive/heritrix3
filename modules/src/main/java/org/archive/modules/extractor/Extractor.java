@@ -55,7 +55,10 @@ public abstract class Extractor extends Processor {
             public int getMaxOutlinks() {
                 return 6000;
             }
-            public boolean isIndependentExtractors() {
+            public boolean getExtractIndependently() {
+                return false;
+            }
+            public boolean getExtract404s() {
                 return false;
             }
         };
@@ -165,11 +168,6 @@ public abstract class Extractor extends Processor {
         numberOfLinksExtracted.set(json.getLong("numberOfLinksExtracted"));
     }
     
-    @Override
-    protected boolean shouldProcess(CrawlURI uri) {
-        // TODO Auto-generated method stub
-        return false;
-    }
     public String report() {
         StringBuffer ret = new StringBuffer();
         ret.append(super.report());

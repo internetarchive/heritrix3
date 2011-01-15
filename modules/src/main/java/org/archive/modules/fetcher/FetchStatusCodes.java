@@ -113,6 +113,9 @@ public interface FetchStatusCodes {
     public static final int S_DNS_SUCCESS = 1;
     /** InetAddress.getByName success */
     public static final int S_GETBYNAME_SUCCESS = 1001;
+    
+    /** HTTP 404 NOT FOUND */
+    public static final int S_NOT_FOUND = 404; //
 }
 
 

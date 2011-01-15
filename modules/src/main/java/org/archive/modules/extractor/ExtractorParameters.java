@@ -21,13 +21,33 @@ package org.archive.modules.extractor;
 
 /**
  * Bean interface for parameters consulted by multiple Extractors, and
- * thus provided by some shared object. Because the only current setting
- * is a cap on the number of discovered outlinks per page, this is
- * typically provided by the Frontier in crawls. 
+ * thus provided by some shared object. Because the original shared setting
+ * was a cap on the number of discovered outlinks per page, this was
+ * traditionally provided by the Frontier in crawls. As the number of settings
+ * here grow, that may need to change. 
  * 
  * @contributor gojomo
  */
 public interface ExtractorParameters {
+    /**
+     * The maximum number of outlinks to discover from any URI's content. 
+     * Additional outlinks will be ignored, but the URI should be annotated as
+     * having yielded more than the maximum. 
+     * @return in maximum outlinks to discover 
+     */
     public int getMaxOutlinks();
-    public boolean isIndependentExtractors();
+    /**
+     * Whether each extractor should make an independent decision as to whether
+     * it can extract links from a URI's content (when value is true), or 
+     * whether a previous  extractor's success (marking the URI as 
+     * hasBeenLinkExtracted) should cancel later extractors (when value is 
+     * false). 
+     * @return boolean whether to extract without regard to prior extractor's success
+     */
+    public boolean getExtractIndependently();
+    /**
+     * Whether to extract links from responses with a 404 'not found' response
+     * code.
+     */
+    public boolean getExtract404s(); 
 }
