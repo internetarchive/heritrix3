@@ -100,7 +100,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
     private ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> stats;
-    private AtomicLong urlsWritten;
+    private AtomicLong urlsWritten = new AtomicLong();
     
     public long getDefaultMaxFileSize() {
         return 1000000000L; // 1 SI giga-byte (10^9 bytes), per WARC appendix A
