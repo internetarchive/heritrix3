@@ -30,8 +30,8 @@ public class WriterPoolSettingsData implements WriterPoolSettings {
     List<File> outputDirs;
     boolean compress;
     List<String> metadata;
-    boolean frequentFlushes;
-    int writeBufferSize;
+    boolean frequentFlushes = true;
+    int writeBufferSize = 16*1024;
     
     public WriterPoolSettingsData(String prefix, String template,
             long maxFileSizeBytes, boolean compress, List<File> outputDirs,
