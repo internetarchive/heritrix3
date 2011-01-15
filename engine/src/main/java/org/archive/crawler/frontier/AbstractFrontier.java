@@ -143,13 +143,23 @@ public abstract class AbstractFrontier
     }
     
     {
-        setIndependentExtractors(false);
+        setExtractIndependently(false);
     }
-    public boolean isIndependentExtractors() {
-        return (Boolean) kp.get("independentExtractors");
+    public boolean getExtractIndependently() {
+        return (Boolean) kp.get("extractIndependently");
     }
-    public void setIndependentExtractors(boolean enabled) {
-        kp.put("independentExtractors", enabled);
+    public void setExtractIndependently(boolean extractIndependently) {
+        kp.put("extractIndependently", extractIndependently);
+    }
+    
+    {
+        setExtract404s(true);
+    }
+    public boolean getExtract404s() {
+        return (Boolean) kp.get("extract404s");
+    }
+    public void setExtract404s(boolean extract404s) {
+        kp.put("extract404s", extract404s);
     }
     
     public boolean isRunning() {
