@@ -92,7 +92,6 @@ public class KeyWordProcessor extends Processor {
             if(!viaUri.getData().containsKey("keywordHit")) {
                 ReplayCharSequence seq = viaUri.getRecorder().getReplayCharSequence();
                 viaUri.getData().put("keywordHit", getPattern().matcher(seq).find());
-                seq.close();
             }
             boolean keywordHit = (Boolean) viaUri.getData().get("keywordHit");
             int precedence = keywordHit ? getFoundPrecedence() : getNotFoundPrecedence(); 

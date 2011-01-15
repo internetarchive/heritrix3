@@ -61,4 +61,9 @@ public interface ReplayCharSequence extends CharSequence, Closeable {
      * @return CharacterCodingException
      */
     public CharacterCodingException getCodingException();
+
+    /**
+     * @return false if {@link #close()} has been called
+     */
+    public boolean isOpen();
 }

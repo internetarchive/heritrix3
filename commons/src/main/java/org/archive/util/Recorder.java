@@ -75,6 +75,8 @@ public class Recorder {
      */
     private String characterEncoding = null;
 
+    private ReplayCharSequence replayCharSequence;
+
    
     /**
      * Create an HttpRecorder.
@@ -283,15 +285,20 @@ public class Recorder {
     }
 
     /**
-     * @return A ReplayCharSequence.  Call close on the RCS when done w/ it.
-     * Will return indeterminate results if the underlying recording streams
-     * have not been closed first.
+     * @return A ReplayCharSequence. Caller may call
+     *         {@link ReplayCharSequence#close()} when finished. However, in
+     *         heritrix, the ReplayCharSequence is closed automatically when url
+     *         processing has finished; in that context it's preferable not
+     *         to close, so that processors can reuse the same instance.
      * @throws IOException
-     * @throws IOException
+     * @see {@link #endReplays()}
      */
     public ReplayCharSequence getReplayCharSequence() throws IOException {
-        return getRecordedInput().
-            getReplayCharSequence(this.characterEncoding);
+        if (replayCharSequence == null || !replayCharSequence.isOpen()) {
+            replayCharSequence = getRecordedInput().getReplayCharSequence(this.characterEncoding);
+        }
+        
+        return replayCharSequence;
     }
     
     /**
@@ -334,5 +341,10 @@ public class Recorder {
         }
         is.close();
         return rec;
+    }
+
+    public void endReplays() {
+        ArchiveUtils.closeQuietly(replayCharSequence);
+        replayCharSequence = null;
     }
 }

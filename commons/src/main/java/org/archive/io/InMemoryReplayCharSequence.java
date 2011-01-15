@@ -157,4 +157,9 @@ public class InMemoryReplayCharSequence implements ReplayCharSequence {
     public CharacterCodingException getCodingException() {
         return codingException;
     }
+
+    @Override
+    public boolean isOpen() {
+        return this.charBuffer != null;
+    }
 }

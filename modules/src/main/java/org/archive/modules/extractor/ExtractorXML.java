@@ -27,7 +27,6 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
-import org.archive.util.ArchiveUtils;
 
 /**
  * A simple extractor which finds HTTP URIs inside XML/RSS files,
@@ -87,8 +86,6 @@ public class ExtractorXML extends ContentExtractor {
             return true;
         } catch (IOException e) {
             logger.severe("Failed getting ReplayCharSequence: " + e.getMessage());
-        } finally {
-            ArchiveUtils.closeQuietly(cs);
         }
         return false; 
     }

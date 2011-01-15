@@ -35,7 +35,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsPolicy;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 import org.archive.util.UriUtils;
@@ -672,8 +671,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             curi.getNonFatalFailures().add(e);
             logger.log(Level.SEVERE,"Failed get of replay char sequence in " +
                 Thread.currentThread().getName(), e);
-        } finally {
-            ArchiveUtils.closeQuietly(cs);
         }
         return false;
     }

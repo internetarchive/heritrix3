@@ -27,7 +27,6 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 
 /**
@@ -156,8 +155,6 @@ public class HTTPContentDigest extends Processor {
                 curi.toString() + " " + e.getMessage() + " " +
                 Thread.currentThread().getName());
             return; // Can't proceed if this happens.
-        } finally {
-            ArchiveUtils.closeQuietly(cs);
         }
     }
 }

@@ -175,6 +175,7 @@ implements MultiReporter, ProgressStatisticsReporter,
                     // OutOfMemory and any others
                     seriousError(err); 
                 } finally {
+                    httpRecorder.endReplays();
                     KeyedProperties.clearOverridesFrom(curi); 
                 }
                 

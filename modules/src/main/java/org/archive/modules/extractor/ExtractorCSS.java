@@ -99,17 +99,14 @@ public class ExtractorCSS extends ContentExtractor {
      * @param curi Crawl URI to process.
      */
     public boolean innerExtract(CrawlURI curi) {
-        ReplayCharSequence cs = null;
         try {
-            cs = curi.getRecorder().getReplayCharSequence();
+            ReplayCharSequence cs = curi.getRecorder().getReplayCharSequence();
             numberOfLinksExtracted.addAndGet(
                 processStyleCode(this, curi, cs));
             // Set flag to indicate that link extraction is completed.
             return true;
         } catch (IOException e) {
             logger.log(Level.WARNING, "Problem with ReplayCharSequence: " + e.getMessage(), e);
-        } finally {
-            ArchiveUtils.closeQuietly(cs);
         }
         return false; 
     }

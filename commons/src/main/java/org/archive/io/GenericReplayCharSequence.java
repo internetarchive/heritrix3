@@ -128,6 +128,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
      */ 
     private CharBuffer prefixBuffer = null;
 
+    private boolean isOpen = true;
+
     /**
      * Constructor.
      *
@@ -353,7 +355,15 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         }
     }
 
+
+    @Override
+    public boolean isOpen() {
+        return this.isOpen;
+    }
+
     public void close() throws IOException {
+        this.isOpen = false;
+
         logger.fine("closing");
 
         if (this.backingFileChannel != null && this.backingFileChannel.isOpen()) {
