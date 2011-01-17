@@ -29,7 +29,6 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 import org.archive.util.UriUtils;
@@ -132,8 +131,6 @@ public class ExtractorJS extends ContentExtractor {
             return true;
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
-        } finally {
-            ArchiveUtils.closeQuietly(cs);
         }
         return false;
     }
