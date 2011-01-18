@@ -30,7 +30,7 @@ import org.archive.modules.Processor;
 import org.archive.util.TextUtils;
 
 /**
- * A processor for calculating custum HTTP content digests in place of the 
+ * A processor for calculating custom HTTP content digests in place of the 
  * default (if any) computed by the HTTP fetcher processors.
  * <p>
  * This processor allows the user to specify a regular expression called 
@@ -52,7 +52,15 @@ import org.archive.util.TextUtils;
  * It is generally recommended that this recalculation only be performed when 
  * absolutely needed (because of stripping data that changes automatically each 
  * time the URL is fetched) as this is an expensive operation.
- *
+ * 
+ * NOTE: This processor may open a ReplayCharSequence from the 
+ * CrawlURI's Recorder, without closing that ReplayCharSequence, to allow
+ * reuse by later processors in sequence. In the usual (Heritrix) case, a 
+ * call after all processing to the Recorder's endReplays() method ensures
+ * timely close of any reused ReplayCharSequences. Reuse of this processor
+ * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
+ * occurs. 
+ * 
  * @author Kristinn Sigurdsson
  */
 public class HTTPContentDigest extends Processor {

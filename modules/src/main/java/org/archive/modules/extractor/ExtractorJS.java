@@ -37,8 +37,19 @@ import org.archive.util.UriUtils;
  * Processes Javascript files for strings that are likely to be
  * crawlable URIs.
  *
- * @author gojomo
- *
+ * NOTE: This processor may open a ReplayCharSequence from the 
+ * CrawlURI's Recorder, without closing that ReplayCharSequence, to allow
+ * reuse by later processors in sequence. In the usual (Heritrix) case, a 
+ * call after all processing to the Recorder's endReplays() method ensures
+ * timely close of any reused ReplayCharSequences. Reuse of this processor
+ * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
+ * occurs. 
+ * 
+ * TODO: Replace with a system for actually executing Javascript in a 
+ * browser-workalike DOM, such as via HtmlUnit or remote-controlled 
+ * browser engines. 
+ * 
+ * @contributor gojomo
  */
 public class ExtractorJS extends ContentExtractor {
 

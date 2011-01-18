@@ -27,7 +27,6 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
 
@@ -43,6 +42,14 @@ import org.archive.util.TextUtils;
  * the style sheet, not relative to the document. <a href="http://www.w3.org/TR/REC-CSS1#url">
  * Source: www.w3.org</a>
  *
+ * NOTE: This processor may open a ReplayCharSequence from the 
+ * CrawlURI's Recorder, without closing that ReplayCharSequence, to allow
+ * reuse by later processors in sequence. In the usual (Heritrix) case, a 
+ * call after all processing to the Recorder's endReplays() method ensures
+ * timely close of any reused ReplayCharSequences. Reuse of this processor
+ * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
+ * occurs. 
+ * 
  * @author Igor Ranitovic
  *
  **/

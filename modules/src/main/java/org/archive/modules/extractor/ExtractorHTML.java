@@ -45,8 +45,18 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Basic link-extraction, from an HTML content-body,
  * using regular expressions.
  *
- * @author gojomo
- *
+ * NOTE: This processor may open a ReplayCharSequence from the 
+ * CrawlURI's Recorder, without closing that ReplayCharSequence, to allow
+ * reuse by later processors in sequence. In the usual (Heritrix) case, a 
+ * call after all processing to the Recorder's endReplays() method ensures
+ * timely close of any reused ReplayCharSequences. Reuse of this processor
+ * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
+ * occurs. 
+ * 
+ * TODO: Compare against extractors based on HTML parsing libraries for 
+ * accuracy, completeness, and speed.
+ * 
+ * @contributor gojomo
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 

@@ -31,12 +31,18 @@ import org.archive.modules.CrawlURI;
 /**
  * A simple extractor which finds HTTP URIs inside XML/RSS files,
  * inside attribute values and simple elements (those with only
- * whitespace + HTTP URI + whitespace as contents)
- *
- * @author gojomo
- *
- **/
-
+ * whitespace + HTTP URI + whitespace as contents).
+ * 
+ * NOTE: This processor may open a ReplayCharSequence from the 
+ * CrawlURI's Recorder, without closing that ReplayCharSequence, to allow
+ * reuse by later processors in sequence. In the usual (Heritrix) case, a 
+ * call after all processing to the Recorder's endReplays() method ensures
+ * timely close of any reused ReplayCharSequences. Reuse of this processor
+ * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
+ * occurs. 
+ * 
+ * @contributor gojomo
+ */
 public class ExtractorXML extends ContentExtractor {
 
     private static final long serialVersionUID = 3L;
