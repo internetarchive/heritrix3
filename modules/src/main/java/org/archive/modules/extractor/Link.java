@@ -19,6 +19,7 @@
 package org.archive.modules.extractor;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
@@ -37,6 +38,7 @@ import org.archive.net.UURIFactory;
  * @author gojomo
  */
 public class Link implements Serializable, Comparable<Link> {
+    private static final Logger LOGGER = Logger.getLogger(Link.class.getName());
 
     private static final long serialVersionUID = 2L;
 
@@ -133,6 +135,11 @@ public class Link implements Serializable, Comparable<Link> {
     
     public static void addRelativeToVia(CrawlURI uri, int max,
             String newUri, LinkContext context, Hop hop) throws URIException {
+        UURI relTo = uri.getVia();
+        if(relTo==null) {
+            LOGGER.warning("no via where expected; using base instead: "+uri);
+            relTo = uri.getBaseURI();
+        }
         UURI dest = UURIFactory.getInstance(uri.getVia(), newUri);
         add2(uri, max, dest, context, hop);
     }

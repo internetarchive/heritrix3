@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
@@ -156,6 +157,7 @@ public class ExtractorJS extends ContentExtractor {
                 cs.subSequence(strings.start(2), strings.end(2));
             if(UriUtils.isLikelyUri(subsequence)) {
                 String string = subsequence.toString();
+                string = StringEscapeUtils.unescapeJavaScript(string);
                 string = UriUtils.speculativeFixup(string, curi.getUURI());
                 foundLinks++;
                 try {
