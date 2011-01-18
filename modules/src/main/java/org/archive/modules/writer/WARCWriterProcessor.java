@@ -99,7 +99,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
-    private ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> stats;
+    private ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> stats = new ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>>();
+
     private AtomicLong urlsWritten = new AtomicLong();
     
     public long getDefaultMaxFileSize() {
@@ -268,7 +269,9 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     addStats(w.getTmpStats());
                     urlsWritten.incrementAndGet();
                 }
-                logger.fine("wrote " + WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
+               if (logger.isLoggable(Level.FINE)) { 
+                   logger.fine("wrote " + WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
+               }
             	setTotalBytesWritten(getTotalBytesWritten() +
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
@@ -277,20 +280,21 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         return checkBytesWritten();
     }
 
-    protected void addStats(ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> statz) {
-        if (stats == null) {
-            stats = new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>();
-        }
-
-        for (String key: statz.keySet()) {
+    protected void addStats(Map<String, Map<String, Long>> substats) {
+        for (String key: substats.keySet()) {
+            // intentionally redundant here -- if statement avoids creating
+            // unused empty map every time; putIfAbsent() ensures thread safety
             if (stats.get(key) == null) {
-                stats.put(key, new ConcurrentHashMap<String,AtomicLong>());
+                stats.putIfAbsent(key, new ConcurrentHashMap<String, AtomicLong>());
             }
-            for (String subkey: statz.get(key).keySet()) {
-                if (stats.get(key).get(subkey) == null) {
-                    stats.get(key).put(subkey, statz.get(key).get(subkey));
-                } else {
-                    stats.get(key).get(subkey).addAndGet(statz.get(key).get(subkey).get());
+            
+            for (String subkey: substats.get(key).keySet()) {
+                AtomicLong oldValue = stats.get(key).get(subkey);
+                if (oldValue == null) {
+                    oldValue = stats.get(key).putIfAbsent(subkey, new AtomicLong(substats.get(key).get(subkey)));
+                }
+                if (oldValue != null) {
+                    oldValue.addAndGet(substats.get(key).get(subkey));
                 }
             }
         }

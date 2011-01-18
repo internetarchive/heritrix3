@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
+import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
@@ -84,7 +85,7 @@ implements WARCConstants {
      * {@link #resetTmpStats()}, write some records, then add
      * {@link #getTmpStats()} into its long-term running totals.
      */
-    private ConcurrentMap<String,ConcurrentMap<String,AtomicLong>> tmpStats; 
+    private Map<String,Map<String,Long>> tmpStats; 
     
     /**
      * Constructor.
@@ -284,13 +285,13 @@ implements WARCConstants {
     // should be the same as totalBytes (right?)
     protected void tally(String recordType, long contentBytes, long totalBytes, long sizeOnDisk) {
         if (tmpStats == null) {
-            tmpStats = new ConcurrentHashMap<String,ConcurrentMap<String,AtomicLong>>();
+            tmpStats = new HashMap<String, Map<String,Long>>();
         }
 
         // add to stats for this record type
-        ConcurrentMap<String, AtomicLong> substats = tmpStats.get(recordType);
+        Map<String, Long> substats = tmpStats.get(recordType);
         if (substats == null) {
-            substats = new ConcurrentHashMap<String, AtomicLong>();
+            substats = new HashMap<String, Long>();
             tmpStats.put(recordType, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
@@ -298,37 +299,37 @@ implements WARCConstants {
         // add to totals
         substats = tmpStats.get(TOTALS);
         if (substats == null) {
-            substats = new ConcurrentHashMap<String, AtomicLong>();
+            substats = new HashMap<String, Long>();
             tmpStats.put(TOTALS, substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
     }
 
-    protected void subtally(ConcurrentMap<String, AtomicLong> substats, long contentBytes,
+    protected void subtally(Map<String, Long> substats, long contentBytes,
             long totalBytes, long sizeOnDisk) {
         
         if (substats.get(NUM_RECORDS) == null) {
-            substats.put(NUM_RECORDS, new AtomicLong(1l));
+            substats.put(NUM_RECORDS, 1l);
         } else {
-            substats.get(NUM_RECORDS).incrementAndGet();
+            substats.put(NUM_RECORDS, substats.get(NUM_RECORDS) + 1);
         }
         
         if (substats.get(CONTENT_BYTES) == null) {
-            substats.put(CONTENT_BYTES, new AtomicLong(contentBytes));
+            substats.put(CONTENT_BYTES, contentBytes);
         } else {
-            substats.get(CONTENT_BYTES).addAndGet(contentBytes);
+            substats.put(CONTENT_BYTES, substats.get(CONTENT_BYTES) + contentBytes);
         }
         
         if (substats.get(TOTAL_BYTES) == null) {
-            substats.put(TOTAL_BYTES, new AtomicLong(totalBytes));
+            substats.put(TOTAL_BYTES, totalBytes);
         } else {
-            substats.get(TOTAL_BYTES).addAndGet(totalBytes);
+            substats.put(TOTAL_BYTES, substats.get(TOTAL_BYTES) + totalBytes);
         }
         
         if (substats.get(SIZE_ON_DISK) == null) {
-            substats.put(SIZE_ON_DISK, new AtomicLong(sizeOnDisk));
+            substats.put(SIZE_ON_DISK, sizeOnDisk);
         } else {
-            substats.get(SIZE_ON_DISK).addAndGet(sizeOnDisk);
+            substats.put(SIZE_ON_DISK, substats.get(SIZE_ON_DISK) + sizeOnDisk);
         }
     }
 
@@ -490,22 +491,33 @@ implements WARCConstants {
      */
     public void resetTmpStats() {
         if (tmpStats != null) {
-            for (ConcurrentMap<String, AtomicLong> substats : tmpStats.values()) {
-                for (Entry<String, AtomicLong> entry : substats.entrySet()) {
-                    entry.getValue().set(0l);
+            for (Map<String, Long> substats : tmpStats.values()) {
+                for (Entry<String, Long> entry : substats.entrySet()) {
+                    entry.setValue(0l);
                 }
             }
         }
     }
 
-    public ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> getTmpStats() {
+    public Map<String, Map<String, Long>> getTmpStats() {
         return tmpStats;
+    }
+
+    public static long getStat(Map<String, Map<String, Long>> map, String key,
+            String subkey) {
+        if (map != null && map.get(key) != null
+                && map.get(key).get(subkey) != null) {
+            return map.get(key).get(subkey);
+        } else {
+            return 0l;
+        }
     }
 
     public static long getStat(
             ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> map,
             String key, String subkey) {
-        if (map != null && map.get(key) != null && map.get(key).get(subkey) != null) {
+        if (map != null && map.get(key) != null
+                && map.get(key).get(subkey) != null) {
             return map.get(key).get(subkey).get();
         } else {
             return 0l;
