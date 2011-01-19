@@ -666,6 +666,25 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     /**
+     * Get total hops from seed. 
+     * @return int hops count
+     */
+    public int getHopCount() {
+        if(pathFromSeed.length()<=MAX_HOPS_DISPLAYED) {
+            return pathFromSeed.length();
+        }
+        int plusIndex = pathFromSeed.indexOf('+');
+        if(plusIndex<0) {
+            // just in case old-style hops-paths slip through
+            return pathFromSeed.length(); 
+        }
+        // return overflow number + remainder (remainder will be 
+        // MAX_HOPS_DISPLAYED unless an exceptional condition)
+        return Integer.parseInt(pathFromSeed.substring(0,plusIndex)) 
+            + pathFromSeed.length()-(plusIndex+1);
+    }
+    
+    /**
      * Get the embed hop count.
      *
      * @return the embed hop count.
