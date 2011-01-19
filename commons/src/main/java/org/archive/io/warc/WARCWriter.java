@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
-import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
