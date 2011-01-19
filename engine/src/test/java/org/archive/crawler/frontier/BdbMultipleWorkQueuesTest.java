@@ -52,35 +52,35 @@ public class BdbMultipleWorkQueuesTest extends TestCase {
         }
 
         for (long ordinalOrigin = 1; ordinalOrigin < Long.MAX_VALUE / 4; ordinalOrigin <<= 1) {
-            CrawlURI cauri1 = 
+            CrawlURI curi1 = 
                 new CrawlURI(UURIFactory.getInstance("http://archive.org/foo"));
-            CrawlURI curi1 = new CrawlURI(cauri1, ordinalOrigin);
+            curi1.setOrdinal(ordinalOrigin);
             curi1.setClassKey("foo");
             byte[] key1 = 
                 BdbMultipleWorkQueues.calculateInsertKey(curi1).getData();
-            CrawlURI cauri2 = 
+            CrawlURI curi2 = 
                 new CrawlURI(UURIFactory.getInstance("http://archive.org/bar"));
-            CrawlURI curi2 = new CrawlURI(cauri2, ordinalOrigin + 1);
+            curi2.setOrdinal(ordinalOrigin + 1);
             curi2.setClassKey("foo");
             byte[] key2 = 
                 BdbMultipleWorkQueues.calculateInsertKey(curi2).getData();
-            CrawlURI cauri3 = 
+            CrawlURI curi3 = 
                 new CrawlURI(UURIFactory.getInstance("http://archive.org/baz"));
-            CrawlURI curi3 = new CrawlURI(cauri3, ordinalOrigin + 2);
+            curi3.setOrdinal(ordinalOrigin + 2);
             curi3.setClassKey("foo");
             curi3.setSchedulingDirective(SchedulingConstants.HIGH);
             byte[] key3 = 
                 BdbMultipleWorkQueues.calculateInsertKey(curi3).getData();
-            CrawlURI cauri4 = 
+            CrawlURI curi4 = 
                 new CrawlURI(UURIFactory.getInstance("http://archive.org/zle"));
-            CrawlURI curi4 = new CrawlURI(cauri4, ordinalOrigin + 3);
+            curi4.setOrdinal(ordinalOrigin + 3);
             curi4.setClassKey("foo");
             curi4.setPrecedence(2);
             byte[] key4 = 
                 BdbMultipleWorkQueues.calculateInsertKey(curi4).getData();
-            CrawlURI cauri5 = 
+            CrawlURI curi5 = 
                 new CrawlURI(UURIFactory.getInstance("http://archive.org/gru"));
-            CrawlURI curi5 = new CrawlURI(cauri5, ordinalOrigin + 4);
+            curi5.setOrdinal(ordinalOrigin + 4);
             curi5.setClassKey("foo");
             curi5.setPrecedence(1);
             byte[] key5 = 
