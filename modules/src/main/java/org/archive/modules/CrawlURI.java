@@ -258,6 +258,9 @@ implements MultiReporter, Serializable, OverlayContext {
      = new CopyOnWriteArrayList<String>(
             new String [] {A_CREDENTIALS_KEY});
 
+    /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
+    private static final int MAX_HOPS_DISPLAYED = 50;
+
     /**
      * A digest (hash, usually SHA1) of retrieved content-body. 
      * 
@@ -304,23 +307,6 @@ implements MultiReporter, Serializable, OverlayContext {
         this.viaContext = viaContext;
     }
 
-    
-    /**
-     * Create a new instance of CrawlURI from a {@link CrawlURI}
-     *
-     * @param caUri the CrawlURI to base this CrawlURI on.
-     * @param o Monotonically increasing number within a crawl.
-     */
-    public CrawlURI(CrawlURI caUri, long o) {
-        this(caUri.getUURI(), caUri.getPathFromSeed(), caUri.getVia(),
-            caUri.getViaContext());
-        ordinal = o;
-        setSeed(caUri.isSeed());
-        setSchedulingDirective(caUri.getSchedulingDirective());
-        this.data = caUri.data;
-    }
-    
-    
     /**
      * @return Returns the schedulingDirective.
      */
@@ -680,9 +666,9 @@ implements MultiReporter, Serializable, OverlayContext {
     }
 
     /**
-     * Get the embeded hop count.
+     * Get the embed hop count.
      *
-     * @return the embeded hop count.
+     * @return the embed hop count.
      */
     public int getEmbedHopCount() {
         int embedHops = 0;
@@ -882,22 +868,6 @@ implements MultiReporter, Serializable, OverlayContext {
         result.keySet().retainAll(retain);
         return result;
     }
-
-    /**
-     * Make a <code>CrawlURI</code> from the passed <code>CrawlURI</code>.
-     *
-     * Its safe to pass a CrawlURI instance.  In this case we just return it
-     * as a result. Otherwise, we create new CrawlURI instance.
-     *
-     * @param caUri Candidate URI.
-     * @param ordinal
-     * @return A crawlURI made from the passed CrawlURI.
-     */
-//    public static CrawlURI from(CrawlURI caUri, long ordinal) {
-//        return (caUri instanceof CrawlURI)?
-//            (CrawlURI)caUri: new CrawlURI(caUri, ordinal);
-//    }
-
 
     /**
      * @return Credential avatars.  Null if none set.
@@ -1647,13 +1617,30 @@ implements MultiReporter, Serializable, OverlayContext {
             UURIFactory.getInstance(baseUURI,
                 link.getDestination().toString());
         CrawlURI newCaURI = new CrawlURI(u, 
-                getPathFromSeed() + link.getHopType().getHopChar(),
+                extendHopsPath(getPathFromSeed(),link.getHopType().getHopChar()),
                 getUURI(), link.getContext());
         newCaURI.inheritFrom(this);
-//        newCaURI.setStateProvider(manager);
         return newCaURI;
     }
 
+    /**
+     * Extend a 'hopsPath' (pathFromSeed string of single-character hop-type symbols),
+     * keeping the number of displayed hop-types under MAX_HOPS_DISPLAYED. For longer
+     * hops paths, precede the string with a integer and '+', then the displayed 
+     * hops. 
+     * 
+     * @param pathFromSeed
+     * @param hopChar
+     * @return
+     */
+    public static String extendHopsPath(String pathFromSeed, char hopChar) {
+        if(pathFromSeed.length()<MAX_HOPS_DISPLAYED) {
+            return pathFromSeed + hopChar;
+        }
+        int plusIndex = pathFromSeed.indexOf('+');
+        int prevOverflow = (plusIndex<0) ? 0 : Integer.parseInt(pathFromSeed.substring(0,plusIndex));
+        return (prevOverflow+1)+"+"+pathFromSeed.substring(plusIndex+2)+hopChar; 
+    }
 
     /**
      * Utility method for creation of CandidateURIs found extracting

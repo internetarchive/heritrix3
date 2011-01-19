@@ -33,7 +33,10 @@ import org.archive.net.UURIFactory;
 import org.archive.util.TmpDirTestCase;
 
 /**
- * @author stack
+ * Tests related to CrawlURI
+ * 
+ * @contributor stack
+ * @contributor gojomo
  * @version $Revision$, $Date$
  */
 public class CrawlURITest extends TmpDirTestCase {
@@ -90,25 +93,31 @@ public class CrawlURITest extends TmpDirTestCase {
     public void testCandidateURIWithLoadedAList()
     throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.archive.org");
-        CrawlURI c = new CrawlURI(uuri);
-        c.setSeed(true);
-        c.getData().put("key", "value");
-        CrawlURI curi = new CrawlURI(c, 0);
+        CrawlURI curi = new CrawlURI(uuri);
+        curi.setSeed(true);
+        curi.getData().put("key", "value");
         assertTrue("Didn't find AList item",
             curi.getData().get("key").equals("value"));
     }
     
-// TODO: move to QueueAssignmentPolicies
-//    public void testCalculateClassKey() throws URIException {
-//        final String uri = "http://mprsrv.agri.gov.cn";
-//        CrawlURI curi = new CrawlURI(UURIFactory.getInstance(uri));
-//        String key = curi.getClassKey();
-//        assertTrue("Key1 is bad " + key,
-//            key.equals(curi.getUURI().getAuthorityMinusUserinfo()));
-//    	final String baduri = "ftp://pfbuser:pfbuser@mprsrv.agri.gov.cn/clzreceive/";
-//        curi = new CrawlURI(UURIFactory.getInstance(baduri));
-//        key = curi.getClassKey();
-//        assertTrue("Key2 is bad " + key,
-//            key.equals(curi.getUURI().getAuthorityMinusUserinfo()));
-//	}
+    public void testExtendHopsPath() {
+        assertEquals("from empty","L",CrawlURI.extendHopsPath("",'L'));
+        
+        assertEquals("from one","LX",CrawlURI.extendHopsPath("L",'X'));
+        
+        assertEquals(
+            "from fortynine",
+            "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
+            CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+        
+        assertEquals(
+                "from fifty",
+                "1+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
+                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+        
+        assertEquals(
+                "from 149",
+                "100+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
+                CrawlURI.extendHopsPath("99+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+    }
 }
