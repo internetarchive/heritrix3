@@ -363,6 +363,8 @@ implements Serializable,
     protected void completeStop() {
         LOGGER.fine("Entered complete stop.");
 
+        statisticsTracker.getSnapshot(); // ???
+        
         this.reserveMemory = null;
         if (this.toePool != null) {
             this.toePool.cleanup();
