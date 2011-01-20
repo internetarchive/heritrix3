@@ -133,18 +133,6 @@ implements Checkpointable, BeanNameAware {
 
 
     /**
-     * Return the work queue for the given CrawlURI's classKey. URIs
-     * are ordered and politeness-delayed within their 'class'.
-     * 
-     * @param curi CrawlURI to base queue on
-     * @return the found or created BdbWorkQueue
-     */
-    protected WorkQueue getQueueFor(CrawlURI curi) {
-        String classKey = curi.getClassKey();
-        return getQueueFor(classKey);
-    }
-    
-    /**
      * Return the work queue for the given classKey, or null
      * if no such queue exists.
      * 
@@ -164,8 +152,12 @@ implements Checkpointable, BeanNameAware {
                     }});
         return wq;
     }
-
-
+    
+    @Override
+    public FrontierGroup getGroup(CrawlURI curi) {
+        return getQueueFor(curi.getClassKey());
+    }
+    
     /**
      * Return list of urls.
      * @param marker
@@ -276,7 +268,8 @@ implements Checkpointable, BeanNameAware {
                 totalProcessedBytes.set(json.getLong("totalProcessedBytes"));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
-            }            
+            }           
+            // TODO: restore largestQueues topNset
             // restore WorkQueues to internal management queues
             // either retired or inactive tiers
             for (String key : allQueues.keySet()) {
@@ -286,7 +279,7 @@ implements Checkpointable, BeanNameAware {
                 } else if (q.getCount()>0){
                     deactivateQueue(q);
                 } else {
-                    // ensure quques that were empty-but-not-yet-recognized
+                    // ensure queues that were empty-but-not-yet-recognized
                     // (ready/snoozed) at time of checkpoint are reset
                     q.noteDeactivated();
                 }

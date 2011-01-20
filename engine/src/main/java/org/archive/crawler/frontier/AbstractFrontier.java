@@ -607,13 +607,16 @@ public abstract class AbstractFrontier
         CrawlServer server = getServerCache().getServerFor(curi.getUURI());
         if (server != null) {
             server.getSubstats().tally(curi, stage);
+            server.makeDirty(); 
         }
         CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host != null) {
             host.getSubstats().tally(curi, stage);
+            host.makeDirty();
         }
         FrontierGroup group = getGroup(curi);
         group.tally(curi, stage);
+        group.makeDirty(); 
     }
 
     protected void doJournalFinishedSuccess(CrawlURI c) {

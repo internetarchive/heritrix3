@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @contributor gojomo
  * @param <V>
  */
-public class ObjectIdentityMemCache<V> 
-implements ObjectIdentityCache<String,V> {
+public class ObjectIdentityMemCache<V extends IdentityCacheable> 
+implements ObjectIdentityCache<V> {
     ConcurrentHashMap<String, V> map; 
     
     public ObjectIdentityMemCache() {
@@ -46,8 +46,11 @@ implements ObjectIdentityCache<String,V> {
         // do nothing
     }
 
+    
+    @Override
     public V get(String key) {
-        return map.get(key); 
+        // all gets are mutatable
+        return getOrUse(key,null);
     }
 
     public V getOrUse(String key, Supplier<V> supplierOrNull) {
@@ -59,6 +62,7 @@ implements ObjectIdentityCache<String,V> {
                 val = prevVal; 
             }
         }
+        val.setIdentityCache(this); 
         return val; 
     }
 
@@ -72,6 +76,11 @@ implements ObjectIdentityCache<String,V> {
 
     public void sync() {
         // do nothing
+    }
+
+    @Override
+    public void dirtyKey(String key) {
+        // do nothing: memory is whole cache        
     }
 
     /**

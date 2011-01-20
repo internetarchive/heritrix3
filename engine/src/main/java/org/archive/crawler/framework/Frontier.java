@@ -27,6 +27,7 @@ import org.archive.crawler.frontier.FrontierJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
+import org.archive.util.IdentityCacheable;
 import org.archive.util.MultiReporter;
 import org.json.JSONException;
 import org.springframework.context.Lifecycle;
@@ -497,7 +498,7 @@ public interface Frontier extends Lifecycle, MultiReporter {
      * offers the HasCrawlSubstats interface. 
      */
     public interface FrontierGroup 
-    extends FetchStats.HasFetchStats, FetchStats.CollectsFetchStats {
+    extends FetchStats.HasFetchStats, FetchStats.CollectsFetchStats, IdentityCacheable {
     }
     
     /**

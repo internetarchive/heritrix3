@@ -37,7 +37,9 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.IdentityCacheable;
 import org.archive.util.MultiReporter;
+import org.archive.util.ObjectIdentityCache;
 
 /**
  * A single queue of related URIs to visit, grouped by a classKey
@@ -47,7 +49,7 @@ import org.archive.util.MultiReporter;
  * @author Christian Kohlschuetter 
  */
 public abstract class WorkQueue implements Frontier.FrontierGroup,
-        Serializable, MultiReporter, Delayed {
+        Serializable, MultiReporter, Delayed, IdentityCacheable {
     private static final long serialVersionUID = -3199666138837266341L;
     private static final Logger logger =
         Logger.getLogger(WorkQueue.class.getName());
@@ -651,6 +653,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     public synchronized void noteDeactivated() {
         active = false;
         isManaged = true; 
+        makeDirty();
     }
     
     /**
@@ -660,6 +663,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     public synchronized void noteExhausted() {
         active = false;
         isManaged = false; 
+        makeDirty();
     }
 
     /**
@@ -679,4 +683,24 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     public String toString() {
         return super.toString()+"("+getClassKey()+")";
     }
+
+    
+    //
+    // IdentityCacheable support
+    //
+    transient private ObjectIdentityCache<?> cache;
+    @Override
+    public String getKey() {
+        return getClassKey();
+    }
+
+    @Override
+    public void makeDirty() {
+        cache.dirtyKey(getKey());
+    }
+
+    @Override
+    public void setIdentityCache(ObjectIdentityCache<?> cache) {
+        this.cache = cache; 
+    } 
 }

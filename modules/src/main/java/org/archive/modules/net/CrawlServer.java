@@ -44,6 +44,8 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.IdentityCacheable;
+import org.archive.util.ObjectIdentityCache;
 
 /**
  * Represents a single remote "server".
@@ -53,7 +55,7 @@ import org.archive.net.UURIFactory;
  *
  * @author gojomo
  */
-public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
+public class CrawlServer implements Serializable, FetchStats.HasFetchStats, IdentityCacheable {
     private static final Logger logger =
         Logger.getLogger(CrawlServer.class.getName());
     private static final long serialVersionUID = 3L;
@@ -338,4 +340,23 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats {
         kryo.autoregister(java.util.LinkedList.class);
         kryo.setRegistrationOptional(true); 
     }
+    
+    //
+    // IdentityCacheable support
+    //
+    transient private ObjectIdentityCache<?> cache;
+    @Override
+    public String getKey() {
+        return getName();
+    }
+
+    @Override
+    public void makeDirty() {
+        cache.dirtyKey(getKey());
+    }
+
+    @Override
+    public void setIdentityCache(ObjectIdentityCache<?> cache) {
+        this.cache = cache; 
+    } 
 }

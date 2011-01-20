@@ -73,8 +73,8 @@ import com.sleepycat.je.Environment;
  * @author paul baclace (conversion to ConcurrentMap)
  *  
  */
-public class ObjectIdentityBdbCache<V> 
-implements ObjectIdentityCache<String, V>, Closeable, Serializable {
+public class ObjectIdentityBdbCache<V extends IdentityCacheable> 
+implements ObjectIdentityCache<V>, Closeable, Serializable {
     private static final long serialVersionUID = 1L;
     private static final Logger logger =
         Logger.getLogger(ObjectIdentityBdbCache.class.getName());
@@ -242,6 +242,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
             if(val != null) {
                 // the concurrent garden path: in mem, valid
                 cacheHit.incrementAndGet();
+                val.setIdentityCache(this); 
                 return val;
             } 
         }
@@ -255,6 +256,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 V val = entry.get();
                 if(val != null) {
                     cacheHit.incrementAndGet();
+                    val.setIdentityCache(this); 
                     return val;
                 } 
             }
@@ -300,6 +302,7 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 // memMap.get() should be impossible
                 logger.log(Level.SEVERE,"memMap modified outside synchronized block?", new Exception());
             }
+            valDisk.setIdentityCache(this); 
             return valDisk; 
         }
     }
@@ -411,6 +414,12 @@ implements ObjectIdentityCache<String, V>, Closeable, Serializable {
                 "Finish sizes: disk " +
                 this.diskMap.size() + ", mem " + this.memMap.size());
         }
+    }
+ 
+    @Override
+    public void dirtyKey(String key) {
+        // do nothing, because our weak/phantom trickery is supposed to
+        // ensure sync-to-persistence if/when dereferenced and collected
     }
 
     /** An incremental, poll-based expunger.

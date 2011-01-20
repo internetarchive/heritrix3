@@ -182,7 +182,7 @@ implements Closeable,
 
     /** All known queues.
      */
-    protected ObjectIdentityCache<String,WorkQueue> allQueues = null; 
+    protected ObjectIdentityCache<WorkQueue> allQueues = null; 
     // of classKey -> ClassKeyQueue
 
     /**
@@ -385,7 +385,7 @@ implements Closeable,
     protected void sendToQueue(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
         
-        WorkQueue wq = getQueueFor(curi);
+        WorkQueue wq = getQueueFor(curi.getClassKey());
         synchronized(wq) {
             int originalPrecedence = wq.getPrecedence();
             wq.enqueue(this, curi);
@@ -406,6 +406,7 @@ implements Closeable,
         }
         // Update recovery log.
         doJournalAdded(curi);
+        wq.makeDirty();
         largestQueues.update(wq.getClassKey(), wq.getCount());
     }
 
@@ -539,6 +540,7 @@ implements Closeable,
             WorkQueue q = (WorkQueue)this.allQueues.get(key);
             if(q != null) {
                 unretireQueue(q);
+                q.makeDirty();
             }
             key = getRetiredQueues().poll();
         }
@@ -557,16 +559,6 @@ implements Closeable,
     }
 
     /**
-     * Return the work queue for the given CrawlURI's classKey. URIs
-     * are ordered and politeness-delayed within their 'class'.
-     * If the requested queue is not found, a new instance is created.
-     * 
-     * @param curi CrawlURI to base queue on
-     * @return the found or created ClassKeyQueue
-     */
-    protected abstract WorkQueue getQueueFor(CrawlURI curi);
-
-    /**
      * Return the work queue for the given classKey, or null
      * if no such queue exists.
      * 
@@ -575,6 +567,7 @@ implements Closeable,
      */
     protected abstract WorkQueue getQueueFor(String classKey);
     
+ 
     /**
      * Return the next CrawlURI eligible to be processed (and presumably
      * visited/fetched) by a a worker thread.
@@ -619,6 +612,7 @@ implements Closeable,
                     if(readyQ.getCount()==0) {
                         // readyQ is empty and ready: it's exhausted
                         readyQ.noteExhausted(); 
+                        readyQ.makeDirty();
                         readyQ = null;
                         continue; 
                     }
@@ -635,11 +629,13 @@ implements Closeable,
                     readyQ.setWakeTime(0); // clear obsolete wake time, if any
                     if (readyQ.isOverSessionBudget()) {
                         deactivateQueue(readyQ);
+                        readyQ.makeDirty();
                         readyQ = null;
                         continue; 
                     }
                     if (readyQ.isOverTotalBudget()) {
                         retireQueue(readyQ);
+                        readyQ.makeDirty();
                         readyQ = null;
                         continue; 
                     }
@@ -698,6 +694,7 @@ implements Closeable,
                         // receive new URI, be readied, fail not-in-process?
                         inProcessQueues.remove(readyQ);
                         readyQ.noteExhausted();
+                        readyQ.makeDirty();
                         readyQ = null;
                         continue findauri;
                     }
@@ -764,6 +761,7 @@ implements Closeable,
                     if(candidateQ.getPrecedence() > expectedPrecedence) {
                         // queue demoted since placed; re-deactivate
                         deactivateQueue(candidateQ);
+                        candidateQ.makeDirty();
                         continue; 
                     }
                     updateHighestWaiting(expectedPrecedence);
@@ -840,6 +838,7 @@ implements Closeable,
             WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
             queue.setWakeTime(0);
             reenqueueQueue(queue);
+            queue.makeDirty();
             iterSnoozed.remove(); 
         }
         Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
@@ -847,6 +846,7 @@ implements Closeable,
             WorkQueue queue = iterOverflow.next().getWorkQueue(WorkQueueFrontier.this);
             queue.setWakeTime(0);
             reenqueueQueue(queue);
+            queue.makeDirty();
             iterOverflow.remove(); 
             snoozedOverflowCount.decrementAndGet();
         }
@@ -860,6 +860,7 @@ implements Closeable,
         while((waked = snoozedClassQueues.poll())!=null) {
             WorkQueue queue = waked.getWorkQueue(this);
             queue.setWakeTime(0);
+            queue.makeDirty();
             reenqueueQueue(queue);
         }
         // also consider overflow (usually empty)
@@ -873,6 +874,7 @@ implements Closeable,
                     snoozedOverflowCount.decrementAndGet();
                     WorkQueue queue = dq.getWorkQueue(this);
                     queue.setWakeTime(0);
+                    queue.makeDirty();
                     reenqueueQueue(queue);
                 }
             }
@@ -924,7 +926,7 @@ implements Closeable,
             handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
             appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,DEFERRED_FOR_RETRY));
             doJournalReenqueued(curi);
-            
+            wq.makeDirty();
             return; // no further dequeueing, logging, rescheduling to occur
         }
 
@@ -973,7 +975,8 @@ implements Closeable,
         
         long delay_ms = curi.getPolitenessDelay();
         handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
-
+        wq.makeDirty();
+        
         if(curi.getRescheduleTime()>0) {
             // marked up for forced-revisit at a set time
             curi.processingCleanup();
@@ -1053,13 +1056,13 @@ implements Closeable,
      */
     public long deleteURIs(String queueRegex, String uriRegex) {
         long count = 0;
-        // TODO: DANGER/ values() may not work right from CachedBdbMap
         Pattern queuePat = Pattern.compile(queueRegex);
         for (String qname: allQueues.keySet()) {
             if (queuePat.matcher(qname).matches()) {
                 WorkQueue wq = getQueueFor(qname);
                 wq.unpeek(null);
                 count += wq.deleteMatching(this, uriRegex);
+                wq.makeDirty();
             }
         }
         decrementQueuedCount(count);
@@ -1113,6 +1116,8 @@ implements Closeable,
      * @param w Where to write to.
      */
     public void shortReportLineTo(PrintWriter w) {
+        if (!isRunning()) return; //???
+        
         if (this.allQueues == null) {
             return;
         }
@@ -1506,7 +1511,9 @@ implements Closeable,
         try {
             KeyedProperties.loadOverridesFrom(curi);
             curi.setClassKey(getClassKey(curi));
-            getQueueFor(curi).expend(curi.getHolderCost());
+            WorkQueue wq = getQueueFor(curi.getClassKey());
+            wq.expend(curi.getHolderCost());
+            wq.makeDirty();
         } finally {
             KeyedProperties.clearOverridesFrom(curi); 
         }
@@ -1523,13 +1530,7 @@ implements Closeable,
      * @return a constant boolean value for this class/instance
      */
     protected abstract boolean workQueueDataOnDisk();
-    
-    
-    public FrontierGroup getGroup(CrawlURI curi) {
-        return getQueueFor(curi);
-    }
-    
-    
+
     public long averageDepth() {
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
             return 0; 
@@ -1581,4 +1582,5 @@ implements Closeable,
     protected int getInProcessCount() {
         return inProcessQueues.size();
     }
+    
 } // TODO: slim class! Suspect it should be < 800 lines, shedding budgeting/reporting

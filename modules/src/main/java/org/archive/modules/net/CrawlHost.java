@@ -27,7 +27,9 @@ import java.util.logging.Logger;
 
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.fetcher.FetchStats;
+import org.archive.util.IdentityCacheable;
 import org.archive.util.InetAddressUtil;
+import org.archive.util.ObjectIdentityCache;
 
 /** 
  * Represents a single remote "host".
@@ -37,7 +39,7 @@ import org.archive.util.InetAddressUtil;
  *
  * @author gojomo
  */
-public class CrawlHost implements Serializable, FetchStats.HasFetchStats {
+public class CrawlHost implements Serializable, FetchStats.HasFetchStats, IdentityCacheable {
 
     private static final long serialVersionUID = -5494573967890942895L;
 
@@ -234,4 +236,23 @@ public class CrawlHost implements Serializable, FetchStats.HasFetchStats {
         kryo.autoregister(Inet4Address.class);
         kryo.setRegistrationOptional(true);
     }
+    
+    //
+    // IdentityCacheable support
+    //
+    transient private ObjectIdentityCache<?> cache;
+    @Override
+    public String getKey() {
+        return getHostName();
+    }
+
+    @Override
+    public void makeDirty() {
+        cache.dirtyKey(getKey());
+    }
+
+    @Override
+    public void setIdentityCache(ObjectIdentityCache<?> cache) {
+        this.cache = cache; 
+    } 
 }

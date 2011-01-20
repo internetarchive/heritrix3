@@ -24,7 +24,8 @@ import org.apache.commons.lang.math.RandomUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.spring.ConfigPath;
-import org.archive.util.ObjectIdentityBdbCache;
+import org.archive.util.IdentityCacheableWrapper;
+import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.Supplier;
 import org.archive.util.TmpDirTestCase;
 
@@ -36,6 +37,7 @@ import org.archive.util.TmpDirTestCase;
  */
 public class BdbModuleTest extends TmpDirTestCase {
 
+    @SuppressWarnings("unchecked")
     public void testDoCheckpoint() throws Exception {
         ConfigPath basePath = new ConfigPath("testBase",getTmpDir().getAbsolutePath());
         ConfigPath bdbDir = new ConfigPath("bdb","bdb"); 
@@ -49,16 +51,15 @@ public class BdbModuleTest extends TmpDirTestCase {
         // avoid data from prior runs being mistaken for current run
         int randomFactor = RandomUtils.nextInt();
         
-        ObjectIdentityBdbCache<String> testData = 
-            bdb.getOIBCCache("testData", false,String.class);
+        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> testData = 
+            bdb.getOIBCCache("testData", false,IdentityCacheableWrapper.class);
         for (int i1 = 0; i1 < 1000; i1++) {
             String key = String.valueOf(i1);
             final String value = String.valueOf(randomFactor*i1);
-            String cached = testData.getOrUse(key, new Supplier<String>(){
-                public String get() {
-                    return value;
-                }
-            });
+            String cached = (String)testData.getOrUse(
+                    key, 
+                    new Supplier<IdentityCacheableWrapper>(
+                            new IdentityCacheableWrapper(key, value))).get();
             assertSame("unexpected prior entry",value,cached);  
         }
         
@@ -73,11 +74,10 @@ public class BdbModuleTest extends TmpDirTestCase {
         for (int i2 = 1000; i2 < 2000; i2++) {
             String key = String.valueOf(i2);
             final String value = String.valueOf(randomFactor*i2);
-            String cached = testData.getOrUse(key, new Supplier<String>(){
-                public String get() {
-                    return value;
-                }
-            });
+            String cached = (String)testData.getOrUse(
+                    key, 
+                    new Supplier<IdentityCacheableWrapper>(
+                            new IdentityCacheableWrapper(key, value))).get();
             assertSame("unexpected prior entry",value,cached);  
         }
 
@@ -101,11 +101,14 @@ public class BdbModuleTest extends TmpDirTestCase {
         
         bdb2.start();
         
-        ObjectIdentityBdbCache<String> restoreData = 
-            bdb2.getOIBCCache("testData",true,String.class);
+        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> restoreData = 
+            bdb2.getOIBCCache("testData",true,IdentityCacheableWrapper.class);
         
         assertEquals("unexpected size", 1000, restoreData.size());
-        assertEquals("unexpected value",randomFactor*999,Integer.parseInt(restoreData.get(""+999)));
+        assertEquals(
+                "unexpected value",
+                randomFactor*999,
+                Integer.parseInt((String)restoreData.get(""+999).get()));
 
         bdb2.stop(); 
     }

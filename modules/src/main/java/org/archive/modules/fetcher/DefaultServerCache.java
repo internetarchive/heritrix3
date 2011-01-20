@@ -21,6 +21,7 @@ package org.archive.modules.fetcher;
 
 import java.io.Closeable;
 import java.io.Serializable;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
@@ -49,13 +50,13 @@ public class DefaultServerCache extends ServerCache implements Closeable, Serial
      * hostname[:port] -> CrawlServer.
      * Set in the initialization.
      */
-    protected ObjectIdentityCache<String,CrawlServer> servers = null;
+    protected ObjectIdentityCache<CrawlServer> servers = null;
     
     /**
      * hostname -> CrawlHost.
      * Set in the initialization.
      */
-    protected ObjectIdentityCache<String,CrawlHost> hosts = null;
+    protected ObjectIdentityCache<CrawlHost> hosts = null;
     
     /**
      * Constructor.
@@ -68,8 +69,8 @@ public class DefaultServerCache extends ServerCache implements Closeable, Serial
     
     
     
-    public DefaultServerCache(ObjectIdentityCache<String,CrawlServer> servers, 
-            ObjectIdentityCache<String,CrawlHost> hosts) {
+    public DefaultServerCache(ObjectIdentityCache<CrawlServer> servers, 
+            ObjectIdentityCache<CrawlHost> hosts) {
         this.servers = servers;
         this.hosts = hosts;
     }
@@ -141,12 +142,19 @@ public class DefaultServerCache extends ServerCache implements Closeable, Serial
         }
     }
 
-    /* (non-Javadoc)
+    /**
+     * NOTE: Should not mutate the CrawlHost instance so retrieved; depending on
+     * the hostscache implementation, the change may not be reliably persistent.  
+     * 
      * @see org.archive.modules.net.ServerCache#forAllHostsDo(org.apache.commons.collections.Closure)
      */
     public void forAllHostsDo(Closure c) {
         for(String host : hosts.keySet()) {
             c.execute(hosts.get(host));
         }
+    }
+    
+    public Set<String> hostKeys() {
+        return hosts.keySet();
     }
 }

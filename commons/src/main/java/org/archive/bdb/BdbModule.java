@@ -42,7 +42,8 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
-import org.archive.util.ObjectIdentityBdbCache;
+import org.archive.util.IdentityCacheable;
+import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -174,7 +175,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * according to JE FAQ
      * http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
      */
-    int expectedConcurrency = 25;
+    int expectedConcurrency = 64;
     public int getExpectedConcurrency() {
         return expectedConcurrency;
     }
@@ -291,20 +292,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         }
     }
     
-    public void disposeDatabase(String name) {
-        DatabasePlusConfig dpc = databases.remove(name);
-        if (dpc == null) {
-            throw new IllegalStateException("No such database: " + name);
-        }
-        Database db = dpc.database;
-        try {
-            db.close();
-            bdbEnvironment.removeDatabase(null, name);
-        } catch (DatabaseException e) {
-            LOGGER.log(Level.WARNING, "Error closing db " + name, e);
-        }
-    }
-
     /**
      * Open a Database inside this BdbModule's environment, and 
      * remember it for automatic close-at-module-stop. 
@@ -376,7 +363,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @return
      * @throws DatabaseException
      */
-    public <V> ObjectIdentityBdbCache<V> getOIBCCache(String dbName, boolean recycle,
+    public <V extends IdentityCacheable> ObjectIdentityBdbManualCache<V> getOIBCCache(String dbName, boolean recycle,
             Class<? extends V> valueClass) 
     throws DatabaseException {
         if (!recycle) {
@@ -386,13 +373,13 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 // ignored
             }
         }
-        ObjectIdentityBdbCache<V> oic = new ObjectIdentityBdbCache<V>();
+        ObjectIdentityBdbManualCache<V> oic = new ObjectIdentityBdbManualCache<V>();
         oic.initialize(bdbEnvironment, dbName, valueClass, classCatalog);
         oiCaches.put(dbName, oic);
         return oic;
     }
   
-    public <V> ObjectIdentityCache<String, V> getObjectCache(String dbName, boolean recycle,
+    public <V extends IdentityCacheable> ObjectIdentityCache<V> getObjectCache(String dbName, boolean recycle,
             Class<V> valueClass) 
     throws DatabaseException {
         return getObjectCache(dbName, recycle, valueClass, valueClass);
@@ -411,11 +398,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      * @return
      * @throws DatabaseException
      */
-    public <V> ObjectIdentityCache<String, V> getObjectCache(String dbName, boolean recycle,
+    public <V extends IdentityCacheable> ObjectIdentityCache<V> getObjectCache(String dbName, boolean recycle,
             Class<V> declaredClass, Class<? extends V> valueClass) 
     throws DatabaseException {
         @SuppressWarnings("unchecked")
-        ObjectIdentityCache<String,V> oic = oiCaches.get(dbName);
+        ObjectIdentityCache<V> oic = oiCaches.get(dbName);
         if(oic!=null) {
             return oic; 
         }
@@ -639,9 +626,12 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 true) {
                     @Override
                     public void dispose() {
-                        BdbModule.this.disposeDatabase(openName);
+                        super.dispose();
+                        DatabasePlusConfig dpc = BdbModule.this.databases.remove(openName);
+                        if (dpc == null) {
+                            BdbModule.LOGGER.log(Level.WARNING,"No such database: " + openName);
+                        }
                     }
-            ;
         };
         return storedMap; 
     }

@@ -19,6 +19,7 @@
 
 package org.archive.modules.net;
 
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,6 +90,8 @@ public abstract class ServerCache {
         }
         return cs;
     }
+
+    abstract public Set<String> hostKeys();
 
 
 }

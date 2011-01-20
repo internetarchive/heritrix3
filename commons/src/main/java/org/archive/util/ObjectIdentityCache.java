@@ -39,18 +39,24 @@ import java.util.Set;
  * 
  * @param <V>
  */
-public interface ObjectIdentityCache<K, V> extends Closeable {
-    /** get the object under the given key/name */
-    public abstract V get(final K key);
+public interface ObjectIdentityCache<V extends IdentityCacheable> extends Closeable {
+    /** get the object under the given key/name -- but should not mutate 
+     * object state*/
+    public abstract V get(final String key);
     
     /** get the object under the given key/name, using (and remembering)
-     * the object supplied by the supplier if no prior mapping exists */
-    public abstract V getOrUse(final K key, Supplier<V> supplierOrNull);
+     * the object supplied by the supplier if no prior mapping exists 
+     * -- but should not mutate object state */
+    public abstract V getOrUse(final String key, Supplier<V> supplierOrNull);
 
     /** force the persistent backend, if any, to be updated with all 
      * live object state */ 
     public abstract void sync();
     
+    /** force the persistent backend, if any, to eventually be updated with 
+     * live object state for the given key */ 
+    public abstract void dirtyKey(final String key);
+
     /** close/release any associated resources */ 
     public abstract void close();
     
@@ -58,5 +64,5 @@ public interface ObjectIdentityCache<K, V> extends Closeable {
     public abstract int size();
 
     /** set of all keys */ 
-    public abstract Set<K> keySet();
+    public abstract Set<String> keySet();
 }
