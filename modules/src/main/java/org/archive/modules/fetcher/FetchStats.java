@@ -69,6 +69,8 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
     long dupByHashBytes;
     long dupByHashUrls;  
     
+    long lastSuccessTime; 
+    
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {
             case SCHEDULED:
@@ -96,6 +98,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                     novelUrls++;
                 } 
                 
+                lastSuccessTime = curi.getFetchCompletedTime();
                 break;
             case DISREGARDED:
                 fetchDisregards++;
@@ -208,7 +211,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
     public String shortReportLegend() {
         return "totalScheduled fetchSuccesses fetchFailures fetchDisregards " +
                 "fetchResponses robotsDenials successBytes totalBytes " +
-                "fetchNonResponses";
+                "fetchNonResponses lastSuccessTime";
     }
 
     public String shortReportLine() {
@@ -233,6 +236,8 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         writer.print(totalBytes);
         writer.print(" "); 
         writer.print(fetchNonResponses);
+        writer.print(" "); 
+        writer.print(ArchiveUtils.getLog17Date(lastSuccessTime));
     }
 
     public Map<String, Object> shortReportMap() {
@@ -246,6 +251,11 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         map.put("successBytes", successBytes);
         map.put("totalBytes", totalBytes);
         map.put("fetchNonResponses", fetchNonResponses);
+        map.put("lastSuccessTime",lastSuccessTime);
         return map;
+    }
+
+    public long getLastSuccessTime() {
+        return lastSuccessTime;
     }
 }

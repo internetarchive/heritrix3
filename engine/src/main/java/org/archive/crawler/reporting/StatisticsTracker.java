@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.collections.Closure;
 import org.archive.bdb.BdbModule;
 import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.checkpointing.Checkpoint;
@@ -50,6 +51,7 @@ import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
@@ -235,13 +237,6 @@ public class StatisticsTracker
         ToeThreadsReport.class,
     };
 
-    /** reusable Supplier for initial zero AtomicLong instances */
-    private static final Supplier<AtomicLong> ATOMIC_ZERO_SUPPLIER = 
-        new Supplier<AtomicLong>() {
-            public AtomicLong get() {
-                return new AtomicLong(0); 
-            }};
-    
     /**
      * Whether to maintain seed disposition records (expensive in 
      * crawls with millions of seeds)
@@ -312,28 +307,18 @@ public class StatisticsTracker
 
     // TODO: fortify these against key explosion with bigmaps like other tallies
     /** Keep track of the file types we see (mime type -> count) */
-    protected ObjectIdentityCache<String,AtomicLong> mimeTypeDistribution
-     = new ObjectIdentityMemCache<AtomicLong>();
-    protected ObjectIdentityCache<String,AtomicLong> mimeTypeBytes
-     = new ObjectIdentityMemCache<AtomicLong>();
+    protected ConcurrentMap<String,AtomicLong> mimeTypeDistribution
+     = new ConcurrentHashMap<String, AtomicLong>();
+    protected ConcurrentMap<String,AtomicLong> mimeTypeBytes
+    = new ConcurrentHashMap<String, AtomicLong>();
     
     /** Keep track of fetch status codes */
-    protected ObjectIdentityCache<String,AtomicLong> statusCodeDistribution
-     = new ObjectIdentityMemCache<AtomicLong>();
+    protected ConcurrentMap<String,AtomicLong> statusCodeDistribution
+    = new ConcurrentHashMap<String, AtomicLong>();
     
-    /** Keep track of hosts. 
-     */
-    protected ObjectIdentityCache<String,AtomicLong> hostsDistribution = 
-        new ObjectIdentityMemCache<AtomicLong>(); // temp dummy
-    protected ObjectIdentityCache<String,AtomicLong> hostsBytes = 
-        new ObjectIdentityMemCache<AtomicLong>(); // temp dummy
-    protected ObjectIdentityCache<String,AtomicLong> hostsLastFinished = 
-        new ObjectIdentityMemCache<AtomicLong>(); // temp dummy
-
     /** Keep track of URL counts per host per seed */
-    @SuppressWarnings("unchecked")
-    protected ObjectIdentityCache<String,ConcurrentHashMap> sourceHostDistribution = 
-        new ObjectIdentityMemCache<ConcurrentHashMap>(); // temp dummy;
+    protected ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> sourceHostDistribution = 
+        new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); 
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -343,7 +328,7 @@ public class StatisticsTracker
     /**
      * Record of seeds and latest results
      */
-    protected ObjectIdentityCache<String,SeedRecord> processedSeedsRecords = 
+    protected ObjectIdentityCache<SeedRecord> processedSeedsRecords = 
         new ObjectIdentityMemCache<SeedRecord>();
     long seedsTotal = -1; 
     long seedsCrawled = -1;
@@ -366,14 +351,6 @@ public class StatisticsTracker
         isRunning = true;
         boolean isRecover = (recoveryCheckpoint != null); 
         try {
-            this.sourceHostDistribution = bdb.getObjectCache("sourceHostDistribution",
-            	    isRecover, ConcurrentHashMap.class);
-            this.hostsDistribution = bdb.getObjectCache("hostsDistribution",
-                    isRecover, AtomicLong.class);
-            this.hostsBytes = bdb.getObjectCache("hostsBytes", 
-                    isRecover, AtomicLong.class);
-            this.hostsLastFinished = bdb.getObjectCache("hostsLastFinished",
-                    isRecover, AtomicLong.class);
             this.processedSeedsRecords = bdb.getObjectCache("processedSeedsRecords",
                     isRecover, SeedRecord.class);
             
@@ -393,23 +370,36 @@ public class StatisticsTracker
                 JSONUtils.putAllLongs(
                         hostsDistributionTop.getTopSet(),
                         json.getJSONObject("hostsDistributionTop"));
+                hostsDistributionTop.updateBounds();
                 JSONUtils.putAllLongs(
                         hostsBytesTop.getTopSet(),
                         json.getJSONObject("hostsBytesTop"));
+                hostsBytesTop.updateBounds();
                 JSONUtils.putAllLongs(
                         hostsLastFinishedTop.getTopSet(),
                         json.getJSONObject("hostsLastFinishedTop"));
+                hostsLastFinishedTop.updateBounds();
                 
                 JSONUtils.putAllAtomicLongs(
-                    ((ObjectIdentityMemCache)mimeTypeDistribution).getMap(),
+                    mimeTypeDistribution,
                     json.getJSONObject("mimeTypeDistribution"));
                 JSONUtils.putAllAtomicLongs(
-                    ((ObjectIdentityMemCache)mimeTypeBytes).getMap(),
+                    mimeTypeBytes,
                     json.getJSONObject("mimeTypeBytes"));
                 JSONUtils.putAllAtomicLongs(
-                    ((ObjectIdentityMemCache)statusCodeDistribution).getMap(),
+                    statusCodeDistribution,
                     json.getJSONObject("statusCodeDistribution"));
           
+
+                JSONObject shd = json.getJSONObject("sourceHostDistribution");
+                Iterator<String> keyIter = shd.keys();
+                for(; keyIter.hasNext();) {
+                    String source = keyIter.next();
+                    ConcurrentHashMap<String, AtomicLong> hostUriCount = new ConcurrentHashMap<String, AtomicLong>();
+                    JSONUtils.putAllAtomicLongs(hostUriCount,shd.getJSONObject(source));
+                    sourceHostDistribution.put(source, hostUriCount);
+                }
+                
                 JSONUtils.putAllLongs(
                     crawledBytes,
                     json.getJSONObject("crawledBytes"));
@@ -595,7 +585,7 @@ public class StatisticsTracker
      * <b>Note:</b> All the values are wrapped with a {@link AtomicLong AtomicLong}
      * @return mimeTypeDistribution
      */
-    public ObjectIdentityCache<String,AtomicLong> getFileDistribution() {
+    public Map<String, AtomicLong> getFileDistribution() {
         return mimeTypeDistribution;
     }
 
@@ -612,42 +602,6 @@ public class StatisticsTracker
     protected static void incrementMapCount(ConcurrentMap<String,AtomicLong> map, 
             String key) {
     	incrementMapCount(map,key,1);
-    }
-
-    /**
-     * Increment a counter for a key in a given cache. Used for various
-     * aggregate data.
-     * 
-     * @param cache the ObjectIdentityCache
-     * @param key The key for the counter to be incremented, if it does not
-     *               exist it will be added (set to 1).  If null it will
-     *            increment the counter "unknown".
-     */
-    protected static void incrementCacheCount(ObjectIdentityCache<String,AtomicLong> cache, 
-            String key) {
-        incrementCacheCount(cache,key,1);
-    }
-    /**
-     * Increment a counter for a key in a given cache by an arbitrary amount.
-     * Used for various aggregate data. The increment amount can be negative.
-     *
-     *
-     * @param cache
-     *            The ObjectIdentityCache
-     * @param key
-     *            The key for the counter to be incremented, if it does not exist
-     *            it will be added (set to equal to <code>increment</code>).
-     *            If null it will increment the counter "unknown".
-     * @param increment
-     *            The amount to increment counter related to the <code>key</code>.
-     */
-    protected static void incrementCacheCount(ObjectIdentityCache<String,AtomicLong> cache, 
-            String key, long increment) {
-        if (key == null) {
-            key = "unknown";
-        }
-        AtomicLong lw = cache.getOrUse(key, ATOMIC_ZERO_SUPPLIER);
-        lw.addAndGet(increment);
     }
     
     /**
@@ -671,7 +625,7 @@ public class StatisticsTracker
         }
         AtomicLong lw = (AtomicLong)map.get(key);
         if(lw == null) {
-            lw = new AtomicLong();
+            lw = new AtomicLong(0);
             AtomicLong prevVal = map.putIfAbsent(key, lw);
             if(prevVal != null) {
                 lw = prevVal;
@@ -710,35 +664,7 @@ public class StatisticsTracker
         return sortedMap;
     }
 
-    /**
-     * Sort the entries of the given ObjectIdentityCache in descending order by their
-     * values, which must be longs wrapped with <code>AtomicLong</code>.
-     * <p>
-     * Elements are sorted by value from largest to smallest. Equal values are
-     * sorted in an arbitrary, but consistent manner by their keys. Only items
-     * with identical value and key are considered equal.
-     *
-     * If the passed-in map requires access to be synchronized, the caller
-     * should ensure this synchronization. 
-     * 
-     * @param mapOfAtomicLongValues
-     *            Assumes values are wrapped with AtomicLong.
-     * @return a sorted set containing the same elements as the map.
-     */
-    public DisposableStoredSortedMap<Long,String> getReverseSortedCopy(
-            final ObjectIdentityCache<String,AtomicLong> cacheOfAtomicLongValues) {
-        DisposableStoredSortedMap<Long,String> sortedMap = 
-            bdb.getStoredMap(
-                    null,
-                    Long.class,
-                    String.class,
-                    true,
-                    false);
-        for(String k : cacheOfAtomicLongValues.keySet()) {
-            sortedMap.put(-cacheOfAtomicLongValues.get(k).longValue(), k);
-        }
-        return sortedMap;
-    }
+
 
     /**
      * Return a objectCache representing the distribution of status codes for
@@ -747,10 +673,11 @@ public class StatisticsTracker
      * 
      * <b>Note: </b> All the values are wrapped with a
      * {@link AtomicLong AtomicLong}
+     * @return 
      * 
      * @return statusCodeDistribution
      */
-    public ObjectIdentityCache<String,AtomicLong> getStatusCodeDistribution() {
+    public Map<String, AtomicLong> getStatusCodeDistribution() {
         return statusCodeDistribution;
     }
     
@@ -763,9 +690,8 @@ public class StatisticsTracker
      * host was last finished processing. If no URI has been completed for host
      * -1 will be returned. 
      */
-    public AtomicLong getHostLastFinished(String host){
-        AtomicLong fini = hostsLastFinished.getOrUse(host, ATOMIC_ZERO_SUPPLIER);
-        return fini;
+    public long getHostLastFinished(String host){
+        return serverCache.getHostFor(host).getSubstats().getLastSuccessTime();
     }
 
     /**
@@ -774,7 +700,7 @@ public class StatisticsTracker
      * @return the accumulated number of bytes downloaded from a given host
      */
     public long getBytesPerHost(String host){
-        return getReportValue(hostsBytes, host);
+        return serverCache.getHostFor(host).getSubstats().getTotalBytes();
     }
 
     /**
@@ -825,13 +751,13 @@ public class StatisticsTracker
         crawledBytes.accumulate(curi);
 
         // Save status codes
-        incrementCacheCount(statusCodeDistribution,
+        incrementMapCount(statusCodeDistribution,
             Integer.toString(curi.getFetchStatus()));
 
         // Save mime types
         String mime = MimetypeUtils.truncate(curi.getContentType());
-        incrementCacheCount(mimeTypeDistribution, mime);
-        incrementCacheCount(mimeTypeBytes, mime, curi.getContentSize());
+        incrementMapCount(mimeTypeDistribution, mime);
+        incrementMapCount(mimeTypeBytes, mime, curi.getContentSize());
 
         // Save hosts stats.
         ServerCache sc = serverCache;
@@ -845,32 +771,33 @@ public class StatisticsTracker
         }
     }
          
-    @SuppressWarnings("unchecked")
     protected void saveSourceStats(String source, String hostname) {
-        synchronized(sourceHostDistribution) {
-            ConcurrentMap<String,AtomicLong> hostUriCount = 
-                sourceHostDistribution.getOrUse(
-                        source,
-                        new Supplier<ConcurrentHashMap>() {
-                            public ConcurrentHashMap<String, AtomicLong> get() {
-                                return new ConcurrentHashMap<String,AtomicLong>();
-                            }});
-            incrementMapCount(hostUriCount, hostname);
+        ConcurrentMap<String,AtomicLong> hostUriCount = sourceHostDistribution.get(source); 
+        if(hostUriCount == null) {
+            hostUriCount = new ConcurrentHashMap<String,AtomicLong>();
+            ConcurrentMap<String,AtomicLong> prevVal = sourceHostDistribution.putIfAbsent(source, hostUriCount);
+            if (prevVal!=null) {
+                hostUriCount = prevVal; 
+            }
         }
+        incrementMapCount(hostUriCount, hostname);
+
     }
     
+    /**
+     * Update some running-stats based on a URI success
+     * 
+     * @param hostname
+     * @param size
+     */
     protected void saveHostStats(String hostname, long size) {
-        incrementCacheCount(hostsDistribution, hostname);
-        hostsDistributionTop.update(
-                hostname, getReportValue(hostsDistribution, hostname)); 
-
-        incrementCacheCount(hostsBytes, hostname, size);
-        hostsBytesTop.update(hostname, 
-                getReportValue(hostsBytes, hostname));
+        // TODO: consider moving 'top' accounting elsewhere, such 
+        // as the frontier or ServerCache itself
         
-        long time = new Long(System.currentTimeMillis());
-        getHostLastFinished(hostname).set(time); 
-        hostsLastFinishedTop.update(hostname, time);
+        CrawlHost host = serverCache.getHostFor(hostname); 
+        hostsDistributionTop.update(hostname, host.getSubstats().getFetchSuccesses()); 
+        hostsBytesTop.update(hostname, host.getSubstats().getSuccessBytes());
+        hostsLastFinishedTop.update(hostname, host.getSubstats().getLastSuccessTime());
     }
 
     public void crawledURINeedRetry(CrawlURI curi) {
@@ -940,9 +867,21 @@ public class StatisticsTracker
      * @return SortedMap of hosts distribution
      */
     public DisposableStoredSortedMap<Long,String> calcReverseSortedHostsDistribution() {
-        synchronized(hostsDistribution){
-            return getReverseSortedCopy(hostsDistribution);
-        }
+        final DisposableStoredSortedMap<Long,String> sortedMap = 
+            bdb.getStoredMap(
+                    null,
+                    Long.class,
+                    String.class,
+                    true,
+                    false);     
+        serverCache.forAllHostsDo(new Closure() {
+            @Override
+            public void execute(Object hostObj) {
+                CrawlHost host = (CrawlHost) hostObj; 
+                sortedMap.put(-host.getSubstats().getFetchSuccesses(), host.getHostName());
+            }
+        });
+        return sortedMap;
     }
 
     public File writeReportFile(String reportName) {
@@ -1015,7 +954,7 @@ public class StatisticsTracker
         logNote("CRAWL CHECKPOINTING TO " + cpDir.toString());
     }
   
-    private long getReportValue(ObjectIdentityCache<String,AtomicLong> map, String key) {
+    private long getReportValue(Map<String,AtomicLong> map, String key) {
         if (key == null) {
             return -1;
         }
@@ -1124,10 +1063,7 @@ public class StatisticsTracker
     }
     
     // Checkpointable
-    // CrawlController's only interest is in knowing that a Checkpoint is
-    // being recovered
     public void startCheckpoint(Checkpoint checkpointInProgress) {}
-    @SuppressWarnings("unchecked")
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         JSONObject json = new JSONObject();
         try {
@@ -1145,10 +1081,12 @@ public class StatisticsTracker
             json.put("hostsBytesTop", hostsBytesTop.getTopSet());
             json.put("hostsLastFinishedTop", hostsLastFinishedTop.getTopSet());
 
-            json.put("mimeTypeDistribution", ((ObjectIdentityMemCache)mimeTypeDistribution).getMap());
-            json.put("mimeTypeBytes", ((ObjectIdentityMemCache)mimeTypeBytes).getMap());
-            json.put("statusCodeDistribution", ((ObjectIdentityMemCache)statusCodeDistribution).getMap());
+            json.put("mimeTypeDistribution", mimeTypeDistribution);
+            json.put("mimeTypeBytes", mimeTypeBytes);
+            json.put("statusCodeDistribution", statusCodeDistribution);
 
+            json.put("sourceHostDistribution", sourceHostDistribution);
+            
             json.put("crawledBytes", crawledBytes);
 
             // TODO: save crawledBytesHistotable

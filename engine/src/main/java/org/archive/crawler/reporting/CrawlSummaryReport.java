@@ -47,7 +47,7 @@ public class CrawlSummaryReport extends Report {
         writer.println();
 
         // hostsDistribution contains all hosts crawled plus an entry for dns.
-        writer.println("hosts visited: " + (stats.hostsDistribution.size()-1));
+        writer.println("hosts visited: " + (stats.serverCache.hostKeys().size()-1));
         writer.println();
 
         // URI totals

@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.util.IdentityCacheable;
+import org.archive.util.ObjectIdentityCache;
 
 /**
  * Record of all interesting info about the most-recent
@@ -31,7 +33,7 @@ import org.archive.modules.CrawlURI;
  * 
  * @author gojomo
  */
-public class SeedRecord implements CoreAttributeConstants, Serializable {
+public class SeedRecord implements CoreAttributeConstants, Serializable, IdentityCacheable {
     private static final long serialVersionUID = -8455358640509744478L;
     private static Logger logger =
         Logger.getLogger(SeedRecord.class.getName());
@@ -134,4 +136,23 @@ public class SeedRecord implements CoreAttributeConstants, Serializable {
     public int sortShiftStatusCode() {
         return -statusCode - Integer.MAX_VALUE;
     }
+    
+    //
+    // IdentityCacheable support
+    //
+    transient private ObjectIdentityCache<?> cache;
+    @Override
+    public String getKey() {
+        return uri;
+    }
+
+    @Override
+    public void makeDirty() {
+        cache.dirtyKey(getKey());
+    }
+
+    @Override
+    public void setIdentityCache(ObjectIdentityCache<?> cache) {
+        this.cache = cache; 
+    } 
 }
