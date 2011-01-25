@@ -125,10 +125,10 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     
     private static LinkContext determineContext(String s) {
         if (s.endsWith(" A")) {
-            return new HTMLLinkContext("a/@href");
+            return HTMLLinkContext.get("a/@href");
         }
         if (s.endsWith(" IMG")) {
-            return new HTMLLinkContext("img/@src");
+            return HTMLLinkContext.get("img/@src");
         }
         return LinkContext.NAVLINK_MISC;
     }
