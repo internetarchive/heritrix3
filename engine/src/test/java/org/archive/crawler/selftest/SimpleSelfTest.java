@@ -41,6 +41,6 @@ public class SimpleSelfTest extends SelfTestBase {
     @Override
     protected void verify() throws Exception {
         Set<String> files = filesInArcs();
-        assertTrue(EXPECTED.equals(files));
+        assertEquals(EXPECTED,files);
     }
 }
