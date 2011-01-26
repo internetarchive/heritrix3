@@ -66,7 +66,7 @@ public class TooManyHopsDecideRule extends PredicatedDecideRule {
      */
     @Override
     protected boolean evaluate(CrawlURI uri) {
-        return uri.getHopCount() <= getMaxHops();
+        return uri.getHopCount() > getMaxHops();
     }
 
 }
