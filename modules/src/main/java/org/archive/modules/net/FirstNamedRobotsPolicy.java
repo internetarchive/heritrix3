@@ -24,24 +24,28 @@ import java.util.List;
 import org.archive.modules.CrawlURI;
 
 /**
- * Follow a most-favored robots policy -- allowing an URL if either the 
- * conventionally-configured User-Agent, or any of a number of alternate 
- * User-Agents (from the candidateUserAgents list) would be allowed. 
+ * Working from an ordered list of potential User-Agents, consisting of first 
+ * the regularly-configured User-Agent and then those in the candidateUserAgents
+ * list, consider each potential agent in order. As soon as a matching 
+ * (not '*' wildcard) set of directives is found, follow those. If none are 
+ * followed, use the wildcard directives (if any). 
  * 
- * Some possible rationales for using this policy could include: 
+ * For example, is the usual User-Agent is 'A', and the candidateUserAgents
+ * are 'B' and 'C', any rules applying to 'A' will be followed if found. 
+ * If not, rules applying to 'B' will be followed if found. If not, rules
+ * applying to 'C' will be followed if found. If not, wildcard User-Agent
+ * rules will be followed if found. 
  * 
- * (1) the current bot is the successor to a previous differently-named bot, 
- * which could reasonably obey the directives for the previous agent if 
- * they are more permissive; 
+ * Offers the option of adjusting the outgoing request to declare the 
+ * User-Agent whose rules are being followed. (This option is the default 
+ * and recommended.) 
  * 
- * (2) a project with negotiated or statutory permission to ignore robots still 
- * wishes only to collect material a site has allowed at least some named 
- * robots to collect. (That is, assume that if any of a number of robots is
- * allowed, it will not be disruptive to collect.) 
+ * (With an empty candidateUserAgents list, should behave same as the 
+ * ObeyRobotsPolicy, but offers the a setting for obeyMetaRobotsNofollow.)
  * 
  * @contributor gojomo
  */
-public class MostFavoredRobotsPolicy extends RobotsPolicy {
+public class FirstNamedRobotsPolicy extends RobotsPolicy {
     
     /** list of user-agents to try; if any are allowed, a URI will be crawled */
     List<String> candidateUserAgents = new LinkedList<String>();
@@ -72,21 +76,21 @@ public class MostFavoredRobotsPolicy extends RobotsPolicy {
     
     @Override
     public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
-        if (robotstxt.getDirectivesFor(userAgent).allows(getPath(curi))) {
-            return true;
+        RobotsDirectives directives = robotstxt.getDirectivesFor(userAgent, false);
+        if(directives!=null) {
+            return directives.allows(getPath(curi));
         }
+        
         for(String candidate : candidateUserAgents) {
-            if (robotstxt.getDirectivesFor(candidate).allows(getPath(curi))) {
+            directives = robotstxt.getDirectivesFor(candidate, false);
+            if(directives!=null) {
                 if(shouldMasquerade) {
                     curi.setUserAgent(candidate);
                 }
-                return true;
+                return directives.allows(getPath(curi));
             }
         }
-        // TODO: expand to offer option of following other rules in site's
-        // robots.txt, even if they don't match any of candidate set.
-        // TBD: which user-agent to use in that case.
-        return false;
+        return robotstxt.getDirectivesFor(userAgent).allows(getPath(curi));
     }
     
     @Override

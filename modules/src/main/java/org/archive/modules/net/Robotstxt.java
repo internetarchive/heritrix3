@@ -42,12 +42,14 @@ public class Robotstxt implements Serializable {
         Logger.getLogger(Robotstxt.class.getName());
 
     // all user agents contained in this robots.txt
-    // may be thinned of irrelevant entries
-    LinkedList<String> userAgents = new LinkedList<String>();
+    // in order of declaration
+    // TODO: consider discarding irrelevant entries
+    LinkedList<String> namedUserAgents = new LinkedList<String>();
     // map user-agents to directives
     Map<String,RobotsDirectives> agentsToDirectives = 
         new HashMap<String,RobotsDirectives>();
-    // 
+    RobotsDirectives wildcardDirectives = null; 
+    
     boolean hasErrors = false;
     
     static RobotsDirectives NO_DIRECTIVES = new RobotsDirectives();
@@ -80,7 +82,6 @@ public class Robotstxt implements Serializable {
         RobotsDirectives current = null;
         // whether a non-'User-Agent' directive has been encountered
         boolean hasDirectivesYet = false; 
-        String catchall = null;
         while (reader != null) {
             do {
                 read = reader.readLine();
@@ -108,12 +109,11 @@ public class Robotstxt implements Serializable {
                         hasDirectivesYet = false; 
                     }
                     if (ua.equals("*")) {
-                        ua = "";
-                        catchall = ua;
+                        wildcardDirectives = current;
                     } else {
-                        userAgents.addLast(ua);
+                        namedUserAgents.addLast(ua);
+                        agentsToDirectives.put(ua, current);
                     }
-                    agentsToDirectives.put(ua, current);
                     continue;
                 }
                 if (read.matches("(?i)Disallow:.*")) {
@@ -174,10 +174,6 @@ public class Robotstxt implements Serializable {
                 // unknown line; do nothing for now
             }
         }
-
-        if (catchall != null) {
-            userAgents.addLast(catchall);
-        }
     }
 
     /**
@@ -191,18 +187,48 @@ public class Robotstxt implements Serializable {
         return agentsToDirectives.isEmpty();
     }
     
-    public List<String> getUserAgents() {
-        return userAgents;
+    public List<String> getNamedUserAgents() {
+        return namedUserAgents;
     }
 
-    public RobotsDirectives getDirectivesFor(String ua) {
+    /**
+     * Return the RobotsDirectives, if any, appropriate for the given User-Agent
+     * string. If useFallbacks is true, a wildcard ('*') directives or the default
+     * of NO_DIRECTIVES will be returned, as appropriate, if there is no better
+     * match. If useFallbacks is false, a null will be returned if no declared
+     * directives targeted the given User-Agent.
+     * 
+     * @param ua String User-Agent to lookup
+     * @param useFallbacks if true, fall-back to wildcard directives or 
+     * default allow as needed
+     * @return directives to use, or null if useFallbacks is false and no 
+     * non-wildcard directives match the supplied User-Agent
+     */
+    public RobotsDirectives getDirectivesFor(String ua, boolean useFallbacks) {
         // find matching ua
-        for(String uaListed : userAgents) {
+        for(String uaListed : namedUserAgents) {
             if(ua.indexOf(uaListed)>-1) {
                 return agentsToDirectives.get(uaListed);
             }
         }
+        if(useFallbacks==false) {
+            return null; 
+        }
+        if (wildcardDirectives!=null) {
+            return wildcardDirectives;
+        }
         // no applicable user-agents, so empty directives
         return NO_DIRECTIVES; 
+    }
+
+    /**
+     * Return directives to use for the given User-Agent, resorting to wildcard
+     * rules or the default no-directives if necessary.
+     * 
+     * @param userAgent String User-Agent to lookup
+     * @return directives to use
+     */
+    public RobotsDirectives getDirectivesFor(String userAgent) {
+        return getDirectivesFor(userAgent, true);
     }
 }

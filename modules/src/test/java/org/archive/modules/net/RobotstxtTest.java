@@ -29,7 +29,7 @@ public class RobotstxtTest extends TestCase {
         BufferedReader reader = new BufferedReader(new StringReader("BLAH"));
         Robotstxt r = new Robotstxt(reader);
         assertFalse(r.hasErrors);
-        assertTrue(r.getUserAgents().size() == 0);
+        assertEquals(0,r.getNamedUserAgents().size());
         // Parse archive robots.txt with heritrix agent.
         String agent = "archive.org_bot";
         reader = new BufferedReader(
@@ -38,9 +38,9 @@ public class RobotstxtTest extends TestCase {
             "Disallow: /details/software\n"));
         r = new Robotstxt(reader);
         assertFalse(r.hasErrors);
-        assertTrue(r.getUserAgents().size() == 1);
-        assertTrue(r.agentsToDirectives.size() == 1);
-        assertEquals(r.getUserAgents().get(0), agent);
+        assertEquals(1,r.getNamedUserAgents().size());
+        assertEquals(1,r.agentsToDirectives.size());
+        assertEquals(agent, r.getNamedUserAgents().get(0));
         // Parse archive robots.txt with star agent.
         agent = "*";
         reader = new BufferedReader(
@@ -49,9 +49,8 @@ public class RobotstxtTest extends TestCase {
             "Disallow: /details/software\n"));
         r = new Robotstxt(reader);
         assertFalse(r.hasErrors);
-        assertTrue(r.getUserAgents().size() == 1);
-        assertTrue(r.agentsToDirectives.size() == 1);
-        assertEquals(r.getUserAgents().get(0), "");
+        assertEquals(0, r.getNamedUserAgents().size());
+        assertEquals(0, r.agentsToDirectives.size());
     }
     
     Robotstxt sampleRobots1() throws IOException {
