@@ -60,6 +60,7 @@ extends TmpDirTestCase implements WARCConstants {
     
     private static final String SOME_URL = "http://www.archive.org/test/";
     
+    @SuppressWarnings("unchecked")
     public void testCheckHeaderLineValue() throws Exception {
         WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderValue("one");
@@ -79,6 +80,7 @@ extends TmpDirTestCase implements WARCConstants {
       assertNotNull(exception);
     }
 
+    @SuppressWarnings("unchecked")
     public void testMimetypes() throws IOException {
         WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderLineMimetypeParameter("text/xml");

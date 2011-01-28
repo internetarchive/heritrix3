@@ -171,6 +171,9 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
 	 * then is after construction, call this method to add the metadata, then
 	 * call {@link #getPosition()} to find offset of first record.
 	 *
+	 * TODO: perhaps this should be called checkForNewOpen? because it also
+	 * handles initial open, even when not rolling oversize
+	 * 
 	 * @exception IOException
 	 */
     public void checkSize() throws IOException {

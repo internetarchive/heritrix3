@@ -71,7 +71,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ReplayInputStream;
-import org.archive.io.WriterPoolMember;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.io.warc.WARCWriterPoolSettings;
@@ -209,7 +208,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             }
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
-            logger.log(Level.SEVERE, "Failed write of Record: " +
+            logger.log(Level.SEVERE, "Failed write of Records: " +
                 curi.toString(), e);
         }
         return ProcessResult.PROCEED;
@@ -218,40 +217,38 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     protected ProcessResult write(final String lowerCaseScheme, 
             final CrawlURI curi)
     throws IOException {
-        WriterPoolMember writer = getPool().borrowFile();
+        WARCWriter writer = (WARCWriter) getPool().borrowFile();
+      
         long position = writer.getPosition();
-        // See if we need to open a new file because we've exceeded maxBytes.
-        // Call to checkFileSize will open new file if we're at maximum for
-        // current file.
-        writer.checkSize();
-        if (writer.getPosition() != position) {
-            // We just closed the file because it was larger than maxBytes.
-            // Add to the totalBytesWritten the size of the first record
-            // in the file, if any.
-            setTotalBytesWritten(getTotalBytesWritten() +
-            	(writer.getPosition() - position));
-            position = writer.getPosition();
-        }
-        
-        WARCWriter w = (WARCWriter)writer;
-        
-        // Reset writer temp stats so they reflect only this set of records.
-        // They'll be added to totals below, in finally block, after records
-        // have been written.
-        w.resetTmpStats();
-
         try {
+            // See if we need to open a new file because we've exceeded maxBytes.
+            // Call to checkFileSize will open new file if we're at maximum for
+            // current file.
+            writer.checkSize();
+            if (writer.getPosition() != position) {
+                // We just closed the file because it was larger than maxBytes.
+                // Add to the totalBytesWritten the size of the first record
+                // in the file, if any.
+                setTotalBytesWritten(getTotalBytesWritten() +
+                    (writer.getPosition() - position));
+                position = writer.getPosition();
+            }
+                       
+            // Reset writer temp stats so they reflect only this set of records.
+            // They'll be added to totals below, in finally block, after records
+            // have been written.
+            writer.resetTmpStats();
             // Write a request, response, and metadata all in the one
             // 'transaction'.
             final URI baseid = getRecordID();
             final String timestamp =
                 ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
             if (lowerCaseScheme.startsWith("http")) {
-                writeHttpRecords(curi, w, baseid, timestamp); 
+                writeHttpRecords(curi, writer, baseid, timestamp); 
             } else if (lowerCaseScheme.equals("dns")) {
-                writeDnsRecords(curi, w, baseid, timestamp);
+                writeDnsRecords(curi, writer, baseid, timestamp);
             } else if (lowerCaseScheme.equals("ftp")) {
-                writeFtpRecords(w, curi, baseid, timestamp);
+                writeFtpRecords(writer, curi, baseid, timestamp);
             } else {
                 logger.warning("No handler for scheme " + lowerCaseScheme);
             }
@@ -265,13 +262,15 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             throw e;
         } finally {
             if (writer != null) {
-               if (WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
-                    addStats(w.getTmpStats());
-                    urlsWritten.incrementAndGet();
+                if (WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
+                     addStats(writer.getTmpStats());
+                     urlsWritten.incrementAndGet();
                 }
-               if (logger.isLoggable(Level.FINE)) { 
-                   logger.fine("wrote " + WARCWriter.getStat(w.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) + " bytes to " + w.getFile().getName() + " for " + curi);
-               }
+                if (logger.isLoggable(Level.FINE)) { 
+                    logger.fine("wrote " 
+                        + WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) 
+                        + " bytes to " + writer.getFile().getName() + " for " + curi);
+                }
             	setTotalBytesWritten(getTotalBytesWritten() +
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
