@@ -138,7 +138,8 @@ public class Heritrix {
                 "The full path to the logging properties file " + 
                 "(eg, conf/logging.properties).  If present, this file " +
                 "will be used to configure Java logging.  Defaults to " +
-                "./conf/logging.properties");
+                "${heritrix.home}/conf/logging.properties or if no " +
+                "heritrix.home property set, ./conf/logging.properties");
         options.addOption("b", "web-bind-hosts", true, 
                 "A comma-separated list of addresses/hostnames for the " +
                 "web interface to bind to.");
@@ -152,7 +153,7 @@ public class Heritrix {
     
     
     private static File getDefaultPropertiesFile() {
-        File confDir = new File(CONF);
+        File confDir = new File(getHeritrixHome(),CONF);
         File props = new File(confDir, PROPERTIES);
         return props;
     }
@@ -474,20 +475,17 @@ public class Heritrix {
      * @return Heritrix home directory.
      * @throws IOException
      */
-    protected static File getHeritrixHome()
-    throws IOException {
-        File heritrixHome = null;
+    protected static File getHeritrixHome() {
         String home = System.getProperty("heritrix.home");
         if (home != null && home.length() > 0) {
-            heritrixHome = new File(home);
-            if (!heritrixHome.exists()) {
-                throw new IOException("HERITRIX_HOME <" + home +
-                    "> does not exist.");
-            }
-        } else {
-            heritrixHome = new File(new File("").getAbsolutePath());
+            File candidate = new File(home);
+            if (candidate.exists()) {
+                return candidate; 
+            } 
+            logger.warning("HERITRIX_HOME <" + home +"> does not exist; " +
+            		"using current working directory instead.");
         }
-        return heritrixHome;
+        return new File(System.getProperty("user.dir"));
     }
 
 
