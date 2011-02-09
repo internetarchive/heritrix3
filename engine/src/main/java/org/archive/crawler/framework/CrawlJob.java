@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -797,7 +798,12 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if(stats==null) {
             return null;
         }
-        return stats.getCrawledBytes();
+        
+        // stats.crawledBytesSummary() also includes totals, so add those in here
+        TreeMap<String, Long> map = new TreeMap<String,Long>(stats.getCrawledBytes());
+        map.put("total", stats.getCrawledBytes().getTotalBytes());
+        map.put("total-count", stats.getCrawledBytes().getTotalUrls());
+        return map;
     }
 
     public String sizeTotalsReport() {

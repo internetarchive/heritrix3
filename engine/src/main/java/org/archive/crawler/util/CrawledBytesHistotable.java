@@ -79,4 +79,8 @@ implements CoreAttributeConstants {
     public long getTotalBytes() {
         return get(NOVEL) + get(DUPLICATE) + get(NOTMODIFIED);
     }
+    
+    public long getTotalUrls() {
+        return get(NOVELCOUNT) + get(DUPLICATECOUNT) + get(NOTMODIFIEDCOUNT);
+    }
 }
