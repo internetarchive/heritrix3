@@ -430,7 +430,8 @@ public class Heritrix {
                         "-keypass",ADHOC_PASSWORD,
                         "-alias","adhoc",
                         "-genkey","-keyalg","RSA",
-                        "-dname", "CN=Heritrix Ad-Hoc HTTPS Certificate"};
+                        "-dname", "CN=Heritrix Ad-Hoc HTTPS Certificate",
+                        "-validity","3650"}; // 10 yr validity
                 KeyTool.main(args);
             }
 
