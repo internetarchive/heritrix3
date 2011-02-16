@@ -19,11 +19,14 @@
 
 package org.archive.modules.fetcher;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.SortedMap;
 
 import org.apache.commons.httpclient.Cookie;
 import org.archive.bdb.BdbModule;
+import org.archive.checkpointing.Checkpoint;
+import org.archive.checkpointing.Checkpointable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.sleepycat.bind.serial.SerialBinding;
@@ -39,7 +42,7 @@ import com.sleepycat.je.DatabaseException;
  * 
  * @author pjack
  */
-public class BdbCookieStorage extends AbstractCookieStorage {
+public class BdbCookieStorage extends AbstractCookieStorage implements Checkpointable {
     private static final long serialVersionUID = 1L;
     
     protected BdbModule bdb;
@@ -47,6 +50,9 @@ public class BdbCookieStorage extends AbstractCookieStorage {
     public void setBdbModule(BdbModule bdb) {
         this.bdb = bdb;
     }
+    
+    /** are we a checkpoint recovery? (in which case, reuse stored cookie data?) */
+    boolean isCheckpointRecovery = false; 
     
     public static String COOKIEDB_NAME = "http_cookies";
  
@@ -62,14 +68,13 @@ public class BdbCookieStorage extends AbstractCookieStorage {
             BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
             dbConfig.setTransactional(false);
             dbConfig.setAllowCreate(true);
-            cookieDb = bdb.openDatabase(COOKIEDB_NAME, dbConfig, true);
+            cookieDb = bdb.openDatabase(COOKIEDB_NAME, dbConfig, isCheckpointRecovery);
             cookies = 
                 new StoredSortedMap<String,Cookie>(
                     cookieDb,
                     new StringBinding(), 
                     new SerialBinding<Cookie>(classCatalog,Cookie.class), 
                     true);
-            @SuppressWarnings("unchecked")
             SortedMap<String,Cookie> result = cookies;
             return result;
         } catch (DatabaseException e) {
@@ -77,7 +82,6 @@ public class BdbCookieStorage extends AbstractCookieStorage {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public SortedMap<String, Cookie> getCookiesMap() {
 //        assert cookies != null : "cookie map not set up";
         return cookies;
@@ -85,4 +89,28 @@ public class BdbCookieStorage extends AbstractCookieStorage {
 
     protected void innerSaveCookiesMap(Map<String, Cookie> map) {
     }
+
+    
+
+    @Override
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+    @Override
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+
+    @Override
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        // just remember that we are doing checkpoint-recovery;
+        // actual state recovery happens via BdbModule
+        isCheckpointRecovery = true; 
+    }
+
 }
