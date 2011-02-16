@@ -36,7 +36,7 @@
     <repository>
       <releases>
         <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
+        <updatePolicy>always</updatePolicy>
         <checksumPolicy>warn</checksumPolicy>
       </releases>
       <snapshots>
@@ -269,7 +269,7 @@
 <dependency>
     <groupId>com.google.guava</groupId>
     <artifactId>guava</artifactId>
-    <version>r07</version>
+    <version>r08</version>
 </dependency>
 
   </dependencies>

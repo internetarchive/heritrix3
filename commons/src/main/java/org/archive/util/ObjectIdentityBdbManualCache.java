@@ -130,9 +130,11 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
         this.memMap = new MapMaker().concurrencyLevel(64).initialCapacity(8192).softValues().makeMap();    
         this.db = openDatabase(env, dbName);
         this.diskMap = createDiskMap(this.db, classCatalog, valueClass);
-        // TODO: add maxCapacity when upgrading to Guava r08
+        // keep a record of items that must be persisted; auto-persist if 
+        // unchanged after 5 minutes, or more than 10K would collect
         this.dirtyItems = new MapMaker().concurrencyLevel(64)
-            .expiration(600, TimeUnit.SECONDS).evictionListener(this).makeMap();
+            .maximumSize(10000).expireAfterWrite(5,TimeUnit.MINUTES)
+            .evictionListener(this).makeMap();
             
         this.count = new AtomicLong(diskMap.size());
     }

@@ -55,6 +55,6 @@
 	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/minlog/1.2/minlog-1.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/reflectasm/0.8/reflectasm-0.8.jar"/>
 	<classpathentry kind="var" path="M2_REPO/asm/asm/3.2/asm-3.2.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/google/guava/guava/r07/guava-r07.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/google/guava/guava/r08/guava-r08.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
