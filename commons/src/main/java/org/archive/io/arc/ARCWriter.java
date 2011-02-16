@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.archive.io.GzippedInputStream;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
@@ -244,7 +243,7 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
             // produces a 'default' header only).  We can get away w/ these
             // maniupulations because the GZIP 'default' header doesn't
             // do the 'optional' CRC'ing of the header.
-            byte [] gzippedMetaData = GzippedInputStream.gzip(bytes);
+            byte [] gzippedMetaData = ArchiveUtils.gzip(bytes);
             if (gzippedMetaData[3] != 0) {
                 throw new IOException("The GZIP FLG header is unexpectedly " +
                     " non-zero.  Need to add smarter code that can deal " +

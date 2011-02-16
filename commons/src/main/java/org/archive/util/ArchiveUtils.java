@@ -21,6 +21,7 @@ package org.archive.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
@@ -44,8 +45,11 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.archive.io.GzipHeader;
+import org.archive.io.NoGzipMagicException;
 
 
 /**
@@ -976,6 +980,39 @@ public class ArchiveUtils {
         return new BufferedReader(isGzipped?
             new InputStreamReader(new GZIPInputStream(uis)):
             new InputStreamReader(uis));    
+    }
+    
+    /**
+     * Gzip passed bytes.
+     * Use only when bytes is small.
+     * @param bytes What to gzip.
+     * @return A gzip member of bytes.
+     * @throws IOException
+     */
+    public static byte [] gzip(byte [] bytes) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        GZIPOutputStream gzipOS = new GZIPOutputStream(baos);
+        gzipOS.write(bytes, 0, bytes.length);
+        gzipOS.close();
+        return baos.toByteArray();
+    }
+    
+    /**
+     * Tests passed stream is gzip stream by reading in the HEAD.
+     * Does not mark/reset stream -- so this test actually makes
+     * stream unopenable within GZIP streams, unless reset. 
+     * @param is An InputStream.
+     * @return True if compressed stream.
+     * @throws IOException
+     */
+    public static boolean isGzipped(final InputStream is)
+    throws IOException {
+        try {
+            new GzipHeader(is);
+        } catch (NoGzipMagicException e) {
+            return false;
+        }
+        return true;
     }
     
 //    public static long doubleMurmur(byte[] data) {

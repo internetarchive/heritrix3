@@ -19,12 +19,12 @@
 
 package org.archive.io;
 
-import it.unimi.dsi.fastutil.io.RepositionableStream;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +36,8 @@ import java.util.logging.Logger;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.archive.util.MimetypeUtils;
+
+import com.google.common.io.CountingInputStream;
 
 
 /**
@@ -120,8 +122,8 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
      */
     protected InputStream getInputStream(final File f, final long offset)
     throws IOException {
-        return new RandomAccessBufferedInputStream(
-            new RandomAccessInputStream(f, offset));
+        FileInputStream fin = new FileInputStream(f); 
+        return new BufferedInputStream(fin);
     }
 
     public boolean isCompressed() {
@@ -137,13 +139,13 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
      */
     public ArchiveRecord get(long offset) throws IOException {
         cleanupCurrentRecord();
-        RepositionableStream ps = (RepositionableStream)this.in;
-        long currentOffset = ps.position();
-        if (currentOffset != offset) {
-            currentOffset = offset;
-            ps.position(offset);
+        long posn = positionForRecord(in); 
+        if(offset>=posn) {
+            in.skip(offset-posn); 
+        } else {
+            throw new UnsupportedOperationException("no reverse seeking: at "+posn+" requested "+offset); 
         }
-        return createArchiveRecord(this.in, currentOffset);
+        return createArchiveRecord(this.in, offset);
     }
     
     /**
@@ -151,8 +153,7 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
      * @throws IOException
      */
     public ArchiveRecord get() throws IOException {
-        return createArchiveRecord(this.in,
-            ((RepositionableStream)this.in).position());
+        return createArchiveRecord(this.in, positionForRecord(in));
     }
 
     public void close() throws IOException {
@@ -160,23 +161,6 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
             this.in.close();
             this.in = null;
         }
-    }
-    
-    /**
-     * Rewinds stream to start of the Archive file.
-     * @throws IOException if stream is not resettable.
-     */
-    protected void rewind() throws IOException {
-        cleanupCurrentRecord();
-        if (this.in instanceof RepositionableStream) {
-            try {
-                ((RepositionableStream)this.in).position(0);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-       } else {
-           throw new IOException("Stream is not resettable.");
-       }
     }
     
     /**
@@ -350,13 +334,7 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        
-        // Now reset stream to the start of the arc file.
-        try {
-            rewind();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
         return new ArchiveRecordIterator();
     }
 
@@ -413,42 +391,42 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         System.err.println(level.toString() + " " + message);
     }
     
-    /**
-     * Add buffering to RandomAccessInputStream.
-     */
-    protected class RandomAccessBufferedInputStream
-    extends BufferedInputStream implements RepositionableStream {
-
-        public RandomAccessBufferedInputStream(RandomAccessInputStream is)
-        		throws IOException {
-            super(is);
-        }
-
-        public RandomAccessBufferedInputStream(RandomAccessInputStream is, int size)
-        		throws IOException {
-            super(is, size);
-        }
-
-        public long position() throws IOException {
-            // Current position is the underlying files position
-            // minus the amount thats in the buffer yet to be read.
-            return ((RandomAccessInputStream)this.in).position() -
-            	(this.count - this.pos);
-        }
-
-        public void position(long position) throws IOException {
-            // Force refill of buffer whenever there's been a seek.
-            this.pos = 0;
-            this.count = 0;
-            ((RandomAccessInputStream)this.in).position(position);
-        }
-        
-        public int available() throws IOException {
-            // Avoid overflow on large datastreams
-            long amount = (long)in.available() + (long)(count - pos);
-            return (amount >= Integer.MAX_VALUE)? Integer.MAX_VALUE: (int)amount;
-        }
-    }
+//    /**
+//     * Add buffering to RandomAccessInputStream.
+//     */
+//    protected class RandomAccessBufferedInputStream
+//    extends BufferedInputStream implements RepositionableStream {
+//
+//        public RandomAccessBufferedInputStream(RandomAccessInputStream is)
+//        		throws IOException {
+//            super(is);
+//        }
+//
+//        public RandomAccessBufferedInputStream(RandomAccessInputStream is, int size)
+//        		throws IOException {
+//            super(is, size);
+//        }
+//
+//        public long position() throws IOException {
+//            // Current position is the underlying files position
+//            // minus the amount thats in the buffer yet to be read.
+//            return ((RandomAccessInputStream)this.in).position() -
+//            	(this.count - this.pos);
+//        }
+//
+//        public void position(long position) throws IOException {
+//            // Force refill of buffer whenever there's been a seek.
+//            this.pos = 0;
+//            this.count = 0;
+//            ((RandomAccessInputStream)this.in).position(position);
+//        }
+//        
+//        public int available() throws IOException {
+//            // Avoid overflow on large datastreams
+//            long amount = (long)in.available() + (long)(count - pos);
+//            return (amount >= Integer.MAX_VALUE)? Integer.MAX_VALUE: (int)amount;
+//        }
+//    }
     
     /**
      * Inner ArchiveRecord Iterator class.
@@ -490,12 +468,10 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         }
         
         protected boolean innerHasNext() {
-            long offset = -1;
             try {
-                offset = ((RepositionableStream)getInputStream()).position();
                 return getInputStream().available() > 0;
             } catch (IOException e) {
-                throw new RuntimeException("Offset " + offset, e);
+                throw new RuntimeException(e);
             }
         }
 
@@ -512,7 +488,7 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         public ArchiveRecord next() {
             long offset = -1;
             try {
-                offset = ((RepositionableStream)getInputStream()).position();
+                offset = positionForRecord(getIn()); 
                 return exceptionNext();
             } catch (IOException e) {
                 if (!isStrict()) {
@@ -521,20 +497,20 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
                     try {
                         if (hasNext()) {
                             getLogger().warning("Bad Record. Trying skip " +
-                                "(Current offset " +  offset + "): " +
+                                "(Record start " +  offset + "): " +
                                 e.getMessage());
                             return exceptionNext();
                         }
                         // Else we are at last record.  Iterator#next is
                         // expecting value. We do not have one. Throw exception.
                         throw new RuntimeException("Retried but no next " + 
-                            "record (Offset " + offset + ")", e);
+                            "record (Record start " + offset + ")", e);
                     } catch (IOException e1) {
                         throw new RuntimeException("After retry (Offset " +
                                 offset + ")", e1);
                     }
                 }
-                throw new RuntimeException("(Offset " + offset + ")", e);
+                throw new RuntimeException("(Record start " + offset + ")", e);
             }
         }
         
@@ -580,12 +556,18 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         }
         
         protected ArchiveRecord innerNext() throws IOException {
-            return get(((RepositionableStream)getInputStream()).position());
+            return get(positionForRecord(getIn()));
         }
         
         public void remove() {
             throw new UnsupportedOperationException();
         }
+    }
+    
+    protected static long positionForRecord(InputStream in) {
+        return (in instanceof GZIPMembersInputStream) 
+            ? ((GZIPMembersInputStream)in).getCurrentMemberStart()
+            : ((CountingInputStream)in).getCount();
     }
     
     protected static String stripExtension(final String name,

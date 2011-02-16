@@ -177,15 +177,16 @@ extends TmpDirTestCase implements ARCConstants {
         // Now, run through each of the records doing absolute get going from
         // the end to start.  Reopen the arc so no context between this test
         // and the previous.
-        reader = ARCReaderFactory.get(arcFile);
+        
         for (int i = metaDatas.size() - 1; i >= 0; i--) {
+            reader = ARCReaderFactory.get(arcFile);
             ARCRecordMetaData meta = (ARCRecordMetaData)metaDatas.get(i);
             ArchiveRecord r = reader.get(meta.getOffset());
             String mimeType = r.getHeader().getMimetype();
             assertTrue("Record is bogus",
                 mimeType != null && mimeType.length() > 0);
+            reader.close();
         }
-        reader.close();
         assertTrue("Metadatas not equal", metaDatas.size() == recordCount);
         for (Iterator<ArchiveRecordHeader> i = metaDatas.iterator(); i.hasNext();) {
                 ARCRecordMetaData r = (ARCRecordMetaData)i.next();
@@ -397,7 +398,7 @@ extends TmpDirTestCase implements ARCConstants {
             eMessage = e.getMessage();
         }
         assertTrue("Didn't get expected exception: " + eMessage,
-            eMessage.startsWith("java.io.IOException: Record ENDING at"));
+            eMessage.startsWith("java.io.IOException: Record STARTING at"));
     }
      
     protected void lengthTooShort(String name, boolean compress, boolean strict)
@@ -415,18 +416,23 @@ extends TmpDirTestCase implements ARCConstants {
         
         // Catch System.err into a byte stream.
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        System.setErr(new PrintStream(os));
-        
-        ARCReader r = ARCReaderFactory.get(writer.getFile());
-        r.setStrict(strict);
-        int count = iterateRecords(r);
-        assertTrue("Count wrong " + count, count == 4);
-
-        // Make sure we get the warning string which complains about the
-        // trailing bytes.
-        String err = os.toString();
-        assertTrue("No message " + err, err.startsWith("WARNING") &&
-            (err.indexOf("Record ENDING at") > 0));
+        PrintStream origErr = System.err; 
+        try {
+            System.setErr(new PrintStream(os));
+            
+            ARCReader r = ARCReaderFactory.get(writer.getFile());
+            r.setStrict(strict);
+            int count = iterateRecords(r);
+            assertTrue("Count wrong " + count, count == 4);
+    
+            // Make sure we get the warning string which complains about the
+            // trailing bytes.
+            String err = os.toString();
+            assertTrue("No message " + err, err.startsWith("WARNING") &&
+                (err.indexOf("Record STARTING at") > 0));
+        } finally {
+            System.setErr(origErr); 
+        }
     }
     
 //  If uncompressed, length has to be right or parse will fail.

@@ -32,10 +32,14 @@ import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
+import org.archive.io.GZIPMembersInputStream;
 import org.archive.io.GzipHeader;
-import org.archive.io.GzippedInputStream;
 import org.archive.io.NoGzipMagicException;
 import org.archive.util.FileUtils;
+
+import com.google.common.io.ByteStreams;
+import com.google.common.io.CountingInputStream;
+import com.google.common.io.NullOutputStream;
 
 
 /**
@@ -296,7 +300,8 @@ implements ARCConstants {
         throws IOException {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(getInputStream(f, offset));
+            setIn(new CountingInputStream(getInputStream(f, offset)));
+            getIn().skip(offset); 
             initialize(f.getAbsolutePath());
         }
         
@@ -343,8 +348,9 @@ implements ARCConstants {
                 throws IOException {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(new GzippedInputStream(getInputStream(f, offset)));
-            setCompressed((offset == 0));
+            setIn(new GZIPMembersInputStream(getInputStream(f, offset)));
+            ((GZIPMembersInputStream)getIn()).compressedSeek(offset); 
+            setCompressed((offset == 0)); // TODO: does this make sense???
             initialize(f.getAbsolutePath());
         }
         
@@ -360,7 +366,7 @@ implements ARCConstants {
         throws IOException {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(new GzippedInputStream(is));
+            setIn(new GZIPMembersInputStream(is));
             setCompressed(true);
             setAlignedOnFirstRecord(atFirstRecord);
             initialize(f);
@@ -376,7 +382,7 @@ implements ARCConstants {
          */
         public ARCRecord get(long offset) throws IOException {
             cleanupCurrentRecord();
-            ((GzippedInputStream)getIn()).gzipMemberSeek(offset);
+            ((GZIPMembersInputStream)getIn()).compressedSeek(offset);
             return createArchiveRecord(getIn(), offset);
         }
         
@@ -386,37 +392,38 @@ implements ARCConstants {
              * GzippedInputStream iterator.
              */
             return new ArchiveRecordIterator() {
-                private GzippedInputStream gis =
-                    (GzippedInputStream)getInputStream();
+                private GZIPMembersInputStream gis =
+                    (GZIPMembersInputStream)getInputStream();
 
-                private Iterator<GzippedInputStream> gzipIterator = this.gis.iterator();
+                private Iterator<GZIPMembersInputStream> gzipIterator = this.gis.memberIterator();
 
                 protected boolean innerHasNext() {
                     return this.gzipIterator.hasNext();
                 }
 
                 protected ArchiveRecord innerNext() throws IOException {
-                    // Get the position before gzipIterator.next moves
-                    // it on past the gzip header.
-                    long p = this.gis.position();
-                    InputStream is = (InputStream) this.gzipIterator.next();
-                    return createArchiveRecord(is, p);
+                    InputStream is = this.gzipIterator.next();
+                    return createArchiveRecord(is, Math.max(gis.getCurrentMemberStart(), gis.getCurrentMemberEnd()));
                 }
             };
         }
         
         protected void gotoEOR(ArchiveRecord rec) throws IOException {
-            long skipped = ((GzippedInputStream)getIn()).
-                gotoEOR(LINE_SEPARATOR);
-            if (skipped <= 0) {
-                return;
+            int c;
+            while ((c = getIn().read())==LINE_SEPARATOR);
+            if(c==-1) {
+                return; 
+            }
+            long skipped = 1; 
+            while (getIn().read()>-1) {
+                skipped++;
             }
             // Report on system error the number of unexpected characters
             // at the end of this record.
             ArchiveRecordHeader meta = (getCurrentRecord() != null)?
                 rec.getHeader(): null;
-            String message = "Record ENDING at " +
-                ((GzippedInputStream)getIn()).position() +
+            String message = "Record STARTING at " +
+                ((GZIPMembersInputStream)getIn()).getCurrentMemberStart() +
                 " has " + skipped + " trailing byte(s): " +
                 ((meta != null)? meta.toString(): "");
             if (isStrict()) {

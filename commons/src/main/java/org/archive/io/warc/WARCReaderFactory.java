@@ -26,13 +26,19 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.GzippedInputStream;
+import org.archive.io.ArchiveRecordHeader;
+import org.archive.io.GZIPMembersInputStream;
 import org.archive.io.warc.WARCConstants;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
+
+import com.google.common.io.ByteStreams;
+import com.google.common.io.CountingInputStream;
 
 /**
  * Factory for WARC Readers.
@@ -142,7 +148,7 @@ implements WARCConstants {
         boolean compressed = false;
         final InputStream is = new FileInputStream(f);
         try {
-            compressed = GzippedInputStream.isCompressedStream(is);
+            compressed = ArchiveUtils.isGzipped(is);
         } finally {
             is.close();
         }
@@ -174,7 +180,8 @@ implements WARCConstants {
         public UncompressedWARCReader(final File f, final long offset)
         throws IOException {
             // File has been tested for existence by time it has come to here.
-            setIn(getInputStream(f, offset));
+            setIn(new CountingInputStream(getInputStream(f, offset)));
+            getIn().skip(offset);
             initialize(f.getAbsolutePath());
         }
         
@@ -187,7 +194,7 @@ implements WARCConstants {
         public UncompressedWARCReader(final String f, final InputStream is) {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(is);
+            setIn(new CountingInputStream(is));
             initialize(f);
         }
     }
@@ -218,8 +225,9 @@ implements WARCConstants {
         public CompressedWARCReader(final File f, final long offset)
                 throws IOException {
             // File has been tested for existence by time it has come to here.
-            setIn(new GzippedInputStream(getInputStream(f, offset)));
-            setCompressed((offset == 0));
+            setIn(new GZIPMembersInputStream(getInputStream(f, offset)));
+            ((GZIPMembersInputStream)getIn()).compressedSeek(offset); 
+            setCompressed((offset == 0)); // TODO: does this make sense?!?!
             initialize(f.getAbsolutePath());
         }
         
@@ -236,7 +244,7 @@ implements WARCConstants {
         throws IOException {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(new GzippedInputStream(is));
+            setIn(new GZIPMembersInputStream(is));
             setCompressed(true);
             initialize(f);
             // TODO: Ignore atFirstRecord. Probably doesn't apply in WARC world.
@@ -251,7 +259,7 @@ implements WARCConstants {
          */
         public WARCRecord get(long offset) throws IOException {
             cleanupCurrentRecord();
-            ((GzippedInputStream)getIn()).gzipMemberSeek(offset);
+            ((GZIPMembersInputStream)getIn()).compressedSeek(offset);
             return (WARCRecord) createArchiveRecord(getIn(), offset);
         }
         
@@ -261,27 +269,33 @@ implements WARCConstants {
              * GzippedInputStream iterator.
              */
             return new ArchiveRecordIterator() {
-                private GzippedInputStream gis =
-                    (GzippedInputStream)getInputStream();
+                private GZIPMembersInputStream gis =
+                    (GZIPMembersInputStream)getInputStream();
 
-                private Iterator<GzippedInputStream> gzipIterator = this.gis.iterator();
+                private Iterator<GZIPMembersInputStream> gzipIterator = this.gis.memberIterator();
 
                 protected boolean innerHasNext() {
                     return this.gzipIterator.hasNext();
                 }
 
                 protected ArchiveRecord innerNext() throws IOException {
-                    // Get the positoin before gzipIterator.next moves
+                    // Get the position before gzipIterator.next moves
                     // it on past the gzip header.
-                    long p = this.gis.position();
                     InputStream is = (InputStream) this.gzipIterator.next();
-                    return createArchiveRecord(is, p);
+                    return createArchiveRecord(is, Math.max(gis.getCurrentMemberStart(), gis.getCurrentMemberEnd()));
                 }
             };
         }
         
         protected void gotoEOR(ArchiveRecord rec) throws IOException {
-        	// TODO
+            long skipped = 0; 
+            while (getIn().read()>-1) {
+                skipped++;
+            }
+            if(skipped>4) {
+                System.err.println("unexpected extra data after record "+rec);
+            }
+            return;
         }
     }
     

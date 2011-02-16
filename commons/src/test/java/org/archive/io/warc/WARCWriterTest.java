@@ -243,15 +243,16 @@ extends TmpDirTestCase implements WARCConstants {
         // Now, run through each of the records doing absolute get going from
         // the end to start.  Reopen the arc so no context between this test
         // and the previous.
-        reader = WARCReaderFactory.get(f);
+        
         for (int i = headers.size() - 1; i >= 0; i--) {
+            reader = WARCReaderFactory.get(f);
             ArchiveRecordHeader h = (ArchiveRecordHeader)headers.get(i);
             ArchiveRecord r = reader.get(h.getOffset());
             String mimeType = r.getHeader().getMimetype();
             assertTrue("Record is bogus",
                 mimeType != null && mimeType.length() > 0);
+            reader.close();
         }
-        reader.close();
         
         assertTrue("Metadatas not equal", headers.size() == recordCount);
         for (Iterator<ArchiveRecordHeader> i = headers.iterator(); i.hasNext();) {
