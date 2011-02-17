@@ -484,6 +484,9 @@ public class UURIFactory extends URI {
             + ((uriQuery != null)? uriQuery.length(): 0));
         appendNonNull(s, uriScheme, ":", true);
         appendNonNull(s, uriAuthority, "//", false);
+        if ("whois".equals(uriScheme) && uriAuthority == null) {
+            s.append("//"); // XXX :( is this generalizable somehow?
+        }
         appendNonNull(s, uriPath, "", false);
         appendNonNull(s, uriQuery, "?", false);
         return s.toString();

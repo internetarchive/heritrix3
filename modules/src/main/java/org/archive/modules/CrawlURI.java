@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
@@ -108,6 +109,9 @@ import org.archive.util.Recorder;
 public class CrawlURI 
 implements MultiReporter, Serializable, OverlayContext {
     private static final long serialVersionUID = 3L;
+
+    private static final Logger logger =
+        Logger.getLogger(CrawlURI.class.getName());
 
     public static final int UNCALCULATED = -1;
     
@@ -1829,4 +1833,38 @@ implements MultiReporter, Serializable, OverlayContext {
         kryo.autoregister(org.archive.modules.credential.HtmlFormCredential.class);
         kryo.setRegistrationOptional(true);
     }
+    
+    /**
+     * Do all actions associated with setting a <code>CrawlURI</code> as
+     * requiring a prerequisite.
+     *
+     * @param lastProcessorChain Last processor chain reference.  This chain is
+     * where this <code>CrawlURI</code> goes next.
+     * @param preq Object to set a prerequisite.
+     * @return the newly created prerequisite CrawlURI
+     * @throws URIException
+     */
+    public CrawlURI markPrerequisite(String preq) 
+    throws URIException {
+        UURI src = getUURI();
+        UURI dest = UURIFactory.getInstance(preq);
+        LinkContext lc = LinkContext.PREREQ_MISC;
+        Hop hop = Hop.PREREQ;
+        Link link = new Link(src, dest, lc, hop);
+        CrawlURI caUri = createCrawlURI(getBaseURI(), link);
+        // TODO: consider moving some of this to candidate-handling
+        int prereqPriority = getSchedulingDirective() - 1;
+        if (prereqPriority < 0) {
+            prereqPriority = 0;
+            logger.severe("Unable to promote prerequisite " + caUri + " above " + this);
+        }
+        caUri.setSchedulingDirective(prereqPriority);
+        caUri.setForceFetch(true);
+        setPrerequisiteUri(caUri);
+        incrementDeferrals();
+        setFetchStatus(S_DEFERRED);
+        
+        return caUri;
+    }
+
 }

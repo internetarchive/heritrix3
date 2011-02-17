@@ -249,6 +249,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                 writeDnsRecords(curi, writer, baseid, timestamp);
             } else if (lowerCaseScheme.equals("ftp")) {
                 writeFtpRecords(writer, curi, baseid, timestamp);
+            } else if (lowerCaseScheme.equals("whois")) {
+                writeWhoisRecords(writer, curi, baseid, timestamp);
             } else {
                 logger.warning("No handler for scheme " + lowerCaseScheme);
             }
@@ -310,7 +312,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         writeResponse(w, timestamp, curi.getContentType(), baseid,
             curi, headers);
     }
-    
+
+    private void writeWhoisRecords(WARCWriter w, CrawlURI curi, URI baseid,
+            String timestamp) throws IOException {
+        writeResponse(w, timestamp, curi.getContentType(), baseid, curi, null);
+    }
+
     private void writeHttpRecords(final CrawlURI curi, WARCWriter w,
             final URI baseid, final String timestamp) throws IOException {
         // Add named fields for ip, checksum, and relate the metadata

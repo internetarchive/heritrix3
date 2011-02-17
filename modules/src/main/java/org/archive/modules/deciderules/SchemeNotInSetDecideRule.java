@@ -48,7 +48,7 @@ public class SchemeNotInSetDecideRule extends PredicatedDecideRule {
     protected Set<String> schemes = new HashSet<String>(); 
     {
         // default set are those schemes Heritrix supports in usual configuration
-        schemes.addAll(Arrays.asList(new String[] {"http","https","ftp","dns"}));
+        schemes.addAll(Arrays.asList(new String[] {"http","https","ftp","dns","whois"}));
     }
     public Set<String> getSchemes() {
         return schemes;

@@ -18,7 +18,6 @@
  */
 package org.archive.crawler.prefetch;
 
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PRECLUDED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PREREQUISITE_FAILURE;
@@ -36,15 +35,11 @@ import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
-import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
-import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.RobotsPolicy;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -232,7 +227,7 @@ public class PreconditionEnforcer extends Processor  {
             // crawled.
             try {
                 String prereq = curi.getUURI().resolve("/robots.txt").toString();
-                markPrerequisite(curi, prereq);
+                curi.markPrerequisite(prereq);
             }
             catch (URIException e1) {
                 logger.severe("Failed resolve using " + curi);
@@ -280,6 +275,8 @@ public class PreconditionEnforcer extends Processor  {
             // DNS URIs never have a DNS precondition
             curi.setPrerequisite(true);
             return false; 
+        } else if (curi.getUURI().getScheme().equals("whois")) {
+            return false;
         }
         
         CrawlServer cs = serverCache.getServerFor(curi.getUURI());
@@ -310,7 +307,7 @@ public class PreconditionEnforcer extends Processor  {
                 + " for dns lookup.");
             String preq = "dns:" + ch.getHostName();
             try {
-                markPrerequisite(curi, preq);
+                curi.markPrerequisite(preq);
             } catch (URIException e) {
                 throw new RuntimeException(e); // shouldn't ever happen
             }
@@ -421,7 +418,7 @@ public class PreconditionEnforcer extends Processor  {
                         + " is null.");
                 } else {
                     try {
-                        markPrerequisite(curi, prereq);
+                        curi.markPrerequisite(prereq);
                     } catch (URIException e) {
                         logger.severe("unable to set credentials prerequisite "+prereq);
                         loggerModule.logUriError(e,curi.getUURI(),prereq);
@@ -461,36 +458,4 @@ public class PreconditionEnforcer extends Processor  {
         return false;
     }
 
-
-    /**
-     * Do all actions associated with setting a <code>CrawlURI</code> as
-     * requiring a prerequisite.
-     *
-     * @param lastProcessorChain Last processor chain reference.  This chain is
-     * where this <code>CrawlURI</code> goes next.
-     * @param preq Object to set a prerequisite.
-     * @throws URIException
-     */
-    protected void markPrerequisite(CrawlURI curi, String preq) 
-    throws URIException {
-        UURI src = curi.getUURI();
-        UURI dest = UURIFactory.getInstance(preq);
-        LinkContext lc = LinkContext.PREREQ_MISC;
-        Hop hop = Hop.PREREQ;
-        Link link = new Link(src, dest, lc, hop);
-        CrawlURI caUri = curi.createCrawlURI(curi.getBaseURI(), link);
-        // TODO: consider moving some of this to candidate-handling
-        int prereqPriority = curi.getSchedulingDirective() - 1;
-        if (prereqPriority < 0) {
-            prereqPriority = 0;
-            logger.severe("Unable to promote prerequisite " + caUri +
-                " above " + this);
-        }
-        caUri.setSchedulingDirective(prereqPriority);
-        caUri.setForceFetch(true);
-        curi.setPrerequisiteUri(caUri);
-        curi.incrementDeferrals();
-        curi.setFetchStatus(S_DEFERRED);
-        //skipToPostProcessing();
-    }
 }

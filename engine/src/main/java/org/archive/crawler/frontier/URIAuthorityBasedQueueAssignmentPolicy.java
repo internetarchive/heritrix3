@@ -86,6 +86,11 @@ implements
             return getForceQueueAssignment(); 
         }
         
+        // all whois urls in the same queue
+        if (curi.getUURI().getScheme().equals("whois")) {
+            return "whois";
+        }
+        
         UURI basis = curi.getPolicyBasisUURI();
         String candidate = getCoreKey(basis); 
         

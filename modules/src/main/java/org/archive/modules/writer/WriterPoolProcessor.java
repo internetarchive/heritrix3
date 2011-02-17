@@ -21,6 +21,7 @@ package org.archive.modules.writer;
 
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
 
 import java.io.File;
 import java.io.IOException;
@@ -325,6 +326,8 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         // TODO: possibly move this sort of isSuccess() test into CrawlURI
         if (scheme.equals("dns")) {
             retVal = curi.getFetchStatus() == S_DNS_SUCCESS;
+        } else if (scheme.equals("whois")) {
+            retVal = curi.getFetchStatus() == S_WHOIS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
             retVal = curi.getFetchStatus() > 0 && curi.getHttpMethod() != null;
         } else if (scheme.equals("ftp")) {

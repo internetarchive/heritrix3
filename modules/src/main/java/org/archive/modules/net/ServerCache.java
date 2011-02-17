@@ -58,6 +58,8 @@ public abstract class ServerCache {
         try {
             if (uuri.getScheme().equals("dns")) {
                 h = getHostFor("dns:");
+            } else if (uuri.getScheme().equals("whois")) {
+                h = getHostFor("whois:");
             } else {
                 h = getHostFor(uuri.getReferencedHost());
             }
