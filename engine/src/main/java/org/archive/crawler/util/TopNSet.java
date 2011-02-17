@@ -20,9 +20,9 @@
 package org.archive.crawler.util;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 
 import org.archive.util.Histotable;
@@ -139,8 +139,8 @@ public class TopNSet implements Serializable {
      * 
      * @return SortedSet of Entry<key, count> descending-frequency 
      */
-    public SortedSet<Entry<?, Long>> getEntriesDescending() {
-        TreeSet<Entry<?, Long>> sorted = Histotable.getEntryByFrequencySortedSet();
+    public SortedSet<Map.Entry<?, Long>> getEntriesDescending() {
+        TreeSet<Map.Entry<?, Long>> sorted = Histotable.getEntryByFrequencySortedSet();
         sorted.addAll(getTopSet().entrySet());
         return sorted; 
     }
