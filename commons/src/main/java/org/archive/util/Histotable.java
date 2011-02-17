@@ -76,7 +76,7 @@ public class Histotable<K> extends TreeMap<K,Long> {
      * 
      * @return TreeSet with suitable Comparator
      */
-    public static TreeSet<Map.Entry<?,Long>> getEntryByFrequencySortedSet() {
+    public static TreeSet<Map.Entry<?, Long>> getEntryByFrequencySortedSet() {
         // sorted by count
         TreeSet<Map.Entry<?,Long>> sorted = 
           new TreeSet<Map.Entry<?,Long>>(
