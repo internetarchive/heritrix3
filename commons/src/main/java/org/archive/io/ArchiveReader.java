@@ -257,7 +257,7 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
             if (recordCount != numRecords) {
                 throw new IOException("Count of records, " 
                         + Integer.toString(recordCount) 
-                        + " is less than expected " 
+                        + " is not equal to expected " 
                         + Integer.toString(numRecords));
             }
         }

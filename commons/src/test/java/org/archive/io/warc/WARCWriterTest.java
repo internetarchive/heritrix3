@@ -56,13 +56,16 @@ extends TmpDirTestCase implements WARCConstants {
     /**
      * Prefix to use for ARC files made by JUNIT.
      */
-    private static final String PREFIX = "IAH";
+    private static final String SUFFIX = "JUNIT";
     
     private static final String SOME_URL = "http://www.archive.org/test/";
     
     @SuppressWarnings("unchecked")
     public void testCheckHeaderLineValue() throws Exception {
-        WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
+        WARCWriter writer = new WARCWriter(
+                SERIAL_NO, 
+                new WARCWriterPoolSettingsData(
+                    "","test",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderValue("one");
         IllegalArgumentException exception = null;
         try {
@@ -77,12 +80,15 @@ extends TmpDirTestCase implements WARCConstants {
        } catch(IllegalArgumentException e) {
            exception = e;
        }
+       writer.close(); 
       assertNotNull(exception);
     }
 
     @SuppressWarnings("unchecked")
     public void testMimetypes() throws IOException {
-        WARCWriter writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData("","",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
+        WARCWriter writer = new WARCWriter(SERIAL_NO, 
+            new WARCWriterPoolSettingsData(
+                    "m","testM",1,false,Collections.EMPTY_LIST,Collections.EMPTY_LIST,generator));
         writer.checkHeaderLineMimetypeParameter("text/xml");
         writer.checkHeaderLineMimetypeParameter("text/xml+rdf");
         assertEquals(writer.checkHeaderLineMimetypeParameter(
@@ -97,14 +103,18 @@ extends TmpDirTestCase implements WARCConstants {
 
     	// Write uncompressed.
         WARCWriter writer =
-        	new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(this.getClass().getName(), "template", -1, false, Arrays.asList(files), null, generator));
+        	new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(
+                    this.getClass().getName(), "templateWR1", -1, false, Arrays.asList(files), null, generator));
 
         writeFile(writer);
+        writer.close();
         
         // Write compressed.
-        writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(this.getClass().getName(), "template", -1, true, Arrays.asList(files), null, generator));
+        writer = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(
+                this.getClass().getName(), "templateWR2", -1, true, Arrays.asList(files), null, generator));
 
         writeFile(writer);
+        writer.close(); 
     }
     
     private void writeFile(final WARCWriter writer)
@@ -209,7 +219,8 @@ extends TmpDirTestCase implements WARCConstants {
     throws IOException {
         cleanUpOldFiles(baseName);
         File [] files = {getTmpDir()};
-        WARCWriter w = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(baseName + '-' + PREFIX, "", maxSize, compress, Arrays.asList(files), null, generator));
+        WARCWriter w = new WARCWriter(SERIAL_NO, new WARCWriterPoolSettingsData(
+                baseName + '-' + SUFFIX, "${prefix}", maxSize, compress, Arrays.asList(files), null, generator));
             
         assertNotNull(w);
         for (int i = 0; i < recordCount; i++) {
@@ -263,14 +274,14 @@ extends TmpDirTestCase implements WARCConstants {
 
     public void testWriteRecords() throws IOException {
         final int recordCount = 2;
-        File f = writeRecords("writeRecord", false, DEFAULT_MAX_WARC_FILE_SIZE,
+        File f = writeRecords("writeRecords", false, DEFAULT_MAX_WARC_FILE_SIZE,
             recordCount);
      	validate(f, recordCount  + 1); // Header record.
     }
 
     public void testRandomAccess() throws IOException {
         final int recordCount = 3;
-        File f = writeRecords("writeRecord", true, DEFAULT_MAX_WARC_FILE_SIZE,
+        File f = writeRecords("randomAccess", true, DEFAULT_MAX_WARC_FILE_SIZE,
             recordCount);
         WARCReader reader = WARCReaderFactory.get(f);
         // Get to second record.  Get its offset for later use.
@@ -292,11 +303,13 @@ extends TmpDirTestCase implements WARCConstants {
                 readSecond = true;
             }
         }
+        reader.close(); 
         
         reader = WARCReaderFactory.get(f, offset);
         ArchiveRecord ar = reader.get();
         assertEquals(ar.getHeader().getUrl(), url);
         ar.close();
+        reader.close(); 
         
         // Get reader again.  See how iterator works with offset
         reader = WARCReaderFactory.get(f, offset);
@@ -315,13 +328,14 @@ extends TmpDirTestCase implements WARCConstants {
         validate(arcFile, recordCount + 1 /*Header record*/);
     }
     
-    protected WARCWriter createWARCWriter(String NAME,
+    protected WARCWriter createWARCWriter(String name,
             boolean compress) {
         File [] files = {getTmpDir()};
         return new WARCWriter(SERIAL_NO, 
                               new WARCWriterPoolSettingsData(
-                                      NAME, 
-                                      "", DEFAULT_MAX_WARC_FILE_SIZE, 
+                                      name, 
+                                      "${prefix}-"+SUFFIX, 
+                                      DEFAULT_MAX_WARC_FILE_SIZE, 
                                       compress, 
                                       Arrays.asList(files), 
                                       null, 
@@ -372,12 +386,12 @@ extends TmpDirTestCase implements WARCConstants {
     }
     
     public void testSpaceInURL() throws IOException {
-        long bytesWritten = holeyUrl("testSpaceInURL-" + PREFIX, false, " ");
+        long bytesWritten = holeyUrl("testSpaceInURL", false, " ");
         assertEquals("Unexpected successful writing occurred",0,bytesWritten);
     }
 
     public void testTabInURL() throws IOException {
-        long bytesWritten = holeyUrl("testTabInURL-" + PREFIX, false, "\t");
+        long bytesWritten = holeyUrl("testTabInURL", false, "\t");
         assertEquals("Unexpected successful writing occurred",0,bytesWritten);
     }
     
@@ -408,8 +422,9 @@ extends TmpDirTestCase implements WARCConstants {
         WARCWriter writer =
             new WARCWriter(SERIAL_NO, 
                     new WARCWriterPoolSettingsData(
+                            "", 
                             "test", 
-                            "", DEFAULT_MAX_WARC_FILE_SIZE, 
+                            DEFAULT_MAX_WARC_FILE_SIZE, 
                             compress, 
                             Arrays.asList(files), 
                             null, 

@@ -437,6 +437,9 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
             if (path.endsWith(OCCUPIED_SUFFIX)) {
                 File f = new File(path.substring(0,
                         path.length() - OCCUPIED_SUFFIX.length()));
+                if (f.exists() & !f.delete()) {
+                    logger.warning("Failed delete of " + f);
+                }
                 if (!this.f.renameTo(f)) {
                     logger.warning("Failed rename of " + path);
                 }

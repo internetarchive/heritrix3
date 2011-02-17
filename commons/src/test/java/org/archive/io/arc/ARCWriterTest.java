@@ -42,8 +42,9 @@ import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
+
+import com.google.common.io.Closeables;
 
 
 /**
@@ -80,10 +81,9 @@ extends TmpDirTestCase implements ARCConstants {
     }
 
     /**
-     * Prefix to use for ARC files made by JUNIT.
+     * Suffix to use for ARC files made by JUNIT.
      */
-    private static final String SUFFIX =
-        /* TODO DEFAULT_ARC_FILE_PREFIX*/ "JUNIT";
+    private static final String SUFFIX =  "JUNIT";
     
     private static final String SOME_URL = "http://www.archive.org/test/";
 
@@ -146,8 +146,8 @@ extends TmpDirTestCase implements ARCConstants {
             new ARCWriter(
                 SERIAL_NO,
                 new WriterPoolSettingsData(
-                        baseName + '-' + SUFFIX, 
-                        "", 
+                        baseName, 
+                        "${prefix}-"+SUFFIX, 
                         maxSize, 
                         compress, 
                         Arrays.asList(files), 
@@ -187,7 +187,7 @@ extends TmpDirTestCase implements ARCConstants {
                 mimeType != null && mimeType.length() > 0);
             reader.close();
         }
-        assertTrue("Metadatas not equal", metaDatas.size() == recordCount);
+        assertEquals("Metadata count not as expected",recordCount, metaDatas.size());
         for (Iterator<ArchiveRecordHeader> i = metaDatas.iterator(); i.hasNext();) {
                 ARCRecordMetaData r = (ARCRecordMetaData)i.next();
                 assertTrue("Record is empty", r.getLength() > 0);
@@ -234,11 +234,13 @@ extends TmpDirTestCase implements ARCConstants {
                 readSecond = true;
             }
         }
+        reader.close();
         
         reader = ARCReaderFactory.get(arcFile, offset);
         ArchiveRecord ar = reader.get();
         assertEquals(ar.getHeader().getUrl(), url);
         ar.close();
+        reader.close(); 
         
         // Get reader again.  See how iterator works with offset
         reader = ARCReaderFactory.get(arcFile, offset);
@@ -280,25 +282,21 @@ extends TmpDirTestCase implements ARCConstants {
         arcWriter.write("dummy:uri", "application/octet-stream",
             "0.1.2.3", now, recordLength, new NullInputStream(recordLength));
         arcWriter.close();
-        }
+    }
     
     private void runCheckARCFileSizeTest(String baseName, boolean compress)
     throws FileNotFoundException, IOException  {
-        writeRecords(baseName, compress, 1024, 15);
-        // Now validate all files just created.
-        File [] files = FileUtils.getFilesWithPrefix(getTmpDir(), SUFFIX);
-        for (int i = 0; i < files.length; i++) {
-            validate(files[i], -1);
-        }
+        File f = writeRecords(baseName, compress, 1024, 15);
+        validate(f, 15+1);
     }
     
-    protected CorruptibleARCWriter createARCWriter(String NAME, boolean compress) {
+    protected CorruptibleARCWriter createARCWriter(String name, boolean compress) {
         File [] files = {getTmpDir()};
         return new CorruptibleARCWriter(
                     SERIAL_NO, 
                     new WriterPoolSettingsData(
-                            NAME, 
-                            "", 
+                            name, 
+                            "${prefix}-"+SUFFIX, 
                             DEFAULT_MAX_ARC_FILE_SIZE, 
                             compress, 
                             Arrays.asList(files), 
@@ -349,7 +347,7 @@ extends TmpDirTestCase implements ARCConstants {
     public void testSpaceInURL() {
         String eMessage = null;
         try {
-            holeyUrl("testSpaceInURL-" + SUFFIX, false, " ");
+            holeyUrl("testSpaceInURL", false, " ");
         } catch (IOException e) {
             eMessage = e.getMessage();
         }
@@ -360,7 +358,7 @@ extends TmpDirTestCase implements ARCConstants {
     public void testTabInURL() {        
         String eMessage = null;
         try {
-            holeyUrl("testTabInURL-" + SUFFIX, false, "\t");
+            holeyUrl("testTabInURL", false, "\t");
         } catch (IOException e) {
             eMessage = e.getMessage();
         }
@@ -370,12 +368,16 @@ extends TmpDirTestCase implements ARCConstants {
     
     protected void holeyUrl(String name, boolean compress, String urlInsert)
     throws IOException {
-    	ARCWriter writer = createArcWithOneRecord(name, compress);
-        // Add some bytes on the end to mess up the record.
-        String content = getContent();
-        writeRecord(writer, SOME_URL + urlInsert + "/index.html", "text/html",
-            content.length(), getBais(content));
-        writer.close();
+    	ARCWriter writer = null;
+        try {
+            writer = createArcWithOneRecord(name, compress);
+            // Add some bytes on the end to mess up the record.
+            String content = getContent();
+            writeRecord(writer, SOME_URL + urlInsert + "/index.html", "text/html",
+                content.length(), getBais(content));
+        } finally {
+            Closeables.closeQuietly(writer);
+        }
     }
     
 // If uncompressed, length has to be right or parse will fail.
@@ -385,14 +387,14 @@ extends TmpDirTestCase implements ARCConstants {
 //    }
     
     public void testLengthTooShortCompressed() throws IOException {
-        lengthTooShort("testLengthTooShortCompressed-" + SUFFIX, true, false);
+        lengthTooShort("testLengthTooShortCompressed", true, false);
     }
     
     public void testLengthTooShortCompressedStrict()
     throws IOException {      
         String eMessage = null;
         try {
-            lengthTooShort("testLengthTooShortCompressedStrict-" + SUFFIX,
+            lengthTooShort("testLengthTooShortCompressedStrict",
                 true, true);
         } catch (RuntimeException e) {
             eMessage = e.getMessage();
@@ -403,24 +405,29 @@ extends TmpDirTestCase implements ARCConstants {
      
     protected void lengthTooShort(String name, boolean compress, boolean strict)
     throws IOException {
-    	CorruptibleARCWriter writer = createArcWithOneRecord(name, compress);
-        // Add some bytes on the end to mess up the record.
-        String content = getContent();
-        ByteArrayInputStream bais = getBais(content+"SOME TRAILING BYTES");
-        writeRecord(writer, SOME_URL, "text/html",
-            content.length(), bais);
-        writer.setEndJunk("SOME TRAILING BYTES".getBytes());
-        writeRecord(writer, SOME_URL, "text/html",
-            content.length(), getBais(content));
-        writer.close();
+    	CorruptibleARCWriter writer = null;
+        try {
+            writer = createArcWithOneRecord(name, compress);
+            // Add some bytes on the end to mess up the record.
+            String content = getContent();
+            ByteArrayInputStream bais = getBais(content+"SOME TRAILING BYTES");
+            writeRecord(writer, SOME_URL, "text/html",
+                content.length(), bais);
+            writer.setEndJunk("SOME TRAILING BYTES".getBytes());
+            writeRecord(writer, SOME_URL, "text/html",
+                content.length(), getBais(content));
+        } finally {
+            Closeables.closeQuietly(writer); 
+        }
         
         // Catch System.err into a byte stream.
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintStream origErr = System.err; 
+        ARCReader r = null; 
         try {
             System.setErr(new PrintStream(os));
             
-            ARCReader r = ARCReaderFactory.get(writer.getFile());
+            r = ARCReaderFactory.get(writer.getFile());
             r.setStrict(strict);
             int count = iterateRecords(r);
             assertTrue("Count wrong " + count, count == 4);
@@ -430,7 +437,9 @@ extends TmpDirTestCase implements ARCConstants {
             String err = os.toString();
             assertTrue("No message " + err, err.startsWith("WARNING") &&
                 (err.indexOf("Record STARTING at") > 0));
+            r.close();
         } finally {
+            Closeables.closeQuietly(r); 
             System.setErr(origErr); 
         }
     }
@@ -445,14 +454,14 @@ extends TmpDirTestCase implements ARCConstants {
     
     public void testLengthTooLongCompressed()
     throws IOException {
-        lengthTooLong("testLengthTooLongCompressed-" + SUFFIX,
+        lengthTooLong("testLengthTooLongCompressed",
             true, false);
     }
     
     public void testLengthTooLongCompressedStrict() {
         String eMessage = null;
         try {
-            lengthTooLong("testLengthTooLongCompressed-" + SUFFIX,
+            lengthTooLong("testLengthTooLongCompressed",
                 true, true);
         } catch (IOException e) {
             eMessage = e.getMessage();
@@ -475,18 +484,26 @@ extends TmpDirTestCase implements ARCConstants {
         
         // Catch System.err.
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        System.setErr(new PrintStream(os));
         
-        ARCReader r = ARCReaderFactory.get(writer.getFile());
-        r.setStrict(strict);
-        int count = iterateRecords(r);
-        assertTrue("Count wrong " + count, count == 4);
-        
-        // Make sure we get the warning string which complains about the
-        // trailing bytes.
-        String err = os.toString();
-        assertTrue("No message " + err, 
-            err.startsWith("WARNING Premature EOF before end-of-record"));
+        PrintStream origErr = System.err; 
+        ARCReader r = null; 
+        try {
+            System.setErr(new PrintStream(os));
+            
+            r = ARCReaderFactory.get(writer.getFile());
+            r.setStrict(strict);
+            int count = iterateRecords(r);
+            assertTrue("Count wrong " + count, count == 4);
+            
+            // Make sure we get the warning string which complains about the
+            // trailing bytes.
+            String err = os.toString();
+            assertTrue("No message " + err, 
+                err.startsWith("WARNING Premature EOF before end-of-record"));
+        } finally {
+            Closeables.closeQuietly(r);
+            System.setErr(origErr);
+        }
     }
     
     public void testGapError() throws IOException {
@@ -569,7 +586,8 @@ extends TmpDirTestCase implements ARCConstants {
     }
     
     public void testArcRecordOffsetReads() throws Exception {
-        ARCRecord ar = getSingleRecord("testArcRecordInBufferStream");
+        ARCReader r = getSingleRecordReader("testArcRecordInBufferStream");
+        ARCRecord ar = getSingleRecord(r);
         // Now try getting some random set of bytes out of it 
         // at an odd offset (used to fail because we were
         // doing bad math to find where in buffer to read).
@@ -581,12 +599,14 @@ extends TmpDirTestCase implements ARCConstants {
                 + ar.read(buffer, 13 + totalRead, maxRead - totalRead);
             assertTrue(totalRead > 0);
         }
+        r.close(); 
     }
     
     // available should always be >= 0; extra read()s should all give EOF
     public void testArchiveRecordAvailableConsistent() throws Exception {
         // first test reading byte-at-a-time via no-param read()
-        ARCRecord record = getSingleRecord("testArchiveRecordAvailableConsistent");
+        ARCReader r = getSingleRecordReader("testArchiveRecordAvailableConsistent");
+        ARCRecord record = getSingleRecord(r);
         int c = record.read(); 
         while(c>=0) {
             c = record.read(); 
@@ -596,22 +616,26 @@ extends TmpDirTestCase implements ARCConstants {
             assertTrue("available negative:"+record.available(), record.available()>=0);
             assertEquals(-1, record.read());            
         }
+        r.close(); 
     }
     
     // should always give -1 on repeated reads past EOR
     public void testArchiveRecordEORConsistent() throws Exception {
-        ARCRecord record = getSingleRecord("testArchiveRecordEORConsistent");
+        ARCReader r = getSingleRecordReader("testArchiveRecordEORConsistent");
+        ARCRecord record = getSingleRecord(r);
         this.readToEOS(record);
         // consecutive reads after EOR should always give -1
         for (int i=0; i<5; i++) {
             assertEquals(-1, record.read(new byte[1]));            
         }
+        r.close(); 
     }
     
     // should not throw premature EOF when wrapped with BufferedInputStream
     // [HER-1450] showed this was the case using Apache Tika
     public void testArchiveRecordMarkSupport() throws Exception {
-        ARCRecord record = getSingleRecord("testArchiveRecordMarkSupport");
+        ARCReader r = getSingleRecordReader("testArchiveRecordMarkSupport");
+        ARCRecord record = getSingleRecord(r);
         record.setStrict(true);
         // ensure mark support
         InputStream stream = new BufferedInputStream(record);
@@ -623,6 +647,7 @@ extends TmpDirTestCase implements ARCConstants {
             }
             stream.close();
         }
+        r.close(); 
     }
 
     protected void readToEOS(InputStream in) throws Exception {
@@ -634,12 +659,16 @@ extends TmpDirTestCase implements ARCConstants {
         }
     }
     
-    protected ARCRecord getSingleRecord(String name) throws Exception {
+    protected ARCReader getSingleRecordReader(String name) throws Exception {
         // Get an ARC with one record.
         WriterPoolMember w = createArcWithOneRecord(name, true);
         w.close();
         // Get reader on said ARC.
         ARCReader r = ARCReaderFactory.get(w.getFile());
+        return r; 
+    }
+    
+    protected ARCRecord getSingleRecord(ARCReader r) {
         final Iterator<ArchiveRecord> i = r.iterator();
         // Skip first ARC meta record.
         i.next();
