@@ -20,6 +20,7 @@
 package org.archive.io.arc;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,7 +66,7 @@ import org.archive.util.ArchiveUtils;
  * @version $Date$ $Revision$
  */
 public abstract class ARCReader extends ArchiveReader
-implements ARCConstants {
+implements ARCConstants, Closeable {
     Logger logger = Logger.getLogger(ARCReader.class.getName());
     
     /**

@@ -22,6 +22,7 @@ package org.archive.io.arc;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -109,7 +110,7 @@ import org.archive.util.MimetypeUtils;
  *
  * @author stack
  */
-public class ARCWriter extends WriterPoolMember implements ARCConstants {
+public class ARCWriter extends WriterPoolMember implements ARCConstants, Closeable {
     private static final Logger logger =
         Logger.getLogger(ARCWriter.class.getName());
     
@@ -145,13 +146,7 @@ public class ARCWriter extends WriterPoolMember implements ARCConstants {
      * Constructor.
      *
      * @param serialNo  used to generate unique file name sequences
-     * @param dirs Where to drop files.
-     * @param prefix File prefix to use.
-     * @param cmprs Compress the records written. 
-     * @param maxSize Maximum size for ARC files written.
-     * @param suffix File tail to use.  If null, unused.
-     * @param meta File meta data.  Can be null.  Is list of File and/or
-     * String objects.
+     * @param settings all creation parameters
      */
     public ARCWriter(final AtomicInteger serialNo, final WriterPoolSettings settings) {
         super(serialNo, settings, ARC_FILE_EXTENSION);
