@@ -649,6 +649,26 @@ extends TmpDirTestCase implements ARCConstants {
         }
         r.close(); 
     }
+    
+    /**
+     * Test a particular style of using the reader iterator. (Should
+     * possibly be on a reader-centric test class, but the best setup 
+     * functionality is here.)
+     * 
+     * @throws IOException
+     */
+    public void testReadIterator() throws IOException {
+        final int recordCount = 3;
+        File arcFile = writeRecords("writeRecord", true,
+            DEFAULT_MAX_ARC_FILE_SIZE, recordCount);
+        ARCReader reader = ARCReaderFactory.get(arcFile);
+        Iterator<ArchiveRecord> it = reader.iterator();
+        while (it.hasNext()) {
+            ArchiveRecord next = it.next();
+            next.close();
+        }
+        reader.close(); 
+    }
 
     protected void readToEOS(InputStream in) throws Exception {
         byte [] buf = new byte[1024];
