@@ -155,7 +155,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             String whoisQuery = getWhoisQuery(curi);
 
             if (whoisServer == null) {
-                // e.g. whois:///foo.org
+                // e.g. whois:foo.org
                 ProcessResult ret = deferOrFinishGeneric(curi, whoisQuery);
                 return ret;
             } else {
@@ -288,7 +288,13 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
 
     protected String getWhoisQuery(CrawlURI curi) {
         try {
-            return curi.getUURI().getPathQuery().toString().substring(1);
+            if (curi.getUURI().getAuthority() == null) {
+                // whois:archive-it.org - returns "archive-it.org"
+                return curi.getUURI().getPathQuery();
+            } else {
+                // whois://whois.pir.org/archive-it.org - getPathQuery() returns"/archive-it.org", so chop off "/"
+                return curi.getUURI().getPathQuery().substring(1);
+            }
         } catch (URIException e) {
             logger.log(Level.SEVERE, "Failed to get path/query from uri " + curi, e);
             return null;
@@ -300,7 +306,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
 
         try {
             whoisServer = curi.getUURI().getHost();
-            if (whoisServer.length() == 0) {
+            if (whoisServer != null && whoisServer.length() == 0) {
                 whoisServer = null;
             }
         } catch (URIException e) {
@@ -327,7 +333,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
     }
 
     protected void addWhoisLink(CrawlURI curi, String query) {
-        String whoisUrl = "whois:///" + query;
+        String whoisUrl = "whois:" + query;
         try {
             Link.add(curi, Integer.MAX_VALUE, whoisUrl, LinkContext.INFERRED_MISC, Hop.INFERRED);
         } catch (URIException e) {
