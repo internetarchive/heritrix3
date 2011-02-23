@@ -53,11 +53,6 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
       System.setProperty("java.protocol.handler.pkgs", "org.archive.net");
     }
   }
-  
-	/**
-	 * Offset value for when we want to stream all.
-	 */
-	private final static int STREAM_ALL = -1;
 
 	private static final ArchiveReaderFactory factory =
 		new ArchiveReaderFactory();
@@ -85,7 +80,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
     
     protected ArchiveReader getArchiveReader(final String arcFileOrUrl)
     throws MalformedURLException, IOException {
-    	return getArchiveReader(arcFileOrUrl, STREAM_ALL);
+    	return getArchiveReader(arcFileOrUrl, 0);
     }
     
     protected ArchiveReader getArchiveReader(final String arcFileOrUrl,
@@ -202,7 +197,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
         if (connection instanceof HttpURLConnection) {
           addUserAgent((HttpURLConnection)connection);
         }
-        if (offset != STREAM_ALL) {
+        if (offset != 0) {
         	// Use a Range request (Assumes HTTP 1.1 on other end). If
         	// length >= 0, add open-ended range header to the request.  Else,
         	// because end-byte is inclusive, subtract 1.
@@ -244,7 +239,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
             // Try streaming if http or s3 URLs rather than copying local
         	// and then reading (Passing an offset will get us an Reader
         	// that wraps a Stream).
-            return get(u, STREAM_ALL);
+            return get(u, 0);
         }
         
         return makeARCLocal(u.openConnection());
