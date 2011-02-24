@@ -43,6 +43,7 @@ public class GZIPMembersInputStreamTest extends TestCase {
     byte[] a_gz;
     byte[] hello_gz;
     byte[] allfour_gz;
+    byte[] sixsmall_gz;
     {
         Random rand = new Random(1); 
         try {
@@ -55,6 +56,7 @@ public class GZIPMembersInputStreamTest extends TestCase {
             a_gz = ArchiveUtils.gzip("a".getBytes("ASCII"));
             hello_gz = ArchiveUtils.gzip("hello".getBytes("ASCII"));
             allfour_gz = Bytes.concat(noise1k_gz,noise32k_gz,a_gz,hello_gz);
+            sixsmall_gz = Bytes.concat(a_gz,hello_gz,a_gz,hello_gz,a_gz,hello_gz); 
         }  catch (IOException e) {
             // should not happen
         }
@@ -64,14 +66,21 @@ public class GZIPMembersInputStreamTest extends TestCase {
         junit.textui.TestRunner.run(GZIPMembersInputStreamTest.class);
     }
     
-    public void testFullRead() throws IOException {
+    public void testFullReadAllFour() throws IOException {
         GZIPMembersInputStream gzin = 
             new GZIPMembersInputStream(new ByteArrayInputStream(allfour_gz));
         int count = IOUtils.copy(gzin, new NullOutputStream());
         assertEquals("wrong length uncompressed data", 1024+(32*1024)+1+5, count);
     }
     
-    public void testReadPerMember() throws IOException {
+    public void testFullReadSixSmall() throws IOException {
+        GZIPMembersInputStream gzin = 
+            new GZIPMembersInputStream(new ByteArrayInputStream(sixsmall_gz));
+        int count = IOUtils.copy(gzin, new NullOutputStream());
+        assertEquals("wrong length uncompressed data", 1+5+1+5+1+5, count);
+    }
+    
+    public void testReadPerMemberAllFour() throws IOException {
         GZIPMembersInputStream gzin = 
             new GZIPMembersInputStream(new ByteArrayInputStream(allfour_gz));
         gzin.setEofEachMember(true); 
@@ -102,6 +111,23 @@ public class GZIPMembersInputStreamTest extends TestCase {
         int countEnd = IOUtils.copy(gzin, new NullOutputStream());
         assertEquals("wrong eof count", 0, countEnd);
     }
+    
+    public void testReadPerMemberSixSmall() throws IOException {
+        GZIPMembersInputStream gzin = 
+            new GZIPMembersInputStream(new ByteArrayInputStream(sixsmall_gz));
+        gzin.setEofEachMember(true); 
+        for(int i = 0; i < 3; i++) {
+            int count2 = IOUtils.copy(gzin, new NullOutputStream());
+            assertEquals("wrong 1-byte member count", 1, count2);
+            gzin.nextMember(); 
+            int count3 = IOUtils.copy(gzin, new NullOutputStream());
+            assertEquals("wrong 5-byte member count", 5, count3);
+            gzin.nextMember();
+        }
+        int countEnd = IOUtils.copy(gzin, new NullOutputStream());
+        assertEquals("wrong eof count", 0, countEnd);
+    }
+    
     
     public void testByteReadPerMember() throws IOException {
         GZIPMembersInputStream gzin = 
