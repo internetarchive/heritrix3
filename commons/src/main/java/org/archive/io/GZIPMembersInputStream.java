@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
 
 import com.google.common.io.CountingInputStream;
 
@@ -96,12 +97,13 @@ public class GZIPMembersInputStream extends GZIPInputStream {
 
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
-        if (inf.finished()) {
-            // note read past member boundary
+        boolean wasFinishedOnEntry = inf.finished(); 
+        if (wasFinishedOnEntry) {
             if(memberNumber>=holdAtMemberNumber) {
                 // only advance if allowed
                 return -1; 
             }
+            // note read past member boundary
             memberNumber++; 
             currentMemberStart = currentMemberEnd; 
             currentMemberEnd = -1; 
@@ -113,6 +115,12 @@ public class GZIPMembersInputStream extends GZIPInputStream {
             // this read has exactly completed an underlying member
             currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
         }
+        if(inf.finished() && !wasFinishedOnEntry && currentMemberEnd<0) {
+            // a previous nonzero read truly finished the member, without reporting so
+            // so now return a zero-read, with member-complete indicator
+            currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
+            return 0; 
+        }
         int n = inf.getRemaining();
         if(n==0) {
             // no need to retain previous mark; won't need to backup for next member
@@ -122,8 +130,12 @@ public class GZIPMembersInputStream extends GZIPInputStream {
             // WORKAROUND FOR JDK6u22 and earlier, when GzipOutputStream 
             // gave persistent EOF after first member. Forward past the 
             // boundary, enabling continuing reading. 
+//            long at1 = ((CountingInputStream)in).getCount();
             in.reset(); 
+//            long at2 = ((CountingInputStream)in).getCount();
             in.skip(currentMemberStart-((CountingInputStream)in).getCount()); 
+//            long at3 = ((CountingInputStream)in).getCount();
+//            System.out.println(at1+","+at2+","+at3+":"+retVal); 
             startNewMember(); 
             return this.read(buf, off, len);
         }
@@ -239,6 +251,15 @@ public class GZIPMembersInputStream extends GZIPInputStream {
         if(holdAtMemberNumber<Long.MAX_VALUE) {
             holdAtMemberNumber++;
         }
+    }
+    
+    /**
+     * Helpful for testing/debugging
+     * 
+     * @return Inflater
+     */
+    public Inflater getInflater() {
+        return inf;
     }
 
     /**

@@ -460,9 +460,9 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
                 }
                 // If not strict, try going again.  We might be able to skip
                 // over the bad record.
-                logger.warning("Trying skip of failed record cleanup of " +
+                logger.log(Level.WARNING,"Trying skip of failed record cleanup of " +
                     currentRecord.getHeader().toString() + ": " +
-                    e.getMessage());
+                    e.getMessage(), e);
             }
             return innerHasNext();
         }
