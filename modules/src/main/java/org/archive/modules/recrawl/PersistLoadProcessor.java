@@ -24,11 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
-import org.archive.modules.recrawl.PersistLoadProcessor;
-import org.archive.modules.recrawl.PersistProcessor;
 import org.archive.modules.CrawlURI;
-import org.archive.spring.ConfigFile;
-import org.archive.spring.ConfigPath;
 
 import com.sleepycat.je.DatabaseException;
 
@@ -55,14 +51,14 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * is in its own independent BDB environment, and then copy and 
      * reuse that environment in the followup crawl(s).)
      */
-    ConfigPath preloadSource = 
-        new ConfigFile("preload source","");
-    public ConfigPath getPreloadSource() {
+    String preloadSource = "";
+    public String getPreloadSource() {
         return preloadSource;
     }
-    public void setPreloadSource(ConfigPath preloadSource) {
+    public void setPreloadSource(String preloadSource) {
         this.preloadSource = preloadSource;
     }
+    
     public PersistLoadProcessor() {
     }
 
@@ -90,18 +86,17 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
             return;
         }
         super.start();
-        String psource = getPreloadSource().getPath();
-        if (StringUtils.isNotBlank(psource)) {
+        if (StringUtils.isNotBlank(preloadSource)) {
             try {
                 int count = PersistProcessor.copyPersistSourceToHistoryMap(
-                        null, preloadSource.getFile().getAbsolutePath(),store);
-                logger.info("Loaded deduplication information for " + count + " previously fetched urls from " + preloadSource.getFile());
+                        null, preloadSource, store);
+                logger.info("Loaded deduplication information for " + count + " previously fetched urls from " + preloadSource);
             } catch (IOException ioe) {
-                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + ioe);
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource + ", proceeding without deduplication. " + ioe);
             } catch(DatabaseException de) {
-                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + de);
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource + ", proceeding without deduplication. " + de);
             } catch(IllegalArgumentException iae) {
-                logger.log(Level.SEVERE, "Problem loading " + preloadSource.getFile() + ", proceeding without deduplication. " + iae);
+                logger.log(Level.SEVERE, "Problem loading " + preloadSource + ", proceeding without deduplication. " + iae);
             }
         }
     }
