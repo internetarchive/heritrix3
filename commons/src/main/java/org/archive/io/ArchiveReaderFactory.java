@@ -86,7 +86,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
     protected ArchiveReader getArchiveReader(final String arcFileOrUrl,
     	final long offset)
     throws MalformedURLException, IOException {
-    	return UURI.hasScheme(arcFileOrUrl)?
+    	return UURI.hasScheme(arcFileOrUrl) && arcFileOrUrl.indexOf(":")>1?
     		get(new URL(arcFileOrUrl), offset):
     			get(new File(arcFileOrUrl), offset);
     }
