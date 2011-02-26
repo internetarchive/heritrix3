@@ -115,16 +115,16 @@ public class GZIPMembersInputStream extends GZIPInputStream {
             // this read has exactly completed an underlying member
             currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
         }
+        int n = inf.getRemaining();
+        if(n==0) {
+            // no need to retain previous mark; won't need to backup for next member
+            updateInnerMark(); 
+        }
         if(inf.finished() && !wasFinishedOnEntry && currentMemberEnd<0) {
             // a previous nonzero read truly finished the member, without reporting so
             // so now return a zero-read, with member-complete indicator
             currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
             return 0; 
-        }
-        int n = inf.getRemaining();
-        if(n==0) {
-            // no need to retain previous mark; won't need to backup for next member
-            updateInnerMark(); 
         }
         if(eos && (this.in.available() > 0 || n > 26)) { 
             // WORKAROUND FOR JDK6u22 and earlier, when GzipOutputStream 
@@ -134,6 +134,7 @@ public class GZIPMembersInputStream extends GZIPInputStream {
             in.reset(); 
 //            long at2 = ((CountingInputStream)in).getCount();
             in.skip(currentMemberStart-((CountingInputStream)in).getCount()); 
+            updateInnerMark();
 //            long at3 = ((CountingInputStream)in).getCount();
 //            System.out.println(at1+","+at2+","+at3+":"+retVal); 
             startNewMember(); 
