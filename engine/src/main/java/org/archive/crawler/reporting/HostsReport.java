@@ -20,6 +20,8 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Map;
 
 import org.apache.commons.collections.Closure;
@@ -32,6 +34,18 @@ import org.archive.modules.net.CrawlHost;
  * @contributor gojomo
  */
 public class HostsReport extends Report {
+
+    protected String fixup(String hostName) {
+        if ("dns:".equals(hostName)) {
+            return hostName;
+        } else {
+            try {
+                return URLEncoder.encode(hostName, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @Override
     public void write(final PrintWriter writer) {
@@ -47,7 +61,7 @@ public class HostsReport extends Report {
             writeReportLine(writer,
                     count,
                     stats.getBytesPerHost(entry.getValue()),
-                    entry.getValue(),
+                    fixup(entry.getValue()),
                     host.getSubstats().getRobotsDenials(),
                     host.getSubstats().getRemaining(), 
                     host.getSubstats().getNovelUrls(),
@@ -67,7 +81,7 @@ public class HostsReport extends Report {
                     writeReportLine(writer,
                             host.getSubstats().getRecordedFinishes(),
                             host.getSubstats().getTotalBytes(),
-                            host.getHostName(),
+                            fixup(host.getHostName()),
                             host.getSubstats().getRobotsDenials(),
                             host.getSubstats().getRemaining(),
                             host.getSubstats().getNovelUrls(),
