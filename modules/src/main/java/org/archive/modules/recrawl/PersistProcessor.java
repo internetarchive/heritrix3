@@ -23,7 +23,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,7 +39,6 @@ import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.FileUtils;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.SURT;
 import org.archive.util.bdbje.EnhancedEnvironment;
@@ -259,7 +257,7 @@ public abstract class PersistProcessor extends Processor {
         }
 
         try {
-            count = copyPersistSourceToHistoryMap(null, sourcePath, historyMap);
+            count = copyPersistSourceToHistoryMap(new File(sourcePath), historyMap);
         } finally {
             // in finally block so that we unlock the target env even if we
             // failed to populate it
@@ -281,38 +279,48 @@ public abstract class PersistProcessor extends Processor {
      * environment db or a persist log. If a map is not provided, only 
      * logs the entries that would have been populated.
      * 
-     * @param sourcePath
+     * @param sourceFile
      *            source of old entries: can be a path to an existing
-     *            environment db, or a URL or path to a persist log
+     *            environment db or persist log
      * @param historyMap
      *            map to populate (or null for a dry run)
      * @return number of records
      * @throws DatabaseException
      * @throws IOException
      */
-    public static int copyPersistSourceToHistoryMap(File context,
-            String sourcePath,
-            StoredSortedMap<String, Map> historyMap)
-            throws DatabaseException, IOException, MalformedURLException,
-            UnsupportedEncodingException {
-        int count;
+    public static int copyPersistSourceToHistoryMap(File sourceFile,
+            StoredSortedMap<String, Map> historyMap) throws DatabaseException,
+            IOException {
         // delegate depending on the source
-        File sourceFile = FileUtils.maybeRelative(context, sourcePath);
         if (sourceFile.isDirectory()) {
-            count = copyPersistEnv(sourceFile, historyMap);
+            return copyPersistEnv(sourceFile, historyMap);
         } else {
-            BufferedReader persistLogReader = null;
-            if (sourceFile.isFile()) {
-                persistLogReader = ArchiveUtils.getBufferedReader(sourceFile);
-            } else {
-                URL sourceUrl = new URL(sourcePath);
-                persistLogReader = ArchiveUtils.getBufferedReader(sourceUrl);
-            }
-            count = populatePersistEnvFromLog(persistLogReader, historyMap);
+            BufferedReader persistLogReader = ArchiveUtils.getBufferedReader(sourceFile);
+            return populatePersistEnvFromLog(persistLogReader, historyMap);
         }
-        return count;
     }
 
+    /**
+     * Populates a given StoredSortedMap (history map) from an old persist log.
+     * If a map is not provided, only logs the entries that would have been
+     * populated.
+     * 
+     * @param sourceUrl
+     *            url of source persist log
+     * @param historyMap
+     *            map to populate (or null for a dry run)
+     * @return number of records
+     * @throws DatabaseException
+     * @throws IOException
+     */
+    public static int copyPersistSourceToHistoryMap(URL sourceUrl,
+            StoredSortedMap<String, Map> historyMap) throws DatabaseException,
+            IOException {
+        BufferedReader persistLogReader = ArchiveUtils
+                .getBufferedReader(sourceUrl);
+        return populatePersistEnvFromLog(persistLogReader, historyMap);
+    }
+    
     /**
      * Utility main for importing a log into a BDB-JE environment or moving a
      * database between environments (2 arguments), or simply dumping a log
