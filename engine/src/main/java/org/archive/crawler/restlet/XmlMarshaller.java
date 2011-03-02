@@ -19,6 +19,7 @@
 
 package org.archive.crawler.restlet;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
@@ -71,16 +72,22 @@ public class XmlMarshaller {
      *            xml document root tag name
      * @param content
      *            data structure to marshal
+     * @throws IOException 
      */
-    public static void marshalDocument(Writer writer, String rootTag, Object content) {
+    public static void marshalDocument(Writer writer, String rootTag,
+            Object content) throws IOException {
         XmlWriter xmlWriter = getXmlWriter(writer); 
         try {
             xmlWriter.startDocument();
             marshal(xmlWriter, rootTag, content);
             xmlWriter.endDocument(); // calls flush()
         } catch (SAXException e) {
-            // can this happen?
-            throw new RuntimeException(e);
+            if (e.getException() instanceof IOException) {
+                // e.g. broken tcp connection
+                throw (IOException) e.getException();  
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
