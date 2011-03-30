@@ -187,6 +187,7 @@ public class GZIPMembersInputStreamTest extends TestCase {
         assertEquals("wrong eof count", 0, countEnd);
     }
     
+    @SuppressWarnings("deprecation")
     public void testMemberIterator() throws IOException {
         GZIPMembersInputStream gzin = 
             new GZIPMembersInputStream(new ByteArrayInputStream(allfour_gz));

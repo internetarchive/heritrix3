@@ -21,8 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
+
+import org.archive.util.zip.OpenJDK7GZIPInputStream;
 
 import com.google.common.io.CountingInputStream;
 
@@ -31,36 +32,35 @@ import com.google.common.io.CountingInputStream;
  * artificial stop after the first member in a concatenated series (in 
  * pre-JDK6u23), and offers direct access to discovered GZIP member 
  * boundaries (in compressed offsets) via the getMemberNumber(), 
- * getCurrentMemberStart(), getCurrentMemberEnd() accessors (both pre- and 
- * post- JDK6u23). 
+ * getCurrentMemberStart(), getCurrentMemberEnd() accessors, both pre- and 
+ * post- JDK6u23 (but see below for caveat about getCurrentMemberEnd()). 
  * 
  * (This replaces our previous workaround, 'GzippedInputStream', for
  * pre-JDK6u23 GZIPInputStream behavior.)
  * 
- * Users must ensure the source InputStream supports mark/reset to at least the
- * same size as the buffer size used by this class (default 512, or as
- * user-specified by the 2-argument constructor). 
- * 
- * After each read(), calling code may examine the value of getAtMemberEnd(), or
- * a nonzero getCurrentMemberEnd(), to recognize that a full member has 
- * just finished decompressing. (The next call to read() will increment the 
- * memberNumber, and change the start/end positions.)
- * 
  * By default, will read straight through members, returning all uncompressed
- * data from concatenated compressed members as one stream. (Though, per the 
- * operation of the 6u23 GZIPInputStream, the data returned from a single 
- * read() will not straddle a member boundary.)
+ * data from concatenated compressed members as one stream, per the 
+ * JDK6u23-and-higher behavior. The data returned from a single 
+ * read() will not straddle a member boundary, *but* only after reading
+ * the first byte of the next member can certainty be offered as to 
+ * whether the previous member ended. Thus, in this default mode, until
+ * the end of all input, the getAtMemberEnd() method will always return 
+ * false, and getCurrentMemberEnd() will always return -1, because any 
+ * read that discovered a definitive member-end will have begun the next
+ * member. In this mode, member-ends should be deduced by watching the 
+ * increment of getMemberNumber(), and using the start of the current 
+ * record as the (exclusive) end-position of the previous record. 
  * 
  * The setEofEachMember() method may be used to change behavior to mimic that 
  * of pre-6u23 GZIPInputStream: reaching the end of a GZIP member will result
- * in a returned EOF. Calling nextMember() at this point will allow reading
+ * in a returned EOF. When receiving this EOF, getAtMemberEnd() will return
+ * true and getCurrentMemberEnd() will return the (exclusive) member-end
+ * position. Calling nextMember() after receiving an EOF will allow reading
  * to proceed into the next member (if any). 
- *  
+ * 
  *  @contributor gojomo
  */
-public class GZIPMembersInputStream extends GZIPInputStream {
-
-
+public class GZIPMembersInputStream extends OpenJDK7GZIPInputStream {
     long memberNumber = 0; 
     long holdAtMemberNumber = Long.MAX_VALUE;
     long currentMemberStart = 0;
@@ -97,8 +97,7 @@ public class GZIPMembersInputStream extends GZIPInputStream {
 
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
-        boolean wasFinishedOnEntry = inf.finished(); 
-        if (wasFinishedOnEntry) {
+        if(currentMemberEnd>0) {
             if(memberNumber>=holdAtMemberNumber) {
                 // only advance if allowed
                 return -1; 
@@ -108,39 +107,14 @@ public class GZIPMembersInputStream extends GZIPInputStream {
             currentMemberStart = currentMemberEnd; 
             currentMemberEnd = -1; 
         }
-        
-        int retVal = super.read(buf, off, len);
-        
-        if(retVal>0 && inf.finished()) {
-            // this read has exactly completed an underlying member
-            currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
-        }
+        return super.read(buf, off, len);
+    }
+    
+    @Override
+    protected boolean readTrailer() throws IOException {
         int n = inf.getRemaining();
-        if(n==0) {
-            // no need to retain previous mark; won't need to backup for next member
-            updateInnerMark(); 
-        }
-        if(inf.finished() && !wasFinishedOnEntry && currentMemberEnd<0) {
-            // a previous nonzero read truly finished the member, without reporting so
-            // so now return a zero-read, with member-complete indicator
-            currentMemberEnd = ((CountingInputStream)in).getCount()-(inf.getRemaining()-8); 
-            return 0; 
-        }
-        if(eos && (this.in.available() > 0 || n > 26)) { 
-            // WORKAROUND FOR JDK6u22 and earlier, when GzipOutputStream 
-            // gave persistent EOF after first member. Forward past the 
-            // boundary, enabling continuing reading. 
-//            long at1 = ((CountingInputStream)in).getCount();
-            in.reset(); 
-//            long at2 = ((CountingInputStream)in).getCount();
-            in.skip(currentMemberStart-((CountingInputStream)in).getCount()); 
-            updateInnerMark();
-//            long at3 = ((CountingInputStream)in).getCount();
-//            System.out.println(at1+","+at2+","+at3+":"+retVal); 
-            startNewMember(); 
-            return this.read(buf, off, len);
-        }
-        return retVal; 
+        currentMemberEnd = ((CountingInputStream)in).getCount()-(n-8); 
+        return super.readTrailer();
     }
 
     /**
@@ -191,7 +165,7 @@ public class GZIPMembersInputStream extends GZIPInputStream {
      * @return true if exactly at member end
      */
     public boolean getAtMemberEnd() {
-        return inf.finished();
+        return currentMemberEnd>0;
     }
     
     /**
@@ -294,7 +268,7 @@ public class GZIPMembersInputStream extends GZIPInputStream {
         @Override
         public boolean hasNext() {
             try {
-                return (in.available()>0 || inf.getRemaining() > 26);
+                return (in.available()>0 || inf.getRemaining() > 8);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

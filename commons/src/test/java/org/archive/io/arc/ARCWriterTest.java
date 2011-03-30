@@ -327,7 +327,7 @@ extends TmpDirTestCase implements ARCConstants {
             rec.close();
             if (count != 0) {
                 assertTrue("Unexpected URL " + rec.getMetaData().getUrl(),
-                    rec.getMetaData().getUrl().equals(SOME_URL));
+                    rec.getMetaData().getUrl().startsWith(SOME_URL));
             }
             count++;
         }
@@ -476,9 +476,9 @@ extends TmpDirTestCase implements ARCConstants {
     	ARCWriter writer = createArcWithOneRecord(name, compress);
         // Add a record with a length that is too long.
         String content = getContent();
-        writeRecord(writer, SOME_URL, "text/html",
+        writeRecord(writer, SOME_URL+"2", "text/html",
             content.length() + 10, getBais(content));
-        writeRecord(writer, SOME_URL, "text/html",
+        writeRecord(writer, SOME_URL+"3", "text/html",
             content.length(), getBais(content));
         writer.close();
         
