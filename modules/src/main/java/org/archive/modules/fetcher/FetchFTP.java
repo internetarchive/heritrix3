@@ -196,15 +196,33 @@ public class FetchFTP extends Processor  {
      * retry later).
      */
     {
-         setTimeoutSeconds(20*60); // 20 minutes
-     }
-     public int getTimeoutSeconds() {
-         return (Integer) kp.get("timeoutSeconds");
-     }
-     public void setTimeoutSeconds(Integer timeout) {
-         kp.put("timeoutSeconds",timeout);
-     }
+        setTimeoutSeconds(20*60); // 20 minutes
+    }
+    public int getTimeoutSeconds() {
+        return (Integer) kp.get("timeoutSeconds");
+    }
+    public void setTimeoutSeconds(Integer timeout) {
+        kp.put("timeoutSeconds",timeout);
+    }
 
+    /**
+     * If the socket is unresponsive for this number of milliseconds, give up.
+     * Set to zero for no timeout (Not. recommended. Could hang a thread on an
+     * unresponsive server). This timeout is used timing out socket opens and
+     * for timing out each socket read. Make sure this value is &lt;
+     * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
+     * retry read.
+     */
+    {
+        setSoTimeoutMs(20*1000); // 20 seconds
+    }
+    public int getSoTimeoutMs() {
+        return (Integer) kp.get("soTimeoutMs");
+    }
+    public void setSoTimeoutMs(int timeout) {
+        kp.put("soTimeoutMs",timeout);
+    }
+     
     /**
      * Constructs a new <code>FetchFTP</code>.
      */
@@ -293,7 +311,12 @@ public class FetchFTP extends Processor  {
             port = 21;
         }
 
+        client.setConnectTimeout(getSoTimeoutMs());
+        client.setDefaultTimeout(getSoTimeoutMs());
+        client.setDataTimeout(getSoTimeoutMs());
+        
         client.connect(uuri.getHost(), port);
+        client.setSoTimeout(getSoTimeoutMs());  // must be after connect()
         
         // Authenticate.
         String[] auth = getAuth(curi);
@@ -336,6 +359,9 @@ public class FetchFTP extends Processor  {
         // Save the streams in the CURI, where downstream processors
         // expect to find them.
         if (socket != null) {
+            if (socket.getSoTimeout() != getSoTimeoutMs()) {
+                logger.warning("data socket timeout " + socket.getSoTimeout() + "ms is not expected value " + getSoTimeoutMs() + "ms");
+            }
             // Shall we get a digest on the content downloaded?
             boolean digestContent = getDigestContent();
             String algorithm = null; 
