@@ -110,6 +110,24 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         this.specialQueryTemplates.putAll(m);
     }
 
+    /**
+     * If the socket is unresponsive for this number of milliseconds, give up.
+     * Set to zero for no timeout (Not. recommended. Could hang a thread on an
+     * unresponsive server). This timeout is used timing out socket opens and
+     * for timing out each socket read. Make sure this value is &lt;
+     * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
+     * retry read.
+     */
+    {
+        setSoTimeoutMs(20*1000); // 20 seconds
+    }
+    public int getSoTimeoutMs() {
+        return (Integer) kp.get("soTimeoutMs");
+    }
+    public void setSoTimeoutMs(int timeout) {
+        kp.put("soTimeoutMs",timeout);
+    }
+
     private boolean isRunning = false; 
     public void start() {
         if(isRunning()) {
@@ -219,14 +237,14 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         }
     }
     
-    protected String makeWhoisUrl(String server, String principle) {
+    protected String makeWhoisUrl(String server, String principal) {
         try {
             String query;
             String template = specialQueryTemplates.get(server.toLowerCase());
             if (template != null) {
-                query = template.replaceAll("%s", principle);
+                query = template.replaceAll("%s", principal);
             } else {
-                query = principle;
+                query = principal;
             }
             
             return "whois://" + server + "/" + URLEncoder.encode(query, "UTF-8");
@@ -240,12 +258,17 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         Recorder recorder = curi.getRecorder();
         
         try {
+            client.setConnectTimeout(getSoTimeoutMs());
+            client.setDefaultTimeout(getSoTimeoutMs());
+            
             if (curi.getUURI().getPort() > 0) {
                 client.connect(whoisServer, curi.getUURI().getPort());
             } else {
                 client.connect(whoisServer);
             }
 
+            client.setSoTimeout(getSoTimeoutMs()); // must be after connect()
+            
             recorder.inputWrap(client.getInputStream(whoisQuery));
 
             // look for info about whois server in the response
@@ -342,7 +365,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
     }
 
     /**
-     * Adds outlinks to whois:///{domain} and whois:///{ipAddress} 
+     * Adds outlinks to whois:{domain} and whois:{ipAddress} 
      */
     protected void addWhoisLinks(CrawlURI curi) throws InterruptedException {
         CrawlHost ch = serverCache.getHostFor(curi.getUURI());
