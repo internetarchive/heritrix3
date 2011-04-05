@@ -23,13 +23,18 @@ import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.SocketFactory;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.net.ftp.FTP;
@@ -228,7 +233,6 @@ public class FetchFTP extends Processor  {
      */
     public FetchFTP() {
     }
-
     
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
@@ -292,6 +296,60 @@ public class FetchFTP extends Processor  {
         }
     }
 
+    /**
+     * A {@link SocketFactory} much like {@link javax.net.DefaultSocketFactory},
+     * except that the createSocket() methods that open connections support a
+     * connect timeout.
+     */
+    public class SocketFactoryWithTimeout extends SocketFactory {
+        protected int connectTimeoutMs = 0;
+        
+        public int getConnectTimeoutMs() {
+            return connectTimeoutMs;
+        }
+
+        public void setConnectTimeoutMs(int connectTimeoutMs) {
+            this.connectTimeoutMs = connectTimeoutMs;
+        }
+
+        public Socket createSocket() {
+            return new Socket();
+        }
+
+        public Socket createSocket(String host, int port) throws IOException,
+                UnknownHostException {
+            Socket sock = createSocket();
+            sock.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+            return sock;
+        }
+
+        public Socket createSocket(InetAddress host, int port)
+                throws IOException {
+            Socket sock = createSocket();
+            sock.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+            return sock;
+        }
+
+        public Socket createSocket(String host, int port,
+                InetAddress localHost, int localPort) throws IOException,
+                UnknownHostException {
+            Socket sock = createSocket();
+            sock.bind(new InetSocketAddress(localHost, localPort));
+            sock.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+            return sock;
+        }
+
+        public Socket createSocket(InetAddress address, int port,
+                InetAddress localAddress, int localPort) throws IOException {
+            Socket sock = createSocket();
+            sock.bind(new InetSocketAddress(localAddress, localPort));
+            sock.connect(new InetSocketAddress(address, port), connectTimeoutMs);
+            return sock;
+        }         
+        
+    }
+
+    protected SocketFactoryWithTimeout socketFactory;
 
     /**
      * Fetches a document from an FTP server.
@@ -311,11 +369,17 @@ public class FetchFTP extends Processor  {
             port = 21;
         }
 
+        if (socketFactory == null) {
+            socketFactory = new SocketFactoryWithTimeout();
+        }
+        socketFactory.setConnectTimeoutMs(getSoTimeoutMs());
+        client.setSocketFactory(socketFactory);
         client.setConnectTimeout(getSoTimeoutMs());
         client.setDefaultTimeout(getSoTimeoutMs());
         client.setDataTimeout(getSoTimeoutMs());
         
         client.connect(uuri.getHost(), port);
+        
         client.setSoTimeout(getSoTimeoutMs());  // must be after connect()
         
         // Authenticate.
