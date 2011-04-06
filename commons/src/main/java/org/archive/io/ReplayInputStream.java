@@ -111,6 +111,10 @@ public class ReplayInputStream extends SeekInputStream
      * reading the entire stream (and possibly overflowing to a temporary
      * file). Primary reason for doing so would be to have a repositionable
      * version of the original stream's contents.
+     * 
+     * If created via this constructor, use the destroy() method to ensure
+     * prompt deletion of any associated tmp file when done. 
+     * 
      * @param fillStream
      * @throws IOException
      */
