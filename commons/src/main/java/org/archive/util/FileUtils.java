@@ -18,9 +18,6 @@
  */
 package org.archive.util;
 
-import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
-
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -612,24 +609,14 @@ public class FileUtils {
      * @param toFile File to write to.
      * @throws IOException 
      */
-    public static void readFullyToFile(InputStream is, File toFile)
+    public static long readFullyToFile(InputStream is, File toFile)
             throws IOException {
-        byte[] buffer = new byte[16 * 1024];
-        long totalcount = -1;
-        OutputStream os = new FastBufferedOutputStream(new FileOutputStream(
-                toFile));
-        InputStream localIs = (is instanceof BufferedInputStream) ? is
-                : new BufferedInputStream(is);
+        OutputStream os = org.apache.commons.io.FileUtils.openOutputStream(toFile); 
         try {
-            for (int count = -1; (count = localIs
-                    .read(buffer, 0, buffer.length)) != -1; totalcount += count) {
-                os.write(buffer, 0, count);
-            }
+            return IOUtils.copyLarge(is, os);
         } finally {
-            os.close();
-            if (localIs != null) {
-                localIs.close();
-            }
+            IOUtils.closeQuietly(os); 
+            IOUtils.closeQuietly(is);
         }
     }
 

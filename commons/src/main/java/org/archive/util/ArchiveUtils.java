@@ -930,7 +930,7 @@ public class ArchiveUtils {
      * @param buf
      * @throws IOException
      */
-    public static void readFully(InputStream input, byte[] buf) 
+    public static int readFully(InputStream input, byte[] buf) 
     throws IOException {
         int max = buf.length;
         int ofs = 0;
@@ -941,6 +941,7 @@ public class ArchiveUtils {
             }
             ofs += l;
         }
+        return ofs; 
     }
 
     /** suffix to recognize gzipped files */
