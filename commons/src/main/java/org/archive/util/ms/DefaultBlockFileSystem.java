@@ -252,7 +252,7 @@ public class DefaultBlockFileSystem implements BlockFileSystem {
     /**
      * Returns the BAT block with the given block number.
      * If the BAT block were previously cached, then the cached version
-     * is returned.  Otherwise, the file pointer is repoisitioned to 
+     * is returned.  Otherwise, the file pointer is repositioned to 
      * the start of the given block, and the 512 bytes are read and
      * stored in the cache.
      * 
