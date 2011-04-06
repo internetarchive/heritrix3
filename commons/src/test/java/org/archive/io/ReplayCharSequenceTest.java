@@ -20,6 +20,7 @@
 package org.archive.io;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Date;
 import java.util.Random;
@@ -27,6 +28,8 @@ import java.util.logging.Logger;
 
 import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
+
+import com.google.common.base.Charsets;
 
 /**
  * Test ReplayCharSequences.
@@ -79,7 +82,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 bytes_nihongo,MULTIPLIER,
                 "testShiftjis",MULTIPLIER);
         // TODO: check for existence of overflow file?
-        ReplayCharSequence rcs = ros.getReplayCharSequence(ENCODING);
+        ReplayCharSequence rcs = getReplayCharSequence(ros,Charset.forName(ENCODING));
             
         // Now check that start of the rcs comes back in as nihongo string.
         String rcsStr = rcs.subSequence(0, nihongo.length()).toString();
@@ -101,24 +104,22 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         RecordingOutputStream ros = writeTestStream(
                 regularBuffer,MULTIPLIER,
                 "testGetReplayCharSequenceByteZeroOffset",MULTIPLIER);
-        ReplayCharSequence rcs = ros.getReplayCharSequence();
+        ReplayCharSequence rcs = getReplayCharSequence(ros);
 
         for (int i = 0; i < MULTIPLIER; i++) {
             accessingCharacters(rcs);
         }
     }
 
-    public void testGetReplayCharSequenceByteOffset() throws IOException {
-
-        RecordingOutputStream ros = writeTestStream(
-                regularBuffer,MULTIPLIER,
-                "testGetReplayCharSequenceByteOffset",MULTIPLIER);
-        ReplayCharSequence rcs = ros.getReplayCharSequence(null,SEQUENCE_LENGTH);
-
-        for (int i = 0; i < MULTIPLIER; i++) {
-            accessingCharacters(rcs);
-        }
+    private ReplayCharSequence getReplayCharSequence(RecordingOutputStream ros) throws IOException {
+        return getReplayCharSequence(ros,null);
     }
+
+    private ReplayCharSequence getReplayCharSequence(RecordingOutputStream ros, Charset charset) throws IOException {
+        return new GenericReplayCharSequence(ros.getReplayInputStream(), 
+                ros.getBufferLength()/2, ros.backingFilename, charset);
+    }
+
 
     public void testGetReplayCharSequenceMultiByteZeroOffset()
         throws IOException {
@@ -126,26 +127,10 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         RecordingOutputStream ros = writeTestStream(
                 regularBuffer,MULTIPLIER,
                 "testGetReplayCharSequenceMultiByteZeroOffset",MULTIPLIER);
-        ReplayCharSequence rcs = ros.getReplayCharSequence("UTF-8");
+        ReplayCharSequence rcs = getReplayCharSequence(ros,Charsets.UTF_8);
 
         for (int i = 0; i < MULTIPLIER; i++) {
             accessingCharacters(rcs);
-        }
-    }
-
-    public void testGetReplayCharSequenceMultiByteOffset() throws IOException {
-
-        RecordingOutputStream ros = writeTestStream(
-                regularBuffer,MULTIPLIER,
-                "testGetReplayCharSequenceMultiByteOffset",MULTIPLIER);
-        ReplayCharSequence rcs = ros.getReplayCharSequence("UTF-8", SEQUENCE_LENGTH);
-
-        try {
-            for (int i = 0; i < MULTIPLIER; i++) {
-                accessingCharacters(rcs);
-            }
-        } finally {
-            rcs.close();
         }
     }
     
@@ -155,7 +140,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         RecordingOutputStream ros = writeTestStream(
                 buffer,1,
                 "testReplayCharSequenceByteToString.txt",0);
-        ReplayCharSequence rcs = ros.getReplayCharSequence();
+        ReplayCharSequence rcs = getReplayCharSequence(ros);
         String result = rcs.toString();
         assertEquals("Strings don't match",result,fileContent);
     }
@@ -186,7 +171,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         String latin1String = new String(bytes, "latin1");
         RecordingOutputStream ros = writeTestStream(
                 bytes, 1, "testSingleByteEncodings-latin1.txt", 0);
-        ReplayCharSequence rcs = ros.getReplayCharSequence("latin1");
+        ReplayCharSequence rcs = getReplayCharSequence(ros,Charsets.ISO_8859_1);
         String result = rcs.toString();
         logger.fine("latin1[0] " + toHexString(latin1String));
         logger.fine("latin1[1] " + toHexString(result));
@@ -195,7 +180,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         String w1252String = new String(bytes, "windows-1252");
         ros = writeTestStream(
                 bytes, 1, "testSingleByteEncodings-windows-1252.txt", 0);
-        rcs = ros.getReplayCharSequence("windows-1252");
+        rcs = getReplayCharSequence(ros,Charset.forName("windows-1252"));
         result = rcs.toString();
         logger.fine("windows-1252[0] " + toHexString(w1252String));
         logger.fine("windows-1252[1] " + toHexString(result));
@@ -204,7 +189,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         String asciiString = new String(bytes, "ascii");
         ros = writeTestStream(
                 bytes, 1, "testSingleByteEncodings-ascii.txt", 0);
-        rcs = ros.getReplayCharSequence("ascii");
+        rcs = getReplayCharSequence(ros,Charset.forName("ascii"));
         result = rcs.toString();
         logger.fine("ascii[0] " + toHexString(asciiString));
         logger.fine("ascii[1] " + toHexString(result));
@@ -223,8 +208,8 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
         // both encodings because they exercise different code paths. UTF-8 is
         // decoded to UTF-16 while windows-1252 is memory mapped directly. See
         // GenericReplayCharSequence
-        ReplayCharSequence rcsUtf8 = ros.getReplayCharSequence("UTF-8");
-        ReplayCharSequence rcs1252 = ros.getReplayCharSequence("windows-1252");
+        ReplayCharSequence rcsUtf8 = getReplayCharSequence(ros,Charsets.UTF_8);
+        ReplayCharSequence rcs1252 = getReplayCharSequence(ros,Charset.forName("windows-1252"));
 
         String result = rcsUtf8.toString();
         assertEquals("Strings don't match", expectedContent, result);
@@ -247,7 +232,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 buffer,1,
                 "testReplayCharSequenceByteToStringMulti.txt",MULTIPLICAND-1);
         for (int i = 0; i < 3; i++) {
-            ReplayCharSequence rcs = ros.getReplayCharSequence("UTF-8");
+            ReplayCharSequence rcs = getReplayCharSequence(ros,Charsets.UTF_8);
             String result = rcs.toString();
             assertEquals("Strings don't match", result, expectedResult);
             rcs.close();
@@ -267,7 +252,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 + " bytes to testHugeReplayCharSequence.txt");
         RecordingOutputStream ros = writeTestStream(buffer, 0,
                 "testHugeReplayCharSequence.txt", reps);
-        ReplayCharSequence rcs = ros.getReplayCharSequence(characterEncoding);
+        ReplayCharSequence rcs = getReplayCharSequence(ros,Charset.forName(characterEncoding));
 
         if (reps * fileContent.length() > (long) Integer.MAX_VALUE) {
             assertTrue("ReplayCharSequence has wrong length (length()="
@@ -369,7 +354,7 @@ public class ReplayCharSequenceTest extends TmpDirTestCase
                 content.length * memReps,
                 backingFilename);
         ros.open();
-        ros.markContentBegin();
+        ros.markMessageBodyBegin();
         for(long i = 0; i < (memReps+fileReps); i++) {
             // fill buffer (repeat MULTIPLIER times) and 
             // overflow to disk (also MULTIPLIER times)
