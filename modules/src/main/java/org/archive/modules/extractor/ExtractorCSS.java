@@ -107,7 +107,7 @@ public class ExtractorCSS extends ContentExtractor {
      */
     public boolean innerExtract(CrawlURI curi) {
         try {
-            ReplayCharSequence cs = curi.getRecorder().getReplayCharSequence();
+            ReplayCharSequence cs = curi.getRecorder().getContentReplayCharSequence();
             numberOfLinksExtracted.addAndGet(
                 processStyleCode(this, curi, cs));
             // Set flag to indicate that link extraction is completed.

@@ -19,6 +19,7 @@
 
 package org.archive.modules.extractor;
 
+import java.io.InputStream;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,26 +74,27 @@ public class ExtractorDOC extends ContentExtractor {
      */
     protected boolean innerExtract(CrawlURI curi){
         int links = 0;
-        ReplayInputStream documentStream = null;
+        InputStream contentStream = null;
+        ReplayInputStream documentStream = null; 
         SeekReader docReader = null;
 
         // Get the doc as a repositionable reader
         try
         {
-            documentStream = curi.getRecorder().getRecordedInput().
-                getContentReplayInputStream();
-
-            if (documentStream==null) {
+            contentStream = curi.getRecorder().getContentReplayInputStream();
+            if (contentStream==null) {
                 // TODO: note problem
                 return false;
             }
+            documentStream = new ReplayInputStream(contentStream);
+           
             
             docReader = Doc.getText(documentStream);
         } catch(Exception e){
             curi.getNonFatalFailures().add(e);
             return false;
         } finally {
-            IOUtils.closeQuietly(documentStream);
+            IOUtils.closeQuietly(contentStream); 
         }
 
         CharSequence cs = new SeekReaderCharSequence(docReader, 0);
@@ -101,6 +103,7 @@ public class ExtractorDOC extends ContentExtractor {
             links++;
             addLink(curi, m.group(1));
         }
+        documentStream.destroy(); 
         logger.fine(curi + " has " + links + " links.");
         return true;
     }

@@ -669,7 +669,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     public boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
         try {
-           cs = curi.getRecorder().getReplayCharSequence();
+           cs = curi.getRecorder().getContentReplayCharSequence();
            // Extract all links from the charsequence
            extract(curi, cs);
            if(cs.getDecodeExceptionCount()>0) {

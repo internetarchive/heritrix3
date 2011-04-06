@@ -730,7 +730,7 @@ public class MirrorWriterProcessor extends Processor {
         ReplayInputStream replayis = null;
         FileOutputStream fos = null;
         try {
-            replayis = recis.getContentReplayInputStream();
+            replayis = recis.getMessageBodyReplayInputStream();
             fos = new FileOutputStream(tf);
 
             replayis.readFullyTo(fos);

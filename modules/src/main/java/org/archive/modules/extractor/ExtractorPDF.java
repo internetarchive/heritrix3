@@ -28,6 +28,7 @@ import org.archive.io.SinkHandlerLogThread;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.FileUtils;
 
 /** Allows the caller to process a CrawlURI representing a PDF
  *  for the purpose of extracting URIs
@@ -90,8 +91,7 @@ public class ExtractorPDF extends ContentExtractor {
         PDFParser parser;
         ArrayList<String> uris;
         try {
-            curi.getRecorder().getRecordedInput().
-                copyContentBodyTo(tempFile);
+            curi.getRecorder().copyContentBodyTo(tempFile);
             parser = new PDFParser(tempFile.getAbsolutePath());
             uris = parser.extractURIs();
         } catch (IOException e) {
@@ -103,7 +103,7 @@ public class ExtractorPDF extends ContentExtractor {
             curi.getNonFatalFailures().add(e);
             return false;
         } finally {
-            tempFile.delete();
+            FileUtils.deleteSoonerOrLater(tempFile);
         }
         
         if (uris == null) {

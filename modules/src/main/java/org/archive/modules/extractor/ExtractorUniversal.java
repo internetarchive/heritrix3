@@ -360,8 +360,7 @@ public class ExtractorUniversal extends ContentExtractor {
     protected boolean innerExtract(CrawlURI curi) {
         InputStream instream = null;
         try {
-            instream = curi.getRecorder().getRecordedInput().
-                getContentReplayInputStream();
+            instream = curi.getRecorder().getContentReplayInputStream();
             int ch = instream.read();
             StringBuffer lookat = new StringBuffer();
             long counter = 0;

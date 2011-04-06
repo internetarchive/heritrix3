@@ -81,8 +81,7 @@ public class ExtractorSWF extends ContentExtractor {
         InputStream documentStream = null;
         // Get the SWF file's content stream.
         try {
-            documentStream = curi.getRecorder().getRecordedInput().
-                getContentReplayInputStream();
+            documentStream = curi.getRecorder().getContentReplayInputStream();
             if (documentStream == null) {
                 return false;
             }

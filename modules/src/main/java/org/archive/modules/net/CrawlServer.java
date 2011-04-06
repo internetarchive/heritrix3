@@ -24,6 +24,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -38,7 +39,6 @@ import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.bdb.AutoKryo;
-import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.fetcher.FetchStats;
@@ -181,13 +181,11 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
            return;
        }
 
-       ReplayInputStream contentBodyStream = null;
+       InputStream contentBodyStream = null;
        try {
            BufferedReader reader;
-           contentBodyStream = curi.getRecorder()
-                   .getRecordedInput().getContentReplayInputStream();
+           contentBodyStream = curi.getRecorder().getContentReplayInputStream();
 
-           contentBodyStream.setToResponseBodyStart();
            reader = new BufferedReader(new InputStreamReader(contentBodyStream));
            robotstxt = new Robotstxt(reader); 
            validRobots = true;
