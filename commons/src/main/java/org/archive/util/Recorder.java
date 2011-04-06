@@ -22,14 +22,25 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.httpclient.ChunkedInputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.archive.io.GenericReplayCharSequence;
 import org.archive.io.RecordingInputStream;
 import org.archive.io.RecordingOutputStream;
 import org.archive.io.ReplayCharSequence;
 import org.archive.io.ReplayInputStream;
+
+import com.google.common.base.Charsets;
 
 
 /**
@@ -47,8 +58,8 @@ public class Recorder {
     protected static Logger logger =
         Logger.getLogger("org.archive.util.HttpRecorder");
 
-    private static final int DEFAULT_OUTPUT_BUFFER_SIZE = 4096;
-    private static final int DEFAULT_INPUT_BUFFER_SIZE = 65536;
+    private static final int DEFAULT_OUTPUT_BUFFER_SIZE = 16384;
+    private static final int DEFAULT_INPUT_BUFFER_SIZE = 524288;
 
     private RecordingInputStream ris = null;
     private RecordingOutputStream ros = null;
@@ -71,10 +82,16 @@ public class Recorder {
     private static final String RECORDING_INPUT_STREAM_SUFFIX = ".ris";
 
     /**
-     * Response character encoding.
+     * recording-input (ris) content character encoding.
      */
     private String characterEncoding = null;
+    
+    /** whether recording-input (ris) message-body is chunked */
+    protected boolean inputIsChunked = false; 
 
+    /** recording-input (ris) entity content-encoding (eg gzip, deflate), if any */ 
+    protected String contentEncoding = null; 
+    
     private ReplayCharSequence replayCharSequence;
 
    
@@ -143,6 +160,12 @@ public class Recorder {
     public InputStream inputWrap(InputStream is) 
     throws IOException {
         logger.fine(Thread.currentThread().getName() + " wrapping input");
+        
+        // discard any state from previously-recorded input
+        this.characterEncoding = null;
+        this.inputIsChunked = false;
+        this.contentEncoding = null; 
+        
         this.ris.open(is);
         return this.ris;
     }
@@ -278,12 +301,43 @@ public class Recorder {
     }
 
     /**
-     * @return Returns the characterEncoding.
+     * @return Returns the characterEncoding of input recording.
      */
     public String getCharacterEncoding() {
         return this.characterEncoding;
     }
+    
+    /**
+     * @param characterEncoding Character encoding of input recording.
+     */
+    public void setInputIsChunked(boolean chunked) {
+        this.inputIsChunked = chunked;
+    }
+    
+    /**
+     * @param contentEncoding declared content-encoding of input recording.
+     */
+    public void setContentEncoding(String contentEncoding) {
+        this.contentEncoding = contentEncoding;
+    }
 
+    /**
+     * @return Returns the characterEncoding.
+     */
+    public String getContentEncoding() {
+        return this.contentEncoding;
+    }
+
+    
+    /**
+     * @return
+     * @throws IOException
+     * @deprecated use getContentReplayCharSequence
+     */
+    public ReplayCharSequence getReplayCharSequence() throws IOException {
+        return getContentReplayCharSequence();
+    }
+    
     /**
      * @return A ReplayCharSequence. Caller may call
      *         {@link ReplayCharSequence#close()} when finished. However, in
@@ -293,20 +347,152 @@ public class Recorder {
      * @throws IOException
      * @see {@link #endReplays()}
      */
-    public ReplayCharSequence getReplayCharSequence() throws IOException {
+    public ReplayCharSequence getContentReplayCharSequence() throws IOException {
         if (replayCharSequence == null || !replayCharSequence.isOpen()) {
-            replayCharSequence = getRecordedInput().getReplayCharSequence(this.characterEncoding);
+            replayCharSequence = getContentReplayCharSequence(this.characterEncoding);
         }
         
         return replayCharSequence;
     }
     
+    
     /**
+     * @param characterEncoding Encoding of recorded stream.
+     * @return A ReplayCharSequence  Will return null if an IOException.  Call
+     * close on returned RCS when done.
+     * @throws IOException
+     */
+    public ReplayCharSequence getContentReplayCharSequence(String encoding) throws IOException {
+        Charset charset = Charsets.UTF_8;
+        if (encoding != null) {
+            try {
+                charset = Charset.forName(encoding);
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.WARNING,"charset problem: "+encoding,e);
+                // TODO: better detection or default
+                charset = ReplayCharSequence.FALLBACK_CHARSET;
+            }
+        }
+
+        logger.fine("using GenericReplayCharSequence");
+        // raw data overflows to disk; use temp file
+        InputStream ris = getContentReplayInputStream();
+        ReplayCharSequence rcs =  new GenericReplayCharSequence(
+                ris,
+                this.ros.getBufferLength()/2, 
+                this.backingFileBasename + RECORDING_OUTPUT_STREAM_SUFFIX,
+                charset);
+        ris.close();
+        return rcs;
+        
+    }
+    
+    /**
+     * Get a raw replay of all recorded data (including, for example, HTTP 
+     * protocol headers)
+     * 
      * @return A replay input stream.
      * @throws IOException
      */
     public ReplayInputStream getReplayInputStream() throws IOException {
         return getRecordedInput().getReplayInputStream();
+    }
+    
+    /**
+     * Get a raw replay of the 'message-body'. For the common case of 
+     * HTTP, this is the raw, possibly chunked-transfer-encoded message 
+     * contents not including the leading headers. 
+     * 
+     * @return A replay input stream.
+     * @throws IOException
+     */
+    public ReplayInputStream getMessageBodyReplayInputStream() throws IOException {
+        return getRecordedInput().getMessageBodyReplayInputStream();
+    }
+    
+    /**
+     * Get a raw replay of the 'entity'. For the common case of 
+     * HTTP, this is the message-body after any (usually-unnecessary)
+     * transfer-decoding but before any content-encoding (eg gzip) decoding
+     * 
+     * @return A replay input stream.
+     * @throws IOException
+     */
+    public InputStream getEntityReplayInputStream() throws IOException {
+        if(inputIsChunked) {
+            return new ChunkedInputStream(getRecordedInput().getMessageBodyReplayInputStream());
+        } else {
+            return getRecordedInput().getMessageBodyReplayInputStream();
+        }
+    }
+    
+    /**
+     * Get a replay cued up for the 'content' (after all leading headers)
+     * 
+     * TODO: handle chunking
+     * TODO: handle decompression, either here or in a parallel method
+     * 
+     * @return A replay input stream.
+     * @throws IOException
+     */
+    public InputStream getContentReplayInputStream() throws IOException {
+        InputStream entityStream = getEntityReplayInputStream();
+        if(StringUtils.isEmpty(contentEncoding)) {
+            return entityStream;
+        } else if ("gzip".equalsIgnoreCase(contentEncoding) || "x-gzip".equalsIgnoreCase(contentEncoding)) {
+            try {
+                return new GZIPInputStream(entityStream);
+            } catch (IOException ioe) {
+                logger.log(Level.WARNING,"gzip problem; using raw entity instead",ioe);
+                IOUtils.closeQuietly(entityStream); // close partially-read stream
+                return getEntityReplayInputStream(); 
+            }
+        } else if ("deflate".equalsIgnoreCase(contentEncoding)) {
+            return new DeflaterInputStream(entityStream);
+        } else if ("identity".equalsIgnoreCase(contentEncoding)) {
+            return entityStream;
+        } else {
+            logger.log(Level.WARNING,"Unknown content-encoding '"+contentEncoding+"' declared; using raw entity instead");
+            return entityStream; 
+        }
+    }
+    
+    /**
+     * Return a short prefix of the presumed-textual content as a String.
+     * 
+     * @param size max length of String to return 
+     * @return String prefix, or empty String (with logged exception) on any error
+     */
+    public String getContentReplayPrefixString(int size) {
+        try {
+            InputStreamReader isr =  (characterEncoding == null) 
+                ? new InputStreamReader(getContentReplayInputStream(), Charsets.ISO_8859_1)
+                : new InputStreamReader(getContentReplayInputStream(), characterEncoding); 
+            char[] chars = new char[size];
+            int count = isr.read(chars);
+            isr.close(); 
+            return new String(chars,0,count);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE,"unable to get replay prefix string", e);
+            return ""; 
+        } 
+    }
+    
+    /**
+     * @param tempFile
+     * @throws IOException
+     */
+    public void copyContentBodyTo(File tempFile) throws IOException {
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        try {
+            inStream = getContentReplayInputStream();
+            outStream = FileUtils.openOutputStream(tempFile); 
+            IOUtils.copy(inStream, outStream); 
+        } finally {
+            IOUtils.closeQuietly(inStream); 
+            IOUtils.closeQuietly(outStream); 
+        }
     }
     
     /**

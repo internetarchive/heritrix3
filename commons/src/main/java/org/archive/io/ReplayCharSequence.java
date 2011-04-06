@@ -22,6 +22,9 @@ package org.archive.io;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+
+import com.google.common.base.Charsets;
 
 
 /**
@@ -37,8 +40,7 @@ public interface ReplayCharSequence extends CharSequence, Closeable {
 
     /** charset to use in replay when declared value 
      * is absent/illegal/unavailable */
-//  String FALLBACK_CHARSET_NAME = "UTF-8";
-    String FALLBACK_CHARSET_NAME = "ISO8859_1";
+    public Charset FALLBACK_CHARSET = Charsets.ISO_8859_1; // TODO: should this be UTF-8?
     
     /**
      * Call this method when done so implementation has chance to clean up

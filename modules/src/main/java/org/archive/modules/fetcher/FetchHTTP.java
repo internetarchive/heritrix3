@@ -195,7 +195,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     /**
      * Accept Headers to include in each request. Each must be the complete
-     * header, e.g., 'Accept-Language: en'.
+     * header, e.g., 'Accept-Language: en'. (Thus, this can also be used to 
+     * other headers not beginning 'Accept-' as well.)
      */
     {
         setAcceptHeaders(new LinkedList<String>());
@@ -322,6 +323,34 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     private static final String MIDFETCH_ABORT_LOG = "midFetchAbort";
 
+    /**
+     * Use HTTP/1.1. Note: even when offering an HTTP/1.1 request, 
+     * Heritrix may not properly handle persistent/keep-alive connections, 
+     * so the sendConnectionClose parameter should remain 'true'. 
+     */
+    {
+        setUseHTTP11(false);
+    }
+    public boolean getUseHTTP11() {
+        return (Boolean) kp.get("useHTTP11");
+    }
+    public void setUseHTTP11(boolean useHTTP11) {
+        kp.put("useHTTP11",useHTTP11);
+    }
+    
+    /**
+     * Set headers to accept compressed responses. 
+     */
+    {
+        setAcceptCompression(false);
+    }
+    public boolean getAcceptCompression() {
+        return (Boolean) kp.get("acceptCompression");
+    }
+    public void setAcceptCompression(boolean acceptCompression) {
+        kp.put("acceptCompression",acceptCompression);
+    }
+    
     /**
      * Send 'Connection: close' header with every request.
      */
@@ -622,6 +651,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             // Set the response charset into the HttpRecord if available.
             setCharacterEncoding(curi, rec, method);
             setSizes(curi, rec);
+            setOtherCodings(curi, rec, method); 
         }
 
         if (digestContent) {
@@ -765,6 +795,32 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         rec.setCharacterEncoding(encoding);
     }
+    
+    /**
+     * Set the transfer, content encodings based on headers (if necessary). 
+     * 
+     * @param rec
+     *            Recorder for this request.
+     * @param method
+     *            Method used for the request.
+     */
+    private void setOtherCodings(CrawlURI uri, final Recorder rec,
+            final HttpMethod method) {
+        Header transferCodingHeader = ((HttpMethodBase) method).getResponseHeader("Transfer-Encoding"); 
+        if (transferCodingHeader !=null) {
+            String te = transferCodingHeader.getValue().trim(); 
+            if(te.equalsIgnoreCase("chunked")) {
+                rec.setInputIsChunked(true); 
+            } else {
+                logger.log(Level.WARNING,"Unknown transfer-encoding '"+te+"' for "+uri.getURI());
+            }
+        }
+        Header contentEncodingHeader = ((HttpMethodBase) method).getResponseHeader("Content-Encoding"); 
+        if (contentEncodingHeader!=null) {
+            String ce = contentEncodingHeader.getValue().trim(); 
+            rec.setContentEncoding(ce); 
+        }
+    }
 
     /**
      * Cleanup after a failed method execute.
@@ -862,8 +918,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
                 ignoreCookies ? CookiePolicy.IGNORE_COOKIES
                         : CookiePolicy.BROWSER_COMPATIBILITY);
 
-        // Use only HTTP/1.0 (to avoid receiving chunked responses)
-        method.getParams().setVersion(HttpVersion.HTTP_1_0);
+        method.getParams().setVersion(getUseHTTP11() 
+                                        ? HttpVersion.HTTP_1_1 
+                                        : HttpVersion.HTTP_1_0);
 
         UserAgentProvider uap = getUserAgentProvider();
         String from = uap.getFrom();
@@ -1398,6 +1455,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
 
     private void setAcceptHeaders(CrawlURI curi, HttpMethod get) {
+        if(getAcceptCompression()) {
+            // we match the Firefox header exactly (ordering and whitespace)
+            // as a favor to caches
+            get.setRequestHeader("Accept-Encoding","gzip,deflate"); 
+        }
         List<String> acceptHeaders = getAcceptHeaders();
         if (acceptHeaders.isEmpty()) {
             return;

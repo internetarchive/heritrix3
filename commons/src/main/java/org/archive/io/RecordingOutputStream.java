@@ -70,10 +70,10 @@ public class RecordingOutputStream extends OutputStream {
      * Later passed to ReplayInputStream on creation.  It uses it to know when
      * EOS.
      */
-    private long size = 0;
+    protected long size = 0;
 
-    private String backingFilename;
-    private OutputStream diskStream = null;
+    protected String backingFilename;
+    protected OutputStream diskStream = null;
 
     /**
      * Buffer we write recordings to.
@@ -106,7 +106,7 @@ public class RecordingOutputStream extends OutputStream {
     private MessageDigest digest = null;
 
     /**
-     * Define for SHA1 alogarithm.
+     * Define for SHA1 algarithm.
      */
     private static final String SHA1 = "SHA1";
 
@@ -130,7 +130,7 @@ public class RecordingOutputStream extends OutputStream {
     /**
      * When recording HTTP, where the content-body starts.
      */
-    private long contentBeginMark;
+    protected long messageBodyBeginMark;
 
     /**
      * Stream to record.
@@ -186,7 +186,7 @@ public class RecordingOutputStream extends OutputStream {
         this.markPosition = 0;
         this.maxPosition = 0; 
         this.size = 0;
-        this.contentBeginMark = -1;
+        this.messageBodyBeginMark = -1;
         // ensure recording turned on
         this.recording = true;
         // Always begins false; must use startDigest() to begin
@@ -245,7 +245,7 @@ public class RecordingOutputStream extends OutputStream {
      */
     protected void checkLimits() throws RecorderIOException {
         // too much material before finding end of headers? 
-        if (contentBeginMark<0) {
+        if (messageBodyBeginMark<0) {
             // no mark yet
             if(position>MAX_HEADER_MATERIAL) {
                 throw new RecorderTooMuchHeaderException();
@@ -344,10 +344,10 @@ public class RecordingOutputStream extends OutputStream {
     }
 
     public void close() throws IOException {
-        if(contentBeginMark<0) {
+        if(messageBodyBeginMark<0) {
             // if unset, consider 0 posn as content-start
             // (so that a -1 never survives to replay step)
-            contentBeginMark = 0;
+            messageBodyBeginMark = 0;
         }
         if (this.out != null) {
             this.out.close();
@@ -396,7 +396,7 @@ public class RecordingOutputStream extends OutputStream {
         // -- the size will zero so any attempt at a read will get back EOF.
         assert this.out == null: "Stream is still open.";
         ReplayInputStream replay = new ReplayInputStream(this.buffer, 
-                this.size, this.contentBeginMark, this.backingFilename);
+                this.size, this.messageBodyBeginMark, this.backingFilename);
         replay.skip(skip);
         return replay; 
     }
@@ -407,8 +407,8 @@ public class RecordingOutputStream extends OutputStream {
      * @throws IOException
      * @return An RIS.
      */
-    public ReplayInputStream getContentReplayInputStream() throws IOException {
-        return getReplayInputStream(this.contentBeginMark);
+    public ReplayInputStream getMessageBodyReplayInputStream() throws IOException {
+        return getReplayInputStream(this.messageBodyBeginMark);
     }
 
     public long getSize() {
@@ -416,20 +416,20 @@ public class RecordingOutputStream extends OutputStream {
     }
 
     /**
-     * Remember the current position as the start of the "response
+     * Remember the current position as the start of the "message
      * body". Useful when recording HTTP traffic as a way to start
      * replays after the headers.
      */
-    public void markContentBegin() {
-        this.contentBeginMark = this.position;
+    public void markMessageBodyBegin() {
+        this.messageBodyBeginMark = this.position;
         startDigest();
     }
 
     /**
-     * Return stored content-begin-mark (which is also end-of-headers)
+     * Return stored message-body-begin-mark (which is also end-of-headers)
      */
-    public long getContentBegin() {
-        return this.contentBeginMark;
+    public long getMessageBodyBegin() {
+        return this.messageBodyBeginMark;
     }
     
     /**
@@ -499,51 +499,8 @@ public class RecordingOutputStream extends OutputStream {
         return this.digest.digest();
     }
 
-    public ReplayCharSequence getReplayCharSequence() throws IOException {
-        return getReplayCharSequence(null);
-    }
-
-    public ReplayCharSequence getReplayCharSequence(String characterEncoding) 
-    throws IOException {
-        return getReplayCharSequence(characterEncoding, this.contentBeginMark);
-    }
-
-    /**
-     * @param characterEncoding Encoding of recorded stream.
-     * @return A ReplayCharSequence  Will return null if an IOException.  Call
-     * close on returned RCS when done.
-     * @throws IOException
-     */
-    public ReplayCharSequence getReplayCharSequence(String characterEncoding, 
-            long startOffset) throws IOException {
-        if (characterEncoding == null) {
-            characterEncoding = "UTF-8";
-        }
-        logger.fine("this.size=" + this.size + " this.buffer.length=" + this.buffer.length);
-        if (this.size <= this.buffer.length) {
-            logger.fine("using InMemoryReplayCharSequence");
-            // raw data is all in memory; do in memory
-            return new InMemoryReplayCharSequence(
-                    this.buffer, 
-                    this.size, 
-                    startOffset,
-                    characterEncoding);
-        }
-        else {
-            logger.fine("using GenericReplayCharSequence");
-            // raw data overflows to disk; use temp file
-            ReplayInputStream ris = getReplayInputStream(startOffset);
-            ReplayCharSequence rcs =  new GenericReplayCharSequence(
-                    ris,
-                    this.backingFilename,
-                    characterEncoding);
-            ris.close();
-            return rcs;
-        }
-    }
-
     public long getResponseContentLength() {
-        return this.size - this.contentBeginMark;
+        return this.size - this.messageBodyBeginMark;
     }
 
     /**
@@ -551,6 +508,10 @@ public class RecordingOutputStream extends OutputStream {
      */
     public boolean isOpen() {
         return this.out != null;
+    }
+    
+    public int getBufferLength() {
+        return this.buffer.length;
     }
     
     /**

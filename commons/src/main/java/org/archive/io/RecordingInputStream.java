@@ -18,8 +18,6 @@
  */
 package org.archive.io;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
@@ -149,8 +147,8 @@ public class RecordingInputStream
         return this.recordingOutputStream.getReplayInputStream();
     }
 
-    public ReplayInputStream getContentReplayInputStream() throws IOException {
-        return this.recordingOutputStream.getContentReplayInputStream();
+    public ReplayInputStream getMessageBodyReplayInputStream() throws IOException {
+        return this.recordingOutputStream.getMessageBodyReplayInputStream();
     }
 
     public long readFully() throws IOException {
@@ -249,11 +247,11 @@ public class RecordingInputStream
     }
 
     public void markContentBegin() {
-        this.recordingOutputStream.markContentBegin();
+        this.recordingOutputStream.markMessageBodyBegin();
     }
     
     public long getContentBegin() {
-        return this.recordingOutputStream.getContentBegin();
+        return this.recordingOutputStream.getMessageBodyBegin();
     }
     
     public void startDigest() {
@@ -302,40 +300,12 @@ public class RecordingInputStream
         return this.recordingOutputStream.getDigestValue();
     }
 
-    public ReplayCharSequence getReplayCharSequence() throws IOException {
-        return getReplayCharSequence(null);
-    }
-
-    /**
-     * @param characterEncoding Encoding of recorded stream.
-     * @return A ReplayCharSequence  Will return null if an IOException.  Call
-     * close on returned RCS when done.
-     * @throws IOException
-     */
-    public ReplayCharSequence getReplayCharSequence(String characterEncoding)
-    		throws IOException {
-        return this.recordingOutputStream.
-            getReplayCharSequence(characterEncoding);
-    }
-
     public long getResponseContentLength() {
         return this.recordingOutputStream.getResponseContentLength();
     }
 
     public void closeRecorder() throws IOException {
         this.recordingOutputStream.closeRecorder();
-    }
-
-    /**
-     * @param tempFile
-     * @throws IOException
-     */
-    public void copyContentBodyTo(File tempFile) throws IOException {
-        FileOutputStream fos = new FileOutputStream(tempFile);
-        ReplayInputStream ris = getContentReplayInputStream();
-        ris.readFullyTo(fos);
-        fos.close();
-        ris.close();
     }
 
     /**

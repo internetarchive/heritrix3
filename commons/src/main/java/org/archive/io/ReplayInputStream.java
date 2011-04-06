@@ -21,7 +21,12 @@ package org.archive.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 
 
 /**
@@ -34,6 +39,7 @@ import java.io.OutputStream;
  */
 public class ReplayInputStream extends SeekInputStream
 {
+    private static final int DEFAULT_BUFFER_SIZE = 256*1024; // 256KiB
     private BufferedSeekInputStream diskStream;
     private byte[] buffer;
     private long position;
@@ -89,9 +95,43 @@ public class ReplayInputStream extends SeekInputStream
         this.buffer = buffer;
         this.size = size;
         if (size > buffer.length) {
-            RandomAccessInputStream rais = new RandomAccessInputStream(
-                    new File(backingFilename));
-            diskStream = new BufferedSeekInputStream(rais, 4096);
+            setupDiskStream(new File(backingFilename));
+        }
+    }
+
+    protected void setupDiskStream(File backingFile) throws IOException {
+        RandomAccessInputStream rais = new RandomAccessInputStream(backingFile); 
+        diskStream = new BufferedSeekInputStream(rais, 4096);
+    }
+
+    File backingFile; 
+    
+    /**
+     * Create a ReplayInputStream from the given source stream. Requires 
+     * reading the entire stream (and possibly overflowing to a temporary
+     * file). Primary reason for doing so would be to have a repositionable
+     * version of the original stream's contents.
+     * @param fillStream
+     * @throws IOException
+     */
+    public ReplayInputStream(InputStream fillStream) throws IOException {
+        this.buffer = new byte[DEFAULT_BUFFER_SIZE];
+        long count = ArchiveUtils.readFully(fillStream, buffer);
+        if(fillStream.available()>0) {
+            this.backingFile = File.createTempFile("tid"+Thread.currentThread().getId(), "ris");
+            count += FileUtils.readFullyToFile(fillStream, backingFile);
+            setupDiskStream(backingFile);
+        }
+        this.size = count; 
+    }
+    
+    /**
+     * Close & destroy any internally-generated temporary files. 
+     */
+    public void destroy() {
+        IOUtils.closeQuietly(this); 
+        if(backingFile!=null) {
+            FileUtils.deleteSoonerOrLater(backingFile); 
         }
     }
 
