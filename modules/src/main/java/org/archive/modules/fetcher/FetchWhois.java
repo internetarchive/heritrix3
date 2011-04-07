@@ -55,8 +55,68 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
 /**
- * WHOIS Fetcher (RFC 3912). If this fetcher is enabled, heritrix will attempt
- * whois lookups on the topmost assigned domain and the IP address of each URL.
+ * WHOIS Fetcher (RFC 3912). If this fetcher is enabled, Heritrix will attempt
+ * WHOIS lookups on the topmost assigned domain and the IP address of each URL.
+ * 
+ * <h3>WHOIS URIs</h3>
+ * <p>
+ * There is no pre-existing, canonical specification for WHOIS URIs. What
+ * follows is the the format that Heritrix uses, which we propose for general
+ * use.
+ * </p>
+ * 
+ * <p>
+ * Syntax in ABNF as used in RFC 3986 <i>Uniform Resource Identifier (URI):
+ * Generic Syntax</i>:
+ * </p>
+ * 
+ * <blockquote>whoisurl = "whois:" [ "//" host [ ":" port ] ]
+ * whoisquery</blockquote>
+ * 
+ * <p>
+ * <b>whoisquery</b> is a url-encoded string. In ABNF,
+ * <code>whoisquery = 1*pchar</code> where pchar is defined in RFC 3986.
+ * <b>host</b> and <b>port</b> also as defined in RFC 3986.
+ * </p>
+ * 
+ * <p>
+ * To resolve a WHOIS URI which specifies host[:port], open a TCP connection to
+ * the host at the specified port (default 43), send the query (whoisquery,
+ * url-decoded) followed by CRLF, and read the response until the server closes
+ * the connection. For more details see RFC 3912.
+ * </p>
+ * 
+ * <p>
+ * Resolution of a "serverless" WHOIS URI, which does not specify host[:port],
+ * is implementation-dependent.
+ * </p>
+ * 
+ * <h3>Serverless WHOIS URIs in Heritrix</h3>
+ * 
+ * <p>
+ * For each non-WHOIS URI processed which has an authority, FetchWhois adds 1 or
+ * 2 serverless WHOIS URIs to the CrawlURI's outlinks. These are
+ * "whois:{ipAddress}" and, if the authority includes a hostname,
+ * "whois:{topLevelDomain}". See {@link #addWhoisLinks(CrawlURI)}.
+ * </p>
+ * 
+ * <p>
+ * Heritrix resolves serverless WHOIS URIs by first querying an initial server,
+ * then following referrals to other servers. In pseudocode:
+ * 
+ * <pre>
+ * if query is an IPv4 address
+ *     resolve whois://{@link #DEFAULT_IP_WHOIS_SERVER}/whoisquery</div>
+ * else
+ *     let domainSuffix = part of query after the last '.' (or the whole query if no '.'), url-encoded
+ *     resolve whois://{@link #ULTRA_SUFFIX_WHOIS_SERVER}/domainSuffix
+ * 
+ * while last response refers to another server, i.e. matches regex {@link #WHOIS_SERVER_REGEX}
+ *     if we have a special query formatting rule for this whois server, apply it - see {@link #specialQueryTemplates}
+ *     resolve whois://referralServer/whoisquery
+ * </pre>
+ * 
+ * <p>See {@link #deferOrFinishGeneric(CrawlURI, String)}</p>
  * 
  * @contributor nlevitt
  */
@@ -188,7 +248,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         }
     }
 
-    // handle server-less whois url
+    // handle serverless whois url
     protected ProcessResult deferOrFinishGeneric(CrawlURI curi, String domainOrIp) {
         String tryThis = null;
         String ultraSuffix = domainOrIp.substring(domainOrIp.lastIndexOf('.') + 1).toLowerCase();
