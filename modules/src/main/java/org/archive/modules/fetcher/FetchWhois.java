@@ -70,8 +70,7 @@ import com.sleepycat.je.DatabaseException;
  * Generic Syntax</i>:
  * </p>
  * 
- * <blockquote>whoisurl = "whois:" [ "//" host [ ":" port ] ]
- * whoisquery</blockquote>
+ * <blockquote>whoisurl = "whois:" [ "//" host [ ":" port ] "/" ] whoisquery</blockquote>
  * 
  * <p>
  * <b>whoisquery</b> is a url-encoded string. In ABNF,
