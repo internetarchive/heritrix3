@@ -17,11 +17,14 @@
  *  limitations under the License.
  */
 package org.archive.io;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.zip.Inflater;
+import java.util.zip.ZipException;
 
 import org.archive.util.zip.OpenJDK7GZIPInputStream;
 
@@ -112,9 +115,34 @@ public class GZIPMembersInputStream extends OpenJDK7GZIPInputStream {
     
     @Override
     protected boolean readTrailer() throws IOException {
+        int c = inf.getRemaining();
+        currentMemberEnd = ((CountingInputStream)in).getCount()-(c-8); 
+//        return super.readTrailer();
+// REIMPLEMENTED TO FIX MISUSE OF available()
+        InputStream in = this.in;
         int n = inf.getRemaining();
-        currentMemberEnd = ((CountingInputStream)in).getCount()-(n-8); 
-        return super.readTrailer();
+        if (n > 0) {
+            in = new SequenceInputStream(
+                        new ByteArrayInputStream(buf, len - n, n), in);
+        }
+        // Uses left-to-right evaluation order
+        if ((readUInt(in) != crc.getValue()) ||
+            // rfc1952; ISIZE is the input size modulo 2^32
+            (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
+            throw new ZipException("Corrupt GZIP trailer");
+
+        // always try concatenated case; EOF or other IOException
+        // will let us know if we're wrong
+        int m = 8;                  // this.trailer
+        try {
+            m += readHeader(in);    // next.header
+        } catch (IOException ze) {
+            return true;  // ignore any malformed, do nothing
+        }
+        inf.reset();
+        if (n > m)
+            inf.setInput(buf, len - n + m, n - m);
+        return false;
     }
 
     /**
@@ -267,11 +295,9 @@ public class GZIPMembersInputStream extends OpenJDK7GZIPInputStream {
         
         @Override
         public boolean hasNext() {
-            try {
-                return (in.available()>0 || inf.getRemaining() > 8);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            // because readTrailer also reads into next header 
+            // resetting inflater when there's more content, this works
+            return !inf.finished();
         }
     
         @Override

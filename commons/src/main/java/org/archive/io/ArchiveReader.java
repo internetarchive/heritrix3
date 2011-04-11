@@ -66,10 +66,10 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
      *
      * Keep it around so we can close it when done.
      *
-     * <p>Set in constructor. Must support {@link RepositionableStream}
-     * interface.  Make it protected so subclasses have access.
+     * <p>Set in constructor. Should support at least 1 byte mark/reset.
+     * Make it protected so subclasses have access.
      */
-    private InputStream in = null;
+    protected InputStream in = null;
     
     /**
      * Maximum amount of recoverable exceptions in a row.
@@ -316,10 +316,6 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
         return Logger.getLogger(this.getClass().getName());
     }
     
-    protected InputStream getInputStream() {
-        return this.in;
-    }
-    
     /**
      * Returns an ArchiveRecord iterator.
      * Of note, on IOException, especially if ZipException reading compressed
@@ -467,12 +463,16 @@ public abstract class ArchiveReader implements ArchiveFileConstants, Iterable<Ar
             return innerHasNext();
         }
         
-        protected boolean innerHasNext() {
+        protected boolean innerHasNext(){
             try {
-                return getInputStream().available() > 0;
+                getIn().mark(1); 
+                int c = getIn().read();
+                getIn().reset(); 
+                return c > -1; 
             } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+                logger.log(Level.WARNING,"problem probing for more content",e);
+                return false; 
+            } 
         }
 
         /**

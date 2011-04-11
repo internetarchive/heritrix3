@@ -18,8 +18,6 @@
  */
 package org.archive.io;
 
-import it.unimi.dsi.fastutil.io.RepositionableStream;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -147,26 +145,10 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
         	atFirstRecord);
     }
     
-    /**
-     * @param is
-     * @return If passed <code>is</code> is
-     * {@link RepositionableInputStream}, returns <code>is</code>, else we
-     * wrap <code>is</code> with {@link RepositionableStream}.
-     */
-    protected InputStream asRepositionable(final InputStream is) {
-        if (is instanceof RepositionableStream) {
-            return is;
-        }
-        // RepositionableInputStream calls mark on each read so can back up at
-        // least the read amount.  Needed for gzip inflater overinflations
-        // reading into the next gzip member.
-        return new RepositionableInputStream(is, 16 * 1024);
-    }
-    
     protected ArchiveReader getArchiveReader(final String id, 
     		final InputStream is, final boolean atFirstRecord)
     throws IOException {
-    	final InputStream stream = asRepositionable(is);
+    	final InputStream stream = is; 
         if (ARCReaderFactory.isARCSuffix(id)) {
             return ARCReaderFactory.get(id, stream, atFirstRecord);
         } else if (WARCReaderFactory.isWARCSuffix(id)) {
@@ -204,8 +186,7 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
         	connection.addRequestProperty("Range", "bytes=" + offset + "-");
         }
         
-        return getArchiveReader(f.toString(), connection.getInputStream(),
-            (offset == 0));
+        return getArchiveReader(f.toString(), connection.getInputStream(), (offset == 0));
     }
     
     /**

@@ -26,18 +26,15 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import java.util.logging.Level;
 
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.GZIPMembersInputStream;
 import org.archive.io.warc.WARCConstants;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingInputStream;
 
 /**
@@ -108,7 +105,7 @@ implements WARCConstants {
 			throws IOException {
 		// For now, assume stream is compressed. Later add test of input
 		// stream or handle exception thrown when figure not compressed stream.
-		return new CompressedWARCReader(f, asRepositionable(is), atFirstRecord);
+		return new CompressedWARCReader(f, is, atFirstRecord);
 	}
     
     public static WARCReader get(final URL arcUrl, final long offset)
@@ -270,7 +267,7 @@ implements WARCConstants {
              */
             return new ArchiveRecordIterator() {
                 private GZIPMembersInputStream gis =
-                    (GZIPMembersInputStream)getInputStream();
+                    (GZIPMembersInputStream)getIn();
 
                 private Iterator<GZIPMembersInputStream> gzipIterator = this.gis.memberIterator();
 

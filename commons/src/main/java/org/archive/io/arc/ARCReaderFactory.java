@@ -37,9 +37,7 @@ import org.archive.io.GzipHeader;
 import org.archive.io.NoGzipMagicException;
 import org.archive.util.FileUtils;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingInputStream;
-import com.google.common.io.NullOutputStream;
 
 
 /**
@@ -136,8 +134,7 @@ implements ARCConstants {
 			throws IOException {
 		// For now, assume stream is compressed. Later add test of input
 		// stream or handle exception thrown when figure not compressed stream.
-		return new CompressedARCReader(arc, asRepositionable(is),
-            atFirstRecord);
+		return new CompressedARCReader(arc, is, atFirstRecord);
 	}
     
     /**
@@ -393,7 +390,7 @@ implements ARCConstants {
              */
             return new ArchiveRecordIterator() {
                 private GZIPMembersInputStream gis =
-                    (GZIPMembersInputStream)getInputStream();
+                    (GZIPMembersInputStream)getIn();
 
                 private Iterator<GZIPMembersInputStream> gzipIterator = this.gis.memberIterator();
 
