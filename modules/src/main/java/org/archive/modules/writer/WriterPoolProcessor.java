@@ -75,10 +75,9 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     }
     
     /**
-     * File prefix. The text supplied here will be used as a prefix naming
-     * writer files. For example if the prefix is 'WEB', then file names will
-     * look like WEB-20040808101010-0001-PID@HOSTNAME#PORT.arc.gz ...if 
-     * writing ARCs (The prefix will be separated from the date by a hyphen).
+     * File prefix. The text supplied here will be supplied to the naming 
+     * template (below) as the 'prefix' variable for possible interpolation.
+     * In the default/recommended naming formula, the prefix will appear first. 
      */
     String prefix = WriterPoolMember.DEFAULT_PREFIX; 
     public String getPrefix() {
@@ -94,11 +93,16 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * form ${key} will be replaced by values from a local map of useful 
      * values (including 'prefix', 'timestamp17', and 'serialno') or 
      * global system properties (which includes the local hostname/port/pid). 
-     *
-     * The default pattern will generate unique names under reasonable 
+     * 
+     * The default template is:
+     * 
+     * "${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}"
+     * 
+     * The default template will generate unique names under reasonable 
      * assumptions; be sure you know what you're doing before customizing,
      * as you could easily create filename collisions with a poorly-designed
-     * filename template.
+     * filename template, and many downstream tools have historically assumed
+     * that ARCs/WARCs are carefully named to preserve uniqueness. 
      * 
      */
     String template = WriterPoolMember.DEFAULT_TEMPLATE; 
