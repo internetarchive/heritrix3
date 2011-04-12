@@ -42,6 +42,7 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
+import org.archive.util.CLibrary;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
@@ -183,6 +184,25 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         this.expectedConcurrency = expectedConcurrency;
     }
     
+    /**
+     * Whether to use hard-links to log files to collect/retain
+     * the BDB log files needed for a checkpoint. Default is true. 
+     * May not work on Windows (especially on pre-NTFS filesystems). 
+     * If false, the BDB 'je.cleaner.expunge' value will be set to 
+     * 'false', as well, meaning BDB will *not* delete obsolete JDB
+     * files, but only rename the '.DEL'. They will have to be 
+     * manually deleted to free disk space, but .DEL files referenced
+     * in any checkpoint's 'jdbfiles.manifest' should be retained to
+     * keep the checkpoint valid. 
+     */
+    boolean useHardLinkCheckpoints = true;
+    public boolean getUseHardLinkCheckpoints() {
+        return useHardLinkCheckpoints;
+    }
+    public void setUseHardLinkCheckpoints(boolean useHardLinkCheckpoints) {
+        this.useHardLinkCheckpoints = useHardLinkCheckpoints;
+    }
+    
     private transient EnhancedEnvironment bdbEnvironment;
         
     private transient StoredClassCatalog classCatalog;
@@ -255,8 +275,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         // triple this value to 6K because stats show many faults
         config.setConfigParam("je.log.faultReadSize", "6144"); 
 
-        // to support checkpoints, prevent BDB's cleaner from deleting log files
-        config.setConfigParam("je.cleaner.expunge", "false");
+        if(!getUseHardLinkCheckpoints()) {
+            // to support checkpoints by textual manifest only, 
+            // prevent BDB's cleaner from deleting log files
+            config.setConfigParam("je.cleaner.expunge", "false");
+        } // else leave whatever other setting was already in place
 
         f.mkdirs();
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
@@ -460,7 +483,14 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 String[] filedata = dbBackup.getLogFilesInBackupSet();
                 for (int i=0; i<filedata.length;i++) {
                     File f = new File(dir.getFile(),filedata[i]);
-                    filedata[i] += " "+f.length();
+                    filedata[i] += ","+f.length();
+                    if(getUseHardLinkCheckpoints()) {
+                        File hardLink = new File(envCpDir,filedata[i]);
+                        int status = CLibrary.INSTANCE.link(f.getAbsolutePath(), hardLink.getAbsolutePath()); 
+                        if(status!=0) {
+                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link "+hardLink); 
+                        }
+                    }
                 }
                 FileUtils.writeLines(logfilesList,Arrays.asList(filedata));
                 LOGGER.fine("Finished processing bdb log files.");
@@ -474,33 +504,66 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     
     @SuppressWarnings("unchecked")
     protected void doRecover() throws IOException {
-        File logfilesList = new File(
-                new File(dir.getFile(),recoveryCheckpoint.getName()),
-                "jdbfiles.manifest");
+        File cpDir = new File(dir.getFile(),recoveryCheckpoint.getName());
+        File logfilesList = new File(cpDir,"jdbfiles.manifest");
         List<String> filesAndLengths = FileUtils.readLines(logfilesList);
         HashMap<String,Long> retainLogfiles = new HashMap<String,Long>();
         for(String line : filesAndLengths) {
-            String[] fileAndLength = line.split(" ");
-            retainLogfiles.put(fileAndLength[0],Long.valueOf(fileAndLength[1]));
+            String[] fileAndLength = line.split(",");
+            long expectedLength = Long.valueOf(fileAndLength[1]);
+            retainLogfiles.put(fileAndLength[0],expectedLength);
+            
+            // check for files in checkpoint directory; relink to environment as necessary
+            File cpFile = new File(cpDir, line);
+            File destFile = new File(dir.getFile(), fileAndLength[0]);
+            if(cpFile.exists()) {
+                if(cpFile.length()!=expectedLength) {
+                    LOGGER.warning(cpFile.getName()+" expected "+expectedLength+" actual "+cpFile.length());
+                    // TODO: is truncation necessary? 
+                }
+                if(destFile.exists()) {
+                    if(!destFile.delete()) {
+                        LOGGER.log(Level.SEVERE, "unable to delete obstructing file "+destFile);  
+                    }
+                }
+                int status = CLibrary.INSTANCE.link(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
+                if (status!=0) {
+                    LOGGER.log(Level.SEVERE, "unable to create required restore link "+destFile); 
+                }
+            }
+            
         }
+        
         IOFileFilter filter = FileFilterUtils.orFileFilter(
                 FileFilterUtils.suffixFileFilter(".jdb"), 
                 FileFilterUtils.suffixFileFilter(".del"));
         filter = FileFilterUtils.makeFileOnly(filter);
+        
+        // reverify environment directory is as it was at checkpoint time, 
+        // deleting any extra files
         for(File f : dir.getFile().listFiles((FileFilter)filter)) {
             if(retainLogfiles.containsKey(f.getName())) {
+                // named file still exists under original name
                 long expectedLength = retainLogfiles.get(f.getName());
                 if(f.length()!=expectedLength) {
                     LOGGER.warning(f.getName()+" expected "+expectedLength+" actual "+f.length());
+                    // TODO: truncate? this unexpected length mismatch
+                    // probably only happens if there was already a recovery
+                    // where the affected file was the last of the set, in 
+                    // which case BDB appends a small amount of (harmless?) data
+                    // to the previously-undersized file
                 }
                 retainLogfiles.remove(f.getName()); 
                 continue;
             }
+            // file as now-named not in restore set; check if un-".DEL" renaming needed
             String undelName = f.getName().replace(".del", ".jdb");
             if(retainLogfiles.containsKey(undelName)) {
+                // file if renamed matches desired file name
                 long expectedLength = retainLogfiles.get(undelName);
                 if(f.length()!=expectedLength) {
                     LOGGER.warning(f.getName()+" expected "+expectedLength+" actual "+f.length());
+                    // TODO: truncate to expected size?
                 }
                 if(!f.renameTo(new File(f.getParentFile(),undelName))) {
                     throw new IOException("Unable to rename " + f + " to " +
@@ -508,13 +571,16 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 }
                 retainLogfiles.remove(undelName); 
             }
-            // not needed; move aside
-            org.archive.util.FileUtils.moveAsideIfExists(f);
+            // file not needed; delete/move-aside
+            if(!f.delete()) {
+                LOGGER.warning("unable to delete "+f);
+                org.archive.util.FileUtils.moveAsideIfExists(f);
+            }
             // TODO: log/warn of ruined later checkpoints? 
         }
         if(retainLogfiles.size()>0) {
             // some needed files weren't present
-            LOGGER.severe("needed log files missing: "+retainLogfiles);
+            LOGGER.severe("Checkpoint corrupt, needed log files missing: "+retainLogfiles);
         }
         
     }

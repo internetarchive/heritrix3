@@ -272,6 +272,12 @@
     <version>r08</version>
 </dependency>
 
+<dependency>
+    <groupId>net.java.dev.jna</groupId>
+    <artifactId>jna</artifactId>
+    <version>3.2.3</version>
+</dependency>
+
   </dependencies>
   <build>
     <resources>
