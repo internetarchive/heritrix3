@@ -116,7 +116,8 @@ public class RobotstxtTest extends TestCase {
         // bot allowed with explicit allow
         assertTrue(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/path"));
         assertTrue(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/"));
-        assertTrue(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/foo"));
+        // bot denied with specific disallow overriding general allow
+        assertFalse(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/foo"));
         // bot denied with blanket deny
         assertFalse(r.getDirectivesFor("Mozilla denybot 99.9").allows("/path"));
         assertFalse(r.getDirectivesFor("Mozilla denybot 99.9").allows("/"));

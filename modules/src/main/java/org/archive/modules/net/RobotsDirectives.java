@@ -19,8 +19,7 @@
 package org.archive.modules.net;
 
 import java.io.Serializable;
-
-import org.archive.util.PrefixSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Represents the directives that apply to a user-agent (or set of
@@ -29,15 +28,28 @@ import org.archive.util.PrefixSet;
 public class RobotsDirectives implements Serializable {
     private static final long serialVersionUID = 5386542759286155383L;
     
-    PrefixSet disallows = new PrefixSet();
-    PrefixSet allows = new PrefixSet();
+    ConcurrentSkipListSet<String> disallows = new ConcurrentSkipListSet<String>();
+    ConcurrentSkipListSet<String> allows = new ConcurrentSkipListSet<String>();
     float crawlDelay = -1; 
 
     public boolean allows(String path) {
-        if(disallows.containsPrefixOf(path)) {
-            return allows.containsPrefixOf(path);
+        return !(longestPrefixLength(disallows, path) > longestPrefixLength(allows, path));
+    }
+
+    /**
+     * @param prefixSet
+     * @param str
+     * @return length of longest entry in {@code prefixSet} that prefixes {@code str}, or zero
+     *         if no entry prefixes {@code str}
+     */
+    protected int longestPrefixLength(ConcurrentSkipListSet<String> prefixSet,
+            String str) {
+        String possiblePrefix = prefixSet.floor(str);
+        if (possiblePrefix != null && str.startsWith(possiblePrefix)) {
+            return possiblePrefix.length();
+        } else {
+            return 0;
         }
-        return true;
     }
 
     public void addDisallow(String path) {
