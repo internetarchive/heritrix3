@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationListener;
  * <p>
  * Paths that do not resolve to actual filesystem folders or files will not be
  * evaluated (i.e. if <code>java.io.File.exists()</code> returns <code>false</code>
- * no furhter processing is carried out on that File). 
+ * no further processing is carried out on that File). 
  * <p>
  * Paths are checked available space whenever a {@link StatSnapshotEvent} occurs. 
  * 

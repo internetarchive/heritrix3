@@ -31,6 +31,7 @@ import org.archive.spring.KeyedProperties;
  * @author gojomo
  */
 public abstract class QueueAssignmentPolicy implements Serializable, HasKeyedProperties {
+    private static final long serialVersionUID = 1L;
     
     KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
