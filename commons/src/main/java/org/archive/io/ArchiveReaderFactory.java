@@ -184,6 +184,10 @@ public class ArchiveReaderFactory implements ArchiveFileConstants {
         	// length >= 0, add open-ended range header to the request.  Else,
         	// because end-byte is inclusive, subtract 1.
         	connection.addRequestProperty("Range", "bytes=" + offset + "-");
+            // TODO: should actually verify that server respected 'Range' request
+            // (spec allows them to ignore; 206 response or Content-Range header
+            // should be present if Range satisfied; multipart/byteranges could be
+            // a problem). 
         }
         
         return getArchiveReader(f.toString(), connection.getInputStream(), (offset == 0));
