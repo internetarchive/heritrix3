@@ -18,6 +18,7 @@
  */
 package org.archive.io;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -28,6 +29,7 @@ import java.util.zip.ZipException;
 
 import org.archive.util.zip.OpenJDK7GZIPInputStream;
 
+import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingInputStream;
 
 /**
@@ -170,9 +172,10 @@ public class GZIPMembersInputStream extends OpenJDK7GZIPInputStream {
      * 
      * @param offset bytes to skip
      * @throws IOException
+     * @throws EOFException 
      */
     public void compressedSkip(long offset) throws IOException {
-        in.skip(offset); 
+        ByteStreams.skipFully(in, offset);
         updateInnerMark();
         currentMemberStart = ((CountingInputStream)in).getCount(); 
         currentMemberEnd = -1; 
