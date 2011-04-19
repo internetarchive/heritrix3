@@ -33,18 +33,18 @@ import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.URIException;
 import org.archive.util.TextUtils;
 
-
 /**
  * Factory that returns UURIs.
  * 
- * Does escaping and fixup on URIs massaging in accordance with RFC2396
- * and to match browser practice. For example, it removes any
- * '..' if first thing in the path as per IE,  converts backslashes to forward
- * slashes, and discards any 'fragment'/anchor portion of the URI. This
+ * Does escaping and fixup on URIs massaging in accordance with RFC2396 and to
+ * match browser practice. For example, it removes any '..' if first thing in
+ * the path as per IE, converts backslashes preceding the query string to
+ * forward slashes, and discards any 'fragment'/anchor portion of the URI. This
  * class will also fail URIs if they are longer than IE's allowed maximum
  * length.
  * 
- * <p>TODO: Test logging.
+ * <p>
+ * TODO: Test logging.
  * 
  * @author stack
  */
@@ -173,7 +173,6 @@ public class UURIFactory extends URI {
     public static final String RCURBRACKET_PATTERN = "\\}";
     public static final String ESCAPED_RCURBRACKET = "%7D";
     public static final String BACKSLASH = "\\";
-    public static final String BACKSLASH_PATTERN = "\\\\";
     public static final String ESCAPED_BACKSLASH = "%5C";
     public static final String STRAY_SPACING = "[\n\r\t]+";
     public static final String IMPROPERESC_REPLACE = "%25$1";
@@ -357,13 +356,19 @@ public class UURIFactory extends URI {
         // Get rid of any trailing spaces or new-lines. 
         uri = uri.trim();
         
-        // IE actually converts backslashes to slashes rather than to %5C.
-        // Since URIs that have backslashes usually work only with IE, we will
-        // convert backslashes to slashes as well.
-        // TODO: Maybe we can first convert backslashes by specs and than by IE
-        // so that we fetch both versions.
-        if (uri.indexOf(BACKSLASH) >= 0) {
-            uri = TextUtils.replaceAll(BACKSLASH_PATTERN, uri, SLASH);
+        // IE converts backslashes preceding the query string to slashes, rather
+        // than to %5C. Since URIs that have backslashes usually work only with
+        // IE, we will convert backslashes to slashes as well.
+        int nextBackslash = uri.indexOf(BACKSLASH);
+        if (nextBackslash >= 0) {
+            int queryStart = uri.indexOf('?');
+            StringBuilder tmp = new StringBuilder(uri);
+            while (nextBackslash >= 0
+                    && (queryStart < 0 || nextBackslash < queryStart)) {
+                tmp.setCharAt(nextBackslash, '/');
+                nextBackslash = uri.indexOf(BACKSLASH, nextBackslash + 1);
+            }
+            uri = tmp.toString();
         }
         
         // Remove stray TAB/CR/LF

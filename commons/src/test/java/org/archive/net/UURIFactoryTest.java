@@ -1166,4 +1166,17 @@ public class UURIFactoryTest extends TestCase {
         base.resolve(relative);
         UURIFactory.getInstance(base,relative); 
     }
+
+    /**
+     * To match IE behavior, backslashes in path-info (really, anywhere before
+     * query string) assumed to be slashes, to match IE behavior. In
+     * query-string, they are escaped to %5C.
+     * 
+     * @throws URIException
+     */
+    public void testBackslashes() throws URIException {
+        UURI uuri = UURIFactory.getInstance("http:\\/www.example.com\\a/b\\c/d?q\\r\\|s/t\\v");
+        String expected = "http://www.example.com/a/b/c/d?q%5Cr%5C|s/t%5Cv";
+        assertEquals(expected, uuri.toString());
+    }
 }
