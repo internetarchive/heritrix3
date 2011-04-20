@@ -52,7 +52,7 @@ public class SeedRecord implements CoreAttributeConstants, Serializable, Identit
     public SeedRecord(CrawlURI curi, String disposition) {
         super();
         this.uri = curi.getURI();
-        updateWith(curi,disposition); 
+        fillWith(curi,disposition); 
     }
     
     /**
@@ -86,11 +86,24 @@ public class SeedRecord implements CoreAttributeConstants, Serializable, Identit
 
     /**
      * A later/repeat report of the same seed has arrived; update with
-     * latest. Should be rare/never?
+     * latest. 
      * 
      * @param curi
+     * @param disposition
      */
     public void updateWith(CrawlURI curi,String disposition) {
+        fillWith(curi, disposition);
+        this.makeDirty();
+    }
+
+    /**
+     * Fill instance with given values; skips makeDirty so may be used
+     * on initialization. 
+     * 
+     * @param curi
+     * @param disposition
+     */
+    protected void fillWith(CrawlURI curi, String disposition) {
         if(!this.uri.equals(curi.getURI())) {
             logger.warning("SeedRecord URI changed: "+uri+"->"+curi.getURI());
         }
