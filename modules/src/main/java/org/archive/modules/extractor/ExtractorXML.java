@@ -67,17 +67,28 @@ public class ExtractorXML extends ContentExtractor {
     protected boolean shouldExtract(CrawlURI curi) {
         String mimeType = curi.getContentType();
 
+        // first check for xml mimetype or file extension
+        if (mimeType != null && mimeType.toLowerCase().indexOf("xml") >= 0
+                || curi.toString().toLowerCase().endsWith(".rss")
+                || curi.toString().toLowerCase().endsWith(".xml")) {
+            return true;
+        }
+        
         try {
-            return mimeType != null
-                    && (mimeType.toLowerCase().indexOf("xml") >= 0
-                            || curi.toString().toLowerCase().endsWith(".rss")
-                            || curi.toString().toLowerCase().endsWith(".xml") 
-                            || (curi.getRecorder().getContentReplayCharSequence().length() >= 8 
-                                    && curi.getRecorder().getContentReplayCharSequence().subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*")));
+            // check if content starts with xml preamble "<?xml" and does not
+            // contain "<!doctype html" or "<html" early in the content
+            ReplayCharSequence cs = curi.getRecorder().getContentReplayCharSequence();
+            String contentStartingChunk = cs.subSequence(0, Math.min(cs.length(), 400)).toString();
+            if (contentStartingChunk.matches("(?is)[\\ufeff]?<\\?xml\\s.*")
+                    && !contentStartingChunk.matches("(?is).*(?:<!doctype\\s+html|<html[>\\s]).*")) {
+                return true;
+            }
         } catch (IOException e) {
             logger.severe(curi + " - failed getting ReplayCharSequence: " + e);
             return false;
         } 
+        
+        return false;
     }
     
     /**
