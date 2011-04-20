@@ -520,7 +520,7 @@ public class FetchFTP extends Processor  {
         
         ReplayCharSequence seq = null;
         try {
-            seq = recorder.getReplayCharSequence();
+            seq = recorder.getContentReplayCharSequence();
             extract(curi, seq);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "IO error during extraction.", e);

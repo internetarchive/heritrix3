@@ -72,8 +72,8 @@ public class ExtractorXML extends ContentExtractor {
                     && (mimeType.toLowerCase().indexOf("xml") >= 0
                             || curi.toString().toLowerCase().endsWith(".rss")
                             || curi.toString().toLowerCase().endsWith(".xml") 
-                            || (curi.getRecorder().getReplayCharSequence().length() >= 8 
-                                    && curi.getRecorder().getReplayCharSequence().subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*")));
+                            || (curi.getRecorder().getContentReplayCharSequence().length() >= 8 
+                                    && curi.getRecorder().getContentReplayCharSequence().subSequence(0, 8).toString().matches("[\\ufeff]?<\\?xml\\s.*")));
         } catch (IOException e) {
             logger.severe(curi + " - failed getting ReplayCharSequence: " + e);
             return false;
@@ -87,7 +87,7 @@ public class ExtractorXML extends ContentExtractor {
     protected boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
         try {
-            cs = curi.getRecorder().getReplayCharSequence();
+            cs = curi.getRecorder().getContentReplayCharSequence();
             numberOfLinksExtracted.addAndGet(processXml(this, curi, cs));
             // Set flag to indicate that link extraction is completed.
             return true;

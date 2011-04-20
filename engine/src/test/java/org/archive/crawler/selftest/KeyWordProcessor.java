@@ -98,7 +98,7 @@ public class KeyWordProcessor extends Processor {
         try {
             CrawlURI viaUri = curi.getFullVia(); 
             if(!viaUri.getData().containsKey("keywordHit")) {
-                ReplayCharSequence seq = viaUri.getRecorder().getReplayCharSequence();
+                ReplayCharSequence seq = viaUri.getRecorder().getContentReplayCharSequence();
                 viaUri.getData().put("keywordHit", getPattern().matcher(seq).find());
             }
             boolean keywordHit = (Boolean) viaUri.getData().get("keywordHit");

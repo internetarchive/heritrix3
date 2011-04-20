@@ -133,7 +133,7 @@ public class ExtractorJS extends ContentExtractor {
         this.numberOfCURIsHandled++;
         ReplayCharSequence cs = null;
         try {
-            cs = curi.getRecorder().getReplayCharSequence();
+            cs = curi.getRecorder().getContentReplayCharSequence();
             try {
                 numberOfLinksExtracted += considerStrings(this, curi, cs, true);
             } catch (StackOverflowError e) {

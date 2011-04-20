@@ -129,7 +129,7 @@ public class HTTPContentDigest extends Processor {
         // Get a replay of the document character seq.
         ReplayCharSequence cs = null;
         try {
-           cs = curi.getRecorder().getReplayCharSequence();
+           cs = curi.getRecorder().getContentReplayCharSequence();
            // Create a MessageDigest 
            MessageDigest digest = null;
            try {
