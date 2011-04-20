@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
+import org.archive.util.UriUtils;
 
 /**
  * A simple extractor which finds HTTP URIs inside XML/RSS files,
@@ -51,7 +52,7 @@ public class ExtractorXML extends ContentExtractor {
         Logger.getLogger(ExtractorXML.class.getName());
 
     static final Pattern XML_URI_EXTRACTOR = Pattern.compile(    
-    "(?i)[\"\'>]\\s*(https?:[^\\s\"\'<>]+)\\s*[\"\'<]"); 
+    "(?i)[\"\'>]\\s*(" + UriUtils.NAIVE_LIKELY_URI_PATTERN + ")\\s*[\"\'<]"); 
     // GROUPS:
     // (G1) URI
 
@@ -99,19 +100,21 @@ public class ExtractorXML extends ContentExtractor {
     public static long processXml(Extractor ext, 
             CrawlURI curi, CharSequence cs) {
         long foundLinks = 0;
-        Matcher uris = null;
-        String xmlUri;
-        uris = XML_URI_EXTRACTOR.matcher(cs);
-        while (uris.find()) {
-            xmlUri = StringEscapeUtils.unescapeXml(uris.group(1));
+        Matcher matcher = XML_URI_EXTRACTOR.matcher(cs);
+        while (matcher.find()) {
+            String xmlUri = StringEscapeUtils.unescapeXml(matcher.group(1));
+            if (UriUtils.isLikelyFalsePositive(xmlUri)) {
+                continue;
+            }
+            
             foundLinks++;
             try {
                 // treat as speculative, as whether context really 
                 // intends to create a followable/fetchable URI is
                 // unknown
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.add(curi, max, xmlUri, LinkContext.SPECULATIVE_MISC, 
-                        Hop.SPECULATIVE);
+                Link.addRelativeToBase(curi, max, xmlUri, 
+                        LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE); 
             } catch (URIException e) {
                 // There may not be a controller (e.g. If we're being run
                 // by the extractor tool).

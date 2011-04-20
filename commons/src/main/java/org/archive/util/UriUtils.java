@@ -89,32 +89,40 @@ public class UriUtils {
 // new combined test
 //
     // naive likely-uri test: 
-    //    no whitespace or '<' or '>'; 
+    //    no whitespace or '<' or '>' or quotes 
     //    at least one '.' or '/';
     //    not ending with '.'
-    static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*(?<!\\.)";
-    
+    public static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s'\"]*[\\./][^<>\\s'\"]*(?<!\\.)";
+
     // blacklist of strings that NAIVE_LIKELY_URI_PATTERN picks up as URIs,
     // which are known to be problematic, and NOT to be tried as URIs
     protected final static String[] NAIVE_URI_EXCEPTIONS = {
         "text/javascript"
-        };
+    };
     
     public static boolean isLikelyUri(CharSequence candidate) {
         // naive test
         if(!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
             return false; 
         }
+        if (isLikelyFalsePositive(candidate)) {
+            return false;
+        }
+        return true;
+    }
+
+
+    public static boolean isLikelyFalsePositive(CharSequence candidate) {
         // eliminate common false-positives: by blacklist
         for (String s : NAIVE_URI_EXCEPTIONS) {
             if (s.contentEquals(candidate)) 
-                return false;
+                return true;
         }
         // ...and simple numbers
         if(TextUtils.matches("\\d+\\.\\d+", candidate)) {
-            return false; 
+            return true; 
         }
-        return true; 
+        return false;
     }
     
     
