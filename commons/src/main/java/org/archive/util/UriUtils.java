@@ -92,12 +92,21 @@ public class UriUtils {
     //    no whitespace or '<' or '>' or quotes 
     //    at least one '.' or '/';
     //    not ending with '.'
-    public static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s'\"]*[\\./][^<>\\s'\"]*(?<!\\.)";
+    static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*(?<!\\.)";
 
     // blacklist of strings that NAIVE_LIKELY_URI_PATTERN picks up as URIs,
     // which are known to be problematic, and NOT to be tried as URIs
     protected final static String[] NAIVE_URI_EXCEPTIONS = {
-        "text/javascript"
+        "text/javascript",
+        "text/css",
+        "text/html",
+        "application/rss+xml",
+        "application/atom+xml",
+        "application/pdf",
+        "application/x-shockwave-flash",
+        "image/png",
+        "image/x-icon",
+        "text/xsl",
     };
     
     public static boolean isLikelyUri(CharSequence candidate) {
@@ -111,8 +120,7 @@ public class UriUtils {
         return true;
     }
 
-
-    public static boolean isLikelyFalsePositive(CharSequence candidate) {
+    protected static boolean isLikelyFalsePositive(CharSequence candidate) {
         // eliminate common false-positives: by blacklist
         for (String s : NAIVE_URI_EXCEPTIONS) {
             if (s.contentEquals(candidate)) 

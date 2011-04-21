@@ -51,10 +51,10 @@ public class ExtractorXML extends ContentExtractor {
     private static Logger logger =
         Logger.getLogger(ExtractorXML.class.getName());
 
-    static final Pattern XML_URI_EXTRACTOR = Pattern.compile(    
-    "(?i)[\"\'>]\\s*(" + UriUtils.NAIVE_LIKELY_URI_PATTERN + ")\\s*[\"\'<]"); 
+    static final Pattern XML_URI_EXTRACTOR = Pattern
+            .compile("(?s)[\"\'>]\\s*([^<>\\s'\"@]+)\\s*[\"\'<]");
     // GROUPS:
-    // (G1) URI
+    // (G1) possible uri
 
     /**
      * @param name
@@ -68,7 +68,10 @@ public class ExtractorXML extends ContentExtractor {
         String mimeType = curi.getContentType();
 
         // first check for xml mimetype or file extension
-        if (mimeType != null && mimeType.toLowerCase().indexOf("xml") >= 0
+        // application/vnd.openxmlformats.* seem to be zip archives
+        if (mimeType != null
+                && (mimeType.toLowerCase().indexOf("xml") >= 0 && !mimeType
+                        .matches("(?i)application/vnd.openxmlformats.*"))
                 || curi.toString().toLowerCase().endsWith(".rss")
                 || curi.toString().toLowerCase().endsWith(".xml")) {
             return true;
@@ -114,24 +117,23 @@ public class ExtractorXML extends ContentExtractor {
         Matcher matcher = XML_URI_EXTRACTOR.matcher(cs);
         while (matcher.find()) {
             String xmlUri = StringEscapeUtils.unescapeXml(matcher.group(1));
-            if (UriUtils.isLikelyFalsePositive(xmlUri)) {
-                continue;
-            }
-            
-            foundLinks++;
-            try {
-                // treat as speculative, as whether context really 
-                // intends to create a followable/fetchable URI is
-                // unknown
-                int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToBase(curi, max, xmlUri, 
-                        LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE); 
-            } catch (URIException e) {
-                // There may not be a controller (e.g. If we're being run
-                // by the extractor tool).
-                ext.logUriError(e, curi.getUURI(), xmlUri);
+            if (UriUtils.isLikelyUri(xmlUri)) {
+                foundLinks++;
+                try {
+                    // treat as speculative, as whether context really 
+                    // intends to create a followable/fetchable URI is
+                    // unknown
+                    int max = ext.getExtractorParameters().getMaxOutlinks();
+                    Link.addRelativeToBase(curi, max, xmlUri, 
+                            LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE); 
+                } catch (URIException e) {
+                    // There may not be a controller (e.g. If we're being run
+                    // by the extractor tool).
+                    ext.logUriError(e, curi.getUURI(), xmlUri);
+                }
             }
         }
         return foundLinks;
     }
+    
 }
