@@ -294,10 +294,40 @@ public class Recorder {
     }
 
     /**
-     * @param characterEncoding Character encoding of recording.
+     * Sets character encoding. If new encoding is different from old encoding,
+     * close replayCharSequence and set to null, which will trigger recreation
+     * on next retrieval.
+     * 
+     * @param characterEncoding
+     *            Character encoding of recording.
      */
     public void setCharacterEncoding(String characterEncoding) {
+        boolean needsReset = false;
+        
+        if (replayCharSequence != null && replayCharSequence.isOpen()
+                && this.characterEncoding != characterEncoding)
+        {
+            Charset newCharset = null;
+            if (characterEncoding != null) {
+                newCharset = Charset.forName(characterEncoding);
+            }
+
+            Charset oldCharset = null;
+            if (this.characterEncoding != null) {
+                oldCharset = Charset.forName(this.characterEncoding);
+            } else {
+                oldCharset = Charsets.ISO_8859_1;
+            }
+
+            needsReset = !oldCharset.equals(newCharset);
+        }
+
         this.characterEncoding = characterEncoding;
+
+        if (needsReset) {
+            ArchiveUtils.closeQuietly(replayCharSequence);
+            replayCharSequence = null;
+        }
     }
 
     /**

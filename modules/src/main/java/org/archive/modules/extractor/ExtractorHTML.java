@@ -667,9 +667,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     
     
     public boolean innerExtract(CrawlURI curi) {
-        ReplayCharSequence cs = null;
+        if (!curi.getContentType().matches("(?i).*charset=.*")) {
+            lookForEncodingInContent(curi);
+        }
+
         try {
-           cs = curi.getRecorder().getContentReplayCharSequence();
+            ReplayCharSequence cs = curi.getRecorder().getContentReplayCharSequence();
            // Extract all links from the charsequence
            extract(curi, cs);
            if(cs.getDecodeExceptionCount()>0) {
@@ -683,6 +686,37 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 Thread.currentThread().getName(), e);
         }
         return false;
+    }
+    
+    // 1. look for <meta http-equiv="content-type"...>
+    // 2. if not found then look for <meta charset="">
+    // 3. if not found then <?xml encoding=""...?>
+    protected void lookForEncodingInContent(CrawlURI curi) {
+        String contentStartingChunk = curi.getRecorder().getContentReplayPrefixString(1000);
+        
+        // <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+        Matcher matcher = TextUtils.getMatcher("(?is)<meta\\s+[^>]*http-equiv\\s*=\\s*['\"]content-type['\"][^>]*>", contentStartingChunk);
+        if (matcher.find()) {
+            String metaContentType = matcher.group();
+            matcher = TextUtils.getMatcher("charset=([^'\";\\s>]+)", metaContentType);
+            if (matcher.find()) {
+                curi.getRecorder().setCharacterEncoding(matcher.group(1));
+                return;
+            }
+        }
+
+        // <meta charset="utf-8">
+        matcher = TextUtils.getMatcher("(?si)<meta\\s+[^>]*charset=['\"]([^'\"]+)['\"]", contentStartingChunk);
+        if (matcher.find()) {
+            curi.getRecorder().setCharacterEncoding(matcher.group(1));
+            return;
+        }
+        
+        // <?xml version="1.0" encoding="utf-8"?>
+        matcher = TextUtils.getMatcher("(?is)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]", contentStartingChunk);
+        if (matcher.find()) {
+            curi.getRecorder().setCharacterEncoding(matcher.group(1));
+        }
     }
 
     /**

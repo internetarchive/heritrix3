@@ -95,6 +95,14 @@ public class ExtractorXML extends ContentExtractor {
     protected boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
         try {
+            // if charset not spec'd in http header look for <?xml encoding=""?>
+            if (!curi.getContentType().matches("(?i).*charset=.*")) {
+                Pattern pattern = Pattern.compile("(?s)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]");
+                Matcher matcher = pattern.matcher(curi.getRecorder().getContentReplayPrefixString(50));
+                if (matcher.find()) {
+                    curi.getRecorder().setCharacterEncoding(matcher.group(1));
+                }
+            }
             cs = curi.getRecorder().getContentReplayCharSequence();
             numberOfLinksExtracted.addAndGet(processXml(this, curi, cs));
             // Set flag to indicate that link extraction is completed.
