@@ -77,19 +77,13 @@ public class ExtractorXML extends ContentExtractor {
             return true;
         }
         
-        try {
-            // check if content starts with xml preamble "<?xml" and does not
-            // contain "<!doctype html" or "<html" early in the content
-            ReplayCharSequence cs = curi.getRecorder().getContentReplayCharSequence();
-            String contentStartingChunk = cs.subSequence(0, Math.min(cs.length(), 400)).toString();
-            if (contentStartingChunk.matches("(?is)[\\ufeff]?<\\?xml\\s.*")
-                    && !contentStartingChunk.matches("(?is).*(?:<!doctype\\s+html|<html[>\\s]).*")) {
-                return true;
-            }
-        } catch (IOException e) {
-            logger.severe(curi + " - failed getting ReplayCharSequence: " + e);
-            return false;
-        } 
+        // check if content starts with xml preamble "<?xml" and does not
+        // contain "<!doctype html" or "<html" early in the content
+        String contentStartingChunk = curi.getRecorder().getContentReplayPrefixString(400);
+        if (contentStartingChunk.matches("(?is)[\\ufeff]?<\\?xml\\s.*")
+                && !contentStartingChunk.matches("(?is).*(?:<!doctype\\s+html|<html[>\\s]).*")) {
+            return true;
+        }
         
         return false;
     }
