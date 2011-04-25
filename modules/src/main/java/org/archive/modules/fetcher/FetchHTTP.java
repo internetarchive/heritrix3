@@ -42,9 +42,9 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -195,11 +195,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     /**
      * Accept Headers to include in each request. Each must be the complete
-     * header, e.g., 'Accept-Language: en'. (Thus, this can also be used to 
-     * other headers not beginning 'Accept-' as well.)
+     * header, e.g., 'Accept-Language: en'. (Thus, this can also be used to
+     * other headers not beginning 'Accept-' as well.) By default heritrix sends
+     * an Accept header similar to what a typical browser would send (the value
+     * comes from Firefox 4.0).
      */
     {
-        setAcceptHeaders(new LinkedList<String>());
+        setAcceptHeaders(Arrays.asList("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
     }
     @SuppressWarnings("unchecked")
     public List<String> getAcceptHeaders() {

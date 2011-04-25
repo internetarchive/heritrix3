@@ -269,6 +269,7 @@ http://example.example/example
   <!-- <property name="sslTrustLevel" value="OPEN" /> -->
   <!-- <property name="acceptHeaders"> 
         <list>
+         <value>Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</value>
         </list>
        </property>
   -->
