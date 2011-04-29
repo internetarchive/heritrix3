@@ -20,6 +20,7 @@ package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.archive.bdb.DisposableStoredSortedMap;
@@ -34,9 +35,16 @@ public class SourceTagsReport extends Report {
     @Override
     public void write(PrintWriter writer) {
 
+        Set<String> sourceTags = stats.sourceHostDistribution.keySet();
+        
+        if(sourceTags.isEmpty()) {
+            writer.println("No source tag information. (Is 'sourceTagSeeds' enabled?)");
+            return; 
+        }
+        
         writer.print("[source] [host] [#urls]\n");
         // for each source
-        for (String sourceKey : stats.sourceHostDistribution.keySet()) {
+        for (String sourceKey : sourceTags) {
             Map<String,AtomicLong> hostCounts = 
                 (Map<String,AtomicLong>)stats.sourceHostDistribution.get(sourceKey);
             // sort hosts by #urls
