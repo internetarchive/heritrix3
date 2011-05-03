@@ -494,10 +494,19 @@ public class Recorder {
      * @return String prefix, or empty String (with logged exception) on any error
      */
     public String getContentReplayPrefixString(int size) {
+        Charset charset = Charsets.UTF_8;
+        if (characterEncoding != null) {
+            try {
+                charset = Charset.forName(characterEncoding);
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.WARNING,"charset problem: " + characterEncoding, e);
+                // TODO: better detection or default
+                charset = ReplayCharSequence.FALLBACK_CHARSET;
+            }
+        }
+
         try {
-            InputStreamReader isr =  (characterEncoding == null) 
-                ? new InputStreamReader(getContentReplayInputStream(), Charsets.ISO_8859_1)
-                : new InputStreamReader(getContentReplayInputStream(), characterEncoding); 
+            InputStreamReader isr =  new InputStreamReader(getContentReplayInputStream(), charset);
             char[] chars = new char[size];
             int count = isr.read(chars);
             isr.close(); 
