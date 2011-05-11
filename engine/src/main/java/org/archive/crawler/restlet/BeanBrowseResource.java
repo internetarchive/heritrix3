@@ -195,13 +195,15 @@ public class BeanBrowseResource extends JobRelatedResource {
 
     protected void writeHtml(Writer writer) {
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<html>");
         pw.println("<head><title>Crawl beans in "+cj.getShortName()+"</title></head>");
+        pw.println("<body>");
         pw.println("<h1>Crawl beans in built job <i><a href='/engine/job/"
                 +TextUtils.urlEscape(cj.getShortName())
                 +"'>"+cj.getShortName()+"</a></i></h1>");
         pw.println("Enter a bean path of the form <i>beanName</i>, <i>beanName.property</i>, <i>beanName.property[indexOrKey]</i>, etc.");
-        pw.println("<form method='POST'><input type='text' name='beanPath' style='width:400px' value='"+beanPath+"'/>");
-        pw.println("<input type='submit' value='view'/></form>");
+        pw.println("<form method='POST'><input type='text' name='beanPath' style='width:400px' value='"+beanPath+"'>");
+        pw.println("<input type='submit' value='view'></form>");
         
         if (StringUtils.isNotBlank(beanPath)) {
             pw.println("<h2>Bean path <i>"+beanPath+"</i></h2>");
@@ -227,9 +229,9 @@ public class BeanBrowseResource extends JobRelatedResource {
                         pw.println("<a href=\"javascript:document.getElementById('editform').style.display='inline';void(0);\">edit</a>");
                         pw.println("<span id='editform' style=\'display:none\'>Note: it may not be appropriate/effective to change this value in an already-built crawl context.<br/>");
                         pw.println("<form  id='editform' method='POST'>");
-                        pw.println("<input type='hidden' name='beanPath' value='"+beanPath+"'/>");
-                        pw.println(beanPath + " = <input type='text' name='newVal' style='width:400px' value='"+target+"'/>");
-                        pw.println("<input type='submit' value='update'/></form></span>");
+                        pw.println("<input type='hidden' name='beanPath' value='"+beanPath+"'>");
+                        pw.println(beanPath + " = <input type='text' name='newVal' style='width:400px' value='"+target+"'>");
+                        pw.println("<input type='submit' value='update'></form></span>");
                     } else {
                         writeObject(pw, null, target, beanPath);
                     }
@@ -239,7 +241,7 @@ public class BeanBrowseResource extends JobRelatedResource {
             }
         }
     
-        pw.println("<h2>All named crawl beans</h2");
+        pw.println("<h2>All named crawl beans</h2>");
         pw.println("<ul>");
         Set<Object> alreadyWritten = new HashSet<Object>(); 
         writeNestedNames(pw, appCtx.getBean("crawlController"), getBeansRefPath(), alreadyWritten);
@@ -247,5 +249,7 @@ public class BeanBrowseResource extends JobRelatedResource {
             writeNestedNames(pw, appCtx.getBean(name), getBeansRefPath(), alreadyWritten);
         }
         pw.println("</ul>");
+        
+        pw.println("</body>\n</html>");
     }
 }
