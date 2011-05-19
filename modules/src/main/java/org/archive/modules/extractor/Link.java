@@ -140,7 +140,7 @@ public class Link implements Serializable, Comparable<Link> {
             LOGGER.warning("no via where expected; using base instead: "+uri);
             relTo = uri.getBaseURI();
         }
-        UURI dest = UURIFactory.getInstance(uri.getVia(), newUri);
+        UURI dest = UURIFactory.getInstance(relTo, newUri);
         add2(uri, max, dest, context, hop);
     }
 
