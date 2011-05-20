@@ -22,11 +22,13 @@ import static org.archive.modules.extractor.Hop.SPECULATIVE;
 import static org.archive.modules.extractor.LinkContext.JS_MISC;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.exception.NestableRuntimeException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
@@ -157,7 +159,11 @@ public class ExtractorJS extends ContentExtractor {
                 cs.subSequence(strings.start(2), strings.end(2));
             if(UriUtils.isLikelyUri(subsequence)) {
                 String string = subsequence.toString();
-                string = StringEscapeUtils.unescapeJavaScript(string);
+                try {
+                    string = StringEscapeUtils.unescapeJavaScript(string);
+                } catch (NestableRuntimeException e) {
+                    LOGGER.log(Level.WARNING, "problem unescaping some javascript", e);
+                }
                 string = UriUtils.speculativeFixup(string, curi.getUURI());
                 foundLinks++;
                 try {
