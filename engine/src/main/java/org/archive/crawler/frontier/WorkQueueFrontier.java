@@ -52,7 +52,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.collections.iterators.ObjectArrayIterator;
 import org.archive.crawler.datamodel.UriUniqFilter;
-import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.ToeThread;
 import org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy;
@@ -83,7 +82,6 @@ import com.sleepycat.je.DatabaseException;
  */
 public abstract class WorkQueueFrontier extends AbstractFrontier
 implements Closeable, 
-           CrawlUriReceiver, 
            ApplicationContextAware {
     private static final long serialVersionUID = 570384305871965843L;
 
