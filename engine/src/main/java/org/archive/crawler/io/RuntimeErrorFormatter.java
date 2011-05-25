@@ -35,6 +35,11 @@ import org.archive.modules.CrawlURI;
  */
 public class RuntimeErrorFormatter extends UriProcessingFormatter
 implements CoreAttributeConstants {
+
+    public RuntimeErrorFormatter(boolean logExtraInfo) {
+        super(logExtraInfo);
+    }
+
     public String format(LogRecord lr) {
         Object [] parameters = lr.getParameters();
         String stackTrace = "None retrieved";

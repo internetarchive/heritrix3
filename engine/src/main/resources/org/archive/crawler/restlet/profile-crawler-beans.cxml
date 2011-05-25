@@ -627,6 +627,7 @@ http://example.example/example
   <!-- <property name="uriErrorsLogPath" value="uri-errors.log" /> -->
   <!-- <property name="runtimeErrorsLogPath" value="runtime-errors.log" /> -->
   <!-- <property name="nonfatalErrorsLogPath" value="nonfatal-errors.log" /> -->
+  <!-- <property name="logExtraInfo" value="false" /> -->
  </bean>
  
  <!-- SHEETOVERLAYMANAGER: manager of sheets of contextual overlays

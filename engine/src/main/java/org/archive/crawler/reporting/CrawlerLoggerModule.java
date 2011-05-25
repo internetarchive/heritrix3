@@ -69,15 +69,26 @@ public class CrawlerLoggerModule
     public void setPath(ConfigPath cp) {
         this.path.merge(cp);
     }
+
+    /**
+     * Whether to include the "extra info" field for each entry in crawl.log.
+     * "Extra info" is arbitrary JSON. It is the last field of the log line.
+     */
+    boolean logExtraInfo = false;
+    public boolean getLogExtraInfo() {
+        return logExtraInfo;
+    }
+    public void setLogExtraInfo(boolean logExtraInfo) {
+        this.logExtraInfo = logExtraInfo;
+    }
     
     // manifest support
-    /** abbrieviation label for config files in manifest */
+    /** abbreviation label for config files in manifest */
     public static final char MANIFEST_CONFIG_FILE = 'C';
-    /** abbrieviation label for report files in manifest */
+    /** abbreviation label for report files in manifest */
     public static final char MANIFEST_REPORT_FILE = 'R';
-    /** abbrieviation label for log files in manifest */
+    /** abbreviation label for log files in manifest */
     public static final char MANIFEST_LOG_FILE = 'L';
-
     
     // key log names
     private static final String LOGNAME_CRAWL = "crawl";
@@ -239,15 +250,15 @@ public class CrawlerLoggerModule
         this.fileHandlers = new HashMap<Logger,FileHandler>();
         setupLogFile(uriProcessing,
             getCrawlLogPath().getFile().getAbsolutePath(),
-            new UriProcessingFormatter(), true);
+            new UriProcessingFormatter(getLogExtraInfo()), true);
 
         setupLogFile(runtimeErrors,
             getRuntimeErrorsLogPath().getFile().getAbsolutePath(),
-            new RuntimeErrorFormatter(), true);
+            new RuntimeErrorFormatter(getLogExtraInfo()), true);
 
         setupLogFile(nonfatalErrors,
             getNonfatalErrorsLogPath().getFile().getAbsolutePath(),
-            new NonFatalErrorFormatter(), true);
+            new NonFatalErrorFormatter(getLogExtraInfo()), true);
 
         setupLogFile(uriErrors,
             getUriErrorsLogPath().getFile().getAbsolutePath(),

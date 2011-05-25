@@ -30,6 +30,10 @@ import org.archive.modules.CoreAttributeConstants;
  */
 public class NonFatalErrorFormatter extends UriProcessingFormatter implements CoreAttributeConstants {
 
+    public NonFatalErrorFormatter(boolean logExtraInfo) {
+        super(logExtraInfo);
+    }
+
     /* (non-Javadoc)
      * @see java.util.logging.Formatter#format(java.util.logging.LogRecord)
      */

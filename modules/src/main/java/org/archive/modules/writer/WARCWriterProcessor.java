@@ -70,6 +70,7 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.io.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
@@ -164,7 +165,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     public void setWriteRevisitForNotModified(boolean writeRevisits) {
         kp.put("writeRevisitForNotModified",writeRevisits);
     }
-    
+
     /**
      * Generator for record IDs
      */
@@ -276,6 +277,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             	setTotalBytesWritten(getTotalBytesWritten() +
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
+
+                String filename = writer.getFile().getName();
+                if (filename.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
+                    filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
+                }
+                curi.addExtraInfo("warcFilename", filename);
             }
         }
         return checkBytesWritten();

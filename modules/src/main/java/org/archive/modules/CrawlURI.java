@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpMethod;
@@ -92,6 +93,8 @@ import org.archive.util.ArchiveUtils;
 import org.archive.util.Base32;
 import org.archive.util.MultiReporter;
 import org.archive.util.Recorder;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 /**
@@ -1793,6 +1796,9 @@ implements MultiReporter, Serializable, OverlayContext {
      * A future time at which this CrawlURI should be reenqueued.
      */
     protected long rescheduleTime = -1;
+
+    protected JSONObject extraInfo;
+    
     public void setRescheduleTime(long time) {
         this.rescheduleTime = time;
     }
@@ -1865,6 +1871,21 @@ implements MultiReporter, Serializable, OverlayContext {
         setFetchStatus(S_DEFERRED);
         
         return caUri;
+    }
+    
+    public JSONObject getExtraInfo() {
+        if (extraInfo == null) {
+            extraInfo = new JSONObject();
+        }
+        return extraInfo;
+    }
+
+    public void addExtraInfo(String key, Object value) {
+        try {
+            getExtraInfo().put(key, value);
+        } catch (JSONException e) {
+            logger.log(Level.WARNING, "failed to add extra info", e);
+        }
     }
 
 }

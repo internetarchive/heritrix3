@@ -58,8 +58,13 @@ extends Formatter implements CoreAttributeConstants {
     };
     
     protected final ThreadLocal<LogRecord> cachedRecord = new ThreadLocal<LogRecord>(); 
-    protected final ThreadLocal<String> cachedFormat = new ThreadLocal<String>(); 
+    protected final ThreadLocal<String> cachedFormat = new ThreadLocal<String>();
+    protected boolean logExtraInfo; 
     
+    public UriProcessingFormatter(boolean logExtraInfo) {
+        this.logExtraInfo = logExtraInfo;
+    }
+
     public String format(LogRecord lr) {
         if(lr==cachedRecord.get()) {
             return cachedFormat.get();
@@ -138,14 +143,22 @@ extends Formatter implements CoreAttributeConstants {
             	buffer.append(',');
             	buffer.append(iter.next());
             }
+        } else {
+            buffer.append(NA);
         }
+        
+        if (logExtraInfo) {
+            // XXX would we rather have "-" if info's empty?
+            buffer.append(" ").append(curi.getExtraInfo());
+        }
+        
         buffer.append("\n");
         cachedRecord.set(lr); 
         String formatted = buffer.toString(); 
         cachedFormat.set(formatted);
         return formatted;
     }
-    
+
     /**
      * @param str String to check.
      * @return Return passed string or <code>NA</code> if null.
