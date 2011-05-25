@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.io.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.arc.ARCWriter;
@@ -154,6 +155,12 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
             }
+
+            String filename = writer.getFile().getName();
+            if (filename.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
+                filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
+            }
+            curi.addExtraInfo("arcFilename", filename);
         }
         return checkBytesWritten();
     }
