@@ -170,7 +170,7 @@ public class CandidatesProcessor extends Processor {
          * with seeds at the front of the list, then traverse the list in order.
          */
         LinkedList<CrawlURI> candidates = new LinkedList<CrawlURI>();
-        
+
         for (Link wref: curi.getOutLinks()) {
             CrawlURI candidate;
             try {
@@ -184,16 +184,30 @@ public class CandidatesProcessor extends Processor {
                 continue;
             }
             sheetOverlaysManager.applyOverlaysTo(candidate);
+
+            if(getSeedsRedirectNewSeeds() && curi.isSeed() 
+                    && wref.getHopType() == Hop.REFER) {
+                candidate.setSeed(true);
+                candidates.addFirst(candidate); // seeds at front of list
+            } else {
+                candidates.addLast(candidate);  // non-seeds at end of list
+            }
+        }
+
+        // process candidates in order, seeds first
+        for (CrawlURI candidate: candidates) {
             try {
                 KeyedProperties.clearOverridesFrom(curi); 
                 KeyedProperties.loadOverridesFrom(candidate);
                 
-                if(getSeedsRedirectNewSeeds() && curi.isSeed() 
-                        && wref.getHopType() == Hop.REFER) {
-                    candidate.setSeed(true);
-                    candidates.addFirst(candidate); // seeds at front of list
-                } else {
-                    candidates.addLast(candidate);  // non-seeds at end of list
+                getCandidateChain().process(candidate, null); 
+                if(candidate.getFetchStatus()>=0) {
+                    if(checkForSeedPromotion(candidate)) {
+                        getSeeds().addSeed(candidate);
+                    } else {
+                        frontier.schedule(candidate);
+                    }
+                    curi.getOutCandidates().add(candidate);
                 }
             } finally {
                 KeyedProperties.clearOverridesFrom(candidate); 
@@ -201,19 +215,6 @@ public class CandidatesProcessor extends Processor {
             }
         }
 
-        // process candidates in order, seeds first
-        for (CrawlURI candidate: candidates) {
-            getCandidateChain().process(candidate, null); 
-            if(candidate.getFetchStatus()>=0) {
-                if(checkForSeedPromotion(candidate)) {
-                    getSeeds().addSeed(candidate);
-                } else {
-                    frontier.schedule(candidate);
-                }
-                curi.getOutCandidates().add(candidate);
-            }
-        }
-        
         curi.getOutLinks().clear();
     }
     
