@@ -19,6 +19,8 @@
 
 package org.archive.modules.recrawl;
 
+import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
@@ -53,7 +56,6 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
-
 
 
 /**
@@ -100,17 +102,18 @@ public abstract class PersistProcessor extends Processor {
         // use a case-sensitive SURT for uniqueness and sorting benefits
         return SURT.fromURI(uri,true);
     }
-    
+
     /**
      * Whether the current CrawlURI's state should be persisted (to log or
      * direct to database)
      * 
-     * @param curi CrawlURI
-     * @return true if state should be stored; false to skip persistence
+     * @param curi
+     *            CrawlURI
+     * @return true if {@link CoreAttributeConstants#A_HISTORY_GOOD_TO_STORE} is
+     *         set for this url
      */
     protected boolean shouldStore(CrawlURI curi) {
-        // TODO: don't store some codes, such as 304 unchanged?
-        return curi.isSuccess();
+        return Boolean.TRUE.equals(curi.getData().get(A_HISTORY_GOOD_TO_STORE));
     }
 
     /**

@@ -40,6 +40,7 @@ import static org.archive.io.warc.WARCConstants.TYPE;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
+import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
@@ -283,6 +284,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
                 }
                 curi.addExtraInfo("warcFilename", filename);
+                
+                curi.getData().put(A_HISTORY_GOOD_TO_STORE, Boolean.TRUE);
             }
         }
         return checkBytesWritten();

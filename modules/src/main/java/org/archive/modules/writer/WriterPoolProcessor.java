@@ -20,6 +20,7 @@
 package org.archive.modules.writer;
 
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
+import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
 
@@ -322,6 +323,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             && IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN 
                     + ":identicalDigest");
+            curi.getData().put(A_HISTORY_GOOD_TO_STORE, Boolean.TRUE);
             return false;
         }
         
