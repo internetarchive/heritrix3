@@ -184,6 +184,13 @@ public class CandidatesProcessor extends Processor {
                 getCandidateChain().process(candidate, null); 
                 if(candidate.getFetchStatus()>=0) {
                     if(checkForSeedPromotion(candidate)) {
+                        /*
+                         * We want to guarantee crawling of seed version of
+                         * CrawlURI even if same url has already been enqueued,
+                         * see https://webarchive.jira.com/browse/HER-1891
+                         */
+                        candidate.setForceFetch(true);
+                        
                         getSeeds().addSeed(candidate);
                     } else {
                         frontier.schedule(candidate);
