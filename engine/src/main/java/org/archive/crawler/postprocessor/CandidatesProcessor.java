@@ -23,8 +23,6 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
 
-import java.util.LinkedList;
-
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
@@ -162,15 +160,6 @@ public class CandidatesProcessor extends Processor {
             return;
         }
 
-        /*
-         * The same outlink may have been discovered both in a context that
-         * makes it a seed, and in a context that doesn't. In that case we want
-         * to make sure the seed version of the outlink is the one that gets
-         * processed. In order to do that, we put all the candidates in a list,
-         * with seeds at the front of the list, then traverse the list in order.
-         */
-        LinkedList<CrawlURI> candidates = new LinkedList<CrawlURI>();
-
         for (Link wref: curi.getOutLinks()) {
             CrawlURI candidate;
             try {
@@ -184,22 +173,14 @@ public class CandidatesProcessor extends Processor {
                 continue;
             }
             sheetOverlaysManager.applyOverlaysTo(candidate);
-
-            if(getSeedsRedirectNewSeeds() && curi.isSeed() 
-                    && wref.getHopType() == Hop.REFER) {
-                candidate.setSeed(true);
-                candidates.addFirst(candidate); // seeds at front of list
-            } else {
-                candidates.addLast(candidate);  // non-seeds at end of list
-            }
-        }
-
-        // process candidates in order, seeds first
-        for (CrawlURI candidate: candidates) {
             try {
                 KeyedProperties.clearOverridesFrom(curi); 
                 KeyedProperties.loadOverridesFrom(candidate);
                 
+                if(getSeedsRedirectNewSeeds() && curi.isSeed() 
+                        && wref.getHopType() == Hop.REFER) {
+                    candidate.setSeed(true); 
+                }
                 getCandidateChain().process(candidate, null); 
                 if(candidate.getFetchStatus()>=0) {
                     if(checkForSeedPromotion(candidate)) {
@@ -209,12 +190,12 @@ public class CandidatesProcessor extends Processor {
                     }
                     curi.getOutCandidates().add(candidate);
                 }
+                
             } finally {
                 KeyedProperties.clearOverridesFrom(candidate); 
                 KeyedProperties.loadOverridesFrom(curi);
             }
         }
-
         curi.getOutLinks().clear();
     }
     
