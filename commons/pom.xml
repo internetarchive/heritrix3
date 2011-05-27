@@ -355,7 +355,7 @@
           <excludes>
             <exclude>**/Test*.java</exclude>
           </excludes>
-          <argLine>-Xmx1024m</argLine>
+          <argLine>-Xmx512m</argLine>
         </configuration>
       </plugin>
     </plugins>
