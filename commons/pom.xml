@@ -102,7 +102,7 @@
         <dependency>
              <groupId>commons-lang</groupId>
              <artifactId>commons-lang</artifactId>
-             <version>2.3</version>
+             <version>2.6</version>
              <scope>compile</scope>
         </dependency>
         <dependency>
@@ -355,7 +355,7 @@
           <excludes>
             <exclude>**/Test*.java</exclude>
           </excludes>
-          <argLine>-Xmx512m</argLine>
+          <argLine>-Xmx640m</argLine>
         </configuration>
       </plugin>
     </plugins>
