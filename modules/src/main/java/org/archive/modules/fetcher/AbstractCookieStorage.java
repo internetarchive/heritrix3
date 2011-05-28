@@ -27,7 +27,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.logging.Level;
@@ -45,8 +44,7 @@ import org.springframework.context.Lifecycle;
 public abstract class AbstractCookieStorage 
     implements CookieStorage, 
                Lifecycle, // InitializingBean, 
-               Closeable, 
-               Serializable {
+               Closeable {
 
     final private static Logger LOGGER = 
         Logger.getLogger(AbstractCookieStorage.class.getName());
