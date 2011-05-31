@@ -85,7 +85,7 @@ public abstract class BloomFilterTest extends TestCase {
         trialWithParameters(125000000,22,125000000,34000000);
     }
   
-    public void xestDefaultAbbreviated() {
+    public void testDefaultAbbreviated() {
         trialWithParameters(125000000,22,17000000,0);
     }
     
