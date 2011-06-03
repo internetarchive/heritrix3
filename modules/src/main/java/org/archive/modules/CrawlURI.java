@@ -1796,9 +1796,6 @@ implements MultiReporter, Serializable, OverlayContext {
      * A future time at which this CrawlURI should be reenqueued.
      */
     protected long rescheduleTime = -1;
-
-    protected JSONObject extraInfo;
-    
     public void setRescheduleTime(long time) {
         this.rescheduleTime = time;
     }
@@ -1820,6 +1817,25 @@ implements MultiReporter, Serializable, OverlayContext {
     public boolean includesRetireDirective() {
         return containsDataKey(A_FORCE_RETIRE) 
          && (Boolean)getData().get(A_FORCE_RETIRE);
+    }
+    
+    
+    
+    protected JSONObject extraInfo;  
+     
+    public JSONObject getExtraInfo() {
+        if (extraInfo == null) {
+            extraInfo = new JSONObject();
+        }
+        return extraInfo;
+    }
+
+    public void addExtraInfo(String key, Object value) {
+        try {
+            getExtraInfo().put(key, value);
+        } catch (JSONException e) {
+            logger.log(Level.WARNING, "failed to add extra info", e);
+        }
     }
     
     // Kryo support
@@ -1872,20 +1888,10 @@ implements MultiReporter, Serializable, OverlayContext {
         
         return caUri;
     }
-    
-    public JSONObject getExtraInfo() {
-        if (extraInfo == null) {
-            extraInfo = new JSONObject();
-        }
-        return extraInfo;
-    }
 
-    public void addExtraInfo(String key, Object value) {
-        try {
-            getExtraInfo().put(key, value);
-        } catch (JSONException e) {
-            logger.log(Level.WARNING, "failed to add extra info", e);
-        }
+    public boolean containsContentTypeCharsetDeclaration() {
+        // TODO can this regex be improved? should the test consider if its legal? 
+        return getContentType().matches("(?i).*charset=.*");
     }
 
 }
