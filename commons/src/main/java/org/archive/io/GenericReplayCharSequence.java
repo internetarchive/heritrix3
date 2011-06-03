@@ -129,6 +129,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
 
     private boolean isOpen = true;
 
+    protected Charset charset = null; 
+    
     /**
      * Constructor.
      *
@@ -202,6 +204,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
     protected void decode(InputStream inStream, int prefixMax, 
             String backingFilename, Charset charset) throws IOException {
 
+        this.charset = charset; 
+        
         // TODO: consider if BufferedReader is helping any
         // TODO: consider adding TBW 'LimitReader' to stop reading at 
         // Integer.MAX_VALUE characters because of charAt(int) limit
@@ -393,5 +397,12 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
     @Override
     public CharacterCodingException getCodingException() {
         return codingException;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.archive.io.ReplayCharSequence#getCharset()
+     */
+    public Charset getCharset() {
+        return charset; 
     }
 }

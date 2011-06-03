@@ -68,4 +68,10 @@ public interface ReplayCharSequence extends CharSequence, Closeable {
      * @return false if {@link #close()} has been called
      */
     public boolean isOpen();
+    
+    /**
+     * Return the effective Charset used to create this CharSequence from 
+     * (raw byte) source material. 
+     */
+    public Charset getCharset(); 
 }

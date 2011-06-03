@@ -84,7 +84,17 @@ public class Recorder {
     /**
      * recording-input (ris) content character encoding.
      */
-    private String characterEncoding = null;
+    protected String characterEncoding = null;
+    
+    /**
+     * Charset to use for CharSequence provision. Will be UTF-8 if no
+     * encoding ever requested; a Charset matching above characterEncoding
+     * if possible; ISO_8859 if above characterEncoding is unsatisfiable. 
+     * TODO: unify to UTF-8 for unspecified and bad-specified cases? 
+     * (current behavior is for consistency with our prior but perhaps not
+     * optimal behavior) 
+     */
+    protected Charset charset = Charsets.UTF_8; 
     
     /** whether recording-input (ris) message-body is chunked */
     protected boolean inputIsChunked = false; 
@@ -294,47 +304,18 @@ public class Recorder {
     }
 
     /**
-     * Sets character encoding. If new encoding is different from old encoding,
-     * close replayCharSequence and set to null, which will trigger recreation
-     * on next retrieval.
-     * 
-     * @param characterEncoding
-     *            Character encoding of recording.
+     * @param characterEncoding Character encoding of input recording.
+     * @return actual charset in use after attempt to set
      */
-    public void setCharacterEncoding(String characterEncoding) {
-        boolean needsReset = false;
-        
-        if (replayCharSequence != null && replayCharSequence.isOpen()
-                && this.characterEncoding != characterEncoding)
-        {
-            Charset newCharset = null;
-            if (characterEncoding != null) {
-                newCharset = Charset.forName(characterEncoding);
-            }
-
-            Charset oldCharset = null;
-            if (this.characterEncoding != null) {
-                oldCharset = Charset.forName(this.characterEncoding);
-            } else {
-                oldCharset = Charsets.ISO_8859_1;
-            }
-
-            needsReset = !oldCharset.equals(newCharset);
-        }
-
-        this.characterEncoding = characterEncoding;
-
-        if (needsReset) {
-            ArchiveUtils.closeQuietly(replayCharSequence);
-            replayCharSequence = null;
-        }
+    public void setCharset(Charset cs) {
+        this.charset = cs;
     }
-
+    
     /**
-     * @return Returns the characterEncoding of input recording.
+     * @return effective Charset of input recording 
      */
-    public String getCharacterEncoding() {
-        return this.characterEncoding;
+    public Charset getCharset() {
+        return this.charset; 
     }
     
     /**
@@ -378,10 +359,14 @@ public class Recorder {
      * @see {@link #endReplays()}
      */
     public ReplayCharSequence getContentReplayCharSequence() throws IOException {
-        if (replayCharSequence == null || !replayCharSequence.isOpen()) {
-            replayCharSequence = getContentReplayCharSequence(this.characterEncoding);
+        if (replayCharSequence == null || !replayCharSequence.isOpen() 
+                || !replayCharSequence.getCharset().equals(charset)) {
+            if(replayCharSequence!=null && replayCharSequence.isOpen()) {
+                // existing sequence must not have matched now-configured Charset; close
+                replayCharSequence.close(); 
+            }
+            replayCharSequence = getContentReplayCharSequence(this.charset);
         }
-        
         return replayCharSequence;
     }
     
@@ -392,29 +377,16 @@ public class Recorder {
      * close on returned RCS when done.
      * @throws IOException
      */
-    public ReplayCharSequence getContentReplayCharSequence(String encoding) throws IOException {
-        Charset charset = Charsets.UTF_8;
-        if (encoding != null) {
-            try {
-                charset = Charset.forName(encoding);
-            } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING,"charset problem: "+encoding,e);
-                // TODO: better detection or default
-                charset = ReplayCharSequence.FALLBACK_CHARSET;
-            }
-        }
-
-        logger.fine("using GenericReplayCharSequence");
+    public ReplayCharSequence getContentReplayCharSequence(Charset requestedCharset) throws IOException {
         // raw data overflows to disk; use temp file
         InputStream ris = getContentReplayInputStream();
         ReplayCharSequence rcs =  new GenericReplayCharSequence(
                 ris,
                 this.ros.getBufferLength()/2, 
                 this.backingFileBasename + RECORDING_OUTPUT_STREAM_SUFFIX,
-                charset);
+                requestedCharset);
         ris.close();
         return rcs;
-        
     }
     
     /**
@@ -494,19 +466,18 @@ public class Recorder {
      * @return String prefix, or empty String (with logged exception) on any error
      */
     public String getContentReplayPrefixString(int size) {
-        Charset charset = Charsets.UTF_8;
-        if (characterEncoding != null) {
-            try {
-                charset = Charset.forName(characterEncoding);
-            } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING,"charset problem: " + characterEncoding, e);
-                // TODO: better detection or default
-                charset = ReplayCharSequence.FALLBACK_CHARSET;
-            }
-        }
-
+        return getContentReplayPrefixString(size, this.charset);
+    }
+    
+    /**
+     * Return a short prefix of the presumed-textual content as a String.
+     * 
+     * @param size max length of String to return 
+     * @return String prefix, or empty String (with logged exception) on any error
+     */
+    public String getContentReplayPrefixString(int size, Charset cs) {
         try {
-            InputStreamReader isr =  new InputStreamReader(getContentReplayInputStream(), charset);
+            InputStreamReader isr =  new InputStreamReader(getContentReplayInputStream(), cs); 
             char[] chars = new char[size];
             int count = isr.read(chars);
             isr.close(); 
@@ -554,7 +525,7 @@ public class Recorder {
     throws IOException {
         Recorder rec = new Recorder(dir, basename);
         if (encoding != null && encoding.length() > 0) {
-            rec.setCharacterEncoding(encoding);
+            rec.setCharset(Charset.forName(encoding));
         }
         // Do not use FastBufferedInputStream here.  It does not
         // support mark.

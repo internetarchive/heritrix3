@@ -19,6 +19,8 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +29,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
+import org.archive.util.TextUtils;
 import org.archive.util.UriUtils;
 
 /**
@@ -94,13 +97,24 @@ public class ExtractorXML extends ContentExtractor {
     @Override
     protected boolean innerExtract(CrawlURI curi) {
         ReplayCharSequence cs = null;
+        Charset contentDeclaredEncoding = null; 
         try {
             // if charset not spec'd in http header look for <?xml encoding=""?>
-            if (!curi.getContentType().matches("(?i).*charset=.*")) {
-                Pattern pattern = Pattern.compile("(?s)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]");
-                Matcher matcher = pattern.matcher(curi.getRecorder().getContentReplayPrefixString(50));
-                if (matcher.find()) {
-                    curi.getRecorder().setCharacterEncoding(matcher.group(1));
+            if (!curi.containsContentTypeCharsetDeclaration()) {
+                String contentPrefix = curi.getRecorder().getContentReplayPrefixString(50);
+                contentDeclaredEncoding = getContentDeclaredCharset(curi, contentPrefix); 
+                if(!curi.getRecorder().getCharset().equals(contentDeclaredEncoding) && contentDeclaredEncoding!=null) {
+                    String newContentPrefix = curi.getRecorder().getContentReplayPrefixString(50,contentDeclaredEncoding); 
+                    Charset reflexiveCharset = getContentDeclaredCharset(curi, newContentPrefix);
+                    if(contentDeclaredEncoding.equals(reflexiveCharset)) {
+                        // content-declared charset is self-consistent; use
+                        curi.getAnnotations().add("usingCharsetInXML:"+contentDeclaredEncoding);
+                        curi.getRecorder().setCharset(contentDeclaredEncoding);
+                    } else {
+                        // error: declared charset not evident once put into effect
+                        curi.getAnnotations().add("inconsistentCharsetInXML:"+contentDeclaredEncoding);
+                        // so, ignore in favor of original default
+                    }
                 }
             }
             cs = curi.getRecorder().getContentReplayCharSequence();
@@ -112,6 +126,24 @@ public class ExtractorXML extends ContentExtractor {
         }
         return false; 
     }
+
+    protected Charset getContentDeclaredCharset(CrawlURI curi, String contentPrefix) {
+        Matcher m = TextUtils.getMatcher("(?s)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]", contentPrefix);
+        String charsetName = null;
+        try {
+            if(m.find()) {
+                charsetName = m.group(1); 
+                return Charset.forName(charsetName);
+            }
+        } catch (IllegalArgumentException iae) {
+            logger.log(Level.INFO,"Unknown content-encoding '"+charsetName+"' declared; using default");  
+            curi.getAnnotations().add("unsatisfiableCharsetInXML:"+charsetName);
+        } finally {
+            TextUtils.recycleMatcher(m); 
+        }
+        return null; 
+    }
+
 
     public static long processXml(Extractor ext, 
             CrawlURI curi, CharSequence cs) {

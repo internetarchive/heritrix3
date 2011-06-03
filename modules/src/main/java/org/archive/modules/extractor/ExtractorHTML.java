@@ -22,6 +22,7 @@ package org.archive.modules.extractor;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -667,8 +668,22 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     
     
     public boolean innerExtract(CrawlURI curi) {
-        if (!curi.getContentType().matches("(?i).*charset=.*")) {
-            lookForEncodingInContent(curi);
+        if (!curi.containsContentTypeCharsetDeclaration()) {
+            String contentPrefix = curi.getRecorder().getContentReplayPrefixString(1000);
+            Charset contentDeclaredEncoding = getContentDeclaredCharset(curi,contentPrefix);
+            if(!curi.getRecorder().getCharset().equals(contentDeclaredEncoding) && contentDeclaredEncoding!=null) {
+                String newContentPrefix = curi.getRecorder().getContentReplayPrefixString(50,contentDeclaredEncoding); 
+                Charset reflexiveCharset = getContentDeclaredCharset(curi, newContentPrefix);
+                if(contentDeclaredEncoding.equals(reflexiveCharset)) {
+                    // content-declared charset is self-consistent; use
+                    curi.getAnnotations().add("usingCharsetInHTML:"+contentDeclaredEncoding);
+                    curi.getRecorder().setCharset(contentDeclaredEncoding);
+                } else {
+                    // error: declared charset not evident once put into effect
+                    curi.getAnnotations().add("inconsistentCharsetInHTML:"+contentDeclaredEncoding);
+                    // so, ignore in favor of original default
+                }
+            }
         }
 
         try {
@@ -691,32 +706,44 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // 1. look for <meta http-equiv="content-type"...>
     // 2. if not found then look for <meta charset="">
     // 3. if not found then <?xml encoding=""...?>
-    protected void lookForEncodingInContent(CrawlURI curi) {
-        String contentStartingChunk = curi.getRecorder().getContentReplayPrefixString(1000);
-        
+    protected Charset getContentDeclaredCharset(CrawlURI curi, String contentPrefix) {
+        String charsetName = null; 
         // <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-        Matcher matcher = TextUtils.getMatcher("(?is)<meta\\s+[^>]*http-equiv\\s*=\\s*['\"]content-type['\"][^>]*>", contentStartingChunk);
+        Matcher matcher = TextUtils.getMatcher("(?is)<meta\\s+[^>]*http-equiv\\s*=\\s*['\"]content-type['\"][^>]*>", contentPrefix);
         if (matcher.find()) {
             String metaContentType = matcher.group();
+            TextUtils.recycleMatcher(matcher); 
             matcher = TextUtils.getMatcher("charset=([^'\";\\s>]+)", metaContentType);
             if (matcher.find()) {
-                curi.getRecorder().setCharacterEncoding(matcher.group(1));
-                return;
+                charsetName = matcher.group(1); 
             }
+            TextUtils.recycleMatcher(matcher); 
         }
 
-        // <meta charset="utf-8">
-        matcher = TextUtils.getMatcher("(?si)<meta\\s+[^>]*charset=['\"]([^'\"]+)['\"]", contentStartingChunk);
-        if (matcher.find()) {
-            curi.getRecorder().setCharacterEncoding(matcher.group(1));
-            return;
+        if(charsetName==null) {
+            // <meta charset="utf-8">
+            matcher = TextUtils.getMatcher("(?si)<meta\\s+[^>]*charset=['\"]([^'\";\\s>]+)['\"]", contentPrefix);
+            if (matcher.find()) {
+                charsetName = matcher.group(1); 
+                TextUtils.recycleMatcher(matcher); 
+            } else {
+                // <?xml version="1.0" encoding="utf-8"?>
+                matcher = TextUtils.getMatcher("(?is)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]", contentPrefix);
+                if (matcher.find()) {
+                    charsetName = matcher.group(1); 
+                } else {
+                    return null; // none found
+                }
+                TextUtils.recycleMatcher(matcher); 
+            }
         }
-        
-        // <?xml version="1.0" encoding="utf-8"?>
-        matcher = TextUtils.getMatcher("(?is)<\\?xml\\s+[^>]*encoding=['\"]([^'\"]+)['\"]", contentStartingChunk);
-        if (matcher.find()) {
-            curi.getRecorder().setCharacterEncoding(matcher.group(1));
-        }
+        try {
+            return Charset.forName(charsetName); 
+        } catch (IllegalArgumentException iae) {
+            logger.log(Level.INFO,"Unknown content-encoding '"+charsetName+"' declared; using default");  
+            curi.getAnnotations().add("unsatisfiableCharsetInHTML:"+charsetName);
+            return null; 
+        } 
     }
 
     /**
