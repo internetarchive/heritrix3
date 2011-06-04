@@ -219,10 +219,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
         setDefaultEncoding("ISO-8859-1");
     }
     public String getDefaultEncoding() {
-        return (String) kp.get("defaultEncoding");
+        return getDefaultCharset().name();
     }
     public void setDefaultEncoding(String encoding) {
-        kp.put("defaultEncoding",encoding);
+        kp.put("defaultEncoding",Charset.forName(encoding));
+    }
+    public Charset getDefaultCharset() {
+        return (Charset)kp.get("defaultEncoding");
     }
 
     /**
@@ -782,20 +785,15 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param method
      *            Method used for the request.
      */
-    private void setCharacterEncoding(CrawlURI uri, final Recorder rec,
+    private void setCharacterEncoding(CrawlURI curi, final Recorder rec,
             final HttpMethod method) {
-        String encoding = null;
-        encoding = ((HttpMethodBase) method).getResponseCharSet();
+        String encoding = ((HttpMethodBase) method).getResponseCharSet();
         try {
-            Charset.forName(encoding);
+            rec.setCharset(Charset.forName(encoding));
         } catch (IllegalArgumentException e) {
-            uri.getAnnotations().add("charset_err:"+StringUtils.stripToEmpty(encoding));
-            encoding = null;
+            curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(encoding));
+            rec.setCharset(getDefaultCharset());
         }
-        if (encoding == null) {
-            encoding = getDefaultEncoding();
-        }
-        rec.setCharacterEncoding(encoding);
     }
     
     /**
