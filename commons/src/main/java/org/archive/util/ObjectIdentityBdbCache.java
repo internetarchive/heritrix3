@@ -323,7 +323,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
         }
     }
     
-    private String composeCacheSummary() {
+    String composeCacheSummary() {
         long totalHits = cacheHit.get() + diskHit.get();
         if (totalHits < 1) {
             return "";

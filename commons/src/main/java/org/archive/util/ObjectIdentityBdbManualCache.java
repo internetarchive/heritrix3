@@ -96,6 +96,8 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
     private AtomicLong supplierUsed = new AtomicLong(0);
     /** count of {@link #sync()} use */
     transient private AtomicLong useStatsSyncUsed = new AtomicLong(0);
+    /** Count of times Supplier was used for new object */
+    private AtomicLong evictions = new AtomicLong(0);
 
     /**
      * Constructor. You must call
@@ -262,7 +264,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
         }
     }
     
-    private String composeCacheSummary() {
+    String composeCacheSummary() {
         long totalHits = cacheHit.get() + diskHit.get();
         if (totalHits < 1) {
             return "";
@@ -283,6 +285,12 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
           .append(diskHit.get())
           .append(" supplieds=")
           .append(supplierUsed.get())
+          .append(" inMemItems=")
+          .append(memMap.size())
+          .append(" dirtyItems=")
+          .append(dirtyItems.size())
+          .append(" evictions=")
+          .append(evictions.get())
           .append(" syncs=")
           .append(useStatsSyncUsed.get());
         return sb.toString();
@@ -358,6 +366,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
 
     @Override
     public void onEviction(String key, V val) {
+        evictions.incrementAndGet();
         diskMap.put(key, val);
     }
 }
