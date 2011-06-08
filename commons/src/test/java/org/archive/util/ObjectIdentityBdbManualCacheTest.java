@@ -89,7 +89,7 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                         }
                     }
                 }
-            }.start();
+            };//.start();
             // random checking that all values always at level or higher
             new Thread() {
                 public void run() {
@@ -104,7 +104,7 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                         Thread.yield();
                     }
                 }
-            }.start();
+            };//.start();
             // increment all keys
             for(; level.get() < maxLevel; level.incrementAndGet()) {
                 for(int k = 0; k < keyCount; k++) {
@@ -118,10 +118,12 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                     if(level.get()>0) {
                         TestUtils.forceScarceMemory();
                     }
+                    System.out.println("OIBMCT:"+cbdbmap.composeCacheSummary());
                 }
                 Thread.yield(); 
             }
         } finally {
+            System.err.println("OIBMCT:"+cbdbmap.composeCacheSummary());
             cbdbmap.close();
         }
         // SUCCESS
