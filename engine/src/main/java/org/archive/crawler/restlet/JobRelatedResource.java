@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections.SetUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
@@ -41,7 +40,6 @@ import org.restlet.Context;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
-import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
@@ -53,7 +51,7 @@ import org.springframework.beans.BeanWrapperImpl;
  * @contributor Gojomo
  * @contributor nlevitt
  */
-public abstract class JobRelatedResource extends Resource {
+public abstract class JobRelatedResource extends BaseResource {
     CrawlJob cj; 
 
     IdentityHashMap<Object, String> beanToNameMap;
@@ -143,6 +141,7 @@ public abstract class JobRelatedResource extends Resource {
      * @param alreadyWritten Set of already-written objects whose display 
      * should be suppressed
      */
+    @SuppressWarnings("unchecked")
     protected void writeNestedNames(PrintWriter pw, Object obj, String prefix, Set<Object> alreadyWritten) {
         // don't consider nulls, objects already shown, or spring classes
         if(obj==null 
@@ -405,6 +404,7 @@ public abstract class JobRelatedResource extends Resource {
      * @param alreadyWritten Set of objects to not redundantly write
      * @param beanPathPrefix beanPath prefix to apply to sub fields browse links
      */
+    @SuppressWarnings("unchecked")
     protected void writeObject(PrintWriter pw, String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
             String key = getBeanToNameMap().get(object);
             String close = "";
