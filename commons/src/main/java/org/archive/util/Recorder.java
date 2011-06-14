@@ -382,7 +382,7 @@ public class Recorder {
         InputStream ris = getContentReplayInputStream();
         ReplayCharSequence rcs =  new GenericReplayCharSequence(
                 ris,
-                this.ros.getBufferLength()/2, 
+                this.getRecordedInput().getRecordedBufferLength()/2, 
                 this.backingFileBasename + RECORDING_OUTPUT_STREAM_SUFFIX,
                 requestedCharset);
         ris.close();

@@ -339,4 +339,13 @@ public class RecordingInputStream
     public void setLimits(long hardMax, long timeoutMs, long maxRateKBps) {
         recordingOutputStream.setLimits(hardMax, timeoutMs, maxRateKBps);
     }
+
+    /**
+     * Expose the amount of in-memory buffering used by the internal 
+     * recording stream. 
+     * @return int buffer size
+     */
+    public int getRecordedBufferLength() {
+        return recordingOutputStream.getBufferLength();
+    }
 }
