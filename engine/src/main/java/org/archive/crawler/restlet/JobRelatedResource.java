@@ -160,7 +160,7 @@ public abstract class JobRelatedResource extends BaseResource {
         if(!alreadyWritten.contains(obj)) {
             alreadyWritten.add(obj);
             BeanWrapperImpl bwrap = new BeanWrapperImpl(obj); 
-            for(PropertyDescriptor pd : bwrap.getPropertyDescriptors()) {
+            for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
                 if(pd.getReadMethod()!=null) {
                     String propName = pd.getName();
                     writeNestedNames(pw, bwrap.getPropertyValue(propName), prefix, alreadyWritten);
