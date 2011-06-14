@@ -147,8 +147,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
                                      String backingFilename,
                                      Charset charset) throws IOException {
         super();
-        logger.fine("new GenericReplayCharSequence() characterEncoding="
-                + charset + " backingFilename=" + backingFilename);
+        logger.fine("characterEncoding=" + charset + " backingFilename="
+                + backingFilename);
 
         if(charset==null) {
             charset = ReplayCharSequence.FALLBACK_CHARSET;
@@ -212,8 +212,8 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 inStream, charset));
 
-        logger.fine("decodeToFile: backingFilename=" + backingFilename
-                + " encoding=" + charset + " decodedFile=" + decodedFile);
+        logger.fine("backingFilename=" + backingFilename + " encoding="
+                + charset + " decodedFile=" + decodedFile);
 
         this.prefixBuffer = CharBuffer.allocate(prefixMax); 
         
@@ -225,8 +225,11 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
             }
             count += read; 
         }
-        
-        if(reader.ready()) {
+
+        int ch = reader.read();
+        if(ch >= 0) {
+            count++;
+            
             // more to decode to file overflow
             this.decodedFile = new File(backingFilename + "." + WRITE_ENCODING);
 
@@ -245,6 +248,7 @@ public class GenericReplayCharSequence implements ReplayCharSequence {
             }
             
             Writer writer = new OutputStreamWriter(fos,WRITE_ENCODING);
+            writer.write(ch);
             count += IOUtils.copyLarge(reader, writer); 
             writer.close();
             reader.close();
