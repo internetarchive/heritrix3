@@ -322,10 +322,10 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         File logs = new File(getJobDir(), "logs");
         File statsFile = new File(logs, "progress-statistics.log");
         String stats = FileUtils.readFileToString(statsFile);
-        if (!stats.contains("CRAWL RESUMED - Preparing")) {
+        if (!stats.contains("CRAWL RUNNING - Preparing")) {
             fail("progress-statistics.log has no Prepared line.");
         }
-        if (!stats.contains("CRAWL RESUMED - Running")) {
+        if (!stats.contains("CRAWL RUNNING - Running")) {
             fail("progress-statistics.log has no Running line.");
         }
         if (!stats.contains("CRAWL ENDING - Finished")) {
