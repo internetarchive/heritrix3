@@ -190,13 +190,13 @@ implements Serializable,
         }
     }
     
-    /** whether to pause, rather than finish, when crawl appears done */
-    boolean pauseAtFinish = false; 
-    public boolean getPauseAtFinish() {
-        return pauseAtFinish;
+    /** whether to keep running (without pause or finish) when frontier is empty */
+    boolean runWhileEmpty = false; 
+    public boolean getRunWhileEmpty() {
+        return runWhileEmpty;
     }
-    public void setPauseAtFinish(boolean pauseAtFinish) {
-        this.pauseAtFinish = pauseAtFinish;
+    public void setRunWhileEmpty(boolean runWhileEmpty) {
+        this.runWhileEmpty = runWhileEmpty;
     }
 
     /** whether to pause at crawl start */
@@ -262,7 +262,7 @@ implements Serializable,
     private transient CrawlStatus sExit = CrawlStatus.CREATED;
 
     public static enum State {
-        NASCENT, RUNNING, PAUSED, PAUSING, 
+        NASCENT, RUNNING, EMPTY, PAUSED, PAUSING, 
         STOPPING, FINISHED, PREPARING 
     }
 
@@ -389,11 +389,12 @@ implements Serializable,
 
     private boolean shouldContinueCrawling() {
         Frontier frontier = getFrontier();
-        if (frontier.isEmpty()) {
+        if (frontier.isEmpty() && !getRunWhileEmpty()) {
             this.sExit = CrawlStatus.FINISHED;
             return false;
         }
-        return state == State.RUNNING;
+        // unsure this is correct; perhaps should be constant true
+        return isActive();
     }
 
     /**
@@ -468,8 +469,13 @@ implements Serializable,
         return state == State.PAUSING;
     }
     
-    public boolean isStateRunning() {
-        return state == State.RUNNING;
+    /**
+     * Is this crawl actively able/trying to crawl? Includes both 
+     * states RUNNING and EMPTY.
+     * @return
+     */
+    public boolean isActive() {
+        return state == State.RUNNING || state == State.EMPTY;
     }
 
     public boolean isFinished() {
@@ -540,22 +546,13 @@ implements Serializable,
     }
 
     /**
-     * Evaluate if the crawl should stop because it is finished.
-     */
-    public void checkFinish() {
-        if(atFinish()) {
-            beginCrawlStop();
-        }
-    }
-
-    /**
      * Evaluate if the crawl should stop because it is finished,
      * without actually stopping the crawl.
      * 
      * @return true if crawl is at a finish-possible state
      */
     public boolean atFinish() {
-        return state == State.RUNNING && !shouldContinueCrawling();
+        return isActive() && !shouldContinueCrawling();
     }
 
     private void readObject(ObjectInputStream stream)
@@ -621,24 +618,20 @@ implements Serializable,
     public void noteFrontierState(Frontier.State reachedState) {
         switch (reachedState) {
         case RUN: 
-            LOGGER.info("Crawl resumed.");
+            LOGGER.info("Crawl running.");
             sendCrawlStateChangeEvent(State.RUNNING, CrawlStatus.RUNNING);
+            break;
+        case EMPTY: 
+            LOGGER.info("Crawl empty.");
+            if(!getRunWhileEmpty()) {
+                this.sExit = CrawlStatus.FINISHED;
+                beginCrawlStop();
+            }
+            sendCrawlStateChangeEvent(State.EMPTY, CrawlStatus.RUNNING);
+            break; 
         case PAUSE:
             if (state == State.PAUSING) {
                 completePause();
-                break;
-            }
-            if(atFinish()) { // really, "just reached finish"
-                if (getPauseAtFinish()) {
-                    completePause();
-                    break;
-                } else {
-                    beginCrawlStop();
-                }
-                break;
-            }
-            if(state == State.STOPPING || state == State.FINISHED) {
-                frontier.requestState(Frontier.State.FINISH);
             }
             break;
         case FINISH:

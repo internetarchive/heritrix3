@@ -136,7 +136,7 @@ public class DiskSpaceMonitor implements ApplicationListener {
         long availBytes = path.getUsableSpace();
         long thresholdBytes = getPauseThresholdMiB() * 1024 * 1024;
 
-        if (availBytes < thresholdBytes && controller.isStateRunning()) {
+        if (availBytes < thresholdBytes && controller.isActive()) {
             // Enact pause
             controller.requestCrawlPause();
             

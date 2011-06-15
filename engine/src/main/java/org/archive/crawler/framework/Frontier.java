@@ -515,7 +515,8 @@ public interface Frontier extends Lifecycle, MultiReporter {
      */
     public enum State { 
         RUN,  // juggle/prioritize/emit; usual state
-        HOLD, // enter a consistent, stable, checkpointable state ASAP
+        EMPTY, // running/ready but no URIs queued/scheduled
+        HOLD, // NOT YET USED enter a consistent, stable, checkpointable state ASAP
         PAUSE, // enter a stable state where no URIs are in-progress; unlike
                // HOLD requires all in-process URIs to complete
         FINISH  // end and cleanup; may not return to any other state after

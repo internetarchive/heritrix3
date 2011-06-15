@@ -498,7 +498,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         if(cc==null) {
             return false;
         }
-        return cc.isStateRunning(); 
+        return cc.isActive(); 
     }
     
     public boolean isUnpausable() {

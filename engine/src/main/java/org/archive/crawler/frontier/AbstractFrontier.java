@@ -345,20 +345,26 @@ public abstract class AbstractFrontier
         try {
             loop: while (true) {
                 try {
+                    State reachedState = null; 
                     switch (targetState) {
+                    case EMPTY:
+                        reachedState = State.EMPTY; 
                     case RUN:
                         // enable outbound takes if previously locked
                         while(outboundLock.isWriteLockedByCurrentThread()) {
                             outboundLock.writeLock().unlock();
                         }
-                        reachedState(State.RUN);
+                        if(reachedState==null) {
+                            reachedState = State.RUN; 
+                        }
+                        reachedState(reachedState);
                         
                         Thread.sleep(1000);
                         
-                        if(isEmpty()) {
-                            // pause when frontier exhausted; controller will
-                            // determine if this means to finish or not
-                            targetState = State.PAUSE;
+                        if(isEmpty()&&targetState==State.RUN) {
+                            requestState(State.EMPTY); 
+                        } else if (!isEmpty()&&targetState==State.EMPTY) {
+                            requestState(State.RUN); 
                         }
                         break;
                     case HOLD:

@@ -541,7 +541,11 @@ public class StatisticsTracker
         if (this.crawlStartTime == 0) {
             noteStart();
         }
-        logNote("CRAWL RESUMED - " + statusMessage);
+        logNote("CRAWL RUNNING - " + statusMessage);
+    }
+    
+    public void crawlEmpty(String statusMessage) {
+        logNote("CRAWL EMPTY - " + statusMessage);
     }
 
     /**
@@ -978,6 +982,9 @@ public class StatisticsTracker
                     break;
                 case RUNNING:
                     this.crawlResuming(event1.getMessage());
+                    break;
+                case EMPTY:
+                    this.crawlEmpty(event1.getMessage());
                     break;
                 case PAUSING:
                     this.crawlPausing(event1.getMessage());
