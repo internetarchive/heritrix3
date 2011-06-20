@@ -382,11 +382,26 @@ public class Recorder {
         InputStream ris = getContentReplayInputStream();
         ReplayCharSequence rcs =  new GenericReplayCharSequence(
                 ris,
-                this.getRecordedInput().getRecordedBufferLength()/2, 
+                calcRecommendedCharBufferSize(this.getRecordedInput()), 
                 this.backingFileBasename + RECORDING_OUTPUT_STREAM_SUFFIX,
                 requestedCharset);
         ris.close();
         return rcs;
+    }
+    
+    /**
+     * Calculate a recommended size for an in-memory decoded-character buffer
+     * of this content. We seek a size that is itself no larger (in 2-byte chars)
+     * than the memory already used by the RecordingInputStream's internal raw 
+     * byte buffer, and also no larger than likely necessary. So, we take the 
+     * minimum of the actual recorded byte size and the RecordingInputStream's
+     * max buffer size. 
+     * 
+     * @param inStream
+     * @return int length for in-memory decoded-character buffer
+     */
+    static protected int calcRecommendedCharBufferSize(RecordingInputStream inStream) {
+        return Math.min(inStream.getRecordedBufferLength()/2,(int)inStream.getSize());
     }
     
     /**

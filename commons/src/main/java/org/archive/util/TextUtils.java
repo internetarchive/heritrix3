@@ -78,6 +78,8 @@ public class TextUtils {
     }
 
     public static void recycleMatcher(Matcher m) {
+        // while cached, eliminate reference to potentially-large prior 'input'
+        m.reset(""); 
         final Map<String,Matcher> matchers = TL_MATCHER_MAP.get();
         matchers.put(m.pattern().pattern(),m);
     }
