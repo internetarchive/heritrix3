@@ -140,7 +140,7 @@ public class BdbMultipleWorkQueues {
     }
     
     /**
-     * @param m marker
+     * @param m marker or null to start with first entry
      * @param maxMatches
      * @return list of matches starting from marker position
      * @throws DatabaseException
@@ -154,12 +154,12 @@ public class BdbMultipleWorkQueues {
         int matches = 0;
         int tries = 0;
         ArrayList<String> results = new ArrayList<String>(maxMatches);
-        byte[] marker = m.getBytes(); // = FrontierJMXTypes.fromString(m);
         
         DatabaseEntry key;
-        if (marker == null) {
+        if (m == null) {
             key = getFirstKey();
         } else {
+            byte[] marker = m.getBytes(); // = FrontierJMXTypes.fromString(m);
             key = new DatabaseEntry(marker);
         }
 
