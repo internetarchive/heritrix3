@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,6 +69,23 @@ implements ReadSource {
     public void setTextSource(ReadSource seedsSource) {
         this.textSource = seedsSource;
     }
+    
+    /**
+     * Number of lines of seeds-source to read on initial load before proceeding
+     * with crawl. Default is -1, meaning all. Any other value will cause that
+     * number of lines to be loaded before fetching begins, while all extra
+     * lines continue to be processed in the background. Generally, this should
+     * only be changed when working with very large seed lists, and scopes that
+     * do *not* depend on reading all seeds. 
+     */
+    protected int blockAwaitingSeedLines = -1;
+    public int getBlockAwaitingSeedLines() {
+        return blockAwaitingSeedLines;
+    }
+    @Required
+    public void setBlockAwaitingSeedLines(int blockAwaitingSeedLines) {
+        this.blockAwaitingSeedLines = blockAwaitingSeedLines;
+    }
 
     public TextSeedModule() {
     }
@@ -78,9 +96,31 @@ implements ReadSource {
      * @see org.archive.modules.seeds.SeedModule#announceSeeds()
      */
     public void announceSeeds() {
+        if(getBlockAwaitingSeedLines()>-1) {
+            final CountDownLatch latch = new CountDownLatch(getBlockAwaitingSeedLines());
+            new Thread(){
+                @Override
+                public void run() {
+                    announceSeeds(latch); 
+                    while(latch.getCount()>0) {
+                        latch.countDown();
+                    }
+                }
+            }.start();
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                // do nothing
+            } 
+        } else {
+            announceSeeds(null); 
+        }
+    }
+    
+    protected void announceSeeds(CountDownLatch latchOrNull) {
         BufferedReader reader = new BufferedReader(textSource.obtainReader());       
         try {
-            announceSeedsFromReader(reader);    
+            announceSeedsFromReader(reader,latchOrNull);    
         } finally {
             IOUtils.closeQuietly(reader);
         }
@@ -89,9 +129,11 @@ implements ReadSource {
     /**
      * Announce all seeds (and nonseed possible-directive lines) from
      * the given Reader
-     * @param reader
+     * @param reader source of seed/directive lines
+     * @param latchOrNull if non-null, sent countDown after each line, allowing 
+     * another thread to proceed after a configurable number of lines processed
      */
-    protected void announceSeedsFromReader(BufferedReader reader) {
+    protected void announceSeedsFromReader(BufferedReader reader, CountDownLatch latchOrNull) {
         String s;
         Iterator<String> iter = 
             new RegexLineIterator(
@@ -113,6 +155,9 @@ implements ReadSource {
             } else {
                 // report just in case it's a useful directive
                 nonseedLine(s);
+            }
+            if(latchOrNull!=null) {
+                latchOrNull.countDown(); 
             }
         }
         publishConcludedSeedBatch(); 
@@ -164,7 +209,7 @@ implements ReadSource {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(f));
-            announceSeedsFromReader(reader);    
+            announceSeedsFromReader(reader, null);    
         } catch(FileNotFoundException fnf) {
             logger.log(Level.SEVERE,"seed file source not found",fnf);
         } finally {

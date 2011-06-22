@@ -91,6 +91,7 @@ http://example.example/example
       </bean>
      </property>
 <!-- <property name='sourceTagSeeds' value='false'/> -->
+<!-- <property name='blockAwaitingSeedLines' value='-1'/> -->
  </bean>
  
  <!-- SEEDS ALTERNATE APPROACH: specifying external seeds.txt file in
@@ -104,6 +105,7 @@ http://example.example/example
    </bean>
   </property>
   <property name='sourceTagSeeds' value='false'/>
+  <property name='blockAwaitingSeedLines' value='-1'/>
  </bean>
   -->
  
