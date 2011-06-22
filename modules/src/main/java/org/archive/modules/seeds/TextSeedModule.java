@@ -82,7 +82,6 @@ implements ReadSource {
     public int getBlockAwaitingSeedLines() {
         return blockAwaitingSeedLines;
     }
-    @Required
     public void setBlockAwaitingSeedLines(int blockAwaitingSeedLines) {
         this.blockAwaitingSeedLines = blockAwaitingSeedLines;
     }
