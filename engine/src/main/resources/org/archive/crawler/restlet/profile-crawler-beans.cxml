@@ -378,7 +378,7 @@ http://example.example/example
    class="org.archive.crawler.framework.CrawlController">
   <!-- <property name="maxToeThreads" value="25" /> -->
   <!-- <property name="pauseAtStart" value="true" /> -->
-  <!-- <property name="pauseAtFinish" value="false" /> -->
+  <!-- <property name="runWhileEmpty" value="true" /> -->
   <!-- <property name="recorderInBufferBytes" value="524288" /> -->
   <!-- <property name="recorderOutBufferBytes" value="16384" /> -->
   <!-- <property name="scratchDir" value="scratch" /> -->
