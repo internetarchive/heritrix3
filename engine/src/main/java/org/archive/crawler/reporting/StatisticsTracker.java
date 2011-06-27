@@ -494,7 +494,8 @@ public class StatisticsTracker
         return snapshot;
     }
     
-    public LinkedList<CrawlStatSnapshot> getSnapshots() {
+    public LinkedList<CrawlStatSnapshot> listSnapshots() {
+        // not named getSnapshots to avoid autodiscovery as a (invalid) bean-property
         return snapshots;
     }
     

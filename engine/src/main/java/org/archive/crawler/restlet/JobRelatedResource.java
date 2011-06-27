@@ -43,6 +43,7 @@ import org.restlet.data.Response;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.InvalidPropertyException;
 
 /**
  * Shared superclass for resources that represent functional aspects
@@ -159,23 +160,27 @@ public abstract class JobRelatedResource extends BaseResource {
         }
         if(!alreadyWritten.contains(obj)) {
             alreadyWritten.add(obj);
-            BeanWrapperImpl bwrap = new BeanWrapperImpl(obj); 
-            for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
-                if(pd.getReadMethod()!=null) {
-                    String propName = pd.getName();
-                    writeNestedNames(pw, bwrap.getPropertyValue(propName), prefix, alreadyWritten);
-                } 
-            }
-            if(obj.getClass().isArray()) {
-                List<?> list = Arrays.asList(obj);
-                for(int i = 0; i < list.size(); i++) {
-                    writeNestedNames(pw, list.get(i), prefix, alreadyWritten);
+            try {
+                BeanWrapperImpl bwrap = new BeanWrapperImpl(obj); 
+                for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
+                    if(pd.getReadMethod()!=null) {
+                        String propName = pd.getName();
+                        writeNestedNames(pw, bwrap.getPropertyValue(propName), prefix, alreadyWritten);
+                    } 
                 }
-            }
-            if(obj instanceof Iterable) {
-                for (Object next : (Iterable)obj) {
-                    writeNestedNames(pw, next, prefix, alreadyWritten);
+                if(obj.getClass().isArray()) {
+                    List<?> list = Arrays.asList(obj);
+                    for(int i = 0; i < list.size(); i++) {
+                        writeNestedNames(pw, list.get(i), prefix, alreadyWritten);
+                    }
                 }
+                if(obj instanceof Iterable) {
+                    for (Object next : (Iterable)obj) {
+                        writeNestedNames(pw, next, prefix, alreadyWritten);
+                    }
+                }
+            } catch (InvalidPropertyException ipe) {
+                pw.println("<span style='color:red'>"+ipe.getMessage()+"</span>");
             }
         }
         pw.println(close);
