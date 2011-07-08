@@ -44,17 +44,15 @@ public abstract class WriterPool {
      */
     final protected AtomicInteger serialNo;
     
-    /**
-     * Don't enforce a maximum number of idle instances in pool.
-     * To do so means GenericObjectPool will close files prematurely.
-     */
-    protected static final int NO_MAX_IDLE = -1;
-    
 	/**
 	 * Default maximum active number of files in the pool.
 	 */
 	public static final int DEFAULT_MAX_ACTIVE = 1;
 
+	/** Assumed largest possible value of maxActive; pool will have this
+	 * maximum capacity, so dynamic changes beyond this number won't work. */
+	protected static final int LARGEST_MAX_ACTIVE = 255;
+	
 	/**
 	 * Maximum time to wait on a free file before considering
 	 * making a new one (if not already at max)
@@ -102,7 +100,7 @@ public abstract class WriterPool {
         this.settings = settings;
         this.maxActive = poolMaximumActive;
         this.maxWait = poolMaximumWait;
-        availableWriters = new ArrayBlockingQueue<WriterPoolMember>(maxActive, true);
+        availableWriters = new ArrayBlockingQueue<WriterPoolMember>(LARGEST_MAX_ACTIVE, true);
         this.serialNo = serial;
     }
 
@@ -190,7 +188,10 @@ public abstract class WriterPool {
                 }
             }
         }
-        availableWriters.offer(writer); 
+        if(!availableWriters.offer(writer)) {
+            logger.log(Level.WARNING, "writer unreturnable to available pool; closing early");
+            destroyWriter(writer); 
+        }
     }
 
     /**
