@@ -62,8 +62,8 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
      * @param classCatalog
      */
     public StoredQueue(Database db, Class<E> clsOrNull, StoredClassCatalog classCatalog) {
-        tailIndex = new AtomicLong(0);
         hookupDatabase(db, clsOrNull, classCatalog);
+        tailIndex = new AtomicLong(queueMap.isEmpty() ? 0L : queueMap.lastKey()+1);
     }
 
     /**
@@ -92,7 +92,7 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
     @Override
     public int size() {
         try {
-            return queueMap.size();  
+            return queueMap.isEmpty() ? 0 : (int)(tailIndex.get() - queueMap.firstKey()); 
         } catch (IllegalStateException ise) {
             return 0; 
         }

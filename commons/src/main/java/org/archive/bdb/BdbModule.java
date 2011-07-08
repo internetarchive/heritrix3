@@ -361,11 +361,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         return classCatalog;
     }
 
-    public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz) {
+    public <K extends Serializable> StoredQueue<K> getStoredQueue(String dbname, Class<K> clazz, boolean usePriorData) {
         try {
             Database queueDb;
             queueDb = openDatabase(dbname,
-                    StoredQueue.databaseConfig(), false);
+                    StoredQueue.databaseConfig(), usePriorData);
             return new StoredQueue<K>(queueDb, clazz, getClassCatalog());
         } catch (DatabaseException e) {
             throw new RuntimeException(e);

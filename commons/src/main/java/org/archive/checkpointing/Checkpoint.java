@@ -18,7 +18,11 @@
  */
 package org.archive.checkpointing;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
@@ -124,7 +128,7 @@ public class Checkpoint implements InitializingBean {
                     targetFile,
                     json.toString());
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE,"unable to save checkpoint state of "+beanName,e);
+            LOGGER.log(Level.SEVERE,"unable to save checkpoint JSON state of "+beanName,e);
             setSuccess(false); 
         }
     }
@@ -138,6 +142,22 @@ public class Checkpoint implements InitializingBean {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public BufferedWriter saveWriter(String beanName, String extraName) throws IOException {
+        try {
+            File targetFile = new File(getCheckpointDir().getFile(),beanName+"-"+extraName);
+            return new BufferedWriter(new FileWriter(targetFile)); 
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"unable to save checkpoint writer state "+extraName+" of "+beanName,e);
+            setSuccess(false); 
+            throw e;
+        }
+    }
+    
+    public BufferedReader loadReader(String beanName, String extraName) throws IOException {
+        File sourceFile = new File(getCheckpointDir().getFile(),beanName+"-"+extraName);
+        return new BufferedReader(new FileReader(sourceFile));
     }
     
     public static boolean hasValidStamp(File checkpointDirectory) {

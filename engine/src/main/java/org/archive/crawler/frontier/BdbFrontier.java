@@ -18,6 +18,9 @@
  */
 package org.archive.crawler.frontier;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.Map.Entry;
@@ -31,6 +34,7 @@ import java.util.regex.Pattern;
 import javax.management.openmbean.CompositeData;
 
 import org.apache.commons.collections.Closure;
+import org.apache.commons.io.IOUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.bdb.StoredQueue;
@@ -39,6 +43,7 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Supplier;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.BeanNameAware;
@@ -218,11 +223,12 @@ implements Checkpointable, BeanNameAware {
     }
 
     public void doCheckpoint(Checkpoint checkpointInProgress) {
-        // An explicit sync on the any deferred write dbs is needed to make the
-        // db recoverable. Sync'ing the environment doesn't work.
+        // An explicit sync on any deferred write dbs is needed to make the
+        // db recoverable. Sync'ing the environment is insufficient
         this.pendingUris.sync();
         // object caches will be sync()d by BdbModule
         
+        // save simple instance fields & inactive-levels summary
         JSONObject json = new JSONObject();
         try {
             json.put("nextOrdinal", nextOrdinal.get());
@@ -232,11 +238,35 @@ implements Checkpointable, BeanNameAware {
             json.put("failedFetchCount", failedFetchCount.get());
             json.put("disregardedUriCount", disregardedUriCount.get());
             json.put("totalProcessedBytes", totalProcessedBytes.get());
+            json.put("inactivePrecedences", inactiveQueuesByPrecedence.keySet());
             checkpointInProgress.saveJson(beanName, json);
         } catch (JSONException e) {
             // impossible
             throw new RuntimeException(e);
         }
+        // write all active (inProcess, ready, snoozed) queues to list for quick-resume-use
+        PrintWriter activeQueuesWriter = null;
+        try {
+            activeQueuesWriter = new PrintWriter(checkpointInProgress.saveWriter(beanName, "active"));
+            for(WorkQueue q : inProcessQueues) {
+                activeQueuesWriter.println(q.getClassKey());
+            }
+            for(String qk : readyClassQueues) {
+                activeQueuesWriter.println(qk);
+            }
+            for(DelayedWorkQueue q : snoozedClassQueues) {
+                activeQueuesWriter.println(q.getClassKey());
+            }
+            for(DelayedWorkQueue q : snoozedOverflow.values()) {
+                activeQueuesWriter.println(q.getClassKey());
+            }
+        } catch (IOException ioe) {
+            checkpointInProgress.setSuccess(false);
+            logger.log(Level.SEVERE,"problem writing checkpoint", ioe);
+        } finally {
+            IOUtils.closeQuietly(activeQueuesWriter);
+        }
+        // rotate recover log, if any
         if(this.recover!=null) {
             recover.rotateForCheckpoint(checkpointInProgress);
         }
@@ -257,6 +287,7 @@ implements Checkpointable, BeanNameAware {
         boolean isRecovery = (recoveryCheckpoint != null);
         this.allQueues = bdb.getObjectCache("allqueues", isRecovery, WorkQueue.class, BdbWorkQueue.class);
         if(isRecovery) {
+            // restore simple instance fields 
             JSONObject json = recoveryCheckpoint.loadJson(beanName);
             try {
                 nextOrdinal.set(json.getLong("nextOrdinal"));
@@ -266,36 +297,47 @@ implements Checkpointable, BeanNameAware {
                 failedFetchCount.set(json.getLong("failedFetchCount"));
                 disregardedUriCount.set(json.getLong("disregardedUriCount"));
                 totalProcessedBytes.set(json.getLong("totalProcessedBytes"));
+                JSONArray inactivePrecedences = json.getJSONArray("inactivePrecedences"); 
+                // restore all intended inactiveQueues
+                for(int i = 0; i < inactivePrecedences.length(); i++) {
+                    int precedence = inactivePrecedences.getInt(i);
+                    inactiveQueuesByPrecedence.put(precedence,createInactiveQueueForPrecedence(precedence,true));
+                }
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }           
-            // TODO: restore largestQueues topNset
-            // restore WorkQueues to internal management queues
-            // either retired or inactive tiers
-            for (String key : allQueues.keySet()) {
-                WorkQueue q = allQueues.get(key);
-                if(q.isRetired()) {
-                    getRetiredQueues().add(key); 
-                } else if (q.getCount()>0){
-                    deactivateQueue(q);
-                } else {
-                    // ensure queues that were empty-but-not-yet-recognized
-                    // (ready/snoozed) at time of checkpoint are reset
-                    q.noteDeactivated();
+            
+            // retired queues already restored with prior data in initOtherQueues
+            
+            // restore ready queues (those not already on inactive, retired)
+            BufferedReader activeQueuesReader = null;
+            try {
+                activeQueuesReader = recoveryCheckpoint.loadReader(beanName,"active");
+                String line; 
+                while((line = activeQueuesReader.readLine())!=null) {
+                    readyClassQueues.add(line); 
                 }
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe); 
+            } finally {
+                IOUtils.closeQuietly(activeQueuesReader); 
             }
+
+            // TODO: restore largestQueues topNset?
         }
     }
 
     @Override
     protected void initOtherQueues() throws DatabaseException {
+        boolean recycle = (recoveryCheckpoint != null);
+        
         // tiny risk of OutOfMemoryError: if giant number of snoozed
         // queues all wake-to-ready at once
         readyClassQueues = new LinkedBlockingQueue<String>();
 
         inactiveQueuesByPrecedence = new ConcurrentSkipListMap<Integer,Queue<String>>();
         
-        retiredQueues = bdb.getStoredQueue("retiredQueues", String.class);
+        retiredQueues = bdb.getStoredQueue("retiredQueues", String.class, recycle);
 
         // primary snoozed queues
         snoozedClassQueues = new DelayQueue<DelayedWorkQueue>();
@@ -316,7 +358,14 @@ implements Checkpointable, BeanNameAware {
      */
     @Override
     Queue<String> createInactiveQueueForPrecedence(int precedence) {
-        return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class);
+        return createInactiveQueueForPrecedence(precedence, false);
+    }
+    
+    /** 
+     * Optionally reuse prior data, for use when resuming from a checkpoint
+     */
+    Queue<String> createInactiveQueueForPrecedence(int precedence, boolean usePriorData) {
+        return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class, usePriorData);
     }
     
     /**
