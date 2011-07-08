@@ -45,6 +45,7 @@ import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
@@ -179,10 +180,11 @@ implements Serializable,
     /**
      * Maximum number of threads processing URIs at the same time.
      */
-    int maxToeThreads = 25; 
+    int maxToeThreads; 
     public int getMaxToeThreads() {
         return maxToeThreads;
     }
+    @Value("25")
     public void setMaxToeThreads(int maxToeThreads) {
         this.maxToeThreads = maxToeThreads;
         if(toePool!=null) {

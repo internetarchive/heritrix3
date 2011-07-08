@@ -34,10 +34,13 @@
 	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/4.1.6/je-4.1.6.jar" sourcepath="/M2SRC/je-4.1.6/src"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/1.4/commons-io-1.4.jar" sourcepath="/M2SRC/commons-io-1.4-src/src/java"/>
 	<classpathentry kind="var" path="M2_REPO/org/archive/overlays/archive-overlay-commons-httpclient/3.1/archive-overlay-commons-httpclient-3.1.jar" sourcepath="/M2SRC/commons-httpclient-3.1/src/java"/>
-	<classpathentry kind="var" path="M2_REPO/org/dnsjava/dnsjava/2.0.3/dnsjava-2.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-core/2.5.6/spring-core-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/src"/>
-	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-beans/2.5.6/spring-beans-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6.SEC02/dist/spring-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-context/2.5.6/spring-context-2.5.6.jar" sourcepath="/M2SRC/spring-framework-2.5.6/dist/module-sources/spring-context-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/dnsjava/dnsjava/2.0.3/dnsjava-2.0.3.jar" sourcepath="/M2SRC/dnsjava-2.0.3"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-core/3.0.5.RELEASE/spring-core-3.0.5.RELEASE.jar" sourcepath="/M2SRC/spring-framework-3.0.5.RELEASE/src/org.springframework.core-sources-3.0.5.RELEASE.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-beans/3.0.5.RELEASE/spring-beans-3.0.5.RELEASE.jar" sourcepath="/M2SRC/spring-framework-3.0.5.RELEASE/src/org.springframework.beans-sources-3.0.5.RELEASE.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-context/3.0.5.RELEASE/spring-context-3.0.5.RELEASE.jar" sourcepath="/M2SRC/spring-framework-3.0.5.RELEASE/src/org.springframework.context-sources-3.0.5.RELEASE.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-asm/3.0.5.RELEASE/spring-asm-3.0.5.RELEASE.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-expression/3.0.5.RELEASE/spring-expression-3.0.5.RELEASE.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-aop/3.0.5.RELEASE/spring-aop-3.0.5.RELEASE.jar"/>
 	<classpathentry kind="var" path="M2_REPO/joda-time/joda-time/1.6/joda-time-1.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-ajp/6.1.11/jetty-ajp-6.1.11.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.14/jetty-sslengine-6.1.14.jar"/>

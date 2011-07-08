@@ -219,4 +219,19 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
         return allErrors;
     }
     
+    /**
+     * Initialize the LifecycleProcessor.
+     * Uses HeritrixLifecycleProcessor, which prevents an automatic lifecycle
+     * start(), if none defined in the context.
+     * @see org.springframework.context.support.DefaultLifecycleProcessor
+     */
+    protected void initLifecycleProcessor() {
+        ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+        if (!beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {
+            HeritrixLifecycleProcessor obj = (HeritrixLifecycleProcessor)beanFactory.createBean(HeritrixLifecycleProcessor.class); 
+            beanFactory.registerSingleton(LIFECYCLE_PROCESSOR_BEAN_NAME,obj);
+        }
+        super.initLifecycleProcessor();
+    }
+    
 }

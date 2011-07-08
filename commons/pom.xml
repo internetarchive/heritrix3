@@ -218,17 +218,27 @@
         <dependency>
               <groupId>org.springframework</groupId>
               <artifactId>spring-core</artifactId>
-              <version>2.5.6</version>
+              <version>3.0.5.RELEASE</version>
         </dependency>
         <dependency>
               <groupId>org.springframework</groupId>
               <artifactId>spring-beans</artifactId>
-              <version>2.5.6</version>
+              <version>3.0.5.RELEASE</version>
         </dependency>
         <dependency>
               <groupId>org.springframework</groupId>
               <artifactId>spring-context</artifactId>
-              <version>2.5.6</version>
+              <version>3.0.5.RELEASE</version>
+        </dependency>
+        <dependency>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-asm</artifactId>
+              <version>3.0.5.RELEASE</version>
+        </dependency>
+        <dependency>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-expression</artifactId>
+              <version>3.0.5.RELEASE</version>
         </dependency>
         <dependency>  
           <groupId>joda-time</groupId>  
@@ -241,12 +251,6 @@
           <version>20090211</version>
         </dependency>
         
-<dependency>
-    <groupId>asm</groupId>
-    <artifactId>asm</artifactId>
-    <version>3.2</version>
-    <scope>runtime</scope>
-</dependency>
 <dependency>
     <groupId>com.esotericsoftware</groupId>
     <artifactId>kryo</artifactId>

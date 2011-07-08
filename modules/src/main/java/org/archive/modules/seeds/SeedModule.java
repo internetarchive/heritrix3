@@ -52,7 +52,7 @@ public abstract class SeedModule implements Serializable
     }
     @Autowired
     public void setSeedListeners(Set<SeedListener> seedListeners) {
-        this.seedListeners = seedListeners;
+        this.seedListeners.addAll(seedListeners);
     }
     
     protected void publishAddedSeed(CrawlURI curi) {
