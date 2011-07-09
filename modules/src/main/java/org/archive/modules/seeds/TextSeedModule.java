@@ -21,8 +21,6 @@ package org.archive.modules.seeds;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -39,6 +37,7 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.WriteTarget;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.iterator.LineReadingIterator;
 import org.archive.util.iterator.RegexLineIterator;
@@ -207,10 +206,10 @@ implements ReadSource {
     public void actOn(File f) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(f));
+            reader = ArchiveUtils.getBufferedReader(f);
             announceSeedsFromReader(reader, null);    
-        } catch(FileNotFoundException fnf) {
-            logger.log(Level.SEVERE,"seed file source not found",fnf);
+        } catch (IOException ioe) {
+            logger.log(Level.SEVERE,"problem reading seed file "+f,ioe);
         } finally {
             IOUtils.closeQuietly(reader);
         }
