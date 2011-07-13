@@ -81,6 +81,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.extractor.Link;
+import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
@@ -107,9 +108,9 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     public long getDefaultMaxFileSize() {
         return 1000000000L; // 1 SI giga-byte (10^9 bytes), per WARC appendix A
     }
-    public List<String> getDefaultStorePaths() {
-        List<String> paths = new ArrayList<String>();
-        paths.add("warcs");
+    public List<ConfigPath> getDefaultStorePaths() {
+        List<ConfigPath> paths = new ArrayList<ConfigPath>();
+        paths.add(new ConfigPath("warcs default store path", "warcs"));
         return paths;
     }
     

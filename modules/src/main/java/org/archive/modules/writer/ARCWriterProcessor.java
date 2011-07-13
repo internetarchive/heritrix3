@@ -38,8 +38,9 @@ import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.arc.ARCWriter;
 import org.archive.io.arc.ARCWriterPool;
-import org.archive.modules.ProcessResult;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.ProcessResult;
+import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 
 /**
@@ -64,9 +65,9 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
     public long getDefaultMaxFileSize() {
         return 100000000L; // 100 SI mega-bytes (10^8 bytes)
     }
-    public List<String> getDefaultStorePaths() {
-        List<String> paths = new ArrayList<String>();
-        paths.add("arcs");
+    public List<ConfigPath> getDefaultStorePaths() {
+        List<ConfigPath> paths = new ArrayList<ConfigPath>();
+        paths.add(new ConfigPath("arcs default store path", "arcs"));
         return paths;
     }
 

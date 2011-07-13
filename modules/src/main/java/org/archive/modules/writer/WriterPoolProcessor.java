@@ -241,12 +241,12 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * setting is safe to change midcrawl (You can remove and add new 
      * dirs as the crawler progresses).
      */
-    List<String> storePaths = getDefaultStorePaths();
-    abstract List<String> getDefaultStorePaths();
-    public List<String> getStorePaths() {
+    List<ConfigPath> storePaths = getDefaultStorePaths();
+    abstract List<ConfigPath> getDefaultStorePaths();
+    public List<ConfigPath> getStorePaths() {
         return storePaths;
     }
-    public void setStorePaths(List<String> paths) {
+    public void setStorePaths(List<ConfigPath> paths) {
         this.storePaths = paths; 
     }
     
@@ -430,12 +430,11 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     public abstract List<String> getMetadata();
     
     public List<File> getOutputDirs() {
-        List<String> list = getStorePaths();
+        List<ConfigPath> list = getStorePaths();
         ArrayList<File> results = new ArrayList<File>();
-        for (String path: list) {
-            File f = new File(
-                    path.startsWith("/") ? null : getDirectory().getFile(), 
-                    path);
+        for (ConfigPath path: list) {
+            path.setBase(getDirectory());
+            File f = path.getFile();
             if (!f.exists()) {
                 try {
                     f.mkdirs();

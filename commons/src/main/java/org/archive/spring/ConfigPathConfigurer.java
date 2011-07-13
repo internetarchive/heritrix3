@@ -22,9 +22,11 @@ package org.archive.spring;
 import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.archive.modules.writer.WriterPoolProcessor;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -125,6 +127,16 @@ implements
                 }
             }
         }
+        
+        // we want to remember writer pool store paths for later interpolation
+        // (but their base dirs are taken care of elsewhere)
+        if (bean instanceof WriterPoolProcessor) {
+            List<ConfigPath> storePaths = ((WriterPoolProcessor) bean).getStorePaths();
+            for (int i = 0; i < storePaths.size(); i++) {
+                remember(beanName + "." + "storePaths[" + i + "]", storePaths.get(i));
+            }
+        }
+        
         if(bean instanceof PathFixupListener) {
             ((PathFixupListener)bean).pathsFixedUp();
         }
