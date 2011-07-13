@@ -57,6 +57,7 @@ import org.archive.spring.ConfigPath;
 import org.archive.spring.ConfigPathConfigurer;
 import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.TextUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanWrapperImpl;
@@ -80,7 +81,7 @@ import org.xml.sax.SAXException;
  * 
  * @contributor gojomo
  */
-public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
+public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<ApplicationEvent> {
     private final static Logger LOGGER =
         Logger.getLogger(CrawlJob.class.getName());
 
@@ -97,7 +98,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
     public CrawlJob(File cxml) {
         primaryConfig = cxml; 
         isLaunchInfoPartial = false;
-        scanJobLog(); 
+        scanJobLog(); // XXX look at launch directories instead/first? 
         alertThreadGroup = new AlertThreadGroup(getShortName());
     }
     
@@ -428,8 +429,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         alertThreadGroup.addLogger(getJobLogger());
         Thread launcher = new Thread(alertThreadGroup, getShortName()+" launchthread") {
             public void run() {
-                startContext();
                 CrawlController cc = getCrawlController();
+                initLaunchDir();
+                startContext();
                 if(cc!=null) {
                     cc.requestCrawlStart();
                 }
@@ -446,6 +448,50 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
         }
     }
     
+    protected transient String currentLaunchId;
+    public void initLaunchId() {
+        currentLaunchId = "launch-" + ArchiveUtils.get17DigitDate();
+        LOGGER.info("launch id " + currentLaunchId);
+    }
+    public String getCurrentLaunchId() {
+        return currentLaunchId;
+    }
+
+    protected transient File currentLaunchDir;
+    public File getCurrentLaunchDir() {
+        return currentLaunchDir;
+    }
+    
+    protected void initLaunchDir() {
+        initLaunchId();
+        try {
+            currentLaunchDir = new File(getJobDir(), getCurrentLaunchId());
+            if (!currentLaunchDir.mkdir()) {
+                throw new IOException("failed to create directory " + currentLaunchDir);
+            }
+            
+            // copy cxml to launch dir
+            FileUtils.copyFileToDirectory(getPrimaryConfig(), currentLaunchDir);
+            
+            // attempt to symlink "current" to launch dir
+            File currentSymlink = new File(getJobDir(), "current");
+            currentSymlink.delete();
+            boolean success = FilesystemLinkMaker.makeSymbolicLink(currentLaunchDir.getName(), currentSymlink.getPath());
+            if (!success) {
+                LOGGER.warning("failed to create symlink from " + currentSymlink + " to " + currentLaunchDir);
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "failed to initialize launch directory: " + e);
+            currentLaunchDir = null;
+        }
+        
+        // fill in ${launch-id} in all config paths, and let config files know
+        // where to snapshot themselves
+        for (ConfigPath configPath: getConfigPaths().values()) {
+            configPath.informOfLaunch(getCurrentLaunchId(), getCurrentLaunchDir());
+        }
+    }
+
     /**
      * Start the context, catching and reporting any BeansExceptions.
      */
@@ -515,7 +561,6 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener {
      * 
      * @return Checkpointer
      */
-    @SuppressWarnings("unchecked")
     public synchronized CheckpointService getCheckpointService() {
         if(ac==null) {
             return null;

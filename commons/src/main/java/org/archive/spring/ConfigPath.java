@@ -56,9 +56,10 @@ public class ConfigPath implements Serializable {
     
     String name; 
     String path; 
-    ConfigPath base; 
-    transient File resolved;
+    ConfigPath base;
     
+    transient String interpolatedPath;
+    transient File currentLaunchDir;
     
     public ConfigPath() {
         super();
@@ -68,6 +69,7 @@ public class ConfigPath implements Serializable {
         super();
         this.name = name;
         this.path = path;
+        this.interpolatedPath = path;
     }
 
     public ConfigPath getBase() {
@@ -93,12 +95,13 @@ public class ConfigPath implements Serializable {
     @Required
     public void setPath(String path) {
         this.path = path;
+        this.interpolatedPath = path;
     } 
     
     public File getFile() {
-        return (base == null || path.startsWith("/"))
-                    ? new File(path) 
-                    : new File(base.getFile(), path);
+        return (base == null || interpolatedPath.startsWith("/"))
+                    ? new File(interpolatedPath) 
+                    : new File(base.getFile(), interpolatedPath);
     }
     
     /**
@@ -117,5 +120,11 @@ public class ConfigPath implements Serializable {
             setPath(newvals.getPath()); 
         }
         return this; 
+    }
+
+    public void informOfLaunch(String currentLaunchId, File currentLaunchDir) {
+        this.currentLaunchDir = currentLaunchDir;
+        // could use PropertyUtils.interpolateWithProperties(String, Properties...), but no real need
+        interpolatedPath = path.replace("${launch-id}", currentLaunchId);
     }
 }

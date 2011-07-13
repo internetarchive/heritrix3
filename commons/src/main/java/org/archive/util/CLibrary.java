@@ -35,5 +35,6 @@ public interface CLibrary extends Library {
         Native.loadLibrary((Platform.isWindows() ? "msvcrt" : "c"),
                            CLibrary.class);
     
-    int link(String fromFile, String toFile);
+    int link(String existingPath, String newPath);
+    int symlink(String existingPath, String newPath);
 }

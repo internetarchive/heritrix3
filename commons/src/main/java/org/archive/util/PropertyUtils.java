@@ -83,7 +83,7 @@ public class PropertyUtils {
      * the expression is replaced with the empty-string. 
      * 
      * @param original String
-     * @param properties Properties to try in order; first value found (if any) is used
+     * @param props Properties to try in order; first value found (if any) is used
      * @return modified String
      */
     public static String interpolateWithProperties(String original,

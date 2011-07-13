@@ -225,7 +225,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         this.serverCache = serverCache;
     }
 
-    protected ConfigPath directory = new ConfigPath("writer base path", ".");
+    protected ConfigPath directory = new ConfigPath("writer base path", "${launch-id}");
     public ConfigPath getDirectory() {
         return directory;
     }

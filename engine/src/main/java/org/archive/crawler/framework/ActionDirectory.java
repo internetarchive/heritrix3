@@ -41,6 +41,7 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FilesystemLinkMaker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -100,9 +101,6 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         this.delaySeconds = delay;
     }
     
-    /**
-     * Scratch directory for temporary overflow-to-disk
-     */
     protected ConfigPath actionDir = 
         new ConfigPath("ActionDirectory source directory","action");
     public ConfigPath getActionDir() {
@@ -112,16 +110,13 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         this.actionDir = actionDir;
     }
     
-    /**
-     * Scratch directory for temporary overflow-to-disk
-     */
     protected ConfigPath doneDir = 
-        new ConfigPath("ActionDirectory done directory","action/done");
+        new ConfigPath("ActionDirectory done directory","${launch-id}/actions-done");
     public ConfigPath getDoneDir() {
         return doneDir;
     }
-    public void setDoneDir(ConfigPath scratchDir) {
-        this.doneDir = scratchDir;
+    public void setDoneDir(ConfigPath doneDir) {
+        this.doneDir = doneDir;
     }
     
     ApplicationContext appCtx;
@@ -258,7 +253,19 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         // move file to 'done' area with timestamp prefix
         while(actionFile.exists()) {
             try {
-                FileUtils.moveFile(actionFile, new File(doneDir.getFile(),timestamp+"."+actionFile.getName()));
+                File doneFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName());
+                FileUtils.moveFile(actionFile, doneFile);
+                
+                // attempt to symlink from action/done/ to done file
+                File actionDoneDirFile = new File(actionDir.getFile(), "done");
+                if (!actionDoneDirFile.equals(doneDir.getFile())) {
+                    actionDoneDirFile.mkdirs();
+                    File doneSymlinkFile = new File(actionDoneDirFile, doneFile.getName());
+                    boolean success = FilesystemLinkMaker.makeSymbolicLink(doneFile.getPath(), doneSymlinkFile.getPath());
+                    if (!success) {
+                        LOGGER.warning("failed to create symlink from " + doneSymlinkFile + " to " + doneFile);
+                    }
+                }
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE,"unable to move "+actionFile,e);
             }

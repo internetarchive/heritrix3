@@ -130,9 +130,9 @@ import com.sleepycat.je.DatabaseException;
 public class StatisticsTracker 
     implements 
         ApplicationContextAware, 
-        ApplicationListener,
+        ApplicationListener<ApplicationEvent>,
         SeedListener,
-        Lifecycle, 
+        Lifecycle,
         Runnable, 
         Checkpointable,
         BeanNameAware {
@@ -153,7 +153,7 @@ public class StatisticsTracker
         this.bdb = bdb;
     }
 
-    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,"reports");
+    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,"${launch-id}/reports");
     public ConfigPath getReportsDir() {
         return reportsDir;
     }

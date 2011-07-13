@@ -43,7 +43,7 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
 import org.archive.util.CLibrary;
-import org.archive.util.HardLinker;
+import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
@@ -487,7 +487,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                     filedata[i] += ","+f.length();
                     if(getUseHardLinkCheckpoints()) {
                         File hardLink = new File(envCpDir,filedata[i]);
-                        if (!HardLinker.makeHardLink(f.getAbsolutePath(), hardLink.getAbsolutePath())) {
+                        if (!FilesystemLinkMaker.makeHardLink(f.getAbsolutePath(), hardLink.getAbsolutePath())) {
                             LOGGER.log(Level.SEVERE, "unable to create required checkpoint link "+hardLink); 
                         }
                     }

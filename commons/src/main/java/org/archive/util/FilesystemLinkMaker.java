@@ -32,7 +32,7 @@ import com.sun.jna.win32.StdCallLibrary;
  * 
  * @see http://stackoverflow.com/questions/783075/creating-a-hard-link-in-java/3023349#3023349
  */
-public class HardLinker {
+public class FilesystemLinkMaker {
     
     // see https://github.com/twall/jna/blob/master/www/GettingStarted.md
     public interface Kernel32Library extends StdCallLibrary {
@@ -63,6 +63,9 @@ public class HardLinker {
          */
         boolean CreateHardLinkA(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
         // boolean CreateHardLinkW(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+        
+        // http://msdn.microsoft.com/en-us/library/aa363866%28v=VS.85%29.aspx
+        boolean CreateSymbolicLinkA(String newPath, String existingPath, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
     }
     
     /**
@@ -70,6 +73,7 @@ public class HardLinker {
      * 
      * @return true on success
      */
+    // XXX could handle errors better (examine errno, throw exception...)
     public static boolean makeHardLink(String existingPath, String newPath) {
         if (Platform.isWindows()) {
             return Kernel32Library.INSTANCE.CreateHardLinkA(newPath, existingPath, null);
@@ -78,16 +82,41 @@ public class HardLinker {
             return status == 0;
         }
     }
-
+    
+    /**
+     * Wrapper over platform-dependent system calls to create a symboic link.
+     * 
+     * @return true on success
+     */
+    // XXX could handle errors better (examine errno, throw exception...)
+    public static boolean makeSymbolicLink(String existingPath, String newPath) {
+        if (Platform.isWindows()) {
+            return Kernel32Library.INSTANCE.CreateSymbolicLinkA(newPath, existingPath, null);
+        } else {
+            int status = CLibrary.INSTANCE.symlink(existingPath, newPath);
+            return status == 0;
+        }
+    }
+    
     public static void main(String[] args) throws IOException {
         File existingPath = File.createTempFile("heritrixHardLinkTestExistingFile", ".tmp");
         File newPath = File.createTempFile("heritrixHardLinkTestNewFile", ".tmp");
         newPath.delete();
         
-        if (HardLinker.makeHardLink(existingPath.getAbsolutePath(), newPath.getAbsolutePath())) {
+        if (FilesystemLinkMaker.makeHardLink(existingPath.getAbsolutePath(), newPath.getAbsolutePath())) {
             System.out.println("success - made hard link from " + newPath.getAbsolutePath() + " to " + existingPath.getAbsolutePath());
         } else {
             System.out.println("failed to make hard link from " + newPath.getAbsolutePath() + " to " + existingPath.getAbsolutePath());
+        }
+
+        existingPath = File.createTempFile("heritrixSymlinkTestExistingFile", ".tmp");
+        newPath = File.createTempFile("heritrixSymlinkTestNewFile", ".tmp");
+        newPath.delete();
+        
+        if (FilesystemLinkMaker.makeSymbolicLink(existingPath.getPath(), newPath.getPath())) {
+            System.out.println("success - made symlink from " + newPath.getAbsolutePath() + " to " + existingPath.getAbsolutePath());
+        } else {
+            System.out.println("failed to make symlink from " + newPath.getAbsolutePath() + " to " + existingPath.getAbsolutePath());
         }
     }
 }

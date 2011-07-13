@@ -62,7 +62,7 @@ public class CrawlerLoggerModule
         Checkpointable, SimpleFileLoggerProvider {
     private static final long serialVersionUID = 1L;
 
-    protected ConfigPath path = new ConfigPath(Engine.LOGS_DIR_NAME,"logs"); 
+    protected ConfigPath path = new ConfigPath(Engine.LOGS_DIR_NAME,"${launch-id}/logs"); 
     public ConfigPath getPath() {
         return path;
     }
