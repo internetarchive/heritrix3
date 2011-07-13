@@ -449,7 +449,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     }
     
     protected transient String currentLaunchId;
-    public void initLaunchId() {
+    protected void initLaunchId() {
         currentLaunchId = "launch-" + ArchiveUtils.get17DigitDate();
         LOGGER.info("launch id " + currentLaunchId);
     }
