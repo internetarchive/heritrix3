@@ -462,6 +462,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         return currentLaunchDir;
     }
     
+    protected transient Handler currentLaunchJobLogHandler;
     protected void initLaunchDir() {
         initLaunchId();
         try {
@@ -469,6 +470,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             if (!currentLaunchDir.mkdir()) {
                 throw new IOException("failed to create directory " + currentLaunchDir);
             }
+            
+            // job log file covering just this launch
+            getJobLogger().removeHandler(currentLaunchJobLogHandler);
+            File f = new File(currentLaunchDir, "job.log");
+            currentLaunchJobLogHandler = new FileHandler(f.getAbsolutePath(), true);
+            currentLaunchJobLogHandler.setFormatter(new JobLogFormatter());
+            getJobLogger().addHandler(currentLaunchJobLogHandler);
             
             // copy cxml to launch dir
             FileUtils.copyFileToDirectory(getPrimaryConfig(), currentLaunchDir);
@@ -596,7 +604,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             }
             ac = null;
         }
-        xmlOkAt = new DateTime(0); 
+        xmlOkAt = new DateTime(0);
+        getJobLogger().removeHandler(currentLaunchJobLogHandler);
         getJobLogger().log(Level.INFO,"Job instance discarded");
         return true; 
     }
