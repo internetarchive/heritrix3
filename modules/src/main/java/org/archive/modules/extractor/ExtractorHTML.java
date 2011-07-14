@@ -672,7 +672,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             String contentPrefix = curi.getRecorder().getContentReplayPrefixString(1000);
             Charset contentDeclaredEncoding = getContentDeclaredCharset(curi,contentPrefix);
             if(!curi.getRecorder().getCharset().equals(contentDeclaredEncoding) && contentDeclaredEncoding!=null) {
-                String newContentPrefix = curi.getRecorder().getContentReplayPrefixString(50,contentDeclaredEncoding); 
+                String newContentPrefix = curi.getRecorder().getContentReplayPrefixString(1000,contentDeclaredEncoding); 
                 Charset reflexiveCharset = getContentDeclaredCharset(curi, newContentPrefix);
                 if(contentDeclaredEncoding.equals(reflexiveCharset)) {
                     // content-declared charset is self-consistent; use
