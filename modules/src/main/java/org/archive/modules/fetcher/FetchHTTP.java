@@ -818,7 +818,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
         Header contentEncodingHeader = ((HttpMethodBase) method).getResponseHeader("Content-Encoding"); 
         if (contentEncodingHeader!=null) {
             String ce = contentEncodingHeader.getValue().trim(); 
-            rec.setContentEncoding(ce); 
+            try {
+                rec.setContentEncoding(ce); 
+            } catch (IllegalArgumentException e) {
+                uri.getAnnotations().add("unsatisfiableContentEncoding:"+StringUtils.stripToEmpty(ce));
+            }
         }
     }
 

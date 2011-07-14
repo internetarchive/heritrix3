@@ -697,7 +697,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
            return true;
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
-            logger.log(Level.SEVERE,"Failed get of replay char sequence in " +
+            logger.log(Level.WARNING,"Failed get of replay char sequence in " +
                 Thread.currentThread().getName(), e);
         }
         return false;

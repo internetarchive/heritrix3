@@ -137,7 +137,8 @@ public class Link implements Serializable, Comparable<Link> {
             String newUri, LinkContext context, Hop hop) throws URIException {
         UURI relTo = uri.getVia();
         if(relTo==null) {
-            LOGGER.warning("no via where expected; using base instead: "+uri);
+            LOGGER.info("no via where expected; using base instead: "+uri);
+            uri.getAnnotations().add("usedBaseForVia");
             relTo = uri.getBaseURI();
         }
         UURI dest = UURIFactory.getInstance(relTo, newUri);

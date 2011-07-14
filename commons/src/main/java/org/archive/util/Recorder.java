@@ -25,6 +25,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.DeflaterInputStream;
@@ -325,11 +327,23 @@ public class Recorder {
         this.inputIsChunked = chunked;
     }
     
+    static Set<String> SUPPORTED_ENCODINGS = new HashSet<String>();
+    static {
+        SUPPORTED_ENCODINGS.add("gzip"); 
+        SUPPORTED_ENCODINGS.add("x-gzip");
+        SUPPORTED_ENCODINGS.add("deflate");
+        SUPPORTED_ENCODINGS.add("identity");
+        SUPPORTED_ENCODINGS.add("none"); // unofficial but common
+    }
     /**
      * @param contentEncoding declared content-encoding of input recording.
      */
     public void setContentEncoding(String contentEncoding) {
-        this.contentEncoding = contentEncoding;
+        String lowerCoding = contentEncoding.toLowerCase(); 
+        if(!SUPPORTED_ENCODINGS.contains(contentEncoding.toLowerCase())) {
+            throw new IllegalArgumentException("contentEncoding unsupported: "+contentEncoding); 
+        }
+        this.contentEncoding = lowerCoding;
     }
 
     /**
@@ -466,10 +480,11 @@ public class Recorder {
             }
         } else if ("deflate".equalsIgnoreCase(contentEncoding)) {
             return new DeflaterInputStream(entityStream);
-        } else if ("identity".equalsIgnoreCase(contentEncoding)) {
+        } else if ("identity".equalsIgnoreCase(contentEncoding) || "none".equalsIgnoreCase(contentEncoding)) {
             return entityStream;
         } else {
-            logger.log(Level.WARNING,"Unknown content-encoding '"+contentEncoding+"' declared; using raw entity instead");
+            // shouldn't be reached given check on setContentEncoding
+            logger.log(Level.INFO,"Unknown content-encoding '"+contentEncoding+"' declared; using raw entity instead");
             return entityStream; 
         }
     }
