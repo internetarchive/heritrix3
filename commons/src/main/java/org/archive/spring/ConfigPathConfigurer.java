@@ -54,7 +54,7 @@ import org.springframework.core.Ordered;
 public class ConfigPathConfigurer 
 implements 
     BeanPostProcessor, 
-    ApplicationListener,
+    ApplicationListener<ApplicationEvent>,
     ApplicationContextAware, 
     Ordered {
     Map<String,Object> allBeans = new HashMap<String,Object>();
@@ -87,8 +87,19 @@ implements
      */
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ContextRefreshedEvent) {
-            for(String k : allBeans.keySet()) {
-                fixupPaths(allBeans.get(k),k);
+            for(String beanName: allBeans.keySet()) {
+                Object bean = allBeans.get(beanName);
+
+                fixupPaths(bean, beanName);
+
+                // we want to remember writer pool store paths for later interpolation
+                // (their base dirs are taken care of elsewhere)
+                if (bean instanceof WriterPoolProcessor) {
+                    List<ConfigPath> storePaths = ((WriterPoolProcessor) bean).getStorePaths();
+                    for (int i = 0; i < storePaths.size(); i++) {
+                        remember(beanName + "." + "storePaths[" + i + "]", storePaths.get(i));
+                    }
+                }
             }
             allBeans.clear(); // forget 
         }
@@ -125,15 +136,6 @@ implements
                     }
                     remember(beanPath, cp);
                 }
-            }
-        }
-        
-        // we want to remember writer pool store paths for later interpolation
-        // (but their base dirs are taken care of elsewhere)
-        if (bean instanceof WriterPoolProcessor) {
-            List<ConfigPath> storePaths = ((WriterPoolProcessor) bean).getStorePaths();
-            for (int i = 0; i < storePaths.size(); i++) {
-                remember(beanName + "." + "storePaths[" + i + "]", storePaths.get(i));
             }
         }
         
