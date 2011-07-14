@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+import org.archive.crawler.io.Preformatter;
 import org.archive.util.FileUtils;
 
 
@@ -138,10 +140,19 @@ public class GenerationFileHandler extends FileHandler {
 
     @Override
     public void publish(LogRecord record) {
-        // preformat outside synchronized superclass method
-        // (our most involved UriProcessingFormatter will cache result for LogRecord)
-        getFormatter().format(record);
-        super.publish(record);
+        // when possible preformat outside synchronized superclass method
+        // (our most involved UriProcessingFormatter can cache result)
+        Formatter f = getFormatter(); 
+        if(!(f instanceof Preformatter)) {
+            super.publish(record);
+        } else {
+            try {
+                ((Preformatter)f).preformat(record); 
+                super.publish(record);
+            } finally {
+                ((Preformatter)f).clear();
+            }
+        }
     }
 //
 //    TODO: determine if there's another way to have this optimization without

@@ -34,7 +34,7 @@ import org.archive.util.MimetypeUtils;
  * @author gojomo
  */
 public class UriProcessingFormatter
-extends Formatter implements CoreAttributeConstants {
+extends Formatter implements Preformatter, CoreAttributeConstants {
     private final static String NA = "-";
     /**
      * Guess at line length (URIs are assumed avg. of 128 bytes).
@@ -57,7 +57,6 @@ extends Formatter implements CoreAttributeConstants {
             }
     };
     
-    protected final ThreadLocal<LogRecord> cachedRecord = new ThreadLocal<LogRecord>(); 
     protected final ThreadLocal<String> cachedFormat = new ThreadLocal<String>();
     protected boolean logExtraInfo; 
     
@@ -66,7 +65,7 @@ extends Formatter implements CoreAttributeConstants {
     }
 
     public String format(LogRecord lr) {
-        if(lr==cachedRecord.get()) {
+        if(cachedFormat.get()!=null) {
             return cachedFormat.get();
         }
         CrawlURI curi = (CrawlURI)lr.getParameters()[0];
@@ -153,10 +152,7 @@ extends Formatter implements CoreAttributeConstants {
         }
         
         buffer.append("\n");
-        cachedRecord.set(lr); 
-        String formatted = buffer.toString(); 
-        cachedFormat.set(formatted);
-        return formatted;
+        return buffer.toString(); 
     }
 
     /**
@@ -165,6 +161,16 @@ extends Formatter implements CoreAttributeConstants {
      */
     protected String checkForNull(String str) {
         return (str == null || str.length() <= 0)? NA: str;
+    }
+
+    @Override
+    public void clear() {
+        cachedFormat.set(null); 
+    }
+
+    @Override
+    public void preformat(LogRecord record) {
+        cachedFormat.set(format(record));
     }
 }
 

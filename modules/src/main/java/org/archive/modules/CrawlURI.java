@@ -876,6 +876,12 @@ implements MultiReporter, Serializable, OverlayContext {
         this.linkExtractorFinished = false;
         // Clean the data map of all but registered permanent members.
         this.data = getPersistentDataMap();
+        
+        extraInfo = null;
+        overlayNames = null;
+        outCandidates = null;
+        outLinks = null;
+        method = null;
     }
     
     public Map<String,Object> getPersistentDataMap() {
