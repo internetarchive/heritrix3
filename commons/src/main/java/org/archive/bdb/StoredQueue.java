@@ -22,6 +22,7 @@ package org.archive.bdb;
 import java.io.Serializable;
 import java.util.AbstractQueue;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -92,9 +93,15 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
     @Override
     public int size() {
         try {
-            return queueMap.isEmpty() ? 0 : (int)(tailIndex.get() - queueMap.firstKey()); 
+            return Math.max(0, 
+                    (int)(tailIndex.get() 
+                          - queueMap.firstKey())); 
         } catch (IllegalStateException ise) {
             return 0; 
+        } catch (NoSuchElementException nse) {
+            return 0;
+        } catch (NullPointerException npe) {
+            return 0;
         }
     }
     
