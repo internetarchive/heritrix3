@@ -56,6 +56,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import org.apache.commons.httpclient.Cookie;
+import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
@@ -67,9 +68,11 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.auth.AuthChallengeParser;
 import org.apache.commons.httpclient.auth.AuthScheme;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.auth.BasicScheme;
 import org.apache.commons.httpclient.auth.DigestScheme;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
@@ -145,6 +148,32 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     public void setHttpProxyPort(int port) {
         kp.put("httpProxyPort",port);
+    }
+
+    /**
+     * Proxy user (set only if needed).
+     */
+    {
+        setHttpProxyUser("");
+    }
+    public String getHttpProxyUser() {
+        return (String) kp.get("httpProxyUser");
+    }
+    public void setHttpProxyUser(String user) {
+        kp.put("httpProxyUser",user);
+    }
+
+    /**
+     * Proxy password (set only if needed).
+     */
+    {
+        setHttpProxyPassword("");
+    }
+    public String getHttpProxyPassword() {
+        return (String) kp.get("httpProxyPassword");
+    }
+    public void setHttpProxyPassword(String password) {
+        kp.put("httpProxyPassword",password);
     }
 
     /**
@@ -596,6 +625,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
         // Populate credentials. Set config so auth. is not automatic.
         boolean addedCredentials = populateCredentials(curi, method);
+        if (http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort())) != null) {
+            addedCredentials = true;
+        }
         method.setDoAuthentication(addedCredentials);
 
         // set hardMax on bytes (if set by operator)
@@ -1019,13 +1051,20 @@ public class FetchHTTP extends Processor implements Lifecycle {
     private void configureProxy(CrawlURI curi, HostConfiguration config) {
         String proxy = (String) getAttributeEither(curi, "httpProxyHost");
         int port = (Integer) getAttributeEither(curi, "httpProxyPort");            
-        configureProxy(proxy, port, config);
+        String user = (String) getAttributeEither(curi, "httpProxyUser");
+        String password = (String) getAttributeEither(curi, "httpProxyPassword");
+        configureProxy(proxy, port, user, password, config);
     }
     
-    private void configureProxy(String proxy, int port, 
-            HostConfiguration config) {
+    private void configureProxy(String proxy, int port, String user, String password,
+                                   HostConfiguration config) {
         if(StringUtils.isNotEmpty(proxy)) {
             config.setProxy(proxy, port);
+            if (StringUtils.isNotEmpty(user)) {
+                Credentials credentials = new NTCredentials(user, password, "", "");
+                AuthScope authScope = new AuthScope(proxy, port);
+                this.http.getState().setProxyCredentials(authScope, credentials);
+            }
         }
     }
     
@@ -1387,16 +1426,20 @@ public class FetchHTTP extends Processor implements Lifecycle {
         String addressStr = getHttpBindAddress();
         String proxy = getHttpProxyHost();
         int port = -1;
+        String user = "";
+        String password = "";
         if (proxy.length() == 0) {
             proxy = null;
         } else {
-            port = getHttpProxyPort();            
+            port = getHttpProxyPort();
+            user = getHttpProxyUser();
+            password = getHttpProxyPassword();
         }
-        configureHttp(soTimeout, addressStr, proxy, port);
+        configureHttp(soTimeout, addressStr, proxy, port, user, password);
     }
     
     protected void configureHttp(int soTimeout, String addressStr,
-            String proxy, int port) {
+                                 String proxy, int port, String user, String password) {
         // Get timeout. Use it for socket and for connection timeout.
         int timeout = (soTimeout > 0) ? soTimeout : 0;
 
@@ -1436,7 +1479,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             proxy = null;
         }
         HostConfiguration config = http.getHostConfiguration();
-        configureProxy(proxy, port, config);
+        configureProxy(proxy, port, user, password, config);
         configureBindAddress(addressStr,config);
 
         hcmp.setParameter(SSL_FACTORY_KEY, this.sslfactory);
@@ -1525,6 +1568,35 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
 
 
+    private String getProxyUser() {
+        NTCredentials credentials = (NTCredentials)http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort()));
+        if (credentials == null) {
+            return "";
+        }
+
+        String r = credentials.getUserName();
+        if (r == null) {
+            return "";
+        }
+
+        return r;
+    }
+
+    private String getProxyPassword() {
+        NTCredentials credentials = (NTCredentials)http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort()));
+        if (credentials == null) {
+            return "";
+        }
+
+        String r = credentials.getPassword();
+        if (r == null) {
+            return "";
+        }
+
+        return r;
+    }
+
+
     private void writeObject(ObjectOutputStream stream) throws IOException {
          stream.defaultWriteObject();
 
@@ -1533,21 +1605,25 @@ public class FetchHTTP extends Processor implements Lifecycle {
          stream.writeUTF(getLocalAddress());
          stream.writeUTF(getProxyHost());
          stream.writeInt(getProxyPort());
-     }
+        stream.writeUTF(getProxyUser());
+        stream.writeUTF(getProxyPassword());
+    }
 
 
     private void readObject(ObjectInputStream stream) 
      throws IOException, ClassNotFoundException {
          stream.defaultReadObject();
-         
-         int soTimeout = stream.readInt();
-         String localAddress = stream.readUTF();
-         String proxy = stream.readUTF();
-         int port = stream.readInt();
-         
-         configureHttp(soTimeout, localAddress, proxy, port);
-         setSSLFactory();
-     }
+
+        int soTimeout = stream.readInt();
+        String localAddress = stream.readUTF();
+        String proxy = stream.readUTF();
+        int port = stream.readInt();
+        String user = stream.readUTF();
+        String password = stream.readUTF();
+
+        configureHttp(soTimeout, localAddress, proxy, port, user, password);
+        setSSLFactory();
+    }
 
 
     /**
