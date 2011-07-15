@@ -27,7 +27,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
-import org.archive.crawler.io.Preformatter;
 import org.archive.util.FileUtils;
 
 

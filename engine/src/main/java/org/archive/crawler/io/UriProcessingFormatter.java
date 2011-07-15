@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+import org.archive.io.Preformatter;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
