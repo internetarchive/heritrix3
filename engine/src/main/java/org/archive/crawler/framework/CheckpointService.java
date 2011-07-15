@@ -37,6 +37,7 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
 import org.archive.spring.ConfigPath;
+import org.archive.spring.ConfigPathConfigurer;
 import org.archive.spring.HasValidator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -223,7 +224,6 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         checkpointInProgress = new Checkpoint();
         checkpointInProgress.generateFrom(getCheckpointsDir(),getNextCheckpointNumber());
         
-        @SuppressWarnings("unchecked")
         Map<String,Checkpointable> toCheckpoint = appCtx.getBeansOfType(Checkpointable.class);
         
         try {
@@ -288,8 +288,8 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         if(getRecoveryCheckpoint()!=null || isRunning()) {
             return false;
         }
-        return (getAvailableCheckpointDirectories() != null 
-                && getAvailableCheckpointDirectories().size() > 0);
+        return (findAvailableCheckpointDirectories() != null 
+                && findAvailableCheckpointDirectories().size() > 0);
     }
 
     /**
@@ -300,7 +300,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * @return List of valid checkpoint directory File instances
      */
     @SuppressWarnings("unchecked")
-    public List<File> getAvailableCheckpointDirectories() {
+    public List<File> findAvailableCheckpointDirectories() {
         File[] dirs = getCheckpointsDir().getFile().listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
         if (dirs == null) {
             return Collections.EMPTY_LIST;
@@ -325,7 +325,6 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * 
      * @param selectedCheckpoint
      */
-    @SuppressWarnings("unchecked")
     public void setRecoveryCheckpointByName(String selectedCheckpoint) {
         if(isRunning) {
             throw new RuntimeException("may not set recovery Checkpoint after launch");
@@ -333,6 +332,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         Checkpoint recoveryCheckpoint = new Checkpoint();
         recoveryCheckpoint.getCheckpointDir().setBase(getCheckpointsDir());
         recoveryCheckpoint.getCheckpointDir().setPath(selectedCheckpoint);
+        recoveryCheckpoint.getCheckpointDir().setConfigurer(appCtx.getBean(ConfigPathConfigurer.class));
         recoveryCheckpoint.afterPropertiesSet();
         setRecoveryCheckpoint(recoveryCheckpoint);
         Map<String,Checkpointable> toSetRecovery = appCtx.getBeansOfType(Checkpointable.class);

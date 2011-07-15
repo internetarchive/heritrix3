@@ -58,7 +58,7 @@ public class WriterPoolSettingsData implements WriterPoolSettings {
         return metadata;
     }
     @Override
-    public List<File> getOutputDirs() {
+    public List<File> calcOutputDirs() {
         return outputDirs;
     }
     @Override

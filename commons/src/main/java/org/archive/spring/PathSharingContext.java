@@ -19,13 +19,19 @@
 
 package org.archive.spring;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.FileUtils;
+import org.archive.util.ArchiveUtils;
+import org.archive.util.FilesystemLinkMaker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -39,17 +45,26 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 /**
- * Spring ApplicationContext extended for Heritrix use. 
+ * Spring ApplicationContext extended for Heritrix use.
  * 
  * Notable extensions:
  * 
- * Remembers its primary XML configuration file, and can report its
- * filesystem path. 
+ * Remembers its primary XML configuration file, and can report its filesystem
+ * path.
  * 
- * Propagates lifecycle events (start, stop) without triggering 
- * loops in the case of circular dependencies.
+ * Propagates lifecycle events (start, stop) without triggering loops in the
+ * case of circular dependencies.
  * 
  * Reports a summary of Errors collected from self-Validating Beans.
+ * 
+ * Generates launchId from timestamp, creates launch directory
+ * {jobDir}/{launchId}, and snapshots crawl configuration file into the launch
+ * directory. Other configuration files, if any, are automatically snapshotted
+ * into the launch directory when they are read (see
+ * {@link ConfigFile#obtainReader()}). The token ${launchId} will be
+ * interpolated in configuration-relative paths (see
+ * {@link ConfigPathConfigurer}) so that launch-specific paths can be used for
+ * logs, reports, warcs, etc.
  * 
  * @contributor gojomo
  */
@@ -91,6 +106,7 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
     @SuppressWarnings("unchecked")
     @Override
     public void start() {
+        initLaunchDir();
         Map lifecycleBeans = getLifecycleBeans();
         for (Iterator it = new HashSet(lifecycleBeans.keySet()).iterator(); it.hasNext();) {
             String beanName = (String) it.next();
@@ -217,6 +233,54 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
 
     public HashMap<String,Errors> getAllErrors() {
         return allErrors;
+    }
+    
+    protected transient String currentLaunchId;
+    protected void initLaunchId() {
+        currentLaunchId = ArchiveUtils.getUnique14DigitDate();
+        LOGGER.info("launch id " + currentLaunchId);
+    }
+    public String getCurrentLaunchId() {
+        return currentLaunchId;
+    }
+
+    protected transient File currentLaunchDir;
+    public File getCurrentLaunchDir() {
+        return currentLaunchDir;
+    }
+    
+    protected File getConfigurationFile() {
+        String primaryConfigurationPath =  getPrimaryConfigurationPath();
+        if(primaryConfigurationPath.startsWith("file:")) {
+            // strip URI-scheme if present (as is usual)
+            primaryConfigurationPath = primaryConfigurationPath.substring(5);
+        }
+        File configFile = new File(primaryConfigurationPath);
+        return configFile;
+    }
+    
+    protected void initLaunchDir() {
+        initLaunchId();
+        try {
+            currentLaunchDir = new File(getConfigurationFile().getParentFile(), getCurrentLaunchId());
+            if (!currentLaunchDir.mkdir()) {
+                throw new IOException("failed to create directory " + currentLaunchDir);
+            }
+            
+            // copy cxml to launch dir
+            FileUtils.copyFileToDirectory(getConfigurationFile(), currentLaunchDir);
+            
+            // attempt to symlink "latest" to launch dir
+            File latestSymlink = new File(getConfigurationFile().getParentFile(), "latest");
+            latestSymlink.delete();
+            boolean success = FilesystemLinkMaker.makeSymbolicLink(currentLaunchDir.getName(), latestSymlink.getPath());
+            if (!success) {
+                LOGGER.warning("failed to create symlink from " + latestSymlink + " to " + currentLaunchDir);
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "failed to initialize launch directory: " + e);
+            currentLaunchDir = null;
+        }
     }
     
     /**

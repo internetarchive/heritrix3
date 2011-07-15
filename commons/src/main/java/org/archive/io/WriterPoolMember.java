@@ -201,7 +201,7 @@ public abstract class WriterPoolMember implements ArchiveFileConstants {
         String name = currentBasename + '.' + this.extension  +
             ((settings.getCompress())? DOT_COMPRESSED_FILE_EXTENSION: "") +
             OCCUPIED_SUFFIX;
-        File dir = getNextDirectory(settings.getOutputDirs());
+        File dir = getNextDirectory(settings.calcOutputDirs());
         return createFile(new File(dir, name));
     }
     

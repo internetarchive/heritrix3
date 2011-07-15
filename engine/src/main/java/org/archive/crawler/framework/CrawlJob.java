@@ -57,7 +57,6 @@ import org.archive.spring.ConfigPath;
 import org.archive.spring.ConfigPathConfigurer;
 import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.TextUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanWrapperImpl;
@@ -430,7 +429,6 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         Thread launcher = new Thread(alertThreadGroup, getShortName()+" launchthread") {
             public void run() {
                 CrawlController cc = getCrawlController();
-                initLaunchDir();
                 startContext();
                 if(cc!=null) {
                     cc.requestCrawlStart();
@@ -448,57 +446,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         }
     }
     
-    protected transient String currentLaunchId;
-    protected void initLaunchId() {
-        currentLaunchId = ArchiveUtils.get17DigitDate();
-        LOGGER.info("launch id " + currentLaunchId);
-    }
-    public String getCurrentLaunchId() {
-        return currentLaunchId;
-    }
-
-    protected transient File currentLaunchDir;
-    public File getCurrentLaunchDir() {
-        return currentLaunchDir;
-    }
-    
     protected transient Handler currentLaunchJobLogHandler;
-    protected void initLaunchDir() {
-        initLaunchId();
-        try {
-            currentLaunchDir = new File(getJobDir(), getCurrentLaunchId());
-            if (!currentLaunchDir.mkdir()) {
-                throw new IOException("failed to create directory " + currentLaunchDir);
-            }
-            
-            // job log file covering just this launch
-            getJobLogger().removeHandler(currentLaunchJobLogHandler);
-            File f = new File(currentLaunchDir, "job.log");
-            currentLaunchJobLogHandler = new FileHandler(f.getAbsolutePath(), true);
-            currentLaunchJobLogHandler.setFormatter(new JobLogFormatter());
-            getJobLogger().addHandler(currentLaunchJobLogHandler);
-            
-            // copy cxml to launch dir
-            FileUtils.copyFileToDirectory(getPrimaryConfig(), currentLaunchDir);
-            
-            // attempt to symlink "current" to launch dir
-            File currentSymlink = new File(getJobDir(), "current");
-            currentSymlink.delete();
-            boolean success = FilesystemLinkMaker.makeSymbolicLink(currentLaunchDir.getName(), currentSymlink.getPath());
-            if (!success) {
-                LOGGER.warning("failed to create symlink from " + currentSymlink + " to " + currentLaunchDir);
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "failed to initialize launch directory: " + e);
-            currentLaunchDir = null;
-        }
-        
-        // fill in ${launch-id} in all config paths, and let config files know
-        // where to snapshot themselves
-        for (ConfigPath configPath: getConfigPaths().values()) {
-            configPath.informOfLaunch(getCurrentLaunchId(), getCurrentLaunchDir());
-        }
-    }
 
     /**
      * Start the context, catching and reporting any BeansExceptions.
@@ -506,6 +454,15 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     protected synchronized void startContext() {
         try {
             ac.start(); 
+            
+            // job log file covering just this launch
+            getJobLogger().removeHandler(currentLaunchJobLogHandler);
+            File f = new File(ac.getCurrentLaunchDir(), "job.log");
+            currentLaunchJobLogHandler = new FileHandler(f.getAbsolutePath(), true);
+            currentLaunchJobLogHandler.setFormatter(new JobLogFormatter());
+            getJobLogger().addHandler(currentLaunchJobLogHandler);
+            
+            
         } catch (BeansException be) {
             ac.close();
             ac = null; 
@@ -606,6 +563,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         }
         xmlOkAt = new DateTime(0);
         getJobLogger().removeHandler(currentLaunchJobLogHandler);
+        currentLaunchJobLogHandler.close();
         getJobLogger().log(Level.INFO,"Job instance discarded");
         return true; 
     }
@@ -701,7 +659,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
      */
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof CrawlStateEvent) {
-            getJobLogger().log(Level.INFO, ((CrawlStateEvent)event).getState().toString());
+            getJobLogger().log(Level.INFO, ((CrawlStateEvent)event).getState() + 
+                    ac.getCurrentLaunchId() != null ? " " + ac.getCurrentLaunchId() : "");
         }
         if(event instanceof CheckpointSuccessEvent) {
             getJobLogger().log(Level.INFO, "CHECKPOINTED "+((CheckpointSuccessEvent)event).getCheckpoint().getName());

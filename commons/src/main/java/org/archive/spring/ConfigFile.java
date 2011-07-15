@@ -26,7 +26,6 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
-import org.apache.commons.io.FileUtils;
 import org.archive.io.ReadSource;
 
 /**
@@ -50,8 +49,7 @@ public class ConfigFile extends ConfigPath implements ReadSource, WriteTarget {
                 getFile().createNewFile();
             }
             
-            // snapshot file to launch directory
-            FileUtils.copyFileToDirectory(getFile(), currentLaunchDir);
+            configurer.snapshotToLaunchDir(getFile());
 
             return new InputStreamReader(
                     new FileInputStream(getFile()),

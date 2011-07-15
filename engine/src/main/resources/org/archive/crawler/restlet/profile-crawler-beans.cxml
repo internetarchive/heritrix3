@@ -123,7 +123,7 @@ http://example.example/example
      <!-- <property name="seedsAsSurtPrefixes" value="true" /> -->
      <!-- <property name="alsoCheckVia" value="false" /> -->
      <!-- <property name="surtsSourceFile" value="" /> -->
-     <!-- <property name="surtsDumpFile" value="${launch-id}/surts.dump" /> -->
+     <!-- <property name="surtsDumpFile" value="${launchId}/surts.dump" /> -->
      <!-- <property name="surtsSource">
            <bean class="org.archive.spring.ConfigString">
             <property name="value">
@@ -149,7 +149,7 @@ http://example.example/example
     <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
           <property name="decision" value="REJECT"/>
           <property name="seedsAsSurtPrefixes" value="false"/>
-          <property name="surtsDumpFile" value="${launch-id}/negative-surts.dump" /> 
+          <property name="surtsDumpFile" value="${launchId}/negative-surts.dump" /> 
      <!-- <property name="surtsSource">
            <bean class="org.archive.spring.ConfigFile">
             <property name="path" value="negative-surts.txt" />
@@ -338,7 +338,7 @@ http://example.example/example
   <!-- <property name="MaxWaitForIdleMs" value="500" /> -->
   <!-- <property name="skipIdenticalDigests" value="false" /> -->
   <!-- <property name="maxTotalBytesToWrite" value="0" /> -->
-  <!-- <property name="directory" value="${launch-id}" /> -->
+  <!-- <property name="directory" value="${launchId}" /> -->
   <!-- <property name="storePaths">
         <list>
          <value>warcs</value>
@@ -517,7 +517,7 @@ http://example.example/example
       scripts, and other data to be processed during a crawl. -->
  <bean id="actionDirectory" class="org.archive.crawler.framework.ActionDirectory">
   <!-- <property name="actionDir" value="action" /> -->
-  <!-- <property name="doneDir" value="${launch-id}/actions-done" /> -->
+  <!-- <property name="doneDir" value="${launchId}/actions-done" /> -->
   <!-- <property name="initialDelaySeconds" value="10" /> -->
   <!-- <property name="delaySeconds" value="30" /> -->
  </bean> 
@@ -613,7 +613,7 @@ http://example.example/example
  <!-- STATISTICSTRACKER: standard stats/reporting collector -->
  <bean id="statisticsTracker" 
    class="org.archive.crawler.reporting.StatisticsTracker" autowire="byName">
-  <!-- <property name="reportsDir" value="${launch-id}/reports" /> -->
+  <!-- <property name="reportsDir" value="${launchId}/reports" /> -->
   <!-- <property name="liveHostReportSize" value="20" /> -->
   <!-- <property name="intervalSeconds" value="20" /> -->
   <!-- <property name="keepSnapshotsCount" value="5" /> -->
@@ -623,7 +623,7 @@ http://example.example/example
  <!-- CRAWLERLOGGERMODULE: shared logging facility -->
  <bean id="loggerModule" 
    class="org.archive.crawler.reporting.CrawlerLoggerModule">
-  <!-- <property name="path" value="${launch-id}/logs" /> -->
+  <!-- <property name="path" value="${launchId}/logs" /> -->
   <!-- <property name="crawlLogPath" value="crawl.log" /> -->
   <!-- <property name="alertsLogPath" value="alerts.log" /> -->
   <!-- <property name="progressLogPath" value="progress-statistics.log" /> -->

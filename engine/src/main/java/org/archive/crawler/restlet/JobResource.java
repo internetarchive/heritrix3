@@ -304,7 +304,7 @@ public class JobResource extends BaseResource {
             } else if (cj.getCheckpointService().hasAvailableCheckpoints() && cj.isLaunchable()) {
                 pw.println("select an available checkpoint before launch to recover:");
                 pw.println("<select name='checkpoint'><option> </option>");
-                for(File f : cj.getCheckpointService().getAvailableCheckpointDirectories()) {
+                for(File f : cj.getCheckpointService().findAvailableCheckpointDirectories()) {
                     pw.println("<option>"+f.getName()+"</option>");
                 }
                 pw.println("</select>");

@@ -21,12 +21,12 @@ package org.archive.spring;
 
 import java.beans.PropertyDescriptor;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.modules.writer.WriterPoolProcessor;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -35,7 +35,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.Ordered;
 
 /**
@@ -88,24 +87,13 @@ implements
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ContextRefreshedEvent) {
             for(String beanName: allBeans.keySet()) {
-                Object bean = allBeans.get(beanName);
-
-                fixupPaths(bean, beanName);
-
-                // we want to remember writer pool store paths for later interpolation
-                // (their base dirs are taken care of elsewhere)
-                if (bean instanceof WriterPoolProcessor) {
-                    List<ConfigPath> storePaths = ((WriterPoolProcessor) bean).getStorePaths();
-                    for (int i = 0; i < storePaths.size(); i++) {
-                        remember(beanName + "." + "storePaths[" + i + "]", storePaths.get(i));
-                    }
-                }
+                fixupPaths(allBeans.get(beanName), beanName);
             }
             allBeans.clear(); // forget 
         }
         // ignore all others
     }
-    
+
     /**
      * Find any ConfigPath properties in the passed bean; ensure that
      * if they have a null 'base', that is replaced with the job home
@@ -119,55 +107,66 @@ implements
     protected Object fixupPaths(Object bean, String beanName) {
         BeanWrapperImpl wrapper = new BeanWrapperImpl(bean);
         for(PropertyDescriptor d : wrapper.getPropertyDescriptors()) {
-            if(d.getPropertyType().isAssignableFrom(ConfigPath.class)
-                || d.getPropertyType().isAssignableFrom(ConfigFile.class)) {
+            if (d.getPropertyType().isAssignableFrom(ConfigPath.class)
+                    || d.getPropertyType().isAssignableFrom(ConfigFile.class)) {
                 Object value = wrapper.getPropertyValue(d.getName());
-                if(ConfigPath.class.isInstance(value)) {
-                    ConfigPath cp = (ConfigPath) value;
-                    if(cp==null) {
-                        continue;
+                if (value != null && value instanceof ConfigPath) {
+                    String patchName = beanName+"."+d.getName();
+                    fixupConfigPath((ConfigPath) value,patchName);
+                }
+            } else if (Iterable.class.isAssignableFrom(d.getPropertyType())) {
+                Iterable<?> iterable = (Iterable<?>) wrapper.getPropertyValue(d.getName());
+                if (iterable != null) {
+                    int i = 0;
+                    for (Object candidate : iterable) {
+                        if(candidate!=null && candidate instanceof ConfigPath) {
+                            String patchName = beanName+"."+d.getName()+"["+i+"]";
+                            fixupConfigPath((ConfigPath) candidate,patchName); 
+                        }
+                        i++; 
                     }
-                    if(cp.getBase()==null && cp != path) {
-                        cp.setBase(path);
-                    }
-                    String beanPath = beanName+"."+d.getName();
-                    if(StringUtils.isEmpty(cp.getName())) {
-                        cp.setName(beanPath);
-                    }
-                    remember(beanPath, cp);
                 }
             }
         }
-        
         if(bean instanceof PathFixupListener) {
             ((PathFixupListener)bean).pathsFixedUp();
         }
         return bean;
     }
 
+    protected void fixupConfigPath(ConfigPath cp, String patchName) {
+        if(cp.getBase()==null && cp != path) {
+            cp.setBase(path);
+        }
+        
+        if(StringUtils.isEmpty(cp.getName())) {
+            cp.setName(patchName);
+        }
+        cp.setConfigurer(this);
+        remember(patchName, cp);
+    }
+
     //// APPLICATIONCONTEXTAWARE IMPLEMENTATION
 
-    AbstractApplicationContext appCtx;
+    PathSharingContext appCtx;
     /**
      * Remember ApplicationContext, and if possible primary 
      * configuration file's home directory. 
+     * 
+     * Requires appCtx be a PathSharingContext 
+     * 
      * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
      */
     public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
-        this.appCtx = (AbstractApplicationContext)appCtx;
+        this.appCtx = (PathSharingContext)appCtx;
         String basePath;
         if(appCtx instanceof PathSharingContext) {
-            String primaryConfigurationPath = ((PathSharingContext)appCtx).getPrimaryConfigurationPath();
-            if(primaryConfigurationPath.startsWith("file:")) {
-                // strip URI-scheme if present (as is usual)
-                primaryConfigurationPath = primaryConfigurationPath.substring(5);
-            }
-            File configFile = new File(primaryConfigurationPath);
-            basePath = configFile.getParent();
+            basePath = this.appCtx.getConfigurationFile().getParent();
         } else {
             basePath = ".";
         }
         path = new ConfigPath("job base",basePath); 
+        path.setConfigurer(this);
     }
 
     // REMEMBERED CONFIGPATHS
@@ -192,5 +191,17 @@ implements
      */
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
+    }
+
+    public void snapshotToLaunchDir(File readFile) throws IOException {
+        FileUtils.copyFileToDirectory(readFile, appCtx.getCurrentLaunchDir());
+    }
+
+    protected String interpolate(String rawPath) {
+        if (appCtx.getCurrentLaunchId() != null) {
+            return rawPath.replace("${launchId}", appCtx.getCurrentLaunchId());
+        } else {
+            return rawPath;
+        }
     }
 }

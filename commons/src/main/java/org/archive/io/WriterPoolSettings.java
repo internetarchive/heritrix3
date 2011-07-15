@@ -31,7 +31,7 @@ public interface WriterPoolSettings {
     public long getMaxFileSizeBytes();
     public String getPrefix();
     public String getTemplate(); 
-    public List<File> getOutputDirs();
+    public List<File> calcOutputDirs();
     public boolean getCompress();
     public List<String> getMetadata();
     public boolean getFrequentFlushes();

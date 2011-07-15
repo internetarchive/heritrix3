@@ -225,7 +225,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         this.serverCache = serverCache;
     }
 
-    protected ConfigPath directory = new ConfigPath("writer base path", "${launch-id}");
+    protected ConfigPath directory = new ConfigPath("writer base path", "${launchId}");
     public ConfigPath getDirectory() {
         return directory;
     }
@@ -429,7 +429,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
 	
     public abstract List<String> getMetadata();
     
-    public List<File> getOutputDirs() {
+    public List<File> calcOutputDirs() {
         List<ConfigPath> list = getStorePaths();
         ArrayList<File> results = new ArrayList<File>();
         for (ConfigPath path: list) {

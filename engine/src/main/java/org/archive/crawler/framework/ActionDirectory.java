@@ -111,7 +111,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
     }
     
     protected ConfigPath doneDir = 
-        new ConfigPath("ActionDirectory done directory","${launch-id}/actions-done");
+        new ConfigPath("ActionDirectory done directory","${launchId}/actions-done");
     public ConfigPath getDoneDir() {
         return doneDir;
     }

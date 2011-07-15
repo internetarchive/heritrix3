@@ -111,7 +111,7 @@ implements
      * Dump file to save SURT prefixes actually used: Useful debugging SURTs.
      */
     protected ConfigFile surtsDumpFile = 
-        new ConfigFile("surtsDumpFile","${launch-id}/surts.dump");
+        new ConfigFile("surtsDumpFile","${launchId}/surts.dump");
     public ConfigFile getSurtsDumpFile() {
         return surtsDumpFile;
     }

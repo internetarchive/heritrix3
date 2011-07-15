@@ -153,7 +153,7 @@ public class StatisticsTracker
         this.bdb = bdb;
     }
 
-    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,"${launch-id}/reports");
+    protected ConfigPath reportsDir = new ConfigPath(Engine.REPORTS_DIR_NAME,"${launchId}/reports");
     public ConfigPath getReportsDir() {
         return reportsDir;
     }
