@@ -87,6 +87,7 @@ crawlController.pauseAtStart=false
  <bean id="extractorSwf" class="org.archive.modules.extractor.ExtractorSWF">
  </bean>    
  <bean id="arcWriterProcessor" class="org.archive.modules.writer.ARCWriterProcessor">
+  <property name="directory" value="." /> <!-- make logs easy to find  for test verification -->
  </bean>
  
   <!-- Processors as named beans; assembled into DispositionChain later --> 
@@ -171,6 +172,7 @@ crawlController.pauseAtStart=false
  <!-- Shared logging facility -->
  <bean id="loggerModule" 
    class="org.archive.crawler.reporting.CrawlerLoggerModule">
+   <property name="path" value="logs" /> <!-- make logs easy to find  for test verification -->
  </bean>
  
  <!-- manager of sheets of contextual overlays; autowired to include
