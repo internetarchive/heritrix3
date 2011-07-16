@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -56,6 +58,9 @@ implements
     ApplicationListener<ApplicationEvent>,
     ApplicationContextAware, 
     Ordered {
+    private static final Logger logger =
+        Logger.getLogger(ConfigPathConfigurer.class.getName());
+
     Map<String,Object> allBeans = new HashMap<String,Object>();
     
     
@@ -194,6 +199,10 @@ implements
     }
 
     public void snapshotToLaunchDir(File readFile) throws IOException {
+        if(appCtx.getCurrentLaunchDir()==null|| !appCtx.getCurrentLaunchDir().exists()) {
+            logger.log(Level.WARNING, "launch directory unavailable to snapshot "+readFile); 
+            return; 
+        }
         FileUtils.copyFileToDirectory(readFile, appCtx.getCurrentLaunchDir());
     }
 
