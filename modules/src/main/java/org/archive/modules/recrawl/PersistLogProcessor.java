@@ -50,7 +50,7 @@ implements Checkpointable, Lifecycle {
 
     //  description: "Filename to which to log URI persistence information. " +
     // "Default is 'logs/persistlog.txtser.gz'. "
-    ConfigPath logFile = new ConfigPath("URI persistence log file","logs/persistlog.txtser.gz");
+    ConfigPath logFile = new ConfigPath("URI persistence log file","${launchId}/logs/persistlog.txtser.gz");
     public ConfigPath getLogFile() {
         return this.logFile;
     }
