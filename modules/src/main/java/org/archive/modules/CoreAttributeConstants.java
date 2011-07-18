@@ -18,9 +18,6 @@
  */
 package org.archive.modules;
 
-import org.archive.io.warc.WARCWriter;
-import org.archive.modules.recrawl.PersistProcessor;
-
 
 /**
  * Attribute keys and constant strings used by the core crawler
@@ -115,15 +112,4 @@ public interface CoreAttributeConstants {
 
     public static final String A_FTP_CONTROL_CONVERSATION = "ftp-control-conversation";
     public static final String A_FTP_FETCH_STATUS = "ftp-fetch-status";
-
-    /**
-     * This flag should be set on a {@link CrawlURI} if the decision is made
-     * that the history is good to persist, e.g. with {@link PersistProcessor}
-     * and family. Typically it's set in a writer upon confirmation that the
-     * fetch being processed, or a previous fetch with identical content, has
-     * been written to persistent storage. (Not all fetches are necessarily
-     * written to persistent storage. For instance they could be rejected by
-     * {@link Processor#getShouldProcessRule()} of a {@link WARCWriter}.)
-     */
-    public static final String A_HISTORY_GOOD_TO_STORE = "history-good-to-store";
 }

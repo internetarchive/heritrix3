@@ -41,4 +41,17 @@ public interface RecrawlAttributeConstants {
     /** reference length (content length or virtual length */
     public static final String A_REFERENCE_LENGTH = "reference-length";
 
+    /**
+     * Writer processors of all types are encouraged to put a 'writeTag'
+     * (analogous to HTTP 'etag') in the CrawlURI state. Its contents are
+     * opaque/private-to-the-writer, but might generally be a
+     * WARC-name/offset/UUID/etc, and their mere presence means content is
+     * written somewhere. A writer processor that decides not to write fresh
+     * content at all, not even a revisit record, because it sees previous
+     * sufficient writeTag in history, will usually copy that forward to latest
+     * history record. {@link PersistLogProcessor}/{@link PersistStoreProcessor}
+     * have an option {@link PersistProcessor#onlyStoreIfWriteTagPresent}, which
+     * defaults to true.
+     */
+   public static final String A_WRITE_TAG = "write-tag";
 }

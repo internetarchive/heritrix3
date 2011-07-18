@@ -19,6 +19,9 @@
 
 package org.archive.modules.writer;
 
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -26,6 +29,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,6 +106,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
                 return write(curi, recordLength, ris, getHostAddress(curi));
             } else {
                 logger.info("does not write " + curi.toString());
+                copyForwardWriteTagIfDupe(curi);
             }
          } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
@@ -162,6 +167,12 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
                 filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
             }
             curi.addExtraInfo("arcFilename", filename);
+            
+            @SuppressWarnings("unchecked")
+            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            if (history != null && history[0] != null) {
+                history[0].put(A_WRITE_TAG, filename);
+            }
         }
         return checkBytesWritten();
     }

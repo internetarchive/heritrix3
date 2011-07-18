@@ -62,7 +62,7 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
 
     /**
      * Utility method for testing if a CrawlURI's last two history 
-     * entiries (one being the most recent fetch) have identical 
+     * entries (one being the most recent fetch) have identical 
      * content-digest information. 
      * 
      * @param curi CrawlURI to test

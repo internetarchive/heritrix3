@@ -20,15 +20,17 @@
 package org.archive.modules.writer;
 
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
-import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -323,7 +325,6 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             && IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN 
                     + ":identicalDigest");
-            curi.getData().put(A_HISTORY_GOOD_TO_STORE, Boolean.TRUE);
             return false;
         }
         
@@ -339,6 +340,8 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         } else if (scheme.equals("ftp")) {
             retVal = curi.getFetchStatus() > 0;
         } else {
+            logger.info("This writer does not write out scheme " +
+                    scheme + " content");
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN
                     + ":scheme");
             return false;
@@ -471,5 +474,27 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         }
         
         return true;
+    }
+    
+    /**
+     * If this fetch is identical to the last written (archived) fetch, then
+     * copy forward the writeTag. This method should generally be called when
+     * writeTag is present from a previous identical fetch, even though this
+     * particular fetch is not being written anywhere (not even a revisit
+     * record).
+     */
+    protected void copyForwardWriteTagIfDupe(CrawlURI curi) {
+        if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
+            @SuppressWarnings("unchecked")
+            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            if (history[1].containsKey(A_WRITE_TAG)) {
+                history[0].put(A_WRITE_TAG, history[1].get(A_WRITE_TAG));
+            }
+        }
+    }
+    
+    @Override
+    protected void innerRejectProcess(CrawlURI curi) throws InterruptedException {
+        copyForwardWriteTagIfDupe(curi);
     }
 }

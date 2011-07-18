@@ -40,13 +40,14 @@ import static org.archive.io.warc.WARCConstants.TYPE;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
-import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -206,8 +207,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             if (shouldWrite(curi)) {
                 return write(scheme, curi);
             } else {
-                logger.info("This writer does not write out scheme " +
-                        scheme + " content");
+                copyForwardWriteTagIfDupe(curi);
             }
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
@@ -216,7 +216,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
         return ProcessResult.PROCEED;
     }
-    
+
     protected ProcessResult write(final String lowerCaseScheme, 
             final CrawlURI curi)
     throws IOException {
@@ -285,8 +285,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
                 }
                 curi.addExtraInfo("warcFilename", filename);
-                
-                curi.getData().put(A_HISTORY_GOOD_TO_STORE, Boolean.TRUE);
+
+                @SuppressWarnings("unchecked")
+                Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+                if (history != null && history[0] != null) {
+                    history[0].put(A_WRITE_TAG, filename);
+                }
             }
         }
         return checkBytesWritten();

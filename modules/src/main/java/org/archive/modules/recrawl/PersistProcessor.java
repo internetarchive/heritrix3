@@ -19,7 +19,8 @@
 
 package org.archive.modules.recrawl;
 
-import static org.archive.modules.CoreAttributeConstants.A_HISTORY_GOOD_TO_STORE;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,7 +39,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
-import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
@@ -56,7 +56,6 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
-
 
 /**
  * Superclass for Processors which utilize BDB-JE for URI state
@@ -83,9 +82,18 @@ public abstract class PersistProcessor extends Processor {
         HISTORY_DB_CONFIG = dbConfig;
     }
 
-    public PersistProcessor() {
+    /** @see RecrawlAttributeConstants#A_WRITE_TAG */
+    boolean onlyStoreIfWriteTagPresent = true;
+    public boolean getOnlyStoreIfWriteTagPresent() {
+        return onlyStoreIfWriteTagPresent;
+    }
+    public void setOnlyStoreIfWriteTagPresent(boolean onlyStoreIfWriteTagPresent) {
+        this.onlyStoreIfWriteTagPresent = onlyStoreIfWriteTagPresent;
     }
 
+    public PersistProcessor() {
+    }
+    
     /**
      * Return a preferred String key for persisting the given CrawlURI's
      * AList state. 
@@ -109,11 +117,16 @@ public abstract class PersistProcessor extends Processor {
      * 
      * @param curi
      *            CrawlURI
-     * @return true if {@link CoreAttributeConstants#A_HISTORY_GOOD_TO_STORE} is
-     *         set for this url
+     * @return true if state should be stored; false to skip persistence
      */
     protected boolean shouldStore(CrawlURI curi) {
-        return Boolean.TRUE.equals(curi.getData().get(A_HISTORY_GOOD_TO_STORE));
+        if (getOnlyStoreIfWriteTagPresent()) {
+            @SuppressWarnings("unchecked")
+            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            return history != null && history[0] != null && history[0].containsKey(A_WRITE_TAG);
+        } else {
+            return curi.isSuccess(); 
+        }
     }
 
     /**
