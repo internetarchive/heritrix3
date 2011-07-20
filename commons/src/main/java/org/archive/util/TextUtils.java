@@ -30,20 +30,35 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
+import com.google.common.base.Function;
+import com.google.common.collect.MapMaker;
+
 public class TextUtils {
     private static final String FIRSTWORD = "^([^\\s]*).*$";
 
+    /** thread-local cached matchers, by string key */
     private static final ThreadLocal<Map<String,Matcher>> TL_MATCHER_MAP
      = new ThreadLocal<Map<String,Matcher>>() {
         protected Map<String,Matcher> initialValue() {
             return new HashMap<String,Matcher>(50);
         }
     };
+    
+    /** global soft-cache of Patterns, by string key */
+    private static final ConcurrentMap<String, Pattern> PATTERNS = new MapMaker()
+        .concurrencyLevel(16)
+        .softValues()
+        .makeComputingMap(new Function<String, Pattern>() {
+            public Pattern apply(String regex) {
+                return Pattern.compile(regex);
+            }
+        });
 
     /**
      * Get a matcher object for a precompiled regex pattern.
@@ -69,7 +84,7 @@ public class TextUtils {
         final Map<String,Matcher> matchers = TL_MATCHER_MAP.get();
         Matcher m = (Matcher)matchers.get(pattern);
         if(m == null) {
-            m = Pattern.compile(pattern).matcher(input);
+            m = PATTERNS.get(pattern).matcher(input);
         } else {
             matchers.put(pattern,null);
             m.reset(input);
