@@ -29,7 +29,7 @@ import java.io.PrintWriter;
 public class ToeThreadsReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         writer.print(stats.controller.getToeThreadReport());
     }
 

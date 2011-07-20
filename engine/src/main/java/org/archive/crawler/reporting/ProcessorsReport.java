@@ -30,7 +30,7 @@ import java.io.PrintWriter;
 public class ProcessorsReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         stats.controller.getCandidateChain().reportTo(writer);
         stats.controller.getFetchChain().reportTo(writer);
         stats.controller.getDispositionChain().reportTo(writer);

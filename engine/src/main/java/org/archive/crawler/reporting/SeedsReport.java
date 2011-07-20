@@ -35,7 +35,7 @@ import com.sleepycat.collections.StoredIterator;
 public class SeedsReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         // Build header.
         writer.print("[code] [status] [seed] [redirect]\n");
 

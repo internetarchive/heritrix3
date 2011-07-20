@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -190,54 +191,6 @@ public class StatisticsTracker
         Logger.getLogger(StatisticsTracker.class.getName());
 
     /**
-     * All report types, for selection by name
-     */
-    @SuppressWarnings("unchecked")
-    public static final Class[] ALL_REPORTS = {
-        CrawlSummaryReport.class,
-        SeedsReport.class, 
-        HostsReport.class, 
-        SourceTagsReport.class,
-        MimetypesReport.class, 
-        ResponseCodeReport.class, 
-        ProcessorsReport.class,
-        FrontierSummaryReport.class, 
-        FrontierNonemptyReport.class, 
-        ToeThreadsReport.class,
-    };
-    
-    /**
-     * Live report types, for iteration dump at end
-     */
-    @SuppressWarnings("unchecked")
-    public static final Class[] LIVE_REPORTS = {
-        CrawlSummaryReport.class,
-        SeedsReport.class, 
-        HostsReport.class, 
-        SourceTagsReport.class,
-        MimetypesReport.class, 
-        ResponseCodeReport.class, 
-        ProcessorsReport.class,
-        FrontierSummaryReport.class, 
-        ToeThreadsReport.class,
-    };
-    /**
-     * End-of-crawl report types, for iteration dump at end
-     */
-    @SuppressWarnings("unchecked")
-    public static final Class[] END_REPORTS = {
-        CrawlSummaryReport.class,
-        SeedsReport.class, 
-        HostsReport.class, 
-        SourceTagsReport.class,
-        MimetypesReport.class, 
-        ResponseCodeReport.class, 
-        ProcessorsReport.class,
-        FrontierSummaryReport.class, 
-        ToeThreadsReport.class,
-    };
-
-    /**
      * Whether to maintain seed disposition records (expensive in 
      * crawls with millions of seeds)
      */
@@ -337,7 +290,33 @@ public class StatisticsTracker
         
     }
     
-    boolean isRunning = false; 
+    boolean isRunning = false;
+
+    protected List<Report> reports;
+    
+    public List<Report> getReports() {
+        // lazy initialization so we don't pointlessly create a bunch of beans
+        // right before setReports is called
+        if (reports == null) {
+            reports = new LinkedList<Report>();
+            reports.add(new CrawlSummaryReport());
+            reports.add(new SeedsReport());
+            reports.add(new HostsReport());
+            reports.add(new SourceTagsReport());
+            reports.add(new MimetypesReport());
+            reports.add(new ResponseCodeReport());
+            reports.add(new ProcessorsReport());
+            reports.add(new FrontierSummaryReport());
+            reports.add(new ToeThreadsReport());
+        }
+        
+        return reports;
+    }
+    
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
+    }
+
     public boolean isRunning() {
         return isRunning;
     }
@@ -890,23 +869,16 @@ public class StatisticsTracker
     }
 
     public File writeReportFile(String reportName) {
-        for(Class<Report> reportClass : ALL_REPORTS) {
-            if(reportClass.getSimpleName().equals(reportName)) {
-             return writeReportFile(reportClass, false);
+        for(Report report: getReports()) {
+            if (report.getClass().getSimpleName().equals(reportName)) {
+                return writeReportFile(report, false);
             }
         }
-        return null; 
+        return null;
     }
-    
-    protected File writeReportFile(Class<Report> reportClass, boolean force) {
-        Report r;
-        try {
-            r = reportClass.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        r.setStats(this);
-        File f = new File(getReportsDir().getFile(), r.getFilename());
+
+    protected File writeReportFile(Report report, boolean force) {
+        File f = new File(getReportsDir().getFile(), report.getFilename());
         
         if(f.exists() && !controller.isRunning() && controller.hasStarted() && !force) {
             // controller already started and stopped 
@@ -920,7 +892,7 @@ public class StatisticsTracker
         f.getParentFile().mkdirs();
         try {
             PrintWriter bw = new PrintWriter(new FileWriter(f));
-            r.write(bw);
+            report.write(bw, this);
             bw.close();
             addToManifest(f.getAbsolutePath(),
                 CrawlerLoggerModule.MANIFEST_REPORT_FILE, true);
@@ -945,11 +917,13 @@ public class StatisticsTracker
         // order to the manifest set.
         //controller.addOrderToManifest();
         
-        for(Class<Report> reportClass : END_REPORTS) {
-            try {
-                writeReportFile(reportClass, true);
-            } catch (RuntimeException re) {
-                logger.log(Level.SEVERE, re.getMessage(), re);
+        for (Report report: getReports()) {
+            if (report.getShouldReportAtEndOfCrawl()) {
+                try {
+                    writeReportFile(report, true);
+                } catch (RuntimeException re) {
+                    logger.log(Level.SEVERE, re.getMessage(), re);
+                }
             }
         }
     }

@@ -36,13 +36,12 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpoint;
+import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
-import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.reporting.AlertHandler;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.Report;
-import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
@@ -429,10 +428,12 @@ public class JobResource extends BaseResource {
         
         if(cj.hasApplicationContext()) {
             pw.println("<h2>Reports</h2>");
-            for(Class<Report> reportClass : StatisticsTracker.LIVE_REPORTS) {
-                String className = reportClass.getSimpleName();
-                String shortName = className.substring(0,className.length()-"Report".length());
-                pw.println("<a href='report/"+className+"'>"+shortName+"</a>");
+            for (Report report: cj.getCrawlController().getStatisticsTracker().getReports()) {
+                if (report.getShouldReportDuringCrawl()) {
+                    String className = report.getClass().getSimpleName();
+                    String shortName = className.substring(0,className.length()-"Report".length());
+                    pw.println("<a href='report/"+className+"'>"+shortName+"</a>");
+                }
             }
         }
         

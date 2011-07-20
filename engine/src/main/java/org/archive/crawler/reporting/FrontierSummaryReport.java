@@ -32,7 +32,7 @@ import org.archive.crawler.frontier.WorkQueueFrontier;
 public class FrontierSummaryReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         if(!stats.controller.getFrontier().isRunning()) {
             writer.println("frontier unstarted");
 //        } else if (stats.controller.getFrontier().isEmpty()) {

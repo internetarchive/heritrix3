@@ -32,7 +32,7 @@ import org.archive.util.ArchiveUtils;
 public class CrawlSummaryReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         CrawlStatSnapshot snapshot = stats.getLastSnapshot(); 
         writer.println("crawl name: " + stats.getCrawlController().getMetadata().getJobName());
         writer.println("crawl status: " + stats.getCrawlController().getCrawlExitStatus().desc);

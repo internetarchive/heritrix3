@@ -28,21 +28,28 @@ import java.io.PrintWriter;
  * @contributor gojomo
  */
 public abstract class Report {
-    StatisticsTracker stats;
-    
     public Report() {
     }
     
-    public abstract void write(PrintWriter writer); 
+    public abstract void write(PrintWriter writer, StatisticsTracker stats); 
     
     public abstract String getFilename();
 
-    public StatisticsTracker getStats() {
-        return stats;
+    private boolean shouldReportAtEndOfCrawl = true;
+    public boolean getShouldReportAtEndOfCrawl() {
+        return shouldReportAtEndOfCrawl;
     }
 
-    public Report setStats(StatisticsTracker stats) {
-        this.stats = stats;
-        return this; 
-    } 
+    public void setShouldReportAtEndOfCrawl(boolean shouldReportAtEndOfCrawl) {
+        this.shouldReportAtEndOfCrawl = shouldReportAtEndOfCrawl;
+    }
+
+    private boolean shouldReportDuringCrawl = true;
+    public boolean getShouldReportDuringCrawl() {
+        return shouldReportDuringCrawl;
+    }
+
+    public void setShouldReportDuringCrawl(boolean shouldReportDuringCrawl) {
+        this.shouldReportDuringCrawl = shouldReportDuringCrawl;
+    }
 }

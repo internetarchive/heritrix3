@@ -48,7 +48,7 @@ public class HostsReport extends Report {
     }
 
     @Override
-    public void write(final PrintWriter writer) {
+    public void write(final PrintWriter writer, StatisticsTracker stats) {
         // TODO: use CrawlHosts for all stats; only perform sorting on 
         // manageable number of hosts
         DisposableStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();

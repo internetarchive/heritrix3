@@ -615,6 +615,20 @@ http://example.example/example
  <!-- STATISTICSTRACKER: standard stats/reporting collector -->
  <bean id="statisticsTracker" 
    class="org.archive.crawler.reporting.StatisticsTracker" autowire="byName">
+  <!-- <property name="reports">
+        <list>
+         <bean id="crawlSummaryReport" class="org.archive.crawler.reporting.CrawlSummaryReport" />
+         <bean id="seedsReport" class="org.archive.crawler.reporting.SeedsReport" />
+         <bean id="hostsReport" class="org.archive.crawler.reporting.HostsReport" />
+         <bean id="sourceTagsReport" class="org.archive.crawler.reporting.SourceTagsReport" />
+         <bean id="mimetypesReport" class="org.archive.crawler.reporting.MimetypesReport" />
+         <bean id="responseCodeReport" class="org.archive.crawler.reporting.ResponseCodeReport" />
+         <bean id="processorsReport" class="org.archive.crawler.reporting.ProcessorsReport" />
+         <bean id="frontierSummaryReport" class="org.archive.crawler.reporting.FrontierSummaryReport" />
+         <bean id="frontierNonemptyReport" class="org.archive.crawler.reporting.FrontierNonemptyReport" />
+         <bean id="toeThreadsReport" class="org.archive.crawler.reporting.ToeThreadsReport" />
+        </list>
+       </property> -->
   <!-- <property name="reportsDir" value="${launchId}/reports" /> -->
   <!-- <property name="liveHostReportSize" value="20" /> -->
   <!-- <property name="intervalSeconds" value="20" /> -->

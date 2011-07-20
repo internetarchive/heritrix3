@@ -31,7 +31,7 @@ import org.archive.bdb.DisposableStoredSortedMap;
 public class ResponseCodeReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
         // header
         writer.print("[#urls] [rescode]\n");
         

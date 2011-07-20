@@ -33,7 +33,7 @@ import org.archive.bdb.DisposableStoredSortedMap;
 public class SourceTagsReport extends Report {
 
     @Override
-    public void write(PrintWriter writer) {
+    public void write(PrintWriter writer, StatisticsTracker stats) {
 
         Set<String> sourceTags = stats.sourceHostDistribution.keySet();
         
