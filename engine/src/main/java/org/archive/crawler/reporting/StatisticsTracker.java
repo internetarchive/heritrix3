@@ -201,6 +201,19 @@ public class StatisticsTracker
     public void setTrackSeeds(boolean trackSeeds) {
         this.trackSeeds = trackSeeds;
     }
+    
+    /**
+     * Whether to maintain hosts-per-source-tag records for; very expensive in 
+     * crawls with large numbers of source-tags (seeds) or large crawls 
+     * over many hosts
+     */
+    boolean trackSources = true;
+    public boolean getTrackSources() {
+        return this.trackSources;
+    }
+    public void setTrackSources(boolean trackSources) {
+        this.trackSources = trackSources;
+    }
             
     /**
      * The interval between writing progress information to log.
@@ -270,6 +283,7 @@ public class StatisticsTracker
     = new ConcurrentHashMap<String, AtomicLong>();
     
     /** Keep track of URL counts per host per seed */
+    // TODO: restore spill-to-disk, like with processedSeedsRecords
     protected ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> sourceHostDistribution = 
         new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); 
 
@@ -290,8 +304,6 @@ public class StatisticsTracker
         
     }
     
-    boolean isRunning = false;
-
     protected List<Report> reports;
     
     public List<Report> getReports() {
@@ -317,6 +329,7 @@ public class StatisticsTracker
         this.reports = reports;
     }
 
+    boolean isRunning = false;
     public boolean isRunning() {
         return isRunning;
     }
@@ -748,7 +761,7 @@ public class StatisticsTracker
         saveHostStats(sc.getHostFor(curi.getUURI()).getHostName(),
                 curi.getContentSize());
         
-        if (curi.getData().containsKey(A_SOURCE_TAG)) {
+        if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
         	saveSourceStats((String)curi.getData().get(A_SOURCE_TAG),
                         sc.getHostFor(curi.getUURI()).
                     getHostName()); 
