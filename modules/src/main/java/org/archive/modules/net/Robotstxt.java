@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
+import org.archive.bdb.AutoKryo;
 import org.archive.io.ReadSource;
 
 /**
@@ -230,5 +231,14 @@ public class Robotstxt implements Serializable {
      */
     public RobotsDirectives getDirectivesFor(String userAgent) {
         return getDirectivesFor(userAgent, true);
+    }
+    
+    // Kryo support
+    public static void autoregisterTo(AutoKryo kryo) {
+        kryo.register(Robotstxt.class);
+        kryo.autoregister(HashMap.class);
+        kryo.autoregister(LinkedList.class);
+        kryo.autoregister(RobotsDirectives.class);
+        kryo.setRegistrationOptional(true); 
     }
 }

@@ -29,7 +29,6 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.Checksum;
@@ -332,12 +331,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     public static void autoregisterTo(AutoKryo kryo) {
         kryo.register(CrawlServer.class);
         kryo.autoregister(FetchStats.class); 
-        kryo.autoregister(org.archive.modules.net.Robotstxt.class);
-        kryo.autoregister(java.util.HashMap.class);
-        kryo.autoregister(org.archive.modules.net.RobotsDirectives.class);
-        kryo.autoregister(org.archive.util.PrefixSet.class);
-        kryo.autoregister(ConcurrentSkipListSet.class); // now used instead of PrefixSet in RobotsDirectives
-        kryo.autoregister(java.util.LinkedList.class);
+        kryo.autoregister(Robotstxt.class);
         kryo.setRegistrationOptional(true); 
     }
     

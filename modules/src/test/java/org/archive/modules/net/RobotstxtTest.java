@@ -21,8 +21,11 @@ package org.archive.modules.net;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
+
+import org.archive.bdb.AutoKryo;
 
 public class RobotstxtTest extends TestCase {
     public void testParseRobots() throws IOException {
@@ -156,5 +159,40 @@ public class RobotstxtTest extends TestCase {
         Robotstxt r = htmlMarkupRobots();
         assertFalse(r.getDirectivesFor("anybot").allows("/index.html"));
         assertEquals(30f,r.getDirectivesFor("anybot").getCrawlDelay());
+    }
+    /**
+     * Test serialization/deserialization of Robotstxt object.
+     * Improper behavior, such as failure to restore shared RobotsDirectives objects,
+     * can lead to excess memory usage and CPU cycles. In one case, 450KB robots.txt
+     * exploded into 450MB. See [HER-1912].
+     * @throws IOException
+     */
+    public void testCompactSerialization() throws IOException {
+        AutoKryo kryo = new AutoKryo();
+        kryo.autoregister(Robotstxt.class);
+        
+        final String TEST_ROBOTS_TXT = "User-Agent:a\n" +
+        "User-Agent:b\n" +
+        "User-Agent:c\n" +
+        "User-Agent:d\n" +
+        "Disallow:/service\n";
+
+        StringReader sr = new StringReader(TEST_ROBOTS_TXT);
+        Robotstxt rt = new Robotstxt(new BufferedReader(sr));
+        {
+            RobotsDirectives da = rt.getDirectivesFor("a", false);
+            RobotsDirectives db = rt.getDirectivesFor("b", false);
+            assertTrue("user-agent a and b shares the same RobotsDirectives before serialization", da == db);
+        }
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1024);
+        kryo.writeObject(buffer, rt);
+        buffer.flip();
+        Robotstxt rt2 = kryo.readObject(buffer, Robotstxt.class);
+        assertNotNull(rt2);
+        {
+            RobotsDirectives da = rt2.getDirectivesFor("a", false);
+            RobotsDirectives db = rt2.getDirectivesFor("b", false);
+            assertTrue("user-agent a and b shares the same RobotsDirectives after deserialization", da == db);
+        }
     }
 }

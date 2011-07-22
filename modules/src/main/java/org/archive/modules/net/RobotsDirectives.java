@@ -21,6 +21,10 @@ package org.archive.modules.net;
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import org.archive.bdb.AutoKryo;
+
+import com.esotericsoftware.kryo.serialize.ReferenceFieldSerializer;
+
 /**
  * Represents the directives that apply to a user-agent (or set of
  * user-agents)
@@ -72,4 +76,12 @@ public class RobotsDirectives implements Serializable {
     public float getCrawlDelay() {
         return crawlDelay;
     }
+    
+    // Kryo support
+    public static void autoregisterTo(AutoKryo kryo) {
+        kryo.register(RobotsDirectives.class, new ReferenceFieldSerializer(kryo, RobotsDirectives.class));
+        kryo.autoregister(ConcurrentSkipListSet.class); // now used instead of PrefixSet in RobotsDirectives
+        kryo.setRegistrationOptional(true); 
+    }
+
 }
