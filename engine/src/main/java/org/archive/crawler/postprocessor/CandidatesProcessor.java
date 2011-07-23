@@ -46,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * that may deserve special treatment to expand the scope.
  */
 public class CandidatesProcessor extends Processor {
+
     private static final long serialVersionUID = -3L;
     
     /**
@@ -84,7 +85,8 @@ public class CandidatesProcessor extends Processor {
     
     /**
      * If enabled, any URL found because a seed redirected to it (original seed
-     * returned 301 or 302), will also be treated as a seed.
+     * returned 301 or 302), will also be treated as a seed, as long as the hop
+     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
      */
     {
         setSeedsRedirectNewSeeds(true);
@@ -95,6 +97,7 @@ public class CandidatesProcessor extends Processor {
     public void setSeedsRedirectNewSeeds(boolean redirect) {
         kp.put("seedsRedirectNewSeeds",redirect);
     }
+    protected static final int SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS = 5;
 
     protected SeedModule seeds;
     public SeedModule getSeeds() {
@@ -178,7 +181,8 @@ public class CandidatesProcessor extends Processor {
                 KeyedProperties.loadOverridesFrom(candidate);
                 
                 if(getSeedsRedirectNewSeeds() && curi.isSeed() 
-                        && wref.getHopType() == Hop.REFER) {
+                        && wref.getHopType() == Hop.REFER
+                        && candidate.getHopCount() < SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS) {
                     candidate.setSeed(true); 
                 }
                 getCandidateChain().process(candidate, null); 
