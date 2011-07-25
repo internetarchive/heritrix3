@@ -35,9 +35,11 @@ import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigFile;
-import org.archive.spring.PathFixupListener;
 import org.archive.util.SurtPrefixSet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextStartedEvent;
 
 /**
  * Rule applies configured decision to any URIs that, when 
@@ -53,11 +55,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  * 
  * @author gojomo
  */
-public class SurtPrefixedDecideRule extends PredicatedDecideRule 
-implements 
-    SeedListener,
-    PathFixupListener
-{
+public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
+        SeedListener, ApplicationListener<ApplicationEvent> {
+    
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
         Logger.getLogger(SurtPrefixedDecideRule.class.getName());
@@ -153,10 +153,6 @@ implements
 
     public SurtPrefixedDecideRule() {
     }
-
-    public void pathsFixedUp() {
-        readPrefixes();
-    }
     
     public void concludedSeedBatch() {
         dumpSurtPrefixSet();
@@ -177,7 +173,6 @@ implements
         }
         return innerDecide(uri.getUURI());
     }
-    
     
     private boolean innerDecide(UURI uuri) {
         String candidateSurt;
@@ -281,6 +276,13 @@ implements
             return DEFAULT_REJECT_ADD_PREFIX_DIRECTIVE;
         }
         throw new IllegalArgumentException("decision must be ACCEPT or REJECT");
+    }
+    
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof ContextStartedEvent) {
+            readPrefixes();
+        }
     }
 
 }//EOC
