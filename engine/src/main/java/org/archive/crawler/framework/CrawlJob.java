@@ -562,8 +562,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             ac = null;
         }
         xmlOkAt = new DateTime(0);
-        getJobLogger().removeHandler(currentLaunchJobLogHandler);
-        currentLaunchJobLogHandler.close();
+        if (currentLaunchJobLogHandler != null) {
+            getJobLogger().removeHandler(currentLaunchJobLogHandler);
+            currentLaunchJobLogHandler.close();
+        }
         getJobLogger().log(Level.INFO,"Job instance discarded");
         return true; 
     }
