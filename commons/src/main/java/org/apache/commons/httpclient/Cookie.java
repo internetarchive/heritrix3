@@ -510,7 +510,7 @@ public class Cookie extends NameValuePair implements Serializable, Comparator {
      * 
      * Only two cookies that are equals() (same domain, path, name) will have
      * the same sort key. The '\1' separator character is important in 
-     * conjunction with Cookie.DOMAIN+OVERBOUNDS, allowing keys based on the
+     * conjunction with Cookie.DOMAIN_OVERBOUNDS, allowing keys based on the
      * domain plus an extension to define the relevant range in a SortedMap. 
      * @return String sort key for this cookie
      */

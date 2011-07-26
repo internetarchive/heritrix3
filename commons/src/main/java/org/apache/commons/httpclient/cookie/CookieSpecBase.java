@@ -624,7 +624,7 @@ public class CookieSpecBase implements CookieSpec {
             domain = null; 
         }
         
-        String candidate = (domain!=null) ? domain.toString() : host;
+        String candidate = (domain!=null) ? domain.name() : host;
         while(candidate!=null) {
             Iterator iter = cookies.subMap(candidate,
                     candidate + Cookie.DOMAIN_OVERBOUNDS).values().iterator();
@@ -637,7 +637,7 @@ public class CookieSpecBase implements CookieSpec {
             StoredIterator.close(iter);
             if(domain!=null && domain.isUnderPublicSuffix()) {
                 domain = domain.parent(); 
-                candidate = domain.toString(); 
+                candidate = domain.name(); 
             } else {
                 candidate = null;
             }
