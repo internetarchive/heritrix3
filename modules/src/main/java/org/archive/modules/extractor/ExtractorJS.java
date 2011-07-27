@@ -154,7 +154,8 @@ public class ExtractorJS extends ContentExtractor {
         long foundLinks = 0;
         Matcher strings =
             TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, cs);
-        while(strings.find()) {
+        int startIndex = 0;
+        while (strings.find(startIndex)) {
             CharSequence subsequence =
                 cs.subSequence(strings.start(2), strings.end(2));
             if(UriUtils.isLikelyUri(subsequence)) {
@@ -182,6 +183,9 @@ public class ExtractorJS extends ContentExtractor {
                foundLinks += considerStrings(ext, curi, subsequence, 
                        handlingJSFile);
             }
+            
+            // reconsider the last closing quote as possible opening quote
+            startIndex = strings.end(2);
         }
         TextUtils.recycleMatcher(strings);
         return foundLinks;

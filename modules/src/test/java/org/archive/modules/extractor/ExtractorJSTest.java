@@ -44,6 +44,8 @@ public class ExtractorJSTest extends StringExtractorTestBase {
         "var foo = \"<a href=\\\"http:\\/\\/www.example.com\\/outlink\\\">link in html in string with gratuitous escaping</a>\";",
         "http://www.example.com/outlink",
 
+        "'string with spaces','http://example.com/outlink'",
+        "http://example.com/outlink"
     };
        
     @Override
