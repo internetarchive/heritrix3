@@ -19,6 +19,7 @@
 
 package org.archive.modules.credential;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -27,6 +28,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.archive.modules.CrawlURI;
 
@@ -129,6 +131,10 @@ public class HttpAuthenticationCredential extends Credential {
         	logger.fine("Credentials for realm " + getRealm() +
         	    " for CrawlURI " + curi.toString() + " added to request: " +
 				result);
+
+            http.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY,
+                    Arrays.asList(AuthPolicy.DIGEST, AuthPolicy.BASIC));
+
         	result = true;
         } catch (URIException e) {
         	logger.severe("Failed to parse host from " + curi + ": " +
