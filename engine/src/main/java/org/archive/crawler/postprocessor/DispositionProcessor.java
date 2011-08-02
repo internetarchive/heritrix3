@@ -189,12 +189,6 @@ public class DispositionProcessor extends Processor {
             // Update robots info
             try {
                 if ("/robots.txt".equals(curi.getUURI().getPath())) {
-                    // Update server with robots info
-                	// NOTE: in some cases the curi's status can be changed here
-//                    server.updateRobots(metadata.getRobotsHonoringPolicy(),  curi);
-                    
-                    server.updateRobots(curi);
-                    
                     // shortcut retries  w/ DEEMED when ignore-all
                     if (metadata.getRobotsPolicy() instanceof IgnoreRobotsPolicy) {
                         if(curi.getFetchStatus() < 0 && curi.getFetchStatus()!=S_DEFERRED) {
@@ -202,6 +196,10 @@ public class DispositionProcessor extends Processor {
                             curi.setFetchStatus(S_DEEMED_NOT_FOUND);
                         }
                     }
+                    
+                    // Update server with robots info
+                    // NOTE: in some cases the curi's status can be changed here
+                    server.updateRobots(curi);
                 }
             }
             catch (URIException e) {

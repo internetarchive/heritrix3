@@ -142,7 +142,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
        robotsFetched = System.currentTimeMillis();
        
        boolean gotSomething = curi.getFetchType() == HTTP_GET 
-           && (curi.getFetchStatus() > 0 || curi.getFetchStatus() == S_DEEMED_NOT_FOUND );
+           && (curi.getFetchStatus() > 0 || curi.getFetchStatus() == S_DEEMED_NOT_FOUND);
        
        
        if (!gotSomething && curi.getFetchAttempts() < MIN_ROBOTS_RETRIES) {
