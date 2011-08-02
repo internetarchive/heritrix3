@@ -1772,7 +1772,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     public String getCanonicalString() {
         if(StringUtils.isEmpty(canonicalString)){
-            System.err.println("not canonicalized "+this);
+            logger.warning("canonicalString unset, returning uncanonicalized " + getURI());
             return getURI();
         }
         return canonicalString;
@@ -1784,7 +1784,7 @@ implements MultiReporter, Serializable, OverlayContext {
     }
     public long getPolitenessDelay() {
         if(politenessDelay<0) {
-            System.err.println("not politeness-calc "+this);
+            logger.warning("politessDelay unset, returning default 5000 for " + this);
             return 5000;
         }
         return this.politenessDelay;
