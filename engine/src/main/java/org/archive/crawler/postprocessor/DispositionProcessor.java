@@ -20,8 +20,8 @@
 package org.archive.crawler.postprocessor;
 
 
-import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
@@ -188,7 +188,7 @@ public class DispositionProcessor extends Processor {
 
             // Update robots info
             try {
-                if ("/robots.txt".equals(curi.getUURI().getPath())) {
+                if ("/robots.txt".equals(curi.getUURI().getPath()) && curi.getFetchStatus() != S_DEFERRED) {
                     // shortcut retries  w/ DEEMED when ignore-all
                     if (metadata.getRobotsPolicy() instanceof IgnoreRobotsPolicy) {
                         if(curi.getFetchStatus() < 0 && curi.getFetchStatus()!=S_DEFERRED) {
