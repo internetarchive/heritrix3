@@ -10,24 +10,6 @@
   <artifactId>heritrix</artifactId>
   <packaging>pom</packaging>
   <name>Heritrix 3 (distribution bundles)</name>
-    <pluginRepositories>
-    <pluginRepository>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>never</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <id>agilejava</id>
-      <name>agilejava.com</name>
-      <url>http://www.agilejava.com/maven</url>
-      <layout>default</layout>
-    </pluginRepository>
-    </pluginRepositories>
 
     <repositories>
     <repository>
@@ -44,23 +26,6 @@
       <id>internetarchive</id>
       <name>Internet Archive Maven Repository</name>
       <url>http://builds.archive.org:8080/maven2</url>
-      <layout>default</layout>
-    </repository>
-
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>never</updatePolicy>
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <id>agilejava</id>
-      <name>agilejava.com</name>
-      <url>http://www.agilejava.com/maven</url>
       <layout>default</layout>
     </repository>
   </repositories>
