@@ -148,8 +148,7 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
                                     hkp,
                                     fullpath,
                                     wrapper.getPropertyValue(terminalProp),
-                                    value), requiredType);
-                tme2.initCause(tme);
+                                    value), requiredType, tme);
                 throw tme2;
             }
         }
