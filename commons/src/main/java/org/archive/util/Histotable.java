@@ -56,7 +56,7 @@ public class Histotable<K> extends TreeMap<K,Long> {
      * 
      * @param key Object key.
      */
-    public void tally(K key,long count) {
+    public synchronized void tally(K key,long count) {
         long tally = containsKey(key) ? get(key) : 0; 
         tally += count; 
         if(tally!=0) {
