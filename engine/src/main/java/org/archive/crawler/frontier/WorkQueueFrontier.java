@@ -625,6 +625,9 @@ implements Closeable,
                     // queue has gone 'in process' 
                     readyQ.considerActive();
                     readyQ.setWakeTime(0); // clear obsolete wake time, if any
+
+                    readyQ.setSessionBudget(getBalanceReplenishAmount());
+                    readyQ.setTotalBudget(getQueueTotalBudget()); 
                     if (readyQ.isOverSessionBudget()) {
                         deactivateQueue(readyQ);
                         readyQ.makeDirty();
