@@ -254,6 +254,7 @@ http://example.example/example
        </property> 
       </bean> -->
  <bean id="fetchHttp" class="org.archive.modules.fetcher.FetchHTTP">
+  <!-- <property name="useHTTP11" value="false" /> -->
   <!-- <property name="maxLengthBytes" value="0" /> -->
   <!-- <property name="timeoutSeconds" value="1200" /> -->
   <!-- <property name="maxFetchKBSec" value="0" /> -->
