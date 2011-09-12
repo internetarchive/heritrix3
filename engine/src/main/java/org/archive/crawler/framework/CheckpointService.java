@@ -325,7 +325,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * 
      * @param selectedCheckpoint
      */
-    public void setRecoveryCheckpointByName(String selectedCheckpoint) {
+    public synchronized void setRecoveryCheckpointByName(String selectedCheckpoint) {
         if(isRunning) {
             throw new RuntimeException("may not set recovery Checkpoint after launch");
         }
