@@ -59,12 +59,11 @@ public class BucketQueueAssignmentPolicy extends QueueAssignmentPolicy {
         if(host == null) {
             return "NO-HOST";
         } else if(host.getIP() == null) {
-            return "NO-IP-".concat(Integer.toString(Math.abs(host.getHostName()
-                .hashCode())
-                & DEFAULT_NOIP_BITMASK));
+            return "NO-IP-".concat(Long.toString(Math.abs((long) host
+                    .getHostName().hashCode()) & DEFAULT_NOIP_BITMASK));
         } else {
-            return Integer.toString(Math.abs(host.getIP().hashCode())
-                % DEFAULT_QUEUES_HOSTS_MODULO);
+            return Long.toString(Math.abs((long) host.getIP().hashCode())
+                    % DEFAULT_QUEUES_HOSTS_MODULO);
         }
     }
 
