@@ -229,7 +229,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * URI for crawling, and continues until it is deactivated (for example, 
      * for session-budget reasons). 
      */
-    public void considerActive() {
+    public synchronized void considerActive() {
         if(active) {
             return; 
         }
@@ -336,7 +336,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * return a different item. 
      * 
      */
-    public void unpeek(CrawlURI expected) {
+    public synchronized void unpeek(CrawlURI expected) {
         assert expected == peekItem : "unexpected peekItem";
         peekItem = null;
     }
