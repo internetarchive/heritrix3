@@ -192,14 +192,6 @@ public class CrawlerLoggerModule
     private transient Logger progressStats;
 
     /**
-     * Logger to hold job summary report.
-     *
-     * Large state reports made at infrequent intervals (e.g. job ending) go
-     * here.
-     */
-    private transient Logger reports;
-
-    /**
      * Record of fileHandlers established for loggers,
      * assisting file rotation.
      */
@@ -401,12 +393,6 @@ public class CrawlerLoggerModule
     public Logger getProgressStats() {
         return progressStats;
     }
-
-
-    public Logger getReports() {
-        return reports;
-    }
-
 
     public Logger getRuntimeErrors() {
         return runtimeErrors;

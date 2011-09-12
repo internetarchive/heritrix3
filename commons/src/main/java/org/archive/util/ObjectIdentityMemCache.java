@@ -55,14 +55,15 @@ implements ObjectIdentityCache<V> {
 
     public V getOrUse(String key, Supplier<V> supplierOrNull) {
         V val = map.get(key); 
-        if (val==null && supplierOrNull!=null) {
+        if (val != null) {
+            val.setIdentityCache(this); 
+        } else if (supplierOrNull!=null) {
             val = supplierOrNull.get(); 
             V prevVal = map.putIfAbsent(key, val);
             if(prevVal!=null) {
                 val = prevVal; 
             }
         }
-        val.setIdentityCache(this); 
         return val; 
     }
 

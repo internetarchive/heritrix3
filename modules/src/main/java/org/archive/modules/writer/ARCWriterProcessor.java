@@ -160,18 +160,18 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             	setTotalBytesWritten(getTotalBytesWritten() +
             	     (writer.getPosition() - position));
                 getPool().returnFile(writer);
-            }
-
-            String filename = writer.getFile().getName();
-            if (filename.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
-                filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
-            }
-            curi.addExtraInfo("arcFilename", filename);
-            
-            @SuppressWarnings("unchecked")
-            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
-            if (history != null && history[0] != null) {
-                history[0].put(A_WRITE_TAG, filename);
+                
+                String filename = writer.getFile().getName();
+                if (filename.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
+                    filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
+                }
+                curi.addExtraInfo("arcFilename", filename);
+                
+                @SuppressWarnings("unchecked")
+                Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+                if (history != null && history[0] != null) {
+                    history[0].put(A_WRITE_TAG, filename);
+                }
             }
         }
         return checkBytesWritten();

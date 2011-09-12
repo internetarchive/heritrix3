@@ -29,7 +29,6 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigPath;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 
@@ -106,12 +105,6 @@ implements Checkpointable, Lifecycle {
     
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
 
-    Checkpoint recoveryCheckpoint;
-    @Autowired(required=false)
-    public void setRecoveryCheckpoint(Checkpoint checkpoint) {
-        this.recoveryCheckpoint = checkpoint; 
-    }
-    
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         return shouldStore(uri);

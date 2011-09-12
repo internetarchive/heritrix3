@@ -84,11 +84,11 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.lang.StringUtils;
 import org.archive.httpclient.ConfigurableX509TrustManager;
+import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.httpclient.HttpRecorderGetMethod;
 import org.archive.httpclient.HttpRecorderMethod;
 import org.archive.httpclient.HttpRecorderPostMethod;
 import org.archive.httpclient.SingleHttpConnectionManager;
-import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecorderTooMuchHeaderException;
@@ -1306,7 +1306,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             if (key == null || key.length() <= 0 || challenge == null
                     || challenge.length() <= 0) {
                 logger.warning("Empty scheme: " + curi.toString() + ": "
-                        + headers);
+                        + Arrays.toString(headers));
+                continue;
             }
             AuthScheme authscheme = null;
             if (key.equals("basic")) {
@@ -1321,7 +1322,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             try {
                 authscheme.processChallenge(challenge);
             } catch (MalformedChallengeException e) {
-                logger.fine(e.getMessage() + " " + curi + " " + headers);
+                logger.fine(e.getMessage() + " " + curi + " " + Arrays.toString(headers));
                 continue;
             }
             if (authscheme.isConnectionBased()) {

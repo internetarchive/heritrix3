@@ -18,6 +18,7 @@
  */
 package org.archive.modules.deciderules;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 
 /**
@@ -26,7 +27,7 @@ import java.net.InetAddress;
  * @version $Date$, $Revision$
  * @see ExternalImplDecideRule
  */
-public interface ExternalGeoLookupInterface {
+public interface ExternalGeoLookupInterface extends Serializable {
     /**
      * @param obj Object to evaluate
      * @return String of a country code that the object belongs to.

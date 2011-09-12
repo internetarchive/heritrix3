@@ -36,10 +36,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
@@ -1289,15 +1289,16 @@ implements Closeable,
                     q = null; 
                 }
             }
-                
-            if(q == null) {
+
+            if(q != null) {
+                if(!legendWritten) {
+                    writer.println(q.shortReportLegend());
+                    legendWritten = true;
+                }
+                q.shortReportLineTo(writer);
+            } else {
                 writer.print(" ERROR: "+obj);
             }
-            if(!legendWritten) {
-                writer.println(q.shortReportLegend());
-                legendWritten = true;
-            }
-            q.shortReportLineTo(writer);
         }       
     }
 
@@ -1459,7 +1460,7 @@ implements Closeable,
      * @param total
      * @param max
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     protected void appendQueueReports(PrintWriter w, String label, Iterator<?> iterator,
             int total, int max) {
         Object obj;
@@ -1479,11 +1480,12 @@ implements Closeable,
             } else {
                 q = this.allQueues.get((String)obj);
             }
-            if(q == null) {
+            if(q != null) {
+                w.println(label+"#"+count+":");
+                q.reportTo(w);
+            } else {
                 w.print("WARNING: No report for queue "+obj);
             }
-            w.println(label+"#"+count+":");
-            q.reportTo(w);
         }
         count++;
         if(count < total) {

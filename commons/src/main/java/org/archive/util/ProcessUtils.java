@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -135,7 +136,7 @@ public class ProcessUtils {
         try {
             exitVal = p.waitFor();
         } catch (InterruptedException e) {
-            throw new IOException("Wait on process " + args + " interrupted: "
+            throw new IOException("Wait on process " + Arrays.toString(args) + " interrupted: "
                 + e.getMessage());
         }
         ProcessUtils.ProcessResult result =

@@ -581,7 +581,7 @@ implements Serializable,
     /**
      * @return CrawlController state.
      */
-    public Object getState() {
+    public State getState() {
         return this.state;
     }
     

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,7 +85,7 @@ public abstract class DownloadURLConnection extends URLConnection {
             }
             ProcessResult pr = ProcessUtils.exec(cmd);
             if (pr.getResult() != 0) {
-                LOGGER.info(cmd + " returned non-null " + pr.getResult());
+                LOGGER.info(Arrays.toString(cmd) + " returned non-null " + pr.getResult());
             }
             // Assume download went smoothly.
             this.connected = true;

@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
@@ -50,9 +49,7 @@ import org.archive.net.UURIFactory;
  */
 public class ExtractorUniversal extends ContentExtractor {
 
-
     private static final long serialVersionUID = 3L;
-    
 
     /**
      * How deep to look into files for URI strings, in bytes.
@@ -485,7 +482,7 @@ public class ExtractorUniversal extends ContentExtractor {
             return false;
         }
 
-        potentialTLD.toLowerCase();
+        potentialTLD = potentialTLD.toLowerCase();
         Matcher uri = TLDs.matcher(potentialTLD);
         boolean ret = uri.matches();
         return ret;

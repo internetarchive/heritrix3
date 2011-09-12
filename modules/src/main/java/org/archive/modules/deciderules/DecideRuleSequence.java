@@ -34,7 +34,7 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
         Logger.getLogger(DecideRuleSequence.class.getName());
     private static final long serialVersionUID = 3L;
     
-    protected Logger fileLogger = null;
+    protected transient Logger fileLogger = null;
 
     /**
      * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format

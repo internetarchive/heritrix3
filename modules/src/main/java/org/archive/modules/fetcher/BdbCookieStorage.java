@@ -75,8 +75,7 @@ public class BdbCookieStorage extends AbstractCookieStorage implements Checkpoin
                     new StringBinding(), 
                     new SerialBinding<Cookie>(classCatalog,Cookie.class), 
                     true);
-            SortedMap<String,Cookie> result = cookies;
-            return result;
+            return cookies;
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }

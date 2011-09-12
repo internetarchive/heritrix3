@@ -31,10 +31,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.Checksum;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
@@ -70,7 +69,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     protected Robotstxt robotstxt;
     long robotsFetched = ROBOTS_NOT_FETCHED;
     boolean validRobots = false;
-    Checksum robotstxtChecksum;
     FetchStats substats = new FetchStats();
     
     // how many consecutive connection errors have been encountered;
@@ -152,14 +150,12 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
        }
               
        // special deeming for a particular kind of connection-lost (empty server response)
-       if(curi.getFetchStatus() == S_CONNECT_LOST && CollectionUtils.exists(curi.getNonFatalFailures(),new Predicate() {
-           public boolean evaluate(Object obj) {
-               return obj instanceof NoHttpResponseException;
-           }
-       })) {
-           curi.setFetchStatus(S_DEEMED_NOT_FOUND);
-           gotSomething = true; 
-       }
+        if (curi.getFetchStatus() == S_CONNECT_LOST
+                && CollectionUtils.exists(curi.getNonFatalFailures(),
+                        PredicateUtils.instanceofPredicate(NoHttpResponseException.class))) {
+            curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+            gotSomething = true;
+        }
        
        if (!gotSomething) {
            // robots.txt fetch failed and exceptions (ignore/deeming) don't apply; no valid robots info yet
