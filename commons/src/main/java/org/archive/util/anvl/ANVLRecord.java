@@ -118,18 +118,6 @@ public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
         return (ANVLRecord) super.clone();
     }
     
-    public static void main(String[] args) {
-        ANVLRecord a = new ANVLRecord();
-        a.addLabelValue("labelOne", "valueOne");
-        a.addLabelValue("labelTwo", "valueTwo");
-        a.addLabelValue("labelThree", "valueThree");
-        
-        System.out.println("a = " + a);
-        System.out.println("a.clone() = " + a.clone());
-        System.out.println("a.equals(a.clone()) = " + a.equals(a.clone()));
-        System.out.println("a.clone().equals(a) = " + a.clone().equals(a));
-    }
-    
     /**
      * @return This ANVLRecord as UTF8 bytes.
      */
