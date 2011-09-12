@@ -55,7 +55,7 @@ public final class ThreadLocalHttpConnectionManager implements
         return (ConnectionInfo) tl.get();
     }
 
-    private final class ConnectionInfo {
+    private static final class ConnectionInfo {
         /** The http connection */
         private HttpConnection conn = null;
 
