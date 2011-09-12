@@ -256,7 +256,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     }
     
     protected void setup(File f, boolean create) 
-    throws DatabaseException {
+    throws DatabaseException, IOException {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
         config.setLockTimeout(75, TimeUnit.MINUTES); // set to max
@@ -282,7 +282,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
             config.setConfigParam("je.cleaner.expunge", "false");
         } // else leave whatever other setting was already in place
 
-        f.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(f);
         this.bdbEnvironment = new EnhancedEnvironment(f, config);
         this.classCatalog = this.bdbEnvironment.getClassCatalog();
         if(!create) {
@@ -479,7 +479,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                 dbBackup.startBackup();
                 
                 File envCpDir = new File(dir.getFile(),checkpointInProgress.getName());
-                envCpDir.mkdirs();
+                org.archive.util.FileUtils.ensureWriteableDirectory(envCpDir);
                 File logfilesList = new File(envCpDir,"jdbfiles.manifest");
                 String[] filedata = dbBackup.getLogFilesInBackupSet();
                 for (int i=0; i<filedata.length;i++) {

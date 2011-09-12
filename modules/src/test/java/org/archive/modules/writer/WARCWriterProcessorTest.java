@@ -42,6 +42,7 @@ import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
+import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
 import org.archive.util.anvl.ANVLRecord;
 
@@ -57,8 +58,8 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
     @Override
     protected Object makeModule() throws Exception {
         File tmp = TmpDirTestCase.tmpDir();
-        tmp = new File(tmp, "ARCWriterProcessTest");
-        tmp.mkdirs();
+        tmp = new File(tmp, "WARCWriterProcessTest");
+        FileUtils.ensureWriteableDirectory(tmp);
 
         WARCWriterProcessor result = new WARCWriterProcessor();
         result.setDirectory(new ConfigPath("test",tmp.getAbsolutePath()));

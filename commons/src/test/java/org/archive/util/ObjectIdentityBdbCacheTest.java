@@ -38,9 +38,9 @@ public class ObjectIdentityBdbCacheTest extends TmpDirTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         File envDir = new File(getTmpDir(),"ObjectIdentityBdbCacheTest");
-        envDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
         FileUtils.deleteDirectory(envDir);
-        envDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
         env = EnhancedEnvironment.getTestEnvironment(envDir); 
         this.cache = new ObjectIdentityBdbCache<IdentityCacheableWrapper<HashMap<String,String>>>();
         this.cache.initialize(env,"setUpCache",IdentityCacheableWrapper.class, env.getClassCatalog());

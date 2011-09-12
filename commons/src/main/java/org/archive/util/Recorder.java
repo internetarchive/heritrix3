@@ -120,14 +120,18 @@ public class Recorder {
      */
     public Recorder(File tempDir, String backingFilenameBase, 
             int outBufferSize, int inBufferSize) {
-        this(ensure(new File(tempDir, backingFilenameBase)), 
+        this(new File(ensure(tempDir), backingFilenameBase),
                 outBufferSize, inBufferSize);
-        tempDir.mkdirs();
     }
     
     
     private static File ensure(File tempDir) {
-        tempDir.mkdirs();
+        try {
+            org.archive.util.FileUtils.ensureWriteableDirectory(tempDir);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        
         return tempDir;
     }
     

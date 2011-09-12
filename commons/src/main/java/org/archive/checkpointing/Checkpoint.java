@@ -78,15 +78,16 @@ public class Checkpoint implements InitializingBean {
      * 
      * @param checkpointsDir
      * @param nextCheckpointNumber
+     * @throws IOException 
      */
-    public void generateFrom(ConfigPath checkpointsDir, int nextCheckpointNumber) {
+    public void generateFrom(ConfigPath checkpointsDir, int nextCheckpointNumber) throws IOException {
         getCheckpointDir().setBase(checkpointsDir);
         getCheckpointDir().setPath(
                 "cp" 
                 + INDEX_FORMAT.format(nextCheckpointNumber) 
                 + "-" 
                 + ArchiveUtils.get14DigitDate());
-        getCheckpointDir().getFile().mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(getCheckpointDir().getFile());
         afterPropertiesSet();
     }
     

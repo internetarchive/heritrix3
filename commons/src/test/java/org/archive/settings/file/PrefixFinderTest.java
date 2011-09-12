@@ -82,7 +82,7 @@ public class PrefixFinderTest extends TmpDirTestCase {
         
         File f = new File(getTmpDir(), "PrefixFinderText");
         FileUtils.deleteQuietly(f);
-        f.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(f);
         Environment bdbEnvironment = new Environment(f, config);
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setAllowCreate(true);

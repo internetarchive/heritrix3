@@ -92,7 +92,7 @@ public class MigrateH1to3Tool {
         }
         File destinationH3JobDir = new File(destinationH3JobDirArg);
 
-        destinationH3JobDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(destinationH3JobDir);
 
         System.out.println("H1 source: "+sourceOrderXmlFile.getAbsolutePath()); 
         System.out.println("H3 destination: "+destinationH3JobDir.getAbsolutePath());

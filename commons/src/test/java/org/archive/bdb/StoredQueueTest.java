@@ -42,7 +42,7 @@ public class StoredQueueTest extends TmpDirTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         this.envDir = new File(getTmpDir(),"StoredMapTest");
-        this.envDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(this.envDir);
         try {
             EnvironmentConfig envConfig = new EnvironmentConfig();
             envConfig.setTransactional(false);

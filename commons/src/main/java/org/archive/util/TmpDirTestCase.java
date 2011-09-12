@@ -106,10 +106,7 @@ public abstract class TmpDirTestCase extends TestCase
         String tmpDirStr = System.getProperty(TEST_TMP_SYSTEM_PROPERTY_NAME);
         tmpDirStr = (tmpDirStr == null)? DEFAULT_TEST_TMP_DIR: tmpDirStr;
         File tmpDir = new File(tmpDirStr);
-        if (!tmpDir.exists())
-        {
-            tmpDir.mkdirs();
-        }
+        FileUtils.ensureWriteableDirectory(tmpDir);
 
         if (!tmpDir.canWrite())
         {

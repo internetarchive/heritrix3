@@ -58,6 +58,7 @@ import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 import org.archive.util.JSONUtils;
 import org.archive.util.MimetypeUtils;
 import org.archive.util.ObjectIdentityCache;
@@ -902,8 +903,8 @@ public class StatisticsTracker
             return f;
         }
         
-        f.getParentFile().mkdirs();
         try {
+            FileUtils.ensureWriteableDirectory(f.getParentFile());
             PrintWriter bw = new PrintWriter(new FileWriter(f));
             report.write(bw, this);
             bw.close();

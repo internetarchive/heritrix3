@@ -47,6 +47,7 @@ import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
+import org.archive.util.FileUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -440,7 +441,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             File f = path.getFile();
             if (!f.exists()) {
                 try {
-                    f.mkdirs();
+                    FileUtils.ensureWriteableDirectory(f);
                 } catch (Exception e) {
                     e.printStackTrace();
                     continue;

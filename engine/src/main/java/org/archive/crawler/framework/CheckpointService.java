@@ -221,12 +221,12 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
             }
         }
         
-        checkpointInProgress = new Checkpoint();
-        checkpointInProgress.generateFrom(getCheckpointsDir(),getNextCheckpointNumber());
-        
         Map<String,Checkpointable> toCheckpoint = appCtx.getBeansOfType(Checkpointable.class);
         
+        checkpointInProgress = new Checkpoint();
         try {
+            checkpointInProgress.generateFrom(getCheckpointsDir(),getNextCheckpointNumber());
+            
             // pre (incl. acquire necessary locks)
 //            long startMs = System.currentTimeMillis();
             for(Checkpointable c : toCheckpoint.values()) {

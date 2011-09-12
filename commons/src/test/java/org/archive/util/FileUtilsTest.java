@@ -56,9 +56,9 @@ public class FileUtilsTest extends TmpDirTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         this.srcDirFile = new File(getTmpDir(), srcDirName);
-        this.srcDirFile.mkdirs();
+        FileUtils.ensureWriteableDirectory(srcDirFile);
         this.tgtDirFile = new File(getTmpDir(), tgtDirName);
-        this.tgtDirFile.mkdirs();
+        FileUtils.ensureWriteableDirectory(tgtDirFile);
         addFiles();
         
         zeroLengthLinesUnix = setUpLinesFile("zeroLengthLinesUnix",0,0,400,IOUtils.LINE_SEPARATOR_UNIX);

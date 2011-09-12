@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.archive.util.FileUtils;
+
 /**
  * Utilities useful checkpointing.
  * @author stack
@@ -76,7 +78,7 @@ public class CheckpointUtils {
     public static void writeObjectToFile(final Object o, final String suffix,
             final File dir)
     throws IOException {
-        dir.mkdirs();
+        FileUtils.ensureWriteableDirectory(dir);
         ObjectOutputStream out = new ObjectOutputStream(
             new FileOutputStream(getClassCheckpointFile(dir, suffix,
                 o.getClass())));

@@ -99,7 +99,7 @@ public class ObjectPlusFilesOutputStream extends ObjectOutputStream {
         writeLong(file.length());
         File auxDir = getAuxiliaryDirectory();
         if(!auxDir.exists()) {
-        	auxDir.mkdirs();
+            FileUtils.ensureWriteableDirectory(auxDir);
         }
         File destination = new File(auxDir,name);
         hardlinkOrCopy(file, destination);

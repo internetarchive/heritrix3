@@ -140,10 +140,7 @@ public class TestUtils {
         String tmpDirStr = System.getProperty(TmpDirTestCase.TEST_TMP_SYSTEM_PROPERTY_NAME);
         tmpDirStr = (tmpDirStr == null)? TmpDirTestCase.DEFAULT_TEST_TMP_DIR: tmpDirStr;
         File tmpDir = new File(tmpDirStr);
-        if (!tmpDir.exists())
-        {
-            tmpDir.mkdirs();
-        }
+        FileUtils.ensureWriteableDirectory(tmpDir);
 
         if (!tmpDir.canWrite())
         {

@@ -90,7 +90,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         if(profileTemplate.exists()) {
             org.apache.commons.io.FileUtils.copyDirectory(profileTemplate, tmpDefProfile);
         } else {
-            tmpDefProfile.mkdirs();
+            org.archive.util.FileUtils.ensureWriteableDirectory(tmpDefProfile);
         }
         
         // Start up a Jetty that serves the selftest's content directory.
@@ -98,7 +98,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         
         // Copy configuration for eg Logging over
         File tmpConfDir = new File(tmpTestDir, "conf");
-        tmpConfDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(tmpConfDir);
         File srcConf = new File(src.getParentFile(), "conf");
         FileUtils.copyDirectory(srcConf, tmpConfDir);
 

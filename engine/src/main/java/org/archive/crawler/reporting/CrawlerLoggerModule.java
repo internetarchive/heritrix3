@@ -46,6 +46,7 @@ import org.archive.modules.extractor.UriErrorLoggerModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -209,9 +210,9 @@ public class CrawlerLoggerModule
         if(isRunning) {
             return; 
         }
-        getPath().getFile().mkdirs();
         this.atg = AlertThreadGroup.current();
         try {
+            FileUtils.ensureWriteableDirectory(getPath().getFile());
             setupLogs();
         } catch (IOException e) {
             throw new IllegalStateException(e);

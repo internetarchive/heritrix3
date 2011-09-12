@@ -672,7 +672,10 @@ public class FileUtils {
     public static File ensureWriteableDirectory(File dir)
     throws IOException {
         if (!dir.exists()) {
-            dir.mkdirs();
+            boolean success = dir.mkdirs();
+            if (!success) {
+                throw new IOException("Failed to create directory: " + dir);
+            }
         } else {
             if (!dir.canWrite()) {
                 throw new IOException("Dir " + dir.getAbsolutePath() +

@@ -30,6 +30,7 @@ import org.archive.modules.net.BdbServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.state.ModuleTestBase;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 
 /**
  * 
@@ -45,9 +46,7 @@ public class CrawlControllerTest extends ModuleTestBase {
             tmpPath = DEFAULT_TEST_TMP_DIR;
         }
         File tmp = new File(tmpPath);
-        if (!tmp.exists()) {
-            tmp.mkdirs();
-        }
+        FileUtils.ensureWriteableDirectory(tmp);
         
         FileWriter fileWriter = null;
         try {
@@ -59,10 +58,10 @@ public class CrawlControllerTest extends ModuleTestBase {
         }
         
         File state = new File(tmp, "state");
-        state.mkdirs();
+        FileUtils.ensureWriteableDirectory(state);
         
         File checkpoints = new File(tmp, "checkpoints");
-        checkpoints.mkdirs();
+        FileUtils.ensureWriteableDirectory(checkpoints);
         
         BdbModule bdb = new BdbModule();
         bdb.setDir(new ConfigPath("test",state.getAbsolutePath()));

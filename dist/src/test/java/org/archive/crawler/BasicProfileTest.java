@@ -57,7 +57,7 @@ public class BasicProfileTest extends TmpDirTestCase {
         System.out.println("\nNow testing " + srcDir.getName());
         File tmpDir = new File(getTmpDir(), "validatorTest");
         File configDir = new File(tmpDir, srcDir.getName());
-        configDir.mkdirs();
+        org.archive.util.FileUtils.ensureWriteableDirectory(configDir);
         FileUtils.copyDirectory(srcDir, configDir);
 
         PathSharingContext ac = null;

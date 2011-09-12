@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
+import org.archive.util.FileUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.BeanNameAware;
@@ -165,9 +166,7 @@ implements Lifecycle, Checkpointable, BeanNameAware {
     public BdbUriUniqFilter(File bdbEnv, final int cacheSizePercentage)
     throws IOException {
         super();
-        if (!bdbEnv.exists()) {
-            bdbEnv.mkdirs();
-        }
+        FileUtils.ensureWriteableDirectory(bdbEnv);
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         if (cacheSizePercentage > 0 && cacheSizePercentage < 100) {

@@ -48,6 +48,7 @@ import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
+import org.archive.util.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -273,7 +274,7 @@ public class Kw3WriterProcessor extends Processor {
       File dir = new File(getPath().getFile(), md5.substring(0, 2) + "/" + host +
               "/current");
       if (!dir.exists()) {
-          dir.mkdirs();
+          FileUtils.ensureWriteableDirectory(dir);
           if (this.chmod)
               chmods(dir, getPath().getFile());
       }

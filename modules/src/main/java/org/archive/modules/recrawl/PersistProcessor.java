@@ -42,6 +42,7 @@ import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.SURT;
 import org.archive.util.bdbje.EnhancedEnvironment;
@@ -261,9 +262,7 @@ public abstract class PersistProcessor extends Processor {
 
         if (envFile != null) {
             // set up target environment
-            if (!envFile.exists()) {
-                envFile.mkdirs();
-            }
+            FileUtils.ensureWriteableDirectory(envFile);
             targetEnv = setupCopyEnvironment(envFile);
             classCatalog = targetEnv.getClassCatalog();
             historyDB = targetEnv.openDatabase(null, URI_HISTORY_DBNAME, 

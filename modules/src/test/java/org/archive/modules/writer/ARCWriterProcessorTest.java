@@ -25,6 +25,7 @@ import org.archive.modules.CrawlMetadata;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.spring.ConfigPath;
+import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
 
 
@@ -39,7 +40,7 @@ public class ARCWriterProcessorTest extends ProcessorTestBase {
     protected Object makeModule() throws Exception {
         File tmp = TmpDirTestCase.tmpDir();
         tmp = new File(tmp, "ARCWriterProcessTest");
-        tmp.mkdirs();
+        FileUtils.ensureWriteableDirectory(tmp);
         
         ARCWriterProcessor result = new ARCWriterProcessor();
         result.setDirectory(new ConfigPath("test",tmp.getAbsolutePath()));

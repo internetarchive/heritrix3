@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.archive.modules.recrawl.PersistProcessor;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.FileUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
 
@@ -100,9 +101,7 @@ public class PrecedenceLoader {
             FileNotFoundException, UnsupportedEncodingException, IOException {
         File source = new File(args[0]);
         File env = new File(args[1]);
-        if(!env.exists()) {
-            env.mkdirs();
-        }
+        FileUtils.ensureWriteableDirectory(env);
         
         // setup target environment
         EnhancedEnvironment targetEnv = PersistProcessor.setupCopyEnvironment(env);
