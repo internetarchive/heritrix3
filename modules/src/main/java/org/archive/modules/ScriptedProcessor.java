@@ -134,12 +134,14 @@ implements ApplicationContextAware, InitializingBean {
         synchronized(engine) {
             // synchronization is harmless for local thread engine,
             // necessary for shared engine
+            engine.put("curi",curi);
             try {
-                engine.put("curi",curi);
                 engine.eval("process(curi)");
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
-            } 
+            } finally { 
+                engine.put("curi", null);
+            }
         }
     }
 
