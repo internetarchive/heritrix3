@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.spring.HasKeyedProperties;
-import org.archive.spring.KeyedProperties;
 import org.archive.util.LongToIntConsistentHash;
 
 /**
@@ -36,10 +35,6 @@ implements
  HasKeyedProperties {
     private static final long serialVersionUID = 3L;
     
-    KeyedProperties kp = new KeyedProperties();
-    public KeyedProperties getKeyedProperties() {
-        return kp;
-    }
     //for when neat class-key fails us
     protected static String DEFAULT_CLASS_KEY = "default...";
 
