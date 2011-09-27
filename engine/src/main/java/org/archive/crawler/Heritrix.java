@@ -119,7 +119,7 @@ public class Heritrix {
     private static void usage(PrintStream out, String[] args) {
         HelpFormatter hf = new HelpFormatter();
         hf.printHelp("Heritrix", options());
-        out.print("Your arguments were: "+StringUtils.join(args, ' '));
+        out.println("Your arguments were: "+StringUtils.join(args, ' '));
     }
     
     
