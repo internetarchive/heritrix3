@@ -30,12 +30,12 @@ public class CrawledBytesHistotable extends Histotable<String>
 implements CoreAttributeConstants {
     private static final long serialVersionUID = 7923431123239026213L;
     
-    public static final String NOTMODIFIED = "not-modified";
-    public static final String DUPLICATE = "dup-by-hash";
+    public static final String NOTMODIFIED = "notModified";
+    public static final String DUPLICATE = "dupByHash";
     public static final String NOVEL = "novel";
-    public static final String NOTMODIFIEDCOUNT = "not-modified-count";
-    public static final String DUPLICATECOUNT = "dup-by-hash-count";
-    public static final String NOVELCOUNT = "novel-count";
+    public static final String NOTMODIFIEDCOUNT = "notModifiedCount";
+    public static final String DUPLICATECOUNT = "dupByHashCount";
+    public static final String NOVELCOUNT = "novelCount";
     
     public CrawledBytesHistotable() {
         super();

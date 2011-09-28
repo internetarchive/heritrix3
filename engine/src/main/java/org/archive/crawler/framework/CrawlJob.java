@@ -817,7 +817,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         // stats.crawledBytesSummary() also includes totals, so add those in here
         TreeMap<String, Long> map = new TreeMap<String,Long>(stats.getCrawledBytes());
         map.put("total", stats.getCrawledBytes().getTotalBytes());
-        map.put("total-count", stats.getCrawledBytes().getTotalUrls());
+        map.put("totalCount", stats.getCrawledBytes().getTotalUrls());
         return map;
     }
 
