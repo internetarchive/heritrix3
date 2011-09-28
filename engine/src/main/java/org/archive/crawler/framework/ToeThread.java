@@ -187,6 +187,7 @@ implements MultiReporter, ProgressStatisticsReporter,
                     controller.getFrontier().endDisposition();
                     setCurrentCuri(null);
                 }
+                curi = null;
                 
                 setStep(Step.FINISHING_PROCESS, null);
                 lastFinishTime = System.currentTimeMillis();
