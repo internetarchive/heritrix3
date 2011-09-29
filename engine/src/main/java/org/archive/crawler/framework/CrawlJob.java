@@ -295,7 +295,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 getCrawlController(); // trigger NoSuchBeanDefinitionException if no CC
                 getJobLogger().log(Level.INFO,"Job instantiated");
             } catch (BeansException be) {
-                doTeardown();
+                // Calling doTeardown() and therefore ac.close() here sometimes
+                // triggers an IllegalStateException and logs stack trace from
+                // within spring, even if ac.isActive(). So, just null it.
+                ac = null;
                 beansException(be);
             }
         }
@@ -538,6 +541,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         CrawlController cc = getCrawlController();
         if (cc != null) {
             cc.requestCrawlStop();
+            needTeardown = true;
+            
             // wait up to 3 seconds for stop
             for(int i = 0; i < 11; i++) {
                 if(cc.isFinished()) {
@@ -549,14 +554,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                     // do nothing
                 }
             }
+            
+            if (cc.isFinished()) {
+                doTeardown();
+            }
         }
-
-        needTeardown = true;
-        if (cc.isFinished()) {
-            doTeardown();
-        }
-        assert needTeardown == (ac != null);
         
+        assert needTeardown == (ac != null);
         return !needTeardown; 
     }
 
@@ -569,7 +573,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 ac.close();
             }
         } finally {
-            // all this stuff should happen even if ac.close() bugs out (XXX does it ever?)
+            // all this stuff should happen even in case ac.close() bugs out
             ac = null;
             
             xmlOkAt = new DateTime(0);
