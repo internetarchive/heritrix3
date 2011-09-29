@@ -340,6 +340,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
     }
     
     public void stop() {
-        cache = null; 
+        // XXX this happens at finish; move to teardown?
+        cache = null;
     }
 }

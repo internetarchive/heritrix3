@@ -290,16 +290,12 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         if(ac==null) {
             try {
                 ac = new PathSharingContext(new String[] {"file:"+primaryConfig.getAbsolutePath()},false,null);
-//                ac = new PathSharingContext(new String[] {primaryConfig.getAbsolutePath()},false,null);
                 ac.addApplicationListener(this);
                 ac.refresh();
                 getCrawlController(); // trigger NoSuchBeanDefinitionException if no CC
                 getJobLogger().log(Level.INFO,"Job instantiated");
             } catch (BeansException be) {
-//                if(ac!=null) {
-//                    ac.close();
-//                }
-                ac = null; 
+                doTeardown();
                 beansException(be);
             }
         }
@@ -448,6 +444,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     
     protected transient Handler currentLaunchJobLogHandler;
 
+    protected boolean needTeardown = false;
+
     /**
      * Start the context, catching and reporting any BeansExceptions.
      */
@@ -462,20 +460,16 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             currentLaunchJobLogHandler.setFormatter(new JobLogFormatter());
             getJobLogger().addHandler(currentLaunchJobLogHandler);
             
-            
         } catch (BeansException be) {
-            ac.close();
-            ac = null; 
+            doTeardown();
             beansException(be);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,e.getClass().getSimpleName()+": "+e.getMessage(),e);
             try {
-                ac.close();
+                doTeardown();
             } catch (Exception e2) {
                 e2.printStackTrace(System.err);
-            } finally {
-                ac = null;
-            }
+            }        
         }
     }
 
@@ -537,37 +531,57 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     /**
      * Ensure a fresh start for any configuration changes or relaunches,
      * by stopping and discarding an existing ApplicationContext.
+     * 
+     * @return true if teardown is complete when method returns, false if still in progress
      */
     public synchronized boolean teardown() {
-        if(ac!=null) {
-            CrawlController cc = getCrawlController();
-            if(cc!=null) {
-                cc.requestCrawlStop();
-                // TODO: wait for stop?
-                // wait up to 3 seconds for stop
-                for(int i = 0; i < 10; i++) {
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        // do nothing
-                    }
-                    if(cc.isFinished()) {
-                        break;
-                    }
+        CrawlController cc = getCrawlController();
+        if (cc != null) {
+            cc.requestCrawlStop();
+            // wait up to 3 seconds for stop
+            for(int i = 0; i < 11; i++) {
+                if(cc.isFinished()) {
+                    break;
                 }
-                if(!cc.isFinished()) {
-                    return false; 
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    // do nothing
                 }
             }
+        }
+
+        needTeardown = true;
+        if (cc.isFinished()) {
+            doTeardown();
+        }
+        assert needTeardown == (ac != null);
+        
+        return !needTeardown; 
+    }
+
+    // ac guaranteed to be null after this method is called
+    protected synchronized void doTeardown() {
+        needTeardown = false;
+
+        try {
+            if (ac != null) { 
+                ac.close();
+            }
+        } finally {
+            // all this stuff should happen even if ac.close() bugs out (XXX does it ever?)
             ac = null;
+            
+            xmlOkAt = new DateTime(0);
+            
+            if (currentLaunchJobLogHandler != null) {
+                getJobLogger().removeHandler(currentLaunchJobLogHandler);
+                currentLaunchJobLogHandler.close();
+                currentLaunchJobLogHandler = null;
+            }
+
+            getJobLogger().log(Level.INFO,"Job instance discarded");
         }
-        xmlOkAt = new DateTime(0);
-        if (currentLaunchJobLogHandler != null) {
-            getJobLogger().removeHandler(currentLaunchJobLogHandler);
-            currentLaunchJobLogHandler.close();
-        }
-        getJobLogger().log(Level.INFO,"Job instance discarded");
-        return true; 
     }
 
     /**
@@ -663,6 +677,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         if(event instanceof CrawlStateEvent) {
             getJobLogger().log(Level.INFO, ((CrawlStateEvent)event).getState() + 
                     (ac.getCurrentLaunchId() != null ? " " + ac.getCurrentLaunchId() : ""));
+            if (needTeardown && ((CrawlStateEvent) event).getState().equals(CrawlController.State.FINISHED)) {
+                doTeardown();
+            }
         }
         if(event instanceof CheckpointSuccessEvent) {
             getJobLogger().log(Level.INFO, "CHECKPOINTED "+((CheckpointSuccessEvent)event).getCheckpoint().getName());

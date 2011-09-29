@@ -48,6 +48,7 @@ import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.bdbje.EnhancedEnvironment;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -69,8 +70,7 @@ import com.sleepycat.je.util.DbBackup;
  * @contributor pjack
  * @contributor gojomo
  */
-public class BdbModule implements Lifecycle, Checkpointable, Closeable {
-    private static final long serialVersionUID = 1L;
+public class BdbModule implements Lifecycle, Checkpointable, Closeable, DisposableBean {
     final private static Logger LOGGER = 
         Logger.getLogger(BdbModule.class.getName()); 
 
@@ -208,23 +208,24 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         
     private transient StoredClassCatalog classCatalog;
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     private Map<String,ObjectIdentityCache> oiCaches = 
         new ConcurrentHashMap<String,ObjectIdentityCache>();
 
     private Map<String,DatabasePlusConfig> databases =
         new ConcurrentHashMap<String,DatabasePlusConfig>();
 
-    private transient Thread shutdownHook;
-    
+    protected boolean isRunning = false;
+
     public BdbModule() {
     }
-
     
-    public void start() {
+    public synchronized void start() {
         if (isRunning()) {
             return;
         }
+        
+        isRunning = true;
         
         try {
             boolean isRecovery = false; 
@@ -239,20 +240,14 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        
-        shutdownHook = new BdbShutdownHook(this);
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
     
     public boolean isRunning() {
-        return shutdownHook!=null;
+        return isRunning;
     }
 
     public void stop() {
-        if (!isRunning()) {
-            return;
-        }
-        close();
+        isRunning = false;
     }
     
     protected void setup(File f, boolean create) 
@@ -328,10 +323,9 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
      */
     public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
     throws DatabaseException {
-        if(!isRunning()) {
+        if (bdbEnvironment == null) {
             // proper initialization hasn't occurred
-            throw new IllegalStateException(
-                    "BdbModule not started; as a Lifecycle bean it must not be an inner bean.");
+            throw new IllegalStateException("BdbModule not started");
         }
         if (databases.containsKey(name)) {
             DatabasePlusConfig dpc = databases.get(name);
@@ -440,10 +434,9 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     
     public void startCheckpoint(Checkpoint checkpointInProgress) {}
 
-    @SuppressWarnings("unchecked")
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // First sync objectCaches
-        for (ObjectIdentityCache oic : oiCaches.values()) {
+        for (@SuppressWarnings("rawtypes") ObjectIdentityCache oic : oiCaches.values()) {
             oic.sync();
         }
 
@@ -594,20 +587,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
     }
 
     public void close() {
-        close2();
-        if(shutdownHook!=null) {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            shutdownHook = null; 
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    void close2() {
         if (classCatalog == null) {
             return;
         }
         
-        for(ObjectIdentityCache cache : oiCaches.values()) {
+        for(@SuppressWarnings("rawtypes") ObjectIdentityCache cache : oiCaches.values()) {
             try {
                 cache.close();
             } catch (Exception e) {
@@ -636,18 +620,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
             return null;
         }
         return dpc.database;
-    }
-
-    private static class BdbShutdownHook extends Thread {
-        final private BdbModule bdb;
-        
-        public BdbShutdownHook(BdbModule bdb) {
-            this.bdb = bdb;
-        }
-        
-        public void run() {
-            this.bdb.close2();
-        }
     }
 
     /** uniqueness serial number for temp map databases */
@@ -700,6 +672,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable {
                     }
         };
         return storedMap; 
+    }
+    
+    @Override
+    public void destroy() throws Exception {
+        close();
     }
 
 }

@@ -300,7 +300,10 @@ implements Closeable,
     @Override
     public void stop() {
         super.stop();
-        // also release resources and trigger end-of-frontier actions
+    }
+    
+    public void destroy() {
+        // release resources and trigger end-of-frontier actions
         close();
     }
     

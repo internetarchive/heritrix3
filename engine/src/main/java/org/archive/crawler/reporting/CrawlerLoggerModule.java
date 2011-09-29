@@ -47,6 +47,7 @@ import org.archive.net.UURI;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -60,7 +61,7 @@ import org.springframework.context.Lifecycle;
 public class CrawlerLoggerModule 
     implements 
         UriErrorLoggerModule, Lifecycle, InitializingBean,
-        Checkpointable, SimpleFileLoggerProvider {
+        Checkpointable, SimpleFileLoggerProvider, DisposableBean {
     private static final long serialVersionUID = 1L;
 
     protected ConfigPath path = new ConfigPath(Engine.LOGS_DIR_NAME,"${launchId}/logs"); 
@@ -226,8 +227,11 @@ public class CrawlerLoggerModule
     }
     
     public void stop() {
-        closeLogFiles();
         isRunning = false; 
+    }
+    
+    public void destroy() {
+        closeLogFiles();
     }
     
     private void setupLogs() throws IOException {
@@ -336,11 +340,13 @@ public class CrawlerLoggerModule
      * Close all log files and remove handlers from loggers.
      */
     public void closeLogFiles() {
-       for (Logger l: fileHandlers.keySet()) {
-            GenerationFileHandler gfh =
-                (GenerationFileHandler)fileHandlers.get(l);
-            gfh.close();
-            l.removeHandler(gfh);
+        if (fileHandlers != null) {
+            for (Logger l: fileHandlers.keySet()) {
+                GenerationFileHandler gfh =
+                        (GenerationFileHandler)fileHandlers.get(l);
+                gfh.close();
+                l.removeHandler(gfh);
+            }
         }
     }
 

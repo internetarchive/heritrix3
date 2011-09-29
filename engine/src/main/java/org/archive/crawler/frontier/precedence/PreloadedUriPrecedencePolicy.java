@@ -99,8 +99,10 @@ implements Lifecycle {
         if(!isRunning()) {
             return;
         }
+        
         // BdbModule will handle closing of DB
-        historyDb = null; 
+        // XXX happens at finish; move to teardown?
+        historyDb = null;         
     }
     
     /* (non-Javadoc)

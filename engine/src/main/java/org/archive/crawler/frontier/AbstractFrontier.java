@@ -170,6 +170,8 @@ public abstract class AbstractFrontier
     
     public void stop() {
         terminate();
+        
+        // XXX this happens at finish; move to teardown?
         ArchiveUtils.closeQuietly(this.recover);
     }
 

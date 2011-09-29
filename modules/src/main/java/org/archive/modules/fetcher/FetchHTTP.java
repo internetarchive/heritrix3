@@ -1396,7 +1396,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             cookieStorage.saveCookiesMap(map);
             cookieStorage.stop();
         }
-        cleanupHttp();
+        cleanupHttp(); // XXX happens at finish; move to teardown?
     }
 
     /**

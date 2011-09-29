@@ -85,6 +85,8 @@ implements Checkpointable, Lifecycle {
         if(!isRunning()) {
             return;
         }
+        
+        // XXX happens at finish; move to teardown?
         log.close();
         log = null; 
     }

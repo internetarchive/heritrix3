@@ -220,6 +220,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         isRunning = false;
 
         // BdbModule will handle closing of DB
+        // XXX happens at finish; move to teardown?
         bdb = null;
     }
 

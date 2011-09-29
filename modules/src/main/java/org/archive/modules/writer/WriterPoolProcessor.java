@@ -288,6 +288,8 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             return;
         }
         super.stop(); 
+        
+        // XXX happens at finish; move to teardown?
         this.pool.close();
     }
     
