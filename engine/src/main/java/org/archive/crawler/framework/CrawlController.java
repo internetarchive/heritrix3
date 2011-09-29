@@ -48,6 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.xbill.DNS.DClass;
@@ -327,9 +328,15 @@ implements Serializable,
     
 
     // TODO: provide better knowledge/guard against twice-starting
-    boolean hasStarted = false; 
+    boolean hasStarted = false;
+
     public boolean hasStarted() {
         return hasStarted; 
+    }
+
+    boolean isStopComplete = false;
+    public boolean isStopComplete() {
+        return isStopComplete;
     }
     
     /** 
@@ -381,8 +388,18 @@ implements Serializable,
             LOGGER.log(Level.SEVERE,re.getMessage(),re);
         }
         
-        // notify after lifecycle beans stopped
         sendCrawlStateChangeEvent(State.FINISHED, this.sExit);
+
+        // CrawlJob needs to be sure all beans have received FINISHED signal before teardown
+        this.isStopComplete = true;
+        appCtx.publishEvent(new StopCompleteEvent(this)); 
+    }
+    
+    public static class StopCompleteEvent extends ApplicationEvent {
+        private static final long serialVersionUID = 1L;
+        public StopCompleteEvent(Object source) {
+            super(source);
+        }
     }
     
     protected synchronized void completePause() {
@@ -418,6 +435,7 @@ implements Serializable,
         if (state == State.NASCENT) {
             this.sExit = message;
             this.state = State.FINISHED;
+            this.isStopComplete = true;
         }
         if (state == State.STOPPING || state == State.FINISHED ) {
             return;

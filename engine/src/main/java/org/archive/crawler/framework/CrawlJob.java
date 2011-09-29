@@ -50,6 +50,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.event.CrawlStateEvent;
+import org.archive.crawler.framework.CrawlController.StopCompleteEvent;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
 import org.archive.crawler.reporting.StatisticsTracker;
@@ -545,7 +546,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             
             // wait up to 3 seconds for stop
             for(int i = 0; i < 11; i++) {
-                if(cc.isFinished()) {
+                if(cc.isStopComplete()) {
                     break;
                 }
                 try {
@@ -555,7 +556,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 }
             }
             
-            if (cc.isFinished()) {
+            if (cc.isStopComplete()) {
                 doTeardown();
             }
         }
@@ -681,10 +682,14 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         if(event instanceof CrawlStateEvent) {
             getJobLogger().log(Level.INFO, ((CrawlStateEvent)event).getState() + 
                     (ac.getCurrentLaunchId() != null ? " " + ac.getCurrentLaunchId() : ""));
-            if (needTeardown && ((CrawlStateEvent) event).getState().equals(CrawlController.State.FINISHED)) {
+        }
+        
+        synchronized (this) {
+            if (needTeardown && event instanceof StopCompleteEvent) {
                 doTeardown();
             }
         }
+        
         if(event instanceof CheckpointSuccessEvent) {
             getJobLogger().log(Level.INFO, "CHECKPOINTED "+((CheckpointSuccessEvent)event).getCheckpoint().getName());
         }
