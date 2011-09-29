@@ -87,6 +87,7 @@ public class BdbModuleTest extends TmpDirTestCase {
         bdb.doCheckpoint(checkpointInProgress);
         
         bdb.stop();
+        bdb.destroy();
         
         BdbModule bdb2 = new BdbModule();
         bdb2.setDir(bdbDir);
@@ -110,6 +111,7 @@ public class BdbModuleTest extends TmpDirTestCase {
                 randomFactor*999,
                 Integer.parseInt((String)restoreData.get(""+999).get()));
 
-        bdb2.stop(); 
+        bdb2.stop();
+        bdb2.destroy();
     }
 }
