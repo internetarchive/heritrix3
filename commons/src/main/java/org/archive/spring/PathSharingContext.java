@@ -106,6 +106,12 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
         }
     }
 
+    @Override
+    public void start() {
+        initLaunchDir();
+        super.start();
+    }
+    
     public HashMap<String,Errors> getAllErrors() {
         return allErrors;
     }
