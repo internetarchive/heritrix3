@@ -131,7 +131,8 @@ public class DiskSpaceMonitor implements ApplicationListener {
         if (!path.exists()) {
             // Paths that can not be resolved will not report accurate
             // available space. Log and ignore.
-            logger.fine("Ignoring non-existant path " + path.getAbsolutePath());
+            logger.fine("Ignoring non-existent path " + path.getAbsolutePath());
+            return;
         }
         long availBytes = path.getUsableSpace();
         long thresholdBytes = getPauseThresholdMiB() * 1024 * 1024;
