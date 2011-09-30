@@ -88,8 +88,9 @@ public class UriUtilsTest extends TestCase {
         "https://www.example.com/about/",
         "https://www.example.com/about/index.html",
         "ftp://example.com/public/report.pdf",
-    // TODO: other schemes? mailto?
-
+        "http://a.example.com/combiner/c?js=analytics/sOmni.js,analytics/analytics.js,analytics/zf.js,analytics/externalnielsen.js",
+        "http://l.example.com/jn/util/anysize/74*74c-86400,http%3A%2F%2Fl.example.com%2Fa%2Fi%2Fus%2Fshine%2Fmoreon%2F74.upallnight.jpg",
+        // TODO: other schemes? mailto?
     };
 
     /** check that absolute URIs return true with legacy tests */
@@ -100,6 +101,19 @@ public class UriUtilsTest extends TestCase {
     /** check that absolute URIs return true with new tests */
     public void testAbsolutes() {
         tryAll(urisAbsolute,true);
+    }
+    
+    protected static String[] urisRelative = new String[] {
+        "default.asp?type=1",
+        "\\/add\\/page?.crumb=O2.eArRHJUUWRkVHN6L0Y.&frompg=p1",
+        "/wiki/Ficheiro:Wikiversity-logo.svg",
+        "cssp!gelui-1/overlay",
+        "/wiki/%E0%B4%B8%E0%B4%B9%E0%B4%BE%E0%B4%AF%E0%B4%82:To_Read_in_Malayalam",
+        "/wiki/Wikiversity:Why_create_an_account%3F",
+        ";s.channel=d.channel?d.channel:"
+    };
+    public void testRelatives() {
+        tryAll(urisRelative, true);
     }
 
     /** path-absolute images URIs that should be considered likely URIs **/
@@ -151,7 +165,51 @@ public class UriUtilsTest extends TestCase {
     public void testNaiveNotUris() {
         tryAll(notUrisNaive, false); 
     }
+
+    protected static final String[] unusualCharacterFalsePositives = new String[] {
+        "),f=document.getElementsByTagName(",
+        "window.location.href='/'",
+        "location='http://example.com/blah/'",
+        "http://example.com/intent/user?screen_name='+p.user+'",
+        ").append(",
+        "[\\x3cb\\x3e−\\x3c/b\\x3e]",
+        "http://demo.example.net/panama.php?cgroup=ron728x90&pid=\"+pid+\"&uid=\"+uid+\"&rid=\"+rid+\"&kw=10&cx=10&bh=10",
+    };
+    public void testUnusualCharacterFalsePositives() {
+        tryAll(unusualCharacterFalsePositives, false);
+    }
     
+    protected static final String[] mimetypesFalsePositives = new String[] {
+        "text/javascript",
+        "text/css", 
+        "application/x-shockwave-flash", 
+        "text/javaScript", 
+        "text/html", 
+        "application/x-www-form-urlencoded", 
+        "text/xml", 
+        "text/plain", 
+        "application/x-mplayer2", 
+        "application/json", 
+        "image/jpeg", 
+        "image/x-icon", 
+        "audio/mpeg", 
+        "image/gif", 
+        "audio/ogg", 
+        "video/quicktime", 
+        "audio/x-pn-realaudio-plugin", 
+    };
+    public void testMimetypesFalsePositives() {
+        tryAll(mimetypesFalsePositives, false);
+    }
+
+    protected static final String[] startsOrEndsWithPlusFalsePositives = new String[] {
+        "+resp.result+",
+        ";overlay.style.width=viewport_dimensions.width+",
+        "+_ti;bb.src=",
+    };
+    public void testStartsOrEndsWithPlusFalsePositives() {
+        tryAll(startsOrEndsWithPlusFalsePositives, false);
+    }
     
     /**
      * Test that all supplied candidates give the expected result, for each of 
@@ -170,8 +228,6 @@ public class UriUtilsTest extends TestCase {
                     UriUtils.isLikelyUriHtmlContextLegacy(candidate));
         }
     }
-    
-
     
     /**
      * Test that all supplied candidates give the expected results, for 

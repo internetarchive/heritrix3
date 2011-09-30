@@ -85,51 +85,203 @@ import org.archive.net.UURI;
 public class UriUtils {
     private static final Logger LOGGER = Logger.getLogger(UriUtils.class.getName());
 
-//
-// new combined test
-//
     // naive likely-uri test: 
-    //    no whitespace or '<' or '>' or quotes 
+    //    no whitespace or '<' or '>' 
     //    at least one '.' or '/';
     //    not ending with '.'
     static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*(?<!\\.)";
-
-    // blacklist of strings that NAIVE_LIKELY_URI_PATTERN picks up as URIs,
-    // which are known to be problematic, and NOT to be tried as URIs
-    protected final static String[] NAIVE_URI_EXCEPTIONS = {
-        "text/javascript",
-        "text/css",
-        "text/html",
-        "application/rss+xml",
-        "application/atom+xml",
-        "application/pdf",
-        "application/x-shockwave-flash",
-        "image/png",
-        "image/x-icon",
-        "text/xsl",
-    };
+    
+    public static boolean isPossibleUri(CharSequence candidate) {
+        return TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate);
+    }
     
     public static boolean isLikelyUri(CharSequence candidate) {
-        // naive test
-        if(!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
-            return false; 
-        }
-        if (isLikelyFalsePositive(candidate)) {
-            return false;
-        }
-        return true;
+        return isPossibleUri(candidate) && !isLikelyFalsePositive(candidate);
     }
 
+    protected final static String[] AUDIO_VIDEO_IMAGE_MIMETYPES = new String[] {
+            "audio/aiff",
+            "audio/asf",
+            "audio/basic",
+            "audio/m4a",
+            "audio/mid",
+            "audio/midi",
+            "audio/mp3",
+            "audio/mp4",
+            "audio/mp4a-latm",
+            "audio/mpeg",
+            "audio/mpeg3",
+            "audio/mpegurl",
+            "audio/mpg",
+            "audio/ogg",
+            "audio/playlist",
+            "audio/unknown",
+            "audio/vnd.qcelp",
+            "audio/vnd.rn-realaudio",
+            "audio/wav",
+            "audio/x-aiff",
+            "audio/x-m4a",
+            "audio/x-midi",
+            "audio/x-mp3",
+            "audio/x-mpeg",
+            "audio/x-mpeg3",
+            "audio/x-mpegurl",
+            "audio/x-ms-wax",
+            "audio/x-ms-wma",
+            "audio/x-ms-wmv",
+            "audio/x-pn-realaudio",
+            "audio/x-pn-realaudio-plugin",
+            "audio/x-realaudio",
+            "audio/x-scpls",
+            "audio/x-wav",
+            "image/bitmap",
+            "image/bmp",
+            "image/BMP",
+            "image/cur",
+            "image/fits",
+            "image/gif",
+            "image/GIF",
+            "image/ico",
+            "image/icon",
+            "image/jp2",
+            "image/jpeg",
+            "image/JPEG",
+            "image/jpeg-cmyk",
+            "image/jpg",
+            "image/JPG",
+            "image/pdf",
+            "image/pict",
+            "image/pjpeg",
+            "image/png",
+            "image/PNG",
+            "image/svg+xml",
+            "image/tiff",
+            "image/vnd.adobe.photoshop",
+            "image/vnd.djvu",
+            "image/vnd.dwg",
+            "image/vnd.dxf",
+            "image/vnd.microsoft.icon",
+            "image/vnd.ms-modi",
+            "image/vnd.ms-photo",
+            "image/vnd.wap.wbmp",
+            "image/x-bitmap",
+            "image/x-bmp",
+            "image/x-citrix-pjpeg",
+            "image/x-dcraw",
+            "image/x-djvu",
+            "image/x.djvu",
+            "image/x-emf",
+            "image/x-eps",
+            "image/x-guffaw",
+            "image/x-ico",
+            "image/xicon",
+            "image/x-icon",
+            "image/x-jg",
+            "image/x-ms-bmp",
+            "image/x-MS-bmp",
+            "image/x-pcx",
+            "image/x-photoshop",
+            "image/x-pict",
+            "image/x-png",
+            "image/x-portable-anymap",
+            "image/x-portable-bitmap",
+            "image/x-portable-graymap",
+            "image/x-portable-pixmap",
+            "image/x-psd",
+            "image/x-quicktime",
+            "image/x-rgb",
+            "image/x-windows-bmp",
+            "image/x-wmf",
+            "image/x-xbitmap",
+            "image/x-xbm",
+            "image/x-xfig",
+            "image/x-xpixmap",
+            "video/3gpp",
+            "video/asx",
+            "video/avi",
+            "video/f4v",
+            "video/flv",
+            "video/m4v",
+            "video/mp4",
+            "video/MP4",
+            "video/mp4v-es",
+            "video/mpeg",
+            "video/mpeg3",
+            "video/mpeg4",
+            "video/mpg4",
+            "video/msvideo",
+            "video/ogg",
+            "video/quicktime",
+            "video/swf",
+            "video/unknown",
+            "video/vnd.objectvideo",
+            "video/webm",
+            "video/wmv",
+            "video/x-dv",
+            "video/x-flv",
+            "video/x-m4v",
+            "video/x-mp4",
+            "video/x-mpeg",
+            "video/x-ms-asf",
+            "video/x-ms-asx",
+            "video/x-msvideo",
+            "video/x-ms-wm",
+            "video/x-ms-wma",
+            "video/x-ms-wmv",
+            "video/x-ms-wmx",
+            "video/x-ms-wvx",
+            "video/x-pn-realaudio",
+            "video/x-pn-realvideo",
+            "video/x-sgi-movie",
+            "video/x-swf"
+    };
+
     protected static boolean isLikelyFalsePositive(CharSequence candidate) {
-        // eliminate common false-positives: by blacklist
-        for (String s : NAIVE_URI_EXCEPTIONS) {
-            if (s.contentEquals(candidate)) 
+        if (TextUtils.matches("(?:text|application)/[^/]+", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: looks like an application or text mimetype: " + candidate);
+            }
+            return true;
+        }
+
+        for (String s: AUDIO_VIDEO_IMAGE_MIMETYPES) {
+            if (s.contentEquals(candidate)) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("rejected: looks like an audio video or image mimetype: " + candidate);
+                }
                 return true;
+            }
         }
-        // ...and simple numbers
-        if(TextUtils.matches("\\d+\\.\\d+", candidate)) {
-            return true; 
+        
+        if (TextUtils.matches("\\d+\\.\\d+", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: looks like a decimal number: " + candidate);
+            }
+            return true;
         }
+
+        if (TextUtils.matches(".*[$()'\"\\[\\]{}|].*", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: contains unusual characters: " + candidate);
+            }
+            return true;
+        }
+        
+        // this happens often because of string concatenation in javascript
+        if (TextUtils.matches("^[+].*|.*[+]$", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: starts or ends with a '+': " + candidate);
+            }
+            return true;
+        }
+        
+        // look for things that look like hostnames and not filenames?
+        // look for too many dots but make sure we take into account that url may have hostname?
+
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("accepted: does not look like a false positive: " + candidate);
+        }
+
         return false;
     }
     
