@@ -112,6 +112,12 @@ public class ScriptResource extends JobRelatedResource {
             rawOutput = rawString.toString();
             htmlOut.flush();
             htmlOutput = htmlString.toString();
+
+            eng.put("rawOut", null);
+            eng.put("htmlOut", null);
+            eng.put("job", null);
+            eng.put("appCtx", null);
+            eng.put("scriptResource", null);
         }
         //TODO: log script, results somewhere; job log INFO? 
         

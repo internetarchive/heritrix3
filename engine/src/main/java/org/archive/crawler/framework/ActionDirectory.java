@@ -324,7 +324,10 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
-        } 
+        } finally {
+            engine.put("rawOut", null);
+            engine.put("appCtx", null);
+        }
 
         // report output/exception to files paired with script in done dir
         rawOut.flush();

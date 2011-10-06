@@ -132,7 +132,9 @@ implements ApplicationContextAware, InitializingBean {
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
                 return DecideResult.NONE;
-            } 
+            } finally {
+                engine.put("object", null);
+            }
         }
     }
 
