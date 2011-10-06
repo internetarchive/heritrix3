@@ -141,14 +141,15 @@ public class Robotstxt implements Serializable {
                         hasErrors = true;
                         continue;
                     }
-                    // consider a crawl-delay, even though we don't 
-                    // yet understand it, as sufficient to end a 
-                    // grouping of User-Agent lines
+                    // consider a crawl-delay as sufficient to end a grouping of
+                    // User-Agent lines
                     hasDirectivesYet = true;
                     String val = read.substring(12).trim();
-                    val = val.split("[^\\d\\.]+")[0];
                     try {
+                        val = val.split("[^\\d\\.]+")[0];
                         current.setCrawlDelay(Float.parseFloat(val));
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        // ignore 
                     } catch (NumberFormatException nfe) {
                         // ignore
                     }
