@@ -506,14 +506,12 @@ implements Serializable,
      * Resume crawl from paused state
      */
     public void requestCrawlResume() {
-        if (this.toePool == null) {
-            this.setupToePool();
-        }
-
-        if (state != State.PAUSING && state != State.PAUSED ) {
+        if (state != State.PAUSING && state != State.PAUSED) {
             // Can't resume if not been told to pause
             return;
         }
+        
+        assert toePool != null;
         
         Frontier f = getFrontier();
         f.unpause();
