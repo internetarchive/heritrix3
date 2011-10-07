@@ -397,7 +397,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
      * (Note the crawl may have been configured to start in a 'paused'
      * state.) 
      */
-    public void launch() {
+    public synchronized void launch() {
         if (isProfile()) {
             throw new IllegalArgumentException("Can't launch profile" + this);
         }
