@@ -369,7 +369,7 @@ http://example.example/example
    <list>
     <!-- write to aggregate archival files... -->
     <ref bean="warcWriter"/>
-    <!-- ...send each outlink candidate URI to CandidatesChain, 
+    <!-- ...send each outlink candidate URI to CandidateChain, 
          and enqueue those ACCEPTed to the frontier... -->
     <ref bean="candidates"/>
     <!-- ...then update stats, shared-structures, frontier decisions -->
