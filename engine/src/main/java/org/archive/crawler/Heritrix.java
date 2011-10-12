@@ -201,6 +201,10 @@ public class Heritrix {
             System.err.println("Please try again with a later Java.");
             System.exit(1);
         }
+
+        System.out.println(System.getProperty("java.vendor")
+                + ' ' + System.getProperty("java.runtime.name") 
+                + ' ' + System.getProperty("java.runtime.version"));
         
         // Set some system properties early.
         // Can't use class names here without loading them.
