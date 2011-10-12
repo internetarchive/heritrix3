@@ -464,9 +464,6 @@ public class Recorder {
     /**
      * Get a replay cued up for the 'content' (after all leading headers)
      * 
-     * TODO: handle chunking
-     * TODO: handle decompression, either here or in a parallel method
-     * 
      * @return A replay input stream.
      * @throws IOException
      */
