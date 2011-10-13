@@ -432,7 +432,6 @@ implements Closeable,
         }
     }
 
-//    ConcurrentHashMap<String, String> inactiveByClass = new ConcurrentHashMap<String, String>();
     /**
      * Put the given queue on the inactiveQueues queue
      * @param wq
@@ -440,23 +439,20 @@ implements Closeable,
     protected void deactivateQueue(WorkQueue wq) {
         int precedence = wq.getPrecedence();
 
-        Queue<String> inactiveQueues = 
-            getInactiveQueuesForPrecedence(precedence);
-        
         synchronized(wq) {
             wq.noteDeactivated();
             inProcessQueues.remove(wq);
             if(wq.getCount()==0) {
                 System.err.println("deactivate empty queue?");
             }
-//            String prev = inactiveByClass.put(wq.getClassKey(), wq.shortReportLine());
-//            if(prev!=null) {
-//                logger.log(Level.WARNING,"duplicate add: "+wq.getClassKey()+"\n"+wq.shortReportLegend()+"\n"+prev+wq.shortReportLine(), new Exception());
-//            }
-            inactiveQueues.add(wq.getClassKey());
-            if(wq.getPrecedence() < highestPrecedenceWaiting ) {
-                highestPrecedenceWaiting = wq.getPrecedence();
+
+            synchronized (getInactiveQueuesByPrecedence()) {
+                getInactiveQueuesForPrecedence(precedence).add(wq.getClassKey());
+                if(wq.getPrecedence() < highestPrecedenceWaiting ) {
+                    highestPrecedenceWaiting = wq.getPrecedence();
+                }
             }
+
             if(logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
                         "queue deactivated to p" + precedence 
@@ -483,7 +479,7 @@ implements Closeable,
     }
 
     /**
-     * Return a sorted map of all inactive queues, keyed by precedence
+     * Return a sorted map of all queues of WorkQueue keys, keyed by precedence
      * @return SortedMap<Integer, Queue<String>> of inactiveQueues
      */
     abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
@@ -755,30 +751,37 @@ implements Closeable,
      * Activate an inactive queue, if any are available. 
      */
     protected boolean activateInactiveQueue() {
+        for (Entry<Integer, Queue<String>> entry: getInactiveQueuesByPrecedence().entrySet()) {
+            int expectedPrecedence = entry.getKey();
+            Queue<String> queueOfWorkQueueKeys = entry.getValue();
 
-        for( Entry<Integer, Queue<String>> entry : getInactiveQueuesByPrecedence().entrySet()) {
-            for (String key = entry.getValue().poll(); key!=null; key = entry.getValue().poll() ) {
-//                inactiveByClass.remove(key);
-                int expectedPrecedence = entry.getKey();
-                if(key!=null) {
-                    WorkQueue candidateQ = (WorkQueue) this.allQueues.get(key);
-                    if(candidateQ.getPrecedence() > expectedPrecedence) {
+            while (true) {
+                synchronized (getInactiveQueuesByPrecedence()) {
+                    String workQueueKey = queueOfWorkQueueKeys.poll();
+                    if (workQueueKey == null) {
+                        break;
+                    }
+
+                    WorkQueue candidateQ = (WorkQueue) this.allQueues.get(workQueueKey);
+                    if (candidateQ.getPrecedence() > expectedPrecedence) {
                         // queue demoted since placed; re-deactivate
                         deactivateQueue(candidateQ);
                         candidateQ.makeDirty();
                         continue; 
                     }
+
                     updateHighestWaiting(expectedPrecedence);
                     try {
-                        readyClassQueues.put(key);
+                        readyClassQueues.put(workQueueKey);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e); 
                     } 
+                    
                     return true; 
                 }
             }
         }
-
+        
         return false;
     }
 
