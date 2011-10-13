@@ -419,7 +419,7 @@ public class Recorder {
      * @return int length for in-memory decoded-character buffer
      */
     static protected int calcRecommendedCharBufferSize(RecordingInputStream inStream) {
-        return Math.min(inStream.getRecordedBufferLength()/2,(int)inStream.getSize());
+        return (int) Math.min(inStream.getRecordedBufferLength()/2, inStream.getSize());
     }
     
     /**
