@@ -18,6 +18,8 @@
  */
 package org.archive.bdb;
 
+import java.lang.ref.WeakReference;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.ObjectBuffer;
 import com.sleepycat.bind.EntryBinding;
@@ -33,10 +35,10 @@ public class KryoBinding<K> implements EntryBinding<K> {
 
     protected Class<K> baseClass;
     protected AutoKryo kryo = new AutoKryo(); 
-    protected ThreadLocal<ObjectBuffer> threadBuffer = new ThreadLocal<ObjectBuffer>() {
+    protected ThreadLocal<WeakReference<ObjectBuffer>> threadBuffer = new ThreadLocal<WeakReference<ObjectBuffer>>() {
         @Override
-        protected ObjectBuffer initialValue() {
-            return new ObjectBuffer(kryo,16*1024,Integer.MAX_VALUE);
+        protected WeakReference<ObjectBuffer> initialValue() {
+            return new WeakReference<ObjectBuffer>(new ObjectBuffer(kryo,16*1024,Integer.MAX_VALUE));
         }
     };
     
@@ -61,17 +63,27 @@ public class KryoBinding<K> implements EntryBinding<K> {
         return kryo;
     }
     
+    private ObjectBuffer getBuffer() {
+        WeakReference<ObjectBuffer> ref = threadBuffer.get();
+        ObjectBuffer ob = ref.get();
+        if (ob == null) {
+            ob = new ObjectBuffer(kryo,16*1024,Integer.MAX_VALUE);
+            threadBuffer.set(new WeakReference<ObjectBuffer>(ob));
+        }
+        return ob;        
+    }
+    
     /**
      * Copies superclass simply to allow different source for FastOoutputStream.
      * 
      * @see com.sleepycat.bind.serial.SerialBinding#entryToObject
      */
     public void objectToEntry(K object, DatabaseEntry entry) {
-        entry.setData(threadBuffer.get().writeObjectData(object));
+        entry.setData(getBuffer().writeObjectData(object));
     }
 
     @Override
     public K entryToObject(DatabaseEntry entry) {
-        return threadBuffer.get().readObjectData(entry.getData(), baseClass);
+        return getBuffer().readObjectData(entry.getData(), baseClass);
     }
 }
