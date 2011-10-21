@@ -13,7 +13,7 @@
 	<classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/poi/poi/2.5.1-final-20040804/poi-2.5.1-final-20040804.jar" sourcepath="M2_REPO/poi/poi/2.5.1-final-20040804/poi-2.5.1-final-20040804-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.1/commons-cli-1.1.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.1/commons-cli-1.1.jar" sourcepath="/M2_REPO/commons-cli/commons-cli/1.1/commons-cli-1.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/net/htmlparser/jericho/jericho-html/2.6.1/jericho-html-2.6.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/gnu/inet/libidn/0.6.5/libidn-0.6.5.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-lang/commons-lang/2.6/commons-lang-2.6.jar" sourcepath="/M2_REPO/commons-lang/commons-lang/2.6/commons-lang-2.6-sources.jar"/>
