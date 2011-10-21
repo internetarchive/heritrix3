@@ -361,8 +361,10 @@ http://example.example/example
   <!-- <property name="respectCrawlDelayUpToSeconds" value="300" /> -->
   <!-- <property name="maxDelayMs" value="30000" /> -->
   <!-- <property name="maxPerHostBandwidthUsageKbSec" value="0" /> -->
-  
  </bean>
+ <!-- <bean id="rescheduler" class="org.archive.crawler.postprocessor.ReschedulingProcessor">
+       <property name="rescheduleDelaySeconds" value="-1" />
+      </bean> -->
  <!-- now, processors are assembled into ordered DispositionChain bean -->
  <bean id="dispositionProcessors" class="org.archive.modules.DispositionChain">
   <property name="processors">
@@ -374,6 +376,7 @@ http://example.example/example
     <ref bean="candidates"/>
     <!-- ...then update stats, shared-structures, frontier decisions -->
     <ref bean="disposition"/>
+    <!-- <ref bean="rescheduler" /> -->
    </list>
   </property>
  </bean>
