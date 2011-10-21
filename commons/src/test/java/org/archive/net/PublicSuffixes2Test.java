@@ -116,7 +116,7 @@ public class PublicSuffixes2Test extends TestCase {
 
     // test of higher-level functionality
     
-    Matcher m = PublicSuffixes.getTopmostAssignedSurtPrefixPattern()
+    Matcher m = PublicSuffixes2.getTopmostAssignedSurtPrefixPattern()
             .matcher("");
 
     public void testBasics() {
@@ -148,13 +148,13 @@ public class PublicSuffixes2Test extends TestCase {
     public void testIPV4() {
         assertEquals("unexpected reduction", 
                 "1.2.3.4",
-                PublicSuffixes.reduceSurtToAssignmentLevel("1.2.3.4"));
+                PublicSuffixes2.reduceSurtToAssignmentLevel("1.2.3.4"));
     }
     
     public void testIPV6() {
         assertEquals("unexpected reduction", 
                 "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
-                PublicSuffixes.reduceSurtToAssignmentLevel(
+                PublicSuffixes2.reduceSurtToAssignmentLevel(
                         "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]"));
     }
     
@@ -178,8 +178,8 @@ public class PublicSuffixes2Test extends TestCase {
     }
 
     public void testTopmostAssignedCaching() {
-        assertSame("topmostAssignedSurtPrefixPattern not cached",PublicSuffixes.getTopmostAssignedSurtPrefixPattern(),PublicSuffixes.getTopmostAssignedSurtPrefixPattern());
-        assertSame("topmostAssignedSurtPrefixRegex not cached",PublicSuffixes.getTopmostAssignedSurtPrefixRegex(),PublicSuffixes.getTopmostAssignedSurtPrefixRegex()); 
+        assertSame("topmostAssignedSurtPrefixPattern not cached",PublicSuffixes2.getTopmostAssignedSurtPrefixPattern(),PublicSuffixes2.getTopmostAssignedSurtPrefixPattern());
+        assertSame("topmostAssignedSurtPrefixRegex not cached",PublicSuffixes2.getTopmostAssignedSurtPrefixRegex(),PublicSuffixes2.getTopmostAssignedSurtPrefixRegex()); 
     }
     
     // TODO: test UTF domains?
