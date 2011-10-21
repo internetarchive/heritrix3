@@ -144,7 +144,7 @@ else
     HERITRIX_PID=$!
 
     # Wait for content in the heritrix_dmesg.log file.
-    echo -n "`date` Starting heritrix"
+    echo -n "`date` Heritrix starting (pid $HERITRIX_PID)"
     while true 
     do
         sleep 1
@@ -156,10 +156,8 @@ else
             break
         fi
         kill -0 $HERITRIX_PID > /dev/null 2>&1
-        if [ $? -eq 0 ]
+        if [ $? -ne 0 ]
         then
-            echo $HERITRIX_PID > heritrix.pid
-        else
             echo
             echo "ERROR: JVM terminated without running Heritrix."
             echo "This could be due to invalid JAVA_OPTS or JMX_PORT, etc."
@@ -171,4 +169,10 @@ else
         fi
         echo -n '.'
     done
+
+    kill -0 $HERITRIX_PID > /dev/null 2>&1
+    if [ $? -eq 0 ] 
+    then
+        echo $HERITRIX_PID > heritrix.pid
+    fi
 fi
