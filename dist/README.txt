@@ -41,7 +41,7 @@ For API documentation, see <https://webarchive.jira.com/wiki/display/Heritrix/He
 
 5.0 Release History
 
-See the Heritrix Release Notes at <http://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+3.0.0>.
+See the Heritrix Release Notes at <https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.1.0>
 
 6.0 License
 
