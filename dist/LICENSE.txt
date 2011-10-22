@@ -26,11 +26,6 @@ licenses. Here is a list of such files currently known:
 Except as otherwise noted, always consult individual source files for most
 accurate info.
  
-Heritrix is distributed with the libraries it depends upon.  The 
-libraries can be found under the 'lib' directory, and are used under 
-the terms of their respective licenses, which are included alongside 
-the libraries in the 'lib' directory. 
-
 --
                                  Apache License
                            Version 2.0, January 2004
