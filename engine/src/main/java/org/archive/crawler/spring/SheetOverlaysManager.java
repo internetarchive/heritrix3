@@ -169,7 +169,12 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * @see org.archive.spring.OverlayMapsSource#getOverlayMap(java.lang.String)
      */
     public Map<String, Object> getOverlayMap(String name) {
-        return sheetsByName.get(name).getMap();
+        Sheet sheet = sheetsByName.get(name);
+        if (sheet != null) {
+            return sheet.getMap();
+        } else {
+            return null;
+        }
     }
 
     /** 

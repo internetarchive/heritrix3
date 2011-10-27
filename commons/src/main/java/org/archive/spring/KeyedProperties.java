@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Map for storing overridable properties. 
@@ -36,6 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class KeyedProperties extends ConcurrentHashMap<String,Object> {
     private static final long serialVersionUID = 3403222335436162778L;
+    
+    private static final Logger logger = Logger.getLogger(KeyedProperties.class.getName());
+
     /** the alternate global property-paths leading to this map 
      * TODO: consider if deterministic ordered list is important */
     HashSet<String> externalPaths = new HashSet<String>(); 
@@ -61,11 +65,15 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
             for(int j = ocontext.getOverlayNames().size()-1; j>=0; j--) {
                 String name = ocontext.getOverlayNames().get(j);
                 Map<String,Object> m = ocontext.getOverlayMap(name);
-                for(String ok : getOverrideKeys(key)) {
-                    Object val = m.get(ok);
-                    if(val!=null) {
-                        return val;
+                if (m != null) { 
+                    for(String ok : getOverrideKeys(key)) {
+                        Object val = m.get(ok);
+                        if(val!=null) {
+                            return val;
+                        }
                     }
+                } else {
+                    logger.warning("sheet '" + name + "' should apply but there is no such sheet!");
                 }
             }
         }
