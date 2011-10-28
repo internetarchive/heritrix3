@@ -1880,6 +1880,7 @@ implements MultiReporter, Serializable, OverlayContext {
         Hop hop = Hop.PREREQ;
         Link link = new Link(src, dest, lc, hop);
         CrawlURI caUri = createCrawlURI(getBaseURI(), link);
+        caUri.setPrerequisite(true);
         // TODO: consider moving some of this to candidate-handling
         int prereqPriority = getSchedulingDirective() - 1;
         if (prereqPriority < 0) {
