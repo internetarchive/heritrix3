@@ -121,6 +121,7 @@ import com.sleepycat.je.DatabaseException;
  */
 public class FetchWhois extends Processor implements CoreAttributeConstants,
         FetchStatusCodes, Lifecycle {
+
     private static final long serialVersionUID = 1L;
 
     private static Logger logger = Logger.getLogger(FetchWhois.class.getName());
@@ -328,6 +329,9 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             }
 
             client.setSoTimeout(getSoTimeoutMs()); // must be after connect()
+            
+            curi.getData().put(CoreAttributeConstants.A_WHOIS_SERVER_IP, 
+                    client.getRemoteAddress().getHostAddress());
             
             recorder.inputWrap(client.getInputStream(whoisQuery));
 

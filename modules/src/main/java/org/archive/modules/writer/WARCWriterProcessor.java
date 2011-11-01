@@ -77,6 +77,7 @@ import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.io.warc.WARCWriterPoolSettings;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
@@ -330,7 +331,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
 
     private void writeWhoisRecords(WARCWriter w, CrawlURI curi, URI baseid,
             String timestamp) throws IOException {
-        writeResponse(w, timestamp, curi.getContentType(), baseid, curi, null);
+        ANVLRecord headers = new ANVLRecord(1);
+        Object whoisServerIP = curi.getData().get(CoreAttributeConstants.A_WHOIS_SERVER_IP);
+        if (whoisServerIP != null) {
+            headers.addLabelValue(HEADER_KEY_IP, whoisServerIP.toString());
+        }
+        writeResponse(w, timestamp, curi.getContentType(), baseid, curi, headers);
     }
 
     private void writeHttpRecords(final CrawlURI curi, WARCWriter w,
