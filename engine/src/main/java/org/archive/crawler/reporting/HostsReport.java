@@ -24,7 +24,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
-import org.apache.commons.collections.Closure;
 import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.modules.net.CrawlHost;
 
@@ -49,19 +48,16 @@ public class HostsReport extends Report {
 
     @Override
     public void write(final PrintWriter writer, StatisticsTracker stats) {
-        // TODO: use CrawlHosts for all stats; only perform sorting on 
-        // manageable number of hosts
+        // TODO: only perform sorting on manageable number of hosts
         DisposableStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
-        // header
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining] [#novel-urls] [#novel-bytes] [#dup-by-hash-urls] [#dup-by-hash-bytes] [#not-modified-urls] [#not-modified-bytes]\n"); 
         for (Map.Entry<Long,String> entry : hd.entrySet()) {
             // key is -count, value is hostname
             CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
-            long count = Math.abs(entry.getKey()); 
             writeReportLine(writer,
-                    count,
-                    stats.getBytesPerHost(entry.getValue()),
-                    fixup(entry.getValue()),
+                    host.getSubstats().getFetchSuccesses(),
+                    host.getSubstats().getTotalBytes(),
+                    fixup(host.getHostName()),
                     host.getSubstats().getRobotsDenials(),
                     host.getSubstats().getRemaining(), 
                     host.getSubstats().getNovelUrls(),
@@ -72,27 +68,6 @@ public class HostsReport extends Report {
                     host.getSubstats().getNotModifiedBytes()); 
         }
         hd.dispose();
-        // StatisticsTracker doesn't know of zero-completion hosts; 
-        // so supplement report with those entries from host cache
-        Closure logZeros = new Closure() {
-            public void execute(Object obj) {
-                CrawlHost host = (CrawlHost)obj;
-                if(host.getSubstats().getRecordedFinishes()==0) {
-                    writeReportLine(writer,
-                            host.getSubstats().getRecordedFinishes(),
-                            host.getSubstats().getTotalBytes(),
-                            fixup(host.getHostName()),
-                            host.getSubstats().getRobotsDenials(),
-                            host.getSubstats().getRemaining(),
-                            host.getSubstats().getNovelUrls(),
-                            host.getSubstats().getNovelBytes(),
-                            host.getSubstats().getDupByHashUrls(),
-                            host.getSubstats().getDupByHashBytes(),
-                            host.getSubstats().getNotModifiedUrls(),
-                            host.getSubstats().getNotModifiedBytes()); 
-                }
-            }};
-        stats.serverCache.forAllHostsDo(logZeros);
     }
 
     protected void writeReportLine(PrintWriter writer, Object  ... fields) {
