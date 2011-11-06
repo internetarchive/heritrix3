@@ -19,9 +19,14 @@
 
 package org.archive.net;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 
 import junit.framework.TestCase;
+
+import org.archive.net.PublicSuffixes.Node;
 
 /**
  * Test cases for PublicSuffixes utility. Confirm expected matches/nonmatches
@@ -30,6 +35,87 @@ import junit.framework.TestCase;
  * @author gojomo
  */
 public class PublicSuffixesTest extends TestCase {
+    // test of low level implementation
+    
+    public void testCompare() {
+        Node n = new Node("hoge");
+        assertTrue(n.compareTo('a') > 0);
+        assertEquals(-1, n.compareTo('*'));
+        assertEquals(-1, n.compareTo('!'));
+        assertEquals(-1, n.compareTo(new Node("*,")));
+        assertEquals(-1, n.compareTo(new Node("!muga,")));
+        assertEquals(-1, n.compareTo(new Node("")));
+        
+        n = new Node("*,");
+        assertEquals(1, n.compareTo('a'));
+        assertEquals(0, n.compareTo('*'));
+        assertEquals(1, n.compareTo('!'));
+        assertEquals(0, n.compareTo(new Node("*,")));
+        assertEquals(1, n.compareTo(new Node("!muga,")));
+        assertEquals(-1, n.compareTo(new Node("")));
+        
+        n = new Node("!hoge");
+        assertEquals(1, n.compareTo('a'));
+        assertEquals(-1, n.compareTo('*'));
+        assertEquals(0, n.compareTo('!'));
+        assertEquals(-1, n.compareTo(new Node("*,")));
+        assertEquals(0, n.compareTo(new Node("!muga,")));
+        assertEquals(-1, n.compareTo(new Node("")));
+        
+        n = new Node("");
+        assertEquals(1, n.compareTo('a'));
+        assertEquals(1, n.compareTo('*'));
+        assertEquals(1, n.compareTo('!'));
+        assertEquals(0, n.compareTo(new Node("")));
+    }
+    
+    protected String dump(Node alt) {
+        StringWriter w = new StringWriter();
+        PublicSuffixes.dump(alt, 0, new PrintWriter(w));
+        return w.toString();
+    }
+    public void testTrie1()  {
+        Node alt = new Node(null, new ArrayList<Node>());
+        alt.addBranch("ac,");
+        // specifically, should not have empty string as match.
+        assertEquals("(null)\n" +
+                "  \"ac,\"\n", dump(alt));
+        alt.addBranch("ac,com,");
+        assertEquals("(null)\n" +
+        		"  \"ac,\"\n" +
+        		"    \"com,\"\n" +
+        		"    \"\"\n", dump(alt));
+        alt.addBranch("ac,edu,");
+        assertEquals("(null)\n" +
+        		"  \"ac,\"\n" +
+        		"    \"com,\"\n" +
+        		"    \"edu,\"\n" +
+        		"    \"\"\n", dump(alt));
+    }
+    public void testTrie2() {
+        Node alt = new Node(null, new ArrayList<Node>());
+        alt.addBranch("ac,");
+        alt.addBranch("*,");
+        assertEquals("(null)\n" +
+        		"  \"ac,\"\n" +
+        		"  \"*,\"\n", dump(alt));
+    }
+
+    public void testTrie3() {
+        Node alt = new Node(null, new ArrayList<Node>());
+        alt.addBranch("ac,");
+        alt.addBranch("ac,!hoge,");
+        alt.addBranch("ac,*,");
+        // exception goes first.
+        assertEquals("(null)\n" +
+        		"  \"ac,\"\n" +
+        		"    \"!hoge,\"\n" +
+        		"    \"*,\"\n" +
+        		"    \"\"\n", dump(alt));
+    }
+
+    // test of higher-level functionality
+    
     Matcher m = PublicSuffixes.getTopmostAssignedSurtPrefixPattern()
             .matcher("");
 
