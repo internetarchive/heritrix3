@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -26,51 +26,99 @@ import java.util.Map;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MultiReporter;
-import org.apache.commons.httpclient.HttpStatus; 
+import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
+import org.apache.commons.httpclient.HttpMethod;
 
 /**
  * Collector of statistics for a 'subset' of a crawl,
- * such as a server (host:port), host, or frontier group 
- * (eg queue). 
- * 
+ * such as a server (host:port), host, or frontier group
+ * (eg queue).
+ *
  * @author gojomo
  */
 public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter {
+
+    /** lower bound on HTTP status codes that we'll interpret as successes */
+    private static final int HTTP_STATUS_CODE_SUCCESS_LOWER = 200;
+
+    /** upper bound on HTTP status codes that we'll interpret as successes */
+    private static final int HTTP_STATUS_CODE_SUCCESS_UPPER = 299;
+
     private static final long serialVersionUID = 8624425657056569036L;
 
-    public enum Stage {SCHEDULED, RELOCATED, RETRIED, 
+    public enum Stage {SCHEDULED, RELOCATED, RETRIED,
         SUCCEEDED, DISREGARDED, FAILED};
-    
+
     public interface HasFetchStats {
         public FetchStats getSubstats();
     }
+
     public interface CollectsFetchStats {
-        public void tally(CrawlURI curi, Stage stage); 
+        public void tally(CrawlURI curi, Stage stage);
     }
-    
-    long totalScheduled;   // anything initially scheduled
-                           // (totalScheduled - (fetchSuccesses + fetchFailures)
-    long fetchSuccesses;   // anything disposed-success 
-                           // (HTTP 2XX response codes, other non-errors)
-    long fetchFailures;    // anything disposed-failure
-    long fetchDisregards;  // anything disposed-disregard
-    long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
-    long robotsDenials;    // all robots-precluded failures
-    long successBytes;     // total size of all success responses
-    long totalBytes;       // total size of all responses
-    long fetchNonResponses; // processing attempts resulting in no response
-                           // (both failures and temp deferrals)
-    
-    long novelBytes; 
+
+    /**
+     * anyting initially scheduled, (totalScheduled - (fetchSuccesses
+     * + fetchFailures)
+     */
+    long totalScheduled;
+
+    /**
+     * anything disposed-success, any non-error HTTP status coed
+     */
+    long fetchSuccesses;
+
+    /**
+     * anything with an HTTP status code between 200 and 299
+     */
+    long fetchHttpSuccesses;
+
+    /**
+     * anything disposed-failure
+     */
+    long fetchFailures;
+
+    /**
+     * anything disposed-disregard
+     */
+    long fetchDisregards;
+
+    /**
+     * all positive responses (incl. 3XX, 4XX, 5XX)
+     */
+    long fetchResponses;
+
+    /**
+     * all robots-precluded failures
+     */
+    long robotsDenials;
+
+    /**
+     * total size of all success responses
+     */
+    long successBytes;
+
+    /**
+     * total size of all responses
+     */
+    long totalBytes;
+
+    /**
+     * processing attempts resulting in no response (both failures and
+     * temp deferrals)
+     */
+    long fetchNonResponses;
+
+    long novelBytes;
     long novelUrls;
     long notModifiedBytes;
     long notModifiedUrls;
     long dupByHashBytes;
-    long dupByHashUrls;  
-    
-    long lastSuccessTime; 
-    
+    long dupByHashUrls;
+
+    long lastSuccessTime;
+
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {
             case SCHEDULED:
@@ -86,7 +134,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 fetchResponses++;
                 totalBytes += curi.getContentSize();
                 successBytes += curi.getContentSize();
-           
+
                 if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) {
                     notModifiedBytes += curi.getContentSize();
                     notModifiedUrls++;
@@ -96,9 +144,23 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 } else {
                     novelBytes += curi.getContentSize();
                     novelUrls++;
-                } 
-                
+                }
+
                 lastSuccessTime = curi.getFetchCompletedTime();
+
+                HttpMethod httpMethod = curi.getHttpMethod();
+
+                if(httpMethod != null) {
+
+                    int statusCode = httpMethod.getStatusCode();
+
+                    if(statusCode >= HTTP_STATUS_CODE_SUCCESS_LOWER &&
+                       statusCode <= HTTP_STATUS_CODE_SUCCESS_UPPER) {
+
+                        fetchHttpSuccesses++;
+                    }
+                }
+
                 break;
             case DISREGARDED:
                 fetchDisregards++;
@@ -112,8 +174,8 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                 } else {
                     fetchResponses++;
                     totalBytes += curi.getContentSize();
-                    
-                    if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) { 
+
+                    if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) {
                         notModifiedBytes += curi.getContentSize();
                         notModifiedUrls++;
                     } else if (IdenticalDigestDecideRule.
@@ -123,16 +185,19 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
                     } else {
                         novelBytes += curi.getContentSize();
                         novelUrls++;
-                    } 
+                    }
 
                 }
                 fetchFailures++;
                 break;
         }
     }
-    
+
     public long getFetchSuccesses() {
         return fetchSuccesses;
+    }
+    public long getFetchHttpSuccesses() {
+        return fetchHttpSuccesses;
     }
     public long getFetchResponses() {
         return fetchResponses;
@@ -155,7 +220,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
     public long getRobotsDenials() {
         return robotsDenials;
     }
-    
+
     public long getRemaining() {
         return totalScheduled - (fetchSuccesses + fetchFailures + fetchDisregards);
     }
@@ -163,7 +228,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         return fetchSuccesses + fetchFailures;
     }
 
-    public long getNovelBytes() { 
+    public long getNovelBytes() {
         return novelBytes;
     }
 
@@ -185,8 +250,8 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
 
     public long getDupByHashUrls() {
         return dupByHashUrls;
-    } 
-    
+    }
+
     public String[] getReports() {
         // TODO Auto-generated method stub
         return null;
@@ -209,9 +274,10 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
     }
 
     public String shortReportLegend() {
-        return "totalScheduled fetchSuccesses fetchFailures fetchDisregards " +
-                "fetchResponses robotsDenials successBytes totalBytes " +
-                "fetchNonResponses lastSuccessTime";
+        return "totalScheduled fetchSuccesses fetchHttpSuccesses " +
+            "fetchFailures fetchDisregards fetchResponses " +
+            "robotsDenials successBytes totalBytes fetchNonResponses " +
+            "lastSuccessTime";
     }
 
     public String shortReportLine() {
@@ -223,20 +289,22 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         writer.print(" ");
         writer.print(fetchSuccesses);
         writer.print(" ");
+        writer.print(fetchHttpSuccesses);
+        writer.print(" ");
         writer.print(fetchFailures);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(fetchDisregards);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(fetchResponses);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(robotsDenials);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(successBytes);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(totalBytes);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(fetchNonResponses);
-        writer.print(" "); 
+        writer.print(" ");
         writer.print(ArchiveUtils.getLog17Date(lastSuccessTime));
     }
 
@@ -244,6 +312,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("totalScheduled", totalScheduled);
         map.put("fetchSuccesses", fetchSuccesses);
+        map.put("fetchHttpSuccesses", fetchHttpSuccesses);
         map.put("fetchFailures", fetchFailures);
         map.put("fetchDisregards", fetchDisregards);
         map.put("fetchResponses", fetchResponses);
