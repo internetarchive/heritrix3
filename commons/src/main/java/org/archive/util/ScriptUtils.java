@@ -14,7 +14,7 @@ import javax.script.ScriptException;
 import org.springframework.context.ApplicationContext;
 
 public class ScriptUtils {
-    private static Map<String, Bindings> savedBindings = new HashMap<>();
+    private static Map<String, Bindings> savedBindings = new HashMap<String, Bindings>();
     
     private ScriptEngine eng;
     public ScriptUtils(ScriptEngine eng) {
