@@ -29,13 +29,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.ScriptEngine;
+import javax.script.Bindings;
 import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.util.ScriptUtils;
 import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
@@ -49,6 +50,8 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
 
+import static org.archive.util.ScriptUtils.MANAGER;
+
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
  * with variables pointing to the job and appContext, from which all
@@ -60,7 +63,6 @@ import org.restlet.resource.WriterRepresentation;
  * @contributor gojomo
  */
 public class ScriptResource extends JobRelatedResource {
-    static ScriptEngineManager MANAGER = new ScriptEngineManager();
     // oddly, ordering is different each call to getEngineFactories, so cache
     static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
     static {
@@ -89,37 +91,28 @@ public class ScriptResource extends JobRelatedResource {
             script="";
         }
 
-        ScriptEngine eng = MANAGER.getEngineByName(chosenEngine);
-        
-        StringWriter rawString = new StringWriter(); 
+        StringWriter rawString = new StringWriter();
         PrintWriter rawOut = new PrintWriter(rawString);
-        eng.put("rawOut", rawOut);
-        StringWriter htmlString = new StringWriter(); 
+        StringWriter htmlString = new StringWriter();
         PrintWriter htmlOut = new PrintWriter(htmlString);
-        eng.put("htmlOut", htmlOut);
-        eng.put("job", cj);
-        eng.put("appCtx", cj.getJobContext());
-        eng.put("scriptResource", this);
+        // TODO make the CrawlJob available from other contexts like the action directory
+        Bindings b = new SimpleBindings();
+        b.put("job", cj);
         try {
-            eng.eval(script);
-            linesExecuted = script.split("\r?\n").length;
+            ScriptUtils.eval(chosenEngine
+                    , script
+                    , cj.getJobContext()
+                    , rawOut
+                    , htmlOut
+                    , null);
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
         } finally {
-            rawOut.flush();
             rawOutput = rawString.toString();
-            htmlOut.flush();
             htmlOutput = htmlString.toString();
-
-            eng.put("rawOut", null);
-            eng.put("htmlOut", null);
-            eng.put("job", null);
-            eng.put("appCtx", null);
-            eng.put("scriptResource", null);
         }
-        //TODO: log script, results somewhere; job log INFO? 
         
         getResponse().setEntity(represent());
     }
