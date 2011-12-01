@@ -1,2 +1,5 @@
 bin/
 commons/target
+dist/
+engine/target/
+modules/target/

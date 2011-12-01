@@ -26,12 +26,6 @@ public class ScriptUtils {
         savedBindings.put(bindingsName
                 , eng.getBindings(ScriptContext.ENGINE_SCOPE));
     }
-    public void loadBindings(String bindingsName) {
-        // don't overwrite bindings that weren't explicitly set in
-        // the bindings being retrieved
-        for (Entry<String, Object> inABind : savedBindings.get(bindingsName).entrySet())
-            eng.put(inABind.getKey(), inABind.getValue());
-    }
 
     public static ScriptEngineManager MANAGER = new ScriptEngineManager();
     
@@ -57,6 +51,8 @@ public class ScriptUtils {
         eng.put("appCtx", appCtx);
         eng.put("engine", eng);
         eng.put("scriptUtils", new ScriptUtils(eng));
+        for (Map.Entry<String, Bindings> me : savedBindings.entrySet())
+            eng.put(me.getKey(), me.getValue());
         
         try {
             eng.eval(script);
