@@ -14,18 +14,7 @@ import javax.script.ScriptException;
 import org.springframework.context.ApplicationContext;
 
 public class ScriptUtils {
-    private static Map<String, Bindings> savedBindings = new HashMap<String, Bindings>();
-    
-    private ScriptEngine eng;
-    public ScriptUtils(ScriptEngine eng) {
-        this.eng = eng;
-    }
-    public void saveBindings(String bindingsName) {
-        // appropriate values are nulled at the end of the script,
-        // so keep the reference to the same managed Bindings
-        savedBindings.put(bindingsName
-                , eng.getBindings(ScriptContext.ENGINE_SCOPE));
-    }
+    private static Map<String, Object> savedState= new HashMap<String, Object>();
 
     public static ScriptEngineManager MANAGER = new ScriptEngineManager();
     
@@ -50,9 +39,7 @@ public class ScriptUtils {
         eng.put("htmlOut", htmlOut);
         eng.put("appCtx", appCtx);
         eng.put("engine", eng);
-        eng.put("scriptUtils", new ScriptUtils(eng));
-        for (Map.Entry<String, Bindings> me : savedBindings.entrySet())
-            eng.put(me.getKey(), me.getValue());
+        eng.put("savedState", savedState);
         
         try {
             eng.eval(script);
@@ -64,7 +51,6 @@ public class ScriptUtils {
             eng.put("htmlOut", null);
             eng.put("appCtx",  null);
             eng.put("engine",  null);
-            eng.put("scriptUtils",  null);
         }
 
     }
