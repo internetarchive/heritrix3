@@ -28,18 +28,16 @@ public class ScriptUtils {
      * @param bindings nonstandard bindings
      * @throws ScriptException
      */
-    public static void eval(ScriptEngine eng
-            , String script
-            , ApplicationContext appCtx
-            , PrintWriter txtOut
-            , PrintWriter htmlOut
-            , Bindings bindings) throws ScriptException {
+    public static void eval(ScriptEngine eng, String script,
+            ApplicationContext appCtx, PrintWriter txtOut, PrintWriter htmlOut,
+            Map<String, Object> bindings) throws ScriptException {
         
         eng.put("rawOut", txtOut);
         eng.put("htmlOut", htmlOut);
         eng.put("appCtx", appCtx);
-        eng.put("engine", eng);
         eng.put("savedState", savedState);
+        for (Map.Entry<String, Object> i : bindings.entrySet())
+            eng.put(i.getKey(), i.getValue());
         
         try {
             eng.eval(script);

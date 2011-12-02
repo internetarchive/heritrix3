@@ -98,13 +98,14 @@ public class ScriptResource extends JobRelatedResource {
         // TODO make the CrawlJob available from other contexts like the action directory
         Bindings b = new SimpleBindings();
         b.put("job", cj);
+        b.put("scriptResource", this);
         try {
             ScriptUtils.eval(chosenEngine
                     , script
                     , cj.getJobContext()
                     , rawOut
                     , htmlOut
-                    , null);
+                    , b);
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
@@ -271,12 +272,14 @@ public class ScriptResource extends JobRelatedResource {
                 "with (global) variables: <ul>\n" +
                 "<li>rawOut: a PrintWriter for arbitrary text output to this page</li>\n" +
                 "<li>htmlOut: a PrintWriter for HTML output to this page</li>\n" +
-                "<li>job: the current CrawlJob instance</li>\n" +
                 "<li>appCtx: current job ApplicationContext, if any</li>\n" +
+                "<li>savedState: a Map&lt;String, Object &rt; that can be used for saving objects between scripts. "+
+                "Values put here will also be available in actions.</li>\n" +
+                "<li>job: the current CrawlJob instance (note this is not available from an action)</li>\n" +
                 "<li>scriptResource: the ScriptResource implementing this " +
-                "page, which offers utility methods</li>\n" +
+                "page, which offers utility methods. (also unavailable from an action)</li>\n" +
                 "</ul>");
-
+        
         pw.flush();
     }
 }
