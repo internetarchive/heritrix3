@@ -173,7 +173,7 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "job");
-        var.put("description", "the current CrawlJob instance");
+        var.put("description", "the current CrawlJob instance (not available from an action)");
         vars.add(var);
         
         var = new LinkedHashMap<String,String>();
@@ -183,7 +183,13 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "scriptResource");
-        var.put("description", "the ScriptResource implementing this page, which offers utility methods");
+        var.put("description", "the ScriptResource implementing this page, which offers utility methods (not available from an action)");
+        vars.add(var);
+        
+        var = new LinkedHashMap<String,String>();
+        var.put("variable", "savedState");
+        var.put("description", "a Map&lt;String, Object&gt; that can be used for saving objects between scripts. "+
+                "Values put here will also be available in actions.");
         vars.add(var);
         
         return vars;
@@ -269,17 +275,16 @@ public class ScriptResource extends JobRelatedResource {
         pw.println("</form>");
         pw.println(
                 "The script will be executed in an engine preloaded " +
-                "with (global) variables: <ul>\n" +
-                "<li>rawOut: a PrintWriter for arbitrary text output to this page</li>\n" +
-                "<li>htmlOut: a PrintWriter for HTML output to this page</li>\n" +
-                "<li>appCtx: current job ApplicationContext, if any</li>\n" +
-                "<li>savedState: a Map&lt;String, Object &rt; that can be used for saving objects between scripts. "+
-                "Values put here will also be available in actions.</li>\n" +
-                "<li>job: the current CrawlJob instance (note this is not available from an action)</li>\n" +
-                "<li>scriptResource: the ScriptResource implementing this " +
-                "page, which offers utility methods. (also unavailable from an action)</li>\n" +
-                "</ul>");
-        
+                "with (global) variables: <ul>\n");
+        for (Map<String, String> i : getAvailableGlobalVariables()) {
+            pw.print("<li>");
+            pw.print(i.get("variable"));
+            pw.print(": ");
+            pw.print(i.get("description"));
+            pw.println("</li>");
+        }
+        pw.print("</ul>");
+                
         pw.flush();
     }
 }
