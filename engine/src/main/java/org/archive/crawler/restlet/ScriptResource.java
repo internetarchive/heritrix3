@@ -173,7 +173,7 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "job");
-        var.put("description", "the current CrawlJob instance (not available from an action)");
+        var.put("description", "the current CrawlJob instance (not available from an action directory script)");
         vars.add(var);
         
         var = new LinkedHashMap<String,String>();
@@ -183,13 +183,13 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "scriptResource");
-        var.put("description", "the ScriptResource implementing this page, which offers utility methods (not available from an action)");
+        var.put("description", "the ScriptResource implementing this page, which offers utility methods (not available from an action directory script)");
         vars.add(var);
         
         var = new LinkedHashMap<String,String>();
-        var.put("variable", "savedState");
+        var.put("variable", "ScriptUtils.savedState");
         var.put("description", "a Map&lt;String, Object&gt; that can be used for saving objects between scripts. "+
-                "Values put here will also be available in actions.");
+                "Values put here will also be available in action directory scripts. Be careful to avoid memory leaks.");
         vars.add(var);
         
         return vars;
