@@ -15,7 +15,7 @@ import javax.script.ScriptException;
 import org.springframework.context.ApplicationContext;
 
 public class ScriptUtils {
-    private static Map<String, Object> savedState = new ConcurrentHashMap<String, Object>();
+    private static Map<String, Object> scriptStaticState = new ConcurrentHashMap<String, Object>();
 
     public static ScriptEngineManager MANAGER = new ScriptEngineManager();
     
@@ -32,12 +32,12 @@ public class ScriptUtils {
     public static void eval(ScriptEngine eng, String script,
             ApplicationContext appCtx, PrintWriter txtOut, PrintWriter htmlOut,
             Map<String, Object> bindings) throws ScriptException {
-        // the local savedState provides isolation (I from ACID)
-        ChangeMarkingHashMap<String,Object> savedState = new ChangeMarkingHashMap<String, Object>(ScriptUtils.savedState);
+        // the local staticState provides isolation (I from ACID)
+        ChangeMarkingHashMap<String,Object> staticState = new ChangeMarkingHashMap<String, Object>(scriptStaticState);
         eng.put("rawOut", txtOut);
         eng.put("htmlOut", htmlOut);
         eng.put("appCtx", appCtx);
-        eng.put("savedState", savedState);
+        eng.put("staticState", staticState);
         for (Map.Entry<String, Object> i : bindings.entrySet())
             eng.put(i.getKey(), i.getValue());
         
@@ -50,12 +50,12 @@ public class ScriptUtils {
             eng.put("rawOut",  null);
             eng.put("htmlOut", null);
             eng.put("appCtx",  null);
-            eng.put("savedState", null);
+            eng.put("staticState", null);
             for (Map.Entry<String, Object> i : bindings.entrySet())
                 eng.put(i.getKey(), null);
         }
-        for (String i : savedState.alteredKeys)
-            ScriptUtils.savedState.put(i, savedState.get(i));
+        for (String i : staticState.alteredKeys)
+            scriptStaticState.put(i, staticState.get(i));
     }
     
     /*

@@ -196,9 +196,12 @@ public class ScriptResource extends JobRelatedResource {
         vars.add(var);
         
         var = new LinkedHashMap<String,String>();
-        var.put("variable", "ScriptUtils.savedState");
+        var.put("variable", "staticState");
         var.put("description", "a Map&lt;String, Object&gt; that can be used for saving objects between scripts. "+
-                "Values put here will also be available in action directory scripts. Be careful to avoid memory leaks.");
+                "Values put here will also be available in action directory scripts. "+
+                "This state is static. Please "+
+                "<a href=\"http://docs.oracle.com/javase/tutorial/java/javaOO/classvars.html\">"+
+                "be aware of what that means</a> and avoid memory leaks.");
         vars.add(var);
         
         return vars;
