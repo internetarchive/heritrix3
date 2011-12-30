@@ -45,7 +45,7 @@ abstract public class RobotsPolicy {
     
     public String getPath(CrawlURI curi) {
         try {
-            return curi.getUURI().getPath();
+            return curi.getUURI().getPathQuery(); // TODO rename method and change callers; add test
         } catch (URIException e) {
             // unlikely
             return "";
