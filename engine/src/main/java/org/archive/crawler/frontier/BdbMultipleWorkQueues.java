@@ -59,7 +59,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * @author gojomo
  */
 public class BdbMultipleWorkQueues {
-	private static final long serialVersionUID = 1L;
+	@SuppressWarnings("unused")
+    private static final long serialVersionUID = 1L;
 	
     private static final Logger LOGGER =
         Logger.getLogger(BdbMultipleWorkQueues.class.getName());
@@ -152,7 +153,7 @@ public class BdbMultipleWorkQueues {
             boolean verbose) 
     throws DatabaseException {
         int matches = 0;
-        int tries = 0;
+//        int tries = 0;
         ArrayList<String> results = new ArrayList<String>(maxMatches);
         
         DatabaseEntry key;
@@ -183,7 +184,7 @@ public class BdbMultipleWorkQueues {
                         }
                         matches++;
                     }
-                    tries++;
+//                    tries++;
                 }
                 result = cursor.getNext(key,value,null);
             }

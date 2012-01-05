@@ -32,6 +32,7 @@ import org.archive.modules.CrawlURI;
  */
 public class AggressiveExtractorHTML
 extends ExtractorHTML {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     static Logger logger =
@@ -43,8 +44,8 @@ extends ExtractorHTML {
     protected void processScript(CrawlURI curi, CharSequence sequence,
             int endOfOpenTag) {
         super.processScript(curi, sequence, endOfOpenTag);
-        // then, proccess entire javascript code as html code
-        // this may cause a lot of false positves
+        // then, process entire javascript code as html code
+        // this may cause a lot of false positives
         processGeneralTag(curi, sequence.subSequence(0,6),
             sequence.subSequence(endOfOpenTag, sequence.length()));
     }
