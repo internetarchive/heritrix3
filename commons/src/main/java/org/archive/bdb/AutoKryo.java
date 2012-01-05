@@ -26,14 +26,17 @@ import com.esotericsoftware.kryo.SerializationException;
  */
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {
+    @SuppressWarnings("rawtypes")
     ArrayList<Class> registeredClasses = new ArrayList<Class>(); 
     
+    @SuppressWarnings("rawtypes")
     @Override
     protected void handleUnregisteredClass(Class type) {
         System.err.println("UNREGISTERED FOR KRYO "+type+" in "+registeredClasses.get(0));
         super.handleUnregisteredClass(type);
     }
 
+    @SuppressWarnings("rawtypes")
     public void autoregister(Class type) {
         if (registeredClasses.contains(type)) {
             return;
@@ -88,6 +91,7 @@ public class AutoKryo extends Kryo {
         throw ex;
     }
 
+    @SuppressWarnings("rawtypes")
     protected Object invokeStatic(String method, Class clazz, Class[] types, Object[] args) throws Exception {
         return clazz.getMethod(method, types).invoke(null, args);
     }

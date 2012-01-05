@@ -60,6 +60,7 @@ import com.sleepycat.je.DatabaseException;
  */
 public class BdbFrontier extends WorkQueueFrontier 
 implements Checkpointable, BeanNameAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =

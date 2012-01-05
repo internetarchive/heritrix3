@@ -658,16 +658,16 @@ public class FileUtils {
     }
 
     /**
-     * Ensure writeable directory.
+     * Ensure writable directory.
      *
      * If doesn't exist, we attempt creation.
      *
-     * @param dir Directory to test for exitence and is writeable.
+     * @param dir Directory to test for existence and is writable.
      *
      * @return The passed <code>dir</code>.
      *
      * @exception IOException If passed directory does not exist and is not
-     * createable, or directory is not writeable or is not a directory.
+     * createable, or directory is not writable or is not a directory.
      */
     public static File ensureWriteableDirectory(File dir)
     throws IOException {
