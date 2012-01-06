@@ -61,6 +61,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger logger =
