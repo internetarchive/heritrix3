@@ -43,9 +43,9 @@ abstract public class RobotsPolicy {
     
     public abstract boolean obeyMetaRobotsNofollow();
     
-    public String getPath(CrawlURI curi) {
+    public String getPathQuery(CrawlURI curi) {
         try {
-            return curi.getUURI().getPathQuery(); // TODO rename method and change callers; add test
+            return curi.getUURI().getPathQuery();
         } catch (URIException e) {
             // unlikely
             return "";
