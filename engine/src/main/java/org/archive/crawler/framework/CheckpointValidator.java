@@ -25,8 +25,7 @@ import org.springframework.validation.Validator;
 public class CheckpointValidator implements Validator {
 
     @Override
-    @SuppressWarnings("unchecked")
-    public boolean supports(Class cls) {
+    public boolean supports(Class<?> cls) {
         return Checkpoint.class.isAssignableFrom(cls);
     }
 

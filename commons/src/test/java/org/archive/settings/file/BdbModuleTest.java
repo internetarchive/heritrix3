@@ -51,11 +51,13 @@ public class BdbModuleTest extends TmpDirTestCase {
         // avoid data from prior runs being mistaken for current run
         int randomFactor = RandomUtils.nextInt();
         
+        @SuppressWarnings("rawtypes")
         ObjectIdentityBdbManualCache<IdentityCacheableWrapper> testData = 
             bdb.getOIBCCache("testData", false,IdentityCacheableWrapper.class);
         for (int i1 = 0; i1 < 1000; i1++) {
             String key = String.valueOf(i1);
             final String value = String.valueOf(randomFactor*i1);
+            @SuppressWarnings("rawtypes")
             String cached = (String)testData.getOrUse(
                     key, 
                     new Supplier<IdentityCacheableWrapper>(
@@ -74,6 +76,7 @@ public class BdbModuleTest extends TmpDirTestCase {
         for (int i2 = 1000; i2 < 2000; i2++) {
             String key = String.valueOf(i2);
             final String value = String.valueOf(randomFactor*i2);
+            @SuppressWarnings("rawtypes")
             String cached = (String)testData.getOrUse(
                     key, 
                     new Supplier<IdentityCacheableWrapper>(
@@ -102,6 +105,7 @@ public class BdbModuleTest extends TmpDirTestCase {
         
         bdb2.start();
         
+        @SuppressWarnings("rawtypes")
         ObjectIdentityBdbManualCache<IdentityCacheableWrapper> restoreData = 
             bdb2.getOIBCCache("testData",true,IdentityCacheableWrapper.class);
         
