@@ -560,8 +560,8 @@ implements MultiReporter, Serializable, OverlayContext {
      * Returns true if this CrawlURI is a prerequisite.
      *
      * TODO:FIXME: code elsewhere is confused whether this means 
-     * that this CrawlURI is a prerquisite for another, or *has* a 
-     * prequisite; clean up and rename as necessary. 
+     * that this CrawlURI is a prerequisite for another, or *has* a 
+     * prerequisite; clean up and rename as necessary. 
      * @return true if this CrawlURI is a prerequisite.
      */
     public boolean isPrerequisite() {
@@ -571,7 +571,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * Set if this CrawlURI is itself a prerequisite URI.
      *
-     * @param prerequisite True if this CrawlURI is itself a prerequiste uri.
+     * @param prerequisite True if this CrawlURI is itself a prerequisite uri.
      */
     public void setPrerequisite(boolean prerequisite) {
         this.prerequisite = prerequisite;
@@ -589,7 +589,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * Set a fetched uri's content type.
      *
-     * @param ct Contenttype.
+     * @param ct Content type.
      */
     public void setContentType(String ct) {
         if (ct == null) {
