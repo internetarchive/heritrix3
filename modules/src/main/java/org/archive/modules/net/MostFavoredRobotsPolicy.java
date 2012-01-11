@@ -72,11 +72,11 @@ public class MostFavoredRobotsPolicy extends RobotsPolicy {
     
     @Override
     public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
-        if (robotstxt.getDirectivesFor(userAgent).allows(getPath(curi))) {
+        if (robotstxt.getDirectivesFor(userAgent).allows(getPathQuery(curi))) {
             return true;
         }
         for(String candidate : candidateUserAgents) {
-            if (robotstxt.getDirectivesFor(candidate).allows(getPath(curi))) {
+            if (robotstxt.getDirectivesFor(candidate).allows(getPathQuery(curi))) {
                 if(shouldMasquerade) {
                     curi.setUserAgent(candidate);
                 }

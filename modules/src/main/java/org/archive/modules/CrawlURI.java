@@ -878,7 +878,6 @@ implements MultiReporter, Serializable, OverlayContext {
         this.data = getPersistentDataMap();
         
         extraInfo = null;
-        overlayNames = null;
         outCandidates = null;
         outLinks = null;
         method = null;
