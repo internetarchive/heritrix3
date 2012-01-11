@@ -18,24 +18,33 @@
  */
 package org.archive.modules.net;
 
+import java.io.IOException;
+
+import junit.framework.TestCase;
+
 import org.archive.modules.CrawlURI;
+import org.archive.net.UURIFactory;
 
-/**
- * Classic obey-robots-as-declared policy. 
- * 
- * @contributor gojomo
- */
-public class ObeyRobotsPolicy extends RobotsPolicy {
-    public static RobotsPolicy INSTANCE = new ObeyRobotsPolicy(); 
+public class RobotsPolicyTest extends TestCase {
+
+    public void testClassicRobots() throws IOException {
+        Robotstxt rtxt = RobotstxtTest.sampleRobots1();
+        RobotsPolicy policy = RobotsPolicy.STANDARD_POLICIES.get("classic");
+        evalQueryString(policy, rtxt); 
+    }
     
-    @Override
-    public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
-        return robotstxt.getDirectivesFor(userAgent).allows(getPathQuery(curi));
-    }
+    
+    /**
+     * HER-1976: query-string disallow
+     * 
+     * @param policy
+     * @param r
+     * @throws IOException
+     */
+    public void evalQueryString(RobotsPolicy policy, Robotstxt rtxt) throws IOException {
+        CrawlURI qs = new CrawlURI(UURIFactory.getInstance("http://example.com/ok?butno=something"));
 
-    @Override
-    public boolean obeyMetaRobotsNofollow() {
-        return true;
+        assertFalse("ignoring query-string", policy.allows("Mozilla allowbot2 99.9", qs, rtxt));
+        
     }
-
 }

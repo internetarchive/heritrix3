@@ -78,7 +78,7 @@ public class FirstNamedRobotsPolicy extends RobotsPolicy {
     public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
         RobotsDirectives directives = robotstxt.getDirectivesFor(userAgent, false);
         if(directives!=null) {
-            return directives.allows(getPath(curi));
+            return directives.allows(getPathQuery(curi));
         }
         
         for(String candidate : candidateUserAgents) {
@@ -87,10 +87,10 @@ public class FirstNamedRobotsPolicy extends RobotsPolicy {
                 if(shouldMasquerade) {
                     curi.setUserAgent(candidate);
                 }
-                return directives.allows(getPath(curi));
+                return directives.allows(getPathQuery(curi));
             }
         }
-        return robotstxt.getDirectivesFor(userAgent).allows(getPath(curi));
+        return robotstxt.getDirectivesFor(userAgent).allows(getPathQuery(curi));
     }
     
     @Override
