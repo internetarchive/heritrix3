@@ -20,8 +20,6 @@
 package org.archive.modules.deciderules;
 
 import java.io.Reader;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,8 +104,6 @@ implements ApplicationContextAware, InitializingBean {
     transient protected ThreadLocal<ScriptEngine> threadEngine = 
         new ThreadLocal<ScriptEngine>();
     transient protected ScriptEngine sharedEngine;
-    /** map for optional use by scripts */
-    public Map<Object,Object> sharedMap = new ConcurrentHashMap<Object,Object>();
 
     public ScriptedDecideRule() {
     }
@@ -128,12 +124,14 @@ implements ApplicationContextAware, InitializingBean {
             // necessary for shared engine
             try {
                 engine.put("object",uri);
+                engine.put("appCtx", appCtx);
                 return (DecideResult)engine.eval("decisionFor(object)");
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
                 return DecideResult.NONE;
             } finally {
                 engine.put("object", null);
+                engine.put("appCtx", null);
             }
         }
     }
