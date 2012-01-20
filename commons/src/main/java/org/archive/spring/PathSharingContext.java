@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -177,5 +178,19 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
             beanFactory.registerSingleton(LIFECYCLE_PROCESSOR_BEAN_NAME,obj);
         }
         super.initLifecycleProcessor();
+    }
+    
+    protected ConcurrentHashMap<Object, Object> data;
+
+    /**
+     * @return a shared map for arbitrary use during a crawl; for example, could
+     *         be used for state persisting for the duration of the crawl,
+     *         shared among ScriptedProcessor, scripting console, etc scripts
+     */
+    public ConcurrentHashMap<Object, Object> getData() {
+        if (data == null) {
+            data = new ConcurrentHashMap<Object, Object>();
+        }
+        return data;
     }
 }

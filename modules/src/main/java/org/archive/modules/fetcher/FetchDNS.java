@@ -35,8 +35,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.Processor;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
@@ -122,8 +122,6 @@ public class FetchDNS extends Processor {
 
     private static final long DEFAULT_TTL_FOR_NON_DNS_RESOLVES
         = 6 * 60 * 60; // 6 hrs
-    
-    private byte [] reusableBuffer = new byte[1024];
 
     public FetchDNS() {
     }
@@ -279,7 +277,8 @@ public class FetchDNS extends Processor {
         // Reading from the wrapped stream, behind the scenes, will write
         // files into scratch space
         try {
-            while (is.read(this.reusableBuffer) != -1) {
+            byte[] buf = new byte[256];
+            while (is.read(buf) != -1) {
                 continue;
             }
         } finally {
@@ -303,15 +302,12 @@ public class FetchDNS extends Processor {
         baos.write(fetchDate);
         // Don't forget the newline
         baos.write("\n".getBytes());
-        int recordLength = fetchDate.length + 1;
         if (rrecordSet != null) {
             for (int i = 0; i < rrecordSet.length; i++) {
                 byte[] record = rrecordSet[i].toString().getBytes();
-                recordLength += record.length;
                 baos.write(record);
                 // Add the newline between records back in
                 baos.write("\n".getBytes());
-                recordLength += 1;
             }
         }
         return baos.toByteArray();
