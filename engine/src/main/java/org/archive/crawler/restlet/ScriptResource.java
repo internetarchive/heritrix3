@@ -24,21 +24,18 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.Bindings;
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.script.SimpleBindings;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.util.ScriptUtils;
 import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
@@ -52,8 +49,6 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
 
-import static org.archive.util.ScriptUtils.MANAGER;
-
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
  * with variables pointing to the job and appContext, from which all
@@ -65,6 +60,7 @@ import static org.archive.util.ScriptUtils.MANAGER;
  * @contributor gojomo
  */
 public class ScriptResource extends JobRelatedResource {
+    static ScriptEngineManager MANAGER = new ScriptEngineManager();
     // oddly, ordering is different each call to getEngineFactories, so cache
     static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
     static {
@@ -100,29 +96,37 @@ public class ScriptResource extends JobRelatedResource {
             script="";
         }
 
-        StringWriter rawString = new StringWriter();
+        ScriptEngine eng = MANAGER.getEngineByName(chosenEngine);
+        
+        StringWriter rawString = new StringWriter(); 
         PrintWriter rawOut = new PrintWriter(rawString);
-        StringWriter htmlString = new StringWriter();
+        eng.put("rawOut", rawOut);
+        StringWriter htmlString = new StringWriter(); 
         PrintWriter htmlOut = new PrintWriter(htmlString);
-        // TODO make the CrawlJob available from other contexts like the action directory
-        Bindings b = new SimpleBindings();
-        b.put("job", cj);
-        b.put("scriptResource", this);
+        eng.put("htmlOut", htmlOut);
+        eng.put("job", cj);
+        eng.put("appCtx", cj.getJobContext());
+        eng.put("scriptResource", this);
         try {
-            ScriptUtils.eval(chosenEngine
-                    , script
-                    , cj.getJobContext()
-                    , rawOut
-                    , htmlOut
-                    , b);
+            eng.eval(script);
+            linesExecuted = script.split("\r?\n").length;
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
         } finally {
+            rawOut.flush();
             rawOutput = rawString.toString();
+            htmlOut.flush();
             htmlOutput = htmlString.toString();
+
+            eng.put("rawOut", null);
+            eng.put("htmlOut", null);
+            eng.put("job", null);
+            eng.put("appCtx", null);
+            eng.put("scriptResource", null);
         }
+        //TODO: log script, results somewhere; job log INFO? 
         
         getResponse().setEntity(represent());
     }
@@ -182,7 +186,7 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "job");
-        var.put("description", "the current CrawlJob instance (not available from an action directory script)");
+        var.put("description", "the current CrawlJob instance");
         vars.add(var);
         
         var = new LinkedHashMap<String,String>();
@@ -192,16 +196,7 @@ public class ScriptResource extends JobRelatedResource {
         
         var = new LinkedHashMap<String,String>();
         var.put("variable", "scriptResource");
-        var.put("description", "the ScriptResource implementing this page, which offers utility methods (not available from an action directory script)");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "staticState");
-        var.put("description", "a Map&lt;String, Object&gt; that can be used for saving objects between scripts. "+
-                "Values put here will also be available in action directory scripts. "+
-                "This state is static. Please "+
-                "<a href=\"http://docs.oracle.com/javase/tutorial/java/javaOO/classvars.html\">"+
-                "be aware of what that means</a> and avoid memory leaks.");
+        var.put("description", "the ScriptResource implementing this page, which offers utility methods");
         vars.add(var);
         
         return vars;
@@ -287,16 +282,15 @@ public class ScriptResource extends JobRelatedResource {
         pw.println("</form>");
         pw.println(
                 "The script will be executed in an engine preloaded " +
-                "with (global) variables: <ul>\n");
-        for (Map<String, String> i : getAvailableGlobalVariables()) {
-            pw.print("<li>");
-            pw.print(i.get("variable"));
-            pw.print(": ");
-            pw.print(i.get("description"));
-            pw.println("</li>");
-        }
-        pw.print("</ul>");
-                
+                "with (global) variables: <ul>\n" +
+                "<li>rawOut: a PrintWriter for arbitrary text output to this page</li>\n" +
+                "<li>htmlOut: a PrintWriter for HTML output to this page</li>\n" +
+                "<li>job: the current CrawlJob instance</li>\n" +
+                "<li>appCtx: current job ApplicationContext, if any</li>\n" +
+                "<li>scriptResource: the ScriptResource implementing this " +
+                "page, which offers utility methods</li>\n" +
+                "</ul>");
+
         pw.flush();
     }
 }

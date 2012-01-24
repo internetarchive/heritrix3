@@ -32,6 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.io.FileUtils;
@@ -41,14 +42,11 @@ import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FilesystemLinkMaker;
-import org.archive.util.ScriptUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
-
-import static org.archive.util.ScriptUtils.MANAGER;
 
 /**
  * Directory watched for new files. Depending on their extension, will
@@ -278,6 +276,9 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         }
     }
     
+    
+    /** shared ScriptEngineManager */
+    static ScriptEngineManager MANAGER = new ScriptEngineManager();
 
     /**
      * Try the actionFile as a script, deducing the proper scripting
@@ -307,42 +308,37 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         }
         
         // prepare engine
-        StringWriter txtStringWriter = new StringWriter(); 
-        PrintWriter txtOut = new PrintWriter(txtStringWriter);
-        StringWriter htmlStringWriter = new StringWriter(); 
-        PrintWriter htmlOut = new PrintWriter(htmlStringWriter);
+        StringWriter rawString = new StringWriter(); 
+        PrintWriter rawOut = new PrintWriter(rawString);
         Exception ex = null;
+        engine.put("rawOut", rawOut);
+        engine.put("appCtx", appCtx);
         
         // evaluate and record any exception
         try {
             String script = FileUtils.readFileToString(actionFile);
-            ScriptUtils.eval(engine
-                    , script
-                    , appCtx
-                    , txtOut
-                    , htmlOut
-                    , null
-                    );
+            engine.eval(script);
         } catch (IOException e) {
             ex = e;
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
+        } finally {
+            engine.put("rawOut", null);
+            engine.put("appCtx", null);
         }
 
         // report output/exception to files paired with script in done dir
-        try {
-            if(StringUtils.isNotBlank(txtStringWriter.toString())) {
-                File outFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".out");
-                FileUtils.writeStringToFile(outFile, txtStringWriter.toString());
+        rawOut.flush();
+        String allOut = rawString.toString();
+        if(StringUtils.isNotBlank(allOut)) {
+            File outFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".out");
+            try {
+                FileUtils.writeStringToFile(outFile, rawString.toString());
+            } catch (IOException ioe) {
+                LOGGER.log(Level.SEVERE,"problem during action file: "+actionFile,ioe);
             }
-            if(StringUtils.isNotBlank(htmlStringWriter.toString())) {
-                File outFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".html");
-                FileUtils.writeStringToFile(outFile, txtStringWriter.toString());
-            }
-        } catch (IOException ioe) {
-            LOGGER.log(Level.SEVERE,"problem during action file: "+actionFile,ioe);
         }
         if(ex!=null) {
             File exFile = new File(doneDir.getFile(),timestamp+"."+actionFile.getName()+".exception");

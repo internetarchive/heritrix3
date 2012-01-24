@@ -245,7 +245,7 @@ implements Serializable,
     }
     
     /**
-     * Messages from the CrawlController.
+     * Messages from the crawlcontroller.
      *
      * They appear on console.
      */
