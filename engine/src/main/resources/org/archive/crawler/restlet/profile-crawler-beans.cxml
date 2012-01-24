@@ -354,6 +354,7 @@ http://example.example/example
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->
+  <!-- <property name="processErrorOutlinks" value="false" /> -->
  </bean>
  <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
   <!-- <property name="delayFactor" value="5.0" /> -->
