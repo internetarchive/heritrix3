@@ -17,14 +17,17 @@
  *  limitations under the License.
  */
 
+// TODO Is ConfigFileEditor ever used? delete me?
+
 package org.archive.spring;
 
 /**
  * PropertyEditor allowing Strings to become ConfigFile instances.
  * 
  */
-public class ConfigFileEditor<T> extends ConfigPathEditor {
+public class ConfigFileEditor<T> extends ConfigPathEditor<T> {
 
+    @Override
     public Object getValue() {
         ConfigFile c =  new ConfigFile(null,value.toString());
         return c;

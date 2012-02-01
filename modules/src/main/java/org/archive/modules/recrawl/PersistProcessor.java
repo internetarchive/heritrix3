@@ -49,6 +49,7 @@ import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
 import org.json.JSONObject;
 
+import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.StringBinding;
@@ -67,6 +68,7 @@ import com.sleepycat.je.EnvironmentConfig;
  */
 public abstract class PersistProcessor extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =
@@ -152,7 +154,7 @@ public abstract class PersistProcessor extends Processor {
      * @return number of records
      * @throws DatabaseException
      */
-    private static int copyPersistEnv(File sourceDir, StoredSortedMap<String,Map> historyMap) 
+    private static int copyPersistEnv(File sourceDir, StoredSortedMap<String, Map<?, ?>> historyMap) 
     throws DatabaseException {
         int count = 0;
 
@@ -163,13 +165,14 @@ public abstract class PersistProcessor extends Processor {
         historyDbConfig.setReadOnly(true);
         Database sourceHistoryDB = sourceEnv.openDatabase(
                 null, URI_HISTORY_DBNAME, historyDbConfig);
-        StoredSortedMap<String,Map> sourceHistoryMap = new StoredSortedMap<String,Map>(sourceHistoryDB,
-                new StringBinding(), new SerialBinding<Map>(sourceClassCatalog,
-                        Map.class), true);
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        EntryBinding<Map<?, ?>> sb = new SerialBinding(sourceClassCatalog, Map.class);
+        StoredSortedMap<String,Map<?, ?>> sourceHistoryMap = new StoredSortedMap<String,Map<?, ?>>(sourceHistoryDB,
+                new StringBinding(), sb, true);
 
-        Iterator<Entry<String,Map>> iter = sourceHistoryMap.entrySet().iterator();
+        Iterator<Entry<String,Map<?, ?>>> iter = sourceHistoryMap.entrySet().iterator();
         while (iter.hasNext()) {
-            Entry<String,Map> item = iter.next(); 
+            Entry<String,Map<?, ?>> item = iter.next(); 
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(item.getKey() + " " + new JSONObject(item.getValue()));
             }
@@ -198,7 +201,7 @@ public abstract class PersistProcessor extends Processor {
      * @throws UnsupportedEncodingException
      * @throws DatabaseException
      */
-    private static int populatePersistEnvFromLog(BufferedReader persistLogReader, StoredSortedMap<String,Map> historyMap) 
+    private static int populatePersistEnvFromLog(BufferedReader persistLogReader, StoredSortedMap<String, Map<?, ?>> historyMap) 
     throws UnsupportedEncodingException, DatabaseException {
         int count = 0;
 
@@ -214,7 +217,7 @@ public abstract class PersistProcessor extends Processor {
                 continue;
             }
 
-            Map alist = (Map) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
+            Map<?, ?> alist = (Map<?, ?>) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
 
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(splits[0] + " " + ArchiveUtils.prettyString(alist));
@@ -255,7 +258,7 @@ public abstract class PersistProcessor extends Processor {
     public static int populatePersistEnv(String sourcePath, File envFile)
         throws DatabaseException, IOException {
         int count = 0;
-        StoredSortedMap<String,Map> historyMap = null;
+        StoredSortedMap<String,Map<?, ?>> historyMap = null;
         EnhancedEnvironment targetEnv = null;
         StoredClassCatalog classCatalog = null;
         Database historyDB = null;
@@ -267,9 +270,10 @@ public abstract class PersistProcessor extends Processor {
             classCatalog = targetEnv.getClassCatalog();
             historyDB = targetEnv.openDatabase(null, URI_HISTORY_DBNAME, 
                     HISTORY_DB_CONFIG.toDatabaseConfig());
-            historyMap = new StoredSortedMap<String,Map>(historyDB, 
-                    new StringBinding(), new SerialBinding<Map>(classCatalog,
-                        Map.class), true);
+            @SuppressWarnings({ "rawtypes", "unchecked" })
+            EntryBinding<Map<?, ?>> sb = new SerialBinding(classCatalog, Map.class);
+            historyMap = new StoredSortedMap<String,Map<?, ?>>(historyDB, 
+                    new StringBinding(), sb, true);
         }
 
         try {
@@ -305,7 +309,7 @@ public abstract class PersistProcessor extends Processor {
      * @throws IOException
      */
     public static int copyPersistSourceToHistoryMap(File sourceFile,
-            StoredSortedMap<String, Map> historyMap) throws DatabaseException,
+            StoredSortedMap<String, Map<?, ?>> historyMap) throws DatabaseException,
             IOException {
         // delegate depending on the source
         if (sourceFile.isDirectory()) {
@@ -330,7 +334,7 @@ public abstract class PersistProcessor extends Processor {
      * @throws IOException
      */
     public static int copyPersistSourceToHistoryMap(URL sourceUrl,
-            StoredSortedMap<String, Map> historyMap) throws DatabaseException,
+            StoredSortedMap<String, Map<?, ?>> historyMap) throws DatabaseException,
             IOException {
         BufferedReader persistLogReader = ArchiveUtils
                 .getBufferedReader(sourceUrl);

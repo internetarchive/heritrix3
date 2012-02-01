@@ -191,7 +191,6 @@ public class PDFParser {
      * them to foundURIs
      * @param entity
      */
-    @SuppressWarnings("unchecked")
     protected void extractURIs(PdfObject entity){
 
             // deal with dictionaries
@@ -219,11 +218,12 @@ public class PDFParser {
             }else if(entity.isArray()){
 
                 PdfArray array = (PdfArray)entity;
-                ArrayList arrayObjects = array.getArrayList();
-                Iterator objectList = arrayObjects.iterator();
+                @SuppressWarnings("unchecked")
+                ArrayList<PdfObject> arrayObjects = array.getArrayList();
+                Iterator<PdfObject> objectList = arrayObjects.iterator();
 
                 while(objectList.hasNext()){
-                    this.extractURIs( (PdfObject)objectList.next());
+                    this.extractURIs( objectList.next());
                 }
 
             // deal with indirect references

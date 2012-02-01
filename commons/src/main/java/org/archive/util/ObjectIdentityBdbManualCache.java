@@ -124,7 +124,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
      * @param classCatalog
      * @throws DatabaseException
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
@@ -141,11 +141,10 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
         this.count = new AtomicLong(diskMap.size());
     }
 
-    @SuppressWarnings("unchecked")
     protected StoredSortedMap<String, V> createDiskMap(Database database,
-            StoredClassCatalog classCatalog, Class valueClass) {
-        EntryBinding keyBinding = TupleBinding.getPrimitiveBinding(String.class);
-        EntryBinding valueBinding = TupleBinding.getPrimitiveBinding(valueClass);
+            StoredClassCatalog classCatalog, Class<V> valueClass) {
+        EntryBinding<String> keyBinding = TupleBinding.getPrimitiveBinding(String.class);
+        EntryBinding<V> valueBinding = TupleBinding.getPrimitiveBinding(valueClass);
         if(valueBinding == null) {
             valueBinding = 
                 new KryoBinding<V>(valueClass);

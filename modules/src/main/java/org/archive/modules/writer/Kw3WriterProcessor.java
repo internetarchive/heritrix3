@@ -78,7 +78,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Kw3WriterProcessor extends Processor {
 
 
-  private static final long serialVersionUID = 3L;
+  @SuppressWarnings("unused")
+private static final long serialVersionUID = 3L;
   
   private static String COLON = ":";
   private static String WS = " ";

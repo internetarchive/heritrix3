@@ -29,6 +29,8 @@ import org.archive.modules.CrawlURI;
  */
 public abstract class PredicatedDecideRule extends DecideRule {
 
+    private static final long serialVersionUID = 1L;
+
     {
         setDecision(DecideResult.ACCEPT);
     }

@@ -29,6 +29,7 @@ import org.archive.modules.CrawlURI;
  */ 
 public class PersistStoreProcessor extends PersistOnlineProcessor 
 {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -8308356194337303758L;
 
 //    class description: "PersistStoreProcessor. Stores CrawlURI attributes " +
@@ -37,7 +38,6 @@ public class PersistStoreProcessor extends PersistOnlineProcessor
     public PersistStoreProcessor() {
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         store.put(persistKeyFor(curi),curi.getPersistentDataMap());

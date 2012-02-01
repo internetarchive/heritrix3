@@ -55,8 +55,7 @@ public class RecyclingSerialBinding<K> extends SerialBinding<K> {
      * @param baseClass is the base class for serialized objects stored using
      * this binding
      */
-    @SuppressWarnings("unchecked")
-    public RecyclingSerialBinding(ClassCatalog classCatalog, Class baseClass) {
+    public RecyclingSerialBinding(ClassCatalog classCatalog, Class<K> baseClass) {
         super(classCatalog, baseClass);
         this.classCatalog = classCatalog;
         this.baseClass = baseClass;

@@ -44,7 +44,7 @@ public class CredentialStoreTest extends ModuleTestBase {
 //        manager.associate(domain, Collections.singleton("org."));
 //        Sheet host = manager.findConfig("org.archive.foo");
         
-        CredentialStore store = new CredentialStore();
+//        CredentialStore store = new CredentialStore();
         //FIXME:SPRINGY
 //        store.setCredentials(new HashMap<K, V>());
 //        global.set(store, CredentialStore.CREDENTIALS, 

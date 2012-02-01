@@ -40,6 +40,7 @@ import org.archive.util.TextUtils;
  *
  */
 public class Preselector extends Scoper {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     /**

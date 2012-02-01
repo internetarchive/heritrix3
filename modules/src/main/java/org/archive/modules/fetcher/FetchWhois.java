@@ -122,6 +122,7 @@ import com.sleepycat.je.DatabaseException;
 public class FetchWhois extends Processor implements CoreAttributeConstants,
         FetchStatusCodes, Lifecycle {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static Logger logger = Logger.getLogger(FetchWhois.class.getName());

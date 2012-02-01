@@ -54,6 +54,7 @@ import org.archive.modules.extractor.Link;
  */
 public class LinksScoper extends Scoper {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -3L;
 
     private static Logger LOGGER =

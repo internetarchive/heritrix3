@@ -78,6 +78,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version $Date$, $Revision$
  */
 public class LexicalCrawlMapper extends CrawlMapper {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     /**

@@ -48,6 +48,7 @@ import org.springframework.beans.factory.annotation.Required;
  *
  */
 public class Sheet implements BeanFactoryAware, BeanNameAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 9129011082185864377L;
     
     /**

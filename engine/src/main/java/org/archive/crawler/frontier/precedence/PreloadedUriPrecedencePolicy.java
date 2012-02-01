@@ -28,6 +28,7 @@ import org.archive.modules.recrawl.PersistProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.StringBinding;
@@ -66,25 +67,24 @@ implements Lifecycle {
         this.bdb = bdb;
     }
 
-    @SuppressWarnings("unchecked")
-    protected StoredSortedMap store;
+    protected StoredSortedMap<String, Map<String, Map<?, ?>>> store;
     protected Database historyDb;
     
-    @SuppressWarnings("unchecked")
     public void start() {
         if(isRunning()) {
             return;
         }
         String dbName = PersistProcessor.URI_HISTORY_DBNAME;
-        StoredSortedMap historyMap;
+        StoredSortedMap<String, Map<String, Map<?, ?>>> historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
             BdbModule.BdbConfig dbConfig = PersistProcessor.HISTORY_DB_CONFIG;
 
             historyDb = bdb.openDatabase(dbName, dbConfig, true);
-            historyMap = new StoredSortedMap(historyDb,
-                    new StringBinding(), new SerialBinding(classCatalog,
-                            Map.class), true);
+            @SuppressWarnings({ "rawtypes", "unchecked" })
+            EntryBinding<Map<String, Map<?, ?>>> sb = new SerialBinding(classCatalog, Map.class);
+            historyMap = new StoredSortedMap<String, Map<String, Map<?, ?>>>(historyDb,
+                    new StringBinding(), sb, true);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
@@ -141,11 +141,9 @@ implements Lifecycle {
      * double-loading
      * @param curi CrawlURI to receive prior state data
      */
-    @SuppressWarnings("unchecked")
     protected void mergePrior(CrawlURI curi) {
-        Map<String, Map> prior = null;
         String key = PersistProcessor.persistKeyFor(curi);
-        prior = (Map<String,Map>) store.get(key);
+        Map<String, Map<?, ?>> prior = (Map<String,Map<?, ?>>) store.get(key);
         if(prior!=null) {
             // merge in keys
             curi.getData().putAll(prior); 

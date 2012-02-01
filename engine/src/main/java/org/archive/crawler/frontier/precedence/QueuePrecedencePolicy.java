@@ -27,6 +27,7 @@ import org.archive.crawler.frontier.WorkQueue;
  * on uri-queues inside the frontier when the uri-queue is first created, and 
  * before the uri-queue is placed on a new internal queue-of-queues. 
  */
+@SuppressWarnings("serial")
 abstract public class QueuePrecedencePolicy implements Serializable {
     
     /**

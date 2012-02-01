@@ -198,6 +198,7 @@ public class Arc2Warc {
        	   "Force overwrite of target file."));
        PosixParser parser = new PosixParser();
        CommandLine cmdline = parser.parse(options, args, false);
+       @SuppressWarnings("unchecked") // org.apache.commons.cli.CommandLine doesn't use generics
        List<String> cmdlineArgs = cmdline.getArgList();
        Option [] cmdlineOptions = cmdline.getOptions();
        HelpFormatter formatter = new HelpFormatter();

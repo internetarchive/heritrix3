@@ -77,6 +77,7 @@ import au.id.jericho.lib.html.StartTagType;
 @SuppressWarnings("unchecked")
 public class JerichoExtractorHTML extends ExtractorHTML {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1684681316546343615L;
 
     final private static Logger logger = 
@@ -105,8 +106,8 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
     private static List<Attribute> findOnAttributes(Attributes attributes) {
         List<Attribute> result = new LinkedList<Attribute>();
-        for (Iterator attrIter = attributes.iterator(); attrIter.hasNext();) {
-            Attribute attr = (Attribute) attrIter.next();
+        for (Object attrObj : attributes) { // the iterator from a Jericho Attributes is not generic
+            Attribute attr = (Attribute) attrObj;
             if (attr.getKey().startsWith("on"))
                 result.add(attr);
         }
@@ -118,7 +119,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             Attributes attributes) {
         Attribute attr;
         String attrValue;
-        List attrList;
+        List<Attribute> attrList;
         String elementName = element.getName();
 
         // Just in case it's an OBJECT or APPLET tag
@@ -163,8 +164,8 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         }
         // ON_
         if ((attrList = findOnAttributes(attributes)).size() != 0) {
-            for (Iterator attrIter = attrList.iterator(); attrIter.hasNext();) {
-                attr = (Attribute) attrIter.next();
+            for (Iterator<Attribute> attrIter = attrList.iterator(); attrIter.hasNext();) {
+                attr = attrIter.next();
                 CharSequence valueSegment = attr.getValueSegment();
                 if (valueSegment != null)
                     processScriptCode(curi, valueSegment);
@@ -371,20 +372,20 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
         // get all form fields
         FormFields formFields = element.findFormFields();
-        for (Iterator fieldsIter = formFields.iterator(); fieldsIter.hasNext();) {
+        for (Iterator<FormField> fieldsIter = formFields.iterator(); fieldsIter.hasNext();) {
             // for each form field
-            FormField formField = (FormField) fieldsIter.next();
+            FormField formField = fieldsIter.next();
 
             // for each form control
-            for (Iterator controlIter = formField.getFormControls().iterator();
+            for (Iterator<FormControl> controlIter = formField.getFormControls().iterator();
                 controlIter.hasNext();) {
-                FormControl formControl = (FormControl) controlIter.next();
+                FormControl formControl = controlIter.next();
 
                 // get name of control element (and URLEncode it)
                 String controlName = formControl.getName();
 
                 // retrieve list of values - submit needs special handling
-                Collection controlValues;
+                Collection<String> controlValues;
                 if (!(formControl.getFormControlType() ==
                         FormControlType.SUBMIT)) {
                     controlValues = formControl.getValues();
@@ -394,9 +395,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
                 if (controlValues.size() > 0) {
                     // for each value set
-                    for (Iterator valueIter = controlValues.iterator();
-                            valueIter.hasNext();) {
-                        String value = (String) valueIter.next();
+                    for (String value : controlValues) {
                         queryURL += "&" + controlName + "=" + value;
                     }
                 } else {
@@ -430,10 +429,8 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      */
     void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
-        List elements = source.findAllElements(StartTagType.NORMAL);
-        for (Iterator elementIter = elements.iterator();
-                elementIter.hasNext();) {
-            Element element = (Element) elementIter.next();
+        List<Element> elements = source.findAllElements(StartTagType.NORMAL);
+        for (Element element : elements) {
             String elementName = element.getName();
             Attributes attributes;
             if (elementName.equals(HTMLElementName.META)) {

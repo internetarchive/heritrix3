@@ -59,6 +59,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
         SeedListener, ApplicationListener<ApplicationEvent> {
     
     private static final long serialVersionUID = 3L;
+    @SuppressWarnings("unused")
     private static final Logger logger =
         Logger.getLogger(SurtPrefixedDecideRule.class.getName());
 

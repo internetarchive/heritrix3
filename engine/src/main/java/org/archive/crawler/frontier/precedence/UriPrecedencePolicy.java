@@ -33,6 +33,7 @@ import org.archive.modules.CrawlURI;
  * that consults URI precedence values is chosen. 
  * 
  */
+@SuppressWarnings("serial")
 abstract public class UriPrecedencePolicy implements Serializable {
 
     /**

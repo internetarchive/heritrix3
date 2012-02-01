@@ -35,6 +35,7 @@ import org.archive.modules.CrawlURI;
  * 
  * @author gojomo
  */
+@SuppressWarnings("serial")
 public abstract class SetBasedUriUniqFilter implements UriUniqFilter, Serializable {
     private static Logger LOGGER =
         Logger.getLogger(SetBasedUriUniqFilter.class.getName());

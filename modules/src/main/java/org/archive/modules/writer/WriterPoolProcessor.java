@@ -61,8 +61,8 @@ import org.springframework.context.Lifecycle;
  */
 public abstract class WriterPoolProcessor extends Processor 
 implements Lifecycle, Checkpointable, WriterPoolSettings {
-    private static final long serialVersionUID = 1L;
     @SuppressWarnings("unused")
+    private static final long serialVersionUID = 1L;
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
 
