@@ -24,6 +24,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,6 +67,13 @@ public class ScriptResource extends JobRelatedResource {
     static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
     static {
         FACTORIES.addAll(MANAGER.getEngineFactories());
+        // Sort factories alphabetically so that they appear in the UI consistently
+        Collections.sort(FACTORIES, new Comparator<ScriptEngineFactory>() {
+            @Override
+            public int compare(ScriptEngineFactory sef1, ScriptEngineFactory sef2) {
+                return sef1.getEngineName().compareTo(sef2.getEngineName());
+            }
+        });
     }
     String script = "";
     Exception ex = null;
