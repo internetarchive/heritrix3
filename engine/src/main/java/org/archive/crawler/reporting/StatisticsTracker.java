@@ -899,7 +899,7 @@ public class StatisticsTracker
             // and file exists
             // and force not requested
             // so, don't overwrite
-            logger.warning("reusing report: " + f.getAbsolutePath());
+            logger.info("reusing report: " + f.getAbsolutePath());
             return f;
         }
         
