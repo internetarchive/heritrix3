@@ -226,9 +226,11 @@ public class JobResource extends BaseResource {
             baseRef += "/";
         }
         // TODO: replace with use a templating system (FreeMarker?)
-        pw.println("<head><title>"+jobTitle+"</title>");
-        pw.println("<base href='"+baseRef+"'/>");
-        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"../../static/engine.css\"");
+        pw.println("<html>");
+        pw.println("<head>");
+        pw.println("<title>"+jobTitle+"</title>");
+        pw.println("<base href='"+baseRef+"'>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
         pw.println("</head><body>");
         pw.print("<h1>Job <i>"+cj.getShortName()+"</i> (");
         
@@ -255,53 +257,59 @@ public class JobResource extends BaseResource {
         // button controls
         pw.println("<div style='white-space:nowrap'><form method='POST'>");
         // PREP, LAUNCH
-        pw.print("<input type='submit' name='action' value='build' ");
-        pw.print(cj.hasApplicationContext()?"disabled='disabled' title='build job'":"");
-        pw.println("/>");
+        pw.println("<span class=\"bgroup\">");
+        pw.print("<input type='submit' name='action' value='build'");
+        if (cj.hasApplicationContext()) {
+            pw.print("disabled='disabled' title='build job'");
+        }
+        pw.println(">");
         pw.print("<input type='submit' name='action' value='launch'");
         if(cj.isProfile()) {
-            pw.print("disabled='disabled' title='profiles cannot be launched'");
+            pw.print(" disabled='disabled' title='profiles cannot be launched'");
         }
         if(!cj.isLaunchable()) {
-            pw.print("disabled='disabled' ");
+            pw.print(" disabled='disabled'");
         }
-        pw.println("/>&nbsp;&nbsp;&nbsp;");
+        pw.println("></span>");
         
         // PAUSE, UNPAUSE, CHECKPOINT
-        pw.println("<input ");
+        pw.print("<span class=\"bgroup\">");
+        pw.print("<input");
         if(!cj.isPausable()) {
-            pw.println(" disabled ");
+            pw.print(" disabled");
         }
-        pw.println(" type='submit' name='action' value='pause'/>");
-        pw.println("<input ");
+        pw.println(" type='submit' name='action' value='pause'>");
+        pw.print("<input");
         if(!cj.isUnpausable()) {
-            pw.println(" disabled ");
+            pw.print(" disabled");
         }
-        pw.println(" type='submit' name='action' value='unpause'/>");
-        pw.println("<input ");
+        pw.println(" type='submit' name='action' value='unpause'>");
+        pw.print("<input");
         if(!cj.isRunning()) { 
-            pw.println(" disabled ");
+            pw.print(" disabled");
         }
-        pw.println(" type='submit' name='action' value='checkpoint'/>");
+        pw.println(" type='submit' name='action' value='checkpoint'>");
+        pw.println("</span>");
         
         // TERMINATE, RESET
-        pw.println("&nbsp;&nbsp;&nbsp;<input ");
+        pw.print("<span class=\"bgroup\"><input");
         if(!cj.isRunning()) {
-            pw.println(" disabled ");
+            pw.print(" disabled");
         }
-        pw.println(" type='submit' name='action' value='terminate'/>");
-        pw.println("<input type='submit' name='action' value='teardown' ");
+        pw.println(" type='submit' name='action' value='terminate'>");
+        pw.print("<input type='submit' name='action' value='teardown' ");
         pw.print(cj.hasApplicationContext()?"":"disabled='disabled' title='no instance'");
-        pw.println("/><br/>");
+        pw.println(">");
+        pw.println("</span>");
 
         
         // display checkpoint options
         if(cj.getCheckpointService()!=null) {
             Checkpoint recoveryCheckpoint = cj.getCheckpointService().getRecoveryCheckpoint();
             if(recoveryCheckpoint!=null) {
-                pw.println("recover from <i>"+recoveryCheckpoint.getName()+"</i>");
+                pw.println("<br>recover from <i>"+recoveryCheckpoint.getName()+"</i>");
             } else if (cj.getCheckpointService().hasAvailableCheckpoints() && cj.isLaunchable()) {
-                pw.println("select an available checkpoint before launch to recover:");
+                pw.println("<br>select an available checkpoint before launch to recover:");
                 pw.println("<select name='checkpoint'><option> </option>");
                 for(File f : cj.getCheckpointService().findAvailableCheckpointDirectories()) {
                     pw.println("<option>"+f.getName()+"</option>");
@@ -314,11 +322,13 @@ public class JobResource extends BaseResource {
 
         
         // configuration 
-        pw.println("configuration: ");
+        pw.print("<div>configuration: ");
         printLinkedFile(pw, cj.getPrimaryConfig());
+        pw.println("</div>");
         for(File f : cj.getImportedConfigs(cj.getPrimaryConfig())) {
-            pw.println("imported: ");
+            pw.print("<div>imported: ");
             printLinkedFile(pw,f);
+            pw.println("</div>");
         }
         
 //        if(cj.isXmlOk()) {
@@ -337,21 +347,21 @@ public class JobResource extends BaseResource {
 //            // pw.println("XML NOT WELL-FORMED<br/>");
 //        }
 
-        pw.println("<h2>Job Log ");
-        pw.println("(<a href='jobdir/"
+        pw.print("<h2>Job Log ");
+        pw.print("(<a href='jobdir/"
                 +cj.getJobLog().getName()
                 +"?format=paged&pos=-1&lines=-128&reverse=y'><i>more</i></a>)");
         pw.println("</h2>");
-        pw.println("<div style='font-family:monospace; white-space:pre-wrap; white-space:normal; text-indent:-10px; padding-left:10px;'>");
+        pw.println("<div class=\"log\">");
         if(cj.getJobLog().exists()) {
             try {
                 List<String> logLines = new LinkedList<String>();
                 FileUtils.pagedLines(cj.getJobLog(), -1, -5, logLines);
                 Collections.reverse(logLines);
                 for(String line : logLines) {
-                    pw.print("<p style='margin:0px'>");
+                    pw.print("<div>");
                     StringEscapeUtils.escapeHtml(pw,line);
-                    pw.print("</p>");
+                    pw.println("</div>");
                 }
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe); 
@@ -362,43 +372,48 @@ public class JobResource extends BaseResource {
         pw.println("<h2>Job is "+cj.getJobStatusDescription()+"</h2>");
 
         if(cj.hasApplicationContext()) {
-            pw.println("<b>Totals</b><br/>&nbsp;&nbsp;");
-            pw.println(cj.uriTotalsReport());
-            pw.println("<br/>&nbsp;&nbsp;");
-            pw.println(cj.sizeTotalsReport());
+            pw.println("<dl id=\"jobstats\">");
+            
+            pw.println("<dt>Totals</dt>");
+            pw.println("<dd>" + cj.uriTotalsReport() + "<br>");
+            pw.println(cj.sizeTotalsReport() + "</dd>");
                         
-            pw.println("<br/><b>Alerts</b><br>&nbsp;&nbsp;");
-            pw.println(cj.getAlertCount()==0 ? "<i>none</i>" : cj.getAlertCount()); 
-            if(cj.getAlertCount()>0) {
+            pw.println("<dt>Alerts</dt>");
+            pw.print("<dd>");
+            pw.println(cj.getAlertCount() == 0 ? "<i>none</i>" : cj.getAlertCount()); 
+            if (cj.getAlertCount() > 0) {
                 printLinkedFile(
                         pw, 
                         cj.getCrawlController().getLoggerModule().getAlertsLogPath().getFile(), 
                         "tail alert log...",
                         "format=paged&pos=-1&lines=-128");
             }
+            pw.println("</dd>");
             
-            pw.println("<br/><b>Rates</b><br/>&nbsp;&nbsp;");
-            pw.println(cj.rateReport());
+            pw.println("<dt>Rates</dt>");
+            pw.println("<dd>" + cj.rateReport() + "</dd>");
             
-            pw.println("<br/><b>Load</b><br/>&nbsp;&nbsp;");
-            pw.println(cj.loadReport());
+            pw.println("<dt>Load</dt>");
+            pw.println("<dd>" + cj.loadReport() + "</dd>");
             
-            pw.println("<br/><b>Elapsed</b><br/>&nbsp;&nbsp;");
-            pw.println(cj.elapsedReport());
+            pw.println("<dt>Elapsed</dt>");
+            pw.println("<dd>" + cj.elapsedReport() + "</dd>");
             
-            pw.println("<br/><a href='report/ToeThreadsReport'><b>Threads</b></a><br/>&nbsp;&nbsp;");
-            pw.println(cj.threadReport());
+            pw.println("<dt><a href=\"report/ToeThreadsReport\">Threads</a></dt>");
+            pw.println("<dd>" + cj.threadReport() + "&nbsp;</dd>");
     
-            pw.println("<br/><a href='report/FrontierSummaryReport'><b>Frontier</b></a><br/>&nbsp;&nbsp;");
-            pw.println(cj.frontierReport());
+            pw.println("<dt><a href='report/FrontierSummaryReport'>Frontier</a></dt>");
+            pw.println("<dd>" + cj.frontierReport() + "&nbsp;</dd>");
             
-            pw.println("<br/><b>Memory</b><br/>&nbsp;&nbsp;");
-            pw.println(getEngine().heapReport());
+            pw.println("<dt>Memory</dt>");
+            pw.println("<dd>" + getEngine().heapReport() + "</dd>");
+
+            pw.println("</dl>");
             
             if ((cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable()))
                     && cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().exists()) {
                 // show crawl log for running or finished crawls
-                pw.println("<h3>Crawl Log");
+                pw.print("<h3>Crawl Log");
                 printLinkedFile(
                         pw,
                         cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile(),
@@ -475,11 +490,14 @@ public class JobResource extends BaseResource {
 
         pw.println("<h2>Copy</h2>");
         pw.println(
-            "<form method='POST'>Copy job to <input name='copyTo'/>" +
-            "<input value='copy' type='submit'/>" +
-            "<input id='asProfile' type='checkbox' name='asProfile'/>" +
+            "<form method='POST'>Copy job to <input name='copyTo'>" +
+            "<input value='copy' type='submit'>" +
+            "<input id='asProfile' type='checkbox' name='asProfile'>" +
             "<label for='asProfile'>as profile</label></form>");
-        pw.println("<hr/>");
+        //pw.println("<hr>");
+        
+        pw.println("</body>");
+        pw.println("</html>");
     }
 
     /**
@@ -508,7 +526,7 @@ public class JobResource extends BaseResource {
         if(EDIT_FILTER.accept(f)) {
             pw.println("[<a href='" 
                     + relativePath 
-                    +  "?format=textedit'>edit</a>]<br/>");
+                    +  "?format=textedit'>edit</a>]");
         }
     }
 

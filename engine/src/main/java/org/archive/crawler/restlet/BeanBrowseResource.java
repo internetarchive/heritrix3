@@ -194,9 +194,14 @@ public class BeanBrowseResource extends JobRelatedResource {
     }
 
     protected void writeHtml(Writer writer) {
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if (!baseRef.endsWith("/")) baseRef += "/";
         PrintWriter pw = new PrintWriter(writer); 
         pw.println("<html>");
-        pw.println("<head><title>Crawl beans in "+cj.getShortName()+"</title></head>");
+        pw.println("<head>");
+        pw.println("<title>Crawl beans in "+cj.getShortName()+"</title>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
+        pw.println("</head>");
         pw.println("<body>");
         pw.println("<h1>Crawl beans in built job <i><a href='/engine/job/"
                 +TextUtils.urlEscape(cj.getShortName())

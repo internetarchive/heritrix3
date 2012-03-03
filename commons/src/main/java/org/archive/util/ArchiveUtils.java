@@ -557,6 +557,9 @@ public class ArchiveUtils {
     }
 
     private static String doubleToString(double val, int maxFractionDigits, int minFractionDigits) {
+        // apparently NumberFormat generates Replacement Character (U+FFFD) for NaN in non-latin1 environment.
+        // following line explicitly produces infinite symbol for NaN.
+        if (Double.isNaN(val)) return "\u221E";
         NumberFormat f = NumberFormat.getNumberInstance(Locale.US); 
         f.setMaximumFractionDigits(maxFractionDigits);
         f.setMinimumFractionDigits(minFractionDigits);

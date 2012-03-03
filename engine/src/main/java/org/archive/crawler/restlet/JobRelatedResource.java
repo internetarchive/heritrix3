@@ -156,7 +156,7 @@ public abstract class JobRelatedResource extends BaseResource {
             String name = getBeanToNameMap().get(obj);
             pw.println("<li><a href='"+prefix+name+"'>"+name+"</a>");
             pw.println("<span style='color:#999'>"+obj.getClass().getName()+"</span><ul>");
-            close = "</ul></li>";
+            close = "</ul></li>\n";
         }
         if(!alreadyWritten.contains(obj)) {
             alreadyWritten.add(obj);
@@ -183,7 +183,7 @@ public abstract class JobRelatedResource extends BaseResource {
                 pw.println("<span style='color:red'>"+ipe.getMessage()+"</span>");
             }
         }
-        pw.println(close);
+        pw.print(close);
     }
 
 

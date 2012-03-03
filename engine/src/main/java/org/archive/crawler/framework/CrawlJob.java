@@ -208,7 +208,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         writeHtmlTo(pw,"./");
     }
     public void writeHtmlTo(PrintWriter pw, String uriPrefix) {
-        pw.println("<span class='job'>");
+//        pw.println("<span class='job'>");
 //        if(isRunning()) {
 //            pw.println("ACTIVE; "+getCrawlController().getState()+":");
 //        }
@@ -225,13 +225,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
           pw.print(" ");
         }
         pw.println(getLaunchCount() + " launches");      
-        pw.println("<br/><span style='color:#666'>");
+        pw.println("<br><span style='color:#666'>");
         pw.println(getPrimaryConfig());
-        pw.println("</span><br/>");
+        pw.println("</span><br>");
         if(lastLaunch!=null) {
             pw.println("(last at "+lastLaunch+")");
         }
-        pw.println("</span>");
+//        pw.println("</span>");
     }
 
     /**

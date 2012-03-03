@@ -242,8 +242,15 @@ public class ScriptResource extends JobRelatedResource {
     }
 
     protected void writeHtml(Writer writer) {
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if (!baseRef.endsWith("/")) baseRef += "/";
         PrintWriter pw = new PrintWriter(writer); 
-        pw.println("<head><title>Script in "+cj.getShortName()+"</title></head>");
+        pw.println("<html>");
+        pw.println("<head>");
+        pw.println("<title>Script in "+cj.getShortName()+"</title>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
+        pw.println("</head>");
+        pw.println("<body>");
         pw.println("<h1>Execute script for job <i><a href='/engine/job/"
                     +TextUtils.urlEscape(cj.getShortName())
                     +"'>"+cj.getShortName()+"</a></i></h1>");
@@ -270,7 +277,7 @@ public class ScriptResource extends JobRelatedResource {
         }
 
         pw.println("<form method='POST'>");
-        pw.println("<input type='submit' value='execute'></input>");
+        pw.println("<input type='submit' value='execute'>");
         pw.println("<select name='engine'>");;
         for(ScriptEngineFactory f : FACTORIES) {
             String opt = f.getNames().get(0);
@@ -284,14 +291,16 @@ public class ScriptResource extends JobRelatedResource {
         pw.println("</form>");
         pw.println(
                 "The script will be executed in an engine preloaded " +
-                "with (global) variables: <ul>\n" +
-                "<li>rawOut: a PrintWriter for arbitrary text output to this page</li>\n" +
-                "<li>htmlOut: a PrintWriter for HTML output to this page</li>\n" +
-                "<li>job: the current CrawlJob instance</li>\n" +
-                "<li>appCtx: current job ApplicationContext, if any</li>\n" +
-                "<li>scriptResource: the ScriptResource implementing this " +
+                "with (global) variables:\n<ul>\n" +
+                "<li><code>rawOut</code>: a PrintWriter for arbitrary text output to this page</li>\n" +
+                "<li><code>htmlOut</code>: a PrintWriter for HTML output to this page</li>\n" +
+                "<li><code>job</code>: the current CrawlJob instance</li>\n" +
+                "<li><code>appCtx</code>: current job ApplicationContext, if any</li>\n" +
+                "<li><code>scriptResource</code>: the ScriptResource implementing this " +
                 "page, which offers utility methods</li>\n" +
                 "</ul>");
+        pw.println("</body>");
+        pw.println("</html>");
 
         pw.flush();
     }
