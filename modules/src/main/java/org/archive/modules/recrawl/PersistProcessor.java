@@ -19,8 +19,6 @@
 
 package org.archive.modules.recrawl;
 
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -40,7 +38,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.Processor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.OneLineSimpleLogger;
@@ -65,7 +62,7 @@ import com.sleepycat.je.EnvironmentConfig;
  * 
  * @author gojomo
  */
-public abstract class PersistProcessor extends Processor {
+public abstract class PersistProcessor extends AbstractPersistProcessor {
 
     private static final long serialVersionUID = 1L;
 
@@ -82,15 +79,6 @@ public abstract class PersistProcessor extends Processor {
         dbConfig.setAllowCreate(true);
         dbConfig.setDeferredWrite(true);
         HISTORY_DB_CONFIG = dbConfig;
-    }
-
-    /** @see RecrawlAttributeConstants#A_WRITE_TAG */
-    boolean onlyStoreIfWriteTagPresent = true;
-    public boolean getOnlyStoreIfWriteTagPresent() {
-        return onlyStoreIfWriteTagPresent;
-    }
-    public void setOnlyStoreIfWriteTagPresent(boolean onlyStoreIfWriteTagPresent) {
-        this.onlyStoreIfWriteTagPresent = onlyStoreIfWriteTagPresent;
     }
 
     public PersistProcessor() {
@@ -111,35 +99,6 @@ public abstract class PersistProcessor extends Processor {
     public static String persistKeyFor(String uri) {
         // use a case-sensitive SURT for uniqueness and sorting benefits
         return SURT.fromURI(uri,true);
-    }
-
-    /**
-     * Whether the current CrawlURI's state should be persisted (to log or
-     * direct to database)
-     * 
-     * @param curi
-     *            CrawlURI
-     * @return true if state should be stored; false to skip persistence
-     */
-    protected boolean shouldStore(CrawlURI curi) {
-        if (getOnlyStoreIfWriteTagPresent()) {
-            @SuppressWarnings("unchecked")
-            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
-            return history != null && history[0] != null && history[0].containsKey(A_WRITE_TAG);
-        } else {
-            return curi.isSuccess(); 
-        }
-    }
-
-    /**
-     * Whether the current CrawlURI's state should be loaded
-     * 
-     * @param curi CrawlURI
-     * @return true if state should be loaded; false to skip loading
-     */
-    protected boolean shouldLoad(CrawlURI curi) {
-        // TODO: don't load some (prereqs?)
-        return true;
     }
 
     /**
