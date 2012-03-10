@@ -413,7 +413,7 @@ public class JobResource extends BaseResource {
             if ((cj.isRunning() || (cj.hasApplicationContext() && !cj.isLaunchable()))
                     && cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().exists()) {
                 // show crawl log for running or finished crawls
-                pw.print("<h3>Crawl Log");
+                pw.print("<h3>Crawl Log ");
                 printLinkedFile(
                         pw,
                         cj.getCrawlController().getLoggerModule().getCrawlLogPath().getFile(),
