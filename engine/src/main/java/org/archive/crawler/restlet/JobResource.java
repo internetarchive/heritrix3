@@ -364,7 +364,7 @@ public class JobResource extends BaseResource {
                     pw.println("</div>");
                 }
             } catch (IOException ioe) {
-                throw new RuntimeException(ioe); 
+                pw.println("<div class=\"error\">error reading job log</div>");
             }
         }
         pw.println("</div>");
@@ -434,7 +434,7 @@ public class JobResource extends BaseResource {
                         pw.println();
                     }
                 } catch (IOException ioe) {
-                    throw new RuntimeException(ioe); 
+                    pw.println("--error reading crawl log--");
                 }
                 pw.println("</pre>");
             }
