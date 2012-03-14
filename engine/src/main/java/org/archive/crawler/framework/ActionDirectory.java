@@ -312,7 +312,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         PrintWriter rawOut = new PrintWriter(rawString);
         Exception ex = null;
         engine.put("rawOut", rawOut);
-        engine.put("appCtx",appCtx);
+        engine.put("appCtx", appCtx);
         
         // evaluate and record any exception
         try {
