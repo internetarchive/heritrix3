@@ -165,12 +165,11 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * current logs. 
      */
     String logGeneration = "";
-        
+    
     protected ArrayLongFPCache cache;
-   
+    
     /**
      * Constructor.
-     * @param name Name of this processor.
      */
     public CrawlMapper() {
         super();
@@ -184,7 +183,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
     
     @Override
     protected void innerProcess(CrawlURI puri) {
-        throw new AssertionError();
+        throw new Error();
     }
 
     @Override
