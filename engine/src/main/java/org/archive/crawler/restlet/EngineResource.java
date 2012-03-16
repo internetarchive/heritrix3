@@ -251,6 +251,7 @@ public class EngineResource extends BaseResource {
             baseRef += "/";
         }
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head><title>"+engineTitle+"</title>");
         pw.println("<base href='"+baseRef+"'/>");
@@ -260,10 +261,9 @@ public class EngineResource extends BaseResource {
         
         Flash.renderFlashesHTML(pw, getRequest());
 
-        pw.println("<b>Memory:</b>");
-        pw.println(engine.heapReport());
-        pw.println("<br><br>");
-        pw.println("<b>Jobs Directory</b>: <a href='jobsdir'>"+jobsDir.getAbsolutePath()+"</a>");
+        pw.println("<p><b>Memory:</b> " + engine.heapReport() + "</p>");
+        pw.println("<p><b>Jobs Directory</b>: <a href='jobsdir'>"
+                + jobsDir.getAbsolutePath() + "</a></p>");
         
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
         
@@ -285,24 +285,24 @@ public class EngineResource extends BaseResource {
         
         // create new job with defaults
         pw.println("<form method='POST'>\n"
-        		+ "Create new job directory with recommended starting configuration<br>\n"
-        		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + File.separator
-        		+ "<input name='createpath'/>\n"
+                + "<div>Create new job directory with recommended starting configuration</div>\n"
+                + "<div><b>Path:</b> " + jobsDir.getAbsolutePath()
+                + File.separator + "<input name='createpath'>\n"
         		+ "<input type='submit' name='action' value='create'>\n"
-        		+ "</form>\n");
+        		+ "</div></form>\n");
 
         pw.println("<form method='POST'>");
-        pw.println("Specify a path to a pre-existing job directory<br>");
-        pw.println("<b>Path:</b> <input size='53' name='addpath'>");
+        pw.println("<div>Specify a path to a pre-existing job directory</div>");
+        pw.println("<div><b>Path:</b> <input size='53' name='addpath'>");
         pw.println("<input type='submit' name='action' value='add'>");
-        pw.println("</form>");
+        pw.println("</div></form>");
 
         pw.println(
-                "You may also compose or copy a valid job directory into " +
+                "<p>You may also compose or copy a valid job directory into " +
                 "the main jobs directory via outside means, then use the " +
                 "'rescan' button above to make it appear in this interface. Or, " +
                 "use the 'copy' functionality at the botton of any existing " +
-                "job's detail page.");
+                "job's detail page.</p>");
         
         pw.println("<h2>Exit Java</h2>");
 
@@ -320,8 +320,10 @@ public class EngineResource extends BaseResource {
                     +checkName+"'><label for='"+checkName+"'> Ignore job '"
                     +entry.getKey()+"' and exit anyway</label><br>"); 
         }
+        pw.println("<div>");
         pw.println("<input type='submit' name='action' value='Exit Java Process'>");
-        pw.println("<input type='checkbox' name=\"I'm sure\" id=\"I'm sure\"><label for=\"I'm sure\"> I'm sure</label>");
+        pw.println("<input type='checkbox' name='im_sure' id='im_sure'><label for='im_sure'> I'm sure</label>");
+        pw.println("</div>");
         pw.println("</form>");
         pw.println("</body>");
         pw.println("</html>");

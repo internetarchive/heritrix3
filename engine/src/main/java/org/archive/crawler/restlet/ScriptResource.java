@@ -244,7 +244,8 @@ public class ScriptResource extends JobRelatedResource {
     protected void writeHtml(Writer writer) {
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if (!baseRef.endsWith("/")) baseRef += "/";
-        PrintWriter pw = new PrintWriter(writer); 
+        PrintWriter pw = new PrintWriter(writer);
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>Script in "+cj.getShortName()+"</title>");

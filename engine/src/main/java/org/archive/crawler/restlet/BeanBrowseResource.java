@@ -195,8 +195,11 @@ public class BeanBrowseResource extends JobRelatedResource {
 
     protected void writeHtml(Writer writer) {
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if (!baseRef.endsWith("/")) baseRef += "/";
+        if (!baseRef.endsWith("/")) {
+            baseRef += "/";
+        }
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>Crawl beans in "+cj.getShortName()+"</title>");
@@ -229,14 +232,16 @@ public class BeanBrowseResource extends JobRelatedResource {
                     if(bwrap.isWritableProperty(propPath) 
                             && (bwrap.getDefaultEditor(type)!=null|| type == String.class)
                             && !Collection.class.isAssignableFrom(type)) {
+                        pw.println("<div>");
                         pw.println(beanPath+" = ");
                         writeObject(pw, null, target);
-                        pw.println("<a href=\"javascript:document.getElementById('editform').style.display='inline';void(0);\">edit</a>");
-                        pw.println("<span id='editform' style=\'display:none\'>Note: it may not be appropriate/effective to change this value in an already-built crawl context.<br/>");
-                        pw.println("<form  id='editform' method='POST'>");
-                        pw.println("<input type='hidden' name='beanPath' value='"+beanPath+"'>");
+                        pw.println(" <a href=\"javascript:document.getElementById('editform').style.display='block';void(0);\">edit</a>");
+                        pw.println("</div>");
+                        pw.println("<form id='editform' style=\'display:none\' method='POST'>");
+                        pw.println("<div>Note: it may not be appropriate/effective to change this value in an already-built crawl context.</div>");
+                        pw.println("<div><input type='hidden' name='beanPath' value='"+beanPath+"'>");
                         pw.println(beanPath + " = <input type='text' name='newVal' style='width:400px' value='"+target+"'>");
-                        pw.println("<input type='submit' value='update'></form></span>");
+                        pw.println("<input type='submit' value='update'></div></form>");
                     } else {
                         writeObject(pw, null, target, beanPath);
                     }
