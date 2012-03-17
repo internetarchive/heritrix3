@@ -125,6 +125,9 @@ public class Checkpoint implements InitializingBean {
     public void saveJson(String beanName, JSONObject json) {
         try {
             File targetFile = new File(getCheckpointDir().getFile(),beanName);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("saving json to " + targetFile);
+            }
             FileUtils.writeStringToFile(
                     targetFile,
                     json.toString());
@@ -137,6 +140,9 @@ public class Checkpoint implements InitializingBean {
     public JSONObject loadJson(String beanName) {
         File sourceFile = new File(getCheckpointDir().getFile(),beanName);
         try {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("reading json from " + sourceFile);
+            }
             return new JSONObject(FileUtils.readFileToString(sourceFile));
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -148,6 +154,9 @@ public class Checkpoint implements InitializingBean {
     public BufferedWriter saveWriter(String beanName, String extraName) throws IOException {
         try {
             File targetFile = new File(getCheckpointDir().getFile(),beanName+"-"+extraName);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("opening for writing: " + targetFile);
+            }
             return new BufferedWriter(new FileWriter(targetFile)); 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"unable to save checkpoint writer state "+extraName+" of "+beanName,e);

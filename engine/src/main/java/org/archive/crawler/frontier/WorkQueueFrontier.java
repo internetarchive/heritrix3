@@ -810,8 +810,6 @@ implements Closeable,
      * @param wq
      */
     protected void reenqueueQueue(WorkQueue wq) { 
-        //TODO:SPRINGY set overrides by queue? 
-        getQueuePrecedencePolicy().queueReevaluate(wq);
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("queue reenqueued: " +
                 wq.getClassKey());
@@ -1012,6 +1010,7 @@ implements Closeable,
         } else if (delay_ms > 0) {
             snoozeQueue(wq, now, delay_ms);
         } else {
+            getQueuePrecedencePolicy().queueReevaluate(wq);
             reenqueueQueue(wq);
         }
     }
