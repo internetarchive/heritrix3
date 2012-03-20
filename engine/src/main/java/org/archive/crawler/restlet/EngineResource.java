@@ -145,7 +145,7 @@ public class EngineResource extends BaseResource {
         	}
         } else if ("Exit Java Process".equals(action)) { 
             boolean cancel = false; 
-            if(!"on".equals(form.getFirstValue("I'm sure"))) {
+            if(!"on".equals(form.getFirstValue("im_sure"))) {
                 Flash.addFlash(
                         getResponse(),
                         "You must tick \"I'm sure\" to trigger exit", 
