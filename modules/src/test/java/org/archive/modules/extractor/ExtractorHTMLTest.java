@@ -66,6 +66,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         "<img src=\"foo.gif\"> IMG",
         "http://www.archive.org/start/foo.gif",
+        
     };
     
         
@@ -378,6 +379,40 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         String expected = "http://www.example.com/EmbedZoomifySlideshowViewer.xml";
         assertTrue("outlinks should contain: "+expected,
                 CollectionUtils.exists(curi.getOutLinks(),destinationsIsPredicate(expected)));
+    }
+    
+    /**
+     * HER-1998 
+     * @throws URIException 
+     */
+    public  void testConditionalComment1() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
+    
+        CharSequence cs = 
+            "<!--[if IE 6]><img src=\"foo.gif\"><![endif]-->" +
+            "<!--[if IE 6]><script src=\"foo.js\"><![endif]-->";
+ 
+        ExtractorHTML extractor = new ExtractorHTML();
+        UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
+        extractor.setLoggerModule(ulm);
+        CrawlMetadata metadata = new CrawlMetadata();
+        metadata.afterPropertiesSet();
+        extractor.setMetadata(metadata);
+        extractor.afterPropertiesSet();
+        
+        extractor.extract(curi, cs);
+        
+        Link[] links = curi.getOutLinks().toArray(new Link[0]);
+        Arrays.sort(links); 
+        
+        String dest1 = "http://www.example.com/foo.gif";
+        String dest2 = "http://www.example.com/foo.js";
+
+        assertEquals("outlink1 from conditional comment img src",dest1,
+                links[0].getDestination().toString());
+        assertEquals("outlink2 from conditional comment script src",dest2,
+                links[1].getDestination().toString());
+        
     }
         
 }
