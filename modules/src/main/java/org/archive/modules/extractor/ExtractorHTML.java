@@ -76,9 +76,29 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     public final static String A_META_ROBOTS = "meta-robots";
     
+    {
+        setMaxElementLength(64); 
+    }
+    public int getMaxElementLength() {
+        return (Integer) kp.get("maxElementLength");
+    }
+    public void setMaxElementLength(int max) {
+        kp.put("maxElementLength",max);
+    }
+      
     
     /**
      * Compiled relevant tag extractor.
+     * 
+     * HER-1998 - Modified part 8 to allow conditional html comments.
+     * Conditional HTML comment example:
+     * "<!--[if expression]> HTML <![endif]-->"
+     * 
+     * This technique is commonly used to reference CSS & JavaScript that are designed to deal with the quirks of a specific version of Internet Explorer.
+     * There is another syntax for conditional comments which already gets parsed by the regex since it doesn't start with "<!--"
+     * Ex. <!if expression> HTML <!endif>
+     * 
+     * https://en.wikipedia.org/wiki/Conditional_Comments
      *
      * <p>
      * This pattern extracts either:
@@ -98,18 +118,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * <li> 7: META
      * <li> 8: !-- comment --
      */
-// version w/ less unnecessary backtracking
-    
-    {
-        setMaxElementLength(64); 
-    }
-    public int getMaxElementLength() {
-        return (Integer) kp.get("maxElementLength");
-    }
-    public void setMaxElementLength(int max) {
-        kp.put("maxElementLength",max);
-    }
-      
+    // version w/ less unnecessary backtracking
     static final String RELEVANT_TAG_EXTRACTOR =
       "(?is)<(?:((script[^>]*+)>.*?</script)" + // 1, 2
       "|((style[^>]*+)>.*?</style)" + // 3, 4

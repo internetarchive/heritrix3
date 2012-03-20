@@ -385,14 +385,21 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
      * HER-1998 
      * @throws URIException 
      */
-    public void testConditionalComment1() throws URIException {
+    public  void testConditionalComment1() throws URIException {
         CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
     
         CharSequence cs = 
             "<!--[if IE 6]><img src=\"foo.gif\"><![endif]-->" +
             "<!--[if IE 6]><script src=\"foo.js\"><![endif]-->";
-
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
+ 
+        ExtractorHTML extractor = new ExtractorHTML();
+        UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
+        extractor.setLoggerModule(ulm);
+        CrawlMetadata metadata = new CrawlMetadata();
+        metadata.afterPropertiesSet();
+        extractor.setMetadata(metadata);
+        extractor.afterPropertiesSet();
+        
         extractor.extract(curi, cs);
         
         Link[] links = curi.getOutLinks().toArray(new Link[0]);
