@@ -250,6 +250,15 @@ public class ScriptResource extends JobRelatedResource {
         pw.println("<head>");
         pw.println("<title>Script in "+cj.getShortName()+"</title>");
         pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
+        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/codemirror.css") + "'>");
+        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/util/dialog.css") + "'>");
+        pw.println("<script src='" + getStaticRef("codemirror/codemirror.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/groovy.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/clike.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/javascript.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/dialog.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/searchcursor.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/search.js") + "'></script>");
         pw.println("</head>");
         pw.println("<body>");
         pw.println("<h1>Execute script for job <i><a href='/engine/job/"
@@ -279,7 +288,7 @@ public class ScriptResource extends JobRelatedResource {
 
         pw.println("<form method='POST'>");
         pw.println("<input type='submit' value='execute'>");
-        pw.println("<select name='engine'>");;
+        pw.println("<select name='engine' id='selectEngine'>");;
         for(ScriptEngineFactory f : FACTORIES) {
             String opt = f.getNames().get(0);
             pw.println("<option "
@@ -287,7 +296,7 @@ public class ScriptResource extends JobRelatedResource {
                     +"value='"+opt+"'>"+f.getLanguageName()+"</option>");
         }
         pw.println("</select>");
-        pw.println("<textarea rows='20' style='width:100%' name=\'script\'>"+script+"</textarea>");
+        pw.println("<textarea rows='20' style='width:100%' name=\'script\' id='editor'>"+script+"</textarea>");
         pw.println("<input type='submit' value='execute'></input>");
         pw.println("</form>");
         pw.println(
@@ -300,6 +309,17 @@ public class ScriptResource extends JobRelatedResource {
                 "<li><code>scriptResource</code>: the ScriptResource implementing this " +
                 "page, which offers utility methods</li>\n" +
                 "</ul>");
+        pw.println("<script>");
+        pw.println("var modemap = {beanshell: 'text/x-java', groovy: 'groovy', js: 'javascript'};");
+        pw.println("var selectEngine = document.getElementById('selectEngine');");
+        pw.println("var editor = document.getElementById('editor');");
+        pw.println("var cmopts = {");
+        pw.println("    mode: modemap[selectEngine.value],");
+        pw.println("    lineNumbers: true, autofocus: true, indentUnit: 4");
+        pw.println("}");
+        pw.println("var cm = CodeMirror.fromTextArea(editor, cmopts);");
+        pw.println("selectEngine.onchange = function(e) { cm.setOption('mode', modemap[selectEngine.value]); }");
+        pw.println("</script>");
         pw.println("</body>");
         pw.println("</html>");
 
