@@ -1,0 +1,9 @@
+CodeMirror: an in-browser code editor
+
+Provides a nicer editing experience for the crawl configuration and script
+console.
+
+We only include here the modes that Heritrix actually uses.
+
+License: MIT-style
+Website: http://codemirror.net/

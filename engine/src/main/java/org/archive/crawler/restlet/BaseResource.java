@@ -68,8 +68,12 @@ public abstract class BaseResource extends Resource {
         return super.getPreferredVariant();
     }
     
-    protected String getStylesheetRef() {
+    protected String getStaticRef(String resource) {
         String rootRef = getRequest().getRootRef().toString();
-        return rootRef + "/engine/static/engine.css";
+        return rootRef + "/engine/static/" + resource;
+    }
+
+    protected String getStylesheetRef() {
+        return getStaticRef("engine.css");
     }
 }
