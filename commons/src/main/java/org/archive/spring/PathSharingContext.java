@@ -21,6 +21,8 @@ package org.archive.spring;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -133,12 +135,16 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
     
     protected File getConfigurationFile() {
         String primaryConfigurationPath =  getPrimaryConfigurationPath();
-        if(primaryConfigurationPath.startsWith("file:")) {
+        if (primaryConfigurationPath.startsWith("file:")) {
             // strip URI-scheme if present (as is usual)
-            primaryConfigurationPath = primaryConfigurationPath.substring(5);
+            try {
+                return new File(new URI(primaryConfigurationPath));
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return new File(primaryConfigurationPath);
         }
-        File configFile = new File(primaryConfigurationPath);
-        return configFile;
     }
     
     protected void initLaunchDir() {

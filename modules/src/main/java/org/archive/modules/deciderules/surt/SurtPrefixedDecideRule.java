@@ -23,10 +23,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.checkpointing.Checkpoint;
+import org.archive.checkpointing.Checkpointable;
 import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
@@ -36,6 +39,10 @@ import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.spring.ConfigFile;
 import org.archive.util.SurtPrefixSet;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -56,7 +63,8 @@ import org.springframework.context.event.ContextStartedEvent;
  * @author gojomo
  */
 public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
-        SeedListener, ApplicationListener<ApplicationEvent> {
+        SeedListener, ApplicationListener<ApplicationEvent>, Checkpointable,
+        BeanNameAware {
     
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
@@ -219,6 +227,9 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
      */
     protected void buildSurtPrefixSet() {
         if (getSurtsSource() != null) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("reading surt prefixes from " + getSurtsSource());
+            }
             Reader reader = getSurtsSource().obtainReader();
             try {
                 surtPrefixes.importFromMixed(reader, true);
@@ -277,12 +288,56 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
         }
         throw new IllegalArgumentException("decision must be ACCEPT or REJECT");
     }
-    
+
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ContextStartedEvent) {
-            readPrefixes();
+            if (recoveryCheckpoint != null) {
+                JSONObject json = recoveryCheckpoint.loadJson(beanName);
+                try {
+                    JSONArray jsonArray = json.getJSONArray("surtPrefixes");
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        surtPrefixes.add(jsonArray.getString(i));
+                    }
+                } catch (JSONException e) {
+                    throw new IllegalStateException(e);
+                }
+            } else {
+                readPrefixes();
+            }
         }
+    }
+    
+    // BeanNameAware
+    protected String beanName; 
+    public void setBeanName(String name) {
+        this.beanName = name;
+    }
+
+    @Override
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+    }
+    
+    @Override
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("surtPrefixes", surtPrefixes);
+            checkpointInProgress.saveJson(beanName, json);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+    }
+    
+    protected Checkpoint recoveryCheckpoint;
+    @Override
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        this.recoveryCheckpoint = recoveryCheckpoint;
     }
 
 }//EOC

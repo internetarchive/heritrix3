@@ -37,7 +37,6 @@ public class PersistStoreProcessor extends PersistOnlineProcessor
     public PersistStoreProcessor() {
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         store.put(persistKeyFor(curi),curi.getPersistentDataMap());
