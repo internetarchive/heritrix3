@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @contributor Travis Wellman <travis@archive.org>
  */
 
-class IpAddressSetDecideRule extends PredicatedDecideRule {
+public class IpAddressSetDecideRule extends PredicatedDecideRule {
 
 //    private static final Logger LOGGER = Logger.getLogger(IpAddressSetDecideRule.class.getCanonicalName());
     private static final long serialVersionUID = -3670434739183271441L;
@@ -50,7 +50,6 @@ class IpAddressSetDecideRule extends PredicatedDecideRule {
     @Override
     protected boolean evaluate(CrawlURI curi) {
         String hostAddress = getHostAddress(curi);
-        System.out.println("hostAddress for "+ curi +" "+ hostAddress);
         return hostAddress != null &&
                 ipAddresses.contains(hostAddress.intern());
     }
