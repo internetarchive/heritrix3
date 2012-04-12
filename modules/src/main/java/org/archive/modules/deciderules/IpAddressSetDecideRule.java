@@ -78,9 +78,13 @@ public class IpAddressSetDecideRule extends PredicatedDecideRule {
         // TODO:FIXME: have fetcher insert exact IP contacted into curi,
         // use that rather than inferred by CrawlHost lookup 
         CrawlHost crlh = getServerCache().getHostFor(curi.getUURI());
-        if (crlh == null) { return null; }
+        if (crlh == null) {
+            return null;
+        }
         InetAddress inetadd = crlh.getIP();
-        if (inetadd == null) { return null; }
+        if (inetadd == null) {
+            return null;
+        }
         return inetadd.getHostAddress();
     }
 }

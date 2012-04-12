@@ -1,7 +1,0 @@
-*.class
-bin
-commons/target
-dist/target
-engine/target
-modules/target
-hq/target
