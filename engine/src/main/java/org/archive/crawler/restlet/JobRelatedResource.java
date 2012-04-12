@@ -23,7 +23,6 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.PrintWriter;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;

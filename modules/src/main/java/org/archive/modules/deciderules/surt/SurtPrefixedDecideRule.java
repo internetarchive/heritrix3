@@ -67,7 +67,6 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
         BeanNameAware {
     
     private static final long serialVersionUID = 3L;
-    @SuppressWarnings("unused")
     private static final Logger logger =
         Logger.getLogger(SurtPrefixedDecideRule.class.getName());
 
