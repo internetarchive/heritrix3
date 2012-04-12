@@ -62,6 +62,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class RuntimeLimitEnforcer extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
     
     protected static Logger logger = Logger.getLogger(

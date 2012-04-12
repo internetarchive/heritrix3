@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationListener;
  * 
  * @contributor gojomo
  */
-public class CrawlLimitEnforcer implements ApplicationListener {
+public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent> {
 
     /**
      * Maximum number of bytes to download. Once this number is exceeded 

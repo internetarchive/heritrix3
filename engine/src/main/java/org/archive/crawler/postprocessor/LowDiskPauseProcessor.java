@@ -45,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Deprecated
 public class LowDiskPauseProcessor extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     /**

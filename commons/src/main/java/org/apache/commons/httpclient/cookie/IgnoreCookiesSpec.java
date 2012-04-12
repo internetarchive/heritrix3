@@ -42,7 +42,6 @@ import org.apache.commons.httpclient.NameValuePair;
  * 
  * @since 3.0
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public class IgnoreCookiesSpec implements CookieSpec {
 
     /**
@@ -55,6 +54,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * Returns an empty {@link Cookie cookie} array.  All parameters are ignored.
      */
+    @Override
     public Cookie[] parse(String host, int port, String path, boolean secure, String header)
         throws MalformedCookieException {
         return new Cookie[0];
@@ -63,19 +63,22 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>null</code>
      */
-    public Collection getValidDateFormats() {
+    @Override
+    public Collection<String> getValidDateFormats() {
         return null;
     }
     
     /**
      * Does nothing.
      */
-    public void setValidDateFormats(Collection datepatterns) {
+    @Override
+    public void setValidDateFormats(Collection<String> datepatterns) {
     }
     
     /**
      * @return <code>null</code>
      */
+    @Override
     public String formatCookie(Cookie cookie) {
         return null;
     }
@@ -90,6 +93,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>null</code>
      */
+    @Override
     public Header formatCookieHeader(Cookie[] cookies) throws IllegalArgumentException {
         return null;
     }
@@ -97,6 +101,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>null</code>
      */
+    @Override
     public String formatCookies(Cookie[] cookies) throws IllegalArgumentException {
         return null;
     }
@@ -104,6 +109,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>false</code>
      */
+    @Override
     public boolean match(String host, int port, String path, boolean secure, Cookie cookie) {
         return false;
     }
@@ -111,6 +117,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * Returns an empty {@link Cookie cookie} array.  All parameters are ignored.
      */
+    @Override
     public Cookie[] match(String host, int port, String path, boolean secure, Cookie[] cookies) {
         return new Cookie[0];
     }
@@ -118,6 +125,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * Returns an empty {@link Cookie cookie} array.  All parameters are ignored.
      */
+    @Override
     public Cookie[] parse(String host, int port, String path, boolean secure, Header header)
         throws MalformedCookieException, IllegalArgumentException {
         return new Cookie[0];
@@ -126,6 +134,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * Does nothing.
      */
+    @Override
     public void parseAttribute(NameValuePair attribute, Cookie cookie)
         throws MalformedCookieException, IllegalArgumentException {
     }
@@ -133,6 +142,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * Does nothing.
      */
+    @Override
     public void validate(String host, int port, String path, boolean secure, Cookie cookie)
         throws MalformedCookieException, IllegalArgumentException {
     }
@@ -140,6 +150,7 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>false</code>
      */
+    @Override
     public boolean domainMatch(final String host, final String domain) {
         return false;
     }
@@ -147,13 +158,15 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>false</code>
      */
+    @Override
     public boolean pathMatch(final String path, final String topmostPath) {
         return false;
     }
 
 // BEGIN IA/HERITRIX ADDITION
+    @Override
     public Cookie[] match(String domain, int port, String path, boolean secure,
-        SortedMap cookiesMap) {
+        SortedMap<String, Cookie> cookiesMap) {
         return new Cookie[0];
     }
 // END IA/HERITRIX CHANGE

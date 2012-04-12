@@ -1146,7 +1146,7 @@ public abstract class HttpMethodBase implements HttpMethod {
                 this.cookiespec = CookiePolicy.getSpecByPolicy(i);
             }
             this.cookiespec.setValidDateFormats(
-                    (Collection)this.params.getParameter(HttpMethodParams.DATE_PATTERNS));
+                    (Collection<String>)this.params.getParameter(HttpMethodParams.DATE_PATTERNS));
         }
         return this.cookiespec;
     }

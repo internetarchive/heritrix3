@@ -37,6 +37,7 @@ import org.archive.util.fingerprint.LongFPSet;
  * @author gojomo
  * @version $Date$, $Revision$
  */
+@SuppressWarnings("serial")
 public abstract class AbstractLongFPSet implements LongFPSet, Serializable {
     private static Logger logger =
         Logger.getLogger("org.archive.util.AbstractLongFPSet");

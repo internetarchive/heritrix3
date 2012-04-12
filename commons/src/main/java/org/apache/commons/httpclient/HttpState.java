@@ -67,7 +67,7 @@ import com.sleepycat.collections.StoredIterator; // <- IA/HERITRIX CHANGE
  * @version $Revision$ $Date$
  * 
  */
-@SuppressWarnings({"unchecked","unused"}) // <- IA/HERITRIX CHANGE
+@SuppressWarnings({"unused"}) // <- IA/HERITRIX CHANGE
 public class HttpState {
 
     // ----------------------------------------------------- Instance Variables
@@ -76,13 +76,13 @@ public class HttpState {
      * Map of {@link Credentials credentials} by realm that this 
      * HTTP state contains.
      */
-    private HashMap credMap = new HashMap();
+    private HashMap<AuthScope, Credentials> credMap = new HashMap<AuthScope, Credentials>();
 
     /**
      * Map of {@link Credentials proxy credentials} by realm that this
      * HTTP state contains
      */
-    private HashMap proxyCred = new HashMap();
+    private HashMap<AuthScope, Credentials> proxyCred = new HashMap<AuthScope, Credentials>();
 
 // BEGIN IA/HERITRIX CHANGES
 //    /**
@@ -92,7 +92,7 @@ public class HttpState {
     /**
      * SortedMap of {@link Cookie cookies} that this HTTP state contains.
      */
-    private SortedMap cookiesMap = new ConcurrentSkipListMap();
+    private SortedMap<String, Cookie> cookiesMap = new ConcurrentSkipListMap<String, Cookie>();
 // END IA/HERITRIX CHANGES
 
     private boolean preemptive = false;
@@ -200,14 +200,14 @@ public class HttpState {
 // BEGIN IA/HERITRIX CHANGES
 //      PRIOR IMPL & COMPARISON HARNESS LEFT COMMENTED OUT FOR TEMPORARY REFERENCE
 //        Cookie[] arrayListAnswer = (Cookie[]) (cookiesArrayList.toArray(new Cookie[cookiesArrayList.size()]));
-        ArrayList arrayableCookies = new ArrayList();
-        Iterator iter = cookiesMap.values().iterator();
+        ArrayList<Cookie> arrayableCookies = new ArrayList<Cookie>();
+        Iterator<Cookie> iter = cookiesMap.values().iterator();
         while(iter.hasNext()) {
             arrayableCookies.add(iter.next());
     }
         StoredIterator.close(iter);
         Cookie[] mapAnswer = 
-            (Cookie[]) arrayableCookies.toArray(new Cookie[arrayableCookies.size()]);
+            arrayableCookies.toArray(new Cookie[arrayableCookies.size()]);
 
 //        if(cookiesArrayList.size()!=arrayableCookies.size()) {
 //            System.out.println("discrepancy");
@@ -226,7 +226,7 @@ public class HttpState {
      * 
      * @return sorter map of {@link Cookie cookies}
      */
-    public SortedMap getCookiesMap() {
+    public SortedMap<String, Cookie> getCookiesMap() {
         return cookiesMap;
     }
     
@@ -236,7 +236,7 @@ public class HttpState {
      * 
      * @param map alternate sorted map to use to store cookies
      */
-    public void setCookiesMap(SortedMap map) {
+    public void setCookiesMap(SortedMap<String, Cookie> map) {
         this.cookiesMap = map;
     }
 // END IA/HERITRIX ADDITIONS
@@ -321,9 +321,9 @@ public class HttpState {
 //            }
 //        }
         boolean removed = false;
-        Iterator it = cookiesMap.values().iterator();
+        Iterator<Cookie> it = cookiesMap.values().iterator();
         while (it.hasNext()) {
-            if (((Cookie) (it.next())).isExpired(date)) {
+            if ((it.next()).isExpired(date)) {
                 it.remove();
                 removed = true;
             }
@@ -457,17 +457,17 @@ public class HttpState {
      * @return the credentials 
      * 
      */
-    private static Credentials matchCredentials(final HashMap map, final AuthScope authscope) {
+    private static Credentials matchCredentials(final HashMap<AuthScope, Credentials> map, final AuthScope authscope) {
         // see if we get a direct hit
-        Credentials creds = (Credentials)map.get(authscope);
+        Credentials creds = map.get(authscope);
         if (creds == null) {
             // Nope.
             // Do a full scan
             int bestMatchFactor  = -1;
             AuthScope bestMatch  = null;
-            Iterator items = map.keySet().iterator();
+            Iterator<AuthScope> items = map.keySet().iterator();
             while (items.hasNext()) {
-                AuthScope current = (AuthScope)items.next();
+                AuthScope current = items.next();
                 int factor = authscope.match(current);
                 if (factor > bestMatchFactor) {
                     bestMatchFactor = factor;
@@ -475,7 +475,7 @@ public class HttpState {
                 }
             }
             if (bestMatch != null) {
-                creds = (Credentials)map.get(bestMatch);
+                creds = map.get(bestMatch);
             }
         }
         return creds;
@@ -649,12 +649,12 @@ public class HttpState {
      * @param credMap The credentials.
      * @return The string representation.
      */
-    private static String getCredentialsStringRepresentation(final Map credMap) {
+    private static String getCredentialsStringRepresentation(final Map<AuthScope, Credentials> credMap) {
         StringBuffer sbResult = new StringBuffer();
-        Iterator iter = credMap.keySet().iterator();
+        Iterator<AuthScope> iter = credMap.keySet().iterator();
         while (iter.hasNext()) {
             Object key = iter.next();
-            Credentials cred = (Credentials) credMap.get(key);
+            Credentials cred = credMap.get(key);
             if (sbResult.length() > 0) {
                 sbResult.append(", ");
             }
@@ -670,11 +670,11 @@ public class HttpState {
      * @param cookies The cookies
      * @return The string representation.
      */
-    private static String getCookiesStringRepresentation(final Collection cookies) { // <- IA/HERITRIX CHANGE
+    private static String getCookiesStringRepresentation(final Collection<Cookie> cookies) { // <- IA/HERITRIX CHANGE
         StringBuffer sbResult = new StringBuffer();
-        Iterator iter = cookies.iterator();
+        Iterator<Cookie> iter = cookies.iterator();
         while (iter.hasNext()) {
-            Cookie ck = (Cookie) iter.next();
+            Cookie ck = iter.next();
             if (sbResult.length() > 0) {
                 sbResult.append("#");
             }

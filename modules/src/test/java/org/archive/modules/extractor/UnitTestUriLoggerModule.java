@@ -14,6 +14,7 @@ import org.archive.net.UURI;
  *
  */
 public class UnitTestUriLoggerModule implements UriErrorLoggerModule {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     
     final private static Logger LOGGER = 

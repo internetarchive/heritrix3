@@ -27,6 +27,7 @@ import org.archive.modules.CrawlURI;
  * 
  * @author gojomo
  */
+@SuppressWarnings("serial")
 public abstract class CostAssignmentPolicy implements Serializable {
     
     public abstract int costOf(CrawlURI curi);

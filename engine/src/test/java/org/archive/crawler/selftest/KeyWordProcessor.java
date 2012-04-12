@@ -57,6 +57,7 @@ import org.archive.modules.Processor;
  * @author pjack
  */
 public class KeyWordProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     /**
      * Regular expression used to detect the presence of a keyword.

@@ -189,8 +189,7 @@ public class Arc2Warc {
     * @throws IOException
     * @throws java.text.ParseException
     */
-   @SuppressWarnings("unchecked")
-public static void main(String [] args)
+   public static void main(String [] args)
    throws ParseException, IOException, java.text.ParseException {
        Options options = new Options();
        options.addOption(new Option("h","help", false,
@@ -199,7 +198,8 @@ public static void main(String [] args)
        	   "Force overwrite of target file."));
        PosixParser parser = new PosixParser();
        CommandLine cmdline = parser.parse(options, args, false);
-       List cmdlineArgs = cmdline.getArgList();
+       @SuppressWarnings("unchecked") // org.apache.commons.cli.CommandLine doesn't use generics
+       List<String> cmdlineArgs = cmdline.getArgList();
        Option [] cmdlineOptions = cmdline.getOptions();
        HelpFormatter formatter = new HelpFormatter();
        

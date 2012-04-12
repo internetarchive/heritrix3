@@ -28,6 +28,7 @@ import org.archive.modules.CrawlURI;
  *
  */
 public class TrapSuppressExtractor extends ContentExtractor  {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -1028783453022579530L;
 
     /** ALIst attribute key for carrying-forward content-digest from 'via'*/

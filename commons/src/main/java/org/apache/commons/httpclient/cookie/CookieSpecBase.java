@@ -65,14 +65,13 @@ import com.sleepycat.collections.StoredIterator; // <- IA/HERITRIX CHANGE
  * 
  * @since 2.0 
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public class CookieSpecBase implements CookieSpec {
     
     /** Log object */
     protected static final Log LOG = LogFactory.getLog(CookieSpec.class);
 
     /** Valid date patterns */
-    private Collection datepatterns = null;
+    private Collection<String> datepatterns = null;
     
     /** Default constructor */
     public CookieSpecBase() {
@@ -346,11 +345,11 @@ public class CookieSpecBase implements CookieSpec {
     }
 
     
-    public Collection getValidDateFormats() {
+    public Collection<String> getValidDateFormats() {
         return this.datepatterns;
     }
 
-    public void setValidDateFormats(final Collection datepatterns) {
+    public void setValidDateFormats(final Collection<String> datepatterns) {
         this.datepatterns = datepatterns;
     }
 
@@ -580,7 +579,7 @@ public class CookieSpecBase implements CookieSpec {
         if (cookies == null) {
             return null;
         }
-        List matching = new LinkedList();
+        List<Cookie> matching = new LinkedList<Cookie>();
         for (int i = 0; i < cookies.length; i++) {
             if (match(host, port, path, secure, cookies[i])) {
                 addInPathOrder(matching, cookies[i]);
@@ -604,11 +603,11 @@ public class CookieSpecBase implements CookieSpec {
      * @param path the path to which the request is being submitted
      * @param secure <tt>true</tt> if the request is using a secure protocol
      * @param cookies SortedMap of <tt>Cookie</tt>s to be matched
-     * @return an array of <tt>Cookie</tt>s matching the criterium
+     * @return an array of <tt>Cookie</tt>s matching the criterion
      */
 
     public Cookie[] match(String host, int port, String path, 
-        boolean secure, final SortedMap cookies) {
+        boolean secure, final SortedMap<String, Cookie> cookies) {
             
         LOG.trace("enter CookieSpecBase.match("
            + "String, int, String, boolean, SortedMap)");
@@ -616,7 +615,7 @@ public class CookieSpecBase implements CookieSpec {
         if (cookies == null) {
             return null;
         }
-        List matching = new LinkedList();
+        List<Cookie> matching = new LinkedList<Cookie>();
         InternetDomainName domain; 
         try {
             domain = InternetDomainName.fromLenient(host); 
@@ -626,10 +625,10 @@ public class CookieSpecBase implements CookieSpec {
         
         String candidate = (domain!=null) ? domain.name() : host;
         while(candidate!=null) {
-            Iterator iter = cookies.subMap(candidate,
+            Iterator<Cookie> iter = cookies.subMap(candidate,
                     candidate + Cookie.DOMAIN_OVERBOUNDS).values().iterator();
             while (iter.hasNext()) {
-                Cookie cookie = (Cookie) (iter.next());
+                Cookie cookie = iter.next();
                 if (match(host, port, path, secure, cookie)) {
                     addInPathOrder(matching, cookie);
                 }
@@ -650,17 +649,17 @@ public class CookieSpecBase implements CookieSpec {
     /**
      * Adds the given cookie into the given list in descending path order. That
      * is, more specific path to least specific paths.  This may not be the
-     * fastest algorythm, but it'll work OK for the small number of cookies
+     * fastest algorithm, but it'll work OK for the small number of cookies
      * we're generally dealing with.
      *
      * @param list - the list to add the cookie to
      * @param addCookie - the Cookie to add to list
      */
-    private static void addInPathOrder(List list, Cookie addCookie) {
+    private static void addInPathOrder(List<Cookie> list, Cookie addCookie) {
         int i = 0;
 
         for (i = 0; i < list.size(); i++) {
-            Cookie c = (Cookie) list.get(i);
+            Cookie c = list.get(i);
             if (addCookie.compare(addCookie, c) > 0) {
                 break;
             }

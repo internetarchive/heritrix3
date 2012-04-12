@@ -25,6 +25,7 @@ import org.archive.bdb.BdbModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.StringBinding;
@@ -40,6 +41,7 @@ import com.sleepycat.je.DatabaseException;
 public abstract class PersistOnlineProcessor extends PersistProcessor 
 implements Lifecycle {
     
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -666479480942267268L;
     
     protected BdbModule bdb;
@@ -56,14 +58,12 @@ implements Lifecycle {
         this.historyDbName = name; 
     }
 
-    @SuppressWarnings("unchecked")
-    protected StoredSortedMap<String,Map> store;
+    protected StoredSortedMap<String, Map<?, ?>> store;
     protected Database historyDb;
 
     public PersistOnlineProcessor() {
     }
 
-    @SuppressWarnings("unchecked")
     public void start() {
         // TODO: share single store instance between Load and Store processors
         // (shared context? EnhancedEnvironment?)
@@ -71,17 +71,19 @@ implements Lifecycle {
         if (isRunning()) {
             return;
         }
-        StoredSortedMap<String,Map> historyMap;
+        StoredSortedMap<String, Map<?, ?>> historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
             BdbModule.BdbConfig dbConfig = HISTORY_DB_CONFIG;
 
             historyDb = bdb.openDatabase(getHistoryDbName(), dbConfig, true);
+            @SuppressWarnings({ "rawtypes", "unchecked" })
+            EntryBinding<Map<?, ?>> sb = new SerialBinding(classCatalog,Map.class);
             historyMap = 
-                new StoredSortedMap<String,Map>(
+                new StoredSortedMap<String,Map<?, ?>>(
                         historyDb,
                         new StringBinding(), 
-                        new SerialBinding<Map>(classCatalog,Map.class), 
+                        sb, 
                         true);
         } catch (DatabaseException e) {
         	throw new RuntimeException(e);

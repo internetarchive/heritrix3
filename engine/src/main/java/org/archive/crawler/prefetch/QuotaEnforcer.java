@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version $Date$, $Revision$
  */
 public class QuotaEnforcer extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static final Logger LOGGER =

@@ -353,15 +353,11 @@ public class ArchiveUtils {
                     d.length());
             }
             StringBuilder sb = new StringBuilder(d);
-            if (sb.length() < 8) {
-                for (int i = sb.length(); sb.length() < 8; i += 2) {
-                    sb.append("01");
-                }
+            while (sb.length() < 8) {
+                sb.append("01");
             }
-            if (sb.length() < 12) {
-                for (int i = sb.length(); sb.length() < 12; i++) {
-                    sb.append("0");
-                }
+            while ( sb.length() < 12) {
+                sb.append("0");
             }
             date = ArchiveUtils.parse12DigitDate(sb.toString());
         }
@@ -377,7 +373,7 @@ public class ArchiveUtils {
      *
      * @param date an arc-style formatted date stamp
      * @return the Date corresponding to the date stamp string
-     * @throws ParseException if the inputstring was malformed
+     * @throws ParseException if the input string was malformed
      */
     public static Date parse17DigitDate(String date) throws ParseException {
         return TIMESTAMP17.get().parse(date);
@@ -391,7 +387,7 @@ public class ArchiveUtils {
      *
      * @param date an arc-style formatted date stamp
      * @return the Date corresponding to the date stamp string
-     * @throws ParseException if the inputstring was malformed
+     * @throws ParseException if the input string was malformed
      */
     public static Date parse14DigitDate(String date) throws ParseException{
         return TIMESTAMP14.get().parse(date);
@@ -765,7 +761,7 @@ public class ArchiveUtils {
      * @param obj Object to prettify
      * @return prettified String
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public static String prettyString(Object obj) {
         // these things have to checked and casted unfortunately
         if (obj instanceof Object[]) {
@@ -783,7 +779,7 @@ public class ArchiveUtils {
      * @param Map
      * @return prettified (in curly brackets) string of Map contents
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public static String prettyString(Map map) {
         StringBuilder builder = new StringBuilder();
         builder.append("{ ");

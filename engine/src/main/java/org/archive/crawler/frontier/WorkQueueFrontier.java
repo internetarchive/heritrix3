@@ -83,6 +83,7 @@ import com.sleepycat.je.DatabaseException;
 public abstract class WorkQueueFrontier extends AbstractFrontier
 implements Closeable, 
            ApplicationContextAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 570384305871965843L;
 
     /**

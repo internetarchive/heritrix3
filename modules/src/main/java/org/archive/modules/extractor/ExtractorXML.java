@@ -49,6 +49,7 @@ import org.archive.util.UriUtils;
  */
 public class ExtractorXML extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger logger =

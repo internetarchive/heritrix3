@@ -560,8 +560,8 @@ implements MultiReporter, Serializable, OverlayContext {
      * Returns true if this CrawlURI is a prerequisite.
      *
      * TODO:FIXME: code elsewhere is confused whether this means 
-     * that this CrawlURI is a prerquisite for another, or *has* a 
-     * prequisite; clean up and rename as necessary. 
+     * that this CrawlURI is a prerequisite for another, or *has* a 
+     * prerequisite; clean up and rename as necessary. 
      * @return true if this CrawlURI is a prerequisite.
      */
     public boolean isPrerequisite() {
@@ -571,7 +571,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * Set if this CrawlURI is itself a prerequisite URI.
      *
-     * @param prerequisite True if this CrawlURI is itself a prerequiste uri.
+     * @param prerequisite True if this CrawlURI is itself a prerequisite uri.
      */
     public void setPrerequisite(boolean prerequisite) {
         this.prerequisite = prerequisite;
@@ -589,7 +589,7 @@ implements MultiReporter, Serializable, OverlayContext {
     /**
      * Set a fetched uri's content type.
      *
-     * @param ct Contenttype.
+     * @param ct Content type.
      */
     public void setContentType(String ct) {
         if (ct == null) {
@@ -905,7 +905,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public Set<Credential> getCredentials() {
         @SuppressWarnings("unchecked")
-        Set<Credential> r = (Set)getData().get(A_CREDENTIALS_KEY);
+        Set<Credential> r = (Set<Credential>)getData().get(A_CREDENTIALS_KEY);
         if (r == null) {
             r = new HashSet<Credential>();
             getData().put(A_CREDENTIALS_KEY, r);
@@ -1265,7 +1265,7 @@ implements MultiReporter, Serializable, OverlayContext {
     
     public Collection<Throwable> getNonFatalFailures() {
         @SuppressWarnings("unchecked")
-        List<Throwable> list = (List)getData().get(A_NONFATAL_ERRORS);
+        List<Throwable> list = (List<Throwable>)getData().get(A_NONFATAL_ERRORS);
         if (list == null) {
             list = new ArrayList<Throwable>();
             getData().put(A_NONFATAL_ERRORS, list);
@@ -1531,7 +1531,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public void makeNonHeritable(String key) {
         @SuppressWarnings("unchecked")
-        HashSet heritableKeys = (HashSet)data.get(A_HERITABLE_KEYS);
+        HashSet<String> heritableKeys = (HashSet<String>)data.get(A_HERITABLE_KEYS);
         if(heritableKeys == null) {
             return;
         }

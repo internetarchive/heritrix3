@@ -59,6 +59,7 @@ import org.springframework.context.ApplicationContextAware;
 public class ScriptedProcessor extends Processor 
 implements ApplicationContextAware, InitializingBean {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =

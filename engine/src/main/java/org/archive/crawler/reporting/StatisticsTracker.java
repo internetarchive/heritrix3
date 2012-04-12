@@ -138,6 +138,7 @@ public class StatisticsTracker
         Runnable, 
         Checkpointable,
         BeanNameAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 5L;
 
     protected SeedModule seeds;

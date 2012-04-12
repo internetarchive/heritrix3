@@ -89,7 +89,8 @@ public abstract class AbstractFrontier
                HasKeyedProperties,
                ExtractorParameters,
                CrawlUriReceiver,
-               ApplicationListener {
+               ApplicationListener<ApplicationEvent> {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 555881755284996860L;
     private static final Logger logger = Logger
             .getLogger(AbstractFrontier.class.getName());

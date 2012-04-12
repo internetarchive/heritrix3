@@ -35,6 +35,7 @@ import org.archive.util.FileUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.archive.util.iterator.LineReadingIterator;
 
+import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.StringBinding;
@@ -110,18 +111,19 @@ public class PrecedenceLoader {
                 null,
                 PersistProcessor.URI_HISTORY_DBNAME,
                 PersistProcessor.HISTORY_DB_CONFIG.toDatabaseConfig());
-        StoredSortedMap historyMap = new StoredSortedMap(historyDB,
-                new StringBinding(), new SerialBinding(classCatalog,
-                        Map.class), true);
+        @SuppressWarnings("rawtypes")
+        EntryBinding<Map<String, Object>> sb = new SerialBinding(classCatalog, Map.class);
+        StoredSortedMap<String, Map<String,Object>> historyMap = new StoredSortedMap<String, Map<String,Object>>(historyDB,
+                new StringBinding(), sb, true);
         
         int count = 0;
         
         if(source.isFile()) {
             // scan log, writing to database
             BufferedReader br = ArchiveUtils.getBufferedReader(source);
-            Iterator iter = new LineReadingIterator(br);
+            Iterator<String> iter = new LineReadingIterator(br);
             while(iter.hasNext()) {
-                String line = (String) iter.next(); 
+                String line = iter.next(); 
                 String[] splits = line.split("\\s");
                 String uri = splits[0];
                 if(!uri.matches("\\w+:.*")) {
@@ -130,7 +132,7 @@ public class PrecedenceLoader {
                 }
                 String key = PersistProcessor.persistKeyFor(uri);
                 int precedence = Integer.parseInt(splits[1]);
-                Map<String,Object> map = (Map<String,Object>)historyMap.get(key);
+                Map<String,Object> map = historyMap.get(key);
                 if (map==null) {
                     map = new HashMap<String,Object>();
                 }

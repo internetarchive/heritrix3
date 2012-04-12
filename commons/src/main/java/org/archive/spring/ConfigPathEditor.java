@@ -17,6 +17,8 @@
  *  limitations under the License.
  */
 
+// TODO is ConfigPathEditor ever used? delete me?
+
 package org.archive.spring;
 
 import java.awt.Component;
@@ -34,26 +36,30 @@ public class ConfigPathEditor<T> implements PropertyEditor {
     
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub
-
+        assert false : "unimplemented";
     }
 
     public String getAsText() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return null;
     }
 
     public Component getCustomEditor() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return null;
     }
 
     public String getJavaInitializationString() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return null;
     }
 
     public String[] getTags() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return null;
     }
 
@@ -65,17 +71,18 @@ public class ConfigPathEditor<T> implements PropertyEditor {
 
     public boolean isPaintable() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return false;
     }
 
     public void paintValue(Graphics gfx, Rectangle box) {
         // TODO Auto-generated method stub
-
+        assert false : "unimplemented";
     }
 
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub
-
+        assert false : "unimplemented";
     }
 
     public void setAsText(String text) throws IllegalArgumentException {
@@ -88,6 +95,7 @@ public class ConfigPathEditor<T> implements PropertyEditor {
 
     public boolean supportsCustomEditor() {
         // TODO Auto-generated method stub
+        assert false : "unimplemented";
         return false;
     }
 

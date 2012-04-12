@@ -20,7 +20,6 @@
 package org.archive.modules.deciderules;
 
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
@@ -86,10 +85,8 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
             DecideRule rule = rules.get(i);
             if (rule.onlyDecision(uri) != result) {
                 DecideResult r = rule.decisionFor(uri);
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest("DecideRule #" + i + " " + 
-                            rule.getClass().getName() + " returned " + r + " for url: " + uri);
-                }
+                LOGGER.finest("DecideRule #" + i + " " + 
+                        rule.getClass().getName() + " returned " + r + " for url: " + uri);
                 if (r != DecideResult.NONE) {
                     result = r;
                     decisiveRule = rule;
