@@ -12,6 +12,11 @@ import org.archive.modules.net.ServerCache;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
+ * IpAddressSetDecideRule must be used with
+ * {@link org.archive.crawler.prefetch.Preselector#setRecheckScope(boolean)} set
+ * to true because it relies on Heritrix' dns lookup to establish the ip address
+ * for a URI before it can run.
+ * 
  * <pre>
  * &lt;bean class="org.archive.modules.deciderules.IpAddressSetDecideRule"&gt;
  *  &lt;property name="ipAddresses"&gt;
