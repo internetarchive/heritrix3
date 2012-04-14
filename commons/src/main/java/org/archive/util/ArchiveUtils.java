@@ -557,6 +557,11 @@ public class ArchiveUtils {
     }
 
     private static String doubleToString(double val, int maxFractionDigits, int minFractionDigits) {
+        // NumberFormat returns U+FFFD REPLACEMENT CHARACTER for NaN which looks
+        // like a bug in the UI
+        if (Double.isNaN(val)) {
+            return "NaN";
+        }
         NumberFormat f = NumberFormat.getNumberInstance(Locale.US); 
         f.setMaximumFractionDigits(maxFractionDigits);
         f.setMinimumFractionDigits(minFractionDigits);

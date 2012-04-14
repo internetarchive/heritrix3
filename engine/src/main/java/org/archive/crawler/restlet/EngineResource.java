@@ -145,7 +145,7 @@ public class EngineResource extends BaseResource {
         	}
         } else if ("Exit Java Process".equals(action)) { 
             boolean cancel = false; 
-            if(!"on".equals(form.getFirstValue("I'm sure"))) {
+            if(!"on".equals(form.getFirstValue("im_sure"))) {
                 Flash.addFlash(
                         getResponse(),
                         "You must tick \"I'm sure\" to trigger exit", 
@@ -251,30 +251,31 @@ public class EngineResource extends BaseResource {
             baseRef += "/";
         }
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<!DOCTYPE html>");
+        pw.println("<html>");
         pw.println("<head><title>"+engineTitle+"</title>");
         pw.println("<base href='"+baseRef+"'/>");
-        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"static/engine.css\"");
-        pw.println("</head><body>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
+        pw.println("</head>\n<body>");
         pw.println("<h1>"+engineTitle+"</h1>"); 
         
         Flash.renderFlashesHTML(pw, getRequest());
 
-        pw.println("<b>Memory: </b>");
-        pw.println(engine.heapReport());
-        pw.println("<br/><br/>");
-        pw.println("<b>Jobs Directory</b>: <a href='jobsdir'>"+jobsDir.getAbsolutePath()+"</a></h2>");
+        pw.println("<p><b>Memory:</b> " + engine.heapReport() + "</p>");
+        pw.println("<p><b>Jobs Directory</b>: <a href='jobsdir'>"
+                + jobsDir.getAbsolutePath() + "</a></p>");
         
         ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
         
         jobs.addAll(engine.getJobConfigs().values());
          
-        pw.println("<form method=\'POST\'><h2>Job Directories ("+jobs.size()+")");
+        pw.println("<form method='POST'><h2>Job Directories ("+jobs.size()+")");
         pw.println("<input type='submit' name='action' value='rescan'>");
         pw.println("</h2></form>");
         Collections.sort(jobs);
         pw.println("<ul>");
         for(CrawlJob cj: jobs) {
-            pw.println("<li>");
+            pw.print("<li class=\"job\">");
             cj.writeHtmlTo(pw,"job/");
             pw.println("</li>");
         }
@@ -283,46 +284,49 @@ public class EngineResource extends BaseResource {
         pw.println("<h2>Add Job Directory</h2>");
         
         // create new job with defaults
-        pw.println("<form method=\'POST\'>\n"
-        		+ "Create new job directory with recommended starting configuration<br/>\n"
-        		+ "<b>Path:</b> " + jobsDir.getAbsolutePath() + File.separator + "\n"
-        		+ "<input name='createpath'/>\n"
+        pw.println("<form method='POST'>\n"
+                + "<div>Create new job directory with recommended starting configuration</div>\n"
+                + "<div><b>Path:</b> " + jobsDir.getAbsolutePath()
+                + File.separator + "<input name='createpath'>\n"
         		+ "<input type='submit' name='action' value='create'>\n"
-        		+ "</form>\n");
+        		+ "</div></form>\n");
 
-        pw.println("<form method=\'POST\'>");
-        pw.println("Specify a path to a pre-existing job directory<br/>");
-        pw.println("<b>Path:</b> " + "<input size='53' name='addpath'/>");
+        pw.println("<form method='POST'>");
+        pw.println("<div>Specify a path to a pre-existing job directory</div>");
+        pw.println("<div><b>Path:</b> <input size='53' name='addpath'>");
         pw.println("<input type='submit' name='action' value='add'>");
-        pw.println("</form>");
+        pw.println("</div></form>");
 
         pw.println(
-                "You may also compose or copy a valid job directory into " +
+                "<p>You may also compose or copy a valid job directory into " +
                 "the main jobs directory via outside means, then use the " +
                 "'rescan' button above to make it appear in this interface. Or, " +
                 "use the 'copy' functionality at the botton of any existing " +
-                "job's detail page.");
+                "job's detail page.</p>");
         
         pw.println("<h2>Exit Java</h2>");
 
         pw.println(
-                "This exits the Java process running Heritrix. To restart " +
+                "<div>This exits the Java process running Heritrix. To restart " +
                 "will then require access to the hosting machine. You should " +
-                "cleanly terminate and teardown any jobs in progress first.<br/>");
-        pw.println("<form method=\'POST\'>");
+                "cleanly terminate and teardown any jobs in progress first.<div>");
+        pw.println("<form method='POST'>");
         for(Map.Entry<String,CrawlJob> entry : getBuiltJobs().entrySet()) {
-            pw.println("<br/>Job '"+entry.getKey()+"' still &laquo;"
+            pw.println("<div>Job '"+entry.getKey()+"' still &laquo;"
                             +entry.getValue().getJobStatusDescription()
-                            +"&raquo;<br>");
+                            +"&raquo;</div>");
             String checkName = "ignore__"+entry.getKey();
             pw.println("<input type='checkbox' id='"+checkName+"' name='"
                     +checkName+"'><label for='"+checkName+"'> Ignore job '"
-                    +entry.getKey()+"' and exit anyway</label><br/>"); 
+                    +entry.getKey()+"' and exit anyway</label><br>"); 
         }
-        pw.println("<br/><input type='submit' name='action' value='Exit Java Process'>");
-        pw.println("<input type='checkbox' name=\"I'm sure\" id=\"I'm sure\"><label for=\"I'm sure\"> I'm sure</label>");
+        pw.println("<div>");
+        pw.println("<input type='submit' name='action' value='Exit Java Process'>");
+        pw.println("<input type='checkbox' name='im_sure' id='im_sure'><label for='im_sure'> I'm sure</label>");
+        pw.println("</div>");
         pw.println("</form>");
         pw.println("</body>");
+        pw.println("</html>");
         pw.flush();
     }
 

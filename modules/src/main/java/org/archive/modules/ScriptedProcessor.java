@@ -20,8 +20,6 @@
 package org.archive.modules;
 
 import java.io.Reader;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,8 +104,6 @@ implements ApplicationContextAware, InitializingBean {
     transient protected ThreadLocal<ScriptEngine> threadEngine = 
         new ThreadLocal<ScriptEngine>();
     protected ScriptEngine sharedEngine;
-    /** map for optional use by scripts */
-    public Map<Object,Object> sharedMap = new ConcurrentHashMap<Object,Object>();
 
     /**
      * Constructor.
@@ -135,12 +131,14 @@ implements ApplicationContextAware, InitializingBean {
             // synchronization is harmless for local thread engine,
             // necessary for shared engine
             engine.put("curi",curi);
+            engine.put("appCtx", appCtx);
             try {
                 engine.eval("process(curi)");
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
             } finally { 
                 engine.put("curi", null);
+                engine.put("appCtx", null);
             }
         }
     }

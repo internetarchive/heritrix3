@@ -10,11 +10,11 @@
    behavior, uncomment AND alter the shown values.)   
  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-	     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns:context="http://www.springframework.org/schema/context"
-	     xmlns:aop="http://www.springframework.org/schema/aop"
-	     xmlns:tx="http://www.springframework.org/schema/tx"
-	     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:aop="http://www.springframework.org/schema/aop"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
@@ -109,6 +109,25 @@ http://example.example/example
  </bean>
   -->
  
+ <bean id="acceptSurts" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+  <!-- <property name="decision" value="ACCEPT"/> -->
+  <!-- <property name="seedsAsSurtPrefixes" value="true" /> -->
+  <!-- <property name="alsoCheckVia" value="false" /> -->
+  <!-- <property name="surtsSourceFile" value="" /> -->
+  <!-- <property name="surtsDumpFile" value="${launchId}/surts.dump" /> -->
+  <!-- <property name="surtsSource">
+        <bean class="org.archive.spring.ConfigString">
+         <property name="value">
+          <value>
+           # example.com
+           # http://www.example.edu/path1/
+           # +http://(org,example,
+          </value>
+         </property> 
+        </bean>
+       </property> -->
+ </bean>
+
  <!-- SCOPE: rules for which discovered URIs to crawl; order is very 
       important because last decision returned other than 'NONE' wins. -->
  <bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
@@ -116,26 +135,9 @@ http://example.example/example
   <property name="rules">
    <list>
     <!-- Begin by REJECTing all... -->
-    <bean class="org.archive.modules.deciderules.RejectDecideRule">
-    </bean>
+    <bean class="org.archive.modules.deciderules.RejectDecideRule" />
     <!-- ...then ACCEPT those within configured/seed-implied SURT prefixes... -->
-    <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
-     <!-- <property name="seedsAsSurtPrefixes" value="true" /> -->
-     <!-- <property name="alsoCheckVia" value="false" /> -->
-     <!-- <property name="surtsSourceFile" value="" /> -->
-     <!-- <property name="surtsDumpFile" value="${launchId}/surts.dump" /> -->
-     <!-- <property name="surtsSource">
-           <bean class="org.archive.spring.ConfigString">
-            <property name="value">
-             <value>
-              # example.com
-              # http://www.example.edu/path1/
-              # +http://(org,example,
-             </value>
-            </property> 
-           </bean>
-          </property> -->
-    </bean>
+    <ref bean="acceptSurts" />
     <!-- ...but REJECT those more than a configured link-hop-count from start... -->
     <bean class="org.archive.modules.deciderules.TooManyHopsDecideRule">
      <!-- <property name="maxHops" value="20" /> -->
@@ -354,6 +356,7 @@ http://example.example/example
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->
+  <!-- <property name="processErrorOutlinks" value="false" /> -->
  </bean>
  <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
   <!-- <property name="delayFactor" value="5.0" /> -->

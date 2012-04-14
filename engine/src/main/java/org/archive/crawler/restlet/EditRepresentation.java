@@ -61,20 +61,26 @@ public class EditRepresentation extends CharacterRepresentation {
     @Override
     public void write(Writer writer) throws IOException {
         PrintWriter pw = new PrintWriter(writer); 
+        pw.println("<!DOCTYPE html>");
+        pw.println("<html>");
         pw.println("<head><title>"+fileRepresentation.getFile().getName()+"</title></head>");
-
-        Flash.renderFlashesHTML(pw, dirResource.getRequest());
-        pw.println("<form method='POST'>");
+        pw.println("<body style='background-color:#ddd'>");
+        pw.println("<form style='position:absolute;top:15px;bottom:15px;left:15px;right:15px;overflow:auto' method='POST'>");
+        pw.println("<textarea style='width:98%;height:90%;font-family:monospace' name='contents'>");
+        StringEscapeUtils.escapeHtml(pw,fileRepresentation.getText()); 
+        pw.println("</textarea>");
+        pw.println("<div>");
         // TODO: enable button on after changes made
-        pw.println("<input type='submit' value='save changes'/>");
+        pw.println("<input type='submit' value='save changes'>");
         pw.println(fileRepresentation.getFile());
         Reference viewRef = dirResource.getRequest().getOriginalRef().clone(); 
         viewRef.setQuery(null);
         pw.println("<a href='"+viewRef+"'>view</a>");
-        pw.println("<br/>");
-        pw.println("<textarea style='width:100%;height:94%;' name='contents'>");
-        StringEscapeUtils.escapeHtml(pw,fileRepresentation.getText()); 
-        pw.println("</textarea></form>");
+        Flash.renderFlashesHTML(pw, dirResource.getRequest());
+        pw.println("</div>");
+        pw.println("</form>");
+        pw.println("</body>");
+        pw.println("</html>");
         pw.close();
     }
 
