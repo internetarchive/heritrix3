@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual
- *  contributors.
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -35,9 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * A simple quota enforcer. If the host, server, or frontier group
- * associated with the current CrawlURI is already over its quotas,
+ * associated with the current CrawlURI is already over its quotas, 
  * blocks the current URI's processing with S_BLOCKED_BY_QUOTA.
- *
+ * 
  * @author gojomo
  * @version $Date$, $Revision$
  */
@@ -46,54 +46,54 @@ public class QuotaEnforcer extends Processor {
 
     private static final Logger LOGGER =
         Logger.getLogger(QuotaEnforcer.class.getName());
-
+    
     // indexed table of reused string categorical names/keys
     protected static final int SERVER = 0;
     protected static final int HOST = 1;
     protected static final int GROUP = 2;
-
+    
+    protected static final int SUCCESSES = 0;
+    protected static final int SUCCESS_KB = 1;
+    protected static final int RESPONSES = 2;
+    protected static final int RESPONSE_KB = 3;
+    
     private static final String SERVER_MAX_FETCH_SUCCESSES = "serverMaxFetchSuccesses";
     private static final String SERVER_MAX_SUCCESS_KB = "serverMaxSuccessKb";
     private static final String SERVER_MAX_FETCH_RESPONSES = "serverMaxFetchResponses";
     private static final String SERVER_MAX_ALL_KB = "serverMaxAllKb";
-    private static final String SERVER_MAX_FETCH_HTTP_SUCCESSES = "serverMaxFetchHttpSuccesses";
 
     private static final String HOST_MAX_FETCH_SUCCESSES = "hostMaxFetchSuccesses";
     private static final String HOST_MAX_SUCCESS_KB = "hostMaxSuccessKb";
     private static final String HOST_MAX_FETCH_RESPONSES = "hostMaxFetchResponses";
     private static final String HOST_MAX_ALL_KB = "hostMaxAllKb";
-    private static final String HOST_MAX_FETCH_HTTP_SUCCESSES = "hostMaxFetchHttpSuccesses";
 
     private static final String GROUP_MAX_FETCH_SUCCESSES = "groupMaxFetchSuccesses";
     private static final String GROUP_MAX_SUCCESS_KB = "groupMaxSuccessKb";
     private static final String GROUP_MAX_FETCH_RESPONSES = "groupMaxFetchResponses";
     private static final String GROUP_MAX_ALL_KB = "groupMaxAllKb";
-    private static final String GROUP_MAX_FETCH_HTTP_SUCCESSES = "groupMaxFetchHttpSuccesses";
-
+    
     protected static final String[][] keys = new String[][] {
         {
             //"server",
             SERVER_MAX_FETCH_SUCCESSES,
             SERVER_MAX_SUCCESS_KB,
             SERVER_MAX_FETCH_RESPONSES,
-            SERVER_MAX_ALL_KB,
-            SERVER_MAX_FETCH_HTTP_SUCCESSES
+            SERVER_MAX_ALL_KB
         },
         {
             //"host"
             HOST_MAX_FETCH_SUCCESSES,
             HOST_MAX_SUCCESS_KB,
             HOST_MAX_FETCH_RESPONSES,
-            HOST_MAX_ALL_KB,
-            HOST_MAX_FETCH_HTTP_SUCCESSES
+            HOST_MAX_ALL_KB
+            ,
         },
         {
             //"group"
             GROUP_MAX_FETCH_SUCCESSES,
             GROUP_MAX_SUCCESS_KB,
             GROUP_MAX_FETCH_RESPONSES,
-            GROUP_MAX_ALL_KB,
-            GROUP_MAX_FETCH_HTTP_SUCCESSES
+            GROUP_MAX_ALL_KB
         }
     };
 
@@ -114,31 +114,6 @@ public class QuotaEnforcer extends Processor {
         kp.put(SERVER_MAX_FETCH_SUCCESSES,max);
     }
 
-    {
-        setServerMaxFetchHttpSuccesses(-1L); // no limit
-    }
-
-    /**
-     * Maximum number of HTTP fetch successes (URI with an HTTP status
-     * code between 200 and 299) to collect from one server. Default
-     * is -1, meaning no limit.
-     *
-     * @param long Maximum number of fetch successes
-     */
-    public void setServerMaxFetchHttpSuccesses(long max) {
-
-        kp.put(SERVER_MAX_FETCH_HTTP_SUCCESSES, max);
-    }
-
-    /**
-     * Returns the maximum number of fetch successes (URI with an HTTP
-     * status code between 200 and 299) to collect from one
-     * server. The default value is -1, indicating no limit.
-     */
-    public long getServerMaxFetchHttpSuccesses() {
-
-        return((Long) kp.get(SERVER_MAX_FETCH_HTTP_SUCCESSES));
-    }
 
     /**
      * Maximum amount of fetch success content (e.g. 200 responses) in KB to
@@ -196,32 +171,6 @@ public class QuotaEnforcer extends Processor {
         kp.put(HOST_MAX_FETCH_SUCCESSES,max);
     }
 
-    {
-        setHostMaxFetchHttpSuccesses(-1L); // no limit
-    }
-
-    /**
-     * Maximum number of HTTP fetch successes (URI with an HTTP status
-     * code between 200 and 299) to collect from one server. Default
-     * is -1, meaning no limit.
-     *
-     * @param long Maximum number of fetch successes
-     */
-    public void setHostMaxFetchHttpSuccesses(long max) {
-
-        kp.put(HOST_MAX_FETCH_HTTP_SUCCESSES, max);
-    }
-
-    /**
-     * Returns the maximum number of fetch successes (URI with an HTTP
-     * status code between 200 and 299) to collect from one
-     * server. The default value is -1, indicating no limit.
-     */
-    public long getHostMaxFetchHttpSuccesses() {
-
-        return((Long) kp.get(HOST_MAX_FETCH_HTTP_SUCCESSES));
-    }
-
     /**
      * Maximum amount of fetch success content (e.g. 200 responses) in KB to
      * collect from one host. Default is -1, meaning no limit.
@@ -276,32 +225,6 @@ public class QuotaEnforcer extends Processor {
     }
     public void setGroupMaxFetchSuccesses(long max) {
         kp.put(GROUP_MAX_FETCH_SUCCESSES,max);
-    }
-
-    {
-        setGroupMaxFetchHttpSuccesses(-1L); // no limit
-    }
-
-    /**
-     * Maximum number of HTTP fetch successes (URI with an HTTP status
-     * code between 200 and 299) to collect from one server. Default
-     * is -1, meaning no limit.
-     *
-     * @param long Maximum number of fetch successes
-     */
-    public void setGroupMaxFetchHttpSuccesses(long max) {
-
-        kp.put(GROUP_MAX_FETCH_HTTP_SUCCESSES, max);
-    }
-
-    /**
-     * Returns the maximum number of fetch successes (URI with an HTTP
-     * status code between 200 and 299) to collect from one
-     * server. The default value is -1, indicating no limit.
-     */
-    public long getGroupMaxFetchHttpSuccesses() {
-
-        return((Long) kp.get(GROUP_MAX_FETCH_HTTP_SUCCESSES));
     }
 
     /**
@@ -362,7 +285,7 @@ public class QuotaEnforcer extends Processor {
     public void setForceRetire(boolean force) {
         kp.put("forceRetire",force);
     }
-
+    
     protected ServerCache serverCache;
     public ServerCache getServerCache() {
         return this.serverCache;
@@ -371,7 +294,7 @@ public class QuotaEnforcer extends Processor {
     public void setServerCache(ServerCache serverCache) {
         this.serverCache = serverCache;
     }
-
+    
     protected Frontier frontier;
     public Frontier getFrontier() {
         return this.frontier;
@@ -380,7 +303,7 @@ public class QuotaEnforcer extends Processor {
     public void setFrontier(Frontier frontier) {
         this.frontier = frontier;
     }
-
+    
     protected boolean shouldProcess(CrawlURI puri) {
         return puri instanceof CrawlURI;
     }
@@ -388,31 +311,31 @@ public class QuotaEnforcer extends Processor {
     protected void innerProcess(CrawlURI puri) {
         throw new AssertionError();
     }
-
-    protected ProcessResult innerProcessResult(CrawlURI curi) {
-
+    
+    protected ProcessResult innerProcessResult(CrawlURI puri) {
+        CrawlURI curi = (CrawlURI)puri;
         final CrawlServer server = serverCache.getServerFor(curi.getUURI());
         final CrawlHost host = serverCache.getHostFor(curi.getUURI());
-        FetchStats.HasFetchStats[] haveStats =
+        FetchStats.HasFetchStats[] haveStats = 
             new FetchStats.HasFetchStats[] {
-                server,
-                host,
+                server, 
+                host, 
                 frontier.getGroup(curi)
             };
-
+        
         for(int cat=SERVER;cat<=GROUP;cat++) {
             if (checkQuotas(curi,haveStats[cat],cat)) {
                 return ProcessResult.FINISH;
             }
         }
-
+        
         return ProcessResult.PROCEED;
     }
 
     /**
      * Check all quotas for the given substats and category (server, host, or
-     * group).
-     *
+     * group). 
+     * 
      * @param curi CrawlURI to mark up with results
      * @param hasStats  holds CrawlSubstats with actual values to test
      * @param CAT category index (SERVER, HOST, GROUP) to quota settings keys
@@ -421,47 +344,41 @@ public class QuotaEnforcer extends Processor {
     protected boolean checkQuotas(final CrawlURI curi,
             final FetchStats.HasFetchStats hasStats,
             final int CAT) {
-
         if (hasStats == null) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine(curi.toString() + " null stats category: " + CAT);
             }
             return false;
         }
-
         FetchStats substats = hasStats.getSubstats();
-
         long[] actuals = new long[] {
                 substats.getFetchSuccesses(),
                 substats.getSuccessBytes()/1024,
                 substats.getFetchResponses(),
                 substats.getTotalBytes()/1024,
-                substats.getFetchHttpSuccesses()
         };
-
-        for(int q = 0; q < keys[CAT].length; q++) {
+        for(int q=SUCCESSES; q<=RESPONSE_KB; q++) {
             String key = keys[CAT][q];
             if (applyQuota(curi, key, actuals[q])) {
-                return true;
+                return true; 
             }
         }
-        return false;
+        return false; 
     }
 
     /**
-     * Apply the quota specified by the given key against the actual
-     * value provided. If the quota and actual values rule out processing the
-     * given CrawlURI,  mark up the CrawlURI appropriately.
-     *
+     * Apply the quota specified by the given key against the actual 
+     * value provided. If the quota and actual values rule out processing the 
+     * given CrawlURI,  mark up the CrawlURI appropriately. 
+     * 
      * @param curi CrawlURI whose processing is subject to a potential quota
      * limitation
      * @param quotaKey settings key to get applicable quota
-     * @param actual current value to compare to quota
+     * @param actual current value to compare to quota 
      * @return true is CrawlURI is blocked by a quota, false otherwise
      */
     protected boolean applyQuota(CrawlURI curi, String key, long actual) {
         long quota = (Long)kp.get(key);
-
         if (quota >= 0 && actual >= quota) {
             curi.getAnnotations().add("Q:"+key);
             if (getForceRetire()) {
@@ -473,6 +390,6 @@ public class QuotaEnforcer extends Processor {
             }
             return true;
         }
-        return false;
+        return false; 
     }
 }
