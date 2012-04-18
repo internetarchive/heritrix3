@@ -445,8 +445,14 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
 
         if (InternetDomainName.isValidLenient(ch.getHostName())) {
             // do a whois lookup on the domain
-            String topmostAssigned = InternetDomainName.fromLenient(ch.getHostName()).topPrivateDomain().name();
-            addWhoisLink(curi, topmostAssigned);
+            try {
+                String topmostAssigned = InternetDomainName.fromLenient(ch.getHostName()).topPrivateDomain().name();
+                addWhoisLink(curi, topmostAssigned);
+            } catch (IllegalStateException e) {
+                // java.lang.IllegalStateException: Not under a public suffix: mod.uk
+                logger.warning("problem resolving topmost assigned domain, will try whois lookup on the plain hostname " + ch.getHostName() + " - " + e);
+                addWhoisLink(curi, ch.getHostName());
+            }
         }
     }
     
