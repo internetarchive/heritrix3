@@ -88,8 +88,7 @@ public class UriUtils {
     // naive likely-uri test: 
     //    no whitespace or '<' or '>' 
     //    at least one '.' or '/';
-    //    not ending with '.'
-    static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*(?<!\\.)";
+    static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*";
     
     public static boolean isPossibleUri(CharSequence candidate) {
         return TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate);
@@ -253,7 +252,7 @@ public class UriUtils {
             }
         }
         
-        if (TextUtils.matches("\\d+\\.\\d+", candidate)) {
+        if (TextUtils.matches("\\d+(?:\\.\\d+)*", candidate)) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("rejected: looks like a decimal number: " + candidate);
             }
@@ -267,10 +266,17 @@ public class UriUtils {
             return true;
         }
         
-        // this happens often because of string concatenation in javascript
-        if (TextUtils.matches("^[+].*|.*[+]$", candidate)) {
+        // starting or ending with + particularly common because of string concatenation in javascript
+        if (TextUtils.matches("^[,;+:].*|.*[.,;+:]$", candidate)) {
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("rejected: starts or ends with a '+': " + candidate);
+                LOGGER.fine("rejected: starts or ends with an unusual starting or ending character: " + candidate);
+            }
+            return true;
+        }
+
+        if (TextUtils.matches("^\\.\\.?[^/].*", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: starts with '.' (but not './' or '../'): " + candidate);
             }
             return true;
         }

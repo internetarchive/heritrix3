@@ -208,10 +208,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         writeHtmlTo(pw,"./");
     }
     public void writeHtmlTo(PrintWriter pw, String uriPrefix) {
-        pw.println("<span class='job'>");
-//        if(isRunning()) {
-//            pw.println("ACTIVE; "+getCrawlController().getState()+":");
-//        }
+        pw.println("<div>");
         pw.println("<a href='"+uriPrefix+TextUtils.urlEscape(getShortName())+"'>"+getShortName()+"</a>");
         if(isProfile()) {
             pw.println("(profile)");
@@ -220,18 +217,18 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             pw.println("&laquo;"+getJobStatusDescription()+"&raquo;");
         }
         if (true == isLaunchInfoPartial) {
-          pw.print(" at least ");
+            pw.print(" at least ");
         } else {
-          pw.print(" ");
+            pw.print(" ");
         }
-        pw.println(getLaunchCount() + " launches");      
-        pw.println("<br/><span style='color:#666'>");
+        pw.println(getLaunchCount() + " launches");
+        pw.println("</div>");
+        pw.println("<div style='color:#666'>");
         pw.println(getPrimaryConfig());
-        pw.println("</span><br/>");
+        pw.println("</div>");
         if(lastLaunch!=null) {
-            pw.println("(last at "+lastLaunch+")");
+            pw.println("<div>(last at "+lastLaunch+")</div>");
         }
-        pw.println("</span>");
     }
 
     /**
@@ -290,7 +287,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         checkXML(); 
         if(ac==null) {
             try {
-                ac = new PathSharingContext(new String[] {"file:"+primaryConfig.getAbsolutePath()},false,null);
+                ac = new PathSharingContext(new String[] {primaryConfig.toURI().toString()}, false, null);
                 ac.addApplicationListener(this);
                 ac.refresh();
                 getCrawlController(); // trigger NoSuchBeanDefinitionException if no CC

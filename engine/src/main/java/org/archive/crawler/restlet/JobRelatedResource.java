@@ -23,6 +23,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
@@ -156,7 +158,7 @@ public abstract class JobRelatedResource extends BaseResource {
             String name = getBeanToNameMap().get(obj);
             pw.println("<li><a href='"+prefix+name+"'>"+name+"</a>");
             pw.println("<span style='color:#999'>"+obj.getClass().getName()+"</span><ul>");
-            close = "</ul></li>";
+            close = "</ul></li>\n";
         }
         if(!alreadyWritten.contains(obj)) {
             alreadyWritten.add(obj);
@@ -183,7 +185,7 @@ public abstract class JobRelatedResource extends BaseResource {
                 pw.println("<span style='color:red'>"+ipe.getMessage()+"</span>");
             }
         }
-        pw.println(close);
+        pw.print(close);
     }
 
 
@@ -415,7 +417,7 @@ public abstract class JobRelatedResource extends BaseResource {
             String close = "";
             String beanPath = beanPathPrefix;
             if(StringUtils.isNotBlank(field)) {
-                pw.write("<tr><td align='right' valign='top'><b>");
+                pw.write("<tr>\n<td style='text-align:right;vertical-align:top'><b>");
                 String closeAnchor ="";
                 if(StringUtils.isNotBlank(beanPathPrefix)) {
                     if(beanPathPrefix.endsWith(".")) {
@@ -423,21 +425,22 @@ public abstract class JobRelatedResource extends BaseResource {
                     } else if (beanPathPrefix.endsWith("[")) {
                         beanPath += field + "]";
                     }
-                    pw.println("<a href='../beans/"+beanPath+"'>");
+                    // url-encode because brackets are not allowed here according to validator.w3.org 
+                    pw.print("<a href='../beans/" + TextUtils.urlEscape(beanPath) + "'>");
                     closeAnchor = "</a>";
                 }
                 pw.write(field);
                 pw.write(closeAnchor);
-                pw.write(":</b></td><td>");
-                close="</td></tr>";
+                pw.write(":</b></td>\n<td>");
+                close="</td>\n</tr>\n";
             }
             if(object == null) {
-                pw.write("<i>null</i><br/>");
+                pw.write("<i>null</i>");
                 pw.write(close);
                 return; 
             }
             if(object instanceof String) {
-                pw.write("\""+object+"\"<br/>");
+                pw.write("\""+object+"\"");
                 pw.write(close);
                 return; 
             }
@@ -445,18 +448,18 @@ public abstract class JobRelatedResource extends BaseResource {
                     || object instanceof File
                     //|| BeanUtils.findEditorByConvention(object.getClass())!=null
                     ) {     
-                pw.write(object+"<br/>");
+                pw.write(object.toString());
                 pw.write(close);
                 return;
             }
             if(alreadyWritten.contains(object)) {
-                pw.println("&uarr;<br/>");
+                pw.println("&uarr;");
                 pw.write(close);
                 return;
             }
             alreadyWritten.add(object); // guard against repeats and cycles
             if(StringUtils.isNotBlank(key) && StringUtils.isNotBlank(field)) {
-                pw.println("<a href='../beans/"+key+"'>"+key+"</a><br/>");
+                pw.println("<a href='../beans/"+key+"'>"+key+"</a>");
                 pw.write(close);
                 return;
             }
@@ -509,7 +512,7 @@ public abstract class JobRelatedResource extends BaseResource {
                 }
             }
             pw.println("</table>");
-            pw.print("</fieldset><br/>");
+            pw.print("</fieldset>");
             pw.write(close);
         }
 

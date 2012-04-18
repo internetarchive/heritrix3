@@ -59,7 +59,7 @@ public class CustomRobotsPolicy extends RobotsPolicy {
     
     @Override
     public boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt) {
-        return customRobotstxt.getDirectivesFor(userAgent).allows(getPath(curi));
+        return customRobotstxt.getDirectivesFor(userAgent).allows(getPathQuery(curi));
     }
 
     @Override

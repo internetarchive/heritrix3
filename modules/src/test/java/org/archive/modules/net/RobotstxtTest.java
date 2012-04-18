@@ -56,7 +56,7 @@ public class RobotstxtTest extends TestCase {
         assertEquals(0, r.agentsToDirectives.size());
     }
     
-    Robotstxt sampleRobots1() throws IOException {
+    static Robotstxt sampleRobots1() throws IOException {
         BufferedReader reader = new BufferedReader(
             new StringReader(
                 "User-agent: *\n" +
@@ -71,6 +71,7 @@ public class RobotstxtTest extends TestCase {
                 "\n"+
                 "User-agent: allowbot2\n" +
                 "Disallow: /foo\n" +
+                "Disallow: /ok?butno\n" +
                 "Allow: /\n"+
                 "\n"+
                 "User-agent: delaybot\n" +
@@ -93,6 +94,7 @@ public class RobotstxtTest extends TestCase {
                 "  Disallow: \n" +
                 " User-agent: allowbot2\n" +
                 " Disallow: /foo\n" +
+                " Disallow: /ok?butno\n" +
                 " Allow: /\n"+
                 " User-agent: delaybot\n" +
                 "  Disallow: /\n" +
@@ -116,19 +118,27 @@ public class RobotstxtTest extends TestCase {
         // bot allowed with empty disallows
         assertTrue(r.getDirectivesFor("Mozilla allowbot1 99.9").allows("/path"));
         assertTrue(r.getDirectivesFor("Mozilla allowbot1 99.9").allows("/"));
+        
         // bot allowed with explicit allow
         assertTrue(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/path"));
         assertTrue(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/"));
+        
         // bot denied with specific disallow overriding general allow
         assertFalse(r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/foo"));
+        // HER-1976: query-string disallow
+        assertFalse("ignoring query-string", r.getDirectivesFor("Mozilla allowbot2 99.9").allows("/ok?butno=something"));
+        
         // bot denied with blanket deny
         assertFalse(r.getDirectivesFor("Mozilla denybot 99.9").allows("/path"));
         assertFalse(r.getDirectivesFor("Mozilla denybot 99.9").allows("/"));
+        
         // unnamed bot with mixed catchall allow/deny
         assertTrue(r.getDirectivesFor("Mozilla anonbot 99.9").allows("/path"));
         assertFalse(r.getDirectivesFor("Mozilla anonbot 99.9").allows("/cgi-bin/foo.pl"));
+        
         // no crawl-delay
         assertEquals(r.getDirectivesFor("Mozilla denybot 99.9").getCrawlDelay(),-1f);
+        
         // with crawl-delay 
         assertEquals(r.getDirectivesFor("Mozilla delaybot 99.9").getCrawlDelay(),20f);
     }
