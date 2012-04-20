@@ -42,6 +42,8 @@ public class Robotstxt implements Serializable {
     private static final Logger logger =
         Logger.getLogger(Robotstxt.class.getName());
 
+    protected static final long MAX_SIZE = 500*1024;
+    
     // all user agents contained in this robots.txt
     // in order of declaration
     // TODO: consider discarding irrelevant entries
@@ -79,16 +81,28 @@ public class Robotstxt implements Serializable {
 
     protected void initializeFromReader(BufferedReader reader) throws IOException {
         String read;
+        long charCount = 0;
         // current is the disallowed paths for the preceding User-Agent(s)
         RobotsDirectives current = null;
         // whether a non-'User-Agent' directive has been encountered
         boolean hasDirectivesYet = false; 
         while (reader != null) {
+            // we count characters instead of bytes because the byte count isn't easily available 
+            if (charCount >= MAX_SIZE) {
+                logger.warning("processed " + charCount + " characters, ignoring the rest (see HER-1990)");
+                reader.close();
+                reader = null;
+                continue;
+            }
+
             do {
                 read = reader.readLine();
+                if (read != null) { 
+                    charCount += read.length();
+                }
                 // Skip comments & blanks
-            } while ((read != null) && ((read = read.trim()).startsWith("#") ||
-                read.length() == 0));
+            } while (read != null && charCount < MAX_SIZE
+                    && ((read = read.trim()).startsWith("#") || read.length() == 0));
             if (read == null) {
                 reader.close();
                 reader = null;
