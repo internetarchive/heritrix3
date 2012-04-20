@@ -667,6 +667,7 @@ http://example.example/example
   class="org.archive.bdb.BdbModule">
   <!-- <property name="dir" value="state" /> -->
   <!-- <property name="cachePercent" value="60" /> -->
+  <!-- <property name="cacheSize" value="104857600" /> -->
   <!-- <property name="useSharedCache" value="true" /> -->
   <!-- <property name="expectedConcurrency" value="25" /> -->
  </bean>

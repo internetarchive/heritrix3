@@ -81,7 +81,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         public BdbConfig config;
     }
     
-    
     /**
      * Configuration object for databases.  Needed because 
      * {@link DatabaseConfig} is not serializable.  Also it prevents invalid
@@ -103,21 +102,17 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         public BdbConfig() {
         }
 
-
         public boolean isAllowCreate() {
             return allowCreate;
         }
-
 
         public void setAllowCreate(boolean allowCreate) {
             this.allowCreate = allowCreate;
         }
 
-
         public boolean getSortedDuplicates() {
             return sortedDuplicates;
         }
-
 
         public void setSortedDuplicates(boolean sortedDuplicates) {
             this.sortedDuplicates = sortedDuplicates;
@@ -132,16 +127,13 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
             return result;
         }
 
-
         public boolean isTransactional() {
             return transactional;
         }
 
-
         public void setTransactional(boolean transactional) {
             this.transactional = transactional;
         }
-
 
         public void setDeferredWrite(boolean b) {
             this.deferredWrite = true; 
@@ -162,6 +154,14 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
     public void setCachePercent(int cachePercent) {
         this.cachePercent = cachePercent;
+    }
+    
+    int cacheSize = -1;
+    public int getCacheSize() {
+        return cacheSize;
+    }
+    public void setCacheSize(int cacheSize) {
+        this.cacheSize = cacheSize;
     }
 
     boolean useSharedCache = true; 
@@ -255,9 +255,16 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
         config.setLockTimeout(75, TimeUnit.MINUTES); // set to max
-        if(getCachePercent()>0) {
+
+        if (getCacheSize() > 0) {
+            config.setCacheSize(getCacheSize());
+            if (getCachePercent() > 0) {
+                LOGGER.warning("cachePercent and cacheSize are both set. Only cacheSize will be used.");
+            }
+        } else if (getCachePercent() > 0) {
             config.setCachePercent(getCachePercent());
         }
+
         config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
