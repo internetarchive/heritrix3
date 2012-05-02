@@ -30,18 +30,19 @@ affected by your crawl can contact you or adapt their server behavior accordingl
 
 
 3.0 Getting Started
-See the User Manual at <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.0+User+Guide>.
+See the User Manual at <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.0+and+3.1+User+Guide>
 
 
 4.0 Developer Documentation
 See ./docs/articles/developer_manual/index.html or
 <http://crawler.archive.org/articles/developer_manual/index.html>.
-For API documentation, see <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.0+API+Guide>.
+For API documentation, see <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.x+API+Guide>
+and <http://builds.archive.org:8080/javadoc/heritrix-3.x-snapshot/>
 
 
 5.0 Release History
 
-See the Heritrix Release Notes at <https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.1.0>
+See the Heritrix Release Notes at <https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.1.1>
 
 6.0 License
 
