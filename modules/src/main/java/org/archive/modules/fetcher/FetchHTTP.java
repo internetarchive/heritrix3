@@ -1210,20 +1210,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         String realm = authscheme.getRealm();
 
-        /*
-         * ======================================================= // Look to
-         * see if this curi had rfc2617 avatars loaded. If so, are // any of
-         * them for this realm? If so, then the credential failed // if we got a
-         * 401 and it should be let die a natural 401 death. if
-         * (curi.detachRfc2617Credential(realm)) { // Then, already tried this
-         * credential. Remove ANY rfc2617 // credential since presence of a
-         * rfc2617 credential serves // as flag to frontier to requeue this curi
-         * and let the curi // die a natural death. logger.warning("Auth failed
-         * (401) though supplied realm " + realm + " to " + curi.toString());
-         * return; } curi.attachRfc2617Credential(realm);
-         * =============================================================
-         */
-
         // Look to see if this curi had rfc2617 avatars loaded. If so, are
         // any of them for this realm? If so, then the credential failed
         // if we got a 401 and it should be let die a natural 401 death.
