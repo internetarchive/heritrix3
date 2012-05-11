@@ -169,11 +169,17 @@ public abstract class PersistProcessor extends AbstractPersistProcessor {
             }
             String[] splits = line.split(" ");
             if (splits.length != 2) {
-                logger.severe("bad line: " + line);
+                logger.severe("bad line has " + splits.length + " fields (should be 2): " + line);
                 continue;
             }
 
-            Map alist = (Map) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
+            Map alist;
+            try {
+                alist = (Map) SerializationUtils.deserialize(Base64.decodeBase64(splits[1].getBytes("UTF-8")));
+            } catch (Exception e) {
+                logger.severe("caught exception " + e + " deserializing line: " + line);
+                continue;
+            }
 
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(splits[0] + " " + ArchiveUtils.prettyString(alist));
