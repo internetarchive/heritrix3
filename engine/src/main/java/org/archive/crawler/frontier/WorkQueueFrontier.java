@@ -624,9 +624,19 @@ implements Closeable,
                     // queue has gone 'in process' 
                     readyQ.considerActive();
                     readyQ.setWakeTime(0); // clear obsolete wake time, if any
-
-                    readyQ.setSessionBudget(getBalanceReplenishAmount());
-                    readyQ.setTotalBudget(getQueueTotalBudget()); 
+                    
+                    // we know readyQ is not empty (getCount()!=0) so peek() shouldn't return null
+                    CrawlURI readyQUri = readyQ.peek(this);
+                    // see HER-1973 and HER-1946
+                    sheetOverlaysManager.applyOverlaysTo(readyQUri);
+                    try {
+                        KeyedProperties.loadOverridesFrom(readyQUri);
+                        readyQ.setSessionBudget(getBalanceReplenishAmount());
+                        readyQ.setTotalBudget(getQueueTotalBudget()); 
+                    } finally {
+                        KeyedProperties.clearOverridesFrom(readyQUri); 
+                    }
+                    
                     if (readyQ.isOverSessionBudget()) {
                         deactivateQueue(readyQ);
                         readyQ.makeDirty();
