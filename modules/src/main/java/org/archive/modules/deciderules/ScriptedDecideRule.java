@@ -141,21 +141,23 @@ implements ApplicationContextAware, InitializingBean {
      * to this thread. 
      * @return ScriptEngine to use
      */
-    protected synchronized ScriptEngine getEngine() {
-        if(sharedEngine==null 
-           && getIsolateThreads()) {
-            // initialize
-            sharedEngine = newEngine();
+    protected ScriptEngine getEngine() {
+        if (getIsolateThreads()) {
+            ScriptEngine engine = threadEngine.get(); 
+            if(engine==null) {
+                engine = newEngine(); 
+                threadEngine.set(engine);
+            }
+            return engine;
         }
-        if(sharedEngine!=null) {
-            return sharedEngine;
+        
+        // sharing the engine
+        synchronized(this) {
+            if (sharedEngine == null)
+                sharedEngine = newEngine();
+            assert sharedEngine != null;
         }
-        ScriptEngine engine = threadEngine.get(); 
-        if(engine==null) {
-            engine = newEngine(); 
-            threadEngine.set(engine);
-        }
-        return engine; 
+        return sharedEngine;
     }
 
     /**
