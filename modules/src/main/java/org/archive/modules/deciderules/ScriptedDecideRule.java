@@ -143,21 +143,21 @@ implements ApplicationContextAware, InitializingBean {
      */
     protected ScriptEngine getEngine() {
         if (getIsolateThreads()) {
-            ScriptEngine engine = threadEngine.get(); 
-            if(engine==null) {
-                engine = newEngine(); 
+            ScriptEngine engine = threadEngine.get();
+            if (engine == null) {
+                engine = newEngine();
                 threadEngine.set(engine);
             }
             return engine;
+        } else {
+            // sharing the engine
+            synchronized (this) {
+                if (sharedEngine == null) {
+                    sharedEngine = newEngine();
+                }
+            }
+            return sharedEngine;
         }
-        
-        // sharing the engine
-        synchronized(this) {
-            if (sharedEngine == null)
-                sharedEngine = newEngine();
-            assert sharedEngine != null;
-        }
-        return sharedEngine;
     }
 
     /**
