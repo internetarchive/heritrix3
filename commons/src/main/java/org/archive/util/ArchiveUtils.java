@@ -741,22 +741,6 @@ public class ArchiveUtils {
         pw.flush();
         return sw.toString();
     }
-
-    /**
-     * Compose the requested report into a String. DANGEROUS IF REPORT
-     * CAN BE LARGE.
-     * 
-     * @param rep Reported
-     * @param name String name of report to compose
-     * @return String of report
-     */
-    public static String writeReportToString(MultiReporter rep, String name) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        rep.reportTo(name,pw);
-        pw.flush();
-        return sw.toString();
-    }
     
     /**
      * Enhance given object's default String display for appearing
@@ -773,8 +757,8 @@ public class ArchiveUtils {
         } else if (obj instanceof Map) {
             return prettyString((Map) obj);
         } else {
-        return "<"+obj+">"; 
-    }
+            return "<"+obj+">"; 
+        }
     }
     
     /**
