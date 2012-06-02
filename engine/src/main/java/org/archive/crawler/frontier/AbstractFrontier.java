@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
@@ -1129,10 +1128,6 @@ public abstract class AbstractFrontier
     // 
     public String shortReportLine() {
         return ArchiveUtils.shortReportLine(this);
-    }
-
-    public void reportTo(PrintWriter writer) {
-        reportTo(null, writer);
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
