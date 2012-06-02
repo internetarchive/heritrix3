@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 /**
  * @contributor stack
  */
+@Deprecated
 public interface MultiReporter  extends Reporter {
     /**
      * Get an array of report names offered by this Reporter. 

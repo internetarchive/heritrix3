@@ -1094,10 +1094,12 @@ implements Closeable,
     public static String ALL_QUEUES = "all";
     protected static String[] REPORTS = {STANDARD_REPORT,ALL_NONEMPTY,ALL_QUEUES};
     
+    @Override
     public String[] getReports() {
         return REPORTS;
     }
     
+    @Override
     public Map<String, Object> shortReportMap() {
         if (this.allQueues == null) {
             return null;
@@ -1131,6 +1133,7 @@ implements Closeable,
     /**
      * @param w Where to write to.
      */
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         if (!isRunning()) return; //???
         
@@ -1212,6 +1215,7 @@ implements Closeable,
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "total active in-process ready snoozed inactive retired exhausted";
     }
@@ -1222,6 +1226,7 @@ implements Closeable,
      * @param name Name of report.
      * @param writer Where to write to.
      */
+    @Override
     public synchronized void reportTo(String name, PrintWriter writer) {
         if(ALL_NONEMPTY.equals(name)) {
             allNonemptyReportTo(writer);

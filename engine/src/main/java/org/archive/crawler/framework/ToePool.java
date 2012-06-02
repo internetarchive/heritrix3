@@ -194,10 +194,13 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     public static String COMPACT_REPORT = "compact";
     protected static String[] REPORTS = {STANDARD_REPORT,COMPACT_REPORT};
 
+    // TODO delete me (not called from anywhere) and don't implement multireporter
+    @Override
     public String[] getReports() {
         return REPORTS;
     }
 
+    @Override
     public void reportTo(String name, PrintWriter writer) {
         if(COMPACT_REPORT.equals(name)) {
             compactReportTo(writer);
@@ -262,6 +265,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
         }
     }
 
+    @Override
     public Map<String, Object> shortReportMap() {
         Histotable<Object> steps = new Histotable<Object>();
         Histotable<Object> processors = new Histotable<Object>();
@@ -291,6 +295,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         Map<String, Object> map = shortReportMap();
         w.print(map.get("toeCount"));
@@ -327,12 +332,14 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "total: mostCommonStateTotal secondMostCommonStateTotal";
     }
 
+    @Override
     public void reportTo(PrintWriter writer) {
-        reportTo(null,writer);
+        standardReportTo(writer);
     }
 
 
