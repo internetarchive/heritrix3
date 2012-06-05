@@ -23,14 +23,14 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.Map.Entry;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Histotable;
-import org.archive.util.MultiReporter;
+import org.archive.util.Reporter;
 
 /**
  * A collection of ToeThreads. The class manages the ToeThreads currently
@@ -43,7 +43,7 @@ import org.archive.util.MultiReporter;
  *
  * @see org.archive.crawler.framework.ToeThread
  */
-public class ToePool extends ThreadGroup implements MultiReporter {
+public class ToePool extends ThreadGroup implements Reporter {
     /** run worker thread slightly lower than usual */
     public static int DEFAULT_TOE_PRIORITY = Thread.NORM_PRIORITY - 1;
     
@@ -70,7 +70,6 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 toe.interrupt();
             }
         }
-//        this.controller = null;
     }
 
     /**
@@ -190,37 +189,15 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     // Reporter implementation
     //
     
-    public static String STANDARD_REPORT = "standard";
-    public static String COMPACT_REPORT = "compact";
-    protected static String[] REPORTS = {STANDARD_REPORT,COMPACT_REPORT};
-
-    public String[] getReports() {
-        return REPORTS;
-    }
-
-    public void reportTo(String name, PrintWriter writer) {
-        if(COMPACT_REPORT.equals(name)) {
-            compactReportTo(writer);
-            return;
-        }
-        if(name!=null && !STANDARD_REPORT.equals(name)) {
-            writer.print(name);
-            writer.print(" not recognized: giving standard report/n");
-        }
-        standardReportTo(writer);
-    }      
-            
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.io.Writer)
-     */
-    protected void standardReportTo(PrintWriter writer) {
+    @Override
+    public void reportTo(PrintWriter writer) {
         writer.print("Toe threads report - "
                 + ArchiveUtils.get12DigitDate() + "\n");
         writer.print(" Job being crawled: "
                 + this.controller.getMetadata().getJobName() + "\n");
         writer.print(" Number of toe threads in pool: " + getToeCount() + " ("
                 + getActiveToeCount() + " active)\n\n");
-
+        
         Thread[] toes = this.getToes();
         synchronized (toes) {
             for (int i = 0; i < toes.length; i++) {
@@ -233,12 +210,9 @@ public class ToePool extends ThreadGroup implements MultiReporter {
                 }
             }
         }
-    }
+    }      
     
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.io.Writer)
-     */
-    protected void compactReportTo(PrintWriter writer) {
+    public void compactReportTo(PrintWriter writer) {
         writer.print(getToeCount() + " threads (" + getActiveToeCount()
                 + " active)\n");
 
@@ -262,6 +236,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
         }
     }
 
+    @Override
     public Map<String, Object> shortReportMap() {
         Histotable<Object> steps = new Histotable<Object>();
         Histotable<Object> processors = new Histotable<Object>();
@@ -291,6 +266,7 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         Map<String, Object> map = shortReportMap();
         w.print(map.get("toeCount"));
@@ -327,12 +303,9 @@ public class ToePool extends ThreadGroup implements MultiReporter {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "total: mostCommonStateTotal secondMostCommonStateTotal";
-    }
-
-    public void reportTo(PrintWriter writer) {
-        reportTo(null,writer);
     }
 
 

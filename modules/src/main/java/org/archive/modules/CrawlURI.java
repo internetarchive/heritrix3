@@ -91,8 +91,8 @@ import org.archive.spring.OverlayContext;
 import org.archive.spring.OverlayMapsSource;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Base32;
-import org.archive.util.MultiReporter;
 import org.archive.util.Recorder;
+import org.archive.util.Reporter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -110,7 +110,7 @@ import org.json.JSONObject;
  * @author Gordon Mohr
  */
 public class CrawlURI 
-implements MultiReporter, Serializable, OverlayContext {
+implements Reporter, Serializable, OverlayContext {
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =
@@ -1433,6 +1433,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return ArchiveUtils.shortReportLine(this);
     }
     
+    @Override
     public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("class", getClass().getName());
@@ -1442,6 +1443,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return map;
     }
 
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         String className = this.getClass().getName();
         className = className.substring(className.lastIndexOf(".")+1);
@@ -1457,31 +1459,18 @@ implements MultiReporter, Serializable, OverlayContext {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "className uri hopsPath viaUri";
-    }
-    
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#getReports()
-     */
-    public String[] getReports() {
-        // none but default: empty options
-        return new String[] {};
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.lang.String, java.io.Writer)
-     */
-    public void reportTo(String name, PrintWriter writer) {
-        shortReportLineTo(writer);
-        writer.print("\n");
     }
 
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#reportTo(java.io.Writer)
      */
+    @Override
     public void reportTo(PrintWriter writer) throws IOException {
-        reportTo(null,writer);
+        shortReportLineTo(writer);
+        writer.print("\n");
     }
 
     
