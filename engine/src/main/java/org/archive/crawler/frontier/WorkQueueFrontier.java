@@ -731,9 +731,6 @@ implements Closeable,
             // nothing eligible
             return null; 
     }
-    
-    // temporary debugging support
-    int depthFindEligibleURI = 0; 
 
     /**
      * Check for any future-scheduled URIs now eligible for reenqueuing
