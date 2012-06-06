@@ -618,9 +618,11 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (curi.getData().containsKey(A_FTP_FETCH_STATUS)) {
             r.addLabelValue("ftpFetchStatus", curi.getData().get(A_FTP_FETCH_STATUS).toString());
         }
+
+        if (curi.getRecorder() != null && curi.getRecorder().getCharset() != null) {
+            r.addLabelValue("charsetForLinkExtraction", curi.getRecorder().getCharset().name());
+        }
         
-        // if extractors have left annotations about the encoding used to
-        // interpret content, include them in the metadata (HER-1987)
         for (String annotation: curi.getAnnotations()) {
             if (annotation.startsWith("usingCharsetIn") || annotation.startsWith("inconsistentCharsetIn")) {
                 String[] kv = annotation.split(":", 2);
