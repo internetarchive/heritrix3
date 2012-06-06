@@ -36,10 +36,10 @@ import org.archive.spring.ConfigString;
  */
 public class CustomRobotsPolicy extends RobotsPolicy {
 
-    Robotstxt customRobotstxt;
+    protected Robotstxt customRobotstxt;
     
     /** textual alternate robots.txt rules to follow */ 
-    ReadSource customRobots = new ConfigString("");
+    protected ReadSource customRobots = new ConfigString("");
     public ReadSource getCustomRobots() {
         return customRobots;
     }
@@ -49,7 +49,7 @@ public class CustomRobotsPolicy extends RobotsPolicy {
     }
     
     /** whether to obey the 'nofollow' directive in an HTML META ROBOTS element */
-    boolean obeyMetaRobotsNofollow = true; 
+    protected boolean obeyMetaRobotsNofollow = true; 
     public boolean isObeyMetaRobotsNofollow() {
         return obeyMetaRobotsNofollow;
     }

@@ -94,7 +94,7 @@ public abstract class AbstractFrontier
     private static final Logger logger = Logger
             .getLogger(AbstractFrontier.class.getName());
 
-    KeyedProperties kp = new KeyedProperties();
+    protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }
@@ -233,7 +233,7 @@ public abstract class AbstractFrontier
         this.scope = scope;
     }
 
-    FrontierPreparer preparer;
+    protected FrontierPreparer preparer;
     public FrontierPreparer getFrontierPreparer() {
         return this.preparer;
     }
@@ -298,12 +298,12 @@ public abstract class AbstractFrontier
      * of URI queues and queues/maps of queues for proper ordering/delay of
      * URI processing. 
      */
-    Thread managerThread;
+    protected Thread managerThread;
     
     /** last Frontier.State reached; used to suppress duplicate notifications */
-    State lastReachedState = null;
+    protected State lastReachedState = null;
     /** Frontier.state that manager thread should seek to reach */
-    volatile State targetState = State.PAUSE;
+    protected volatile State targetState = State.PAUSE;
 
     /**
      * Start the dedicated thread with an independent view of the frontier's

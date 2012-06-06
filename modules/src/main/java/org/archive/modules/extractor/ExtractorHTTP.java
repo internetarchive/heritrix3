@@ -40,7 +40,7 @@ public class ExtractorHTTP extends Extractor {
     }
 
     /** should all HTTP URIs be used to infer a link to the site's root? */
-    boolean inferRootPage = false; 
+    protected boolean inferRootPage = false; 
     public boolean getInferRootPage() {
         return inferRootPage;
     }

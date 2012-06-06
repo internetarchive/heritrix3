@@ -61,9 +61,9 @@ public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
 	 * An ANVL 'newline'.
 	 * @see <a href="http://en.wikipedia.org/wiki/CRLF">http://en.wikipedia.org/wiki/CRLF</a>
 	 */
-    static final String CRLF = "\r\n";
+    protected static final String CRLF = "\r\n";
     
-    static final String FOLD_PREFIX = CRLF + ' ';
+    protected static final String FOLD_PREFIX = CRLF + ' ';
     
     public ANVLRecord() {
         super();

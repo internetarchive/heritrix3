@@ -128,8 +128,8 @@ public class ArchiveUtils {
         return TIMESTAMP17.get().format(new Date());
     }
     
-    static long LAST_UNIQUE_NOW17 = 0;
-    static String LAST_TIMESTAMP17 = ""; 
+    protected static long LAST_UNIQUE_NOW17 = 0;
+    protected static String LAST_TIMESTAMP17 = ""; 
     /**
      * Utility function for creating UNIQUE-from-this-class 
      * arc-style date stamps in the format yyyMMddHHmmssSSS.
@@ -163,8 +163,8 @@ public class ArchiveUtils {
         return TIMESTAMP14.get().format(new Date());
     }
     
-    static long LAST_UNIQUE_NOW14 = 0;
-    static String LAST_TIMESTAMP14 = ""; 
+    protected static long LAST_UNIQUE_NOW14 = 0;
+    protected static String LAST_TIMESTAMP14 = ""; 
     /**
      * Utility function for creating UNIQUE-from-this-class 
      * arc-style date stamps in the format yyyMMddHHmmss.

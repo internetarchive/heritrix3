@@ -176,10 +176,6 @@ implements MultiReporter, Serializable, OverlayContext {
 
     // User agent to masquerade as when crawling this URI. If null, globals should be used
     private String userAgent = null;
-    
-    // From header
-    // TODO: This and user-agent really belong in FetchHTTP
-//    private transient String from = null;
 
     // Once a link extractor has finished processing this curi this will be
     // set as true
@@ -187,7 +183,6 @@ implements MultiReporter, Serializable, OverlayContext {
    
     transient private int discardedOutlinks = 0; 
     
-////////////////////////////////////////////////////////////////////
     private long contentSize = UNCALCULATED;
     private long contentLength = UNCALCULATED;
 
@@ -201,17 +196,8 @@ implements MultiReporter, Serializable, OverlayContext {
      * {@link CoreAttributeConstants} interface.  Use this list to carry
      * data or state produced by custom processors rather change the
      * classes {@link CrawlURI} or this class, CrawlURI.
-     *
-     * Transient to allow more efficient custom serialization.
-     * 
-     * Package-protected so CrawlURI can access it directly.
      */
-    Map<String,Object> data;
-
-    
-//    private transient SheetManager manager;
-//    private transient StateProvider provider;
-
+    protected Map<String,Object> data;
 
     private boolean forceRevisit = false; // even if already visited
 
@@ -1012,8 +998,8 @@ implements MultiReporter, Serializable, OverlayContext {
         return Base32.encode(this.contentDigest);
     }
 
-    transient Object holder;
-    transient Object holderKey;
+    transient protected Object holder;
+    transient protected Object holderKey;
 
     /**
      * Remember a 'holder' to which some enclosing/queueing
@@ -1070,7 +1056,7 @@ implements MultiReporter, Serializable, OverlayContext {
 
     /** spot for an integer cost to be placed by external facility (frontier).
      *  cost is truncated to 8 bits at times, so should not exceed 255 */
-    int holderCost = UNCALCULATED;
+    protected int holderCost = UNCALCULATED;
     /**
      * Return the 'holderCost' for convenience of external facility (frontier)
      * @return value of holderCost
@@ -1094,10 +1080,9 @@ implements MultiReporter, Serializable, OverlayContext {
      * The LinksScoper processor converts Link instances in this collection
      * to CrawlURI instances. 
      */
-    transient Collection<Link> outLinks = new HashSet<Link>();
+    protected transient Collection<Link> outLinks = new HashSet<Link>();
     
-    
-    transient Collection<CrawlURI> outCandidates = new HashSet<CrawlURI>();
+    protected transient Collection<CrawlURI> outCandidates = new HashSet<CrawlURI>();
     
     /**
      * Returns discovered links.  The returned collection might be empty if
@@ -1789,7 +1774,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return this.politenessDelay;
     }
 
-    transient CrawlURI fullVia; 
+    transient protected CrawlURI fullVia; 
     public void setFullVia(CrawlURI curi) {
         this.fullVia = curi; 
     }

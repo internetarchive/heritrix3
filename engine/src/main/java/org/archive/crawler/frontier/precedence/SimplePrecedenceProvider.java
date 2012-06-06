@@ -25,7 +25,7 @@ package org.archive.crawler.frontier.precedence;
 public class SimplePrecedenceProvider extends PrecedenceProvider {
     private static final long serialVersionUID = 3132028374638763487L;
     
-    int precedence;
+    protected int precedence;
     
     public SimplePrecedenceProvider(int p) {
         this.precedence = p;

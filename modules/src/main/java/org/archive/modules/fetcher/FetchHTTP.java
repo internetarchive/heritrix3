@@ -275,7 +275,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Which algorithm (for example MD5 or SHA-1) to use to perform an
      * on-the-fly digest hash of retrieved content-bodies.
      */
-    String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1"; 
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }
@@ -479,7 +479,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public static final String HTTPS_SCHEME = "https";
 
     
-    CookieStorage cookieStorage = new BdbCookieStorage();
+    protected CookieStorage cookieStorage = new BdbCookieStorage();
     @Autowired(required=false)
     public void setCookieStorage(CookieStorage storage) {
         this.cookieStorage = storage; 

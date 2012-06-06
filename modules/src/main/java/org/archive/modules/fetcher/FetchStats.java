@@ -49,27 +49,27 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         public void tally(CrawlURI curi, Stage stage); 
     }
     
-    long totalScheduled;   // anything initially scheduled
+    protected long totalScheduled;   // anything initially scheduled
                            // (totalScheduled - (fetchSuccesses + fetchFailures)
-    long fetchSuccesses;   // anything disposed-success 
+    protected long fetchSuccesses;   // anything disposed-success 
                            // (HTTP 2XX response codes, other non-errors)
-    long fetchFailures;    // anything disposed-failure
-    long fetchDisregards;  // anything disposed-disregard
-    long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
-    long robotsDenials;    // all robots-precluded failures
-    long successBytes;     // total size of all success responses
-    long totalBytes;       // total size of all responses
-    long fetchNonResponses; // processing attempts resulting in no response
+    protected long fetchFailures;    // anything disposed-failure
+    protected long fetchDisregards;  // anything disposed-disregard
+    protected long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
+    protected long robotsDenials;    // all robots-precluded failures
+    protected long successBytes;     // total size of all success responses
+    protected long totalBytes;       // total size of all responses
+    protected long fetchNonResponses; // processing attempts resulting in no response
                            // (both failures and temp deferrals)
     
-    long novelBytes; 
-    long novelUrls;
-    long notModifiedBytes;
-    long notModifiedUrls;
-    long dupByHashBytes;
-    long dupByHashUrls;  
+    protected long novelBytes; 
+    protected long novelUrls;
+    protected long notModifiedBytes;
+    protected long notModifiedUrls;
+    protected long dupByHashBytes;
+    protected long dupByHashUrls;  
     
-    long lastSuccessTime; 
+    protected long lastSuccessTime; 
     
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {

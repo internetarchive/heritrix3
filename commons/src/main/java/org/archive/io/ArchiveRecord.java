@@ -42,7 +42,7 @@ public abstract class ArchiveRecord extends InputStream {
     protected static final long MIN_HTTP_HEADER_LENGTH =
         Math.min("HTTP/1.1 200 OK\r\n".length(), "GET / HTTP/1.0\n\r".length());
 
-    ArchiveRecordHeader header = null;
+    protected ArchiveRecordHeader header = null;
 
     /**
      * Stream to read this record from.
@@ -56,19 +56,19 @@ public abstract class ArchiveRecord extends InputStream {
      * the underlying stream is managing our not reading too much (This pertains
      * to the skipping over the end of the ARCRecord.  See {@link #skip()}.
      */
-    InputStream in = null;
+    protected InputStream in = null;
 
     /**
      * Position w/i the Record content, within <code>in</code>.
      * This position is relative within this Record.  Its not same as the
      * Archive file position.
      */
-    long position = 0;
+    protected long position = 0;
 
     /**
      * Set flag when we've reached the end-of-record.
      */
-    boolean eor = false;
+    protected boolean eor = false;
     
     /**
      * Compute digest on what we read and add to metadata when done.
@@ -84,7 +84,7 @@ public abstract class ArchiveRecord extends InputStream {
     protected MessageDigest digest = null;
     private String digestStr = null;
 
-    boolean strict = false;
+    protected boolean strict = false;
     
 
     /**
@@ -235,7 +235,7 @@ public abstract class ArchiveRecord extends InputStream {
      *
      * @throws IOException
      */
-    void skip() throws IOException {
+    protected void skip() throws IOException {
         if (this.eor) {
             return;
         }

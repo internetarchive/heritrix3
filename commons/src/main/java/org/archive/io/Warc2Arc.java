@@ -64,7 +64,7 @@ public class Warc2Arc {
        System.exit(exitCode);
    }
    
-   static String parseRevision(final String version) {
+   protected static String parseRevision(final String version) {
        final String ID = "$Revision: ";
        int index = version.indexOf(ID);
        return (index < 0)? version:

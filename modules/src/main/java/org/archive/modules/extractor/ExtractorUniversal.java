@@ -70,7 +70,7 @@ public class ExtractorUniversal extends ContentExtractor {
      * 3 chars seperated by 3 dots). Does <b>not</b> ensure that the numbers are
      * each in the range 0-255.
      */
-    static final Pattern IP_ADDRESS = Pattern.compile(
+    protected static final Pattern IP_ADDRESS = Pattern.compile(
         "((http://)|(https://))(\\d(\\d)?(\\d)?\\.\\d(\\d)?(\\d)?\\.\\d(\\d)?(\\d)?\\.\\d(\\d)?(\\d)?)");
 
     /**

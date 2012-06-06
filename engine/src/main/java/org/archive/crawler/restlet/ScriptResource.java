@@ -62,9 +62,9 @@ import org.restlet.resource.WriterRepresentation;
  * @contributor gojomo
  */
 public class ScriptResource extends JobRelatedResource {
-    static ScriptEngineManager MANAGER = new ScriptEngineManager();
+    protected static ScriptEngineManager MANAGER = new ScriptEngineManager();
     // oddly, ordering is different each call to getEngineFactories, so cache
-    static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
+    protected static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
     static {
         FACTORIES.addAll(MANAGER.getEngineFactories());
         // Sort factories alphabetically so that they appear in the UI consistently
@@ -75,12 +75,12 @@ public class ScriptResource extends JobRelatedResource {
             }
         });
     }
-    String script = "";
-    Exception ex = null;
-    int linesExecuted = 0; 
-    String rawOutput = ""; 
-    String htmlOutput = "";
-    String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
+    protected String script = "";
+    protected Exception ex = null;
+    protected int linesExecuted = 0; 
+    protected String rawOutput = ""; 
+    protected String htmlOutput = "";
+    protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
     
     public ScriptResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);

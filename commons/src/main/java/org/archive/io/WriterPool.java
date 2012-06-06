@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * @author stack
  */
 public abstract class WriterPool {
-    final Logger logger =  Logger.getLogger(this.getClass().getName());
+    private final Logger logger =  Logger.getLogger(this.getClass().getName());
    
     /**
      * Used to generate unique filename sequences.
@@ -72,7 +72,7 @@ public abstract class WriterPool {
     /** current count of active writers; only read/mutated in synchronized blocks */
     protected int currentActive = 0; 
     /** round-robin queue of available writers */ 
-    BlockingQueue<WriterPoolMember> availableWriters;
+    protected BlockingQueue<WriterPoolMember> availableWriters;
 
     /** system time when writer was last wanted (because one was not ready in time) */     
     protected long lastWriterNeededTime;

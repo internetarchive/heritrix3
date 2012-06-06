@@ -75,7 +75,7 @@ public abstract class Extractor extends Processor {
     {
     	setExtractorParameters(DEFAULT_PARAMETERS);
     }
-    transient ExtractorParameters extractorParameters;
+    protected transient ExtractorParameters extractorParameters;
     public ExtractorParameters getExtractorParameters() {
         return extractorParameters;
     }

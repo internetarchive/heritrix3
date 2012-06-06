@@ -82,7 +82,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
     final private static Logger LOGGER = 
         Logger.getLogger(ActionDirectory.class.getName()); 
 
-    ScheduledExecutorService executor;
+    protected ScheduledExecutorService executor;
 
     /** how long after crawl start to first scan action directory */
     protected int initialDelaySeconds = 10;
@@ -119,7 +119,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         this.doneDir = doneDir;
     }
     
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }
@@ -278,7 +278,7 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
     
     
     /** shared ScriptEngineManager */
-    static ScriptEngineManager MANAGER = new ScriptEngineManager();
+    protected static ScriptEngineManager MANAGER = new ScriptEngineManager();
 
     /**
      * Try the actionFile as a script, deducing the proper scripting

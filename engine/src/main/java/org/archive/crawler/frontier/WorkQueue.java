@@ -211,7 +211,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param balance to use
      */
-    void setSessionBudget(int budget) {
+    protected void setSessionBudget(int budget) {
         this.sessionBudget = budget;
     }
 
@@ -248,7 +248,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param budget
      */
-    void setTotalBudget(long budget) {
+    protected void setTotalBudget(long budget) {
         this.totalBudget = budget;
     }
 
@@ -609,7 +609,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param b new value for retired status
      */
-    void setRetired(boolean b) {
+    protected void setRetired(boolean b) {
         this.retired = b;
     }
     

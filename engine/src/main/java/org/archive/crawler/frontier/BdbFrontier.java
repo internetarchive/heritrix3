@@ -86,12 +86,12 @@ implements Checkpointable, BeanNameAware {
         this.bdb = bdb;
     }
     
-    String beanName; 
+    protected String beanName; 
     public void setBeanName(String name) {
         this.beanName = name;
     }
     
-    boolean dumpPendingAtClose = false; 
+    protected boolean dumpPendingAtClose = false; 
     public boolean getDumpPendingAtClose() {
         return dumpPendingAtClose;
     }
@@ -103,7 +103,7 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#getInactiveQueuesByPrecedence()
      */
     @Override
-    SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence() {
+    protected SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence() {
         return inactiveQueuesByPrecedence;
     }
 
@@ -111,7 +111,7 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#getRetiredQueues()
      */
     @Override
-    Queue<String> getRetiredQueues() {
+    protected Queue<String> getRetiredQueues() {
         return retiredQueues;
     }
     
@@ -276,7 +276,7 @@ implements Checkpointable, BeanNameAware {
         dispositionInProgressLock.writeLock().unlock();
     }
 
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
@@ -357,14 +357,14 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#createInactiveQueueForPrecedence(int)
      */
     @Override
-    Queue<String> createInactiveQueueForPrecedence(int precedence) {
+    protected Queue<String> createInactiveQueueForPrecedence(int precedence) {
         return createInactiveQueueForPrecedence(precedence, false);
     }
     
     /** 
      * Optionally reuse prior data, for use when resuming from a checkpoint
      */
-    Queue<String> createInactiveQueueForPrecedence(int precedence, boolean usePriorData) {
+    protected Queue<String> createInactiveQueueForPrecedence(int precedence, boolean usePriorData) {
         return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class, usePriorData);
     }
     

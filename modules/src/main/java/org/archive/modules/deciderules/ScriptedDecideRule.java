@@ -96,7 +96,7 @@ implements ApplicationContextAware, InitializingBean {
         this.isolateThreads = isolateThreads;
     }
 
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }

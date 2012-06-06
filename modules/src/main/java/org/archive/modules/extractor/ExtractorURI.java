@@ -53,7 +53,7 @@ public class ExtractorURI extends Extractor {
     private static Logger LOGGER =
         Logger.getLogger(ExtractorURI.class.getName());
 
-    static final String ABS_HTTP_URI_PATTERN = "^https?://[^\\s<>]*$";
+    protected static final String ABS_HTTP_URI_PATTERN = "^https?://[^\\s<>]*$";
 
     /**
      * Constructor

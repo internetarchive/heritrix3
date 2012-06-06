@@ -55,8 +55,8 @@ import org.springframework.beans.BeansException;
  * @contributor nlevitt
  */
 public class BeanBrowseResource extends JobRelatedResource {
-    PathSharingContext appCtx; 
-    String beanPath; 
+    protected PathSharingContext appCtx; 
+    protected String beanPath; 
     
     public BeanBrowseResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);

@@ -67,9 +67,9 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     private String server; // actually, host+port in the https case
     private int port;
     protected Robotstxt robotstxt;
-    long robotsFetched = ROBOTS_NOT_FETCHED;
-    boolean validRobots = false;
-    FetchStats substats = new FetchStats();
+    protected long robotsFetched = ROBOTS_NOT_FETCHED;
+    protected boolean validRobots = false;
+    protected FetchStats substats = new FetchStats();
     
     // how many consecutive connection errors have been encountered;
     // used to drive exponentially increasing retry timeout or decision

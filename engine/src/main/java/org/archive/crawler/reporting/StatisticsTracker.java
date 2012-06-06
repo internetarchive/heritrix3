@@ -180,7 +180,7 @@ public class StatisticsTracker
         this.liveHostReportSize = liveHostReportSize;
     }
     
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
         this.appCtx = appCtx;
     }
@@ -195,7 +195,7 @@ public class StatisticsTracker
      * Whether to maintain seed disposition records (expensive in 
      * crawls with millions of seeds)
      */
-    boolean trackSeeds = true;
+    protected boolean trackSeeds = true;
     public boolean getTrackSeeds() {
         return this.trackSeeds;
     }
@@ -208,7 +208,7 @@ public class StatisticsTracker
      * crawls with large numbers of source-tags (seeds) or large crawls 
      * over many hosts
      */
-    boolean trackSources = true;
+    protected boolean trackSources = true;
     public boolean getTrackSources() {
         return this.trackSources;
     }
@@ -219,7 +219,7 @@ public class StatisticsTracker
     /**
      * The interval between writing progress information to log.
      */
-    int intervalSeconds = 20;
+    protected int intervalSeconds = 20;
     public int getIntervalSeconds() {
         return this.intervalSeconds;
     }
@@ -231,7 +231,7 @@ public class StatisticsTracker
      * Number of crawl-stat sample snapshots to keep for calculation 
      * purposes.
      */
-    int keepSnapshotsCount = 5;
+    protected int keepSnapshotsCount = 5;
     public int getKeepSnapshotsCount() {
         return this.keepSnapshotsCount;
     }
@@ -249,24 +249,24 @@ public class StatisticsTracker
     }
 
     /** wall-clock time the crawl started */
-    long crawlStartTime;
+    protected long crawlStartTime;
     /** wall-clock time the crawl ended */
-    long crawlEndTime = -1; // Until crawl ends, this value is -1.
+    protected long crawlEndTime = -1; // Until crawl ends, this value is -1.
     /** wall-clock time of last pause, while pause in progres */ 
-    long crawlPauseStarted = 0;
+    protected long crawlPauseStarted = 0;
     /** duration tally of all time spent in paused state */ 
-    long crawlTotalPausedTime = 0;
+    protected long crawlTotalPausedTime = 0;
 
     /** snapshots of crawl tallies and rates */
-    LinkedList<CrawlStatSnapshot> snapshots = new LinkedList<CrawlStatSnapshot>();
+    protected LinkedList<CrawlStatSnapshot> snapshots = new LinkedList<CrawlStatSnapshot>();
     
-    ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    protected ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     
     /*
      * Cumulative data
      */
     /** tally sizes novel, verified (same hash), vouched (not-modified) */ 
-    CrawledBytesHistotable crawledBytes = new CrawledBytesHistotable();
+    protected CrawledBytesHistotable crawledBytes = new CrawledBytesHistotable();
     
     public CrawledBytesHistotable getCrawledBytes() {
         return crawledBytes;
@@ -298,8 +298,8 @@ public class StatisticsTracker
      */
     protected ObjectIdentityCache<SeedRecord> processedSeedsRecords = 
         new ObjectIdentityMemCache<SeedRecord>();
-    long seedsTotal = -1; 
-    long seedsCrawled = -1;
+    protected long seedsTotal = -1; 
+    protected long seedsCrawled = -1;
     
     public StatisticsTracker() {
         
@@ -330,7 +330,7 @@ public class StatisticsTracker
         this.reports = reports;
     }
 
-    boolean isRunning = false;
+    protected boolean isRunning = false;
     public boolean isRunning() {
         return isRunning;
     }
@@ -1053,7 +1053,7 @@ public class StatisticsTracker
     }
     
     // BeanNameAware
-    String beanName; 
+    protected String beanName; 
     public void setBeanName(String name) {
         this.beanName = name;
     }
@@ -1093,7 +1093,7 @@ public class StatisticsTracker
         }
     }
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }

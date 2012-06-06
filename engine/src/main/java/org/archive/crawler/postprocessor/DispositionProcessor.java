@@ -151,7 +151,7 @@ public class DispositionProcessor extends Processor {
      * Auto-discovered module providing configured (or overridden)
      * User-Agent value and RobotsHonoringPolicy
      */
-    CrawlMetadata metadata;
+    protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }

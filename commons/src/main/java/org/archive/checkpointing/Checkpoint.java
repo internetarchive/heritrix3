@@ -50,9 +50,9 @@ public class Checkpoint implements InitializingBean {
     /** Name of file written with timestamp into valid checkpoints */
     public static final String VALIDITY_STAMP_FILENAME = "valid";
     
-    String name; 
-    String shortName; 
-    boolean success = false;
+    protected String name;
+    protected String shortName;
+    protected boolean success = false;
     
     /**
      * Checkpoints directory; either an absolute path, or relative to the 

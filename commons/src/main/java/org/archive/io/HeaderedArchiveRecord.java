@@ -411,7 +411,7 @@ public class HeaderedArchiveRecord extends ArchiveRecord {
     }
 
     @Override
-    void skip() throws IOException {
+    protected void skip() throws IOException {
         ((ArchiveRecord)this.in).skip();
     }
 

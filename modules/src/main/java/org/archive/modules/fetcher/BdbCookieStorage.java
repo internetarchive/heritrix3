@@ -52,7 +52,7 @@ public class BdbCookieStorage extends AbstractCookieStorage implements Checkpoin
     }
     
     /** are we a checkpoint recovery? (in which case, reuse stored cookie data?) */
-    boolean isCheckpointRecovery = false; 
+    protected boolean isCheckpointRecovery = false; 
     
     public static String COOKIEDB_NAME = "http_cookies";
  

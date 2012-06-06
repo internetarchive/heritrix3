@@ -39,7 +39,7 @@ implements Serializable {
      
     private transient FPGenerator fpgen = FPGenerator.std64;
     
-    LongFPSet fpset;
+    protected LongFPSet fpset;
     public LongFPSet getFpset() {
         return this.fpset;
     }

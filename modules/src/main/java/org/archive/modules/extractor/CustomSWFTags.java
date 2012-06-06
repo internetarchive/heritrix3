@@ -36,7 +36,7 @@ import com.anotherbigidea.flash.writers.SWFTagTypesImpl;
  */
 @SuppressWarnings("unchecked")
 public class CustomSWFTags extends SWFTagTypesImpl {
-    SWFActions actions;
+    protected SWFActions actions;
 
     public CustomSWFTags(SWFActions a) {
         super(null);

@@ -65,7 +65,7 @@ public class ExtractorJS extends ContentExtractor {
     // finds whitespace-free strings in Javascript
     // (areas between paired ' or " characters, possibly backslash-quoted
     // on the ends, but not in the middle)
-    static final String JAVASCRIPT_STRING_EXTRACTOR =
+    protected static final String JAVASCRIPT_STRING_EXTRACTOR =
         "(\\\\{0,8}+(?:\"|\'))(\\S{0,"+UURI.MAX_URL_LENGTH+"}?)(?:\\1)";
     // GROUPS:
     // (G1) ' or " with optional leading backslashes

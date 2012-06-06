@@ -50,24 +50,24 @@ import org.restlet.resource.FileRepresentation;
 public class PagedRepresentation extends CharacterRepresentation {
     // passed-in at construction
     /** wrapped FileRepresentation **/
-    FileRepresentation fileRepresentation; 
+    protected FileRepresentation fileRepresentation; 
     /** wrapped EnhDirectoryResource; used to formulate self-links **/
-    EnhDirectoryResource dirResource;
+    protected EnhDirectoryResource dirResource;
     
     /** position in file around which to fetch lines **/
-    long position;
+    protected long position;
     /** desired line count; negative to go back from position; default 128 **/
-    int lineCount;
+    protected int lineCount;
     /** whether to display lines in reversed order (latest first) **/
-    boolean reversedOrder; 
+    protected boolean reversedOrder; 
     
     // created when file is scanned
     /** text lines **/
-    List<String> lines;
+    protected List<String> lines;
     /** position range [start-of-first-line, past-end-of-last-line] in file **/
-    LongRange range;
+    protected LongRange range;
     /** File **/ 
-    File file; 
+    protected File file; 
     // TODO: maybe, freeze length for more consistent display of growing files
     // (now, as length/%/bumper are written after lines retrieved, they 
     // sometimes are indicative the file has grown before the page is 

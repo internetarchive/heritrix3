@@ -53,7 +53,7 @@ public class ExtractorSWF extends ContentExtractor {
 
     private static final int MAX_READ_SIZE = 1024 * 1024; // 1MB
 
-    static final String JSSTRING = "javascript:";
+    protected static final String JSSTRING = "javascript:";
 
     /**
      * @param name
@@ -288,7 +288,7 @@ public class ExtractorSWF extends ContentExtractor {
      */
     public class CrawlUriSWFAction extends SWFActionsImpl {
         
-        CrawlURI curi;
+        protected CrawlURI curi;
         
         private long linkCount;
         private Extractor ext;

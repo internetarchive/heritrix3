@@ -52,7 +52,7 @@ public class HtmlFormCredential extends Credential {
      * Full URI of page that contains the HTML login form we're to apply these
      * credentials too: E.g. http://www.archive.org
      */
-    String loginUri = "";
+    protected String loginUri = "";
     public String getLoginUri() {
         return this.loginUri;
     }
@@ -63,7 +63,7 @@ public class HtmlFormCredential extends Credential {
     /**
      * Form items.
      */
-    Map<String,String> formItems = new HashMap<String,String>();
+    protected Map<String,String> formItems = new HashMap<String,String>();
     public Map<String,String> getFormItems() {
         return this.formItems;
     }
@@ -79,7 +79,7 @@ public class HtmlFormCredential extends Credential {
     /**
      * GET or POST.
      */
-    Method httpMethod = Method.POST;
+    protected Method httpMethod = Method.POST;
     public Method getHttpMethod() {
         return this.httpMethod;
     }

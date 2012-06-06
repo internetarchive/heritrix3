@@ -33,7 +33,7 @@ public enum Logs{
     NONFATAL_ERRORS ("nonfatal-errors.log"),
 	URI_ERRORS ("uri-errors.log");
 	
-	String filename;
+	protected String filename;
 	
 	Logs(String filename){
 		this.filename = filename;

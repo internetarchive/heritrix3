@@ -88,7 +88,7 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
     //
     // Cascading self-validation
     //
-    HashMap<String,Errors> allErrors; // bean name -> Errors
+    protected HashMap<String,Errors> allErrors; // bean name -> Errors
     public void validate() {
         allErrors = new HashMap<String,Errors>();
             

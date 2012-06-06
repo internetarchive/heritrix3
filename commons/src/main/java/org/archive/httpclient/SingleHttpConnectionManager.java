@@ -54,7 +54,7 @@ public class SingleHttpConnectionManager extends SimpleHttpConnectionManager {
         finishLast(conn);
     }
 
-    static void finishLast(HttpConnection conn) {
+    protected static void finishLast(HttpConnection conn) {
         // copied from superclass because it wasn't made available to subclasses
         InputStream lastResponse = conn.getLastResponseInputStream();
         if (lastResponse != null) {

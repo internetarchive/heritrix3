@@ -428,7 +428,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      * @param cs
      *            Sequence from underlying ReplayCharSequence.
      */
-    void extract(CrawlURI curi, CharSequence cs) {
+    protected void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
         List elements = source.findAllElements(StartTagType.NORMAL);
         for (Iterator elementIter = elements.iterator();

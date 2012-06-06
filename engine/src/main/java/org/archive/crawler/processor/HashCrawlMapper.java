@@ -52,7 +52,7 @@ public class HashCrawlMapper extends CrawlMapper {
      * Number of crawlers among which to split up the URIs. Their names are
      * assumed to be 0..N-1.
      */
-    long crawlerCount = 1L; 
+    protected long crawlerCount = 1L; 
     public long getCrawlerCount() {
         return this.crawlerCount; 
     }

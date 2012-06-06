@@ -47,12 +47,12 @@ public class TopNSet implements Serializable {
     
     private static final long serialVersionUID = 1L;
 
-    int maxsize;
-    ConcurrentMap<String, Long> set;
-    volatile long smallestKnownValue;
-    volatile String smallestKnownKey;
-    volatile long largestKnownValue;
-    volatile String largestKnownKey; 
+    protected int maxsize;
+    protected ConcurrentMap<String, Long> set;
+    protected volatile long smallestKnownValue;
+    protected volatile String smallestKnownKey;
+    protected volatile long largestKnownValue;
+    protected volatile String largestKnownKey; 
     
     public TopNSet(int size){
         maxsize = size;

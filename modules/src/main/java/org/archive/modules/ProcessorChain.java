@@ -30,7 +30,7 @@ implements Iterable<Processor>,
            Reporter,
            Lifecycle {
     
-    KeyedProperties kp = new KeyedProperties();
+    protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }
@@ -51,7 +51,7 @@ implements Iterable<Processor>,
         kp.put("processors",processors);
     }
 
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public boolean isRunning() {
         return isRunning;
     }

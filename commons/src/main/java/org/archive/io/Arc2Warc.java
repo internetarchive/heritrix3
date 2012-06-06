@@ -58,9 +58,9 @@ import org.joda.time.format.ISODateTimeFormat;
  * @version $Date$ $Revision$
  */
 public class Arc2Warc {
-    RecordIDGenerator generator = new UUIDGenerator();
+    protected RecordIDGenerator generator = new UUIDGenerator();
     
-   private static void usage(HelpFormatter formatter, Options options,
+    private static void usage(HelpFormatter formatter, Options options,
            int exitCode) {
        formatter.printHelp("java org.archive.io.arc.Arc2Warc " +
        		"[--force] ARC_INPUT WARC_OUTPUT", options);

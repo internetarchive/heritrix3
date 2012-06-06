@@ -60,7 +60,7 @@ implements Serializable, InitializingBean {
 	private static Logger LOGGER =
         Logger.getLogger(BloomUriUniqFilter.class.getName());
 
-    BloomFilter bloom; // package access for testing convenience
+	protected BloomFilter bloom; // package access for testing convenience
     public BloomFilter getBloomFilter() {
         return bloom; 
     }

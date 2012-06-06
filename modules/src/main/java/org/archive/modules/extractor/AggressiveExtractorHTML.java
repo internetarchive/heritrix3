@@ -34,7 +34,7 @@ public class AggressiveExtractorHTML
 extends ExtractorHTML {
     private static final long serialVersionUID = 3L;
 
-    static Logger logger =
+    protected static Logger logger =
         Logger.getLogger(AggressiveExtractorHTML.class.getName());
     
     public AggressiveExtractorHTML() {

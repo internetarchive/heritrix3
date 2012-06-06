@@ -48,7 +48,7 @@ implements Lifecycle {
         this.bdb = bdb;
     }
     
-    String historyDbName = "uri_history";
+    protected String historyDbName = "uri_history";
     public String getHistoryDbName() {
         return this.historyDbName;
     }

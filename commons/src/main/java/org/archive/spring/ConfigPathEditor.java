@@ -30,7 +30,7 @@ import java.beans.PropertyEditor;
  * 
  */
 public class ConfigPathEditor<T> implements PropertyEditor {
-    Object value;
+    protected Object value;
     
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub

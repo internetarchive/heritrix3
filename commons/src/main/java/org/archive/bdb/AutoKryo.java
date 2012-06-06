@@ -26,7 +26,7 @@ import com.esotericsoftware.kryo.SerializationException;
  */
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {
-    ArrayList<Class> registeredClasses = new ArrayList<Class>(); 
+    protected ArrayList<Class> registeredClasses = new ArrayList<Class>(); 
     
     @Override
     protected void handleUnregisteredClass(Class type) {

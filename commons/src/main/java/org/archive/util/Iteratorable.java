@@ -27,7 +27,7 @@ import java.util.Iterator;
  * 
  */
 public class Iteratorable<K> implements Iterable<K> {
-    Iterator<K> iterator;
+    protected Iterator<K> iterator;
     
     public Iteratorable(Iterator<K> iterator) {
         this.iterator = iterator;

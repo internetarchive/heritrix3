@@ -41,18 +41,18 @@ import java.util.*;
 // to parse small, but admittedly complex, documents.
 public class PDFParser {
 
-    ArrayList<String> foundURIs;
-    ArrayList<ArrayList<Integer>> encounteredReferences;
-    PdfReader documentReader;
-    byte[] document;
-    PdfDictionary catalog;
+    protected ArrayList<String> foundURIs;
+    protected ArrayList<ArrayList<Integer>> encounteredReferences;
+    protected PdfReader documentReader;
+    protected byte[] document;
+    protected PdfDictionary catalog;
 
     public PDFParser(String doc) throws IOException {
         resetState();
         getInFromFile(doc);
         initialize();
     }
-     public PDFParser(byte[] doc) throws IOException{
+    public PDFParser(byte[] doc) throws IOException{
         resetState();
         document = doc;
         initialize();

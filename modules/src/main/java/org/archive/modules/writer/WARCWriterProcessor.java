@@ -173,7 +173,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     /**
      * Generator for record IDs
      */
-    RecordIDGenerator generator = new UUIDGenerator();
+    protected RecordIDGenerator generator = new UUIDGenerator();
     public RecordIDGenerator getRecordIDGenerator() {
         return generator; 
     }

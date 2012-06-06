@@ -54,7 +54,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * the followup crawl(s).) Only one of {@preloadSource} and
      * {@preloadSourceUrl} may be specified.
      */
-    ConfigPath preloadSource = 
+    protected ConfigPath preloadSource = 
         new ConfigFile("preload source","");
     public ConfigPath getPreloadSource() {
         return preloadSource;
@@ -72,7 +72,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * and then copy and reuse that environment in the followup crawl(s).)
      * Only one of {@preloadSource} and {@preloadSourceUrl} may be specified.
      */
-    String preloadSourceUrl = "";
+    protected String preloadSourceUrl = "";
     public String getPreloadSourceUrl() {
         return preloadSourceUrl;
     }

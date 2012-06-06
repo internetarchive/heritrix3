@@ -159,7 +159,7 @@ public class FetchFTP extends Processor  {
      * Which algorithm (for example MD5 or SHA-1) to use to perform an
      * on-the-fly digest hash of retrieved content-bodies.
      */
-    String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1"; 
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }

@@ -79,7 +79,7 @@ public abstract class Scoper extends Processor implements Lifecycle {
         super();
     }
 
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public void start() {
         if(isRunning) {
             return; 

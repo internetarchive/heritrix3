@@ -67,7 +67,7 @@ import org.archive.util.ArchiveUtils;
  */
 public abstract class ARCReader extends ArchiveReader
 implements ARCConstants, Closeable {
-    Logger logger = Logger.getLogger(ARCReader.class.getName());
+    private final Logger logger = Logger.getLogger(ARCReader.class.getName());
     
     /**
      * Set to true if we are aligned on first record of Archive file.
@@ -80,7 +80,7 @@ implements ARCConstants, Closeable {
     
     private boolean parseHttpHeaders = true;
     
-    ARCReader() {
+    protected ARCReader() {
         super();
     }
     

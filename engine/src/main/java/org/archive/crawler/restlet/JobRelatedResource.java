@@ -55,9 +55,9 @@ import org.springframework.beans.InvalidPropertyException;
  * @contributor nlevitt
  */
 public abstract class JobRelatedResource extends BaseResource {
-    CrawlJob cj; 
+    protected CrawlJob cj; 
 
-    IdentityHashMap<Object, String> beanToNameMap;
+    protected IdentityHashMap<Object, String> beanToNameMap;
     
     public JobRelatedResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
@@ -517,7 +517,7 @@ public abstract class JobRelatedResource extends BaseResource {
         }
 
     /** suppress problematic properties */
-    static HashSet<String> HIDDEN_PROPS = new HashSet<String>(
+    protected static HashSet<String> HIDDEN_PROPS = new HashSet<String>(
             Arrays.asList(new String[]
              {"class","declaringClass","keyedProperties","running","first","last","empty", "inbound", "outbound", "cookiesMap"}
             ));

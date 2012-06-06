@@ -70,14 +70,14 @@ import org.archive.io.SeekInputStream;
  */
 class PieceTable {
 
-    final static Logger LOGGER
+    private final static Logger LOGGER
      = Logger.getLogger(PieceTable.class.getName());
 
     /** The bit that indicates if a piece uses Cp1252 or unicode. */
-    final static int CP1252_INDICATOR = 1 << 30;
+    protected final static int CP1252_INDICATOR = 1 << 30;
     
     /** The mask to use to clear the Cp1252 flag bit. */
-    final static int CP1252_MASK = ~(3 << 30);
+    protected final static int CP1252_MASK = ~(3 << 30);
 
     /** The total number of pieces in the table. */
     private int count;

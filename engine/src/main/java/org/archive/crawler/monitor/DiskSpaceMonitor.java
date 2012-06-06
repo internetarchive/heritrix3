@@ -34,11 +34,11 @@ import org.springframework.context.ApplicationListener;
 public class DiskSpaceMonitor implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(DiskSpaceMonitor.class.getName());
 
-    List<String> monitorPaths = new ArrayList<String>();
-    long pauseThresholdMiB = 500;
-    CrawlController controller;
-    ConfigPathConfigurer configPathConfigurer;
-    boolean monitorConfigPaths = true;
+    protected List<String> monitorPaths = new ArrayList<String>();
+    protected long pauseThresholdMiB = 500;
+    protected CrawlController controller;
+    protected ConfigPathConfigurer configPathConfigurer;
+    protected boolean monitorConfigPaths = true;
 
     /**
      * @param monitorPaths List of filesystem paths that should be monitored for available space.

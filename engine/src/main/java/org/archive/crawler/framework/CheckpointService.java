@@ -67,9 +67,9 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     /** Next overall series checkpoint number */
     protected int nextCheckpointNumber = 1;
     
-    Checkpoint checkpointInProgress;
+    protected Checkpoint checkpointInProgress;
     
-    CrawlStatSnapshot lastCheckpointSnapshot = null;
+    protected CrawlStatSnapshot lastCheckpointSnapshot = null;
     
     /** service for auto-checkpoint tasks at an interval */
     protected Timer timer = new Timer(true);
@@ -90,7 +90,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * Period at which to create automatic checkpoints; -1 means
      * no auto checkpointing. 
      */
-    long checkpointIntervalMinutes = -1;
+    protected long checkpointIntervalMinutes = -1;
     public long getCheckpointIntervalMinutes() {
         return checkpointIntervalMinutes;
     }
@@ -102,7 +102,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         }
     }
     
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
@@ -122,7 +122,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     }
     
     // ApplicationContextAware implementation, for eventing
-    AbstractApplicationContext appCtx;
+    protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
     }
@@ -186,7 +186,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
                 periodMs + " milliseconds.");
     }
     
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public synchronized boolean isRunning() {
         return isRunning; 
     }
@@ -346,7 +346,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         }
     }
     
-    static Validator VALIDATOR = new CheckpointValidator();
+    protected static Validator VALIDATOR = new CheckpointValidator();
     @Override
     public Validator getValidator() {
         return VALIDATOR;

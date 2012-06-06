@@ -81,7 +81,7 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
     private static final long serialVersionUID = 2L;
 
     /** The number of weights used to create hash functions. */
-    final static int NUMBER_OF_WEIGHTS = 2083; // CHANGED FROM 16
+    protected final static int NUMBER_OF_WEIGHTS = 2083; // CHANGED FROM 16
     /** The number of bits in this filter. */
     final protected long m;
     /** if bitfield is an exact power of 2 in length, it is this power */ 
@@ -99,10 +99,10 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      * smaller than the actual number of additions of distinct character
      * sequences because of false positives.
      */
-    int size;
+    protected int size;
 
     /** The natural logarithm of 2, used in the computation of the number of bits. */
-    final static double NATURAL_LOG_OF_2 = Math.log( 2 );
+    protected final static double NATURAL_LOG_OF_2 = Math.log( 2 );
 
     /** power-of-two to use as maximum size of bitfield subarrays */
     protected final static int SUBARRAY_POWER_OF_TWO = 26; // 512MiB of longs
@@ -111,7 +111,7 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
     /** mask for lowest SUBARRAY_POWER_OF_TWO bits */
     protected final static int SUBARRAY_MASK = SUBARRAY_LENGTH_IN_LONGS - 1; //0x0FFFFFFF
 
-    final static boolean DEBUG = false;
+    protected final static boolean DEBUG = false;
 
     /** Creates a new Bloom filter with given number of hash functions and 
      * expected number of elements.

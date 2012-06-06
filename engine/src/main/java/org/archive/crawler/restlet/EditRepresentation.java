@@ -40,8 +40,8 @@ import org.restlet.resource.FileRepresentation;
  * @contributor gojomo
  */
 public class EditRepresentation extends CharacterRepresentation {
-    FileRepresentation fileRepresentation; 
-    EnhDirectoryResource dirResource;
+    protected FileRepresentation fileRepresentation; 
+    protected EnhDirectoryResource dirResource;
     
     public EditRepresentation(FileRepresentation representation, EnhDirectoryResource resource) {
         super(MediaType.TEXT_HTML);

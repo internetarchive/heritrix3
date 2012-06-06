@@ -76,7 +76,7 @@ public class CrawlerLoggerModule
      * Whether to include the "extra info" field for each entry in crawl.log.
      * "Extra info" is arbitrary JSON. It is the last field of the log line.
      */
-    boolean logExtraInfo = false;
+    protected boolean logExtraInfo = false;
     public boolean getLogExtraInfo() {
         return logExtraInfo;
     }
@@ -221,7 +221,7 @@ public class CrawlerLoggerModule
         isRunning = true; 
     }
     
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public boolean isRunning() {
         return this.isRunning; 
     }
@@ -386,7 +386,7 @@ public class CrawlerLoggerModule
 
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
 
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 

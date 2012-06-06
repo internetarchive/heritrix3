@@ -116,7 +116,7 @@ public class MirrorWriterProcessor extends Processor {
      * True if the file system is case-sensitive, like UNIX. False if the file
      * system is case-insensitive, like Macintosh HFS+ and Windows.
      */
-    boolean caseSensitiveFilesystem = true; 
+    protected boolean caseSensitiveFilesystem = true; 
     public boolean getCaseSensitiveFilesystem() {
         return this.caseSensitiveFilesystem;
     }
@@ -132,7 +132,7 @@ public class MirrorWriterProcessor extends Processor {
      * recommended value is [' ' %%20 &quot; %%22 * %%2A : %%3A < %%3C \\> %%3E ?
      * %%3F \\\\ %%5C ^ %%5E | %%7C].
      */
-    List<String> characterMap = new ArrayList<String>(); 
+    protected List<String> characterMap = new ArrayList<String>(); 
     public List<String> getCharacterMap() {
         return this.characterMap;
     }
@@ -150,7 +150,7 @@ public class MirrorWriterProcessor extends Processor {
      * the URI. For example, to force all HTML files to have the same suffix,
      * use [text/html html].
      */
-    List<String> contentTypeMap = new ArrayList<String>(); 
+    protected List<String> contentTypeMap = new ArrayList<String>(); 
     public List<String> getContentTypeMap() {
         return this.contentTypeMap;
     }
@@ -161,7 +161,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * If a segment starts with '.', the '.' is replaced by this.
      */
-    String dotBegin = "%2E";
+    protected String dotBegin = "%2E";
     public String getDotBegin() {
         return this.dotBegin;
     }
@@ -181,7 +181,7 @@ public class MirrorWriterProcessor extends Processor {
      * systems except Windows, '.' is recommended. For Windows, %%2E is
      * recommended.
      */
-    String dotEnd = ".";
+    protected String dotEnd = ".";
     public String getDotEnd() {
         return this.dotEnd;
     }
@@ -193,7 +193,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Implicitly append this to a URI ending with '/'.
      */
-    String directoryFile = "index.html";
+    protected String directoryFile = "index.html";
     public String getDirectoryFile() {
         return this.directoryFile;
     }
@@ -205,7 +205,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Create a subdirectory named for the host in the URI.
      */
-    boolean createHostDirectory = true; 
+    protected boolean createHostDirectory = true; 
     public boolean getCreateHostDirectory() {
         return this.createHostDirectory;
     }
@@ -219,7 +219,7 @@ public class MirrorWriterProcessor extends Processor {
      * pair. This can be used for consistency when several names are used for
      * one host, for example [12.34.56.78 www42.foo.com].
      */
-    List<String> hostMap = new ArrayList<String>(); 
+    protected List<String> hostMap = new ArrayList<String>(); 
     public List<String> getHostMap() {
         return this.hostMap;
     }
@@ -231,7 +231,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Maximum file system path length.
      */
-    int maxPathLength = 1023; 
+    protected int maxPathLength = 1023; 
     public int getMaxPathLength() {
         return maxPathLength;
     }
@@ -242,7 +242,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Maximum file system path segment length.
      */
-    int maxSegLength = 255; 
+    protected int maxSegLength = 255; 
     public int getMaxSegLength() {
         return maxSegLength;
     }
@@ -257,7 +257,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Top-level directory for mirror files.
      */
-    String path = "mirror";
+    protected String path = "mirror";
     public String getPath() {
         return this.path;
     }
@@ -268,7 +268,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Create a subdirectory named for the port in the URI.
      */
-    boolean createPortDirectory = false; 
+    protected boolean createPortDirectory = false; 
     public boolean getCreatePortDirectory() {
         return this.createPortDirectory;
     }
@@ -280,7 +280,7 @@ public class MirrorWriterProcessor extends Processor {
      * If true, the suffix is placed at the end of the path, after the query (if
      * any). If false, the suffix is placed before the query.
      */
-    boolean suffixAtEnd = true; 
+    protected boolean suffixAtEnd = true; 
     public boolean getSuffixAtEnd() {
         return this.suffixAtEnd;
     }
@@ -293,7 +293,7 @@ public class MirrorWriterProcessor extends Processor {
      * exceeding, the file system maximum path length, then they are all
      * replaced by this.
      */
-    String tooLongDirectory = "LONG";
+    protected String tooLongDirectory = "LONG";
     public String getTooLongDirectory() {
         return this.tooLongDirectory;
     }
@@ -309,7 +309,7 @@ public class MirrorWriterProcessor extends Processor {
      * com4 com5 com6 com7 com8 com9 lpt1 lpt2 lpt3 lpt4 lpt5 lpt6 lpt7 lpt8
      * lpt9 con nul prn].
      */
-    List<String> underscoreSet = new ArrayList<String>(); 
+    protected List<String> underscoreSet = new ArrayList<String>(); 
     public List<String> getUnderscoreSet() {
         return this.underscoreSet;
     }

@@ -98,7 +98,7 @@ implements Closeable,
      * will be "long snoozed" instead of "short snoozed".  A "long snoozed"
      * queue may be swapped to disk because it's not needed soon.  
      */
-    long snoozeLongMs = 5L*60L*1000L; 
+    protected long snoozeLongMs = 5L*60L*1000L; 
     public long getSnoozeLongMs() {
         return snoozeLongMs;
     }
@@ -110,7 +110,7 @@ implements Closeable,
         Logger.getLogger(WorkQueueFrontier.class.getName());
     
     // ApplicationContextAware implementation, for eventing
-    AbstractApplicationContext appCtx;
+    protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
     }
@@ -482,14 +482,14 @@ implements Closeable,
      * Return a sorted map of all queues of WorkQueue keys, keyed by precedence
      * @return SortedMap<Integer, Queue<String>> of inactiveQueues
      */
-    abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
+    protected abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
 
     /**
      * Create an inactiveQueue to hold queue names at the given precedence
      * @param precedence
      * @return Queue<String> for names of inactive queues
      */
-    abstract Queue<String> createInactiveQueueForPrecedence(int precedence);
+    protected abstract Queue<String> createInactiveQueueForPrecedence(int precedence);
 
     /**
      * Put the given queue on the retiredQueues queue
@@ -513,7 +513,7 @@ implements Closeable,
      * 
      * @return Queue<String> of retired queue names
      */
-    abstract Queue<String> getRetiredQueues();
+    protected abstract Queue<String> getRetiredQueues();
 
     /** 
      * Accommodate any changes in retirement-determining settings (like

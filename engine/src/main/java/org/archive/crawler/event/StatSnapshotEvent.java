@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationEvent;
  */
 public class StatSnapshotEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;
-    CrawlStatSnapshot snapshot;
+    protected CrawlStatSnapshot snapshot;
     
     public StatSnapshotEvent(StatisticsTracker stats, CrawlStatSnapshot snapshot) {
         super(stats);

@@ -32,9 +32,9 @@ import com.esotericsoftware.kryo.serialize.ReferenceFieldSerializer;
 public class RobotsDirectives implements Serializable {
     private static final long serialVersionUID = 5386542759286155383L;
     
-    ConcurrentSkipListSet<String> disallows = new ConcurrentSkipListSet<String>();
-    ConcurrentSkipListSet<String> allows = new ConcurrentSkipListSet<String>();
-    float crawlDelay = -1; 
+    protected ConcurrentSkipListSet<String> disallows = new ConcurrentSkipListSet<String>();
+    protected ConcurrentSkipListSet<String> allows = new ConcurrentSkipListSet<String>();
+    protected float crawlDelay = -1; 
 
     public boolean allows(String path) {
         return !(longestPrefixLength(disallows, path) > longestPrefixLength(allows, path));

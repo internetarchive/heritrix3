@@ -74,7 +74,7 @@ public class PropertyUtils {
         return interpolateWithProperties(original,System.getProperties());
     }
 
-    static String propRefPattern = "\\$\\{([^{}]+)\\}";
+    protected static String propRefPattern = "\\$\\{([^{}]+)\\}";
     
     /**
      * Given a string which may contain expressions of the form 

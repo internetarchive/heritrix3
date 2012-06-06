@@ -293,7 +293,7 @@ public class Recorder {
     }
 
     
-    static ThreadLocal<Recorder> currentRecorder = new ThreadLocal<Recorder>();
+    protected static ThreadLocal<Recorder> currentRecorder = new ThreadLocal<Recorder>();
     
     public static void setHttpRecorder(Recorder httpRecorder) {
         currentRecorder.set(httpRecorder);
@@ -331,7 +331,7 @@ public class Recorder {
         this.inputIsChunked = chunked;
     }
     
-    static Set<String> SUPPORTED_ENCODINGS = new HashSet<String>();
+    protected static Set<String> SUPPORTED_ENCODINGS = new HashSet<String>();
     static {
         SUPPORTED_ENCODINGS.add("gzip"); 
         SUPPORTED_ENCODINGS.add("x-gzip");

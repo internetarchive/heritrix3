@@ -32,7 +32,7 @@ import java.util.List;
  * @contributor gojomo
  */
 public abstract class SheetAssociation {
-    List<String> targetSheetNames = new LinkedList<String>();
+    protected List<String> targetSheetNames = new LinkedList<String>();
     public List<String> getTargetSheetNames() {
         return targetSheetNames;
     }

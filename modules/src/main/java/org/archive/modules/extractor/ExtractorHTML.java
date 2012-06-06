@@ -777,7 +777,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      */
-    void extract(CrawlURI curi, CharSequence cs) {
+    protected void extract(CrawlURI curi, CharSequence cs) {
         Matcher tags = TextUtils.getMatcher(relevantTagPattern,cs);
         while(tags.find()) {
             if(Thread.interrupted()){

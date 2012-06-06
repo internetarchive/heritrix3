@@ -39,7 +39,7 @@ public class CrawlLimitEnforcer implements ApplicationListener {
      * Maximum number of bytes to download. Once this number is exceeded 
      * the crawler will stop. A value of zero means no upper limit.
      */
-    long maxBytesDownload = 0L;
+    protected long maxBytesDownload = 0L;
     public long getMaxBytesDownload() {
         return maxBytesDownload;
     }
@@ -51,7 +51,7 @@ public class CrawlLimitEnforcer implements ApplicationListener {
      * Maximum number of documents to download. Once this number is exceeded the 
      * crawler will stop. A value of zero means no upper limit.
      */
-    long maxDocumentsDownload = 0L; 
+    protected long maxDocumentsDownload = 0L; 
     public long getMaxDocumentsDownload() {
         return maxDocumentsDownload;
     }
@@ -63,7 +63,7 @@ public class CrawlLimitEnforcer implements ApplicationListener {
      * Maximum amount of time to crawl (in seconds). Once this much time has 
      * elapsed the crawler will stop. A value of zero means no upper limit.
      */
-    long maxTimeSeconds = 0L;
+    protected long maxTimeSeconds = 0L;
     public long getMaxTimeSeconds() {
         return maxTimeSeconds;
     }

@@ -57,14 +57,14 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
     private static final Logger logger = Logger.getLogger(SheetOverlaysManager.class.getName());
     
 
-    BeanFactory beanFactory; 
+    protected BeanFactory beanFactory; 
     /** all SheetAssociations by DecideRule evaluation */ 
-    SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
+    protected SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
         new ConcurrentSkipListSet<DecideRuledSheetAssociation>();
-    NavigableMap<String,List<String>> sheetNamesBySurt = new ConcurrentSkipListMap<String,List<String>>(); 
+    protected NavigableMap<String,List<String>> sheetNamesBySurt = new ConcurrentSkipListMap<String,List<String>>(); 
     
     /** all sheets by (bean)name*/
-    Map<String,Sheet> sheetsByName = new ConcurrentHashMap<String, Sheet>();
+    protected Map<String,Sheet> sheetsByName = new ConcurrentHashMap<String, Sheet>();
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;

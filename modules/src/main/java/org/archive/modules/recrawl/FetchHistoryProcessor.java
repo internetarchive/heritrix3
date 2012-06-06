@@ -39,7 +39,7 @@ public class FetchHistoryProcessor extends Processor {
     private static final long serialVersionUID = 1L;
     
     /** Desired history array length. */
-    int historyLength = 2;
+    protected int historyLength = 2;
     public int getHistoryLength() {
         return this.historyLength;
     }

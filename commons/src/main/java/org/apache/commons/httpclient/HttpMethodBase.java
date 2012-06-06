@@ -2360,7 +2360,7 @@ public abstract class HttpMethodBase implements HttpMethod {
      * 
      * TODO: Remove this crap as soon as possible
      */
-    void fakeResponse(
+    protected void fakeResponse(
         StatusLine statusline, 
         HeaderGroup responseheaders,
         InputStream responseStream

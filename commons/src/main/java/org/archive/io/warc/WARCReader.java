@@ -43,7 +43,7 @@ import org.archive.io.warc.WARCConstants;
  * @version $Date: 2006-11-27 18:03:03 -0800 (Mon, 27 Nov 2006) $ $Version$
  */
 public class WARCReader extends ArchiveReader implements WARCConstants {
-    WARCReader() {
+    protected WARCReader() {
         super();
     }
     

@@ -99,7 +99,7 @@ public class RuntimeLimitEnforcer extends Processor {
      * The amount of time, in seconds, that the crawl will be allowed to run
      * before this processor performs it's 'end operation.'
      */
-    long runtimeSeconds = 24*60*60L; // 1 day
+    protected long runtimeSeconds = 24*60*60L; // 1 day
     public long getRuntimeSeconds() {
         return this.runtimeSeconds;
     }
@@ -122,7 +122,7 @@ public class RuntimeLimitEnforcer extends Processor {
      * processor) fetch status code. This will cause all the URIs queued to wind
      * up in the crawl.log.
      */
-    Operation expirationOperation = Operation.PAUSE;
+    protected Operation expirationOperation = Operation.PAUSE;
     public Operation getExpirationOperation() {
         return this.expirationOperation;
     }

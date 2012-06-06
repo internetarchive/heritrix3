@@ -264,7 +264,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
         }
     }
     
-    String composeCacheSummary() {
+    protected String composeCacheSummary() {
         long totalHits = cacheHit.get() + diskHit.get();
         if (totalHits < 1) {
             return "";

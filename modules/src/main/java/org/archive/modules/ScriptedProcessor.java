@@ -73,7 +73,7 @@ implements ApplicationContextAware, InitializingBean {
         this.engineName = name;
     }
     
-    ReadSource scriptSource = null;
+    protected ReadSource scriptSource = null;
     public ReadSource getScriptSource() {
         return this.scriptSource;
     }
@@ -96,7 +96,7 @@ implements ApplicationContextAware, InitializingBean {
         this.isolateThreads = isolateThreads;
     }
 
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }

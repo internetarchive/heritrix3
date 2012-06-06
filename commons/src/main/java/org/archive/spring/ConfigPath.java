@@ -54,9 +54,9 @@ import org.springframework.beans.factory.annotation.Required;
 public class ConfigPath implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    String name; 
-    String path; 
-    ConfigPath base;
+    protected String name;
+    protected String path; 
+    protected ConfigPath base;
     
     public ConfigPath() {
         super();
@@ -124,7 +124,7 @@ public class ConfigPath implements Serializable {
         return this; 
     }
 
-    ConfigPathConfigurer configurer; 
+    protected ConfigPathConfigurer configurer; 
     public void setConfigurer(ConfigPathConfigurer configPathConfigurer) {
         this.configurer = configPathConfigurer;
     }

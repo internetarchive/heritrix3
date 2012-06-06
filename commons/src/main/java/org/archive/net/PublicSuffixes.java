@@ -85,8 +85,8 @@ public class PublicSuffixes {
      * {@code cs} must not be null except for root node. 
      */
     public static class Node implements Comparable<Node> {
-        CharSequence cs;
-        List<Node> branches;
+        protected CharSequence cs;
+        protected List<Node> branches;
         public Node() {
             this("", null);
         }
