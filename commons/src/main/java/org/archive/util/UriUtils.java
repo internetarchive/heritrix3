@@ -273,8 +273,7 @@ public class UriUtils {
             }
             return true;
         }
-
-        if (TextUtils.matches("^\\.\\.?[^/].*", candidate)) {
+        if (candidate.charAt(0) == '.' && !TextUtils.matches("^\\.{1,2}/.*", candidate)) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("rejected: starts with '.' (but not './' or '../'): " + candidate);
             }
