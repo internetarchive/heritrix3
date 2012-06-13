@@ -55,5 +55,7 @@
 	<classpathentry kind="var" path="M2_REPO/com/esotericsoftware/reflectasm/0.8/reflectasm-0.8.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/google/guava/guava/r08/guava-r08.jar" sourcepath="/M2_REPO/com/google/guava/guava/r08/guava-r08-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/net/java/dev/jna/jna/3.2.3/jna-3.2.3.jar" sourcepath="/M2_REPO/net/java/dev/jna/jna/3.2.3/jna-3.2.3-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2-sources.jar" />
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2-sources.jar" />
 	<classpathentry kind="output" path="bin"/>
 </classpath>
