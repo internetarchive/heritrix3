@@ -10,6 +10,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.util.Map;
@@ -32,7 +33,9 @@ import org.apache.http.impl.conn.DefaultClientConnection;
 import org.apache.http.impl.conn.DefaultClientConnectionOperator;
 import org.apache.http.impl.conn.SchemeRegistryFactory;
 import org.apache.http.impl.io.AbstractSessionInputBuffer;
+import org.apache.http.impl.io.AbstractSessionOutputBuffer;
 import org.apache.http.impl.io.IdentityInputStream;
+import org.apache.http.impl.io.IdentityOutputStream;
 import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.io.SessionOutputBuffer;
 import org.apache.http.params.HttpParams;
@@ -186,34 +189,17 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
 
     }
+
     protected HttpClient obtainHttpClient(final Recorder rec) {
         HttpClient httpClient = new DefaultHttpClient() {
             @Override
             protected ClientConnectionManager createClientConnectionManager() {
-                return new BasicClientConnectionManager(SchemeRegistryFactory.createDefault()) {
+                return new BasicClientConnectionManager(
+                        SchemeRegistryFactory.createDefault()) {
                     @Override
-                    protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
-                        return new DefaultClientConnectionOperator(schreg) {
-                            @Override
-                            public OperatedClientConnection createConnection() {
-                                return new DefaultClientConnection() {
-                                    @Override
-                                    protected SessionInputBuffer createSessionInputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
-                                        SessionInputBuffer sessionInputBuffer = super.createSessionInputBuffer(socket, buffersize, params);
-                                        InputStream recordingInputStream = rec.inputWrap(new IdentityInputStream(sessionInputBuffer));
-                                        return new HcInputWrapper(recordingInputStream, buffersize, params, sessionInputBuffer);
-                                    }
-                                    
-                                    @Override
-                                    protected SessionOutputBuffer createSessionOutputBuffer(
-                                            Socket socket, int buffersize,
-                                            HttpParams params)
-                                                    throws IOException {
-                                        return super.createSessionOutputBuffer(socket, buffersize, params);
-                                    }
-                                };
-                            }
-                        };
+                    protected ClientConnectionOperator createConnectionOperator(
+                            SchemeRegistry schreg) {
+                        return new RecordingClientConnection(schreg, rec);
                     }
                 };
 
@@ -313,20 +299,48 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         curi.getRecorder().close();
     }
 
-    public class HcInputWrapper extends AbstractSessionInputBuffer {
+    protected static class RecordingClientConnection extends DefaultClientConnectionOperator {
+        protected final Recorder rec;
 
-        protected SessionInputBuffer checkMeForDataAvailable;
-
-        @Override
-        public boolean isDataAvailable(int timeout) throws IOException {
-            throw new RuntimeException("not implemented");
-            // return checkMeForDataAvailable.isDataAvailable(timeout);
+        protected RecordingClientConnection(SchemeRegistry schemes, Recorder rec) {
+            super(schemes);
+            this.rec = rec;
         }
 
-        public HcInputWrapper(InputStream in, int buffersize, HttpParams params, SessionInputBuffer checkMeForDataAvailable) {
-            this.checkMeForDataAvailable = checkMeForDataAvailable;
-            this.init(in, buffersize, params);
+        @Override
+        public OperatedClientConnection createConnection() {
+            return new DefaultClientConnection() {
+                @Override
+                protected SessionInputBuffer createSessionInputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
+                    SessionInputBuffer sib = super.createSessionInputBuffer(socket, buffersize, params);
+                    InputStream ris = rec.inputWrap(new IdentityInputStream(sib));
+                    return new HcInputWrapper(ris, buffersize, params);
+                }
+                
+                @Override
+                protected SessionOutputBuffer createSessionOutputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
+                    SessionOutputBuffer sob = super.createSessionOutputBuffer(socket, buffersize, params);
+                    OutputStream ros = rec.outputWrap(new IdentityOutputStream(sob));
+                    return new HcOutputWrapper(ros, buffersize, params);
+                }
+            };
         }
     }
 
+    protected static class HcInputWrapper extends AbstractSessionInputBuffer {
+        public HcInputWrapper(InputStream in, int buffersize, HttpParams params) {
+            this.init(in, buffersize, params);
+        }
+
+        @Override
+        public boolean isDataAvailable(int timeout) throws IOException {
+            throw new IOException("not implemented");
+        }
+    }
+
+    protected static class HcOutputWrapper extends AbstractSessionOutputBuffer {
+        public HcOutputWrapper(OutputStream out, int buffersize, HttpParams params) {
+            this.init(out, buffersize, params);
+        }
+    }
 }
