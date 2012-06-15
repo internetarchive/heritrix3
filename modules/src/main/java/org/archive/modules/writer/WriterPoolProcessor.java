@@ -339,7 +339,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         } else if (scheme.equals("whois")) {
             retVal = curi.getFetchStatus() == S_WHOIS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
-            retVal = curi.getFetchStatus() > 0 && curi.getHttpMethod() != null;
+            retVal = curi.getFetchStatus() > 0 && curi.isHttpTransaction();
         } else if (scheme.equals("ftp")) {
             retVal = curi.getFetchStatus() > 0;
         } else {

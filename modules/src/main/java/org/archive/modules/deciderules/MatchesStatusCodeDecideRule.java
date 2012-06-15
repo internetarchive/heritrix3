@@ -1,14 +1,12 @@
 package org.archive.modules.deciderules;
 
 import org.archive.modules.CrawlURI;
-import org.apache.commons.httpclient.HttpMethod;
 
 /**
- * Provides a rule that returns "true" for any URIs which have an HTTP
- * status code that falls within the provided inclusive range. For
- * instance, to select only URIs with a "success" status code you must
- * provide the range 200 to 299.
- *
+ * Provides a rule that returns "true" for any URIs whose status falls within
+ * the provided inclusive range. For instance, to select only URIs with a
+ * "success" status code you must provide the range 200 to 299.
+ * 
  * @author cmiles74
  */
 public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
@@ -86,33 +84,14 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     }
 
     /**
-     * Returns "true" if the provided CrawlURI has an HttpMethod with
-     * a status code that falls within this instance's specified
-     * range.
-     *
-     * @param CrawlURI The URI to be evaluated
-     * @return true If the URI has an HttpMethod with a status code
-     * within this instances bounds
+     * @param CrawlURI
+     *            The URI to be evaluated
+     * @return true if {@link CrawlURI#getFetchStatus()} is within the specified
+     *         inclusive range
      */
     @Override
     protected boolean evaluate(CrawlURI uri) {
-
-        // by default, we'll return false
-        boolean value = false;
-
-        HttpMethod httpMethod = uri.getHttpMethod();
-
-        if(httpMethod != null) {
-
-            int statusCode = httpMethod.getStatusCode();
-
-            if(statusCode >= getLowerBound().intValue()
-               && statusCode <= getUpperBound().intValue()) {
-
-                value = true;
-            }
-        }
-
-        return(value);
+        return uri.getFetchStatus() >= getLowerBound().intValue()
+                && uri.getFetchStatus() <= getUpperBound().intValue();
     }
 }

@@ -93,6 +93,7 @@ import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecorderTooMuchHeaderException;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
@@ -607,6 +608,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
                     }
                 }
             };
+            curi.setFetchType(FetchType.HTTP_POST);
         } else {
             method = new HttpRecorderGetMethod(curiString, rec) {
                 protected void readResponseBody(HttpState state,
@@ -619,11 +621,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
                     }
                 }
             };
+            curi.setFetchType(FetchType.HTTP_GET);
         }
         
-        // Save method into curi too. Midfetch filters may want to leverage
-        // info in here.
-        curi.setHttpMethod(method);
 
         HostConfiguration customConfigOrNull = configureMethod(curi, method);
 

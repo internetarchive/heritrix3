@@ -547,10 +547,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         		HEADER_KEY_PROFILE, PROFILE_REVISIT_NOT_MODIFIED);
         // save just enough context to understand basis of not-modified
         if(curi.isHttpTransaction()) {
-            HttpMethod method = curi.getHttpMethod();
-            saveHeader(A_ETAG_HEADER,method,namedFields,HEADER_KEY_ETAG);
-            saveHeader(A_LAST_MODIFIED_HEADER,method,namedFields,
-            		HEADER_KEY_LAST_MODIFIED);
+            saveHeader(curi, namedFields, A_ETAG_HEADER, HEADER_KEY_ETAG);
+            saveHeader(curi, namedFields, A_LAST_MODIFIED_HEADER, HEADER_KEY_LAST_MODIFIED);
         }
         // truncate to zero-length (all necessary info is above)
         namedFields.addLabelValue(HEADER_KEY_TRUNCATED,
@@ -568,17 +566,14 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     }
     
     /**
-     * Save a header from the given HTTP operation into the 
+     * Saves a header from the given HTTP operation into the 
      * provider headers under a new name
-     * 
-     * @param origName header name to get if present
-     * @param method http operation containing headers
      */
-    protected void saveHeader(String origName, HttpMethod method, 
-    		ANVLRecord headers, String newName) {
-        Header header = method.getResponseHeader(origName);
-        if(header!=null) {
-            headers.addLabelValue(newName, header.getValue());
+    protected void saveHeader(CrawlURI curi, ANVLRecord warcHeaders,
+            String origName, String newName) {
+        String value = curi.getHttpHeader(origName);
+        if (value != null) {
+            warcHeaders.addLabelValue(newName, value);
         }
     }
 

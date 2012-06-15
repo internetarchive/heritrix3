@@ -72,12 +72,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
@@ -231,8 +228,6 @@ implements Reporter, Serializable, OverlayContext {
     
     transient private FetchType fetchType = FetchType.UNKNOWN;
 
-    transient private HttpMethod method = null;
-    
     /** 
      * Monotonically increasing number within a crawl;
      * useful for tending towards breadth-first ordering.
@@ -843,7 +838,7 @@ implements Reporter, Serializable, OverlayContext {
      * @return True if this is a http transaction.
      */
     public boolean isHttpTransaction() {
-        return method != null;
+        return getFetchType().equals(FetchType.HTTP_GET) || getFetchType().equals(FetchType.HTTP_POST);
     }
 
     /**
@@ -866,7 +861,9 @@ implements Reporter, Serializable, OverlayContext {
         extraInfo = null;
         outCandidates = null;
         outLinks = null;
-        method = null;
+        
+        // XXX er uh surprised this wasn't here before?
+        fetchType = FetchType.UNKNOWN;
     }
     
     public Map<String,Object> getPersistentDataMap() {
@@ -1283,23 +1280,8 @@ implements Reporter, Serializable, OverlayContext {
         fetchType = type;
     }
 
-    public void setHttpMethod(HttpMethod method) {
-        this.method = method;
-        if (method instanceof PostMethod) {
-            fetchType = FetchType.HTTP_POST;
-        } else if (method instanceof GetMethod) {
-            fetchType = FetchType.HTTP_GET;
-        } else {
-            fetchType = FetchType.UNKNOWN;
-        }
-    }
-
     public void setForceRetire(boolean b) {
         getData().put(A_FORCE_RETIRE, b);
-    }
-
-    public HttpMethod getHttpMethod() {
-        return method;
     }
 
     public void setBaseURI(UURI base) {
@@ -1800,7 +1782,9 @@ implements Reporter, Serializable, OverlayContext {
     
     
     
-    protected JSONObject extraInfo;  
+    protected JSONObject extraInfo;
+
+    protected Map<String,String> httpHeaders;  
      
     public JSONObject getExtraInfo() {
         if (extraInfo == null) {
@@ -1874,4 +1858,21 @@ implements Reporter, Serializable, OverlayContext {
         return getContentType().matches("(?i).*charset=.*");
     }
 
+    /**
+     * @param key http header key (case-insensitive)
+     * @return value of the header or null if there is no such header
+     */
+    public String getHttpHeader(String key) {
+        if (httpHeaders == null) {
+            return null;
+        }
+        return httpHeaders.get(key.toLowerCase());
+    }
+
+    public void putHttpHeader(String key, String value) {
+        if (httpHeaders == null) {
+            httpHeaders = new HashMap<String, String>();
+        }
+        httpHeaders.put(key.toLowerCase(), value);
+    }
 }

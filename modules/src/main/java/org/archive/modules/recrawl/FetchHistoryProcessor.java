@@ -19,15 +19,19 @@
 
 package org.archive.modules.recrawl;
 
-import java.util.HashMap;
+import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.*;
-import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
 
 /**
  * Maintain a history of fetch information inside the CrawlURI's attributes. 
@@ -75,9 +79,9 @@ public class FetchHistoryProcessor extends Processor {
         }
         // save relevant HTTP headers, if available
         if(curi.isHttpTransaction()) {
-            HttpMethod method = curi.getHttpMethod();
-            saveHeader(A_ETAG_HEADER,method,latestFetch);
-            saveHeader(A_LAST_MODIFIED_HEADER,method,latestFetch);
+            saveHeader(curi, latestFetch, A_ETAG_HEADER);
+            saveHeader(curi, latestFetch, A_LAST_MODIFIED_HEADER);
+
             // save reference length (real or virtual)
             long referenceLength; 
             if(curi.containsDataKey(A_REFERENCE_LENGTH) ) {
@@ -114,21 +118,14 @@ public class FetchHistoryProcessor extends Processor {
         curi.getData().put(A_FETCH_HISTORY,history);
     }
 
-    /**
-     * Save a header from the given HTTP operation into the AList.
-     * 
-     * @param name header name to save into history AList
-     * @param method http operation containing headers
-     * @param latestFetch AList to get header
-     */
-    protected void saveHeader(String name, HttpMethod method, 
-    		HashMap<String, Object> latestFetch) {
-        Header header = method.getResponseHeader(name);
-        if(header!=null) {
-            latestFetch.put(name, header.getValue());
+    /** Save a header from the given HTTP operation into the Map. */
+    protected void saveHeader(CrawlURI curi, Map<String,Object> map,
+            String key) {
+        String value = curi.getHttpHeader(key);
+        if (value != null) {
+            map.put(key, value);
         }
     }
-
 
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
