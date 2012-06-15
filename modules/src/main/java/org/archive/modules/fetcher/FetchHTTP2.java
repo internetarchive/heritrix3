@@ -20,6 +20,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -39,6 +40,7 @@ import org.apache.http.impl.io.IdentityOutputStream;
 import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.io.SessionOutputBuffer;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -154,12 +156,25 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             rec.markContentBegin();
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
+            return;
         } catch (IOException e) {
             failedExecuteCleanup(request, curi, e);
+            return;
+        }
+        
+        // set softMax on bytes to get (if implied by content-length)
+        long softMax = -1l;
+        Header h = response.getLastHeader("content-length");
+        if (h != null) {
+            Long.parseLong(h.getValue());
         }
         
         try {
-            rec.getRecordedInput().readFully();
+            if (!request.isAborted()) {
+                // Force read-to-end, so that any socket hangs occur here,
+                // not in later modules.
+                rec.getRecordedInput().readFullyOrUntil(softMax);
+            }
         } catch (RecorderTimeoutException ex) {
             doAbort(curi, request, TIMER_TRUNC);
         } catch (RecorderLengthExceededException ex) {
@@ -188,10 +203,14 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
 //            setOtherCodings(curi, rec, method); 
         }
 
+        if (digestContent) {
+            curi.setContentDigest(algorithm, 
+                rec.getRecordedInput().getDigestValue());
+        }
     }
 
     protected HttpClient obtainHttpClient(final Recorder rec) {
-        HttpClient httpClient = new DefaultHttpClient() {
+        DefaultHttpClient httpClient = new DefaultHttpClient() {
             @Override
             protected ClientConnectionManager createClientConnectionManager() {
                 return new BasicClientConnectionManager(
@@ -199,12 +218,21 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
                     @Override
                     protected ClientConnectionOperator createConnectionOperator(
                             SchemeRegistry schreg) {
-                        return new RecordingClientConnection(schreg, rec);
+                        return new RecordingClientConnectionOperator(schreg, rec);
                     }
                 };
-
             }
         };
+        
+        // never retry (heritrix handles this elsewhere)
+        httpClient.setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
+            @Override
+            public boolean retryRequest(IOException exception, int executionCount,
+                    HttpContext context) {
+                return false;
+            }
+        });
+        
         return httpClient;
     }
 
@@ -299,10 +327,10 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         curi.getRecorder().close();
     }
 
-    protected static class RecordingClientConnection extends DefaultClientConnectionOperator {
+    protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
         protected final Recorder rec;
 
-        protected RecordingClientConnection(SchemeRegistry schemes, Recorder rec) {
+        protected RecordingClientConnectionOperator(SchemeRegistry schemes, Recorder rec) {
             super(schemes);
             this.rec = rec;
         }
