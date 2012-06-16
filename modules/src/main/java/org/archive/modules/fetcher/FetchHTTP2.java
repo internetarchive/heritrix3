@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.Header;
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -150,10 +151,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         HttpResponse response = null;
         try {
             response = httpClient.execute(request);
-            
             addResponseContent(response, curi);
-
-            rec.markContentBegin();
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
             return;
@@ -223,7 +221,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
                 };
             }
         };
-        
+
         // never retry (heritrix handles this elsewhere)
         httpClient.setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
             @Override
@@ -351,6 +349,13 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
                     OutputStream ros = rec.outputWrap(new IdentityOutputStream(sob));
                     return new HcOutputWrapper(ros, buffersize, params);
                 }
+                
+                @Override
+                public void receiveResponseEntity(HttpResponse response)
+                        throws HttpException, IOException {
+                    rec.markContentBegin();
+                    super.receiveResponseEntity(response);
+                }
             };
         }
     }
@@ -371,4 +376,5 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             this.init(out, buffersize, params);
         }
     }
+
 }
