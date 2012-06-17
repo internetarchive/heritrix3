@@ -36,7 +36,6 @@ import org.apache.http.impl.conn.DefaultClientConnectionOperator;
 import org.apache.http.impl.conn.SchemeRegistryFactory;
 import org.apache.http.impl.io.AbstractSessionInputBuffer;
 import org.apache.http.impl.io.AbstractSessionOutputBuffer;
-import org.apache.http.impl.io.IdentityInputStream;
 import org.apache.http.impl.io.IdentityOutputStream;
 import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.io.SessionOutputBuffer;
@@ -166,12 +165,13 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         if (h != null) {
             Long.parseLong(h.getValue());
         }
-        
         try {
             if (!request.isAborted()) {
                 // Force read-to-end, so that any socket hangs occur here,
                 // not in later modules.
-                rec.getRecordedInput().readFullyOrUntil(softMax);
+                
+                // XXX does it matter that we're circumventing the library here? response.getEntity().getContent()
+                rec.getRecordedInput().readFullyOrUntil(softMax); 
             }
         } catch (RecorderTimeoutException ex) {
             doAbort(curi, request, TIMER_TRUNC);
@@ -326,6 +326,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     }
 
     protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
+
         protected final Recorder rec;
 
         protected RecordingClientConnectionOperator(SchemeRegistry schemes, Recorder rec) {
@@ -338,9 +339,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             return new DefaultClientConnection() {
                 @Override
                 protected SessionInputBuffer createSessionInputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
-                    SessionInputBuffer sib = super.createSessionInputBuffer(socket, buffersize, params);
-                    InputStream ris = rec.inputWrap(new IdentityInputStream(sib));
-                    return new HcInputWrapper(ris, buffersize, params);
+                    return new RecordingSocketInputBuffer(rec, socket, params);
                 }
                 
                 @Override
