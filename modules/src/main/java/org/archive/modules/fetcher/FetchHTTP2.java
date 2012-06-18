@@ -31,6 +31,7 @@ import java.security.MessageDigest;
 import java.util.Map;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -93,6 +94,13 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         this.digestAlgorithm = digestAlgorithm;
     }
 
+    public UserAgentProvider getUserAgentProvider() {
+        return (UserAgentProvider) kp.get("userAgentProvider");
+    }
+    @Autowired
+    public void setUserAgentProvider(UserAgentProvider provider) {
+        kp.put("userAgentProvider",provider);
+    }
 
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status
@@ -147,6 +155,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             request = new HttpGet(curiString);
             curi.setFetchType(FetchType.HTTP_GET);
         }
+        
+        configureRequest(curi, request);
+        
         HttpResponse response = null;
         try {
             response = getHttpClient().execute(request);
@@ -207,6 +218,18 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
     }
 
+    protected void configureRequest(CrawlURI curi, HttpRequestBase request) {
+        String from = getUserAgentProvider().getFrom();
+        String userAgent = curi.getUserAgent();
+        if (userAgent == null) {
+            userAgent = getUserAgentProvider().getUserAgent();
+        }
+        
+        request.setHeader("User-Agent", userAgent);
+        if(StringUtils.isNotBlank(from)) {
+            request.setHeader("From", from);
+        }
+    }
     protected HttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient();
