@@ -377,21 +377,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
     }
 
-    protected static class HcInputWrapper extends AbstractSessionInputBuffer {
-        public HcInputWrapper(InputStream in, int buffersize, HttpParams params) {
-            this.init(in, buffersize, params);
-        }
-
-        @Override
-        public boolean isDataAvailable(int timeout) throws IOException {
-            throw new IOException("not implemented");
-        }
-    }
-
     protected static class HcOutputWrapper extends AbstractSessionOutputBuffer {
         public HcOutputWrapper(OutputStream out, int buffersize, HttpParams params) {
             this.init(out, buffersize, params);
         }
     }
-
 }
