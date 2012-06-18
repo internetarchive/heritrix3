@@ -18,6 +18,7 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -33,19 +34,31 @@ import org.archive.util.Recorder;
 public class RecordingSocketInputBuffer implements SessionInputBuffer {
 
     protected Socket socket;
-    protected Recorder recorder;
     protected InputStream in;
     protected HttpTransportMetricsImpl metrics;
 
-    public RecordingSocketInputBuffer(Recorder rec, Socket socket, HttpParams params) throws IOException {
+    /**
+     * Gets recorder from current thread.
+     * @param socket
+     * @param buffersize
+     * @param params
+     * @throws IOException
+     */
+    public RecordingSocketInputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
         if (socket == null) {
             throw new IllegalArgumentException("Socket may not be null");
         }
-        this.recorder = rec;
         this.socket = socket;
-        this.in = recorder.inputWrap(socket.getInputStream());
-        
         this.metrics = new HttpTransportMetricsImpl();
+        
+        Recorder recorder = Recorder.getHttpRecorder();
+        Recorder httpRecorder = Recorder.getHttpRecorder();
+        if (httpRecorder == null) {   // XXX || (isSecure() && isProxied())) {
+            // no recorder, OR defer recording for pre-tunnel leg
+             this.in = new BufferedInputStream(socket.getInputStream(), buffersize);
+        } else {
+            this.in = recorder.inputWrap(new BufferedInputStream(socket.getInputStream(), buffersize));
+        }
     }
 
     @Override

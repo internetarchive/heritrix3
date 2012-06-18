@@ -27,38 +27,18 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HIST
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 import java.security.MessageDigest;
 import java.util.Map;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.Header;
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.ClientConnectionOperator;
-import org.apache.http.conn.OperatedClientConnection;
-import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.BasicClientConnectionManager;
-import org.apache.http.impl.conn.DefaultClientConnection;
-import org.apache.http.impl.conn.DefaultClientConnectionOperator;
-import org.apache.http.impl.conn.SchemeRegistryFactory;
-import org.apache.http.impl.io.AbstractSessionInputBuffer;
-import org.apache.http.impl.io.AbstractSessionOutputBuffer;
-import org.apache.http.impl.io.IdentityOutputStream;
-import org.apache.http.io.SessionInputBuffer;
-import org.apache.http.io.SessionOutputBuffer;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -71,6 +51,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 public class FetchHTTP2 extends Processor implements Lifecycle {
+
+    protected DefaultHttpClient httpClient; 
 
     protected ServerCache serverCache;
     public ServerCache getServerCache() {
@@ -98,7 +80,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         kp.put("digestContent",digest);
     }
  
-    protected String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1";
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }
@@ -164,10 +146,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             request = new HttpGet(curiString);
             curi.setFetchType(FetchType.HTTP_GET);
         }
-        HttpClient httpClient = obtainHttpClient(rec);
         HttpResponse response = null;
         try {
-            response = httpClient.execute(request);
+            response = getHttpClient().execute(request);
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
@@ -225,29 +206,10 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
     }
 
-    protected HttpClient obtainHttpClient(final Recorder rec) {
-        DefaultHttpClient httpClient = new DefaultHttpClient() {
-            @Override
-            protected ClientConnectionManager createClientConnectionManager() {
-                return new BasicClientConnectionManager(
-                        SchemeRegistryFactory.createDefault()) {
-                    @Override
-                    protected ClientConnectionOperator createConnectionOperator(
-                            SchemeRegistry schreg) {
-                        return new RecordingClientConnectionOperator(schreg, rec);
-                    }
-                };
-            }
-        };
-
-        // never retry (heritrix handles this elsewhere)
-        httpClient.setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
-            @Override
-            public boolean retryRequest(IOException exception, int executionCount,
-                    HttpContext context) {
-                return false;
-            }
-        });
+    protected HttpClient getHttpClient() {
+        if (httpClient == null) {
+            httpClient = new RecordingHttpClient();
+        }
         
         return httpClient;
     }
@@ -341,45 +303,5 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         curi.getNonFatalFailures().add(exception);
         curi.setFetchStatus(status);
         curi.getRecorder().close();
-    }
-
-    protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
-
-        protected final Recorder rec;
-
-        protected RecordingClientConnectionOperator(SchemeRegistry schemes, Recorder rec) {
-            super(schemes);
-            this.rec = rec;
-        }
-
-        @Override
-        public OperatedClientConnection createConnection() {
-            return new DefaultClientConnection() {
-                @Override
-                protected SessionInputBuffer createSessionInputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
-                    return new RecordingSocketInputBuffer(rec, socket, params);
-                }
-                
-                @Override
-                protected SessionOutputBuffer createSessionOutputBuffer(Socket socket, int buffersize, HttpParams params) throws IOException {
-                    SessionOutputBuffer sob = super.createSessionOutputBuffer(socket, buffersize, params);
-                    OutputStream ros = rec.outputWrap(new IdentityOutputStream(sob));
-                    return new HcOutputWrapper(ros, buffersize, params);
-                }
-                
-                @Override
-                public void receiveResponseEntity(HttpResponse response)
-                        throws HttpException, IOException {
-                    rec.markContentBegin();
-                    super.receiveResponseEntity(response);
-                }
-            };
-        }
-    }
-
-    protected static class HcOutputWrapper extends AbstractSessionOutputBuffer {
-        public HcOutputWrapper(OutputStream out, int buffersize, HttpParams params) {
-            this.init(out, buffersize, params);
-        }
     }
 }
