@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.archive.modules.fetcher;
+package org.archive.net.http;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
