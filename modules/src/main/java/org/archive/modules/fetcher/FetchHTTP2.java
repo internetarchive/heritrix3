@@ -33,13 +33,16 @@ import java.util.Map;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
+import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -102,6 +105,21 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         kp.put("userAgentProvider",provider);
     }
 
+    {
+        setSendConnectionClose(true);
+    }
+    public boolean getSendConnectionClose() {
+        return (Boolean) kp.get("sendConnectionClose");
+    }
+    /**
+     * Send 'Connection: close' header with every request.
+     */
+    public void setSendConnectionClose(boolean sendClose) {
+        kp.put("sendConnectionClose",sendClose);
+    }
+
+    protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader("Connection", "close");
+    
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status
      * if this processor would usually handle the CrawlURI, but cannot in
@@ -229,7 +247,12 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         if(StringUtils.isNotBlank(from)) {
             request.setHeader("From", from);
         }
+        
+        if (getSendConnectionClose()) {
+            request.setHeader(HEADER_SEND_CONNECTION_CLOSE);
+        }
     }
+    
     protected HttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient();

@@ -22,6 +22,7 @@ package org.archive.net.http;
 import java.io.IOException;
 import java.net.Socket;
 
+import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpRequestRetryHandler;
@@ -52,16 +53,21 @@ public class RecordingHttpClient extends DefaultHttpClient {
                 return false;
             }
         });
+        
+        setReuseStrategy(new ConnectionReuseStrategy() {
+            @Override
+            public boolean keepAlive(HttpResponse response, HttpContext context) {
+                return false;
+            }
+        });
     }
     
     @Override
     protected ClientConnectionManager createClientConnectionManager() {
-        return new BasicClientConnectionManager(
-                SchemeRegistryFactory.createDefault()) {
+        return new BasicClientConnectionManager(SchemeRegistryFactory.createDefault()) {
             @Override
-            protected ClientConnectionOperator createConnectionOperator(
-                    SchemeRegistry schreg) {
-                return new RecordingHttpClient.RecordingClientConnectionOperator(schreg);
+            protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
+                return new RecordingClientConnectionOperator(schreg);
             }
         };
     }
