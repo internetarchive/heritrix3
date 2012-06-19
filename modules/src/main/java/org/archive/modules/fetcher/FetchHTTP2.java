@@ -27,8 +27,11 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HIST
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
@@ -39,6 +42,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
@@ -55,6 +59,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 public class FetchHTTP2 extends Processor implements Lifecycle {
+
+    private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 
     protected DefaultHttpClient httpClient; 
 
@@ -116,6 +122,24 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     public void setSendConnectionClose(boolean sendClose) {
         kp.put("sendConnectionClose",sendClose);
     }
+    
+    {
+        setDefaultEncoding("ISO-8859-1");
+    }
+    public String getDefaultEncoding() {
+        return getDefaultCharset().name();
+    }
+    /**
+     * The character encoding to use for files that do not have one specified in
+     * the HTTP response headers. Default: ISO-8859-1.
+     */
+    public void setDefaultEncoding(String encoding) {
+        kp.put("defaultEncoding",Charset.forName(encoding));
+    }
+    public Charset getDefaultCharset() {
+        return (Charset)kp.get("defaultEncoding");
+    }
+
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
             HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
@@ -143,6 +167,58 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
 
         return true;
+    }
+    
+    /**
+     * Set the transfer, content encodings based on headers (if necessary). 
+     * 
+     * @param rec
+     *            Recorder for this request.
+     * @param response
+     *            Method used for the request.
+     */
+    protected void setOtherCodings(CrawlURI uri, final Recorder rec,
+            final HttpResponse response) {
+        rec.setInputIsChunked(response.getEntity().isChunked()); 
+        Header contentEncodingHeader = response.getEntity().getContentEncoding(); 
+        if (contentEncodingHeader != null) {
+            String ce = contentEncodingHeader.getValue().trim();
+            try {
+                rec.setContentEncoding(ce);
+            } catch (IllegalArgumentException e) {
+                uri.getAnnotations().add("unsatisfiableContentEncoding:" + StringUtils.stripToEmpty(ce));
+            }
+        }
+    }
+
+    /**
+     * Set the character encoding based on the result headers or default.
+     * 
+     * The HttpClient returns its own default encoding ("ISO-8859-1") if one
+     * isn't specified in the Content-Type response header. We give the user the
+     * option of overriding this, so we need to detect the case where the
+     * default is returned.
+     * 
+     * Now, it may well be the case that the default returned by HttpClient and
+     * the default defined by the user are the same.
+     * 
+     * TODO:FIXME?: This method does not do the "detect the case where the
+     * [HttpClient] default is returned" mentioned above! Why not?
+     * 
+     * @param rec
+     *            Recorder for this request.
+     * @param response
+     *            Method used for the request.
+     */
+    protected void setCharacterEncoding(CrawlURI curi, final Recorder rec,
+            final HttpResponse response) {
+        Charset charset = ContentType.getOrDefault(response.getEntity()).getCharset();
+        if (charset != null) {
+            rec.setCharset(charset);
+        } else {
+            // curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(encoding));
+            rec.setCharset(getDefaultCharset());
+        }
     }
 
     @Override
@@ -225,9 +301,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             // Note completion time
             curi.setFetchCompletedTime(System.currentTimeMillis());
             // Set the response charset into the HttpRecord if available.
-//            setCharacterEncoding(curi, rec, method);
+            setCharacterEncoding(curi, rec, response);
             setSizes(curi, rec);
-//            setOtherCodings(curi, rec, method); 
+            setOtherCodings(curi, rec, response); 
         }
 
         if (digestContent) {
