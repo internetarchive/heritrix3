@@ -33,9 +33,7 @@ import java.util.Map;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -43,6 +41,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -118,7 +117,8 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         kp.put("sendConnectionClose",sendClose);
     }
 
-    protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader("Connection", "close");
+    protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
+            HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
     
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status
@@ -243,7 +243,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             userAgent = getUserAgentProvider().getUserAgent();
         }
         
-        request.setHeader("User-Agent", userAgent);
+        request.setHeader(HTTP.USER_AGENT, userAgent);
         if(StringUtils.isNotBlank(from)) {
             request.setHeader("From", from);
         }

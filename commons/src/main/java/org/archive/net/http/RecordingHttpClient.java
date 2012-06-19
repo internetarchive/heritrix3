@@ -26,6 +26,8 @@ import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ClientConnectionOperator;
 import org.apache.http.conn.OperatedClientConnection;
@@ -45,7 +47,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
     public RecordingHttpClient() {
         super();
         
-        // never retry (heritrix handles this elsewhere)
+        // never retry requests (heritrix handles this elsewhere)
         setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
             @Override
             public boolean retryRequest(IOException exception, int executionCount,
@@ -54,12 +56,17 @@ public class RecordingHttpClient extends DefaultHttpClient {
             }
         });
         
+        // never reuse (no keep-alive)
         setReuseStrategy(new ConnectionReuseStrategy() {
             @Override
             public boolean keepAlive(HttpResponse response, HttpContext context) {
                 return false;
             }
         });
+        
+        // browser compatible cookie policy
+        HttpClientParams.setCookiePolicy(getParams(),
+                CookiePolicy.BROWSER_COMPATIBILITY);
     }
     
     @Override
