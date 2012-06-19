@@ -42,14 +42,27 @@ import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.io.SessionOutputBuffer;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
-import org.archive.modules.fetcher.HostResolver;
+import org.archive.modules.net.CrawlHost;
+import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
 
+/**
+ * 
+ * @contributor nlevitt
+ */
 public class RecordingHttpClient extends DefaultHttpClient {
-    public RecordingHttpClient() {
+    private ServerCache serverCache;
+
+    /**
+     * 
+     * @param serverCache
+     */
+    public RecordingHttpClient(ServerCache serverCache) {
         super();
         
-        // never retry requests (heritrix handles this elsewhere)
+        this.setServerCache(serverCache);
+        
+        // XXX uhh? see HeritrixHttpMethodRetryHandler ??
         setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
             @Override
             public boolean retryRequest(IOException exception, int executionCount,
@@ -67,33 +80,58 @@ public class RecordingHttpClient extends DefaultHttpClient {
         });
     }
     
+    protected ServerCache getServerCache() {
+        return serverCache;
+    }
+
+    protected void setServerCache(ServerCache serverCache) {
+        this.serverCache = serverCache;
+    }
+
+    /**
+     * 
+     */
     @Override
     protected ClientConnectionManager createClientConnectionManager() {
         return new BasicClientConnectionManager(SchemeRegistryFactory.createDefault()) {
             @Override
             protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
-                return new RecordingClientConnectionOperator(schreg);
+                return new RecordingClientConnectionOperator(schreg, new ServerCacheResolver(getServerCache()));
             }
         };
     }
     
-    protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
-        protected RecordingClientConnectionOperator(SchemeRegistry schemes) {
-            this(schemes, new DnsResolver() {
-                @Override
-                public InetAddress[] resolve(String host) throws UnknownHostException {
-                    // XXX this is how the old system does it, but seems ugly, tangles up modules with engine, etc
-                    Thread currentThread = Thread.currentThread();
-                    if (currentThread instanceof HostResolver) {
-                        HostResolver resolver = (HostResolver)currentThread;
-                        return new InetAddress[] {resolver.resolve(host)};
-                    } else {
-                        return null;
-                    }
-                }
-            });
+    /**
+     * Implementation of {@link DnsResolver} that uses the server cache which is
+     * normally expected to have been populated by FetchDNS.
+     * 
+     * @contributor nlevitt
+     */
+    public static class ServerCacheResolver implements DnsResolver {
+        protected ServerCache serverCache;
+
+        public ServerCacheResolver(ServerCache serverCache) {
+            this.serverCache = serverCache;
         }
-    
+
+        @Override
+        public InetAddress[] resolve(String host) throws UnknownHostException {
+            CrawlHost crawlHost = this.serverCache.getHostFor(host);
+            if (crawlHost != null) {
+                InetAddress ip = crawlHost.getIP();
+                if (ip != null) {
+                    return new InetAddress[] {ip};
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @contributor nlevitt
+     */
+    protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
         public RecordingClientConnectionOperator(SchemeRegistry schemes,
                 DnsResolver dnsResolver) {
             super(schemes, dnsResolver);

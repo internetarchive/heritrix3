@@ -477,7 +477,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     
     protected HttpClient getHttpClient() {
         if (httpClient == null) {
-            httpClient = new RecordingHttpClient();
+            httpClient = new RecordingHttpClient(getServerCache());
         }
         
         return httpClient;
