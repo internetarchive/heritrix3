@@ -243,12 +243,12 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme();
-        if (!(scheme.equals("http") || scheme.equals("https"))) {
+        if (!(scheme.equals(HTTP_SCHEME) || scheme.equals(HTTPS_SCHEME))) {
             // handles only plain http and https
             return false;
         }
 
-        CrawlHost host = serverCache.getHostFor(curi.getUURI());
+        CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host.getIP() == null && host.hasBeenLookedUp()) {
             curi.setFetchStatus(S_DOMAIN_PREREQUISITE_FAILURE);
             return false;

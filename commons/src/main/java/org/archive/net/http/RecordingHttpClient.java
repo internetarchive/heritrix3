@@ -20,7 +20,9 @@
 package org.archive.net.http;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
@@ -28,6 +30,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ClientConnectionOperator;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.OperatedClientConnection;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -39,6 +42,7 @@ import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.io.SessionOutputBuffer;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
+import org.archive.modules.fetcher.HostResolver;
 import org.archive.util.Recorder;
 
 public class RecordingHttpClient extends DefaultHttpClient {
@@ -75,9 +79,26 @@ public class RecordingHttpClient extends DefaultHttpClient {
     
     protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
         protected RecordingClientConnectionOperator(SchemeRegistry schemes) {
-            super(schemes);
+            this(schemes, new DnsResolver() {
+                @Override
+                public InetAddress[] resolve(String host) throws UnknownHostException {
+                    // XXX this is how the old system does it, but seems ugly, tangles up modules with engine, etc
+                    Thread currentThread = Thread.currentThread();
+                    if (currentThread instanceof HostResolver) {
+                        HostResolver resolver = (HostResolver)currentThread;
+                        return new InetAddress[] {resolver.resolve(host)};
+                    } else {
+                        return null;
+                    }
+                }
+            });
         }
     
+        public RecordingClientConnectionOperator(SchemeRegistry schemes,
+                DnsResolver dnsResolver) {
+            super(schemes, dnsResolver);
+        }
+
         @Override
         public OperatedClientConnection createConnection() {
             return new DefaultClientConnection() {
