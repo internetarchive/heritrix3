@@ -29,28 +29,34 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.Processor;
+import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.http.RecordingHttpClient;
@@ -63,6 +69,12 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 
     protected DefaultHttpClient httpClient; 
+    
+    public static final String REFERER = "Referer";
+    public static final String RANGE = "Range";
+    public static final String RANGE_PREFIX = "bytes=0-";
+    public static final String HTTP_SCHEME = "http";
+    public static final String HTTPS_SCHEME = "https";
 
     protected ServerCache serverCache;
     public ServerCache getServerCache() {
@@ -140,7 +152,83 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         return (Charset)kp.get("defaultEncoding");
     }
 
+    {
+        setUseHTTP11(false);
+    }
+    public boolean getUseHTTP11() {
+        return (Boolean) kp.get("useHTTP11");
+    }
+    /**
+     * Use HTTP/1.1. Note: even when offering an HTTP/1.1 request, 
+     * Heritrix may not properly handle persistent/keep-alive connections, 
+     * so the sendConnectionClose parameter should remain 'true'. 
+     */
+    public void setUseHTTP11(boolean useHTTP11) {
+        kp.put("useHTTP11",useHTTP11);
+    }
 
+    {
+        setIgnoreCookies(false);
+    }
+    public boolean getIgnoreCookies() {
+        return (Boolean) kp.get("ignoreCookies");
+    }
+    /**
+     * Disable cookie handling.
+     */
+    public void setIgnoreCookies(boolean ignoreCookies) {
+        kp.put("ignoreCookies",ignoreCookies);
+    }
+
+    {
+        setSendReferer(true);
+    }
+    public boolean getSendReferer() {
+        return (Boolean) kp.get("sendReferer");
+    }
+    /**
+     * Send 'Referer' header with every request.
+     * <p>
+     * The 'Referer' header contans the location the crawler came from, the page
+     * the current URI was discovered in. The 'Referer' usually is logged on the
+     * remote server and can be of assistance to webmasters trying to figure how
+     * a crawler got to a particular area on a site.
+     */
+    public void setSendReferer(boolean sendClose) {
+        kp.put("sendReferer",sendClose);
+    }
+
+    {
+        setAcceptCompression(false);
+    }
+    public boolean getAcceptCompression() {
+        return (Boolean) kp.get("acceptCompression");
+    }
+    /**
+     * Set headers to accept compressed responses. 
+     */
+    public void setAcceptCompression(boolean acceptCompression) {
+        kp.put("acceptCompression", acceptCompression);
+    }
+    
+    {
+        setAcceptHeaders(Arrays.asList("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
+    }
+    @SuppressWarnings("unchecked")
+    public List<String> getAcceptHeaders() {
+        return (List<String>) kp.get("acceptHeaders");
+    }
+    /**
+     * Accept Headers to include in each request. Each must be the complete
+     * header, e.g., 'Accept-Language: en'. (Thus, this can also be used to
+     * other headers not beginning 'Accept-' as well.) By default heritrix sends
+     * an Accept header similar to what a typical browser would send (the value
+     * comes from Firefox 4.0).
+     */
+    public void setAcceptHeaders(List<String> headers) {
+        kp.put("acceptHeaders",headers);
+    }
+    
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
             HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
     
@@ -313,21 +401,79 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     }
 
     protected void configureRequest(CrawlURI curi, HttpRequestBase request) {
-        String from = getUserAgentProvider().getFrom();
+        // ignore cookies?
+        if (getIgnoreCookies()) {
+            HttpClientParams.setCookiePolicy(request.getParams(), CookiePolicy.IGNORE_COOKIES);
+        } else {
+            HttpClientParams.setCookiePolicy(request.getParams(), CookiePolicy.BROWSER_COMPATIBILITY);
+        }
+
+        // http 1.1
+        if (getUseHTTP11()) {
+            HttpProtocolParams.setVersion(request.getParams(), HttpVersion.HTTP_1_1);
+        } else {
+            HttpProtocolParams.setVersion(request.getParams(), HttpVersion.HTTP_1_0);
+        }
+        
+        // user-agent header
         String userAgent = curi.getUserAgent();
         if (userAgent == null) {
             userAgent = getUserAgentProvider().getUserAgent();
         }
-        
-        request.setHeader(HTTP.USER_AGENT, userAgent);
-        if(StringUtils.isNotBlank(from)) {
+        // request.setHeader(HTTP.USER_AGENT, userAgent);
+        HttpProtocolParams.setUserAgent(request.getParams(), userAgent);
+
+        // from header
+        String from = getUserAgentProvider().getFrom();
+        if (StringUtils.isNotBlank(from)) {
             request.setHeader("From", from);
         }
         
         if (getSendConnectionClose()) {
             request.setHeader(HEADER_SEND_CONNECTION_CLOSE);
         }
+        
+        // referer
+        if (getSendReferer() && !LinkContext.PREREQ_MISC.equals(curi.getViaContext())) {
+            // RFC2616 says no referer header if referer is https and the url is not
+            String via = flattenVia(curi);
+            if (!StringUtils.isEmpty(via)
+                    && !(curi.getVia().getScheme().equals(HTTPS_SCHEME) 
+                            && curi.getUURI().getScheme().equals(HTTP_SCHEME))) {
+                request.setHeader(REFERER, via);
+            }
+        }
+
+        // TODO: What happens if below method adds a header already
+        // added above: e.g. Connection, Range, or Referer?
+        configureAcceptHeaders(request);
+
+//        HostConfiguration config = 
+//            new HostConfiguration(http.getHostConfiguration());
+//        configureProxy(curi, config);
+//        configureBindAddress(curi, config);
+//        return config;
     }
+    
+    protected void configureAcceptHeaders(HttpRequestBase request) {
+        if (getAcceptCompression()) {
+            // we match the Firefox header exactly (ordering and whitespace)
+            // as a favor to caches
+            request.setHeader("Accept-Encoding","gzip,deflate"); 
+        }
+        List<String> acceptHeaders = getAcceptHeaders();
+        if (acceptHeaders.isEmpty()) {
+            return;
+        }
+        for (String hdr: acceptHeaders) {
+            String[] nvp = hdr.split(": +");
+            if (nvp.length == 2) {
+                request.addHeader(nvp[0], nvp[1]);
+            } else {
+                logger.warning("Invalid accept header: " + hdr);
+            }
+        }
+}
     
     protected HttpClient getHttpClient() {
         if (httpClient == null) {
