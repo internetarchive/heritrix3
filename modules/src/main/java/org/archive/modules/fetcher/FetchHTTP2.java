@@ -41,13 +41,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
@@ -68,7 +66,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
 
     private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 
-    protected DefaultHttpClient httpClient; 
+    protected RecordingHttpClient httpClient; 
     
     public static final String REFERER = "Referer";
     public static final String RANGE = "Range";
@@ -229,6 +227,15 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         kp.put("acceptHeaders",headers);
     }
     
+    protected AbstractCookieStore cookieStore;
+    @Autowired(required=false)
+    public void setCookieStore(AbstractCookieStore store) {
+        this.cookieStore = store; 
+    }
+    public AbstractCookieStore getCookieStore() {
+        return cookieStore;
+    }
+
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
             HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
     
@@ -475,7 +482,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
 }
     
-    protected HttpClient getHttpClient() {
+    protected RecordingHttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient(getServerCache());
         }
@@ -573,4 +580,38 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         curi.setFetchStatus(status);
         curi.getRecorder().close();
     }
+    
+    public void start() {
+        if(isRunning()) {
+            return; 
+        }
+        super.start();
+        
+        // configureHttp();
+
+        if (getCookieStore() != null) {     
+            getCookieStore().start();
+            getHttpClient().setCookieStore(getCookieStore());
+        }
+
+        // setSSLFactory();
+    }
+    
+    public boolean isRunning() {
+        return this.httpClient != null; 
+    }
+    
+    public void stop() {
+        if (!isRunning()) {
+            return;
+        }
+        super.stop();
+        // At the end save cookies to the file specified in the order file.
+        if (cookieStore != null) {
+            cookieStore.saveCookies();
+            cookieStore.stop();
+        }
+        // cleanupHttp(); // XXX happens at finish; move to teardown?
+    }
+
 }

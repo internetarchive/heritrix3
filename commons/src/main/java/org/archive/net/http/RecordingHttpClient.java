@@ -96,7 +96,8 @@ public class RecordingHttpClient extends DefaultHttpClient {
         return new BasicClientConnectionManager(SchemeRegistryFactory.createDefault()) {
             @Override
             protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
-                return new RecordingClientConnectionOperator(schreg, new ServerCacheResolver(getServerCache()));
+                return new RecordingClientConnectionOperator(schreg, 
+                        new ServerCacheResolver(RecordingHttpClient.this.getServerCache()));
             }
         };
     }
