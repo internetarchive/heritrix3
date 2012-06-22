@@ -749,13 +749,12 @@ public class ArchiveUtils {
      * @param obj Object to prettify
      * @return prettified String
      */
-    @SuppressWarnings("unchecked")
     public static String prettyString(Object obj) {
         // these things have to checked and casted unfortunately
         if (obj instanceof Object[]) {
             return prettyString((Object[]) obj);
         } else if (obj instanceof Map) {
-            return prettyString((Map) obj);
+            return prettyString((Map<?, ?>) obj);
         } else {
             return "<"+obj+">"; 
         }
@@ -767,8 +766,7 @@ public class ArchiveUtils {
      * @param Map
      * @return prettified (in curly brackets) string of Map contents
      */
-    @SuppressWarnings("unchecked")
-    public static String prettyString(Map map) {
+    public static String prettyString(Map<?, ?> map) {
         StringBuilder builder = new StringBuilder();
         builder.append("{ ");
         boolean needsComma = false; 

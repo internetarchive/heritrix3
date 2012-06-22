@@ -53,7 +53,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * @contributor gojomo
  */
 public class SheetOverlaysManager implements 
-BeanFactoryAware, OverlayMapsSource, ApplicationListener {
+BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(SheetOverlaysManager.class.getName());
     
 
@@ -186,6 +186,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * properties.
      * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
      */
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ContextRefreshedEvent) {
             for(Sheet s: sheetsByName.values()) {

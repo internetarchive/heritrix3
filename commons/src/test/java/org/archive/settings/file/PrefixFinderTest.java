@@ -74,7 +74,6 @@ public class PrefixFinderTest extends TmpDirTestCase {
         testUrlsNoMatch(map);
     }
     
-    @SuppressWarnings("unchecked")
     public void testStoredSortedMap() throws Exception {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(true);      
@@ -89,7 +88,7 @@ public class PrefixFinderTest extends TmpDirTestCase {
         dbConfig.setDeferredWrite(true);
         Database db = bdbEnvironment.openDatabase(null, "test", dbConfig);
         
-        StoredSortedMap ssm = new StoredSortedMap(db, new StringBinding(), new StringBinding(), true);        
+        StoredSortedMap<String, String> ssm = new StoredSortedMap<String, String>(db, new StringBinding(), new StringBinding(), true);        
         testUrlsNoMatch(ssm);   
         db.close();
         bdbEnvironment.close();
