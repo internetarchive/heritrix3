@@ -85,7 +85,6 @@ import org.archive.util.FileUtils;
    
    @author Howard Lee Gayle
 */
-@SuppressWarnings("unchecked")
 public class MirrorWriterProcessor extends Processor {
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
@@ -462,7 +461,7 @@ public class MirrorWriterProcessor extends Processor {
        If not, the last element is removed.
        @param list the list
     */
-    private void ensurePairs(List list) {
+    private void ensurePairs(List<?> list) {
         if (1 == (list.size() % 2)) {
             list.remove(list.size() - 1);
         }
@@ -513,7 +512,7 @@ public class MirrorWriterProcessor extends Processor {
         if ((null != ctm) && (ctm.size() > 1)) {
             ensurePairs(ctm);
             String contentType = curi.getContentType().toLowerCase();
-            Iterator i = ctm.iterator();
+            Iterator<String> i = ctm.iterator();
             for (boolean more = true; more && i.hasNext();) {
                 String ct = (String) i.next();
                 String suf = (String) i.next();
@@ -542,7 +541,7 @@ public class MirrorWriterProcessor extends Processor {
             ensurePairs(cm);
             characterMap = new HashMap<String,String>(cm.size()); 
             // Above will be half full.
-            for (Iterator i = cm.iterator(); i.hasNext();) {
+            for (Iterator<String> i = cm.iterator(); i.hasNext();) {
                 String s1 = (String) i.next();
                 String s2 = (String) i.next();
                 if ((null != s1) && (1 == s1.length()) && (null != s2)
@@ -628,15 +627,15 @@ public class MirrorWriterProcessor extends Processor {
        @throws IOException
        if a needed directory could not be created
        @throws IOException
-       if a needed directory is not writeable
+       if a needed directory is not writable
        @throws IOException
        if a non-directory file exists with the same path as a needed directory
     */
     private URIToFileReturn uriToFile(CrawlURI curi, String host, int port,
             String uriPath, String query, String suffix, String baseDir,
             int maxSegLen, int maxPathLen, boolean caseSensitive,
-            String dirFile, Map characterMap, String dotBegin, String dotEnd,
-            String tooLongDir, boolean suffixAtEnd, Set underscoreSet)
+            String dirFile, Map<String, String> characterMap, String dotBegin, String dotEnd,
+            String tooLongDir, boolean suffixAtEnd, Set<String> underscoreSet)
             throws IOException {
         assert (null == host) || (0 != host.length());
         assert 0 != uriPath.length();
@@ -904,7 +903,7 @@ public class MirrorWriterProcessor extends Processor {
     */
     class DirSegment extends PathSegment {
         /** If a segment name is in this set, prepend an underscore.*/
-        private Set underscoreSet;
+        private Set<String> underscoreSet;
 
         /**
            Creates a DirSegment.
@@ -937,8 +936,8 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         DirSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, CrawlURI curi, Map characterMap,
-                   String dotBegin, String dotEnd, Set underscoreSet) {
+                   boolean caseSensitive, CrawlURI curi, Map<String, String> characterMap,
+                   String dotBegin, String dotEnd, Set<String> underscoreSet) {
             super(maxSegLen, caseSensitive, curi);
             mainPart = new LumpyString(uriPath, beginIndex, endIndex,
                                        (null == dotEnd) ? 0 : dotEnd.length(),
@@ -1126,7 +1125,7 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         EndSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, CrawlURI curi, Map characterMap,
+                   boolean caseSensitive, CrawlURI curi, Map<String, String> characterMap,
                    String dotBegin, String query, String suffix,
                    int maxPathLen, boolean suffixAtEnd) {
             super(maxSegLen - 1, caseSensitive, curi);
@@ -1413,7 +1412,7 @@ public class MirrorWriterProcessor extends Processor {
            dotBegin is non-null but empty.
         */
         LumpyString(String str, int beginIndex, int endIndex, int padding,
-                    int maxLen, Map characterMap, String dotBegin) {
+                    int maxLen, Map<String, String> characterMap, String dotBegin) {
             if (beginIndex < 0) {
                 throw new IllegalArgumentException("beginIndex < 0: "
                                                    + beginIndex);

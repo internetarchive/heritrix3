@@ -80,10 +80,10 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
         this.preloadSourceUrl = preloadSourceUrl;
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         String pkey = persistKeyFor(curi);
+        @SuppressWarnings("unchecked")
         Map<String, Object> prior = 
         	(Map<String,Object>) store.get(pkey);
         if(prior!=null) {

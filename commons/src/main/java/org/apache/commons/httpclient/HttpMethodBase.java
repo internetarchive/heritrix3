@@ -94,7 +94,7 @@ import org.apache.commons.logging.LogFactory;
  *
  * @version $Revision$ $Date$
  */
-@SuppressWarnings({"deprecation","unchecked"}) // <- // IA/HERITRIX change
+@SuppressWarnings({"deprecation"}) // <- // IA/HERITRIX change
 public abstract class HttpMethodBase implements HttpMethod {
 
     // -------------------------------------------------------------- Constants
@@ -1145,8 +1145,9 @@ public abstract class HttpMethodBase implements HttpMethod {
             } else {
                 this.cookiespec = CookiePolicy.getSpecByPolicy(i);
             }
-            this.cookiespec.setValidDateFormats(
-                    (Collection)this.params.getParameter(HttpMethodParams.DATE_PATTERNS));
+            @SuppressWarnings("unchecked")
+            Collection<String> val = (Collection<String>)this.params.getParameter(HttpMethodParams.DATE_PATTERNS);
+            this.cookiespec.setValidDateFormats(val);
         }
         return this.cookiespec;
     }

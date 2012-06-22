@@ -42,9 +42,7 @@ it's better to obtain irreduced results inside the fingerprinting loop
 and use <code>reduce</code> to reduce to a fingerprint after the loop.
 
 */
-
 // Tested by: TestFPGenerator
-@SuppressWarnings("unchecked")
 public final class FPGenerator {
 
     /** Return a fingerprint generator.  The fingerprints generated
@@ -64,7 +62,7 @@ public final class FPGenerator {
         }
         return fpgen;
     }
-    private static final Hashtable generators = new Hashtable(10);
+    private static final Hashtable<Long, FPGenerator> generators = new Hashtable<Long, FPGenerator>(10);
 
     private static final long zero = 0;
     private static final long one = 0x8000000000000000L;

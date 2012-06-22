@@ -58,7 +58,6 @@ public class ExtractorJS extends ContentExtractor {
 
     private static final long serialVersionUID = 2L;
 
-    @SuppressWarnings("unused")
     private static Logger LOGGER =
         Logger.getLogger("org.archive.crawler.extractor.ExtractorJS");
 

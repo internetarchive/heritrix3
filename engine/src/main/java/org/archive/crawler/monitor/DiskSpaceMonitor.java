@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationListener;
  * 
  * @contributor Kristinn Sigur&eth;sson
  */
-public class DiskSpaceMonitor implements ApplicationListener {
+public class DiskSpaceMonitor implements ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(DiskSpaceMonitor.class.getName());
 
     protected List<String> monitorPaths = new ArrayList<String>();

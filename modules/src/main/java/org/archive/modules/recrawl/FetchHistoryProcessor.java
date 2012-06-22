@@ -57,7 +57,6 @@ public class FetchHistoryProcessor extends Processor {
     public FetchHistoryProcessor() {
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI puri) throws InterruptedException {
     	CrawlURI curi = (CrawlURI) puri;
@@ -92,12 +91,14 @@ public class FetchHistoryProcessor extends Processor {
         
         // get or create proper-sized history array
         int targetHistoryLength = getHistoryLength();
-        HashMap[] history = 
-            (HashMap[]) (curi.containsDataKey(A_FETCH_HISTORY) 
+        @SuppressWarnings("unchecked")
+        HashMap<String, ?>[] history = 
+            (HashMap<String, ?>[]) (curi.containsDataKey(A_FETCH_HISTORY) 
 		    ? curi.getData().get(A_FETCH_HISTORY) 
 		    : new HashMap[targetHistoryLength]);
         if(history.length != targetHistoryLength) {
-            HashMap[] newHistory = new HashMap[targetHistoryLength];
+            @SuppressWarnings("unchecked")
+            HashMap<String, ?>[] newHistory = new HashMap[targetHistoryLength];
             System.arraycopy(
                     history,0,
                     newHistory,0,
