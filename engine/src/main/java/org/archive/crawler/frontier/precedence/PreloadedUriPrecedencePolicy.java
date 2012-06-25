@@ -66,29 +66,27 @@ implements Lifecycle {
         this.bdb = bdb;
     }
 
-    @SuppressWarnings("unchecked")
-    protected StoredSortedMap store;
+    protected StoredSortedMap<String, ?> store;
     protected Database historyDb;
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void start() {
         if(isRunning()) {
             return;
         }
+        store = null;
         String dbName = PersistProcessor.URI_HISTORY_DBNAME;
-        StoredSortedMap historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
             BdbModule.BdbConfig dbConfig = PersistProcessor.HISTORY_DB_CONFIG;
 
             historyDb = bdb.openDatabase(dbName, dbConfig, true);
-            historyMap = new StoredSortedMap(historyDb,
-                    new StringBinding(), new SerialBinding(classCatalog,
-                            Map.class), true);
+            SerialBinding sb = new SerialBinding(classCatalog, Map.class);
+            StoredSortedMap historyMap = new StoredSortedMap(historyDb, new StringBinding(), sb, true);
+            store = historyMap;
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
-        store = historyMap;
     }
     
     public boolean isRunning() {
@@ -141,11 +139,10 @@ implements Lifecycle {
      * double-loading
      * @param curi CrawlURI to receive prior state data
      */
-    @SuppressWarnings("unchecked")
     protected void mergePrior(CrawlURI curi) {
-        Map<String, Map> prior = null;
         String key = PersistProcessor.persistKeyFor(curi);
-        prior = (Map<String,Map>) store.get(key);
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        Map<String,Map> prior = (Map<String, Map>) store.get(key);
         if(prior!=null) {
             // merge in keys
             curi.getData().putAll(prior); 

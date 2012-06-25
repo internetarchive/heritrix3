@@ -453,7 +453,7 @@ implements ARCConstants, Closeable {
         options.addOption(new Option("p","parse", false, "Parse headers."));
         PosixParser parser = new PosixParser();
         CommandLine cmdline = parser.parse(options, args, false);
-        List cmdlineArgs = cmdline.getArgList();
+        List<String> cmdlineArgs = cmdline.getArgList();
         Option [] cmdlineOptions = cmdline.getOptions();
         HelpFormatter formatter = new HelpFormatter();
 
@@ -529,8 +529,7 @@ implements ARCConstants, Closeable {
             arc.setParseHttpHeaders(parse);
             outputRecord(arc, format);
         } else {
-            for (Iterator i = cmdlineArgs.iterator(); i.hasNext();) {
-                String urlOrPath = (String)i.next();
+            for (String urlOrPath : cmdlineArgs) {
                 try {
                         ARCReader r = ARCReaderFactory.get(urlOrPath);
                         r.setStrict(strict);

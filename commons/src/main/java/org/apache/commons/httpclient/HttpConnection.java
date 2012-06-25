@@ -91,7 +91,6 @@ import org.archive.util.Recorder; // <- // IA/HERITRIX import
  * 
  * @version   $Revision$ $Date$
  */
-@SuppressWarnings("unchecked") // <- HERITRIX CHANGE
 public class HttpConnection {
 
     // ----------------------------------------------------------- Constructors
@@ -1162,7 +1161,7 @@ public class HttpConnection {
             // Socket.shutdownOutput is a JDK 1.3
             // method. We'll use reflection in case
             // we're running in an older VM
-            Class[] paramsClasses = new Class[0];
+            Class<?>[] paramsClasses = new Class[0];
             Method shutdownOutput =
                 socket.getClass().getMethod("shutdownOutput", paramsClasses);
             Object[] params = new Object[0];

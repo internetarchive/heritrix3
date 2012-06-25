@@ -151,7 +151,6 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
      * @param classCatalog
      * @throws DatabaseException
      */
-    @SuppressWarnings("unchecked")
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
@@ -523,10 +522,9 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     private static class SoftEntry<V> extends SoftReference<V> {
         PhantomEntry<V> phantom;
 
-        @SuppressWarnings("unchecked")
         public SoftEntry(String key, V referent, ReferenceQueue<V> q) {
             super(referent, q);
-            this.phantom = new PhantomEntry(key, referent); // unchecked cast
+            this.phantom = new PhantomEntry<V>(key, referent);
         }
 
         public V get() {

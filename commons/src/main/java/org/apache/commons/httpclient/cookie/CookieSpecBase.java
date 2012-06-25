@@ -65,14 +65,13 @@ import com.sleepycat.collections.StoredIterator; // <- IA/HERITRIX CHANGE
  * 
  * @since 2.0 
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public class CookieSpecBase implements CookieSpec {
     
     /** Log object */
     protected static final Log LOG = LogFactory.getLog(CookieSpec.class);
 
     /** Valid date patterns */
-    private Collection datepatterns = null;
+    private Collection<String> datepatterns = null;
     
     /** Default constructor */
     public CookieSpecBase() {
@@ -346,11 +345,13 @@ public class CookieSpecBase implements CookieSpec {
     }
 
     
-    public Collection getValidDateFormats() {
+    @Override
+    public Collection<String> getValidDateFormats() {
         return this.datepatterns;
     }
 
-    public void setValidDateFormats(final Collection datepatterns) {
+    @Override
+    public void setValidDateFormats(final Collection<String> datepatterns) {
         this.datepatterns = datepatterns;
     }
 
@@ -580,7 +581,7 @@ public class CookieSpecBase implements CookieSpec {
         if (cookies == null) {
             return null;
         }
-        List matching = new LinkedList();
+        List<Cookie> matching = new LinkedList<Cookie>();
         for (int i = 0; i < cookies.length; i++) {
             if (match(host, port, path, secure, cookies[i])) {
                 addInPathOrder(matching, cookies[i]);
@@ -606,9 +607,9 @@ public class CookieSpecBase implements CookieSpec {
      * @param cookies SortedMap of <tt>Cookie</tt>s to be matched
      * @return an array of <tt>Cookie</tt>s matching the criterium
      */
-
+    @Override
     public Cookie[] match(String host, int port, String path, 
-        boolean secure, final SortedMap cookies) {
+        boolean secure, final SortedMap<String, Cookie> cookies) {
             
         LOG.trace("enter CookieSpecBase.match("
            + "String, int, String, boolean, SortedMap)");
@@ -616,7 +617,7 @@ public class CookieSpecBase implements CookieSpec {
         if (cookies == null) {
             return null;
         }
-        List matching = new LinkedList();
+        List<Cookie> matching = new LinkedList<Cookie>();
         InternetDomainName domain; 
         try {
             domain = InternetDomainName.fromLenient(host); 
@@ -626,7 +627,7 @@ public class CookieSpecBase implements CookieSpec {
         
         String candidate = (domain!=null) ? domain.name() : host;
         while(candidate!=null) {
-            Iterator iter = cookies.subMap(candidate,
+            Iterator<Cookie> iter = cookies.subMap(candidate,
                     candidate + Cookie.DOMAIN_OVERBOUNDS).values().iterator();
             while (iter.hasNext()) {
                 Cookie cookie = (Cookie) (iter.next());
@@ -656,7 +657,7 @@ public class CookieSpecBase implements CookieSpec {
      * @param list - the list to add the cookie to
      * @param addCookie - the Cookie to add to list
      */
-    private static void addInPathOrder(List list, Cookie addCookie) {
+    private static void addInPathOrder(List<Cookie> list, Cookie addCookie) {
         int i = 0;
 
         for (i = 0; i < list.size(); i++) {

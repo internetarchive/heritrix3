@@ -63,8 +63,7 @@ public class BeanFieldsPatternValidator implements Validator {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public boolean supports(Class cls) {
+    public boolean supports(Class<?> cls) {
         return this.clazz.isAssignableFrom(cls);
     }
 

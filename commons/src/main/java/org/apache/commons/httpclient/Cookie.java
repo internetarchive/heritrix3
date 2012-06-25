@@ -61,8 +61,8 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @version $Revision$ $Date$
  */
-@SuppressWarnings({"serial","unchecked"}) // <- HERITRIX CHANGE
-public class Cookie extends NameValuePair implements Serializable, Comparator {
+@SuppressWarnings({"serial"}) // <- HERITRIX CHANGE
+public class Cookie extends NameValuePair implements Serializable, Comparator<Cookie> {
 
     // ----------------------------------------------------------- Constructors
 
@@ -415,6 +415,7 @@ public class Cookie extends NameValuePair implements Serializable, Comparator {
      * @param obj The object to compare against.
      * @return true if the two objects are equal.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
         if (this == obj) return true;
@@ -454,7 +455,8 @@ public class Cookie extends NameValuePair implements Serializable, Comparator {
      * @param o2 The second object to be compared
      * @return See {@link java.util.Comparator#compare(Object,Object)}
      */
-    public int compare(Object o1, Object o2) {
+    @Override
+    public int compare(Cookie o1, Cookie o2) {
         LOG.trace("enter Cookie.compare(Object, Object)");
 
         if (!(o1 instanceof Cookie)) {
