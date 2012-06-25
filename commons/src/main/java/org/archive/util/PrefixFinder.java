@@ -76,18 +76,17 @@ public class PrefixFinder {
     }
 
     
-    @SuppressWarnings("unchecked")
     protected static SortedSet<String> headSetInclusive(SortedSet<String> set, String input) {
         // use NavigableSet inclusive version if available
         if(set instanceof NavigableSet) {
-            return ((NavigableSet)set).headSet(input, true);
+            return ((NavigableSet<String>)set).headSet(input, true);
         }
         // use Stored*Set inclusive version if available
         if(set instanceof StoredSortedKeySet) {
-            return ((StoredSortedKeySet)set).headSet(input, true);
+            return ((StoredSortedKeySet<String>)set).headSet(input, true);
         }
         if(set instanceof StoredSortedValueSet) {
-            return ((StoredSortedValueSet)set).headSet(input, true);
+            return ((StoredSortedValueSet<String>)set).headSet(input, true);
         }
         // Use synthetic "one above" trick
         // NOTE: because '\0' sorts in the middle in "java modified UTF-8",
@@ -125,15 +124,14 @@ public class PrefixFinder {
     }
 
 
-    @SuppressWarnings("unchecked")
     private static SortedMap<String, ?> headMapInclusive(SortedMap<String, ?> map, String input) {
         // use NavigableMap inclusive version if available
         if(map instanceof NavigableMap) {
-            return ((NavigableMap)map).headMap(input, true);
+            return ((NavigableMap<String, ?>)map).headMap(input, true);
         }
         // use StoredSortedMap inclusive version if available
         if(map instanceof StoredSortedMap) {
-            return ((StoredSortedMap)map).headMap(input, true);
+            return ((StoredSortedMap<String, ?>)map).headMap(input, true);
         }
         // Use synthetic "one above" trick
         // NOTE: because '\0' sorts in the middle in "java modified UTF-8",

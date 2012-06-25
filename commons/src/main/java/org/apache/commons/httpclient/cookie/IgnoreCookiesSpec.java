@@ -42,7 +42,6 @@ import org.apache.commons.httpclient.NameValuePair;
  * 
  * @since 3.0
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public class IgnoreCookiesSpec implements CookieSpec {
 
     /**
@@ -63,14 +62,16 @@ public class IgnoreCookiesSpec implements CookieSpec {
     /**
      * @return <code>null</code>
      */
-    public Collection getValidDateFormats() {
+    @Override
+    public Collection<String> getValidDateFormats() {
         return null;
     }
     
     /**
      * Does nothing.
      */
-    public void setValidDateFormats(Collection datepatterns) {
+    @Override
+    public void setValidDateFormats(Collection<String> datepatterns) {
     }
     
     /**
@@ -152,8 +153,9 @@ public class IgnoreCookiesSpec implements CookieSpec {
     }
 
 // BEGIN IA/HERITRIX ADDITION
+    @Override
     public Cookie[] match(String domain, int port, String path, boolean secure,
-        SortedMap cookiesMap) {
+        SortedMap<String, Cookie> cookiesMap) {
         return new Cookie[0];
     }
 // END IA/HERITRIX CHANGE

@@ -51,7 +51,6 @@ import org.apache.commons.httpclient.Cookie;
  *
  * @since 2.0
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public interface CookieSpec {    
 
     /** Path delimiter */
@@ -140,7 +139,7 @@ public interface CookieSpec {
      *
      * @param datepatterns collection of date patterns
      */
-    void setValidDateFormats(Collection datepatterns);
+    void setValidDateFormats(Collection<String> datepatterns);
     
     /**
      * Returns the {@link Collection} of date patterns used for parsing. The String patterns are compatible 
@@ -148,7 +147,7 @@ public interface CookieSpec {
      *
      * @return collection of date patterns
      */
-    Collection getValidDateFormats();
+    Collection<String> getValidDateFormats();
     
     /**
      * Determines if a Cookie matches a location.
@@ -195,7 +194,7 @@ public interface CookieSpec {
      *
      * @param host the host to which the request is being submitted
      * @param port the port to which the request is being submitted 
-     *  (currenlty ignored)
+     *  (currently ignored)
      * @param path the path to which the request is being submitted
      * @param secure <tt>true</tt> if the request is using a secure protocol
      * @param cookies SortedMap of <tt>Cookie</tt>s to be matched
@@ -203,7 +202,7 @@ public interface CookieSpec {
      * @return <tt>true</tt> if the cookie should be submitted with a request 
      *  with given attributes, <tt>false</tt> otherwise.
      */
-    Cookie[] match(String domain, int port, String path, boolean secure, SortedMap cookiesMap);
+    Cookie[] match(String domain, int port, String path, boolean secure, SortedMap<String, Cookie> cookiesMap);
 // END IA/HERITRIX CHANGES
 
     /**

@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationListener;
  * 
  * @contributor gojomo
  */
-public class CrawlLimitEnforcer implements ApplicationListener {
+public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent> {
 
     /**
      * Maximum number of bytes to download. Once this number is exceeded 
@@ -80,6 +80,7 @@ public class CrawlLimitEnforcer implements ApplicationListener {
         this.controller = controller;
     }
     
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof StatSnapshotEvent) {
             CrawlStatSnapshot snapshot = ((StatSnapshotEvent)event).getSnapshot();

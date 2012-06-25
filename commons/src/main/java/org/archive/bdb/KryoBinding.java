@@ -51,8 +51,7 @@ public class KryoBinding<K> implements EntryBinding<K> {
      * @param baseClass is the base class for serialized objects stored using
      * this binding
      */
-    @SuppressWarnings("unchecked")
-    public KryoBinding(Class baseClass) {
+    public KryoBinding(Class<K> baseClass) {
         this.baseClass = baseClass;
         kryo.autoregister(baseClass);
         // TODO: reevaluate if explicit registration should be required

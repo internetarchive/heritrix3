@@ -124,7 +124,6 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
      * @param classCatalog
      * @throws DatabaseException
      */
-    @SuppressWarnings("unchecked")
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {

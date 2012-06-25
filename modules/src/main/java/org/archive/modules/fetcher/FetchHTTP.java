@@ -743,14 +743,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param curi CrawlURI
      * @param rec HttpRecorder
      */
-    @SuppressWarnings("unchecked")
     protected void setSizes(CrawlURI curi, Recorder rec) {
         // set reporting size
         curi.setContentSize(rec.getRecordedInput().getSize());
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
                 && curi.containsDataKey(A_FETCH_HISTORY)) {
-            Map history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
+            @SuppressWarnings("unchecked")
+            Map<String, ?> history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
             if (history[0] != null
                     && history[0]
                             .containsKey(A_REFERENCE_LENGTH)) {
@@ -1024,12 +1024,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
-    @SuppressWarnings("unchecked")
     protected void setConditionalGetHeader(CrawlURI curi, HttpMethod method, 
             boolean conditional, String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
-                Map[] history = (Map[])curi.getData().get(A_FETCH_HISTORY);
+                @SuppressWarnings("unchecked")
+                Map<String, ?>[] history = (Map[])curi.getData().get(A_FETCH_HISTORY);
                 int previousStatus = (Integer) history[0].get(A_STATUS);
                 if(previousStatus<=0) {
                     // do not reuse headers from any broken fetch
@@ -1261,7 +1261,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            CrawlURI that got a 401.
      * @return Returns first wholesome authscheme found else null.
      */
-    @SuppressWarnings("unchecked")
     protected AuthScheme getAuthScheme(final HttpMethod method,
             final CrawlURI curi) {
         Header[] headers = method.getResponseHeaders("WWW-Authenticate");
@@ -1271,9 +1270,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return null;
         }
 
-        Map authschemes = null;
+        Map<String, String> authschemes = null;
         try {
-            authschemes = AuthChallengeParser.parseChallenges(headers);
+            @SuppressWarnings("unchecked")
+            Map<String, String> parsedChallenges = AuthChallengeParser.parseChallenges(headers);
+            authschemes = parsedChallenges;
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
         }
@@ -1285,7 +1286,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
         AuthScheme result = null;
         // Use the first auth found.
-        for (Iterator i = authschemes.keySet().iterator(); result == null
+        for (Iterator<String> i = authschemes.keySet().iterator(); result == null
                 && i.hasNext();) {
             String key = (String) i.next();
             String challenge = (String) authschemes.get(key);
@@ -1377,7 +1378,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         super.stop();
         // At the end save cookies to the file specified in the order file.
         if (cookieStorage != null) {
-            @SuppressWarnings("unchecked")
             Map<String, Cookie> map = http.getState().getCookiesMap();
             cookieStorage.saveCookiesMap(map);
             cookieStorage.stop();
