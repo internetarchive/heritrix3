@@ -26,6 +26,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
@@ -35,39 +39,44 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
-import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.DefaultHandler;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.handler.ResourceHandler;
+import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
 
-    protected static final String HTDOCS_PATH = FetchHTTPTestBase.class.getResource("testdata").getFile();
+    protected static class TestHandler extends AbstractHandler {
+        @Override
+        public void handle(String target, HttpServletRequest request,
+                HttpServletResponse response, int dispatch) throws IOException,
+                ServletException {
+            response.setContentType("text/plain;charset=US-ASCII");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().println("I am 29 bytes of ascii text.");
+            ((Request)request).setHandled(true);
+        }
+    }
+
     protected static Server httpServer;
     protected AbstractFetchHTTP fetcher;
 
     abstract protected AbstractFetchHTTP makeModule() throws IOException;
 
-    public static Server startHttpFileServer(String path) throws Exception {
-        System.setProperty("org.mortbay.LEVEL", "DEBUG");
+    public static Server startHttpFileServer() throws Exception {
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
+        
         Server server = new Server();
+        
         SocketConnector sc = new SocketConnector();
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
-        ResourceHandler rhandler = new ResourceHandler();
-        rhandler.setResourceBase(path);
-        logger.info("serving files from " + path);
         
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] {rhandler, new DefaultHandler()});
-        server.setHandler(handlers);
+        server.setHandler(new TestHandler());
         
         server.start();
         
@@ -76,7 +85,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     protected static void ensureHttpServer() throws Exception {
         if (httpServer == null) { 
-            httpServer = startHttpFileServer(HTDOCS_PATH);
+            httpServer = startHttpFileServer();
         }
     }
 
@@ -89,7 +98,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
 
     protected CrawlURI defaultTestURI() throws URIException, IOException {
-        UURI uuri = UURIFactory.getInstance("http://localhost:7777/test.txt");
+        UURI uuri = UURIFactory.getInstance("http://localhost:7777/");
         CrawlURI curi = new CrawlURI(uuri);
         curi.setRecorder(getRecorder());
         return curi;
@@ -100,7 +109,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         
         byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
         String requestString = new String(buf, "US-ASCII");
-        assertTrue(requestString.startsWith("GET /test.txt HTTP/1.0\r\n"));
+        assertTrue(requestString.startsWith("GET / HTTP/1.0\r\n"));
         assertTrue(requestString.contains("User-Agent: " + getUserAgentString() + "\r\n"));
         assertTrue(requestString.matches("(?s).*Connection: [Cc]lose\r\n.*"));
         if (!exclusions.contains("acceptHeaders")) {
@@ -111,11 +120,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         
         buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
         String entityString = new String(buf, "US-ASCII");
-        assertTrue(entityString.equals("I am an ascii text file 39 bytes long.\n"));
+        assertTrue(entityString.equals("I am 29 bytes of ascii text.\n"));
         
-        assertEquals(curi.getContentLength(), 39);
-        assertEquals(curi.getContentDigestSchemeString(), "sha1:Y6G7VXZWY52LQA774YOVJ7TPZXMOMUY7");
-        assertEquals(curi.getContentType(), "text/plain");
+        assertEquals(curi.getContentLength(), 29);
+        assertEquals(curi.getContentDigestSchemeString(), "sha1:Q5XGEQBX3LORBIZ5PBKNYNQEZDPAUASH");
+        assertEquals(curi.getContentType(), "text/plain;charset=US-ASCII");
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
         assertTrue(curi.getFetchStatus() == 200);
