@@ -6,11 +6,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.Base32;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.Handler;
@@ -90,7 +90,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(entityString.equals("I am an ascii text file 39 bytes long.\n"));
         
         assertEquals(curi.getContentLength(), 39);
-        assertEquals(Base32.encode(curi.getContentDigest()), "Y6G7VXZWY52LQA774YOVJ7TPZXMOMUY7");
+        assertEquals(curi.getContentDigestSchemeString(), "sha1:Y6G7VXZWY52LQA774YOVJ7TPZXMOMUY7");
+        assertEquals(curi.getContentType(), "text/plain");
+        assertTrue(curi.getCredentials().isEmpty());
+        assertTrue(curi.getFetchDuration() >= 0);
+        assertTrue(curi.getFetchStatus() == 200);
+        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        assertEquals(curi.getRecordedSize(), curi.getContentSize());
     }
 
     protected String getUserAgentString() {
