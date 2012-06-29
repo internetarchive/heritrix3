@@ -19,27 +19,29 @@
 package org.archive.modules.fetcher;
 
 
+import java.io.IOException;
+
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.Processor;
-import org.archive.modules.ProcessorTestBase;
-import org.archive.modules.fetcher.FetchHTTP;
 
 
 /**
  *
  */
-public class FetchHTTPTest extends ProcessorTestBase {
+public class FetchHTTPTest extends FetchHTTPTestBase {
 
     @Override
-    protected Processor makeModule() {
-        FetchHTTP result = new FetchHTTP();
-        // FIXME: Set up server cache, credential store...
-        // Use SimpleCookieStorage for FetchHTTP test, even though BDB is 
-        // actual default
-        result.setCookieStorage(new SimpleCookieStorage());
-        result.start();
-        return result;
+    protected Processor makeModule() throws IOException {
+        FetchHTTP fetchHttp = new FetchHTTP();
+        fetchHttp.setCookieStorage(new SimpleCookieStorage());
+        fetchHttp.setServerCache(new DefaultServerCache());
+        CrawlMetadata uap = new CrawlMetadata();
+        uap.setUserAgentTemplate(getUserAgentString());
+        fetchHttp.setUserAgentProvider(new CrawlMetadata());
+        
+        fetchHttp.start();
+        return fetchHttp;
     }
-    
-    // TODO TESTME!
+
     
 }

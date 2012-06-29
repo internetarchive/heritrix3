@@ -192,11 +192,15 @@ public class ReplayInputStream extends SeekInputStream
     }
 
     public void readFullyTo(OutputStream os) throws IOException {
+        readFullyTo(this, os);
+    }
+
+    public static void readFullyTo(InputStream in, OutputStream os) throws IOException {
         byte[] buf = new byte[4096];
-        int c = read(buf);
+        int c = in.read(buf);
         while (c != -1) {
             os.write(buf,0,c);
-            c = read(buf);
+            c = in.read(buf);
         }
     }
     
@@ -218,12 +222,7 @@ public class ReplayInputStream extends SeekInputStream
      */
     public void readContentTo(OutputStream os) throws IOException {
         setToResponseBodyStart();
-        byte[] buf = new byte[4096];
-        int c = read(buf);
-        while (c != -1) {
-            os.write(buf,0,c);
-            c = read(buf);            
-        }
+        readFullyTo(os);
     }
     
     /**
