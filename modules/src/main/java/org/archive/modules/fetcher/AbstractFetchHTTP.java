@@ -18,29 +18,11 @@
  */
 package org.archive.modules.fetcher;
 
+import java.util.List;
 
-import java.io.IOException;
+import org.archive.modules.Processor;
 
-import org.archive.modules.CrawlMetadata;
+abstract public class AbstractFetchHTTP extends Processor {
 
-
-/**
- *
- */
-public class FetchHTTPTest extends FetchHTTPTestBase {
-
-    @Override
-    protected AbstractFetchHTTP makeModule() throws IOException {
-        FetchHTTP fetchHttp = new FetchHTTP();
-        fetchHttp.setCookieStorage(new SimpleCookieStorage());
-        fetchHttp.setServerCache(new DefaultServerCache());
-        CrawlMetadata uap = new CrawlMetadata();
-        uap.setUserAgentTemplate(getUserAgentString());
-        fetchHttp.setUserAgentProvider(uap);
-        
-        fetchHttp.start();
-        return fetchHttp;
-    }
-
-    
+    abstract public void setAcceptHeaders(List<String> headers);
 }
