@@ -79,6 +79,14 @@ public class UURIFactoryTest extends TestCase {
                 "http://www.archive.org/one//index.html"));
     }
     
+    public final void testSchemelessURI() throws URIException {
+        UURI base = UURIFactory.getInstance("https://www.archive.org");
+        UURI uuri = UURIFactory.getInstance(base, "//example.com/monkey?this:uri:has:colons");
+        assertTrue("Doesn't do right thing with a schemeless URI " + uuri,
+            uuri.toString().equals(
+                "https://example.com/monkey?this:uri:has:colons"));
+    }
+    
     public final void testTrailingEncodedSpace() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.nps-shoes.co.uk%20");
         assertTrue("Doesn't strip trailing encoded space 1 " + uuri,
