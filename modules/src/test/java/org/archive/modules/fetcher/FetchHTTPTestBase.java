@@ -1,8 +1,9 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
@@ -26,12 +27,12 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
 
     protected static final String HTDOCS_PATH = FetchHTTPTestBase.class.getResource("testdata").getFile();
-    protected Server httpServer;
+    protected static Server httpServer;
     protected Processor fetcher;
 
     abstract protected Processor makeModule() throws IOException;
 
-    public Server startHttpFileServer(String path) throws Exception {
+    public static Server startHttpFileServer(String path) throws Exception {
         System.setProperty("org.mortbay.LEVEL", "DEBUG");
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
         Server server = new Server();
@@ -52,9 +53,9 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return server;
     }
     
-    protected void ensureHttpServer() throws Exception {
-        if (this.httpServer == null) { 
-            this.httpServer = startHttpFileServer(HTDOCS_PATH);
+    protected static void ensureHttpServer() throws Exception {
+        if (httpServer == null) { 
+            httpServer = startHttpFileServer(HTDOCS_PATH);
         }
     }
 
@@ -66,7 +67,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return fetcher;
     }
     
-    public void testSomething() throws Exception {
+    public void testDefaults() throws Exception {
         ensureHttpServer();
         fetcher = getFetcher();
         
@@ -79,10 +80,50 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // curi.getRecorder().getRecordedOutput().getReplayInputStream().readFullyTo(buf);
         String requestString = new String(buf, "US-ASCII");
         assertTrue(requestString.startsWith("GET /test.txt HTTP/1.0\r\n"));
-        // assertTrue(requestString.matches("(?is).*User-Agent: " + Pattern.quote(getUserAgentString()) + "\r\n.*"));
-        assertTrue(requestString.matches("(?is).*Connection: close\r\n.*"));
-        assertTrue(requestString.matches("(?is).*Accept: " + Pattern.quote("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") + "\r\n.*"));
-        assertTrue(requestString.matches("(?is).*Host: localhost:7777\r\n.*"));
+        assertTrue(requestString.contains("User-Agent: " + getUserAgentString() + "\r\n"));
+        assertTrue(requestString.matches("(?s).*Connection: [Cc]lose\r\n.*"));
+        assertTrue(requestString.contains("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"));
+        assertTrue(requestString.contains("Host: localhost:7777\r\n"));
+        assertTrue(requestString.endsWith("\r\n\r\n"));
+        
+        buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
+        String entityString = new String(buf, "US-ASCII");
+        assertTrue(entityString.equals("I am an ascii text file 39 bytes long.\n"));
+        
+        assertEquals(curi.getContentLength(), 39);
+        assertEquals(curi.getContentDigestSchemeString(), "sha1:Y6G7VXZWY52LQA774YOVJ7TPZXMOMUY7");
+        assertEquals(curi.getContentType(), "text/plain");
+        assertTrue(curi.getCredentials().isEmpty());
+        assertTrue(curi.getFetchDuration() >= 0);
+        assertTrue(curi.getFetchStatus() == 200);
+        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        assertEquals(curi.getRecordedSize(), curi.getContentSize());
+    }
+
+    public void testAcceptHeaders() throws Exception {
+        ensureHttpServer();
+        fetcher = getFetcher();
+        
+        List<String> headers = Arrays.asList("header1: value1", "header2: value2");
+        ((FetchHTTP) fetcher).setAcceptHeaders(headers);
+        
+        UURI uuri = UURIFactory.getInstance("http://localhost:7777/test.txt");
+        CrawlURI curi = new CrawlURI(uuri);
+        curi.setRecorder(getRecorder());
+        getFetcher().process(curi);
+
+        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
+        // curi.getRecorder().getRecordedOutput().getReplayInputStream().readFullyTo(buf);
+        String requestString = new String(buf, "US-ASCII");
+        assertTrue(requestString.startsWith("GET /test.txt HTTP/1.0\r\n"));
+        assertTrue(requestString.contains("User-Agent: " + getUserAgentString() + "\r\n"));
+        assertTrue(requestString.matches("(?s).*Connection: [Cc]lose\r\n.*"));
+        // test those headers - differs from testDefaults()
+        assertFalse(requestString.contains("Accept:"));
+        for (String h: headers) {
+            assertTrue(requestString.contains(h));
+        }
+        assertTrue(requestString.contains("Host: localhost:7777\r\n"));
         assertTrue(requestString.endsWith("\r\n\r\n"));
         
         buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());

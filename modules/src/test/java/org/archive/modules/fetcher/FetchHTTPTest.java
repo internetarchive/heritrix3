@@ -37,7 +37,7 @@ public class FetchHTTPTest extends FetchHTTPTestBase {
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(getUserAgentString());
-        fetchHttp.setUserAgentProvider(new CrawlMetadata());
+        fetchHttp.setUserAgentProvider(uap);
         
         fetchHttp.start();
         return fetchHttp;
