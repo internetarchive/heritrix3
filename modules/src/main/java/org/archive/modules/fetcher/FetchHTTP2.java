@@ -56,7 +56,6 @@ import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
-import org.archive.net.http.RecordingHttpClient;
 import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;

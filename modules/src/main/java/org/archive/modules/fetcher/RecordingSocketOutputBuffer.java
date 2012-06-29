@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package org.archive.net.http;
+package org.archive.modules.fetcher;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
