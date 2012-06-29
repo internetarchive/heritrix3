@@ -53,7 +53,6 @@ import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
-import org.archive.modules.Processor;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -62,7 +61,7 @@ import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-public class FetchHTTP2 extends Processor implements Lifecycle {
+public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
     private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 

@@ -31,7 +31,7 @@ import org.archive.modules.Processor;
 public class FetchHTTPTest extends FetchHTTPTestBase {
 
     @Override
-    protected Processor makeModule() throws IOException {
+    protected AbstractFetchHTTP makeModule() throws IOException {
         FetchHTTP fetchHttp = new FetchHTTP();
         fetchHttp.setCookieStorage(new SimpleCookieStorage());
         fetchHttp.setServerCache(new DefaultServerCache());

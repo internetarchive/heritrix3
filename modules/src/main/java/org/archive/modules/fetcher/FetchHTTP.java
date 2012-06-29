@@ -95,7 +95,6 @@ import org.archive.io.RecorderTooMuchHeaderException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.credential.HttpAuthenticationCredential;
@@ -121,7 +120,7 @@ import org.springframework.context.Lifecycle;
  * @contributor others
  * @version $Id$
  */
-public class FetchHTTP extends Processor implements Lifecycle {
+public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
     private static final long serialVersionUID = 1L;
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
