@@ -20,6 +20,7 @@ package org.archive.modules.fetcher;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -48,15 +50,20 @@ import org.mortbay.log.Log;
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
+    
+    protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
 
     protected static class TestHandler extends AbstractHandler {
         @Override
         public void handle(String target, HttpServletRequest request,
                 HttpServletResponse response, int dispatch) throws IOException,
                 ServletException {
+            if (target.equals("/set-cookie")) {
+                response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
+            }
             response.setContentType("text/plain;charset=US-ASCII");
             response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().println("I am 29 bytes of ascii text.");
+            response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
             ((Request)request).setHandled(true);
         }
     }
@@ -97,8 +104,9 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return fetcher;
     }
 
-    protected CrawlURI defaultTestURI() throws URIException, IOException {
-        UURI uuri = UURIFactory.getInstance("http://localhost:7777/");
+    protected CrawlURI makeCrawlURI(String uri) throws URIException,
+            IOException {
+        UURI uuri = UURIFactory.getInstance(uri);
         CrawlURI curi = new CrawlURI(uuri);
         curi.setRecorder(getRecorder());
         return curi;
@@ -107,9 +115,12 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected void runDefaultChecks(CrawlURI curi, Set<String> exclusions) throws IOException,
             UnsupportedEncodingException {
         
+        // inspect request that was sent
         byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
         String requestString = new String(buf, "US-ASCII");
-        assertTrue(requestString.startsWith("GET / HTTP/1.0\r\n"));
+        if (!exclusions.contains("requestLine")) {
+            assertTrue(requestString.startsWith("GET / HTTP/1.0\r\n"));
+        }
         assertTrue(requestString.contains("User-Agent: " + getUserAgentString() + "\r\n"));
         assertTrue(requestString.matches("(?s).*Connection: [Cc]lose\r\n.*"));
         if (!exclusions.contains("acceptHeaders")) {
@@ -118,24 +129,40 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(requestString.contains("Host: localhost:7777\r\n"));
         assertTrue(requestString.endsWith("\r\n\r\n"));
         
-        buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
-        String entityString = new String(buf, "US-ASCII");
-        assertTrue(entityString.equals("I am 29 bytes of ascii text.\n"));
+        // check sizes
+        assertEquals(DEFAULT_PAYLOAD_STRING.length(), curi.getContentLength());
+        assertEquals(curi.getContentSize(), curi.getRecordedSize());
         
-        assertEquals(curi.getContentLength(), 29);
-        assertEquals(curi.getContentDigestSchemeString(), "sha1:Q5XGEQBX3LORBIZ5PBKNYNQEZDPAUASH");
-        assertEquals(curi.getContentType(), "text/plain;charset=US-ASCII");
+        // check various 
+        assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi.getContentDigestSchemeString());
+        assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+        assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
         assertTrue(curi.getFetchStatus() == 200);
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
-        assertEquals(curi.getRecordedSize(), curi.getContentSize());
-    }
+        
+        // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
+        buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
+        String messageBodyString = new String(buf, "US-ASCII");
+        assertEquals(DEFAULT_PAYLOAD_STRING, messageBodyString);
 
+        // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
+        buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
+        String entityString = new String(buf, "US-ASCII");
+        assertEquals(DEFAULT_PAYLOAD_STRING, entityString);
+
+        // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
+        buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
+        String contentString = new String(buf, "US-ASCII");
+        assertEquals(DEFAULT_PAYLOAD_STRING, contentString);
+        assertEquals(DEFAULT_PAYLOAD_STRING.substring(0, 10), curi.getRecorder().getContentReplayPrefixString(10));
+        assertEquals(DEFAULT_PAYLOAD_STRING, curi.getRecorder().getContentReplayCharSequence().toString());
+    }
     
     public void testDefaults() throws Exception {
         ensureHttpServer();
-        CrawlURI curi = defaultTestURI();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
     }
@@ -144,12 +171,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         ensureHttpServer();
         List<String> headers = Arrays.asList("header1: value1", "header2: value2");
         getFetcher().setAcceptHeaders(headers);
-        CrawlURI curi = defaultTestURI();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
 
-        HashSet<String> exclusions = new HashSet<String>(Arrays.asList("acceptHeaders"));
-        runDefaultChecks(curi, exclusions);
+        // applicable default checks
+        HashSet<String> skipTheseChecks = new HashSet<String>(Arrays.asList("acceptHeaders"));
+        runDefaultChecks(curi, skipTheseChecks);
         
+        // special checks for this test
         byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
         String requestString = new String(buf, "US-ASCII");
         assertFalse(requestString.contains("Accept:"));
@@ -157,6 +186,52 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             assertTrue(requestString.contains(h));
         }
     }
+    
+    public void testCookies() throws Exception {
+        ensureHttpServer();
+        
+        checkSetCookieURI();
+        
+        // second request to see if cookie is sent
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, new HashSet<String>());
+        
+        // check for cookie headers
+        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
+        String requestString = new String(buf, "US-ASCII");
+        assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
+    }
+
+    public void testIgnoreCookies() throws Exception {
+        ensureHttpServer();
+
+        getFetcher().setIgnoreCookies(true);
+        checkSetCookieURI();
+
+        // second request to see if cookie is NOT sent
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, new HashSet<String>());
+
+        // check for cookie headers
+        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
+        String requestString = new String(buf, "US-ASCII");
+        assertFalse(requestString.contains("Cookie:"));
+    }
+
+    protected void checkSetCookieURI() throws URIException, IOException,
+            InterruptedException, UnsupportedEncodingException {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/set-cookie");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        
+        // check for set-cookie header
+        byte[] buf = IOUtils.toByteArray(getRecorder().getReplayInputStream());
+        String rawResponseString = new String(buf, "US-ASCII");
+        assertTrue(rawResponseString.contains("Set-Cookie: test-cookie-name=test-cookie-value\r\n"));
+    }
+    
 
     protected String getUserAgentString() {
         return getClass().getName();
