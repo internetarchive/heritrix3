@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.Logger;
 
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
@@ -109,6 +110,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
      * @contributor nlevitt
      */
     public static class ServerCacheResolver implements DnsResolver {
+        protected static Logger logger = Logger.getLogger(DnsResolver.class.getName());
         protected ServerCache serverCache;
 
         public ServerCacheResolver(ServerCache serverCache) {
@@ -124,7 +126,9 @@ public class RecordingHttpClient extends DefaultHttpClient {
                     return new InetAddress[] {ip};
                 }
             }
-            return null;
+
+            logger.info("host " + host + " is not in serverCache, allowing java to resolve it");
+            return new InetAddress[] {InetAddress.getByName(host)};
         }
     }
 
