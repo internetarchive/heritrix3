@@ -85,8 +85,8 @@ public class ResourceNoLongerThanDecideRule extends PredicatedDecideRule {
 
             // get content-length
             String newContentlength = null;
-            if (curi.getHttpHeader("content-length") != null) {
-                newContentlength = curi.getHttpHeader("content-length");
+            if (curi.getHttpResponseHeader("content-length") != null) {
+                newContentlength = curi.getHttpResponseHeader("content-length");
             }
 
             if (newContentlength != null && newContentlength.length() > 0) {

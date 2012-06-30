@@ -796,6 +796,10 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         curi.setFetchStatus(method.getStatusCode());
         Header ct = method.getResponseHeader("content-type");
         curi.setContentType((ct == null) ? null : ct.getValue());
+
+        for (Header h: method.getResponseHeaders()) {
+            curi.putHttpResponseHeader(h.getName(), h.getValue());
+        }
     }
 
     /**

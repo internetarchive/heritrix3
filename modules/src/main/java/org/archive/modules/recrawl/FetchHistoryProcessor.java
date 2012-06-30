@@ -122,7 +122,7 @@ public class FetchHistoryProcessor extends Processor {
     /** Save a header from the given HTTP operation into the Map. */
     protected void saveHeader(CrawlURI curi, Map<String,Object> map,
             String key) {
-        String value = curi.getHttpHeader(key);
+        String value = curi.getHttpResponseHeader(key);
         if (value != null) {
             map.put(key, value);
         }

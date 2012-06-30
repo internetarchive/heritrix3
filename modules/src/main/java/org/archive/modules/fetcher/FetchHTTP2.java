@@ -550,12 +550,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      */
     protected void addResponseContent(HttpResponse response, CrawlURI curi) {
         curi.setFetchStatus(response.getStatusLine().getStatusCode());
-        // Header ct = response.getResponseHeader("content-type");
         Header ct = response.getLastHeader("content-type");
         curi.setContentType(ct == null ? null : ct.getValue());
         
         for (Header h: response.getAllHeaders()) {
-            curi.putHttpHeader(h.getName(), h.getValue());
+            curi.putHttpResponseHeader(h.getName(), h.getValue());
         }
     }
 

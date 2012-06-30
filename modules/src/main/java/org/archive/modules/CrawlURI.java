@@ -1784,8 +1784,6 @@ implements Reporter, Serializable, OverlayContext {
     
     protected JSONObject extraInfo;
 
-    protected Map<String,String> httpHeaders;  
-     
     public JSONObject getExtraInfo() {
         if (extraInfo == null) {
             extraInfo = new JSONObject();
@@ -1859,20 +1857,25 @@ implements Reporter, Serializable, OverlayContext {
     }
 
     /**
-     * @param key http header key (case-insensitive)
+     * @param key http response header key (case-insensitive)
      * @return value of the header or null if there is no such header
      */
-    public String getHttpHeader(String key) {
-        if (httpHeaders == null) {
+    public String getHttpResponseHeader(String key) {
+        @SuppressWarnings("unchecked")
+        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get("httpResponseHeaders");
+        if (httpResponseHeaders == null) {
             return null;
         }
-        return httpHeaders.get(key.toLowerCase());
+        return httpResponseHeaders.get(key.toLowerCase());
     }
 
-    public void putHttpHeader(String key, String value) {
-        if (httpHeaders == null) {
-            httpHeaders = new HashMap<String, String>();
+    public void putHttpResponseHeader(String key, String value) {
+        @SuppressWarnings("unchecked")
+        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get("httpResponseHeaders");
+        if (httpResponseHeaders == null) {
+            httpResponseHeaders = new HashMap<String, String>();
+            getData().put("httpResponseHeaders", httpResponseHeaders);
         }
-        httpHeaders.put(key.toLowerCase(), value);
+        httpResponseHeaders.put(key.toLowerCase(), value);
     }
 }

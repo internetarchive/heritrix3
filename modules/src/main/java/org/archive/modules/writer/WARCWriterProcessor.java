@@ -571,7 +571,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
      */
     protected void saveHeader(CrawlURI curi, ANVLRecord warcHeaders,
             String origName, String newName) {
-        String value = curi.getHttpHeader(origName);
+        String value = curi.getHttpResponseHeader(origName);
         if (value != null) {
             warcHeaders.addLabelValue(newName, value);
         }

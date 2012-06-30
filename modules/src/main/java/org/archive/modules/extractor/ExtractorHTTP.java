@@ -71,7 +71,7 @@ public class ExtractorHTTP extends Extractor {
     }
 
     protected void addHeaderLink(CrawlURI curi, String headerKey) {
-        String headerValue = curi.getHttpHeader(headerKey);
+        String headerValue = curi.getHttpResponseHeader(headerKey);
         if (headerValue == null) {
             // If null, return without adding anything.
             return;
