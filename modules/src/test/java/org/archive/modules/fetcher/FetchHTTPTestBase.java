@@ -37,6 +37,7 @@ import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
+import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
@@ -53,7 +54,13 @@ import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
+
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
+    
+    protected static final String BASIC_AUTH_REALM = "basic-auth-realm";
+    protected static final String BASIC_AUTH_ROLE = "basic-auth-role";
+    protected static final String BASIC_AUTH_LOGIN = "basic-auth-login";
+    protected static final String BASIC_AUTH_PASSWORD = "basic-auth-password";
     
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
 
@@ -81,7 +88,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static SecurityHandler makeAuthWrapper() {
         Constraint constraint = new Constraint();
         constraint.setName(Constraint.__BASIC_AUTH);;
-        constraint.setRoles(new String[]{"basic-auth"});
+        constraint.setRoles(new String[]{BASIC_AUTH_ROLE});
         constraint.setAuthenticate(true);
          
         ConstraintMapping constraintMapping = new ConstraintMapping();
@@ -89,9 +96,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         constraintMapping.setPathSpec("/basic-auth");
          
         SecurityHandler authWrapper = new SecurityHandler();
-        authWrapper.setUserRealm(new HashUserRealm(FetchHTTPTestBase.class.getName()) {
-        });
         authWrapper.setConstraintMappings(new ConstraintMapping[]{constraintMapping});
+        authWrapper.setUserRealm(new HashUserRealm(BASIC_AUTH_REALM) {
+            {
+                put(BASIC_AUTH_LOGIN, BASIC_AUTH_PASSWORD);
+                addUserToRole(BASIC_AUTH_LOGIN, BASIC_AUTH_ROLE);
+            }
+        });
         
         return authWrapper;
     }
@@ -154,9 +165,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected void runDefaultChecks(CrawlURI curi, Set<String> exclusions) throws IOException,
             UnsupportedEncodingException {
         
-        // inspect request that was sent
-        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
-        String requestString = new String(buf, "US-ASCII");
+        String requestString = httpRequestString(curi);
         if (!exclusions.contains("requestLine")) {
             assertTrue(requestString.startsWith("GET / HTTP/1.0\r\n"));
         }
@@ -182,21 +191,33 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
         
         // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
-        buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
-        String messageBodyString = new String(buf, "US-ASCII");
-        assertEquals(DEFAULT_PAYLOAD_STRING, messageBodyString);
+        assertEquals(DEFAULT_PAYLOAD_STRING, messageBodyString(curi));
 
         // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
-        buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
-        String entityString = new String(buf, "US-ASCII");
-        assertEquals(DEFAULT_PAYLOAD_STRING, entityString);
+        assertEquals(DEFAULT_PAYLOAD_STRING, entityString(curi));
 
         // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
-        buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
-        String contentString = new String(buf, "US-ASCII");
-        assertEquals(DEFAULT_PAYLOAD_STRING, contentString);
+        assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING.substring(0, 10), curi.getRecorder().getContentReplayPrefixString(10));
         assertEquals(DEFAULT_PAYLOAD_STRING, curi.getRecorder().getContentReplayCharSequence().toString());
+    }
+
+    // convenience methods to get strings from raw recorded i/o
+    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
+        return new String(buf, "US-ASCII");
+    }
+    protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
+        return new String(buf, "US-ASCII");
+    }
+    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
+        return new String(buf, "US-ASCII");
+    }
+    protected String httpRequestString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getRecordedOutput().getReplayInputStream());
+        return new String(buf, "US-ASCII");
     }
     
     public void testDefaults() throws Exception {
@@ -218,14 +239,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         runDefaultChecks(curi, skipTheseChecks);
         
         // special checks for this test
-        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
-        String requestString = new String(buf, "US-ASCII");
+        String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Accept:"));
         for (String h: headers) {
             assertTrue(requestString.contains(h));
         }
     }
-    
+
     public void testCookies() throws Exception {
         ensureHttpServer();
         
@@ -236,9 +256,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
         
-        // check for cookie headers
-        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
-        String requestString = new String(buf, "US-ASCII");
+        String requestString = httpRequestString(curi);
         assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
     }
 
@@ -253,21 +271,35 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
 
-        // check for cookie headers
-        byte[] buf = IOUtils.toByteArray(getRecorder().getRecordedOutput().getReplayInputStream());
-        String requestString = new String(buf, "US-ASCII");
+        String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Cookie:"));
     }
     
     public void testBasicAuth() throws Exception {
         ensureHttpServer();
+
+        HttpAuthenticationCredential basicAuthCredential = new HttpAuthenticationCredential();
+        basicAuthCredential.setRealm(BASIC_AUTH_REALM);
+        basicAuthCredential.setDomain("localhost:7777");
+        basicAuthCredential.setLogin(BASIC_AUTH_LOGIN);
+        basicAuthCredential.setPassword(BASIC_AUTH_PASSWORD);
+        
+        getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
+                basicAuthCredential);
+
         CrawlURI curi = makeCrawlURI("http://localhost:7777/basic-auth");
         getFetcher().process(curi);
-        
-        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
-        String replayString = new String(buf, "US-ASCII");
-        logger.info('\n' + replayString);
 
+        // check that we got the expected response and the fetcher did its thing
+        assertEquals(401, curi.getFetchStatus());
+        assertTrue(curi.getCredentials().contains(basicAuthCredential));
+        
+        // fetch again with the credentials
+        getFetcher().process(curi);
+        String httpRequestString = httpRequestString(curi);
+        // logger.info('\n' + httpRequestString + contentString(curi));
+        assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
+        // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
     }
 
@@ -278,7 +310,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
         
         // check for set-cookie header
-        byte[] buf = IOUtils.toByteArray(getRecorder().getReplayInputStream());
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
         String rawResponseString = new String(buf, "US-ASCII");
         assertTrue(rawResponseString.contains("Set-Cookie: test-cookie-name=test-cookie-value\r\n"));
     }

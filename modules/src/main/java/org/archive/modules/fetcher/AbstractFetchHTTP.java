@@ -21,8 +21,10 @@ package org.archive.modules.fetcher;
 import java.util.List;
 
 import org.archive.modules.Processor;
+import org.archive.modules.credential.CredentialStore;
 
 abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setAcceptHeaders(List<String> headers);
     abstract public void setIgnoreCookies(boolean ignoreCookies);
+    abstract public CredentialStore getCredentialStore();
 }

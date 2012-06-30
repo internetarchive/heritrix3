@@ -53,6 +53,7 @@ import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
+import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -232,6 +233,21 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     }
     public AbstractCookieStore getCookieStore() {
         return cookieStore;
+    }
+    
+    {
+        // initialize with empty store so declaration not required
+        setCredentialStore(new CredentialStore());
+    }
+    public CredentialStore getCredentialStore() {
+        return (CredentialStore) kp.get("credentialStore");
+    }
+    /**
+     * Used to store credentials.
+     */
+    @Autowired(required=false)
+    public void setCredentialStore(CredentialStore credentials) {
+        kp.put("credentialStore",credentials);
     }
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
