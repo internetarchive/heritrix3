@@ -45,6 +45,10 @@ import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.AbstractHandler;
+import org.mortbay.jetty.security.Constraint;
+import org.mortbay.jetty.security.ConstraintMapping;
+import org.mortbay.jetty.security.HashUserRealm;
+import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
@@ -58,7 +62,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         public void handle(String target, HttpServletRequest request,
                 HttpServletResponse response, int dispatch) throws IOException,
                 ServletException {
-            if (target.equals("/set-cookie")) {
+            if (target.endsWith("/set-cookie")) {
                 response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
             }
             response.setContentType("text/plain;charset=US-ASCII");
@@ -73,7 +77,26 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
     abstract protected AbstractFetchHTTP makeModule() throws IOException;
 
-    public static Server startHttpFileServer() throws Exception {
+    // put auth around certain paths for testing fetcher's handling of auth
+    protected static SecurityHandler makeAuthWrapper() {
+        Constraint constraint = new Constraint();
+        constraint.setName(Constraint.__BASIC_AUTH);;
+        constraint.setRoles(new String[]{"basic-auth"});
+        constraint.setAuthenticate(true);
+         
+        ConstraintMapping constraintMapping = new ConstraintMapping();
+        constraintMapping.setConstraint(constraint);
+        constraintMapping.setPathSpec("/basic-auth");
+         
+        SecurityHandler authWrapper = new SecurityHandler();
+        authWrapper.setUserRealm(new HashUserRealm(FetchHTTPTestBase.class.getName()) {
+        });
+        authWrapper.setConstraintMappings(new ConstraintMapping[]{constraintMapping});
+        
+        return authWrapper;
+    }
+    
+    public static Server startHttpServer() throws Exception {
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
         
         Server server = new Server();
@@ -83,7 +106,9 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         sc.setPort(7777);
         server.addConnector(sc);
         
-        server.setHandler(new TestHandler());
+        SecurityHandler authWrapper = makeAuthWrapper();
+        authWrapper.setHandler(new TestHandler());
+        server.setHandler(authWrapper);
         
         server.start();
         
@@ -92,7 +117,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     protected static void ensureHttpServer() throws Exception {
         if (httpServer == null) { 
-            httpServer = startHttpFileServer();
+            httpServer = startHttpServer();
         }
     }
 
@@ -104,6 +129,20 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return fetcher;
     }
 
+    protected String getUserAgentString() {
+        return getClass().getName();
+    }
+
+    protected Recorder getRecorder() throws IOException {
+        if (Recorder.getHttpRecorder() == null) {
+            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
+                    getClass().getName(), 16 * 1024, 512 * 1024);
+            Recorder.setHttpRecorder(httpRecorder);
+        }
+
+        return Recorder.getHttpRecorder();
+    }
+    
     protected CrawlURI makeCrawlURI(String uri) throws URIException,
             IOException {
         UURI uuri = UURIFactory.getInstance(uri);
@@ -219,6 +258,18 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         String requestString = new String(buf, "US-ASCII");
         assertFalse(requestString.contains("Cookie:"));
     }
+    
+    public void testBasicAuth() throws Exception {
+        ensureHttpServer();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/basic-auth");
+        getFetcher().process(curi);
+        
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
+        String replayString = new String(buf, "US-ASCII");
+        logger.info('\n' + replayString);
+
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+    }
 
     protected void checkSetCookieURI() throws URIException, IOException,
             InterruptedException, UnsupportedEncodingException {
@@ -232,20 +283,4 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(rawResponseString.contains("Set-Cookie: test-cookie-name=test-cookie-value\r\n"));
     }
     
-
-    protected String getUserAgentString() {
-        return getClass().getName();
-    }
-
-    protected Recorder getRecorder() throws IOException {
-        if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(
-                    TmpDirTestCase.tmpDir(),
-                    getClass().getName(), 16 * 1024, 512 * 1024);
-
-            Recorder.setHttpRecorder(httpRecorder);
-        }
-        
-        return Recorder.getHttpRecorder();
-    }
 }
