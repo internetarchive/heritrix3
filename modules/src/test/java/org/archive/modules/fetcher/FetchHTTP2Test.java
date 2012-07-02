@@ -105,6 +105,4 @@ public class FetchHTTP2Test extends FetchHTTPTestBase {
         fetchHttp2.start();
         return fetchHttp2;
     }
-
-    
 }
