@@ -25,6 +25,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -40,6 +44,7 @@ import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.Request;
@@ -54,8 +59,19 @@ import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
-
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
+    static {
+        Logger rootLogger = Logger.getLogger("");
+        Handler[] hs = rootLogger.getHandlers();
+        for (int i = 0; i < hs.length; i++) {
+            rootLogger.removeHandler(hs[i]);
+        }
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        handler.setFormatter(new OneLineSimpleLogger());
+        rootLogger.addHandler(handler);
+        rootLogger.setLevel(Level.ALL);
+    }
     
     protected static final String BASIC_AUTH_REALM = "basic-auth-realm";
     protected static final String BASIC_AUTH_ROLE = "basic-auth-role";
@@ -226,6 +242,34 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
     }
+    
+    public void testBasicAuth() throws Exception {
+        ensureHttpServer();
+
+        HttpAuthenticationCredential basicAuthCredential = new HttpAuthenticationCredential();
+        basicAuthCredential.setRealm(BASIC_AUTH_REALM);
+        basicAuthCredential.setDomain("localhost:7777");
+        basicAuthCredential.setLogin(BASIC_AUTH_LOGIN);
+        basicAuthCredential.setPassword(BASIC_AUTH_PASSWORD);
+        
+        getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
+                basicAuthCredential);
+
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/basic-auth");
+        getFetcher().process(curi);
+
+        // check that we got the expected response and the fetcher did its thing
+        assertEquals(401, curi.getFetchStatus());
+//        assertTrue(curi.getCredentials().contains(basicAuthCredential));
+        
+        // fetch again with the credentials
+        getFetcher().process(curi);
+        String httpRequestString = httpRequestString(curi);
+        logger.info('\n' + httpRequestString + contentString(curi));
+        assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
+        // otherwise should be a normal 200 response
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+    }
 
     public void testAcceptHeaders() throws Exception {
         ensureHttpServer();
@@ -273,34 +317,6 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Cookie:"));
-    }
-    
-    public void testBasicAuth() throws Exception {
-        ensureHttpServer();
-
-        HttpAuthenticationCredential basicAuthCredential = new HttpAuthenticationCredential();
-        basicAuthCredential.setRealm(BASIC_AUTH_REALM);
-        basicAuthCredential.setDomain("localhost:7777");
-        basicAuthCredential.setLogin(BASIC_AUTH_LOGIN);
-        basicAuthCredential.setPassword(BASIC_AUTH_PASSWORD);
-        
-        getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
-                basicAuthCredential);
-
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/basic-auth");
-        getFetcher().process(curi);
-
-        // check that we got the expected response and the fetcher did its thing
-        assertEquals(401, curi.getFetchStatus());
-        assertTrue(curi.getCredentials().contains(basicAuthCredential));
-        
-        // fetch again with the credentials
-        getFetcher().process(curi);
-        String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + contentString(curi));
-        assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
-        // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,
