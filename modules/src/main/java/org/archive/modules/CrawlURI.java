@@ -26,6 +26,7 @@ import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import static org.archive.modules.CoreAttributeConstants.A_HTML_BASE;
+import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -1862,7 +1863,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     public String getHttpResponseHeader(String key) {
         @SuppressWarnings("unchecked")
-        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get("httpResponseHeaders");
+        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get(A_HTTP_RESPONSE_HEADERS);
         if (httpResponseHeaders == null) {
             return null;
         }
@@ -1871,10 +1872,10 @@ implements Reporter, Serializable, OverlayContext {
 
     public void putHttpResponseHeader(String key, String value) {
         @SuppressWarnings("unchecked")
-        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get("httpResponseHeaders");
+        Map<String, String> httpResponseHeaders = (Map<String, String>) getData().get(A_HTTP_RESPONSE_HEADERS);
         if (httpResponseHeaders == null) {
             httpResponseHeaders = new HashMap<String, String>();
-            getData().put("httpResponseHeaders", httpResponseHeaders);
+            getData().put(A_HTTP_RESPONSE_HEADERS, httpResponseHeaders);
         }
         httpResponseHeaders.put(key.toLowerCase(), value);
     }
