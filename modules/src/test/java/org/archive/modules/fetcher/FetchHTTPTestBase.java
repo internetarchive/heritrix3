@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -40,6 +42,7 @@ import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.Request;
@@ -53,9 +56,15 @@ import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
-    
 
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
+    static {
+        Logger.getLogger("").setLevel(Level.ALL);
+        for (Handler h: Logger.getLogger("").getHandlers()) {
+            h.setLevel(Level.ALL);
+            h.setFormatter(new OneLineSimpleLogger());
+        }
+    }
     
     protected static final String BASIC_AUTH_REALM = "basic-auth-realm";
     protected static final String BASIC_AUTH_ROLE = "basic-auth-role";
@@ -220,14 +229,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return new String(buf, "US-ASCII");
     }
     
-    public void testDefaults() throws Exception {
+    public void xestDefaults() throws Exception {
         ensureHttpServer();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
     }
 
-    public void testAcceptHeaders() throws Exception {
+    public void xestAcceptHeaders() throws Exception {
         ensureHttpServer();
         List<String> headers = Arrays.asList("header1: value1", "header2: value2");
         getFetcher().setAcceptHeaders(headers);
@@ -246,7 +255,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         }
     }
 
-    public void testCookies() throws Exception {
+    public void xestCookies() throws Exception {
         ensureHttpServer();
         
         checkSetCookieURI();
@@ -260,7 +269,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
     }
 
-    public void testIgnoreCookies() throws Exception {
+    public void xestIgnoreCookies() throws Exception {
         ensureHttpServer();
 
         getFetcher().setIgnoreCookies(true);
