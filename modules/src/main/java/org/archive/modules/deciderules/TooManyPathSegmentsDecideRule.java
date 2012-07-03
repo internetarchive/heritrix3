@@ -63,11 +63,11 @@ public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
      */
     @Override
     protected boolean evaluate(CrawlURI curi) {
-        String uri = curi.toString();
+        String uriPath = curi.getUURI().getEscapedPath();
         int count = 0;
         int threshold = getMaxPathDepth();
-        for (int i = 0; i < uri.length(); i++) {
-            if (uri.charAt(i) == '/') {
+        for (int i = 0; i < uriPath.length(); i++) {
+            if (uriPath.charAt(i) == '/') {
                 count++;
             }
             if (count > threshold) {
