@@ -32,39 +32,38 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.auth.AuthOption;
 import org.apache.http.auth.AuthScheme;
-import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.params.AuthPolicy;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.auth.DigestScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -246,7 +245,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     }
     
     protected AbstractCookieStore cookieStore;
-
     @Autowired(required=false)
     public void setCookieStore(AbstractCookieStore store) {
         this.cookieStore = store; 
@@ -379,51 +377,17 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             curi.setFetchType(FetchType.HTTP_GET);
         }
         
-        HttpHost targetHost;
-        try {
-            targetHost = new HttpHost(curi.getUURI().getHost(), curi.getUURI().getPort(), curi.getUURI().getScheme());
-        } catch (URIException e) {
-            throw new RuntimeException("can this happen here? " + e);
-        }
-
         configureRequest(curi, request);
 
-        {
-            String realm = "basic-auth-realm";
-
-            String serverKey = getServerKey(curi);
-            CrawlServer server = serverCache.getServerFor(serverKey);
-            Set<Credential> storeRfc2617Credentials = getCredentialStore().subset(curi,
-                    HttpAuthenticationCredential.class, server.getName());
-            if (storeRfc2617Credentials == null
-                    || storeRfc2617Credentials.size() <= 0) {
-                logger.fine("No rfc2617 credentials for " + curi);
-            } else {
-                HttpAuthenticationCredential found = HttpAuthenticationCredential.getByRealm(
-                        storeRfc2617Credentials, realm, curi);
-                if (found == null) {
-                    logger.fine("No rfc2617 credentials for realm " + realm
-                            + " in " + curi);
-                } else {
-                    found.attach(curi);
-                    logger.fine("Found credential for realm " + realm
-                            + " in store for " + curi.toString());
-                }
-            }
-
-            if (curi.hasCredentials()) {
-                for (Credential credential: getCredentials(curi, HttpAuthenticationCredential.class)) {
-                    HttpAuthenticationCredential httpAuthCredential = (HttpAuthenticationCredential) credential;
-                    AuthScope authscope = new AuthScope(targetHost, httpAuthCredential.getRealm(), AuthPolicy.BASIC);
-                    UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(httpAuthCredential.getLogin(), httpAuthCredential.getPassword());
-                    getHttpClient().getCredentialsProvider().setCredentials(authscope, credentials);
-                }
-            }
-        }
+        HttpHost targetHost = URIUtils.extractHost(request.getURI());
+        
+        // Populate credentials. Set config so auth. is not automatic.
+        BasicHttpContext contextForAuth = new BasicHttpContext();
+        boolean addedCredentials = populateCredentials(curi, contextForAuth);
         
         HttpResponse response = null;
         try {
-            response = getHttpClient().execute(targetHost, request, getHttpContext());
+            response = getHttpClient().execute(targetHost, request, contextForAuth);
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
@@ -444,7 +408,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                 // Force read-to-end, so that any socket hangs occur here,
                 // not in later modules.
                 
-                // XXX does it matter that we're circumventing the library here? EntityUtils.consume(response.getEntity())
+                // XXX does it matter that we're circumventing the library here? response.getEntity().getContent()
                 rec.getRecordedInput().readFullyOrUntil(softMax); 
             }
         } catch (RecorderTimeoutException ex) {
@@ -479,7 +443,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             curi.setContentDigest(algorithm, 
                 rec.getRecordedInput().getDigestValue());
         }
-        
+
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(((curi.getFetchType() == HTTP_POST) ? "POST" : "GET")
                     + " " + curi.getUURI().toString() + " "
@@ -488,62 +452,144 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                     + curi.getContentType());
         }
 
-        boolean addedCredentials = false; // XXX
         if (isSuccess(curi) && addedCredentials) {
-//            // Promote the credentials from the CrawlURI to the CrawlServer
-//            // so they are available for all subsequent CrawlURIs on this
-//            // server.
-//            promoteCredentials(curi);
-//            if (logger.isLoggable(Level.FINE)) {
-//                // Print out the cookie. Might help with the debugging.
-//                Header setCookie = method.getResponseHeader("set-cookie");
-//                if (setCookie != null) {
-//                    logger.fine(setCookie.toString().trim());
-//                }
-//            }
+            // Promote the credentials from the CrawlURI to the CrawlServer
+            // so they are available for all subsequent CrawlURIs on this
+            // server.
+            promoteCredentials(curi);
         } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             // 401 is not 'success'.
-            handle401(curi, targetHost, response);
+            handle401(response, curi);
         }
 
+        if (rec.getRecordedInput().isOpen()) {
+            logger.severe(curi.toString() + " RIS still open. Should have"
+                    + " been closed by method release: "
+                    + Thread.currentThread().getName());
+            try {
+                rec.getRecordedInput().close();
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "second-chance RIS close failed", e);
+            }
+        }
     }
+    
+    /**
+     * Add credentials if any to passed <code>method</code>.
+     * 
+     * Do credential handling. Credentials are in two places. 1. Credentials
+     * that succeeded are added to the CrawlServer (Or rather, avatars for
+     * credentials are whats added because its not safe to keep around
+     * references to credentials). 2. Credentials to be tried are in the curi.
+     * Returns true if found credentials to be tried.
+     * 
+     * @param curi
+     *            Current CrawlURI.
+     * @param context
+     *            The context to add credentials to.
+     * @return True if prepopulated <code>method</code> with credentials AND
+     *         the credentials came from the <code>curi</code>, not from the
+     *         CrawlServer. The former is special in that if the
+     *         <code>curi</curi> credentials
+     * succeed, then the caller needs to promote them from the CrawlURI to the
+     * CrawlServer so they are available for all subsequent CrawlURIs on this
+     * server.
+     */
+    /*
+        HttpContext localcontext;
+        {
+            // Create AuthCache instance
+            AuthCache authCache = new BasicAuthCache();
+            // Generate BASIC scheme object and add it to the local auth cache
+            BasicScheme basicAuth = new BasicScheme();
+            authCache.put(targetHost, basicAuth);
+
+            // Add AuthCache to the execution context
+            localcontext = new BasicHttpContext();
+            localcontext.setAttribute(ClientContext.AUTH_CACHE, authCache);        
+            
+            AuthScope authscope = new AuthScope("localhost", 7777,
+                    "basic-auth-realm", "basic");
+            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(
+                    "basic-auth-login", "basic-auth-password");
+//            getHttpClient().getCredentialsProvider().setCredentials(authscope,
+//                    credentials);
+        }
+
+     */
+    protected boolean populateCredentials(CrawlURI curi,
+            HttpContext context) {
+        // First look at the server avatars. Add any that are to be volunteered
+        // on every request (e.g. RFC2617 credentials). Every time creds will
+        // return true when we call 'isEveryTime().
+        String serverKey;
+        try {
+            serverKey = CrawlServer.getServerKey(curi.getUURI());
+        } catch (URIException e) {
+            return false;
+        }
+        CrawlServer server = serverCache.getServerFor(serverKey);
+        if (server.hasCredentials()) {
+            for (Credential cred : server.getCredentials()) {
+                if (cred.isEveryTime()) {
+                    // cred.populate(curi, this.http, method);
+                }
+            }
+        }
+
+        boolean result = false;
+
+        // Now look in the curi. The Curi will have credentials loaded either
+        // by the handle401 method if its a rfc2617 or it'll have been set into
+        // the curi by the preconditionenforcer as this login uri came through.
+        for (Credential c: curi.getCredentials()) {
+//            if (c.populate(curi, this.http, method)) {
+//                result = true;
+//            }
+        }
+
+        return result;
+
+    }
+    
+    /**
+     * Promote successful credential to the server.
+     * 
+     * @param curi
+     *            CrawlURI whose credentials we are to promote.
+     */
+    protected void promoteCredentials(final CrawlURI curi) {
+        Set<Credential> credentials = curi.getCredentials();
+        for (Iterator<Credential> i = credentials.iterator(); i.hasNext();) {
+            Credential c = i.next();
+            i.remove();
+            // The server to attach too may not be the server that hosts
+            // this passed curi. It might be of another subdomain.
+            // The avatar needs to be added to the server that is dependent
+            // on this precondition. Find it by name. Get the name from
+            // the credential this avatar represents.
+            String cd = c.getDomain();
+            if (cd != null) {
+                CrawlServer cs = serverCache.getServerFor(cd);
+                if (cs != null) {
+                    cs.addCredential(c);
+                }
+            }
+        }
+    }
+
     /**
      * Server is looking for basic/digest auth credentials (RFC2617). If we have
      * any, put them into the CrawlURI and have it come around again.
      * Presence of the credential serves as flag to frontier to requeue
      * promptly. If we already tried this domain and still got a 401, then our
      * credentials are bad. Remove them and let this curi die.
-     * 
-     * @param method
-     *            Method that got a 401.
+     * @param response 401 http response 
      * @param curi
      *            CrawlURI that got a 401.
-     * @param targetHost 
-     * @param response 
-     * @throws URIException 
      */
-    protected void handle401(final CrawlURI curi, HttpHost targetHost, HttpResponse response) {
-        AuthScheme authscheme = null;
-        try {
-            Map<String, Header> challenges = getHttpClient().getTargetAuthenticationStrategy().getChallenges(targetHost, response, getHttpContext());
-            logger.info("challenges: " + challenges);
-            
-            logger.info("getHttpClient().getAuthSchemes(): " + getHttpClient().getAuthSchemes());
-            getHttpContext().setAttribute(ClientContext.AUTHSCHEME_REGISTRY, getHttpClient().getAuthSchemes());
-            Queue<AuthOption> authOptions = getHttpClient().getTargetAuthenticationStrategy().select(challenges, targetHost, response, getHttpContext());
-            logger.info("authOptions: " + authOptions);
-            if (authOptions.size() == 1) {
-                authscheme  = authOptions.peek().getAuthScheme();
-                Header challenge = challenges.get(authscheme.getSchemeName());
-                authscheme.processChallenge(challenge);
-            } else {
-                return;
-            }
-        } catch (MalformedChallengeException e) {
-            logger.warning(e.toString());
-            return;
-        }
-        
+    protected void handle401(HttpResponse response, final CrawlURI curi) {
+        AuthScheme authscheme = getAuthScheme(response, curi);
         if (authscheme == null) {
             return;
         }
@@ -593,15 +639,73 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
     }
 
-    protected BasicHttpContext localContext;
-    protected BasicHttpContext getHttpContext() {
-        if (localContext == null) {
-            localContext = new BasicHttpContext();
+    /**
+     * @param response 
+     * @param method
+     *            Method that got a 401.
+     * @param curi
+     *            CrawlURI that got a 401.
+     * @return Returns first wholesome authscheme found else null.
+     */
+    protected AuthScheme getAuthScheme(HttpResponse response, final CrawlURI curi) {
+        Header[] headers = response.getHeaders(HttpHeaders.WWW_AUTHENTICATE);
+        if (headers == null || headers.length <= 0) {
+            logger.fine("We got a 401 but no WWW-Authenticate challenge: "
+                    + curi.toString());
+            return null;
         }
-        
-        return localContext;
+
+        Map<String, Header> authschemes = null;
+        try {
+            authschemes = getHttpClient().getTargetAuthenticationStrategy().getChallenges(null, response, null);
+        } catch (MalformedChallengeException e) {
+            logger.fine("Failed challenge parse: " + e.getMessage());
+        }
+        if (authschemes == null || authschemes.size() <= 0) {
+            logger.fine("We got a 401 and WWW-Authenticate challenge"
+                    + " but failed parse of the header " + curi.toString());
+            return null;
+        }
+
+        AuthScheme result = null;
+        // Use the first auth found.
+        for (Iterator<String> i = authschemes.keySet().iterator(); result == null
+                && i.hasNext();) {
+            String authSchemeName = i.next(); // .toLowerCase(Locale.US);
+            Header challenge = authschemes.get(authSchemeName);
+            
+            AuthScheme authscheme = null;
+            if (authSchemeName.equals("basic")) {
+                authscheme = new BasicScheme();
+            } else if (authSchemeName.equals("digest")) {
+                authscheme = new DigestScheme();
+            } else {
+                logger.fine("Unsupported scheme: " + authSchemeName);
+                continue;
+            }
+
+            try {
+                authscheme.processChallenge(challenge);
+            } catch (MalformedChallengeException e) {
+                logger.fine(e.getMessage() + " " + curi + " " + Arrays.toString(headers));
+                continue;
+            }
+            if (authscheme.isConnectionBased()) {
+                logger.fine("Connection based " + authscheme);
+                continue;
+            }
+
+            if (authscheme.getRealm() == null
+                    || authscheme.getRealm().length() <= 0) {
+                logger.fine("Empty realm " + authscheme + " for " + curi);
+                continue;
+            }
+            result = authscheme;
+        }
+
+        return result;
     }
-    
+
     /**
      * @param curi
      *            CrawlURI that got a 401.
@@ -609,7 +713,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      *            Class of credential to get from curi.
      * @return Set of credentials attached to this curi.
      */
-    private Set<Credential> getCredentials(CrawlURI curi, Class<?> type) {
+    protected Set<Credential> getCredentials(CrawlURI curi, Class<?> type) {
         Set<Credential> result = null;
 
         if (curi.hasCredentials()) {
@@ -722,14 +826,14 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * @param curi CrawlURI
      * @param rec HttpRecorder
      */
+    @SuppressWarnings("unchecked")
     protected void setSizes(CrawlURI curi, Recorder rec) {
         // set reporting size
         curi.setContentSize(rec.getRecordedInput().getSize());
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
                 && curi.containsDataKey(A_FETCH_HISTORY)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            Map history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
             if (history[0] != null
                     && history[0]
                             .containsKey(A_REFERENCE_LENGTH)) {
@@ -758,7 +862,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         curi.setContentType(ct == null ? null : ct.getValue());
         
         for (Header h: response.getAllHeaders()) {
-            curi.putHttpResponseHeader(h.getName(), h.getValue());
+            curi.putHttpHeader(h.getName(), h.getValue());
         }
     }
 
@@ -792,6 +896,8 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      */
     protected void cleanup(final CrawlURI curi, final Exception exception,
             final String message, final int status) {
+        logger.log(Level.WARNING, message, exception);
+        
         // message ignored!
         curi.getNonFatalFailures().add(exception);
         curi.setFetchStatus(status);
@@ -831,11 +937,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // cleanupHttp(); // XXX happens at finish; move to teardown?
     }
 
-    private static String getServerKey(CrawlURI curi) {
+    protected static String getServerKey(CrawlURI uri) {
         try {
-            return CrawlServer.getServerKey(curi.getUURI());
+            return CrawlServer.getServerKey(uri.getUURI());
         } catch (URIException e) {
-            logger.severe(e.getMessage() + ": " + curi);
+            logger.severe(e.getMessage() + ": " + uri);
             e.printStackTrace();
             return null;
         }

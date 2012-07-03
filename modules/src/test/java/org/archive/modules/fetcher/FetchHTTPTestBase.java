@@ -25,10 +25,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -58,19 +56,14 @@ import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
-    
+
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
     static {
-        Logger rootLogger = Logger.getLogger("");
-        Handler[] hs = rootLogger.getHandlers();
-        for (int i = 0; i < hs.length; i++) {
-            rootLogger.removeHandler(hs[i]);
+        Logger.getLogger("").setLevel(Level.ALL);
+        for (Handler h: Logger.getLogger("").getHandlers()) {
+            h.setLevel(Level.ALL);
+            h.setFormatter(new OneLineSimpleLogger());
         }
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setLevel(Level.ALL);
-        handler.setFormatter(new OneLineSimpleLogger());
-        rootLogger.addHandler(handler);
-        rootLogger.setLevel(Level.ALL);
     }
     
     protected static final String BASIC_AUTH_REALM = "basic-auth-realm";
@@ -236,11 +229,59 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return new String(buf, "US-ASCII");
     }
     
-    public void testDefaults() throws Exception {
+    public void xestDefaults() throws Exception {
         ensureHttpServer();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
+    }
+
+    public void xestAcceptHeaders() throws Exception {
+        ensureHttpServer();
+        List<String> headers = Arrays.asList("header1: value1", "header2: value2");
+        getFetcher().setAcceptHeaders(headers);
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+
+        // applicable default checks
+        HashSet<String> skipTheseChecks = new HashSet<String>(Arrays.asList("acceptHeaders"));
+        runDefaultChecks(curi, skipTheseChecks);
+        
+        // special checks for this test
+        String requestString = httpRequestString(curi);
+        assertFalse(requestString.contains("Accept:"));
+        for (String h: headers) {
+            assertTrue(requestString.contains(h));
+        }
+    }
+
+    public void xestCookies() throws Exception {
+        ensureHttpServer();
+        
+        checkSetCookieURI();
+        
+        // second request to see if cookie is sent
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, new HashSet<String>());
+        
+        String requestString = httpRequestString(curi);
+        assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
+    }
+
+    public void xestIgnoreCookies() throws Exception {
+        ensureHttpServer();
+
+        getFetcher().setIgnoreCookies(true);
+        checkSetCookieURI();
+
+        // second request to see if cookie is NOT sent
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, new HashSet<String>());
+
+        String requestString = httpRequestString(curi);
+        assertFalse(requestString.contains("Cookie:"));
     }
     
     public void testBasicAuth() throws Exception {
@@ -260,63 +301,15 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
-//        assertTrue(curi.getCredentials().contains(basicAuthCredential));
+        assertTrue(curi.getCredentials().contains(basicAuthCredential));
         
         // fetch again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + contentString(curi));
+        // logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
-    }
-
-    public void testAcceptHeaders() throws Exception {
-        ensureHttpServer();
-        List<String> headers = Arrays.asList("header1: value1", "header2: value2");
-        getFetcher().setAcceptHeaders(headers);
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
-
-        // applicable default checks
-        HashSet<String> skipTheseChecks = new HashSet<String>(Arrays.asList("acceptHeaders"));
-        runDefaultChecks(curi, skipTheseChecks);
-        
-        // special checks for this test
-        String requestString = httpRequestString(curi);
-        assertFalse(requestString.contains("Accept:"));
-        for (String h: headers) {
-            assertTrue(requestString.contains(h));
-        }
-    }
-
-    public void testCookies() throws Exception {
-        ensureHttpServer();
-        
-        checkSetCookieURI();
-        
-        // second request to see if cookie is sent
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>());
-        
-        String requestString = httpRequestString(curi);
-        assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
-    }
-
-    public void testIgnoreCookies() throws Exception {
-        ensureHttpServer();
-
-        getFetcher().setIgnoreCookies(true);
-        checkSetCookieURI();
-
-        // second request to see if cookie is NOT sent
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>());
-
-        String requestString = httpRequestString(curi);
-        assertFalse(requestString.contains("Cookie:"));
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,
