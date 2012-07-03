@@ -95,6 +95,7 @@ import org.archive.io.RecorderTooMuchHeaderException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessResult;
+import org.archive.modules.credential.CommonsHttpCredentialUtil;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.credential.HttpAuthenticationCredential;
@@ -1149,7 +1150,8 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    cred.populate(curi, this.http, method);
+                    // cred.populate(curi, this.http, method);
+                    CommonsHttpCredentialUtil.populate(curi, this.http, method, cred);
                 }
             }
         }
@@ -1160,7 +1162,7 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
-            if (c.populate(curi, this.http, method)) {
+            if (CommonsHttpCredentialUtil.populate(curi, this.http, method, c)) {
                 result = true;
             }
         }

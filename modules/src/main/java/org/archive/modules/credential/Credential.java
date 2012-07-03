@@ -24,8 +24,6 @@ import java.util.logging.Logger;
 
 import javax.management.AttributeNotFoundException;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -45,7 +43,7 @@ import org.archive.modules.net.ServerCache;
  */
 public abstract class Credential implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private static final Logger logger =
         Logger.getLogger(Credential.class.getName());
@@ -162,15 +160,6 @@ public abstract class Credential implements Serializable {
      * on each visit to the server (e.g. Rfc2617 is such a type).
      */
     public abstract boolean isEveryTime();
-
-    /**
-     * @param curi CrawlURI to as for context.
-     * @param http Instance of httpclient.
-     * @param method Method to populate.
-     * @return True if added a credentials.
-     */
-    public abstract boolean populate(CrawlURI curi, HttpClient http,
-        HttpMethod method);
 
     /**
      * @param curi CrawlURI to look at.
