@@ -37,6 +37,7 @@ import st.ata.util.FPGenerator;
  */
 public class HashCrawlMapper extends CrawlMapper {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
     
     protected Frontier frontier;

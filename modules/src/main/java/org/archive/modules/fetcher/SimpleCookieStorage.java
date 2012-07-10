@@ -26,6 +26,7 @@ import org.apache.commons.httpclient.Cookie;
 
 public class SimpleCookieStorage extends AbstractCookieStorage {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     final private SortedMap<String,Cookie> map = new TreeMap<String,Cookie>();

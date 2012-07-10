@@ -62,6 +62,7 @@ public class CrawlerLoggerModule
     implements 
         UriErrorLoggerModule, Lifecycle, InitializingBean,
         Checkpointable, SimpleFileLoggerProvider, DisposableBean {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     protected ConfigPath path = new ConfigPath(Engine.LOGS_DIR_NAME,"${launchId}/logs"); 

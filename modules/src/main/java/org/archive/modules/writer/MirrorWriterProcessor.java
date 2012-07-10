@@ -86,6 +86,7 @@ import org.archive.util.FileUtils;
    @author Howard Lee Gayle
 */
 public class MirrorWriterProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
         Logger.getLogger(MirrorWriterProcessor.class.getName());

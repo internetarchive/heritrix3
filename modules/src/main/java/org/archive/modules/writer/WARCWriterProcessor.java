@@ -99,6 +99,7 @@ import org.archive.util.anvl.ANVLRecord;
  * @contributor stack
  */
 public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWriterPoolSettings {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 6182850087635847443L;
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());

@@ -62,6 +62,7 @@ import org.archive.util.Recorder;
  *
  */
 public class FetchFTP extends Processor  {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     /** Logger for this class. */

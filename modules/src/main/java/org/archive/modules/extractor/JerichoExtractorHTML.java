@@ -76,6 +76,7 @@ import au.id.jericho.lib.html.StartTagType;
 @SuppressWarnings("unchecked")
 public class JerichoExtractorHTML extends ExtractorHTML {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1684681316546343615L;
 
     final private static Logger logger = 

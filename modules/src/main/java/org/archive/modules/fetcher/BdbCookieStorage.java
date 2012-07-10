@@ -43,6 +43,7 @@ import com.sleepycat.je.DatabaseException;
  * @author pjack
  */
 public class BdbCookieStorage extends AbstractCookieStorage implements Checkpointable {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     
     protected BdbModule bdb;
