@@ -61,6 +61,7 @@ import org.xbill.DNS.Type;
  */
 public class FetchDNS extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger logger = Logger.getLogger(FetchDNS.class.getName());

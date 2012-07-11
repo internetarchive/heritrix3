@@ -48,6 +48,7 @@ import org.archive.util.TextUtils;
 
 public class ExtractorURI extends Extractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger LOGGER =

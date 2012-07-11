@@ -121,6 +121,7 @@ import org.springframework.context.Lifecycle;
  * @version $Id$
  */
 public class FetchHTTP extends Processor implements Lifecycle {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 

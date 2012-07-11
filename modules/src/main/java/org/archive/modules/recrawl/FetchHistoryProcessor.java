@@ -36,6 +36,7 @@ import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
  * @version $Date: 2006-09-25 20:19:54 +0000 (Mon, 25 Sep 2006) $, $Revision: 4654 $
  */
 public class FetchHistoryProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     
     /** Desired history array length. */

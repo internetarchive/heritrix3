@@ -65,6 +65,7 @@ import org.archive.util.TextUtils;
  */
 public class HTTPContentDigest extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger logger =

@@ -46,6 +46,7 @@ import com.anotherbigidea.io.InStream;
  */
 public class ExtractorSWF extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger logger =

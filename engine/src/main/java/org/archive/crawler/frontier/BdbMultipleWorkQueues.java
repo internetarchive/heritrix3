@@ -59,7 +59,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * @author gojomo
  */
 public class BdbMultipleWorkQueues {
-	private static final long serialVersionUID = 1L;
+	@SuppressWarnings("unused")
+    private static final long serialVersionUID = 1L;
 	
     private static final Logger LOGGER =
         Logger.getLogger(BdbMultipleWorkQueues.class.getName());

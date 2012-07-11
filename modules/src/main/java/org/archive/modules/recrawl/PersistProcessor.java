@@ -64,6 +64,7 @@ import com.sleepycat.je.EnvironmentConfig;
  */
 public abstract class PersistProcessor extends AbstractPersistProcessor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =

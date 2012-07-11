@@ -42,6 +42,7 @@ import org.archive.util.ms.Doc;
  */
 public class ExtractorDOC extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
     
     private static Pattern PATTERN = Pattern.compile("HYPERLINK.*?\"(.*?)\"");
