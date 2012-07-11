@@ -153,7 +153,6 @@ public class BdbMultipleWorkQueues {
             boolean verbose) 
     throws DatabaseException {
         int matches = 0;
-        int tries = 0;
         ArrayList<String> results = new ArrayList<String>(maxMatches);
         
         DatabaseEntry key;
@@ -184,7 +183,6 @@ public class BdbMultipleWorkQueues {
                         }
                         matches++;
                     }
-                    tries++;
                 }
                 result = cursor.getNext(key,value,null);
             }
