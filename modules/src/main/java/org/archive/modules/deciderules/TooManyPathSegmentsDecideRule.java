@@ -18,6 +18,9 @@
  */
 package org.archive.modules.deciderules;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.archive.modules.CrawlURI;
 
 /**
@@ -30,6 +33,7 @@ import org.archive.modules.CrawlURI;
 public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = 3L;
+    private static final Logger logger = Logger.getLogger(TooManyPathSegmentsDecideRule.class.getName()); 
 
     /** default for this class is to REJECT */
     {
@@ -64,6 +68,11 @@ public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
     @Override
     protected boolean evaluate(CrawlURI curi) {
         String uriPath = curi.getUURI().getEscapedPath();
+        if (uriPath == null) {
+            uriPath = curi.toString();
+            // TODO this is a quick fix. figure out why getUURI().getEscapedPath() returns null.
+            logger.log(Level.WARNING, "getUURI().getEscapedPath() returns null for the given CrawlURI: "+ uriPath);
+        }
         int count = 0;
         int threshold = getMaxPathDepth();
         for (int i = 0; i < uriPath.length(); i++) {
