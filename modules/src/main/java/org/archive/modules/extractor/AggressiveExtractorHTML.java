@@ -32,6 +32,7 @@ import org.archive.modules.CrawlURI;
  */
 public class AggressiveExtractorHTML
 extends ExtractorHTML {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     protected static Logger logger =

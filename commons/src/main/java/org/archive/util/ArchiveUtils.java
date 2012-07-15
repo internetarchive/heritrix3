@@ -353,15 +353,11 @@ public class ArchiveUtils {
                     d.length());
             }
             StringBuilder sb = new StringBuilder(d);
-            if (sb.length() < 8) {
-                for (int i = sb.length(); sb.length() < 8; i += 2) {
-                    sb.append("01");
-                }
+            while (sb.length() < 8) {
+                sb.append("01");
             }
-            if (sb.length() < 12) {
-                for (int i = sb.length(); sb.length() < 12; i++) {
-                    sb.append("0");
-                }
+            while (sb.length() < 12) {
+                sb.append("0");
             }
             date = ArchiveUtils.parse12DigitDate(sb.toString());
         }

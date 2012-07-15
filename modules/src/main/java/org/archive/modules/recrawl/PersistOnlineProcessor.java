@@ -40,6 +40,7 @@ import com.sleepycat.je.DatabaseException;
 public abstract class PersistOnlineProcessor extends PersistProcessor 
 implements Lifecycle {
     
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -666479480942267268L;
     
     protected BdbModule bdb;

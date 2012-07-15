@@ -49,6 +49,7 @@ import org.archive.net.UURIFactory;
  */
 public class ExtractorUniversal extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     /**

@@ -56,6 +56,7 @@ import org.archive.util.UriUtils;
  */
 public class ExtractorJS extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger LOGGER =

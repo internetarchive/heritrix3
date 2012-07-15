@@ -32,6 +32,7 @@ import org.archive.net.UURIFactory;
  */
 public class ExtractorHTTP extends Extractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     public ExtractorHTTP() {

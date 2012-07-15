@@ -57,6 +57,7 @@ import org.archive.util.TextUtils;
 public class ExtractorCSS extends ContentExtractor {
 
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger logger =

@@ -43,6 +43,7 @@ import org.springframework.context.Lifecycle;
 public class PersistLogProcessor extends PersistProcessor 
 implements Checkpointable, Lifecycle {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1678691994065439346L;
     
     protected CrawlerJournal log;

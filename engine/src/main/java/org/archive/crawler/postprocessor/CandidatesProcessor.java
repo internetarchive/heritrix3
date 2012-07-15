@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class CandidatesProcessor extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -3L;
     
     /**

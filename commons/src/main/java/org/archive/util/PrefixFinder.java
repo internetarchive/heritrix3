@@ -56,9 +56,7 @@ public class PrefixFinder {
     public static List<String> find(SortedSet<String> set, String input) {
         LinkedList<String> result = new LinkedList<String>();
         set = headSetInclusive(set, input);
-        int opCount = 0;
         for (String last = last(set); last != null; last = last(set)) {
-            opCount++;
             if (input.startsWith(last)) {
                 result.push(last);
                 set = set.headSet(last); 
@@ -104,9 +102,7 @@ public class PrefixFinder {
     public static List<String> findKeys(SortedMap<String,?> map, String input) {
         LinkedList<String> result = new LinkedList<String>();
         map = headMapInclusive(map, input);
-        int opCount = 0;
         for (String last = last(map); last != null; last = last(map)) {
-            opCount++;
             if (input.startsWith(last)) {
                 result.push(last);
                 map = map.headMap(last); 

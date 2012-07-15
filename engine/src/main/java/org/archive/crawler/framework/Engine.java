@@ -43,6 +43,7 @@ import org.archive.util.ArchiveUtils;
  * @contributor gojomo
  */
 public class Engine {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 4L;
 
     final public static String LOGS_DIR_NAME = "logs subdirectory";
