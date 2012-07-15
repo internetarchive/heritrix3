@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -71,6 +73,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static final String BASIC_AUTH_LOGIN = "basic-auth-login";
     protected static final String BASIC_AUTH_PASSWORD = "basic-auth-password";
     
+    protected static final String DIGEST_AUTH_REALM    = "digest-auth-realm";
+    protected static final String DIGEST_AUTH_ROLE     = "digest-auth-role";
+    protected static final String DIGEST_AUTH_LOGIN    = "digest-auth-login";
+    protected static final String DIGEST_AUTH_PASSWORD = "digest-auth-password";
+
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
 
     protected static class TestHandler extends AbstractHandler {
@@ -88,56 +95,86 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         }
     }
 
-    protected static Server httpServer;
+    protected static Map<Integer, Server> httpServers;
     protected AbstractFetchHTTP fetcher;
 
     abstract protected AbstractFetchHTTP makeModule() throws IOException;
-
-    // put auth around certain paths for testing fetcher's handling of auth
-    protected static SecurityHandler makeAuthWrapper() {
+    
+    protected static SecurityHandler makeAuthWrapper(String authMethod,
+            final String role, String realm, final String login,
+            final String password) {
         Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__BASIC_AUTH);;
-        constraint.setRoles(new String[]{BASIC_AUTH_ROLE});
+        constraint.setRoles(new String[] { role });
         constraint.setAuthenticate(true);
-         
+
         ConstraintMapping constraintMapping = new ConstraintMapping();
         constraintMapping.setConstraint(constraint);
-        constraintMapping.setPathSpec("/basic-auth");
-         
+        constraintMapping.setPathSpec("/auth");
+
         SecurityHandler authWrapper = new SecurityHandler();
-        authWrapper.setConstraintMappings(new ConstraintMapping[]{constraintMapping});
-        authWrapper.setUserRealm(new HashUserRealm(BASIC_AUTH_REALM) {
+        authWrapper.setAuthMethod(authMethod);
+        authWrapper
+                .setConstraintMappings(new ConstraintMapping[] { constraintMapping });
+        authWrapper.setUserRealm(new HashUserRealm(realm) {
             {
-                put(BASIC_AUTH_LOGIN, BASIC_AUTH_PASSWORD);
-                addUserToRole(BASIC_AUTH_LOGIN, BASIC_AUTH_ROLE);
+                put(login, password);
+                addUserToRole(login, role);
             }
         });
-        
+
         return authWrapper;
     }
     
-    public static Server startHttpServer() throws Exception {
+    // can't easily have the same Server do different types of auth for
+    // different paths, so we have multiple servers
+    /**
+     * @return map(port->server)
+     */
+    public static Map<Integer,Server> startHttpServers() throws Exception {
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
         
+        HashMap<Integer, Server> servers = new HashMap<Integer,Server>();
+        
+        // server for basic auth
         Server server = new Server();
         
         SocketConnector sc = new SocketConnector();
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
-        
-        SecurityHandler authWrapper = makeAuthWrapper();
+
+        SecurityHandler authWrapper = makeAuthWrapper(Constraint.__BASIC_AUTH,
+                BASIC_AUTH_ROLE, BASIC_AUTH_REALM, BASIC_AUTH_LOGIN,
+                BASIC_AUTH_PASSWORD);
         authWrapper.setHandler(new TestHandler());
         server.setHandler(authWrapper);
         
         server.start();
+        servers.put(sc.getPort(), server);
+
+        // server for digest auth
+        server = new Server();
         
-        return server;
+        sc = new SocketConnector();
+        sc.setHost("127.0.0.1");
+        sc.setPort(7778);
+        server.addConnector(sc);
+        
+        authWrapper = makeAuthWrapper(Constraint.__DIGEST_AUTH,
+                DIGEST_AUTH_ROLE, DIGEST_AUTH_REALM, DIGEST_AUTH_LOGIN,
+                DIGEST_AUTH_PASSWORD);
+        authWrapper.setHandler(new TestHandler());
+        server.setHandler(authWrapper);
+        
+        server.start();
+        servers.put(sc.getPort(), server);
+
+        return servers;
     }
     
-    protected static void ensureHttpServer() throws Exception {
-        if (httpServer == null) { 
-            httpServer = startHttpServer();
+    protected static void ensureHttpServers() throws Exception {
+        if (httpServers == null) { 
+            httpServers = startHttpServers();
         }
     }
 
@@ -183,7 +220,9 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         if (!exclusions.contains("acceptHeaders")) {
             assertTrue(requestString.contains("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"));
         }
-        assertTrue(requestString.contains("Host: localhost:7777\r\n"));
+        if (!exclusions.contains("hostHeader")) {
+            assertTrue(requestString.contains("Host: localhost:7777\r\n"));
+        }
         assertTrue(requestString.endsWith("\r\n\r\n"));
         
         // check sizes
@@ -229,15 +268,15 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return new String(buf, "US-ASCII");
     }
     
-    public void xestDefaults() throws Exception {
-        ensureHttpServer();
+    public void testDefaults() throws Exception {
+        ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
         runDefaultChecks(curi, new HashSet<String>());
     }
 
-    public void xestAcceptHeaders() throws Exception {
-        ensureHttpServer();
+    public void testAcceptHeaders() throws Exception {
+        ensureHttpServers();
         List<String> headers = Arrays.asList("header1: value1", "header2: value2");
         getFetcher().setAcceptHeaders(headers);
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
@@ -255,8 +294,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         }
     }
 
-    public void xestCookies() throws Exception {
-        ensureHttpServer();
+    public void testCookies() throws Exception {
+        ensureHttpServers();
         
         checkSetCookieURI();
         
@@ -269,8 +308,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
     }
 
-    public void xestIgnoreCookies() throws Exception {
-        ensureHttpServer();
+    public void testIgnoreCookies() throws Exception {
+        ensureHttpServers();
 
         getFetcher().setIgnoreCookies(true);
         checkSetCookieURI();
@@ -285,7 +324,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
     
     public void testBasicAuth() throws Exception {
-        ensureHttpServer();
+        ensureHttpServers();
 
         HttpAuthenticationCredential basicAuthCredential = new HttpAuthenticationCredential();
         basicAuthCredential.setRealm(BASIC_AUTH_REALM);
@@ -296,7 +335,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
                 basicAuthCredential);
 
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/basic-auth");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/auth");
         getFetcher().process(curi);
 
         // check that we got the expected response and the fetcher did its thing
@@ -310,6 +349,35 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+    }
+
+    // server for digest auth is at localhost:7778
+    public void testDigestAuth() throws Exception {
+        ensureHttpServers();
+
+        HttpAuthenticationCredential digestAuthCred = new HttpAuthenticationCredential();
+        digestAuthCred.setRealm(DIGEST_AUTH_REALM);
+        digestAuthCred.setDomain("localhost:7778");
+        digestAuthCred.setLogin(DIGEST_AUTH_LOGIN);
+        digestAuthCred.setPassword(DIGEST_AUTH_PASSWORD);
+        
+        getFetcher().getCredentialStore().getCredentials().put("digest-auth-credential",
+                digestAuthCred);
+
+        CrawlURI curi = makeCrawlURI("http://localhost:7778/auth");
+        getFetcher().process(curi);
+
+        // check that we got the expected response and the fetcher did its thing
+        assertEquals(401, curi.getFetchStatus());
+        assertTrue(curi.getCredentials().contains(digestAuthCred));
+        
+        // fetch again with the credentials
+        getFetcher().process(curi);
+        String httpRequestString = httpRequestString(curi);
+        // logger.info('\n' + httpRequestString + contentString(curi));
+        assertTrue(httpRequestString.contains("Authorization: Digest"));
+        // otherwise should be a normal 200 response
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,

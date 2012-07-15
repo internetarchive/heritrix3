@@ -56,6 +56,6 @@
 	<classpathentry kind="var" path="M2_REPO/net/java/dev/jna/jna/3.2.3/jna-3.2.3.jar" sourcepath="/M2_REPO/net/java/dev/jna/jna/3.2.3/jna-3.2.3-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/jetty-6.1.26-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
