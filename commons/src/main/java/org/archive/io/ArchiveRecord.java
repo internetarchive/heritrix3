@@ -299,7 +299,7 @@ public abstract class ArchiveRecord extends InputStream {
                 this.position += incr;
         }
         
-        protected long getPosition() {
+        public long getPosition() {
                 return this.position;
         }
 
