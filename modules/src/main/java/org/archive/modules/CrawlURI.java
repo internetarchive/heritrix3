@@ -75,7 +75,6 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpStatus;
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
@@ -925,8 +924,7 @@ implements Reporter, Serializable, OverlayContext {
     public boolean isSuccess() {
         boolean result = false;
         int statusCode = this.fetchStatus;
-        if (statusCode == HttpStatus.SC_UNAUTHORIZED &&
-            hasRfc2617Credential()) {
+        if (statusCode == 401 && hasRfc2617Credential()) {
             result = false;
         } else {
             result = (statusCode > 0);
