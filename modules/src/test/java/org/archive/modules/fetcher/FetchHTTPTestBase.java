@@ -109,12 +109,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         ConstraintMapping constraintMapping = new ConstraintMapping();
         constraintMapping.setConstraint(constraint);
-        constraintMapping.setPathSpec("/auth");
+        constraintMapping.setPathSpec("/auth/*");
 
         SecurityHandler authWrapper = new SecurityHandler();
         authWrapper.setAuthMethod(authMethod);
-        authWrapper
-                .setConstraintMappings(new ConstraintMapping[] { constraintMapping });
+        authWrapper.setConstraintMappings(new ConstraintMapping[] {constraintMapping});
         authWrapper.setUserRealm(new HashUserRealm(realm) {
             {
                 put(login, password);
@@ -335,7 +334,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
                 basicAuthCredential);
 
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/auth");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/auth/1");
         getFetcher().process(curi);
 
         // check that we got the expected response and the fetcher did its thing
@@ -346,6 +345,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + contentString(curi));
+        assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
+        // otherwise should be a normal 200 response
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        
+        // fetch a fresh uri to make sure auth info was cached and we don't get another 401
+        curi = makeCrawlURI("http://localhost:7777/auth/2");
+        getFetcher().process(curi);
+        httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
@@ -364,7 +371,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().getCredentialStore().getCredentials().put("digest-auth-credential",
                 digestAuthCred);
 
-        CrawlURI curi = makeCrawlURI("http://localhost:7778/auth");
+        CrawlURI curi = makeCrawlURI("http://localhost:7778/auth/1");
         getFetcher().process(curi);
 
         // check that we got the expected response and the fetcher did its thing
@@ -378,6 +385,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
+        
+        // fetch a fresh uri to make sure auth info was cached and we don't get another 401
+        curi = makeCrawlURI("http://localhost:7778/auth/2");
+        getFetcher().process(curi);
+        httpRequestString = httpRequestString(curi);
+        assertTrue(httpRequestString.contains("Authorization: Digest"));
+        // otherwise should be a normal 200 response
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,

@@ -121,8 +121,7 @@ public class CommonsHttpCredentialUtil {
             http.getState().setCredentials(new AuthScope(curi.getUURI().getHost(),
                     curi.getUURI().getPort(), cred.getRealm()), upc);
             logger.fine("Credentials for realm " + cred.getRealm() +
-                    " for CrawlURI " + curi.toString() + " added to request: " +
-                    result);
+                    " for CrawlURI " + curi.toString() + " added to request");
 
             http.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY,
                     Arrays.asList(AuthPolicy.DIGEST, AuthPolicy.BASIC));
