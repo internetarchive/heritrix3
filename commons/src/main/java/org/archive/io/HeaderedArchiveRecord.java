@@ -351,7 +351,7 @@ public class HeaderedArchiveRecord extends ArchiveRecord {
     }
 
     @Override
-    protected long getPosition() {
+    public long getPosition() {
         return ((ArchiveRecord)this.in).getPosition();
     }
 
