@@ -633,7 +633,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         if (http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort())) != null) {
             addedCredentials = true;
         }
-        method.setDoAuthentication(addedCredentials);
 
         // set hardMax on bytes (if set by operator)
         long hardMax = getMaxLengthBytes();
@@ -1451,6 +1450,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         hcp.setSoTimeout(timeout);
         // Set client to be version 1.0.
         hcp.setVersion(HttpVersion.HTTP_1_0);
+        // We handle 401s, so when we do auth, we want it preemptive.
+        hcp.setAuthenticationPreemptive(true);
 
         // configureHttpCookies(defaults);
 
