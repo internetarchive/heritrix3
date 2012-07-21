@@ -373,6 +373,16 @@ public class UURIFactoryTest extends TestCase {
 				uuriTgt.toString().equals(uuri.toString()));
 	}
 	
+	public void testSchemelessRelative() throws URIException {
+	    UURI base = UURIFactory.getInstance("http://www.itsnicethat.com/articles/laura-hobson");
+	    UURI test1 = UURIFactory.getInstance(base, "//www.facebook.com/plugins/like.php");
+	    assertEquals("schemaless relative 1", "http://www.facebook.com/plugins/like.php", test1.toString());
+	    // reported by Erin Staniland
+	    UURI test2 = UURIFactory.getInstance(base, "//www.facebook.com/plugins/like.php?href=http://www.itsnicethat.com/articles/laura-hobson");
+	    assertEquals("schemeless relative 2", "http://www.facebook.com/plugins/like.php?href=http://www.itsnicethat.com/articles/laura-hobson",
+	            test2.toString());
+	}
+	
 	/**
 	 * Test that an empty uuri does the right thing -- that we get back the
 	 * base.

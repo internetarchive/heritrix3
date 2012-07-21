@@ -633,7 +633,6 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         if (http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort())) != null) {
             addedCredentials = true;
         }
-        method.setDoAuthentication(addedCredentials);
 
         // set hardMax on bytes (if set by operator)
         long hardMax = getMaxLengthBytes();
@@ -1147,19 +1146,16 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         } catch (URIException e) {
             return false;
         }
-        
-        boolean result = false;
-        
         CrawlServer server = serverCache.getServerFor(serverKey);
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    if (CommonsHttpCredentialUtil.populate(curi, this.http, method, cred)) {
-                        result = true;
-                    }
+			CommonsHttpCredentialUtil.populate(curi, this.http, method, cred);
                 }
             }
         }
+
+        boolean result = false;
 
         // Now look in the curi. The Curi will have credentials loaded either
         // by the handle401 method if its a rfc2617 or it'll have been set into
@@ -1458,6 +1454,8 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         hcp.setSoTimeout(timeout);
         // Set client to be version 1.0.
         hcp.setVersion(HttpVersion.HTTP_1_0);
+        // We handle 401s, so when we do auth, we want it preemptive.
+        hcp.setAuthenticationPreemptive(true);
 
         // configureHttpCookies(defaults);
 
