@@ -74,12 +74,15 @@ public class EngineResource extends BaseResource {
         
         Configuration tmpltCfg = new Configuration();
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
+        
+        //TODO: this is temporary, remove this try-catch block
         try {
             tmpltCfg.setDirectoryForTemplateLoading(new File("/0/templates/"));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
         tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
         setTemplateConfiguration(tmpltCfg);
     }

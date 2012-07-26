@@ -18,7 +18,7 @@ public class EngineModel extends HashMap<String, Object> {
     
     public EngineModel(Engine engine){
         super();
-        this.put("title", "Heritrix Engine "+engine.getHeritrixVersion());
+        this.put("heritrixVersion", engine.getHeritrixVersion());
         this.put("heapReport", engine.heapReport());
         this.put("jobsDirAbsolutePath", FileUtils.tryToCanonicalize(engine.getJobsDir()).getAbsolutePath());
 

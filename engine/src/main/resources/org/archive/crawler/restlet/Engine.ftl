@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
-<head><title>${engine.title}</title>
+<head><title>Heritrix Engine ${engine.heritrixVersion}</title>
 <base href='${baseRef}'/>
 <link rel="stylesheet" type="text/css" href="${cssRef}">
 </head>
 
 <body>
 
-<h1>${engine.title}</h1>
+<h1>Heritrix Engine ${engine.heritrixVersion}</h1>
   
 <!--flashed message -->
 <#list flashes as flash>
