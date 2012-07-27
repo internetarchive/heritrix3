@@ -945,6 +945,9 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
      */
     protected HostConfiguration configureMethod(CrawlURI curi,
             HttpMethod method) {
+        // Don't try to handle 401s internally.
+        method.setDoAuthentication(false);
+
         // Don't auto-follow redirects
         method.setFollowRedirects(false);
 
