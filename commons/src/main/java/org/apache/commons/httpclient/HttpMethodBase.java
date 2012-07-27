@@ -386,11 +386,11 @@ public abstract class HttpMethodBase implements HttpMethod {
      * @param header the header to add to the request
      */
     public void addRequestHeader(Header header) {
-        LOG.trace("HttpMethodBase.addRequestHeader(Header)");
 
         if (header == null) {
             LOG.debug("null header value ignored");
         } else {
+            LOG.trace("HttpMethodBase.addRequestHeader(" + header.toString().trim() + ")");
             getRequestHeaderGroup().addHeader(header);
         }
     }

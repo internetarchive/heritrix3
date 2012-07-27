@@ -377,11 +377,16 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
         assertTrue(curi.getCredentials().contains(digestAuthCred));
-        
-        // fetch again with the credentials
+
+        // stick a basic auth 401 in there to check it doesn't mess with the digest auth we're working on
+        CrawlURI inteferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
+        getFetcher().process(inteferingUri);
+        assertEquals(401, inteferingUri.getFetchStatus());
+
+        // fetch origin again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + contentString(curi));
+        logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
