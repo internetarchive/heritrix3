@@ -376,7 +376,7 @@ public class PreconditionEnforcer extends Processor  {
     *         be met before we can proceed. False if we can precede to process
     *         this url.
     */
-    protected boolean credentialPrecondition(final CrawlURI curi) {
+    public boolean credentialPrecondition(final CrawlURI curi) {
 
         boolean result = false;
 

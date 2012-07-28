@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,9 +37,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
+import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -50,11 +51,16 @@ import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.mortbay.jetty.security.Authenticator;
+import org.mortbay.jetty.security.BasicAuthenticator;
 import org.mortbay.jetty.security.Constraint;
 import org.mortbay.jetty.security.ConstraintMapping;
+import org.mortbay.jetty.security.DigestAuthenticator;
+import org.mortbay.jetty.security.FormAuthenticator;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
+import org.mortbay.jetty.servlet.HashSessionManager;
+import org.mortbay.jetty.servlet.SessionHandler;
 import org.mortbay.log.Log;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
@@ -62,15 +68,15 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
     static {
         Logger.getLogger("").setLevel(Level.ALL);
-        for (Handler h: Logger.getLogger("").getHandlers()) {
+        for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
             h.setLevel(Level.ALL);
             h.setFormatter(new OneLineSimpleLogger());
         }
     }
     
-    protected static final String BASIC_AUTH_REALM = "basic-auth-realm";
-    protected static final String BASIC_AUTH_ROLE = "basic-auth-role";
-    protected static final String BASIC_AUTH_LOGIN = "basic-auth-login";
+    protected static final String BASIC_AUTH_REALM    = "basic-auth-realm";
+    protected static final String BASIC_AUTH_ROLE     = "basic-auth-role";
+    protected static final String BASIC_AUTH_LOGIN    = "basic-auth-login";
     protected static final String BASIC_AUTH_PASSWORD = "basic-auth-password";
     
     protected static final String DIGEST_AUTH_REALM    = "digest-auth-realm";
@@ -78,20 +84,50 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static final String DIGEST_AUTH_LOGIN    = "digest-auth-login";
     protected static final String DIGEST_AUTH_PASSWORD = "digest-auth-password";
 
-    protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
+    protected static final String FORM_AUTH_REALM    = "form-auth-realm";
+    protected static final String FORM_AUTH_ROLE     = "form-auth-role";
+    protected static final String FORM_AUTH_LOGIN    = "form-auth-login";
+    protected static final String FORM_AUTH_PASSWORD = "form-auth-password";
 
-    protected static class TestHandler extends AbstractHandler {
+    protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
+    
+    protected static final String LOGIN_HTML =
+            "<html>" +
+            "<head><title>Log In</title></head>" +
+            "<body>" +
+            "<form action='/j_security_check' method='post'>" +
+            "<div> username: <input name='j_username' type='text'/> </div>" +
+            "<div> password: <input name='j_password' type='password'/> </div>" +
+            "<div> <input type='submit' /> </div>" +
+            "</form>" +
+            "</body>" +
+            "</html>";     
+
+    protected static class TestHandler extends SessionHandler {
+        public TestHandler() {
+            super();
+        }
+        
         @Override
         public void handle(String target, HttpServletRequest request,
                 HttpServletResponse response, int dispatch) throws IOException,
                 ServletException {
+            
             if (target.endsWith("/set-cookie")) {
                 response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
             }
-            response.setContentType("text/plain;charset=US-ASCII");
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-            ((Request)request).setHandled(true);
+            
+            if (target.equals("/login.html")) {
+                response.setContentType("text/html;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getOutputStream().write(LOGIN_HTML.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
+            } else {
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
+            }
         }
     }
 
@@ -100,7 +136,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
     abstract protected AbstractFetchHTTP makeModule() throws IOException;
     
-    protected static SecurityHandler makeAuthWrapper(String authMethod,
+    protected static SecurityHandler makeAuthWrapper(Authenticator authenticator,
             final String role, String realm, final String login,
             final String password) {
         Constraint constraint = new Constraint();
@@ -112,7 +148,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         constraintMapping.setPathSpec("/auth/*");
 
         SecurityHandler authWrapper = new SecurityHandler();
-        authWrapper.setAuthMethod(authMethod);
+        authWrapper.setAuthenticator(authenticator);
+        
         authWrapper.setConstraintMappings(new ConstraintMapping[] {constraintMapping});
         authWrapper.setUserRealm(new HashUserRealm(realm) {
             {
@@ -142,7 +179,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         sc.setPort(7777);
         server.addConnector(sc);
 
-        SecurityHandler authWrapper = makeAuthWrapper(Constraint.__BASIC_AUTH,
+        SecurityHandler authWrapper = makeAuthWrapper(new BasicAuthenticator(),
                 BASIC_AUTH_ROLE, BASIC_AUTH_REALM, BASIC_AUTH_LOGIN,
                 BASIC_AUTH_PASSWORD);
         authWrapper.setHandler(new TestHandler());
@@ -159,11 +196,34 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         sc.setPort(7778);
         server.addConnector(sc);
         
-        authWrapper = makeAuthWrapper(Constraint.__DIGEST_AUTH,
+        authWrapper = makeAuthWrapper(new DigestAuthenticator(),
                 DIGEST_AUTH_ROLE, DIGEST_AUTH_REALM, DIGEST_AUTH_LOGIN,
                 DIGEST_AUTH_PASSWORD);
         authWrapper.setHandler(new TestHandler());
         server.setHandler(authWrapper);
+        
+        server.start();
+        servers.put(sc.getPort(), server);
+        
+        // server for form auth
+        server = new Server();
+        
+        sc = new SocketConnector();
+        sc.setHost("127.0.0.1");
+        sc.setPort(7779);
+        server.addConnector(sc);
+        
+        FormAuthenticator formAuthenticatrix = new FormAuthenticator();
+        formAuthenticatrix.setLoginPage("/login.html");
+        
+        authWrapper = makeAuthWrapper(formAuthenticatrix,
+                FORM_AUTH_ROLE, FORM_AUTH_REALM, FORM_AUTH_LOGIN,
+                FORM_AUTH_PASSWORD);
+        authWrapper.setHandler(new TestHandler());
+        SessionHandler sessionHandler = new SessionHandler();
+        sessionHandler.setSessionManager(new HashSessionManager());
+        sessionHandler.setHandler(authWrapper);
+        server.setHandler(sessionHandler);
         
         server.start();
         servers.put(sc.getPort(), server);
@@ -203,6 +263,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             IOException {
         UURI uuri = UURIFactory.getInstance(uri);
         CrawlURI curi = new CrawlURI(uuri);
+        curi.setSeed(true);
         curi.setRecorder(getRecorder());
         return curi;
     }
@@ -386,7 +447,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // fetch origin again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + contentString(curi));
+        // logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
@@ -398,6 +459,45 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+    }
+    
+    // server for form auth is at localhost:7779
+    public void testFormAuth() throws Exception {
+        ensureHttpServers();
+        
+        HtmlFormCredential cred = new HtmlFormCredential();
+        cred.setDomain("localhost:7779");
+        cred.setLoginUri("/j_security_check");
+        cred.setHttpMethod(HtmlFormCredential.Method.POST);
+        HashMap<String, String> formItems = new HashMap<String,String>();
+        formItems.put("j_username", FORM_AUTH_LOGIN);
+        formItems.put("j_password", FORM_AUTH_PASSWORD);
+        cred.setFormItems(formItems);
+
+        getFetcher().getCredentialStore().getCredentials().put("form-auth-credential",
+                cred);
+        
+        CrawlURI curi = makeCrawlURI("http://localhost:7779/");
+        getFetcher().process(curi);
+        
+        PreconditionEnforcer preconditionEnforcer = new PreconditionEnforcer();
+        preconditionEnforcer.setServerCache(getFetcher().getServerCache());
+        preconditionEnforcer.setCredentialStore(getFetcher().getCredentialStore());
+        boolean result = preconditionEnforcer.credentialPrecondition(curi);
+        assertTrue(result);
+
+        CrawlURI loginUri = curi.getPrerequisiteUri();
+        assertEquals("http://localhost:7779/j_security_check", loginUri.toString());
+        loginUri.setRecorder(getRecorder());
+        getFetcher().process(loginUri);
+        
+        getFetcher().process(curi);
+        
+        curi = makeCrawlURI("http://localhost:7779/auth/1");
+        getFetcher().process(curi);
+
+        curi = makeCrawlURI("http://localhost:7779/auth/1");
+        getFetcher().process(curi);
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,

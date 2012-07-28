@@ -1829,7 +1829,7 @@ implements Reporter, Serializable, OverlayContext {
     public CrawlURI markPrerequisite(String preq) 
     throws URIException {
         UURI src = getUURI();
-        UURI dest = UURIFactory.getInstance(preq);
+        UURI dest = UURIFactory.getInstance(src, preq);
         LinkContext lc = LinkContext.PREREQ_MISC;
         Hop hop = Hop.PREREQ;
         Link link = new Link(src, dest, lc, hop);

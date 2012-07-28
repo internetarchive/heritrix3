@@ -64,7 +64,7 @@ public class HtmlFormCredential extends Credential {
     }
     
     
-    enum Method {
+    public enum Method {
         GET,
         POST
     }
