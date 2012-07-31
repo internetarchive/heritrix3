@@ -37,7 +37,7 @@ public class MimetypeUtils {
     /**
      * Truncation regex.
      */
-    final static Pattern TRUNCATION_REGEX = Pattern.compile("^([^\\s;,]+).*");
+    protected final static Pattern TRUNCATION_REGEX = Pattern.compile("^([^\\s;,]+).*");
 
 
     /**

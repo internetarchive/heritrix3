@@ -40,9 +40,9 @@ import org.restlet.data.Response;
  * @contributor gojomo
  */
 public abstract class EnhDirectory extends org.restlet.Directory {
-    IOFileFilter editFilter = FileFilterUtils.falseFileFilter(); 
-    IOFileFilter pageFilter = FileFilterUtils.falseFileFilter(); 
-    IOFileFilter tailFilter = FileFilterUtils.falseFileFilter();
+    protected IOFileFilter editFilter = FileFilterUtils.falseFileFilter(); 
+    protected IOFileFilter pageFilter = FileFilterUtils.falseFileFilter(); 
+    protected IOFileFilter tailFilter = FileFilterUtils.falseFileFilter();
     
     public EnhDirectory(Context context, Reference rootLocalReference) {
         super(context, rootLocalReference);
@@ -72,7 +72,7 @@ public abstract class EnhDirectory extends org.restlet.Directory {
         return retVal;
     }
 
-    abstract Reference determineRootRef(Request request);
+    protected abstract Reference determineRootRef(Request request);
 
     public boolean allowsEdit(File file) {
         return editFilter.accept(file);

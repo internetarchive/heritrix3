@@ -19,9 +19,8 @@
 
 package org.archive.crawler.reporting;
 
+import java.io.IOException;
 import java.io.PrintWriter;
-
-import org.archive.crawler.frontier.WorkQueueFrontier;
 
 /**
  * Frontier summary report showing a limited number of queues of each 
@@ -35,11 +34,12 @@ public class FrontierSummaryReport extends Report {
     public void write(PrintWriter writer, StatisticsTracker stats) {
         if(!stats.controller.getFrontier().isRunning()) {
             writer.println("frontier unstarted");
-//        } else if (stats.controller.getFrontier().isEmpty()) {
-//            writer.println("frontier empty");
         } else {
-            stats.controller.getFrontier().reportTo(
-                    WorkQueueFrontier.STANDARD_REPORT, writer);
+            try {
+                stats.controller.getFrontier().reportTo(writer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

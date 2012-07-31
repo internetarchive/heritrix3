@@ -18,8 +18,6 @@
  */
 package org.archive.modules.canonicalize;
 
-import java.util.regex.Pattern;
-
 /**
  * Strip known session ids.
  * @author stack

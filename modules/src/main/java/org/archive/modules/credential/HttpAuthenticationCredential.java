@@ -48,7 +48,7 @@ public class HttpAuthenticationCredential extends Credential {
 
 
     /** Basic/Digest Auth realm. */
-    String realm = "Realm";
+    protected String realm = "Realm";
     public String getRealm() {
         return this.realm;
     }
@@ -57,7 +57,7 @@ public class HttpAuthenticationCredential extends Credential {
     }
 
     /** Login. */
-    String login = "login";
+    protected String login = "login";
     public String getLogin() {
         return this.login;
     }
@@ -66,7 +66,7 @@ public class HttpAuthenticationCredential extends Credential {
     }
 
     /** Password. */
-    String password = "password";
+    protected String password = "password";
     public String getPassword() {
         return this.password;
     }

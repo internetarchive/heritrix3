@@ -37,7 +37,7 @@ public class RateLimitGuard extends Guard {
 
     private static final Logger logger = Logger.getLogger(RateLimitGuard.class.getName());
 
-    long lastFailureTime = 0;
+    protected long lastFailureTime = 0;
     
     public RateLimitGuard(Context context, ChallengeScheme scheme, String realm) throws IllegalArgumentException {
         super(context, scheme, realm);

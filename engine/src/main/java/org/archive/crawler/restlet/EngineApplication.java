@@ -48,7 +48,7 @@ import org.restlet.util.Template;
  * @contributor gojomo
  */
 public class EngineApplication extends Application {
-    Engine engine; 
+    protected Engine engine; 
     public EngineApplication(Engine engine) {
         this.engine = engine;
         getMetadataService().addExtension("log", MediaType.TEXT_PLAIN );
@@ -76,7 +76,7 @@ public class EngineApplication extends Application {
                 getContext(),
                 engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {
                     @Override
-                    Reference determineRootRef(Request request) {
+                    protected Reference determineRootRef(Request request) {
                         String ref = "file:/";
                         return new Reference(ref);
                     }};
@@ -90,7 +90,7 @@ public class EngineApplication extends Application {
                 getContext(),
                 engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {
                     @Override
-                    Reference determineRootRef(Request request) {
+                    protected Reference determineRootRef(Request request) {
                         try {
                             return new Reference(
                                 EngineApplication.this.getEngine()

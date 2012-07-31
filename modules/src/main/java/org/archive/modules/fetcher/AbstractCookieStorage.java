@@ -70,7 +70,7 @@ public abstract class AbstractCookieStorage
         this.cookiesSaveFile = cookiesSaveFile;
     }
 
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public void start() {
         if(isRunning()) {
             return;

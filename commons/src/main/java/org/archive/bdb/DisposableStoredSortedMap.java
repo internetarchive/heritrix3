@@ -43,7 +43,7 @@ import com.sleepycat.je.DatabaseException;
 public class DisposableStoredSortedMap<K,V> extends StoredSortedMap<K,V> {
     final private static Logger LOGGER = 
         Logger.getLogger(DisposableStoredSortedMap.class.getName()); 
-    Database db; 
+    protected Database db;
     
     public DisposableStoredSortedMap(Database db, EntryBinding<K> arg1, EntityBinding<V> arg2, boolean arg3) {
         super(db, arg1, arg2, arg3);

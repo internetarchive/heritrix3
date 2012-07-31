@@ -61,6 +61,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger logger =
@@ -76,30 +77,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     public final static String A_META_ROBOTS = "meta-robots";
     
-    
-    /**
-     * Compiled relevant tag extractor.
-     *
-     * <p>
-     * This pattern extracts either:
-     * <li> (1) whole &lt;script&gt;...&lt;/script&gt; or
-     * <li> (2) &lt;style&gt;...&lt;/style&gt; or
-     * <li> (3) &lt;meta ...&gt; or
-     * <li> (4) any other open-tag with at least one attribute
-     * (eg matches "&lt;a href='boo'&gt;" but not "&lt;/a&gt;" or "&lt;br&gt;")
-     * <p>
-     * groups:
-     * <li> 1: SCRIPT SRC=foo&gt;boo&lt;/SCRIPT
-     * <li> 2: just script open tag
-     * <li> 3: STYLE TYPE=moo&gt;zoo&lt;/STYLE
-     * <li> 4: just style open tag
-     * <li> 5: entire other tag, without '<' '>'
-     * <li> 6: element
-     * <li> 7: META
-     * <li> 8: !-- comment --
-     */
-// version w/ less unnecessary backtracking
-    
     {
         setMaxElementLength(64); 
     }
@@ -110,11 +87,58 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         kp.put("maxElementLength",max);
     }
       
+    
+    /**
+     * Relevant tag extractor.
+     * 
+     * <p>
+     * This pattern extracts either:
+     * </p>
+     * <ul>
+     * <li>(1) whole &lt;script&gt;...&lt;/script&gt; or
+     * <li>(2) &lt;style&gt;...&lt;/style&gt; or
+     * <li>(3) &lt;meta ...&gt; or
+     * <li>(4) any other open-tag with at least one attribute (eg matches
+     * "&lt;a href='boo'&gt;" but not "&lt;/a&gt;" or "&lt;br&gt;")
+     * </ul>
+     * <p>
+     * groups:
+     * </p>
+     * <ul>
+     * <li>1: SCRIPT SRC=foo&gt;boo&lt;/SCRIPT
+     * <li>2: just script open tag
+     * <li>3: STYLE TYPE=moo&gt;zoo&lt;/STYLE
+     * <li>4: just style open tag
+     * <li>5: entire other tag, without '&lt;' '>'
+     * <li>6: element
+     * <li>7: META
+     * <li>8: !-- comment --
+     * </ul>
+     * 
+     * <p>
+     * HER-1998 - Modified part 8 to allow conditional html comments.
+     * Conditional HTML comment example:
+     * "&lt;!--[if expression]> HTML &lt;![endif]-->"
+     * </p>
+     * 
+     * <p>
+     * This technique is commonly used to reference CSS &amp; JavaScript that
+     * are designed to deal with the quirks of a specific version of Internet
+     * Explorer. There is another syntax for conditional comments which already
+     * gets parsed by the regex since it doesn't start with "&lt;!--" Ex.
+     * &lt;!if expression> HTML &lt;!endif>
+     * </p>
+     * 
+     * <p>
+     * https://en.wikipedia.org/wiki/Conditional_Comments
+     * </p>
+     */
+    // version w/ less unnecessary backtracking
     static final String RELEVANT_TAG_EXTRACTOR =
       "(?is)<(?:((script[^>]*+)>.*?</script)" + // 1, 2
       "|((style[^>]*+)>.*?</style)" + // 3, 4
       "|(((meta)|(?:\\w{1,"+MAX_ELEMENT_REPLACE+"}))\\s+[^>]*+)" + // 5, 6, 7
-      "|(!--.*?--))>"; // 8 
+      "|(!--(?!\\[if).*?--))>"; // 8 
 
 //    version w/ problems with unclosed script tags 
 //    static final String RELEVANT_TAG_EXTRACTOR =
@@ -754,7 +778,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      */
-    void extract(CrawlURI curi, CharSequence cs) {
+    protected void extract(CrawlURI curi, CharSequence cs) {
         Matcher tags = TextUtils.getMatcher(relevantTagPattern,cs);
         while(tags.find()) {
             if(Thread.interrupted()){

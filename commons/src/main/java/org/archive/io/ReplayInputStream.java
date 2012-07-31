@@ -104,7 +104,7 @@ public class ReplayInputStream extends SeekInputStream
         diskStream = new BufferedSeekInputStream(rais, 4096);
     }
 
-    File backingFile; 
+    protected File backingFile;
     
     /**
      * Create a ReplayInputStream from the given source stream. Requires 
@@ -319,8 +319,7 @@ public class ReplayInputStream extends SeekInputStream
         return position;
     }
     
-    // package private
-    byte[] getBuffer() {
+    protected byte[] getBuffer() {
         return buffer;
     }
 }

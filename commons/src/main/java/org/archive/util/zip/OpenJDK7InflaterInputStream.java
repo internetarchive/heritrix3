@@ -101,7 +101,7 @@ class OpenJDK7InflaterInputStream extends FilterInputStream { // IA RENAMED CLAS
         this(in, inf, 512);
     }
 
-    boolean usesDefaultInflater = false;
+    protected boolean usesDefaultInflater = false;
 
     /**
      * Creates a new input stream with a default decompressor and buffer size.

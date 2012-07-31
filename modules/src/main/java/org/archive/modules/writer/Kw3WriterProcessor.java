@@ -78,6 +78,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Kw3WriterProcessor extends Processor {
 
 
+  @SuppressWarnings("unused")
   private static final long serialVersionUID = 3L;
   
   private static String COLON = ":";
@@ -94,7 +95,7 @@ public class Kw3WriterProcessor extends Processor {
   /**
    * Top-level directory for archive files.
    */
-  ConfigPath path = new ConfigPath("Kw3Writer subdirectory","arcs");
+  protected ConfigPath path = new ConfigPath("Kw3Writer subdirectory","arcs");
   public ConfigPath getPath() {
       return this.path;
   }
@@ -105,7 +106,7 @@ public class Kw3WriterProcessor extends Processor {
   /**
    * Max size for each file.
    */
-  long maxFileSizeBytes = 100000000L;
+  protected long maxFileSizeBytes = 100000000L;
   public long getMaxFileSizeBytes() {
       return maxFileSizeBytes;
   }
@@ -116,7 +117,7 @@ public class Kw3WriterProcessor extends Processor {
   /**
    * Should permissions be changed for the newly created dirs.
    */
-  boolean chmod = false; 
+  protected boolean chmod = false; 
   public boolean getChmod() {
       return chmod;
   }
@@ -128,7 +129,7 @@ public class Kw3WriterProcessor extends Processor {
    * What should the permissions be set to. Given as three octal digits, as to
    * the UNIX 'chmod' command. Ex. 777 for all permissions to everyone.
    */
-  String chmodValue = "777";
+  protected String chmodValue = "777";
   public String getChmodValue() {
       return this.chmodValue;
   }
@@ -146,7 +147,7 @@ public class Kw3WriterProcessor extends Processor {
   /**
    * Name of collection.
    */
-  String collection = "kw3";
+  protected String collection = "kw3";
   public String getCollection() {
       return this.collection;
   }
@@ -157,7 +158,7 @@ public class Kw3WriterProcessor extends Processor {
   /**
    * Name of the harvester that is used for the web harvesting.
    */
-  String harvester = "heritrix";
+  protected String harvester = "heritrix";
   public String getHarvester() {
       return this.harvester;
   }

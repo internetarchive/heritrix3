@@ -49,7 +49,6 @@ import au.id.jericho.lib.html.Element;
 import au.id.jericho.lib.html.FormControl;
 import au.id.jericho.lib.html.FormControlType;
 import au.id.jericho.lib.html.FormField;
-import au.id.jericho.lib.html.FormFields;
 import au.id.jericho.lib.html.HTMLElementName;
 import au.id.jericho.lib.html.Source;
 import au.id.jericho.lib.html.StartTagType;
@@ -77,6 +76,7 @@ import au.id.jericho.lib.html.StartTagType;
 @SuppressWarnings("unchecked")
 public class JerichoExtractorHTML extends ExtractorHTML {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1684681316546343615L;
 
     final private static Logger logger = 
@@ -94,7 +94,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                 "parser, the Jericho HTML Parser, reads the whole " +
                 "document into memory for " +
                 "parsing - thus this extractor has an inherent OOME risk. " +
-                "This OOME risk can be reduced/eleminated by limiting the " +
+                "This OOME risk can be reduced/eliminated by limiting the " +
                 "size of documents to be parsed (i.e. using " +
                 "NotExceedsDocumentLengthTresholdDecideRule). ");
     }*/
@@ -105,8 +105,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
     private static List<Attribute> findOnAttributes(Attributes attributes) {
         List<Attribute> result = new LinkedList<Attribute>();
-        for (Iterator attrIter = attributes.iterator(); attrIter.hasNext();) {
-            Attribute attr = (Attribute) attrIter.next();
+        for (Attribute attr : (Iterable<Attribute>)attributes) {
             if (attr.getKey().startsWith("on"))
                 result.add(attr);
         }
@@ -118,7 +117,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             Attributes attributes) {
         Attribute attr;
         String attrValue;
-        List attrList;
+        List<Attribute> attrList;
         String elementName = element.getName();
 
         // Just in case it's an OBJECT or APPLET tag
@@ -163,7 +162,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         }
         // ON_
         if ((attrList = findOnAttributes(attributes)).size() != 0) {
-            for (Iterator attrIter = attrList.iterator(); attrIter.hasNext();) {
+            for (Iterator<Attribute> attrIter = attrList.iterator(); attrIter.hasNext();) {
                 attr = (Attribute) attrIter.next();
                 CharSequence valueSegment = attr.getValueSegment();
                 if (valueSegment != null)
@@ -370,21 +369,14 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         numberOfFormsProcessed.incrementAndGet();
 
         // get all form fields
-        FormFields formFields = element.findFormFields();
-        for (Iterator fieldsIter = formFields.iterator(); fieldsIter.hasNext();) {
-            // for each form field
-            FormField formField = (FormField) fieldsIter.next();
-
+        for (FormField formField : (Iterable<FormField>)element.findFormFields()) {
             // for each form control
-            for (Iterator controlIter = formField.getFormControls().iterator();
-                controlIter.hasNext();) {
-                FormControl formControl = (FormControl) controlIter.next();
-
+            for (FormControl formControl : (Iterable<FormControl>)formField.getFormControls()) {
                 // get name of control element (and URLEncode it)
                 String controlName = formControl.getName();
 
                 // retrieve list of values - submit needs special handling
-                Collection controlValues;
+                Collection<String> controlValues;
                 if (!(formControl.getFormControlType() ==
                         FormControlType.SUBMIT)) {
                     controlValues = formControl.getValues();
@@ -394,9 +386,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
                 if (controlValues.size() > 0) {
                     // for each value set
-                    for (Iterator valueIter = controlValues.iterator();
-                            valueIter.hasNext();) {
-                        String value = (String) valueIter.next();
+                    for (String value : controlValues) {
                         queryURL += "&" + controlName + "=" + value;
                     }
                 } else {
@@ -428,12 +418,10 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      * @param cs
      *            Sequence from underlying ReplayCharSequence.
      */
-    void extract(CrawlURI curi, CharSequence cs) {
+    protected void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
-        List elements = source.findAllElements(StartTagType.NORMAL);
-        for (Iterator elementIter = elements.iterator();
-                elementIter.hasNext();) {
-            Element element = (Element) elementIter.next();
+        List<Element> elements = source.findAllElements(StartTagType.NORMAL);
+        for (Element element : elements) {
             String elementName = element.getName();
             Attributes attributes;
             if (elementName.equals(HTMLElementName.META)) {

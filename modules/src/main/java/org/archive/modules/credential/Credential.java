@@ -53,7 +53,7 @@ public abstract class Credential implements Serializable {
     /**
      * The root domain this credential goes against: E.g. www.archive.org
      */
-    String domain = "";
+    protected String domain = "";
     /**
      * @param context Context to use when searching for credential domain.
      * @return The domain/root URI this credential is to go against.

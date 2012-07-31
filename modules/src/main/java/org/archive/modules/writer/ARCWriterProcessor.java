@@ -61,6 +61,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
 
     final static private String METADATA_TEMPLATE = readMetadataTemplate();
     
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger = 

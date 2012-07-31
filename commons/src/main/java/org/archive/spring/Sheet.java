@@ -48,6 +48,7 @@ import org.springframework.beans.factory.annotation.Required;
  *
  */
 public class Sheet implements BeanFactoryAware, BeanNameAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 9129011082185864377L;
     
     /**
@@ -56,13 +57,13 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
      * also be another string, in the case of Sheets added after 
      * initial container wiring
      */
-    String name; 
-    BeanFactory beanFactory; 
+    protected String name; 
+    protected BeanFactory beanFactory; 
     /** map of full property-paths (from BeanFactory to individual 
      * property) and their changed value when this Sheet of overrides
      * is in effect
      */
-    Map<String,Object> map = new ConcurrentHashMap<String, Object>(); 
+    protected Map<String,Object> map = new ConcurrentHashMap<String, Object>(); 
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;

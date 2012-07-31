@@ -46,8 +46,8 @@ public class Flash {
     /** usual types */
     public enum Kind {ACK, NACK, ADVISORY}
     
-    static long nextdrop = RandomUtils.nextLong();
-    static Map<Long,Flash> dropboxes = new LinkedHashMap<Long, Flash>() {
+    protected static long nextdrop = RandomUtils.nextLong();
+    protected static Map<Long,Flash> dropboxes = new LinkedHashMap<Long, Flash>() {
         private static final long serialVersionUID = 1L;
         @Override
         protected boolean removeEldestEntry(Entry<Long, Flash> eldest) {

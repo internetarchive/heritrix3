@@ -55,7 +55,7 @@ public class ExternalGeoLocationDecideRule extends PredicatedDecideRule {
     private static final Logger LOGGER =
         Logger.getLogger(ExternalGeoLocationDecideRule.class.getName());
 
-    ExternalGeoLookupInterface lookup = null; 
+    protected ExternalGeoLookupInterface lookup = null; 
     public ExternalGeoLookupInterface getLookup() {
         return this.lookup;
     }
@@ -66,7 +66,7 @@ public class ExternalGeoLocationDecideRule extends PredicatedDecideRule {
     /**
      * Country code name.
      */
-    List<String> countryCodes = new ArrayList<String>();
+    protected List<String> countryCodes = new ArrayList<String>();
     public List<String> getCountryCodes() {
         return this.countryCodes;
     }

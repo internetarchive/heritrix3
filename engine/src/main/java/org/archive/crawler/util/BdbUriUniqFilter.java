@@ -91,7 +91,7 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         this.bdb = bdb;
     }
     
-    String beanName; 
+    protected String beanName; 
     public void setBeanName(String name) {
         this.beanName = name;
     }
@@ -99,7 +99,7 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     public BdbUriUniqFilter() {
     }
     
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public void start() {
         if(isRunning()) {
             return; 
@@ -391,7 +391,7 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         }
     }
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }

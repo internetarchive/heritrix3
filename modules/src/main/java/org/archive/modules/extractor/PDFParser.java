@@ -41,18 +41,18 @@ import java.util.*;
 // to parse small, but admittedly complex, documents.
 public class PDFParser {
 
-    ArrayList<String> foundURIs;
-    ArrayList<ArrayList<Integer>> encounteredReferences;
-    PdfReader documentReader;
-    byte[] document;
-    PdfDictionary catalog;
+    protected ArrayList<String> foundURIs;
+    protected ArrayList<ArrayList<Integer>> encounteredReferences;
+    protected PdfReader documentReader;
+    protected byte[] document;
+    protected PdfDictionary catalog;
 
     public PDFParser(String doc) throws IOException {
         resetState();
         getInFromFile(doc);
         initialize();
     }
-     public PDFParser(byte[] doc) throws IOException{
+    public PDFParser(byte[] doc) throws IOException{
         resetState();
         document = doc;
         initialize();
@@ -199,7 +199,6 @@ public class PDFParser {
 
                 PdfDictionary dictionary= (PdfDictionary)entity;
 
-                @SuppressWarnings("unchecked")
                 Set<PdfName> allkeys = dictionary.getKeys();
                 for (PdfName key: allkeys) {
                     PdfObject value = dictionary.get(key);
@@ -219,11 +218,8 @@ public class PDFParser {
             }else if(entity.isArray()){
 
                 PdfArray array = (PdfArray)entity;
-                ArrayList arrayObjects = array.getArrayList();
-                Iterator objectList = arrayObjects.iterator();
-
-                while(objectList.hasNext()){
-                    this.extractURIs( (PdfObject)objectList.next());
+                for (PdfObject pdfObject : (Iterable<PdfObject>)array.getArrayList()) {
+                    this.extractURIs(pdfObject);
                 }
 
             // deal with indirect references

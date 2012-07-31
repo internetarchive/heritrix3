@@ -58,7 +58,7 @@ implements Lifecycle {
         isRunning = true;
     }
 
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public boolean isRunning() {
         return isRunning;
     }

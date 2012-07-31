@@ -96,7 +96,6 @@ public class PrecedenceLoader {
      * @throws UnsupportedEncodingException
      * @throws IOException
      */
-    @SuppressWarnings("unchecked")
     private static void main2args(String[] args) throws DatabaseException,
             FileNotFoundException, UnsupportedEncodingException, IOException {
         File source = new File(args[0]);
@@ -110,16 +109,16 @@ public class PrecedenceLoader {
                 null,
                 PersistProcessor.URI_HISTORY_DBNAME,
                 PersistProcessor.HISTORY_DB_CONFIG.toDatabaseConfig());
-        StoredSortedMap historyMap = new StoredSortedMap(historyDB,
-                new StringBinding(), new SerialBinding(classCatalog,
-                        Map.class), true);
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        StoredSortedMap<String, Object> historyMap = new StoredSortedMap<String, Object>(historyDB,
+                new StringBinding(), new SerialBinding(classCatalog, Map.class), true);
         
         int count = 0;
         
         if(source.isFile()) {
             // scan log, writing to database
             BufferedReader br = ArchiveUtils.getBufferedReader(source);
-            Iterator iter = new LineReadingIterator(br);
+            Iterator<String> iter = new LineReadingIterator(br);
             while(iter.hasNext()) {
                 String line = (String) iter.next(); 
                 String[] splits = line.split("\\s");
@@ -130,9 +129,10 @@ public class PrecedenceLoader {
                 }
                 String key = PersistProcessor.persistKeyFor(uri);
                 int precedence = Integer.parseInt(splits[1]);
-                Map<String,Object> map = (Map<String,Object>)historyMap.get(key);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>)historyMap.get(key);
                 if (map==null) {
-                    map = new HashMap<String,Object>();
+                    map = new HashMap<String, Object>();
                 }
                 map.put(A_PRECALC_PRECEDENCE, precedence);
                 historyMap.put(key,map);

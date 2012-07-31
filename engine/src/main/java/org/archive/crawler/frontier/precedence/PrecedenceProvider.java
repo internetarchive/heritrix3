@@ -27,13 +27,13 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.MultiReporter;
+import org.archive.util.Reporter;
 
 /**
  * Parent class for precedence-providers, stateful helpers that can be 
  * installed in a WorkQueue to implement various queue-precedence policies. 
  */
-abstract public class PrecedenceProvider implements MultiReporter, 
+abstract public class PrecedenceProvider implements Reporter, 
 FetchStats.CollectsFetchStats, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -47,27 +47,16 @@ FetchStats.CollectsFetchStats, Serializable {
         // by default do nothing; subclasses do more
     }
 
-    public String[] getReports() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.lang.String, java.io.PrintWriter)
+     * @see org.archive.util.Reporter#reportTo(java.io.PrintWriter)
      */
-    public void reportTo(String name, PrintWriter writer) {
-        // name ignored, only one report
+    @Override
+    public void reportTo(PrintWriter writer) {
         writer.println(shortReportLegend());
         shortReportLineTo(writer);
     }
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.io.PrintWriter)
-     */
-    public void reportTo(PrintWriter writer) {
-        reportTo(null,writer);
-    }
-
+    @Override
     public String shortReportLegend() {
         return getClass().getSimpleName();
     }
@@ -76,12 +65,14 @@ FetchStats.CollectsFetchStats, Serializable {
         return ArchiveUtils.shortReportLine(this);
     }
 
+    @Override
     public Map<String, Object> shortReportMap() {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
         data.put("precedence", getPrecedence());
         return data;
     }
 
+    @Override
     public void shortReportLineTo(PrintWriter writer) {
         writer.print(getPrecedence());
     }

@@ -21,17 +21,16 @@ package org.archive.net;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,11 +60,101 @@ import org.archive.util.TextUtils;
  * Domain' (2LD), etc. 
  * 
  * @author Gojomo
+ * 
+ * this version of PublicSuffixes uses suffix-tree data structure for generating less
+ * redundant regular expression. It may be even possible to write a light-weight,
+ * thread-safe matcher based on this class.
+ * @author Kenji Nagahashi 
  */
 public class PublicSuffixes {
     protected static Pattern topmostAssignedSurtPrefixPattern;
     protected static String topmostAssignedSurtPrefixRegex;
 
+    /**
+     * prefix tree node. each Node represents sequence of letters (prefix)
+     * and alternative sequences following it (list of Node's). Nodes in 
+     * {@code branches} are sorted for skip list like lookup and for generating
+     * effective regular expression (see {@link #compareTo(Node)} and {@link #compareTo(char).)
+     * 
+     * as is intended for internal use only, there's no access methods. procedures for updating
+     * prefix tree with new input are defined within this class ({@link #addBranch(CharSequence)}).
+     * 
+     * terminal node could be represented in two different form: 1) Node with zero branches,
+     * or 2) Node with zero-length {@code cs}. So, root node must be initialized with empty (not null)
+     * {@code branches} unless empty string matches the overall pattern. 
+     * {@code cs} must not be null except for root node. 
+     */
+    public static class Node implements Comparable<Node> {
+        protected CharSequence cs;
+        protected List<Node> branches;
+        public Node() {
+            this("", null);
+        }
+        protected Node(CharSequence cs) {
+            this(cs, null);
+        }
+        protected Node(CharSequence cs, List<Node> branches) {
+            this.cs = cs;
+            this.branches = branches;
+        }
+        public void addBranch(CharSequence s) {
+            if (branches == null) {
+                branches = new ArrayList<Node>();
+                branches.add(new Node("", null));
+            }
+            for (int i = 0; i < branches.size(); i++) {
+                Node alt = branches.get(i);
+                if (alt.add(s)) return;
+                if (alt.compareTo(s.charAt(0)) > 0) {
+                    Node alt1 = new Node(s, null);
+                    branches.add(i, alt1);
+                    return;
+                }
+            }
+            Node alt2 = new Node(s, null);
+            branches.add(alt2);
+        }
+        public boolean add(CharSequence s) {
+            int l = Math.min(s.length(), cs.length());
+            int i = 0;
+            while (i < l && s.charAt(i) == cs.charAt(i))
+                i++;
+            // zero-length match holds only when both cs and s are empty.
+            if (i == 0) return cs.length() == 0 && s.length() == 0;
+            if (i < cs.length()) {
+                CharSequence cs0 = cs.subSequence(0, i);
+                CharSequence cs1 = cs.subSequence(i, cs.length());
+                CharSequence cs2 = s.subSequence(i, s.length());
+                cs = cs0;
+                Node alt1 = new Node(cs1, branches);
+                (branches = new ArrayList<Node>()).add(alt1);
+                addBranch(cs2);
+            } else {
+                assert i == cs.length();
+                addBranch(s.subSequence(i, s.length()));
+            }
+            return true;
+        }
+        public int compareTo(Node other) {
+            if (other.cs == null || other.cs.length() == 0)
+                return (cs == null || cs.length() == 0) ? 0 : -1;
+            return compareTo(other.cs.charAt(0));
+        }
+        public int compareTo(char oc) {
+            if (cs == null || cs.length() == 0) return 1;
+            // '!' and '*' must come after ordinary letters, in this order, for regexp
+            // to work as intended.
+            char c = cs.charAt(0);
+            if (c == oc) return 0;
+            if (c == '!') return oc == '*' ? -1 : 1;
+            if (c == '*') return 1;
+            if (oc == '*' || oc == '!') return -1;
+            return Character.valueOf(c).compareTo(oc);
+            // for generating the same regexp as previous version.
+            //return Character.valueOf(oc).compareTo(c);
+        }        
+    }
+    
     /**
      * Utility method for dumping a regex String, based on a published public
      * suffix list, which matches any SURT-form hostname up through the broadest
@@ -80,23 +169,22 @@ public class PublicSuffixes {
      * @throws IOException
      */
     public static void main(String args[]) throws IOException {
-
-        String regex;
-        
+        InputStream is;
         if (args.length == 0 || "=".equals(args[0])) {
             // use bundled list
-            regex = getTopmostAssignedSurtPrefixRegex();
+            is = PublicSuffixes.class.getClassLoader().getResourceAsStream(
+            "effective_tld_names.dat");
         } else {
-            // use specified filename
-            BufferedReader reader = new BufferedReader(new FileReader(args[0]));
-            regex = getTopmostAssignedSurtPrefixRegex(reader);
-            IOUtils.closeQuietly(reader);
+            is = new FileInputStream(args[0]);
         }
-
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        String regex = getTopmostAssignedSurtPrefixRegex(reader);
+        IOUtils.closeQuietly(is);
+        
         boolean needsClose = false;
         BufferedWriter writer;
         if (args.length >= 2) {
-            // writer to specified file
+            // write to specified file
             writer = new BufferedWriter(new FileWriter(args[1]));
             needsClose = true;
         } else {
@@ -109,62 +197,96 @@ public class PublicSuffixes {
             writer.close();
         }
     }
-
     /**
      * Reads a file of the format promulgated by publicsuffix.org, ignoring
      * comments and '!' exceptions/notations, converting domain segments to
-     * SURT-ordering. Leaves glob-style '*' wildcarding in place. Returns sorted
-     * list of unique SURT-ordered prefixes.
+     * SURT-ordering. Leaves glob-style '*' wildcarding in place. Returns root
+     * node of SURT-ordered prefix tree.
      * 
      * @param reader
-     * @return
+     * @return root of prefix tree node.
      * @throws IOException
      */
-    public static List<String> readPublishedFileToSurtList(BufferedReader reader)
-            throws IOException {
+    protected static Node readPublishedFileToSurtTrie(BufferedReader reader) throws IOException {
+        // initializing with empty Alt list prevents empty pattern from being
+        // created for the first addBranch()
+        Node alt = new Node(null, new ArrayList<Node>());
         String line;
-        List<String> list = new ArrayList<String>();
         while ((line = reader.readLine()) != null) {
-
             // discard whitespace, empty lines, comments, exceptions
             line = line.trim();
-            if (line.length() == 0 || line.startsWith("//")) {
-                continue;
-            }
+            if (line.length() == 0 || line.startsWith("//")) continue;
             // discard utf8 notation after entry
             line = line.split("\\s+")[0];
+            // TODO: maybe we don't need to create lower-cased String
             line = line.toLowerCase();
-
             // SURT-order domain segments
             String[] segs = line.split("\\.");
-            StringBuilder surtregex = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             for (int i = segs.length - 1; i >= 0; i--) {
-                if (segs[i].length() > 0) {
-                    // current list has a stray '?' in a .no domain
-                    String fixed = segs[i].replaceAll("\\?", "_");
-                    // replace '!' with '+' to indicate lookahead-for-exceptions
-                    // (gets those to sort before '*' at later build-step)
-                    fixed = fixed.replaceAll("!", "+");
-                    surtregex.append(fixed + ",");
+                if (segs[i].length() == 0) continue;
+                sb.append(segs[i]).append(',');
+            }
+            alt.addBranch(sb.toString());
+        }
+        return alt;
+    }
+    /**
+     * utility function for dumping prefix tree structure. intended for debug use.
+     * @param alt root of prefix tree.
+     * @param lv indent level. 0 for root (no indent).
+     * @param out writer to send output to.
+     */
+    public static void dump(Node alt, int lv, PrintWriter out) {
+        for (int i = 0; i < lv; i++)
+            out.print("  ");
+        out.println(alt.cs != null ? ('"'+alt.cs.toString()+'"') : "(null)");
+        if (alt.branches != null) {
+            for (Node br : alt.branches) {
+                dump(br, lv + 1, out);
+            }
+        }
+    }
+    /**
+     * bulids regular expression from prefix-tree {@code alt} into buffer {@code sb}.
+     * @param alt prefix tree root.
+     * @param sb StringBuffer to store regular expression.
+     */
+    protected static void buildRegex(Node alt, StringBuilder sb) {
+        String close = null;
+        if (alt.cs != null) {
+            // actually '!' always be the first character, because it is
+            // always used along with '*'.
+            for (int i = 0; i < alt.cs.length(); i++) {
+                char c = alt.cs.charAt(i);
+                if (c == '!') {
+                    if (close != null)
+                        throw new RuntimeException("more than one '!'");
+                    sb.append("(?=");
+                    close = ")";
+                } else if (c == '*') {
+                    sb.append("[-\\w]+");
+                } else {
+                    sb.append(c);
                 }
             }
-            list.add(surtregex.toString());
         }
-
-        Collections.sort(list);
-        // uniq
-        String last = "";
-        Iterator<String> iter = list.iterator();
-        while (iter.hasNext()) {
-            String s = iter.next();
-            if (s.equals(last)) {
-                iter.remove();
-                continue;
+        if (alt.branches != null) {
+            // alt.branches.size() should always be > 1
+            if (alt.branches.size() > 1) {
+                sb.append("(?:");
             }
-            last = s;
-//            System.out.println(s);
+            String sep = "";
+            for (Node alt1 : alt.branches) {
+                sb.append(sep); sep = "|";
+                buildRegex(alt1, sb);
+            }
+            if (alt.branches.size() > 1) {
+                sb.append(")");
+            }
         }
-        return list;
+        if (close != null)
+            sb.append(close);
     }
 
     /**
@@ -177,76 +299,13 @@ public class PublicSuffixes {
      * @param list
      * @return
      */
-    private static String surtPrefixRegexFromSurtList(List<String> list) {
+    private static String surtPrefixRegexFromTrie(Node trie) {
         StringBuilder regex = new StringBuilder();
         regex.append("(?ix)^\n");
-        TreeSet<String> prefixes = new TreeSet<String>(Collections
-                .reverseOrder());
-        prefixes.addAll(list);
-        prefixes.add("*,"); // for new/unknown TLDs
-        buildRegex("", regex, prefixes);
-        regex.append("\n([\\-\\w]+,)");
-        String rstring = regex.toString();
-        // convert glob-stars to word-char-runs
-        rstring = rstring.replaceAll("\\*", "[\\\\-\\\\w]+");
-        return rstring;
-    }
-
-    protected static void buildRegex(String stem, StringBuilder regex,
-            SortedSet<String> prefixes) {
-        if (prefixes.isEmpty()) {
-            return;
-        }
-        if (prefixes.size() == 1 && prefixes.first().equals(stem)) {
-            // avoid unnecessary "(?:)"
-            return;
-        }
-        regex.append("(?:");
-        if (stem.length() == 0) {
-            regex.append("\n "); // linebreak-space before first character
-        }
-        Iterator<String> iter = prefixes.iterator();
-        char c = 0;
-        while (iter.hasNext()) {
-            String s = iter.next();
-            if (s.length() > stem.length()) {
-                char d = s.charAt(stem.length());
-
-                if (d == '+') {
-                    // convert exception to zero-width-positive-lookahead
-                    regex.append("(?=" + s.substring(stem.length() + 1) + ")");
-                } else {
-                    if (d == c) {
-                        continue;
-                    }
-                    c = d;
-                    regex.append(c);
-                    String newStem = s.substring(0, stem.length() + 1);
-                    SortedSet<String> tail = prefixes.tailSet(newStem);
-                    SortedSet<String> range = null;
-                    successor: for (String candidate : tail) {
-                        if (!candidate.equals(newStem)) {
-                            range = prefixes.subSet(s, candidate);
-                            break successor;
-                        }
-                    }
-                    if (range == null) {
-                        range = prefixes.tailSet(s);
-                    }
-                    buildRegex(newStem, regex, range);
-                }
-                regex.append('|');
-            } else {
-                // empty suffix; insert dummy to be eaten when loop exits
-                regex.append('@');
-            }
-        }
-        // eat the trailing '|' (if no empty '@') or dummy
-        regex.deleteCharAt(regex.length() - 1);
-        regex.append(')');
-        if (stem.length() == 1) {
-            regex.append('\n'); // linebreak for TLDs
-        }
+        trie.addBranch("*,"); // for new/unknown TLDs
+        buildRegex(trie, regex);
+        regex.append("\n([-\\w]+,)");
+        return regex.toString();
     }
 
     public static synchronized Pattern getTopmostAssignedSurtPrefixPattern() {
@@ -260,23 +319,27 @@ public class PublicSuffixes {
     public static synchronized String getTopmostAssignedSurtPrefixRegex() {
         if (topmostAssignedSurtPrefixRegex == null) {
             // use bundled list
-            BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    PublicSuffixes.class.getClassLoader().getResourceAsStream(
-                            "effective_tld_names.dat")));
-            topmostAssignedSurtPrefixRegex = getTopmostAssignedSurtPrefixRegex(reader);
-            IOUtils.closeQuietly(reader);
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        PublicSuffixes.class.getClassLoader().getResourceAsStream(
+                        "effective_tld_names.dat"), "UTF-8"));
+                topmostAssignedSurtPrefixRegex = getTopmostAssignedSurtPrefixRegex(reader);
+                IOUtils.closeQuietly(reader);
+            } catch (UnsupportedEncodingException ex) {
+                // should never happen
+                throw new RuntimeException(ex);
+            }
         }
         return topmostAssignedSurtPrefixRegex;
     }
 
     public static String getTopmostAssignedSurtPrefixRegex(BufferedReader reader) {
-        List<String> list;
         try {
-            list = readPublishedFileToSurtList(reader);
+            Node trie = readPublishedFileToSurtTrie(reader);
+            return surtPrefixRegexFromTrie(trie);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return surtPrefixRegexFromSurtList(list);
     }
 
     /**

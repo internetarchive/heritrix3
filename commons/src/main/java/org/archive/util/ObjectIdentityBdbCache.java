@@ -151,7 +151,6 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
      * @param classCatalog
      * @throws DatabaseException
      */
-    @SuppressWarnings("unchecked")
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
@@ -323,7 +322,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
         }
     }
     
-    String composeCacheSummary() {
+    protected String composeCacheSummary() {
         long totalHits = cacheHit.get() + diskHit.get();
         if (totalHits < 1) {
             return "";
@@ -427,7 +426,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
      * Package-protected for unit-test visibility. 
      */
     @SuppressWarnings("unchecked")
-    synchronized void pageOutStaleEntries() {
+    protected synchronized void pageOutStaleEntries() {
         int c = 0;
         long startTime = System.currentTimeMillis();
         for(SoftEntry<V> entry; (entry = (SoftEntry<V>)refQueue.poll()) != null;) {
@@ -486,7 +485,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     }
     
     private static class PhantomEntry<V> extends PhantomReference<V> {
-        final String key;
+        protected final String key;
 
         public PhantomEntry(String key, V referent) {
             super(referent, null);
@@ -523,10 +522,9 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     private static class SoftEntry<V> extends SoftReference<V> {
         PhantomEntry<V> phantom;
 
-        @SuppressWarnings("unchecked")
         public SoftEntry(String key, V referent, ReferenceQueue<V> q) {
             super(referent, q);
-            this.phantom = new PhantomEntry(key, referent); // unchecked cast
+            this.phantom = new PhantomEntry<V>(key, referent);
         }
 
         public V get() {

@@ -59,7 +59,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * @author gojomo
  */
 public class BdbMultipleWorkQueues {
-	private static final long serialVersionUID = 1L;
+	@SuppressWarnings("unused")
+    private static final long serialVersionUID = 1L;
 	
     private static final Logger LOGGER =
         Logger.getLogger(BdbMultipleWorkQueues.class.getName());
@@ -152,7 +153,6 @@ public class BdbMultipleWorkQueues {
             boolean verbose) 
     throws DatabaseException {
         int matches = 0;
-        int tries = 0;
         ArrayList<String> results = new ArrayList<String>(maxMatches);
         
         DatabaseEntry key;
@@ -183,7 +183,6 @@ public class BdbMultipleWorkQueues {
                         }
                         matches++;
                     }
-                    tries++;
                 }
                 result = cursor.getNext(key,value,null);
             }
@@ -386,7 +385,7 @@ public class BdbMultipleWorkQueues {
      * @param classKey String key to derive origin byte key from 
      * @return a byte array key 
      */
-    static byte[] calculateOriginKey(String classKey) {
+    protected static byte[] calculateOriginKey(String classKey) {
         byte[] classKeyBytes = null;
         int len = 0;
         try {
@@ -422,7 +421,7 @@ public class BdbMultipleWorkQueues {
      * @param curi
      * @return a DatabaseEntry key for the CrawlURI
      */
-    static DatabaseEntry calculateInsertKey(CrawlURI curi) {
+    protected static DatabaseEntry calculateInsertKey(CrawlURI curi) {
         byte[] classKeyBytes = null;
         int len = 0;
         classKeyBytes = curi.getClassKey().getBytes(Charsets.UTF_8);
@@ -441,7 +440,7 @@ public class BdbMultipleWorkQueues {
     }
     
     
-    static String insertKeyToString(DatabaseEntry holderKey) {
+    protected static String insertKeyToString(DatabaseEntry holderKey) {
         StringBuilder result = new StringBuilder();
         byte[] data = holderKey.getData();
         int p = findFirstZero(data);
@@ -503,7 +502,7 @@ public class BdbMultipleWorkQueues {
      * need access.
      * @see <a href="http://www.sleepycat.com/jedocs/GettingStartedGuide/DB.html">Deferred Write Databases</a>
      */
-    void sync() {
+    protected void sync() {
     	if (this.pendingUrisDB == null) {
     		return;
     	}

@@ -47,7 +47,7 @@ abstract public class LongFPSetTestCase extends TestCase {
         fpSet = makeLongFPSet();
     }
 
-    abstract LongFPSet makeLongFPSet();
+    protected abstract LongFPSet makeLongFPSet();
 
     /** check that we can add fingerprints */
     public void testAdd() {

@@ -32,6 +32,7 @@ import org.archive.modules.ProcessResult;
  * @contributor gojomo
  */
 public class CandidateScoper extends Scoper {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     @Override

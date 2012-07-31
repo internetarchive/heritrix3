@@ -99,6 +99,7 @@ import org.archive.util.anvl.ANVLRecord;
  * @contributor stack
  */
 public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWriterPoolSettings {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 6182850087635847443L;
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
@@ -173,7 +174,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     /**
      * Generator for record IDs
      */
-    RecordIDGenerator generator = new UUIDGenerator();
+    protected RecordIDGenerator generator = new UUIDGenerator();
     public RecordIDGenerator getRecordIDGenerator() {
         return generator; 
     }
@@ -618,7 +619,18 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (curi.getData().containsKey(A_FTP_FETCH_STATUS)) {
             r.addLabelValue("ftpFetchStatus", curi.getData().get(A_FTP_FETCH_STATUS).toString());
         }
+
+        if (curi.getRecorder() != null && curi.getRecorder().getCharset() != null) {
+            r.addLabelValue("charsetForLinkExtraction", curi.getRecorder().getCharset().name());
+        }
         
+        for (String annotation: curi.getAnnotations()) {
+            if (annotation.startsWith("usingCharsetIn") || annotation.startsWith("inconsistentCharsetIn")) {
+                String[] kv = annotation.split(":", 2);
+                r.addLabelValue(kv[0], kv[1]);
+            }
+        }
+
         // Add outlinks though they are effectively useless without anchor text.
         Collection<Link> links = curi.getOutLinks();
         if (links != null && links.size() > 0) {

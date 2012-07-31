@@ -29,7 +29,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @contributor gojomo
  */
 public class SurtPrefixesSheetAssociation extends SheetAssociation {
-    List<String> surtPrefixes;
+    protected List<String> surtPrefixes;
 
     public List<String> getSurtPrefixes() {
         return surtPrefixes;

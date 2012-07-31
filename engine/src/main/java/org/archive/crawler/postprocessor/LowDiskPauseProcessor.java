@@ -45,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Deprecated
 public class LowDiskPauseProcessor extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     /**
@@ -67,7 +68,7 @@ public class LowDiskPauseProcessor extends Processor {
      * List of filessystem mounts whose 'available' space should be monitored
      * via 'df' (if available).
      */
-    List<String> monitorMounts = new ArrayList<String>();
+    protected List<String> monitorMounts = new ArrayList<String>();
     public List<String> getMonitorMounts() {
         return this.monitorMounts;
     }
@@ -79,7 +80,7 @@ public class LowDiskPauseProcessor extends Processor {
      * When available space on any monitored mounts falls below this threshold,
      * the crawl will be paused.
      */
-    int pauseThresholdKb = 500*1024; // 500MB 
+    protected int pauseThresholdKb = 500*1024; // 500MB 
     public int getPauseThresholdKb() {
         return this.pauseThresholdKb;
     }
@@ -91,7 +92,7 @@ public class LowDiskPauseProcessor extends Processor {
      * Available space via 'df' is rechecked after every increment of this much
      * content (uncompressed) is observed.
      */
-    int recheckThresholdKb = 200*1024; // 200MB 
+    protected int recheckThresholdKb = 200*1024; // 200MB 
     public int getRecheckThresholdKb() {
         return this.recheckThresholdKb;
     }

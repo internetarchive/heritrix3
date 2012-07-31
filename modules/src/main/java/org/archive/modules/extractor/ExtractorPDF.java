@@ -38,6 +38,7 @@ import org.archive.util.FileUtils;
  */
 public class ExtractorPDF extends ContentExtractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static final Logger LOGGER =

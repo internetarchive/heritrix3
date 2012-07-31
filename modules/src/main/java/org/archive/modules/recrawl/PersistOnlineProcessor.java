@@ -40,6 +40,7 @@ import com.sleepycat.je.DatabaseException;
 public abstract class PersistOnlineProcessor extends PersistProcessor 
 implements Lifecycle {
     
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -666479480942267268L;
     
     protected BdbModule bdb;
@@ -48,7 +49,7 @@ implements Lifecycle {
         this.bdb = bdb;
     }
     
-    String historyDbName = "uri_history";
+    protected String historyDbName = "uri_history";
     public String getHistoryDbName() {
         return this.historyDbName;
     }

@@ -58,7 +58,7 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
     private static Logger logger = Logger.getLogger(
         "org.archive.crawler.datamodel.CredentialStore");
 
-    KeyedProperties kp = new KeyedProperties();
+    protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }

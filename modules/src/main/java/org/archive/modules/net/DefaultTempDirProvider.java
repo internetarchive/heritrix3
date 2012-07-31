@@ -30,14 +30,11 @@ import org.archive.modules.extractor.TempDirProvider;
  */
 public class DefaultTempDirProvider implements TempDirProvider {
 
-
     private static final long serialVersionUID = 1L;
-
     
     final private static File TEMP_DIR = makeTempDir();
     
-    
-    static File makeTempDir() {
+    protected static File makeTempDir() {
         File f;
         try {
             f = File.createTempFile("xxx", null);

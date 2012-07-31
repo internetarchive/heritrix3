@@ -47,7 +47,6 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @since 2.0beta1
  */
-@SuppressWarnings("unchecked") // <- IA/HERITRIX CHANGE
 public class HttpParser {
 
     /** Log object for this class. */
@@ -159,7 +158,7 @@ public class HttpParser {
     public static Header[] parseHeaders(InputStream is, String charset) throws IOException, HttpException {
         LOG.trace("enter HeaderParser.parseHeaders(InputStream, String)");
 
-        ArrayList headers = new ArrayList();
+        ArrayList<Header> headers = new ArrayList<Header>();
         String name = null;
         StringBuffer value = null;
         for (; ;) {

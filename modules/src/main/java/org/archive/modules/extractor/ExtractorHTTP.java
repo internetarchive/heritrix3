@@ -34,13 +34,14 @@ import org.archive.net.UURIFactory;
  */
 public class ExtractorHTTP extends Extractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     public ExtractorHTTP() {
     }
 
     /** should all HTTP URIs be used to infer a link to the site's root? */
-    boolean inferRootPage = false; 
+    protected boolean inferRootPage = false; 
     public boolean getInferRootPage() {
         return inferRootPage;
     }

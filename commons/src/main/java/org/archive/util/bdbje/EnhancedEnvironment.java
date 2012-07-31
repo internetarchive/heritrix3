@@ -35,8 +35,8 @@ import com.sleepycat.je.EnvironmentConfig;
  * @author gojomo
  */
 public class EnhancedEnvironment extends Environment {
-    StoredClassCatalog classCatalog; 
-    Database classCatalogDB;
+    protected StoredClassCatalog classCatalog; 
+    protected Database classCatalogDB;
     
     /**
      * Constructor

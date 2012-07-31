@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class CandidatesProcessor extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -3L;
     
     /**
@@ -99,6 +100,21 @@ public class CandidatesProcessor extends Processor {
     }
     protected static final int SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS = 5;
 
+    /**
+     * If true, outlinks from status codes <200 and >=400 
+     * will be sent through candidates processing. Default is
+     * false. 
+     */
+    {
+        setProcessErrorOutlinks(false);
+    }
+    public boolean getProcessErrorOutlinks() {
+        return (Boolean) kp.get("processErrorOutlinks");
+    }
+    public void setProcessErrorOutlinks(boolean errorOutlinks) {
+        kp.put("processErrorOutlinks",errorOutlinks);
+    }
+    
     protected SeedModule seeds;
     public SeedModule getSeeds() {
         return this.seeds;
@@ -157,8 +173,9 @@ public class CandidatesProcessor extends Processor {
             return;
         }
 
-        // Don't consider candidate links of error pages
-        if (curi.getFetchStatus() < 200 || curi.getFetchStatus() >= 400) {
+        // Only consider candidate links of error pages if configured to do so
+        if (!getProcessErrorOutlinks() 
+                && (curi.getFetchStatus() < 200 || curi.getFetchStatus() >= 400)) {
             curi.getOutLinks().clear();
             return;
         }

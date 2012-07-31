@@ -61,7 +61,7 @@ public class MigrateH1to3Tool {
 
     protected Document sourceOrderXmlDom;
 
-    static DocumentBuilder DOCUMENT_BUILDER;
+    protected static DocumentBuilder DOCUMENT_BUILDER;
 
     static {
         try {

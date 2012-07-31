@@ -54,6 +54,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version $Date$, $Revision$
  */
 public class DispositionProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -1072728147960180091L;
     private static final Logger logger =
         Logger.getLogger(DispositionProcessor.class.getName());
@@ -151,7 +152,7 @@ public class DispositionProcessor extends Processor {
      * Auto-discovered module providing configured (or overridden)
      * User-Agent value and RobotsHonoringPolicy
      */
-    CrawlMetadata metadata;
+    protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }

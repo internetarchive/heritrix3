@@ -84,7 +84,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * Whether to apply the mapping to a URI being processed itself, for example
      * early in processing (while its status is still 'unattempted').
      */
-    boolean checkUri = true;
+    protected boolean checkUri = true;
     public boolean getCheckUri() {
         return this.checkUri;
     }
@@ -96,7 +96,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * Whether to apply the mapping to discovered outlinks, for example after
      * extraction has occurred.
      */
-    boolean checkOutlinks = true;
+    protected boolean checkOutlinks = true;
     public boolean getCheckOutlinks() {
         return this.checkOutlinks;
     }
@@ -107,7 +107,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
     /** 
      * Decide rules to determine if an outlink is subject to mapping.
      */ 
-    DecideRule outlinkRule = new AcceptDecideRule(); 
+    protected DecideRule outlinkRule = new AcceptDecideRule(); 
     public DecideRule getOutlinkRule() {
         return this.outlinkRule;
     }
@@ -119,7 +119,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * Name of local crawler node; mappings to this name result in normal
      * processing (no diversion).
      */
-    String localName = ".";
+    protected String localName = ".";
     public String getLocalName() {
         return this.localName;
     }
@@ -130,7 +130,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
     /**
      * Directory to write diversion logs.
      */
-    ConfigPath diversionDir = 
+    protected ConfigPath diversionDir = 
         new ConfigPath("diverted URIs subdirectory","diversions");
     public ConfigPath getDiversionDir() {
         return this.diversionDir;
@@ -145,7 +145,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * rotation).
      * 
      */
-    int rotationDigits = 10; 
+    protected int rotationDigits = 10; 
     public int getRotationDigits() {
         return this.rotationDigits;
     }
@@ -156,7 +156,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
     /**
      * Mapping of target crawlers to logs (PrintWriters)
      */
-    HashMap<String,PrintWriter> diversionLogs
+    protected HashMap<String,PrintWriter> diversionLogs
      = new HashMap<String,PrintWriter>();
 
     /**
@@ -164,7 +164,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
      * current time doesn't match, it's time to close all
      * current logs. 
      */
-    String logGeneration = "";
+    protected String logGeneration = "";
         
     protected ArrayLongFPCache cache;
    

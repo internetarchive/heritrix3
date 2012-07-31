@@ -28,9 +28,9 @@ import java.util.NoSuchElementException;
  * @author gojomo
  */
 public class CompositeIterator<E> implements Iterator<E> {
-    ArrayList<Iterator<E>> iterators = new ArrayList<Iterator<E>>();
-    Iterator<E> currentIterator;
-    int indexOfCurrentIterator = -1;
+    protected ArrayList<Iterator<E>> iterators = new ArrayList<Iterator<E>>();
+    protected Iterator<E> currentIterator;
+    protected int indexOfCurrentIterator = -1;
 
     /**
      * Moves to the next (non empty) iterator. Returns false if there are no

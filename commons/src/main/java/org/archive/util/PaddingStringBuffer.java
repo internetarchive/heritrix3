@@ -36,9 +36,9 @@ package org.archive.util;
  */
 public final class PaddingStringBuffer {
     // The buffer.
-    StringBuffer buffer;
+    protected StringBuffer buffer;
     // Location in current line
-    int linePos;
+    protected int linePos;
 
     /** 
      * Create a new PaddingStringBuffer

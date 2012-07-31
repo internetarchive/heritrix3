@@ -61,6 +61,7 @@ import org.xbill.DNS.Type;
  */
 public class FetchDNS extends Processor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger logger = Logger.getLogger(FetchDNS.class.getName());
@@ -74,7 +75,7 @@ public class FetchDNS extends Processor {
      * If a DNS lookup fails, whether or not to fallback to InetAddress
      * resolution, which may use local 'hosts' files or other mechanisms.
      */
-    boolean acceptNonDnsResolves = false; 
+    protected boolean acceptNonDnsResolves = false; 
     public boolean getAcceptNonDnsResolves() {
         return acceptNonDnsResolves;
     }
@@ -112,7 +113,7 @@ public class FetchDNS extends Processor {
      * Which algorithm (for example MD5 or SHA-1) to use to perform an 
      * on-the-fly digest hash of retrieved content-bodies.
      */
-    String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1"; 
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }

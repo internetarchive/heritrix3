@@ -179,7 +179,7 @@ public class DefaultBlockFileSystem implements BlockFileSystem {
      * @return   that entry, or null if no such entry exists
      * @throws IOException  if an IO error occurs
      */
-    Entry getEntry(int entryNumber) throws IOException {
+    protected Entry getEntry(int entryNumber) throws IOException {
         // Entry numbers < 0 typically indicate an end-of-stream.
         if (entryNumber < 0) {
             return null;

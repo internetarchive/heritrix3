@@ -20,8 +20,6 @@
 package org.archive.modules.deciderules;
 
 import java.io.Reader;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,7 +96,7 @@ implements ApplicationContextAware, InitializingBean {
         this.isolateThreads = isolateThreads;
     }
 
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }
@@ -106,8 +104,6 @@ implements ApplicationContextAware, InitializingBean {
     transient protected ThreadLocal<ScriptEngine> threadEngine = 
         new ThreadLocal<ScriptEngine>();
     transient protected ScriptEngine sharedEngine;
-    /** map for optional use by scripts */
-    public Map<Object,Object> sharedMap = new ConcurrentHashMap<Object,Object>();
 
     public ScriptedDecideRule() {
     }
@@ -128,12 +124,14 @@ implements ApplicationContextAware, InitializingBean {
             // necessary for shared engine
             try {
                 engine.put("object",uri);
+                engine.put("appCtx", appCtx);
                 return (DecideResult)engine.eval("decisionFor(object)");
             } catch (ScriptException e) {
                 logger.log(Level.WARNING,e.getMessage(),e);
                 return DecideResult.NONE;
             } finally {
                 engine.put("object", null);
+                engine.put("appCtx", null);
             }
         }
     }
@@ -143,21 +141,23 @@ implements ApplicationContextAware, InitializingBean {
      * to this thread. 
      * @return ScriptEngine to use
      */
-    protected synchronized ScriptEngine getEngine() {
-        if(sharedEngine==null 
-           && getIsolateThreads()) {
-            // initialize
-            sharedEngine = newEngine();
-        }
-        if(sharedEngine!=null) {
+    protected ScriptEngine getEngine() {
+        if (getIsolateThreads()) {
+            ScriptEngine engine = threadEngine.get();
+            if (engine == null) {
+                engine = newEngine();
+                threadEngine.set(engine);
+            }
+            return engine;
+        } else {
+            // sharing the engine
+            synchronized (this) {
+                if (sharedEngine == null) {
+                    sharedEngine = newEngine();
+                }
+            }
             return sharedEngine;
         }
-        ScriptEngine engine = threadEngine.get(); 
-        if(engine==null) {
-            engine = newEngine(); 
-            threadEngine.set(engine);
-        }
-        return engine; 
     }
 
     /**

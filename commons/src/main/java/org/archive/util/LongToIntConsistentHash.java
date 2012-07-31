@@ -32,9 +32,9 @@ import st.ata.util.FPGenerator;
  */
 public class LongToIntConsistentHash {
     protected static final int DEFAULT_REPLICAS = 128;
-    TreeMap<Long,Integer> circle = new TreeMap<Long,Integer>();
-    int replicasInstalledUpTo=-1; 
-    int numReplicas; 
+    protected TreeMap<Long,Integer> circle = new TreeMap<Long,Integer>();
+    protected int replicasInstalledUpTo=-1; 
+    protected int numReplicas; 
 
     public LongToIntConsistentHash() {
         this(DEFAULT_REPLICAS); 

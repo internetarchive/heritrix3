@@ -38,7 +38,7 @@ implements
     //for when neat class-key fails us
     protected static String DEFAULT_CLASS_KEY = "default...";
 
-    LongToIntConsistentHash conhash = new LongToIntConsistentHash();
+    protected LongToIntConsistentHash conhash = new LongToIntConsistentHash();
     
     /**
      * Whether to always defer to a previously-assigned key inside 

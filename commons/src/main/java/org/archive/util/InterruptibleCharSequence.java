@@ -25,7 +25,7 @@ package org.archive.util;
  * @author gojomo
  */
 public class InterruptibleCharSequence implements CharSequence {
-    CharSequence inner;
+    protected CharSequence inner;
     // public long counter = 0; 
     
     public InterruptibleCharSequence(CharSequence inner) {

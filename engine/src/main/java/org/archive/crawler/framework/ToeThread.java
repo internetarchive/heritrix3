@@ -42,9 +42,9 @@ import org.archive.modules.fetcher.HostResolver;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
-import org.archive.util.MultiReporter;
 import org.archive.util.ProgressStatisticsReporter;
 import org.archive.util.Recorder;
+import org.archive.util.Reporter;
 
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
@@ -55,7 +55,7 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * @author Gordon Mohr
  */
 public class ToeThread extends Thread
-implements MultiReporter, ProgressStatisticsReporter, 
+implements Reporter, ProgressStatisticsReporter, 
            HostResolver, SinkHandlerLogThread, ChainStatusReceiver {
 
     public enum Step {
@@ -396,10 +396,10 @@ implements MultiReporter, ProgressStatisticsReporter,
     
     /**
      * Compiles and returns a report on its status.
-     * @param name Report name.
      * @param pw Where to print.
      */
-    public void reportTo(String name, PrintWriter pw) {
+    @Override
+    public void reportTo(PrintWriter pw) {
         // name is ignored for now: only one kind of report
         
         pw.print("[");
@@ -488,6 +488,7 @@ implements MultiReporter, ProgressStatisticsReporter,
         }
     }
 
+    @Override
     public Map<String, Object> shortReportMap() {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
         data.put("serialNumber", serialNumber);
@@ -518,6 +519,7 @@ implements MultiReporter, ProgressStatisticsReporter,
     /**
      * @param w PrintWriter to write to.
      */
+    @Override
     public void shortReportLineTo(PrintWriter w)
     {
         w.print("#");
@@ -565,20 +567,9 @@ implements MultiReporter, ProgressStatisticsReporter,
         w.flush();
     }
 
+    @Override
     public String shortReportLegend() {
         return "#serialNumber processorName currentUri (fetchAttempts) threadState threadStep";
-    }
-    
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#getReports()
-     */
-    public String[] getReports() {
-        // for now none but the default
-        return new String[] {};
-    }
-
-    public void reportTo(PrintWriter writer) {
-        reportTo(null, writer);
     }
 
     public String shortReportLine() {

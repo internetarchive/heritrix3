@@ -39,7 +39,7 @@ public class BenchmarkUriUniqFilters implements UriUniqFilter.CrawlUriReceiver {
 //        Logger.getLogger(BenchmarkUriUniqFilters.class.getName());
     
     private BufferedWriter out; // optional to dump uniq items
-    String current; // current line/URI being checked
+    protected String current; // current line/URI being checked
     
     /**
      * Test the UriUniqFilter implementation (MemUriUniqFilter,

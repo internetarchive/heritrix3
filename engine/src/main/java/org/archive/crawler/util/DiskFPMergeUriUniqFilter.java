@@ -41,13 +41,13 @@ import org.archive.util.ArchiveUtils;
  * @author gojomo
  */
 public class DiskFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
-    long count = 0; 
-    File scratchDir; 
-    File currentFps;
-    File newFpsFile;
-    DataOutputStream newFps; 
-    long newCount; 
-    DataInputStream oldFps; 
+    protected long count = 0; 
+    protected File scratchDir; 
+    protected File currentFps;
+    protected File newFpsFile;
+    protected DataOutputStream newFps; 
+    protected long newCount; 
+    protected DataInputStream oldFps; 
     
     public DiskFPMergeUriUniqFilter(File scratchDir) {
         super();

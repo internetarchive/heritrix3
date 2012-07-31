@@ -37,6 +37,7 @@ public interface Reporter {
      * 
      * @param writer to receive report
      */
+    @Deprecated
     public void shortReportLineTo(PrintWriter pw) throws IOException;
     
 

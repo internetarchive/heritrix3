@@ -81,7 +81,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         public BdbConfig config;
     }
     
-    
     /**
      * Configuration object for databases.  Needed because 
      * {@link DatabaseConfig} is not serializable.  Also it prevents invalid
@@ -95,29 +94,25 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public static class BdbConfig implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        boolean allowCreate;
-        boolean sortedDuplicates;
-        boolean transactional;
-        boolean deferredWrite = true; 
+        protected boolean allowCreate;
+        protected boolean sortedDuplicates;
+        protected boolean transactional;
+        protected boolean deferredWrite = true; 
 
         public BdbConfig() {
         }
-
 
         public boolean isAllowCreate() {
             return allowCreate;
         }
 
-
         public void setAllowCreate(boolean allowCreate) {
             this.allowCreate = allowCreate;
         }
 
-
         public boolean getSortedDuplicates() {
             return sortedDuplicates;
         }
-
 
         public void setSortedDuplicates(boolean sortedDuplicates) {
             this.sortedDuplicates = sortedDuplicates;
@@ -132,16 +127,13 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
             return result;
         }
 
-
         public boolean isTransactional() {
             return transactional;
         }
 
-
         public void setTransactional(boolean transactional) {
             this.transactional = transactional;
         }
-
 
         public void setDeferredWrite(boolean b) {
             this.deferredWrite = true; 
@@ -156,15 +148,23 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         this.dir = dir;
     }
     
-    int cachePercent = -1;
+    protected int cachePercent = -1;
     public int getCachePercent() {
         return cachePercent;
     }
     public void setCachePercent(int cachePercent) {
         this.cachePercent = cachePercent;
     }
+    
+    protected int cacheSize = -1;
+    public int getCacheSize() {
+        return cacheSize;
+    }
+    public void setCacheSize(int cacheSize) {
+        this.cacheSize = cacheSize;
+    }
 
-    boolean useSharedCache = true; 
+    protected boolean useSharedCache = true; 
     public boolean getUseSharedCache() {
         return useSharedCache;
     }
@@ -177,7 +177,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * according to JE FAQ
      * http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
      */
-    int expectedConcurrency = 64;
+    protected int expectedConcurrency = 64;
     public int getExpectedConcurrency() {
         return expectedConcurrency;
     }
@@ -196,7 +196,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * in any checkpoint's 'jdbfiles.manifest' should be retained to
      * keep the checkpoint valid. 
      */
-    boolean useHardLinkCheckpoints = true;
+    protected boolean useHardLinkCheckpoints = true;
     public boolean getUseHardLinkCheckpoints() {
         return useHardLinkCheckpoints;
     }
@@ -255,9 +255,16 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(create);
         config.setLockTimeout(75, TimeUnit.MINUTES); // set to max
-        if(getCachePercent()>0) {
+
+        if (getCacheSize() > 0) {
+            config.setCacheSize(getCacheSize());
+            if (getCachePercent() > 0) {
+                LOGGER.warning("cachePercent and cacheSize are both set. Only cacheSize will be used.");
+            }
+        } else if (getCachePercent() > 0) {
             config.setCachePercent(getCachePercent());
         }
+
         config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
@@ -580,7 +587,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
 
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
      
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
@@ -623,7 +630,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
 
     /** uniqueness serial number for temp map databases */
-    long sn = 0; 
+    protected long sn = 0;
         
     /**
      * Creates a database-backed TempStoredSortedMap for transient 

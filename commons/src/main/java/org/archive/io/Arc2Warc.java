@@ -58,9 +58,9 @@ import org.joda.time.format.ISODateTimeFormat;
  * @version $Date$ $Revision$
  */
 public class Arc2Warc {
-    RecordIDGenerator generator = new UUIDGenerator();
+    protected RecordIDGenerator generator = new UUIDGenerator();
     
-   private static void usage(HelpFormatter formatter, Options options,
+    private static void usage(HelpFormatter formatter, Options options,
            int exitCode) {
        formatter.printHelp("java org.archive.io.arc.Arc2Warc " +
        		"[--force] ARC_INPUT WARC_OUTPUT", options);
@@ -199,7 +199,7 @@ public static void main(String [] args)
        	   "Force overwrite of target file."));
        PosixParser parser = new PosixParser();
        CommandLine cmdline = parser.parse(options, args, false);
-       List cmdlineArgs = cmdline.getArgList();
+       List<String> cmdlineArgs = cmdline.getArgList();
        Option [] cmdlineOptions = cmdline.getOptions();
        HelpFormatter formatter = new HelpFormatter();
        
@@ -230,7 +230,7 @@ public static void main(String [] args)
        if (cmdlineArgs.size() != 2) {
            usage(formatter, options, 0);
        }
-       (new Arc2Warc()).transform(new File(cmdlineArgs.get(0).toString()),
-           new File(cmdlineArgs.get(1).toString()), force);
+       (new Arc2Warc()).transform(new File(cmdlineArgs.get(0)),
+           new File(cmdlineArgs.get(1)), force);
    }
 }

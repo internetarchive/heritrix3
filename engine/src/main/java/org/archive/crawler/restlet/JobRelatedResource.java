@@ -36,6 +36,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
+import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.Reference;
 import org.restlet.data.Request;
@@ -53,9 +54,9 @@ import org.springframework.beans.InvalidPropertyException;
  * @contributor nlevitt
  */
 public abstract class JobRelatedResource extends BaseResource {
-    CrawlJob cj; 
+    protected CrawlJob cj; 
 
-    IdentityHashMap<Object, String> beanToNameMap;
+    protected IdentityHashMap<Object, String> beanToNameMap;
     
     public JobRelatedResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
@@ -156,7 +157,7 @@ public abstract class JobRelatedResource extends BaseResource {
             String name = getBeanToNameMap().get(obj);
             pw.println("<li><a href='"+prefix+name+"'>"+name+"</a>");
             pw.println("<span style='color:#999'>"+obj.getClass().getName()+"</span><ul>");
-            close = "</ul></li>";
+            close = "</ul></li>\n";
         }
         if(!alreadyWritten.contains(obj)) {
             alreadyWritten.add(obj);
@@ -175,7 +176,7 @@ public abstract class JobRelatedResource extends BaseResource {
                     }
                 }
                 if(obj instanceof Iterable) {
-                    for (Object next : (Iterable)obj) {
+                    for (Object next : (Iterable<Object>)obj) {
                         writeNestedNames(pw, next, prefix, alreadyWritten);
                     }
                 }
@@ -183,7 +184,7 @@ public abstract class JobRelatedResource extends BaseResource {
                 pw.println("<span style='color:red'>"+ipe.getMessage()+"</span>");
             }
         }
-        pw.println(close);
+        pw.print(close);
     }
 
 
@@ -409,13 +410,12 @@ public abstract class JobRelatedResource extends BaseResource {
      * @param alreadyWritten Set of objects to not redundantly write
      * @param beanPathPrefix beanPath prefix to apply to sub fields browse links
      */
-    @SuppressWarnings("unchecked")
     protected void writeObject(PrintWriter pw, String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
             String key = getBeanToNameMap().get(object);
             String close = "";
             String beanPath = beanPathPrefix;
             if(StringUtils.isNotBlank(field)) {
-                pw.write("<tr><td align='right' valign='top'><b>");
+                pw.write("<tr>\n<td style='text-align:right;vertical-align:top'><b>");
                 String closeAnchor ="";
                 if(StringUtils.isNotBlank(beanPathPrefix)) {
                     if(beanPathPrefix.endsWith(".")) {
@@ -423,21 +423,22 @@ public abstract class JobRelatedResource extends BaseResource {
                     } else if (beanPathPrefix.endsWith("[")) {
                         beanPath += field + "]";
                     }
-                    pw.println("<a href='../beans/"+beanPath+"'>");
+                    // url-encode because brackets are not allowed here according to validator.w3.org 
+                    pw.print("<a href='../beans/" + TextUtils.urlEscape(beanPath) + "'>");
                     closeAnchor = "</a>";
                 }
                 pw.write(field);
                 pw.write(closeAnchor);
-                pw.write(":</b></td><td>");
-                close="</td></tr>";
+                pw.write(":</b></td>\n<td>");
+                close="</td>\n</tr>\n";
             }
             if(object == null) {
-                pw.write("<i>null</i><br/>");
+                pw.write("<i>null</i>");
                 pw.write(close);
                 return; 
             }
             if(object instanceof String) {
-                pw.write("\""+object+"\"<br/>");
+                pw.write("\""+object+"\"");
                 pw.write(close);
                 return; 
             }
@@ -445,18 +446,18 @@ public abstract class JobRelatedResource extends BaseResource {
                     || object instanceof File
                     //|| BeanUtils.findEditorByConvention(object.getClass())!=null
                     ) {     
-                pw.write(object+"<br/>");
+                pw.write(object.toString());
                 pw.write(close);
                 return;
             }
             if(alreadyWritten.contains(object)) {
-                pw.println("&uarr;<br/>");
+                pw.println("&uarr;");
                 pw.write(close);
                 return;
             }
             alreadyWritten.add(object); // guard against repeats and cycles
             if(StringUtils.isNotBlank(key) && StringUtils.isNotBlank(field)) {
-                pw.println("<a href='../beans/"+key+"'>"+key+"</a><br/>");
+                pw.println("<a href='../beans/"+key+"'>"+key+"</a>");
                 pw.write(close);
                 return;
             }
@@ -494,14 +495,15 @@ public abstract class JobRelatedResource extends BaseResource {
                     writeObject(pw, i+"", list.get(i), alreadyWritten, beanPathPrefix);
                 }
             } else if(object instanceof Iterable) {
-                for (Object next : (Iterable)object) {
+                @SuppressWarnings("unchecked")
+                Iterable<Object> itbl = (Iterable<Object>)object;
+                for (Object next : itbl) {
                     writeObject(pw, "#", next, alreadyWritten, null);
                 }
             }
             if(object instanceof Map) {
-                for (Object next : ((Map)object).entrySet()) {
+                for (Map.Entry<?, ?> entry : ((Map<?, ?>)object).entrySet()) {
                     // TODO: protect against giant maps?
-                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>)next;
                     if(beanPath!=null) {
                         beanPathPrefix = beanPath+"[";
                     }
@@ -509,12 +511,12 @@ public abstract class JobRelatedResource extends BaseResource {
                 }
             }
             pw.println("</table>");
-            pw.print("</fieldset><br/>");
+            pw.print("</fieldset>");
             pw.write(close);
         }
 
     /** suppress problematic properties */
-    static HashSet<String> HIDDEN_PROPS = new HashSet<String>(
+    protected static HashSet<String> HIDDEN_PROPS = new HashSet<String>(
             Arrays.asList(new String[]
              {"class","declaringClass","keyedProperties","running","first","last","empty", "inbound", "outbound", "cookiesMap"}
             ));

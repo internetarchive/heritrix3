@@ -32,7 +32,7 @@ import org.archive.io.ReadSource;
  * @contributor gojomo
  */
 public class ConfigString implements ReadSource {
-    String value;
+    protected String value;
     public String getValue() {
         return value;
     }

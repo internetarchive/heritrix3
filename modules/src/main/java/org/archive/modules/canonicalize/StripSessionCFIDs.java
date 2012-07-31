@@ -18,7 +18,6 @@
  */
 package org.archive.modules.canonicalize;
 
-import java.util.regex.Pattern;
 
 /**
  * Strip cold fusion session ids.

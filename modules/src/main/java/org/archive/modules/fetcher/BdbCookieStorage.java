@@ -43,6 +43,7 @@ import com.sleepycat.je.DatabaseException;
  * @author pjack
  */
 public class BdbCookieStorage extends AbstractCookieStorage implements Checkpointable {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     
     protected BdbModule bdb;
@@ -52,7 +53,7 @@ public class BdbCookieStorage extends AbstractCookieStorage implements Checkpoin
     }
     
     /** are we a checkpoint recovery? (in which case, reuse stored cookie data?) */
-    boolean isCheckpointRecovery = false; 
+    protected boolean isCheckpointRecovery = false; 
     
     public static String COOKIEDB_NAME = "http_cookies";
  

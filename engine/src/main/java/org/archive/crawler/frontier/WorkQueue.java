@@ -38,8 +38,8 @@ import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.IdentityCacheable;
-import org.archive.util.MultiReporter;
 import org.archive.util.ObjectIdentityCache;
+import org.archive.util.Reporter;
 
 /**
  * A single queue of related URIs to visit, grouped by a classKey
@@ -49,7 +49,7 @@ import org.archive.util.ObjectIdentityCache;
  * @author Christian Kohlschuetter 
  */
 public abstract class WorkQueue implements Frontier.FrontierGroup,
-        Serializable, MultiReporter, Delayed, IdentityCacheable {
+        Serializable, Reporter, Delayed, IdentityCacheable {
     private static final long serialVersionUID = -3199666138837266341L;
     private static final Logger logger =
         Logger.getLogger(WorkQueue.class.getName());
@@ -211,7 +211,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param balance to use
      */
-    void setSessionBudget(int budget) {
+    protected void setSessionBudget(int budget) {
         this.sessionBudget = budget;
     }
 
@@ -248,7 +248,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param budget
      */
-    void setTotalBudget(long budget) {
+    protected void setTotalBudget(long budget) {
         this.totalBudget = budget;
     }
 
@@ -451,20 +451,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     // Reporter
     //
 
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#getReports()
-     */
-    public String[] getReports() {
-        return new String[] {};
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.io.Writer)
-     */
-    public void reportTo(PrintWriter writer) {
-        reportTo(null,writer);
-    }
-
+    @Override
     public synchronized Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
 
@@ -498,6 +485,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return sessionBudget - (totalExpenditure-expenditureAtLastActivation);
     }
 
+    @Override
     public synchronized void shortReportLineTo(PrintWriter writer) {
         // queue name
         writer.print(classKey);
@@ -545,6 +533,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print("\n");
     }
 
+    @Override
     public String shortReportLegend() {
         return "queue precedence currentSize totalEnqueues sessionBalance " +
                 "lastCost (averageCost) lastDequeueTime wakeTime " +
@@ -559,7 +548,8 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @param writer
      * @throws IOException
      */
-    public synchronized void reportTo(String name, PrintWriter writer) {
+    @Override
+    public synchronized void reportTo(PrintWriter writer) {
         // name is ignored: only one kind of report for now
         writer.print("Queue ");
         writer.print(classKey);
@@ -609,7 +599,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * 
      * @param b new value for retired status
      */
-    void setRetired(boolean b) {
+    protected void setRetired(boolean b) {
         this.retired = b;
     }
     

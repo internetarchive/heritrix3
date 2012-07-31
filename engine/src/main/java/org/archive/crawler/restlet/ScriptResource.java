@@ -24,6 +24,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,18 +62,25 @@ import org.restlet.resource.WriterRepresentation;
  * @contributor gojomo
  */
 public class ScriptResource extends JobRelatedResource {
-    static ScriptEngineManager MANAGER = new ScriptEngineManager();
+    protected static ScriptEngineManager MANAGER = new ScriptEngineManager();
     // oddly, ordering is different each call to getEngineFactories, so cache
-    static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
+    protected static LinkedList<ScriptEngineFactory> FACTORIES = new LinkedList<ScriptEngineFactory>();
     static {
         FACTORIES.addAll(MANAGER.getEngineFactories());
+        // Sort factories alphabetically so that they appear in the UI consistently
+        Collections.sort(FACTORIES, new Comparator<ScriptEngineFactory>() {
+            @Override
+            public int compare(ScriptEngineFactory sef1, ScriptEngineFactory sef2) {
+                return sef1.getEngineName().compareTo(sef2.getEngineName());
+            }
+        });
     }
-    String script = "";
-    Exception ex = null;
-    int linesExecuted = 0; 
-    String rawOutput = ""; 
-    String htmlOutput = "";
-    String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
+    protected String script = "";
+    protected Exception ex = null;
+    protected int linesExecuted = 0; 
+    protected String rawOutput = ""; 
+    protected String htmlOutput = "";
+    protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
     
     public ScriptResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
@@ -233,8 +242,25 @@ public class ScriptResource extends JobRelatedResource {
     }
 
     protected void writeHtml(Writer writer) {
-        PrintWriter pw = new PrintWriter(writer); 
-        pw.println("<head><title>Script in "+cj.getShortName()+"</title></head>");
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if (!baseRef.endsWith("/")) baseRef += "/";
+        PrintWriter pw = new PrintWriter(writer);
+        pw.println("<!DOCTYPE html>");
+        pw.println("<html>");
+        pw.println("<head>");
+        pw.println("<title>Script in "+cj.getShortName()+"</title>");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
+        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/codemirror.css") + "'>");
+        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/util/dialog.css") + "'>");
+        pw.println("<script src='" + getStaticRef("codemirror/codemirror.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/groovy.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/clike.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/mode/javascript.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/dialog.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/searchcursor.js") + "'></script>");
+        pw.println("<script src='" + getStaticRef("codemirror/util/search.js") + "'></script>");
+        pw.println("</head>");
+        pw.println("<body>");
         pw.println("<h1>Execute script for job <i><a href='/engine/job/"
                     +TextUtils.urlEscape(cj.getShortName())
                     +"'>"+cj.getShortName()+"</a></i></h1>");
@@ -261,8 +287,8 @@ public class ScriptResource extends JobRelatedResource {
         }
 
         pw.println("<form method='POST'>");
-        pw.println("<input type='submit' value='execute'></input>");
-        pw.println("<select name='engine'>");;
+        pw.println("<input type='submit' value='execute'>");
+        pw.println("<select name='engine' id='selectEngine'>");;
         for(ScriptEngineFactory f : FACTORIES) {
             String opt = f.getNames().get(0);
             pw.println("<option "
@@ -270,19 +296,32 @@ public class ScriptResource extends JobRelatedResource {
                     +"value='"+opt+"'>"+f.getLanguageName()+"</option>");
         }
         pw.println("</select>");
-        pw.println("<textarea rows='20' style='width:100%' name=\'script\'>"+script+"</textarea>");
+        pw.println("<textarea rows='20' style='width:100%' name=\'script\' id='editor'>"+script+"</textarea>");
         pw.println("<input type='submit' value='execute'></input>");
         pw.println("</form>");
         pw.println(
                 "The script will be executed in an engine preloaded " +
-                "with (global) variables: <ul>\n" +
-                "<li>rawOut: a PrintWriter for arbitrary text output to this page</li>\n" +
-                "<li>htmlOut: a PrintWriter for HTML output to this page</li>\n" +
-                "<li>job: the current CrawlJob instance</li>\n" +
-                "<li>appCtx: current job ApplicationContext, if any</li>\n" +
-                "<li>scriptResource: the ScriptResource implementing this " +
+                "with (global) variables:\n<ul>\n" +
+                "<li><code>rawOut</code>: a PrintWriter for arbitrary text output to this page</li>\n" +
+                "<li><code>htmlOut</code>: a PrintWriter for HTML output to this page</li>\n" +
+                "<li><code>job</code>: the current CrawlJob instance</li>\n" +
+                "<li><code>appCtx</code>: current job ApplicationContext, if any</li>\n" +
+                "<li><code>scriptResource</code>: the ScriptResource implementing this " +
                 "page, which offers utility methods</li>\n" +
                 "</ul>");
+        pw.println("<script>");
+        pw.println("var modemap = {beanshell: 'text/x-java', groovy: 'groovy', js: 'javascript'};");
+        pw.println("var selectEngine = document.getElementById('selectEngine');");
+        pw.println("var editor = document.getElementById('editor');");
+        pw.println("var cmopts = {");
+        pw.println("    mode: modemap[selectEngine.value],");
+        pw.println("    lineNumbers: true, autofocus: true, indentUnit: 4");
+        pw.println("}");
+        pw.println("var cm = CodeMirror.fromTextArea(editor, cmopts);");
+        pw.println("selectEngine.onchange = function(e) { cm.setOption('mode', modemap[selectEngine.value]); }");
+        pw.println("</script>");
+        pw.println("</body>");
+        pw.println("</html>");
 
         pw.flush();
     }

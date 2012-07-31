@@ -47,7 +47,7 @@ public class ProcessUtils {
         private final InputStream is;
         private final StringBuffer sink = new StringBuffer();
 
-        StreamGobbler(InputStream is, String name) {
+        protected StreamGobbler(InputStream is, String name) {
             this.is = is;
             setName(name);
         }
