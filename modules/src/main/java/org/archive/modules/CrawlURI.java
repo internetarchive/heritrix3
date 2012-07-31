@@ -281,7 +281,7 @@ implements Reporter, Serializable, OverlayContext {
             UURIFactory.getInstance(args[2].toString()):
             null;
         LinkContext viaContext = (args.length > 3 && args[2].length()>1) ?
-                new HTMLLinkContext(args[3].toString()): null;
+                HTMLLinkContext.get(args[3].toString()): null;
         CrawlURI caUri = new CrawlURI(u, pathFromSeed, via, viaContext);
         return caUri;
     }
