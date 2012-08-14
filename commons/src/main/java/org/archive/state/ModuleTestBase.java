@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 import junit.framework.TestCase;
 
 import org.apache.commons.lang.SerializationUtils;
-import org.archive.modules.fetcher.FetchHTTPTestBase;
 
 
 /**
