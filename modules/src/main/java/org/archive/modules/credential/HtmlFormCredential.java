@@ -71,10 +71,13 @@ public class HtmlFormCredential extends Credential {
     /**
      * GET or POST.
      */
+    /** @deprecated ignored, always POST*/
     protected Method httpMethod = Method.POST;
+    /** @deprecated ignored, always POST*/
     public Method getHttpMethod() {
         return this.httpMethod;
     }
+    /** @deprecated ignored, always POST*/
     public void setHttpMethod(Method method) {
         this.httpMethod = method; 
     }

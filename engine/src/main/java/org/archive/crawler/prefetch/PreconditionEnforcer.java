@@ -394,6 +394,7 @@ public class PreconditionEnforcer extends Processor  {
                 // is it a prereq BEFORE we do the check that curi is of the
                 // credential domain because such as yahoo have you go to
                 // another domain altogether to login.
+                logger.fine("attaching credential and setting fetch type to POST for recognized form login url " + curi);
                 c.attach(curi);
                 curi.setFetchType(CrawlURI.FetchType.HTTP_POST);
                 break;

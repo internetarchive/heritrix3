@@ -1153,7 +1153,7 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-			CommonsHttpCredentialUtil.populate(curi, this.http, method, cred);
+                    CommonsHttpCredentialUtil.populate(curi, this.http, method, cred);
                 }
             }
         }
