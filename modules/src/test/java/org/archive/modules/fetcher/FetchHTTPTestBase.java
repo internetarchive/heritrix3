@@ -51,6 +51,8 @@ import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
+import org.mortbay.jetty.handler.HandlerCollection;
+import org.mortbay.jetty.handler.RequestLogHandler;
 import org.mortbay.jetty.security.Authenticator;
 import org.mortbay.jetty.security.BasicAuthenticator;
 import org.mortbay.jetty.security.Constraint;
@@ -67,7 +69,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
     private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
     static {
-        Logger.getLogger("").setLevel(Level.ALL);
+        Logger.getLogger("").setLevel(Level.FINE);
         for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
             h.setLevel(Level.ALL);
             h.setFormatter(new OneLineSimpleLogger());
@@ -170,7 +172,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
         
         HashMap<Integer, Server> servers = new HashMap<Integer,Server>();
-        
+
+        HandlerCollection handlers = new HandlerCollection();
+        handlers.addHandler(new TestHandler());
+        handlers.addHandler(new RequestLogHandler());
+
         // server for basic auth
         Server server = new Server();
         
@@ -182,7 +188,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         SecurityHandler authWrapper = makeAuthWrapper(new BasicAuthenticator(),
                 BASIC_AUTH_ROLE, BASIC_AUTH_REALM, BASIC_AUTH_LOGIN,
                 BASIC_AUTH_PASSWORD);
-        authWrapper.setHandler(new TestHandler());
+        authWrapper.setHandler(handlers);
         server.setHandler(authWrapper);
         
         server.start();
@@ -199,7 +205,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         authWrapper = makeAuthWrapper(new DigestAuthenticator(),
                 DIGEST_AUTH_ROLE, DIGEST_AUTH_REALM, DIGEST_AUTH_LOGIN,
                 DIGEST_AUTH_PASSWORD);
-        authWrapper.setHandler(new TestHandler());
+        authWrapper.setHandler(handlers);
         server.setHandler(authWrapper);
         
         server.start();
@@ -219,7 +225,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         authWrapper = makeAuthWrapper(formAuthenticatrix,
                 FORM_AUTH_ROLE, FORM_AUTH_REALM, FORM_AUTH_LOGIN,
                 FORM_AUTH_PASSWORD);
-        authWrapper.setHandler(new TestHandler());
+        authWrapper.setHandler(handlers);
         SessionHandler sessionHandler = new SessionHandler();
         sessionHandler.setSessionManager(new HashSessionManager());
         sessionHandler.setHandler(authWrapper);
@@ -311,6 +317,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
 
     // convenience methods to get strings from raw recorded i/o
+    protected String rawResponseString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
+        return new String(buf, "US-ASCII");
+    }
     protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
         return new String(buf, "US-ASCII");
@@ -440,11 +450,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(curi.getCredentials().contains(digestAuthCred));
 
         // stick a basic auth 401 in there to check it doesn't mess with the digest auth we're working on
-        CrawlURI inteferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
-        getFetcher().process(inteferingUri);
-        assertEquals(401, inteferingUri.getFetchStatus());
+        CrawlURI interferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
+        getFetcher().process(interferingUri);
+        assertEquals(401, interferingUri.getFetchStatus());
 
-        // fetch origin again with the credentials
+        // fetch original again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + contentString(curi));
@@ -468,7 +478,6 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         HtmlFormCredential cred = new HtmlFormCredential();
         cred.setDomain("localhost:7779");
         cred.setLoginUri("/j_security_check");
-        cred.setHttpMethod(HtmlFormCredential.Method.POST);
         HashMap<String, String> formItems = new HashMap<String,String>();
         formItems.put("j_username", FORM_AUTH_LOGIN);
         formItems.put("j_password", FORM_AUTH_PASSWORD);
@@ -479,6 +488,17 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         
         CrawlURI curi = makeCrawlURI("http://localhost:7779/");
         getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + contentString(curi));
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("hostHeader")));
+
+        // jetty needs us to hit a restricted url so it can redirect to the
+        // login page and remember where to redirect back to after successful
+        // login (if not we get a NPE within jetty)
+        curi = makeCrawlURI("http://localhost:7779/auth/1");
+        getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
+        assertEquals(302, curi.getFetchStatus());
+        assertTrue(curi.getHttpResponseHeader("Location").startsWith("http://localhost:7779/login.html"));
         
         PreconditionEnforcer preconditionEnforcer = new PreconditionEnforcer();
         preconditionEnforcer.setServerCache(getFetcher().getServerCache());
@@ -488,16 +508,21 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         CrawlURI loginUri = curi.getPrerequisiteUri();
         assertEquals("http://localhost:7779/j_security_check", loginUri.toString());
+        
+        // there's some special logic with side effects in here for the login uri itself 
+        result = preconditionEnforcer.credentialPrecondition(loginUri);
+        assertFalse(result);
+        
         loginUri.setRecorder(getRecorder());
         getFetcher().process(loginUri);
-        
-        getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(loginUri) + "\n\n" + rawResponseString(loginUri));
+        assertEquals(302, loginUri.getFetchStatus()); // 302 on successful login
+        assertEquals("http://localhost:7779/auth/1", loginUri.getHttpResponseHeader("location"));
         
         curi = makeCrawlURI("http://localhost:7779/auth/1");
         getFetcher().process(curi);
-
-        curi = makeCrawlURI("http://localhost:7779/auth/1");
-        getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + contentString(curi));
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("hostHeader", "requestLine")));
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,
