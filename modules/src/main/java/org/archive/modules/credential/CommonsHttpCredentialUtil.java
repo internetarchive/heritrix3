@@ -19,7 +19,6 @@
 
 package org.archive.modules.credential;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -31,7 +30,6 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthChallengeProcessor;
-import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.auth.AuthenticationException;
@@ -136,9 +134,6 @@ public class CommonsHttpCredentialUtil {
                     curi.getUURI().getPort(), cred.getRealm()), upc);
             logger.fine("Credentials for realm " + cred.getRealm() +
                     " for CrawlURI " + curi.toString() + " added to request");
-
-            http.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY,
-                    Arrays.asList(AuthPolicy.DIGEST, AuthPolicy.BASIC));
 
             result = true;
         } catch (URIException e) {
