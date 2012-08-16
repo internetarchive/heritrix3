@@ -21,6 +21,7 @@ package org.archive.modules.credential;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -28,8 +29,12 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthChallengeProcessor;
 import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.AuthenticationException;
+import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.archive.modules.CrawlURI;
 
 /**
@@ -106,9 +111,22 @@ public class HttpAuthenticationCredential extends Credential {
         return true;
     }
 
-    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method) {
+    @Override
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
+            Map<String, String> httpAuthChallenges) {
         boolean result = false;
 
+        AuthChallengeProcessor authChallengeProcessor = new AuthChallengeProcessor(
+                http.getParams());
+        try {
+            AuthScheme authScheme = authChallengeProcessor.processChallenge(
+                    method.getHostAuthState(), httpAuthChallenges);
+            method.getHostAuthState().setAuthScheme(authScheme);
+        } catch (MalformedChallengeException e) {
+            return result;
+        } catch (AuthenticationException e) {
+            return result;
+        }
 
         // Always add the credential to HttpState. Doing this because no way of
         // removing the credential once added AND there is a bug in the

@@ -26,6 +26,7 @@ import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import static org.archive.modules.CoreAttributeConstants.A_HTML_BASE;
+import static org.archive.modules.CoreAttributeConstants.A_HTTP_AUTH_CHALLENGES;
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -249,7 +250,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIALS_KEY});
+            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES});
 
     /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
     private static final int MAX_HOPS_DISPLAYED = 50;
@@ -1874,4 +1875,12 @@ implements Reporter, Serializable, OverlayContext {
         return getContentType().matches("(?i).*charset=.*");
     }
 
+    @SuppressWarnings("unchecked")
+    public Map<String,String> getHttpAuthChallenges() {
+        return (Map<String, String>) getData().get(A_HTTP_AUTH_CHALLENGES);
+    }
+
+    public void setHttpAuthChallenges(Map<String, String> httpAuthChallenges) {
+        getData().put(A_HTTP_AUTH_CHALLENGES, httpAuthChallenges);
+    }
 }

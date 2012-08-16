@@ -71,10 +71,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.auth.AuthChallengeParser;
+import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.BasicScheme;
-import org.apache.commons.httpclient.auth.DigestScheme;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -1146,7 +1145,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    cred.populate(curi, this.http, method);
+                    cred.populate(curi, this.http, method, server.getHttpAuthChallenges());
                 }
             }
         }
@@ -1157,7 +1156,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
-            if (c.populate(curi, this.http, method)) {
+            if (c.populate(curi, this.http, method, curi.getHttpAuthChallenges())) {
                 result = true;
             }
         }
@@ -1186,6 +1185,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
                 CrawlServer cs = serverCache.getServerFor(cd);
                 if (cs != null) {
                     cs.addCredential(c);
+                    cs.setHttpAuthChallenges(curi.getHttpAuthChallenges());
                 }
             }
         }
@@ -1270,38 +1270,39 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return null;
         }
 
-        Map<String, String> authschemes = null;
+        Map<String, String> authChallenges = null;
         try {
             @SuppressWarnings("unchecked")
             Map<String, String> parsedChallenges = AuthChallengeParser.parseChallenges(headers);
-            authschemes = parsedChallenges;
+            authChallenges = parsedChallenges;
+            
+            // remember WWW-Authenticate headers for later use 
+            curi.setHttpAuthChallenges(authChallenges);
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
         }
-        if (authschemes == null || authschemes.size() <= 0) {
+        if (authChallenges == null || authChallenges.size() <= 0) {
             logger.fine("We got a 401 and WWW-Authenticate challenge"
                     + " but failed parse of the header " + curi.toString());
             return null;
         }
 
+        // XXX there's a lot of overlap below with AuthChallengeProcessor.processChallenge()
+        
         AuthScheme result = null;
         // Use the first auth found.
-        for (Iterator<String> i = authschemes.keySet().iterator(); result == null
+        for (Iterator<String> i = authChallenges.keySet().iterator(); result == null
                 && i.hasNext();) {
             String key = (String) i.next();
-            String challenge = (String) authschemes.get(key);
+            String challenge = (String) authChallenges.get(key);
             if (key == null || key.length() <= 0 || challenge == null
                     || challenge.length() <= 0) {
                 logger.warning("Empty scheme: " + curi.toString() + ": "
                         + Arrays.toString(headers));
                 continue;
             }
-            AuthScheme authscheme = null;
-            if (key.equals("basic")) {
-                authscheme = new BasicScheme();
-            } else if (key.equals("digest")) {
-                authscheme = new DigestScheme();
-            } else {
+            AuthScheme authscheme = AuthPolicy.getAuthScheme(key);
+            if (authscheme == null) {
                 logger.fine("Unsupported scheme: " + key);
                 continue;
             }
@@ -1450,8 +1451,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         hcp.setSoTimeout(timeout);
         // Set client to be version 1.0.
         hcp.setVersion(HttpVersion.HTTP_1_0);
-        // We handle 401s, so when we do auth, we want it preemptive.
-        hcp.setAuthenticationPreemptive(true);
 
         // configureHttpCookies(defaults);
 

@@ -114,4 +114,6 @@ public interface CoreAttributeConstants {
     public static final String A_FTP_FETCH_STATUS = "ftp-fetch-status";
 
     public static final String A_WHOIS_SERVER_IP = "whois-server-ip";
+    
+    public static final String A_HTTP_AUTH_CHALLENGES = "http-auth-challenges";
 }
