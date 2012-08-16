@@ -411,6 +411,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
         assertTrue(curi.getCredentials().contains(basicAuthCredential));
+        assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
         // fetch again with the credentials
         getFetcher().process(curi);
@@ -448,16 +449,18 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
         assertTrue(curi.getCredentials().contains(digestAuthCred));
+        assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("digest"));
 
         // stick a basic auth 401 in there to check it doesn't mess with the digest auth we're working on
         CrawlURI interferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
         getFetcher().process(interferingUri);
         assertEquals(401, interferingUri.getFetchStatus());
+        logger.info('\n' + httpRequestString(interferingUri) + "\n\n" + rawResponseString(interferingUri));
 
         // fetch original again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + contentString(curi));
+        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(interferingUri));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
@@ -468,7 +471,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
     }
     
     // server for form auth is at localhost:7779
@@ -496,7 +499,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // login (if not we get a NPE within jetty)
         curi = makeCrawlURI("http://localhost:7779/auth/1");
         getFetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
+        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertEquals(302, curi.getFetchStatus());
         assertTrue(curi.getHttpResponseHeader("Location").startsWith("http://localhost:7779/login.html"));
         

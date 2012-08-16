@@ -30,8 +30,12 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthChallengeProcessor;
 import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.AuthenticationException;
+import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
@@ -42,9 +46,9 @@ public class CommonsHttpCredentialUtil {
     private static Logger logger = Logger.getLogger(CommonsHttpCredentialUtil.class.getName());
 
     public static boolean populate(CrawlURI curi, HttpClient http,
-            HttpMethod method, Credential cred) {
+            HttpMethod method, Credential cred, Map<String, String> httpAuthChallenges) {
         if (cred instanceof HttpAuthenticationCredential) {
-            return populate(curi, http, method, (HttpAuthenticationCredential) cred);
+            return populate(curi, http, method, (HttpAuthenticationCredential) cred, httpAuthChallenges);
         } else if (cred instanceof HtmlFormCredential) {
             return populate(curi, http, method, (HtmlFormCredential) cred);
         } else {
@@ -99,8 +103,18 @@ public class CommonsHttpCredentialUtil {
     }
 
     public static boolean populate(CrawlURI curi, HttpClient http,
-            HttpMethod method, HttpAuthenticationCredential cred) {
+            HttpMethod method, HttpAuthenticationCredential cred, Map<String,String> httpAuthChallenges) {
         boolean result = false;
+        
+        AuthChallengeProcessor authChallengeProcessor = new AuthChallengeProcessor(http.getParams());
+        try {
+            AuthScheme authScheme = authChallengeProcessor.processChallenge(method.getHostAuthState(), httpAuthChallenges);
+            method.getHostAuthState().setAuthScheme(authScheme);
+        } catch (MalformedChallengeException e) {
+            return result;
+        } catch (AuthenticationException e) {
+            return result;
+        }
 
         // Always add the credential to HttpState. Doing this because no way of
         // removing the credential once added AND there is a bug in the
