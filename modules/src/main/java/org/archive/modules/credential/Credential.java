@@ -46,7 +46,7 @@ import org.archive.modules.net.ServerCache;
  */
 public abstract class Credential implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private static final Logger logger =
         Logger.getLogger(Credential.class.getName());

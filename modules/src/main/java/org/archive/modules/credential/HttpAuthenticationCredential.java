@@ -46,7 +46,7 @@ import org.archive.modules.CrawlURI;
  * @version $Revision$, $Date$
  */
 public class HttpAuthenticationCredential extends Credential {
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 4L;
 
     private static Logger logger =
         Logger.getLogger(HttpAuthenticationCredential.class.getName());
