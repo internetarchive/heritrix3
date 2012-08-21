@@ -822,6 +822,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     protected RecordingHttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient(getServerCache());
+            
+            // XXX should this in the constructor? in configureRequest()? somewhere else?
+            HttpClientParams.setRedirecting(httpClient.getParams(), false);
         }
         
         return httpClient;

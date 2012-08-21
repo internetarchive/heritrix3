@@ -64,13 +64,13 @@ public class RecordingHttpClient extends DefaultHttpClient {
         this.setServerCache(serverCache);
         
         // XXX uhh? see HeritrixHttpMethodRetryHandler ??
-        setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
-            @Override
-            public boolean retryRequest(IOException exception, int executionCount,
-                    HttpContext context) {
-                return false;
-            }
-        });
+//        setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
+//            @Override
+//            public boolean retryRequest(IOException exception, int executionCount,
+//                    HttpContext context) {
+//                return false;
+//            }
+//        });
         
         // never reuse (no keep-alive)
         setReuseStrategy(new ConnectionReuseStrategy() {
