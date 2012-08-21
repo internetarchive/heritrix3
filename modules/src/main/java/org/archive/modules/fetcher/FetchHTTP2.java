@@ -30,6 +30,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,12 +50,14 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -65,6 +68,7 @@ import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
@@ -75,6 +79,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
+import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
@@ -388,7 +393,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         
         // Populate credentials. Set config so auth. is not automatic.
         BasicHttpContext contextForAuth = new BasicHttpContext();
-        boolean addedCredentials = populateCredentials(curi, targetHost, contextForAuth);
+        boolean addedCredentials = populateCredentials(curi, request, targetHost, contextForAuth);
         
         HttpResponse response = null;
         try {
@@ -479,27 +484,41 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
     }
     
-    protected boolean populateCredential(CrawlURI curi, HttpHost targetHost,
-            HttpContext context, Credential genericCred, Map<String, String> httpAuthChallenges) {
-
-        if (genericCred instanceof HttpAuthenticationCredential) {
-            HttpAuthenticationCredential cred = (HttpAuthenticationCredential) genericCred;
-
-            AuthScheme authScheme = chooseAuthScheme(httpAuthChallenges);
-            AuthCache authCache = new BasicAuthCache();
-            authCache.put(targetHost, authScheme);
-
-            context.setAttribute(ClientContext.AUTH_CACHE, authCache);
-
-            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(cred.getLogin(), cred.getPassword());
-            AuthScope authscope = new AuthScope(targetHost, cred.getRealm(), authScheme.getSchemeName());
-            getHttpClient().getCredentialsProvider().setCredentials(authscope,
-                    credentials);
-
-            return true;
-        } else {
+    protected boolean populateHtmlFormCredential(CrawlURI curi,
+            HttpRequestBase request, HtmlFormCredential cred) {
+        if (cred.getFormItems() == null || cred.getFormItems().size() <= 0) {
+            logger.severe("No form items for " + curi);
             return false;
         }
+        
+        List<NameValuePair> formParams = new ArrayList<NameValuePair>();
+        for (Entry<String, String> n: cred.getFormItems().entrySet()) {
+            formParams.add(new BasicNameValuePair(n.getKey(), n.getValue()));
+        }
+
+        // XXX should it get charset from somewhere?
+        UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formParams, HTTP.DEF_CONTENT_CHARSET);
+        HttpPost postRequest = (HttpPost) request;
+        postRequest.setEntity(entity);
+
+        return true;
+    }
+    
+    protected boolean populateHttpAuthCredential(HttpHost targetHost,
+            HttpContext context, HttpAuthenticationCredential cred,
+            Map<String, String> httpAuthChallenges) {
+        AuthScheme authScheme = chooseAuthScheme(httpAuthChallenges);
+        AuthCache authCache = new BasicAuthCache();
+        authCache.put(targetHost, authScheme);
+
+        context.setAttribute(ClientContext.AUTH_CACHE, authCache);
+
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(cred.getLogin(), cred.getPassword());
+        AuthScope authscope = new AuthScope(targetHost, cred.getRealm(), authScheme.getSchemeName());
+        getHttpClient().getCredentialsProvider().setCredentials(authscope,
+                credentials);
+
+        return true;
     }
 
     /**
@@ -513,6 +532,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * 
      * @param curi
      *            Current CrawlURI.
+     * @param request 
      * @param targetHost 
      * @param context
      *            The context to add credentials to.
@@ -525,7 +545,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * server.
      */
     protected boolean populateCredentials(CrawlURI curi,
-            HttpHost targetHost, HttpContext context) {
+            HttpRequestBase request, HttpHost targetHost, HttpContext context) {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
         // return true when we call 'isEveryTime().
@@ -539,7 +559,12 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    populateCredential(curi, targetHost, context, cred, server.getHttpAuthChallenges());
+                    if (cred instanceof HttpAuthenticationCredential) {
+                        populateHttpAuthCredential(targetHost, context, (HttpAuthenticationCredential) cred,
+                                server.getHttpAuthChallenges());
+                    } else {
+                        populateHtmlFormCredential(curi, request, (HtmlFormCredential) cred);
+                    }
                 }
             }
         }
@@ -550,8 +575,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
-            if (populateCredential(curi, targetHost, context, c, curi.getHttpAuthChallenges())) {
-                result = true;
+            if (c instanceof HttpAuthenticationCredential) {
+                result = populateHttpAuthCredential(targetHost, context, (HttpAuthenticationCredential) c,
+                        curi.getHttpAuthChallenges());
+            } else {
+                result = populateHtmlFormCredential(curi, request, (HtmlFormCredential) c);
             }
         }
 
