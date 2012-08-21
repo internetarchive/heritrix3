@@ -54,7 +54,7 @@ public class RecordingSocketInputBuffer implements SessionInputBuffer {
         Recorder recorder = Recorder.getHttpRecorder();
         if (recorder == null) {   // XXX || (isSecure() && isProxied())) {
             // no recorder, OR defer recording for pre-tunnel leg
-             this.in = new BufferedInputStream(socket.getInputStream(), buffersize);
+            this.in = new BufferedInputStream(socket.getInputStream(), buffersize);
         } else {
             this.in = recorder.inputWrap(new BufferedInputStream(socket.getInputStream(), buffersize));
         }

@@ -455,12 +455,12 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         CrawlURI interferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
         getFetcher().process(interferingUri);
         assertEquals(401, interferingUri.getFetchStatus());
-        logger.info('\n' + httpRequestString(interferingUri) + "\n\n" + rawResponseString(interferingUri));
+        // logger.info('\n' + httpRequestString(interferingUri) + "\n\n" + rawResponseString(interferingUri));
 
         // fetch original again with the credentials
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(interferingUri));
+        // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(interferingUri));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));

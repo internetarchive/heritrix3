@@ -31,10 +31,12 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,8 +63,6 @@ import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.ContentType;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.auth.DigestScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.params.HttpProtocolParams;
@@ -480,22 +480,22 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     }
     
     protected boolean populateCredential(CrawlURI curi, HttpHost targetHost,
-            HttpContext context, Credential genericCred) {
+            HttpContext context, Credential genericCred, Map<String, String> httpAuthChallenges) {
 
         if (genericCred instanceof HttpAuthenticationCredential) {
             HttpAuthenticationCredential cred = (HttpAuthenticationCredential) genericCred;
 
+            AuthScheme authScheme = chooseAuthScheme(httpAuthChallenges);
             AuthCache authCache = new BasicAuthCache();
-            AuthScheme authScheme = (AuthScheme) curi.getData().get("rfc2617Scheme");
             authCache.put(targetHost, authScheme);
 
             context.setAttribute(ClientContext.AUTH_CACHE, authCache);
-            
+
             UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(cred.getLogin(), cred.getPassword());
             AuthScope authscope = new AuthScope(targetHost, cred.getRealm(), authScheme.getSchemeName());
             getHttpClient().getCredentialsProvider().setCredentials(authscope,
                     credentials);
-            
+
             return true;
         } else {
             return false;
@@ -539,7 +539,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    populateCredential(curi, targetHost, context, cred);
+                    populateCredential(curi, targetHost, context, cred, server.getHttpAuthChallenges());
                 }
             }
         }
@@ -550,7 +550,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
-            if (populateCredential(curi, targetHost, context, c)) {
+            if (populateCredential(curi, targetHost, context, c, curi.getHttpAuthChallenges())) {
                 result = true;
             }
         }
@@ -579,6 +579,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                 CrawlServer cs = serverCache.getServerFor(cd);
                 if (cs != null) {
                     cs.addCredential(c);
+                    cs.setHttpAuthChallenges(curi.getHttpAuthChallenges());
                 }
             }
         }
@@ -595,7 +596,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      *            CrawlURI that got a 401.
      */
     protected void handle401(HttpResponse response, final CrawlURI curi) {
-        AuthScheme authscheme = choosePreferredAuthScheme(response, curi);
+        AuthScheme authscheme = chooseAuthScheme(response, curi);
         if (authscheme == null) {
             return;
         }
@@ -638,7 +639,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                             + " in " + curi);
                 } else {
                     found.attach(curi);
-                    curi.getData().put("rfc2617Scheme", authscheme);
                     logger.fine("Found credential for scheme " + authscheme
                             + " realm " + realm + " in store for "
                             + curi.toString());
@@ -655,7 +655,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      *            CrawlURI that got a 401.
      * @return Returns first wholesome authscheme found else null.
      */
-    protected AuthScheme choosePreferredAuthScheme(HttpResponse response, final CrawlURI curi) {
+    protected AuthScheme chooseAuthScheme(HttpResponse response, final CrawlURI curi) {
         Header[] headers = response.getHeaders(HttpHeaders.WWW_AUTHENTICATE);
         if (headers == null || headers.length <= 0) {
             logger.fine("We got a 401 but no WWW-Authenticate challenge: "
@@ -675,21 +675,28 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             return null;
         }
 
-        HashSet<String> autschemesLeftToTry = new HashSet<String>(wwwAuthHeaders.keySet());
+        // cache for later use in non-library specific way
+        Map<String,String> challenges = new HashMap<String, String>();
+        for (Entry<String, Header> challenge: wwwAuthHeaders.entrySet()) {
+            challenges.put(challenge.getKey(), challenge.getValue().getValue());
+        }
+        // remember WWW-Authenticate headers for later use 
+        curi.setHttpAuthChallenges(challenges);
+
+        return chooseAuthScheme(challenges);
+    }
+    
+    protected AuthScheme chooseAuthScheme(Map<String, String> challenges) {
+        HashSet<String> authSchemesLeftToTry = new HashSet<String>(challenges.keySet());
         for (String authSchemeName: new String[]{"digest","basic"}) {
-            if (autschemesLeftToTry.remove(authSchemeName)) {
-                AuthScheme authscheme = null;
-                if (authSchemeName.equals("basic")) {
-                    authscheme = new BasicScheme();
-                } else if (authSchemeName.equals("digest")) {
-                    authscheme = new DigestScheme();
-                }
-                Header challenge = wwwAuthHeaders.get(authSchemeName);
+            if (authSchemesLeftToTry.remove(authSchemeName)) {
+                AuthScheme authscheme = getHttpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
+                BasicHeader challenge = new BasicHeader(HttpHeaders.WWW_AUTHENTICATE, challenges.get(authSchemeName));
 
                 try {
                     authscheme.processChallenge(challenge);
                 } catch (MalformedChallengeException e) {
-                    logger.fine(e.getMessage() + " " + curi + " " + Arrays.toString(headers));
+                    logger.fine(e.getMessage() + " " + challenge);
                     continue;
                 }
                 if (authscheme.isConnectionBased()) {
@@ -699,7 +706,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
                 if (authscheme.getRealm() == null
                         || authscheme.getRealm().length() <= 0) {
-                    logger.fine("Empty realm " + authscheme + " for " + curi);
+                    logger.fine("Empty realm " + authscheme);
                     continue;
                 }
 
@@ -707,7 +714,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             }
         }
 
-        for (String unsupportedSchemeName: autschemesLeftToTry) {
+        for (String unsupportedSchemeName: authSchemesLeftToTry) {
             logger.fine("Unsupported scheme: " + unsupportedSchemeName);
         }
         
