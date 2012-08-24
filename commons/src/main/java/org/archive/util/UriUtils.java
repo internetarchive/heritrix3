@@ -280,6 +280,13 @@ public class UriUtils {
             return true;
         }
         
+        if (TextUtils.matches("^.*[^:]//.*$", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: contains '//' (but not '://'): " + candidate);
+            }
+            return true;
+        }
+        
         // look for things that look like hostnames and not filenames?
         // look for too many dots but make sure we take into account that url may have hostname?
 

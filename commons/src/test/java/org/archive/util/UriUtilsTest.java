@@ -210,6 +210,14 @@ public class UriUtilsTest extends TestCase {
         tryAll(startsOrEndsWithPlusFalsePositives, false);
     }
     
+    protected static final String[] doubleSlashFalsePositives = new String[] {
+        ".//*",
+        "http://example.com/monkey//foo/whatever"
+    };
+    public void testDoubleSlashFalsePositives() {
+        tryAll(startsOrEndsWithPlusFalsePositives, false);
+    }
+
     /**
      * Test that all supplied candidates give the expected result, for each of 
      * the 'legacy' (H1) likely-URI-tests
