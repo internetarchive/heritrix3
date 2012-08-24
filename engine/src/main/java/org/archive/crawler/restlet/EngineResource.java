@@ -62,6 +62,7 @@ import freemarker.template.TemplateException;
  * 
  * @contributor gojomo
  * @contributor nlevitt
+ * @contributor adam-miller
  */
 public class EngineResource extends BaseResource {
 

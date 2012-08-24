@@ -72,6 +72,7 @@ import freemarker.template.TemplateException;
  * 
  * @contributor gojomo
  * @contributor nlevitt
+ * @contributor adam-miller
  */
 public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = FileUtils
