@@ -554,35 +554,39 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
     
     public void testAcceptCompression() throws Exception {
-        ensureHttpServers();
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().setAcceptCompression(true);
-        getFetcher().process(curi);
-        String httpRequestString = httpRequestString(curi);
+        try {
+            ensureHttpServers();
+            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().setAcceptCompression(true);
+            getFetcher().process(curi);
+            String httpRequestString = httpRequestString(curi);
 //        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
 //        logger.info("\n----- begin contentString -----\n" + contentString(curi));
 //        logger.info("\n----- begin entityString -----\n" + entityString(curi));
 //        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
-        assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
-        assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
-        assertEquals(curi.getContentSize(), curi.getRecordedSize());
-        
-        // check various 
-        assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
-        assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
-        assertTrue(curi.getCredentials().isEmpty());
-        assertTrue(curi.getFetchDuration() >= 0);
-        assertTrue(curi.getFetchStatus() == 200);
-        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
-        
-        // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
-        assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream())));
+            assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
+            assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
+            assertEquals(curi.getContentSize(), curi.getRecordedSize());
 
-        // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
-        assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream())));
+            // check various 
+            assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+            assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
+            assertTrue(curi.getCredentials().isEmpty());
+            assertTrue(curi.getFetchDuration() >= 0);
+            assertTrue(curi.getFetchStatus() == 200);
+            assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
 
-        // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
-        assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
-        assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
+            // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
+            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream())));
+
+            // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
+            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream())));
+
+            // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
+            assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
+            assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
+        } finally {
+            getFetcher().setAcceptCompression(false);
+        }
     }
 }
