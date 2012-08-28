@@ -573,56 +573,48 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
     
     public void testAcceptCompression() throws Exception {
-        try {
-            ensureHttpServers();
-            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-            getFetcher().setAcceptCompression(true);
-            getFetcher().process(curi);
-            String httpRequestString = httpRequestString(curi);
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().setAcceptCompression(true);
+        getFetcher().process(curi);
+        String httpRequestString = httpRequestString(curi);
 //        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
 //        logger.info("\n----- begin contentString -----\n" + contentString(curi));
 //        logger.info("\n----- begin entityString -----\n" + entityString(curi));
 //        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
-            assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
-            assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
-            assertEquals(curi.getContentSize(), curi.getRecordedSize());
+        assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
+        assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
+        assertEquals(curi.getContentSize(), curi.getRecordedSize());
 
-            // check various 
-            assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
-            assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
-            assertTrue(curi.getCredentials().isEmpty());
-            assertTrue(curi.getFetchDuration() >= 0);
-            assertTrue(curi.getFetchStatus() == 200);
-            assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        // check various 
+        assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+        assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
+        assertTrue(curi.getCredentials().isEmpty());
+        assertTrue(curi.getFetchDuration() >= 0);
+        assertTrue(curi.getFetchStatus() == 200);
+        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
 
-            // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
-            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream())));
+        // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
+        assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream())));
 
-            // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
-            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream())));
+        // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
+        assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream())));
 
-            // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
-            assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
-            assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
-        } finally {
-            getFetcher().setAcceptCompression(false);
-        }
+        // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
+        assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
+        assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
     }
 
     public void testHttpBindAddress() throws Exception {
-        try {
-            ensureHttpServers();
-            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-            getFetcher().setHttpBindAddress("127.0.0.2");
-            getFetcher().process(curi);
-            
-            // the client bind address isn't recorded anywhere in heritrix as
-            // far as i can tell, so we get it this way...
-            assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
-            
-            runDefaultChecks(curi, new HashSet<String>(Arrays.asList("httpBindAddress")));
-        } finally {
-            getFetcher().setHttpBindAddress("");
-        }
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().setHttpBindAddress("127.0.0.2");
+        getFetcher().process(curi);
+
+        // the client bind address isn't recorded anywhere in heritrix as
+        // far as i can tell, so we get it this way...
+        assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
+
+        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("httpBindAddress")));
     }
 }
