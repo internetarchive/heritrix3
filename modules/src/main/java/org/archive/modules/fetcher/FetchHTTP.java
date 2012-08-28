@@ -506,12 +506,11 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
      * Local IP address or hostname to use when making connections (binding
      * sockets). When not specified, uses default local address(es).
      */
-    protected String httpBindAddress = "";
     public String getHttpBindAddress(){
-        return this.httpBindAddress;
+        return (String) kp.get(HTTP_BIND_ADDRESS);
     }
     public void setHttpBindAddress(String address) {
-        this.httpBindAddress = address;
+        kp.put(HTTP_BIND_ADDRESS, address);
     }
     public static final String HTTP_BIND_ADDRESS = "httpBindAddress";
 

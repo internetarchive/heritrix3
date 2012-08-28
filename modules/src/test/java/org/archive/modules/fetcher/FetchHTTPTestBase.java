@@ -48,7 +48,9 @@ import org.archive.net.UURIFactory;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
+import org.mortbay.jetty.NCSARequestLog;
 import org.mortbay.jetty.Request;
+import org.mortbay.jetty.Response;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.HandlerCollection;
@@ -147,6 +149,9 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
 
     protected static Map<Integer, Server> httpServers;
+    protected static Request lastRequest = null;
+    protected static Response lastResponse = null;
+    
     protected AbstractFetchHTTP fetcher;
 
     abstract protected AbstractFetchHTTP makeModule() throws IOException;
@@ -188,7 +193,17 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         HandlerCollection handlers = new HandlerCollection();
         handlers.addHandler(new TestHandler());
-        handlers.addHandler(new RequestLogHandler());
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        NCSARequestLog requestLog = new NCSARequestLog() {
+            @Override
+            public void log(Request request, Response response) {
+                super.log(request, response);
+                lastRequest = request;
+                lastResponse = response;
+            }
+        };
+        requestLogHandler.setRequestLog(requestLog);
+        handlers.addHandler(requestLogHandler);
 
         // server for basic auth
         Server server = new Server();
@@ -327,6 +342,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING.substring(0, 10), curi.getRecorder().getContentReplayPrefixString(10));
         assertEquals(DEFAULT_PAYLOAD_STRING, curi.getRecorder().getContentReplayCharSequence().toString());
+        
+        if (!exclusions.contains("httpBindAddress")) {
+            assertEquals("127.0.0.1", lastRequest.getRemoteAddr());
+        }
     }
 
     // convenience methods to get strings from raw recorded i/o
@@ -587,6 +606,23 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
         } finally {
             getFetcher().setAcceptCompression(false);
+        }
+    }
+
+    public void testHttpBindAddress() throws Exception {
+        try {
+            ensureHttpServers();
+            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().setHttpBindAddress("127.0.0.2");
+            getFetcher().process(curi);
+            
+            // the client bind address isn't recorded anywhere in heritrix as
+            // far as i can tell, so we get it this way...
+            assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
+            
+            runDefaultChecks(curi, new HashSet<String>(Arrays.asList("httpBindAddress")));
+        } finally {
+            getFetcher().setHttpBindAddress("");
         }
     }
 }

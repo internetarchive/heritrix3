@@ -30,4 +30,5 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public CredentialStore getCredentialStore();
     abstract public ServerCache getServerCache();
     abstract public void setAcceptCompression(boolean acceptCompression);
+    abstract public void setHttpBindAddress(String address);
 }

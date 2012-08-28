@@ -28,6 +28,8 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HIST
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -65,6 +67,7 @@ import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.utils.URIUtils;
+import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.message.BasicHeader;
@@ -277,6 +280,19 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     public void setCredentialStore(CredentialStore credentials) {
         kp.put("credentialStore",credentials);
     }
+    
+    public String getHttpBindAddress(){
+        return (String) kp.get(HTTP_BIND_ADDRESS);
+    }
+    /**
+     * Local IP address or hostname to use when making connections (binding
+     * sockets). When not specified, uses default local address(es).
+     */
+    public void setHttpBindAddress(String address) {
+        kp.put(HTTP_BIND_ADDRESS, address);
+    }
+    public static final String HTTP_BIND_ADDRESS = "httpBindAddress";
+
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
             HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
@@ -397,7 +413,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         
         HttpResponse response = null;
         try {
-            response = getHttpClient().execute(targetHost, request, contextForAuth);
+            response = httpClient().execute(targetHost, request, contextForAuth);
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
@@ -515,7 +531,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(cred.getLogin(), cred.getPassword());
         AuthScope authscope = new AuthScope(targetHost, cred.getRealm(), authScheme.getSchemeName());
-        getHttpClient().getCredentialsProvider().setCredentials(authscope,
+        httpClient().getCredentialsProvider().setCredentials(authscope,
                 credentials);
 
         return true;
@@ -693,7 +709,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
         Map<String, Header> wwwAuthHeaders = null;
         try {
-            wwwAuthHeaders = getHttpClient().getTargetAuthenticationStrategy().getChallenges(null, response, null);
+            wwwAuthHeaders = httpClient().getTargetAuthenticationStrategy().getChallenges(null, response, null);
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
         }
@@ -718,7 +734,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         HashSet<String> authSchemesLeftToTry = new HashSet<String>(challenges.keySet());
         for (String authSchemeName: new String[]{"digest","basic"}) {
             if (authSchemesLeftToTry.remove(authSchemeName)) {
-                AuthScheme authscheme = getHttpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
+                AuthScheme authscheme = httpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
                 BasicHeader challenge = new BasicHeader(HttpHeaders.WWW_AUTHENTICATE, challenges.get(authSchemeName));
 
                 try {
@@ -820,13 +836,48 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
 
-//        HostConfiguration config = 
-//            new HostConfiguration(http.getHostConfiguration());
 //        configureProxy(curi, config);
-//        configureBindAddress(curi, config);
-//        return config;
+        configureBindAddress(curi, request);
     }
     
+    /**
+     * Setup local bind address, based on attributes in CrawlURI and 
+     * settings, in given HostConfiguration
+     * @param request 
+     */
+    private void configureBindAddress(CrawlURI curi, HttpRequestBase request) {
+        String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
+        if (StringUtils.isNotEmpty(addressString)) {
+            try {
+                InetAddress localAddress = InetAddress.getByName(addressString);
+                ConnRouteParams.setLocalAddress(request.getParams(), localAddress);
+            } catch (UnknownHostException e) {
+                // Convert all to RuntimeException so get an exception out
+                // if initialization fails.
+                throw new RuntimeException("Unknown host " + addressString
+                        + " in local-address");
+            }
+        }
+    }
+
+    /**
+     * Get a value either from inside the CrawlURI instance, or from
+     * settings (module attributes).
+     * 
+     * @param curi
+     *            CrawlURI to consult
+     * @param key
+     *            key to lookup
+     * @return value from either CrawlURI (preferred) or settings
+     */
+    protected Object getAttributeEither(CrawlURI curi, String key) {
+        Object r = curi.getData().get(key);
+        if (r != null) {
+            return r;
+        }
+        return kp.get(key);
+    }
+
     protected void configureAcceptHeaders(HttpRequestBase request) {
         if (getAcceptCompression()) {
             // we match the Firefox header exactly (ordering and whitespace)
@@ -847,7 +898,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
 }
     
-    protected RecordingHttpClient getHttpClient() {
+    protected RecordingHttpClient httpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient(getServerCache());
             
@@ -959,7 +1010,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
         if (getCookieStore() != null) {     
             getCookieStore().start();
-            getHttpClient().setCookieStore(getCookieStore());
+            httpClient().setCookieStore(getCookieStore());
         }
 
         // setSSLFactory();
