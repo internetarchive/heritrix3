@@ -24,7 +24,6 @@
 	<classpathentry kind="var" path="M2_REPO/net/java/dev/jets3t/jets3t/0.5.0/jets3t-0.5.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-net/commons-net/2.0/commons-net-2.0.jar" sourcepath="/M2_REPO/commons-net/commons-net/2.0/commons-net-2.0-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/poi/poi-scratchpad/2.5.1-final-20040804/poi-scratchpad-2.5.1-final-20040804.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/4.1.6/je-4.1.6.jar" sourcepath="/M2_REPO/com/sleepycat/je/4.1.6/je-4.1.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/1.4/commons-io-1.4.jar" sourcepath="/M2_REPO/commons-io/commons-io/1.4/commons-io-1.4-sources.jar"/>
@@ -57,5 +56,6 @@
 	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpclient/4.2/httpclient-4.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2.jar" sourcepath="/M2_REPO/org/apache/httpcomponents/httpcore/4.2/httpcore-4.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="eclipse-build"/>
 </classpath>
