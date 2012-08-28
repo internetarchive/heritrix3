@@ -29,4 +29,5 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setIgnoreCookies(boolean ignoreCookies);
     abstract public CredentialStore getCredentialStore();
     abstract public ServerCache getServerCache();
+    abstract public void setAcceptCompression(boolean acceptCompression);
 }

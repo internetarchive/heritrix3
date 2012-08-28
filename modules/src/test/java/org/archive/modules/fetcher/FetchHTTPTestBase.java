@@ -92,7 +92,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static final String FORM_AUTH_PASSWORD = "form-auth-password";
 
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
-    
+
+    protected static final byte[] DEFAULT_GZIPPED_PAYLOAD = { 31, -117, 8, 0,
+            -69, 25, 60, 80, 0, 3, 75, 76, 74, 78, 73, 77, 75, -49, -56, -52,
+            -54, -50, -55, -51, -53, 47, 40, 44, 42, 46, 41, 45, 43, -81, -88,
+            -84, 50, 48, 52, 50, 54, 49, 53, 51, -73, -80, -28, 2, 0, -43, 104,
+            -33, -11, 37, 0, 0, 0 };
+
     protected static final String LOGIN_HTML =
             "<html>" +
             "<head><title>Log In</title></head>" +
@@ -123,6 +129,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                 response.setContentType("text/html;charset=US-ASCII");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(LOGIN_HTML.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
+            } else if (request.getHeader("Accept-Encoding") != null
+                    && request.getHeader("Accept-Encoding").contains("gzip")) {
+                response.setHeader("Content-Encoding", "gzip");
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getOutputStream().write(DEFAULT_GZIPPED_PAYLOAD);
                 ((Request)request).setHandled(true);
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
@@ -540,4 +553,40 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertTrue(rawResponseString.contains("Set-Cookie: test-cookie-name=test-cookie-value\r\n"));
     }
     
+    public void testAcceptCompression() throws Exception {
+        try {
+            ensureHttpServers();
+            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().setAcceptCompression(true);
+            getFetcher().process(curi);
+            String httpRequestString = httpRequestString(curi);
+//        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
+//        logger.info("\n----- begin contentString -----\n" + contentString(curi));
+//        logger.info("\n----- begin entityString -----\n" + entityString(curi));
+//        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+            assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
+            assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
+            assertEquals(curi.getContentSize(), curi.getRecordedSize());
+
+            // check various 
+            assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+            assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
+            assertTrue(curi.getCredentials().isEmpty());
+            assertTrue(curi.getFetchDuration() >= 0);
+            assertTrue(curi.getFetchStatus() == 200);
+            assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+
+            // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
+            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream())));
+
+            // check entity, i.e. "message-body after any (usually-unnecessary) transfer-decoding but before any content-encoding (eg gzip) decoding"
+            assertTrue(Arrays.equals(DEFAULT_GZIPPED_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream())));
+
+            // check content, i.e. message-body after possibly tranfer-decoding and after content-encoding (eg gzip) decoding
+            assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
+            assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
+        } finally {
+            getFetcher().setAcceptCompression(false);
+        }
+    }
 }
