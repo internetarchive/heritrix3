@@ -655,7 +655,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
-            assertTrue(requestString.contains("Proxy-Connection: close"));
+//            assertTrue(requestString.contains("Proxy-Connection: close"));
             assertNotNull(curi.getHttpResponseHeader("Via"));
             
             // check that our little proxy server really handled a request

@@ -96,7 +96,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
     private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 
-    protected RecordingHttpClient httpClient; 
+    protected RecordingHttpClient httpClient;
     
     public static final String REFERER = "Referer";
     public static final String RANGE = "Range";
@@ -292,6 +292,47 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put(HTTP_BIND_ADDRESS, address);
     }
     public static final String HTTP_BIND_ADDRESS = "httpBindAddress";
+    
+    public String getHttpProxyHost() {
+        return (String) kp.get("httpProxyHost");
+    }
+    /**
+     * Proxy host IP (set only if needed).
+     */
+    public void setHttpProxyHost(String host) {
+        kp.put("httpProxyHost",host);
+    }
+
+    public int getHttpProxyPort() {
+        return (Integer) kp.get("httpProxyPort");
+    }
+    /**
+     * Proxy port (set only if needed).
+     */
+    public void setHttpProxyPort(int port) {
+        kp.put("httpProxyPort",port);
+    }
+
+    public String getHttpProxyUser() {
+        return (String) kp.get("httpProxyUser");
+    }
+    /**
+     * Proxy user (set only if needed).
+     */
+    public void setHttpProxyUser(String user) {
+        kp.put("httpProxyUser",user);
+    }
+
+    public String getHttpProxyPassword() {
+        return (String) kp.get("httpProxyPassword");
+    }
+    /**
+     * Proxy password (set only if needed).
+     */
+    public void setHttpProxyPassword(String password) {
+        kp.put("httpProxyPassword",password);
+    }
+
 
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
@@ -376,6 +417,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
     @Override
     protected void innerProcess(final CrawlURI curi) throws InterruptedException {
+        // could call after fetch in finally block, but right here feels even more sure
+        resetHttpClient();
+        
         // Note begin time
         curi.setFetchBeginTime(System.currentTimeMillis());
 
@@ -463,6 +507,8 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             setCharacterEncoding(curi, rec, response);
             setSizes(curi, rec);
             setOtherCodings(curi, rec, response); 
+            
+            httpClient().getCredentialsProvider().clear();
         }
 
         if (digestContent) {
@@ -498,6 +544,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                 logger.log(Level.SEVERE, "second-chance RIS close failed", e);
             }
         }
+    }
+    
+    // clear out any state that could conceivably be left over from a fetch
+    protected void resetHttpClient() {
+        httpClient().getCredentialsProvider().clear();
     }
     
     protected boolean populateHtmlFormCredential(CrawlURI curi,
@@ -835,10 +886,26 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // TODO: What happens if below method adds a header already
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
-
-//        configureProxy(curi, config);
+        configureProxy(curi, request);
         configureBindAddress(curi, request);
     }
+
+    protected void configureProxy(CrawlURI curi, HttpRequestBase request) {
+        String host = (String) getAttributeEither(curi, "httpProxyHost");
+        int port = (Integer) getAttributeEither(curi, "httpProxyPort");            
+        String user = (String) getAttributeEither(curi, "httpProxyUser");
+        String password = (String) getAttributeEither(curi, "httpProxyPassword");
+
+        if (StringUtils.isNotEmpty(host)) {
+            HttpHost proxyHost = new HttpHost(host, port);
+            ConnRouteParams.setDefaultProxy(request.getParams(), proxyHost);
+            if (StringUtils.isNotEmpty(user) || StringUtils.isNotEmpty(password)) {
+                UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
+                httpClient().getCredentialsProvider().setCredentials(new AuthScope(proxyHost), credentials);
+            }
+        }
+    }
+    
     
     /**
      * Setup local bind address, based on attributes in CrawlURI and 
@@ -904,6 +971,8 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             
             // XXX should this in the constructor? in configureRequest()? somewhere else?
             HttpClientParams.setRedirecting(httpClient.getParams(), false);
+            
+            httpClient.setCookieStore(getCookieStore());
         }
         
         return httpClient;
@@ -1010,7 +1079,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
         if (getCookieStore() != null) {     
             getCookieStore().start();
-            httpClient().setCookieStore(getCookieStore());
         }
 
         // setSSLFactory();
@@ -1030,9 +1098,16 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             cookieStore.saveCookies();
             cookieStore.stop();
         }
-        // cleanupHttp(); // XXX happens at finish; move to teardown?
+        cleanupHttp(); // XXX happens at finish; move to teardown?
     }
 
+    protected void cleanupHttp() {
+        if (httpClient != null) {
+            httpClient.getConnectionManager().shutdown();
+            httpClient = null;
+        }
+    }
+    
     protected static String getServerKey(CrawlURI uri) {
         try {
             return CrawlServer.getServerKey(uri.getUURI());
