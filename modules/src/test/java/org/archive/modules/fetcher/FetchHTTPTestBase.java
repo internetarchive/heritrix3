@@ -582,10 +582,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().setAcceptCompression(true);
         getFetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-//        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
-//        logger.info("\n----- begin contentString -----\n" + contentString(curi));
-//        logger.info("\n----- begin entityString -----\n" + entityString(curi));
-//        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+        // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
+        // logger.info("\n----- begin contentString -----\n" + contentString(curi));
+        // logger.info("\n----- begin entityString -----\n" + entityString(curi));
+        // logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
         assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
         assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
         assertEquals(curi.getContentSize(), curi.getRecordedSize());
@@ -651,12 +651,16 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             getFetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
-//            assertTrue(requestString.contains("Proxy-Connection: close"));
             assertNotNull(curi.getHttpResponseHeader("Via"));
+            
+            // XXX commons-httpclient sends "Proxy-Connection: close" by
+            // default. But httpcomponents sends "Proxy-Connection: Keep-Alive"
+            // by default. Is this something to worry about?
+            assertTrue(requestString.contains("Proxy-Connection: "));
             
             // check that our little proxy server really handled a request
             assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
