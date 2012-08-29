@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.RequestLine;
 import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -49,7 +48,10 @@ import org.archive.net.UURIFactory;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
+import org.littleshoot.proxy.HttpFilter;
+import org.littleshoot.proxy.HttpRequestFilter;
 import org.mortbay.jetty.NCSARequestLog;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
@@ -607,6 +609,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
     }
 
+    // Binding to 127.0.0.2 only works on some systems. Fails on my mac. We
+    // could skip the test in that case, but better to leave it in I think, so
+    // we notice if it starts failing on the build box and we can do something
+    // about it.
     public void testHttpBindAddress() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
@@ -619,21 +625,45 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         runDefaultChecks(curi, "httpBindAddress");
     }
-    
+
+    protected static class ProxiedRequestRememberer implements HttpRequestFilter {
+        protected HttpRequest lastProxiedRequest = null;
+        public HttpRequest getLastProxiedRequest() {
+            return lastProxiedRequest;
+        }
+
+        @Override
+        public void filter(HttpRequest httpRequest) {
+            lastProxiedRequest = httpRequest;
+        }
+    }
+
     public void testHttpProxy() throws Exception {
         ensureHttpServers();
-        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877);
+        
+        ProxiedRequestRememberer proxiedRequestRememberer = new ProxiedRequestRememberer();
+        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877, proxiedRequestRememberer, new HashMap<String, HttpFilter>());
         httpProxyServer.start(true, false);
-        
-        getFetcher().setHttpProxyHost("localhost");
-        getFetcher().setHttpProxyPort(7877);
-        
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
-        String requestString = httpRequestString(curi);
-        assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
-        runDefaultChecks(curi, "requestLine");
+        try {
+            getFetcher().setHttpProxyHost("localhost");
+            getFetcher().setHttpProxyPort(7877);
+
+            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().process(curi);
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+
+            String requestString = httpRequestString(curi);
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.contains("Proxy-Connection: close"));
+            assertNotNull(curi.getHttpResponseHeader("Via"));
+            
+            // check that our little proxy server really handled a request
+            assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
+            
+            runDefaultChecks(curi, "requestLine");
+        } finally {
+            httpProxyServer.stop();
+        }
     }
 }
