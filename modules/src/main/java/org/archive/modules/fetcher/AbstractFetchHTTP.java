@@ -31,4 +31,8 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public ServerCache getServerCache();
     abstract public void setAcceptCompression(boolean acceptCompression);
     abstract public void setHttpBindAddress(String address);
+    abstract public void setHttpProxyHost(String host);
+    abstract public void setHttpProxyPort(int port);
+    abstract public void setHttpProxyUser(String user);
+    abstract public void setHttpProxyPassword(String password);
 }

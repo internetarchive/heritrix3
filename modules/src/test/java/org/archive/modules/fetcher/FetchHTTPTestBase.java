@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.RequestLine;
 import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -48,6 +49,7 @@ import org.archive.net.UURIFactory;
 import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
+import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.mortbay.jetty.NCSARequestLog;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
@@ -302,8 +304,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         return curi;
     }
 
-    protected void runDefaultChecks(CrawlURI curi, Set<String> exclusions) throws IOException,
-            UnsupportedEncodingException {
+    protected void runDefaultChecks(CrawlURI curi, String... exclusionsArray)
+        throws IOException, UnsupportedEncodingException {
+
+        Set<String> exclusions = new HashSet<String>(Arrays.asList(exclusionsArray));
         
         String requestString = httpRequestString(curi);
         if (!exclusions.contains("requestLine")) {
@@ -374,7 +378,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>());
+        runDefaultChecks(curi);
     }
 
     public void testAcceptHeaders() throws Exception {
@@ -384,9 +388,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
 
-        // applicable default checks
-        HashSet<String> skipTheseChecks = new HashSet<String>(Arrays.asList("acceptHeaders"));
-        runDefaultChecks(curi, skipTheseChecks);
+        runDefaultChecks(curi, "acceptHeaders");
         
         // special checks for this test
         String requestString = httpRequestString(curi);
@@ -404,7 +406,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // second request to see if cookie is sent
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>());
+        runDefaultChecks(curi);
         
         String requestString = httpRequestString(curi);
         assertTrue(requestString.contains("Cookie: test-cookie-name=test-cookie-value\r\n"));
@@ -419,7 +421,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // second request to see if cookie is NOT sent
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>());
+        runDefaultChecks(curi);
 
         String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Cookie:"));
@@ -451,7 +453,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        runDefaultChecks(curi, "requestLine");
         
         // fetch a fresh uri to make sure auth info was cached and we don't get another 401
         curi = makeCrawlURI("http://localhost:7777/auth/2");
@@ -459,7 +461,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        runDefaultChecks(curi, "requestLine");
     }
 
     // server for digest auth is at localhost:7778
@@ -495,7 +497,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(interferingUri));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
+        runDefaultChecks(curi, "requestLine", "hostHeader");
         
         // fetch a fresh uri to make sure auth info was cached and we don't get another 401
         curi = makeCrawlURI("http://localhost:7778/auth/2");
@@ -503,7 +505,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine", "hostHeader")));
+        runDefaultChecks(curi, "requestLine", "hostHeader");
     }
     
     // server for form auth is at localhost:7779
@@ -524,7 +526,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7779/");
         getFetcher().process(curi);
         logger.info('\n' + httpRequestString(curi) + contentString(curi));
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("hostHeader")));
+        runDefaultChecks(curi, "hostHeader");
 
         // jetty needs us to hit a restricted url so it can redirect to the
         // login page and remember where to redirect back to after successful
@@ -557,14 +559,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         curi = makeCrawlURI("http://localhost:7779/auth/1");
         getFetcher().process(curi);
         logger.info('\n' + httpRequestString(curi) + contentString(curi));
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("hostHeader", "requestLine")));
+        runDefaultChecks(curi, "hostHeader", "requestLine");
     }
 
     protected void checkSetCookieURI() throws URIException, IOException,
             InterruptedException, UnsupportedEncodingException {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/set-cookie");
         getFetcher().process(curi);
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("requestLine")));
+        runDefaultChecks(curi, "requestLine");
         
         // check for set-cookie header
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
@@ -615,6 +617,23 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // far as i can tell, so we get it this way...
         assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
 
-        runDefaultChecks(curi, new HashSet<String>(Arrays.asList("httpBindAddress")));
+        runDefaultChecks(curi, "httpBindAddress");
+    }
+    
+    public void testHttpProxy() throws Exception {
+        ensureHttpServers();
+        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877);
+        httpProxyServer.start(true, false);
+        
+        getFetcher().setHttpProxyHost("localhost");
+        getFetcher().setHttpProxyPort(7877);
+        
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+
+        String requestString = httpRequestString(curi);
+        assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
     }
 }
