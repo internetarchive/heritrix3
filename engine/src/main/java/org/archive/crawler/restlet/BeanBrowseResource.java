@@ -123,7 +123,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer, "script", makePresentableMap());
+                    XmlMarshaller.marshalDocument(writer, "beans", makePresentableMap());
                 }
             };
         } else {
