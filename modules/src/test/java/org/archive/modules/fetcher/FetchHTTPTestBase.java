@@ -52,6 +52,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
 import org.littleshoot.proxy.HttpRequestFilter;
+import org.littleshoot.proxy.ProxyAuthorizationHandler;
 import org.mortbay.jetty.NCSARequestLog;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
@@ -636,6 +637,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         public void filter(HttpRequest httpRequest) {
             lastProxiedRequest = httpRequest;
         }
+
+        public void clear() {
+            lastProxiedRequest = null;
+        }
     }
 
     public void testHttpProxy() throws Exception {
@@ -657,10 +662,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
             assertNotNull(curi.getHttpResponseHeader("Via"));
             
-            // XXX commons-httpclient sends "Proxy-Connection: close" by
-            // default. But httpcomponents sends "Proxy-Connection: Keep-Alive"
-            // by default. Is this something to worry about?
-            assertTrue(requestString.contains("Proxy-Connection: "));
+            assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
             
             // check that our little proxy server really handled a request
             assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
@@ -669,5 +671,53 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         } finally {
             httpProxyServer.stop();
         }
+    }
+    
+    public void testHttpProxyAuth() throws Exception {
+        ensureHttpServers();
+        
+        ProxiedRequestRememberer proxiedRequestRememberer = new ProxiedRequestRememberer();
+        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877, proxiedRequestRememberer, new HashMap<String, HttpFilter>());
+        httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
+            @Override
+            public boolean authenticate(String userName, String password) {
+                logger.info("username=" + userName + " password=" + password);
+                return "http-proxy-user".equals(userName) && "http-proxy-password".equals(password);
+            }
+        });
+        httpProxyServer.start(true, false);
+
+        try {
+            getFetcher().setHttpProxyHost("localhost");
+            getFetcher().setHttpProxyPort(7877);
+            getFetcher().setHttpProxyUser("http-proxy-user");
+            getFetcher().setHttpProxyPassword("http-proxy-password");
+
+            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().process(curi);
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+
+            String requestString = httpRequestString(curi);
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
+            assertNull(proxiedRequestRememberer.getLastProxiedRequest()); // request didn't make it this far
+            assertEquals(407, curi.getFetchStatus());
+
+            // fetch original again now that credentials should be populated
+            proxiedRequestRememberer.clear();
+            curi = makeCrawlURI("http://localhost:7777/");
+            getFetcher().process(curi);
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+
+            requestString = httpRequestString(curi);
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
+            assertNotNull(curi.getHttpResponseHeader("Via"));
+            assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
+            runDefaultChecks(curi, "requestLine");
+        } finally {
+            httpProxyServer.stop();
+        }
+        
     }
 }

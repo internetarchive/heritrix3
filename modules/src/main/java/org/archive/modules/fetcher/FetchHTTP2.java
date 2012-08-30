@@ -58,6 +58,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
+import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -453,7 +454,8 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         
         // Populate credentials. Set config so auth. is not automatic.
         BasicHttpContext contextForAuth = new BasicHttpContext();
-        boolean addedCredentials = populateCredentials(curi, request, targetHost, contextForAuth);
+        boolean addedCredentials = populateTargetCredentials(curi, request, targetHost, contextForAuth);
+        populateHttpProxyCredential(curi, request, contextForAuth);
         
         HttpResponse response = null;
         try {
@@ -471,7 +473,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         long softMax = -1l;
         Header h = response.getLastHeader("content-length");
         if (h != null) {
-            Long.parseLong(h.getValue());
+            softMax = Long.parseLong(h.getValue());
         }
         try {
             if (!request.isAborted()) {
@@ -507,8 +509,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             setCharacterEncoding(curi, rec, response);
             setSizes(curi, rec);
             setOtherCodings(curi, rec, response); 
-            
-            httpClient().getCredentialsProvider().clear();
         }
 
         if (digestContent) {
@@ -532,6 +532,10 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             // 401 is not 'success'.
             handle401(response, curi);
+        } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
+            // 407 - remember Proxy-Authenticate headers for later use 
+            kp.put("proxyAuthChallenges", 
+                    extractChallenges(response, curi, httpClient().getProxyAuthenticationStrategy()));
         }
 
         if (rec.getRecordedInput().isOpen()) {
@@ -543,6 +547,25 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "second-chance RIS close failed", e);
             }
+        }
+    }
+    
+    protected void populateHttpProxyCredential(CrawlURI curi,
+            HttpRequestBase request, BasicHttpContext context) {
+        
+        // this should have been set earlier
+        HttpHost proxyHost = ConnRouteParams.getDefaultProxy(request.getParams());
+        
+        String user = (String) getAttributeEither(curi, "httpProxyUser");
+        String password = (String) getAttributeEither(curi, "httpProxyPassword");
+        
+        if (proxyHost != null && kp.get("proxyAuthChallenges") != null && StringUtils.isNotEmpty(user)) {
+
+            @SuppressWarnings("unchecked")
+            Map<String,String> challenges = (Map<String, String>) kp.get("proxyAuthChallenges");
+            
+            AuthScheme authScheme = chooseAuthScheme(challenges, HttpHeaders.PROXY_AUTHENTICATE);
+            populateHttpCredential(proxyHost, context, authScheme, user, password);
         }
     }
     
@@ -571,23 +594,20 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         return true;
     }
     
-    protected boolean populateHttpAuthCredential(HttpHost targetHost,
-            HttpContext context, HttpAuthenticationCredential cred,
-            Map<String, String> httpAuthChallenges) {
-        AuthScheme authScheme = chooseAuthScheme(httpAuthChallenges);
-        AuthCache authCache = new BasicAuthCache();
-        authCache.put(targetHost, authScheme);
+    // http auth credential, either for proxy or target host
+    protected void populateHttpCredential(HttpHost host, HttpContext context, AuthScheme authScheme, String user, String password) {
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
+        
+        AuthCache authCache = (AuthCache) context.getAttribute(ClientContext.AUTH_CACHE);
+        if (authCache == null) {
+            authCache = new BasicAuthCache();
+            context.setAttribute(ClientContext.AUTH_CACHE, authCache);
+        }
+        authCache.put(host, authScheme);
 
-        context.setAttribute(ClientContext.AUTH_CACHE, authCache);
-
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(cred.getLogin(), cred.getPassword());
-        AuthScope authscope = new AuthScope(targetHost, cred.getRealm(), authScheme.getSchemeName());
-        httpClient().getCredentialsProvider().setCredentials(authscope,
-                credentials);
-
-        return true;
+        httpClient().getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
     }
-
+    
     /**
      * Add credentials if any to passed <code>method</code>.
      * 
@@ -611,7 +631,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * CrawlServer so they are available for all subsequent CrawlURIs on this
      * server.
      */
-    protected boolean populateCredentials(CrawlURI curi,
+    protected boolean populateTargetCredentials(CrawlURI curi,
             HttpRequestBase request, HttpHost targetHost, HttpContext context) {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
@@ -624,13 +644,14 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
         CrawlServer server = serverCache.getServerFor(serverKey);
         if (server.hasCredentials()) {
-            for (Credential cred : server.getCredentials()) {
-                if (cred.isEveryTime()) {
-                    if (cred instanceof HttpAuthenticationCredential) {
-                        populateHttpAuthCredential(targetHost, context, (HttpAuthenticationCredential) cred,
-                                server.getHttpAuthChallenges());
+            for (Credential c: server.getCredentials()) {
+                if (c.isEveryTime()) {
+                    if (c instanceof HttpAuthenticationCredential) {
+                        HttpAuthenticationCredential cred = (HttpAuthenticationCredential) c;
+                        AuthScheme authScheme = chooseAuthScheme(server.getHttpAuthChallenges(), HttpHeaders.WWW_AUTHENTICATE);
+                        populateHttpCredential(targetHost, context, authScheme, cred.getLogin(), cred.getPassword());
                     } else {
-                        populateHtmlFormCredential(curi, request, (HtmlFormCredential) cred);
+                        populateHtmlFormCredential(curi, request, (HtmlFormCredential) c);
                     }
                 }
             }
@@ -643,8 +664,10 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
             if (c instanceof HttpAuthenticationCredential) {
-                result = populateHttpAuthCredential(targetHost, context, (HttpAuthenticationCredential) c,
-                        curi.getHttpAuthChallenges());
+                HttpAuthenticationCredential cred = (HttpAuthenticationCredential) c;
+                AuthScheme authScheme = chooseAuthScheme(curi.getHttpAuthChallenges(), HttpHeaders.WWW_AUTHENTICATE);
+                populateHttpCredential(targetHost, context, authScheme, cred.getLogin(), cred.getPassword());
+                result = true;
             } else {
                 result = populateHtmlFormCredential(curi, request, (HtmlFormCredential) c);
             }
@@ -691,7 +714,12 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      *            CrawlURI that got a 401.
      */
     protected void handle401(HttpResponse response, final CrawlURI curi) {
-        AuthScheme authscheme = chooseAuthScheme(response, curi);
+        Map<String, String> challenges = extractChallenges(response, curi, httpClient().getTargetAuthenticationStrategy());
+        AuthScheme authscheme = chooseAuthScheme(challenges, HttpHeaders.WWW_AUTHENTICATE);
+
+        // remember WWW-Authenticate headers for later use 
+        curi.setHttpAuthChallenges(challenges);
+
         if (authscheme == null) {
             return;
         }
@@ -743,50 +771,45 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     }
 
     /**
-     * @param response 
+     * @param response
      * @param method
-     *            Method that got a 401.
+     *            Method that got a 401 or 407.
      * @param curi
-     *            CrawlURI that got a 401.
-     * @return Returns first wholesome authscheme found else null.
+     *            CrawlURI that got a 401 or 407.
+     * @param authStrategy
+     *            Either ProxyAuthenticationStrategy or
+     *            TargetAuthenticationStrategy. Determines whether
+     *            Proxy-Authenticate or WWW-Authenticate header is consulted.
+     * 
+     * @return Map<authSchemeName -> challenge header value>
      */
-    protected AuthScheme chooseAuthScheme(HttpResponse response, final CrawlURI curi) {
-        Header[] headers = response.getHeaders(HttpHeaders.WWW_AUTHENTICATE);
-        if (headers == null || headers.length <= 0) {
-            logger.fine("We got a 401 but no WWW-Authenticate challenge: "
-                    + curi.toString());
-            return null;
-        }
-
-        Map<String, Header> wwwAuthHeaders = null;
+    protected Map<String,String> extractChallenges(HttpResponse response, final CrawlURI curi, AuthenticationStrategy authStrategy) {
+        Map<String, Header> hcChallengeHeaders = null;
         try {
-            wwwAuthHeaders = httpClient().getTargetAuthenticationStrategy().getChallenges(null, response, null);
+            hcChallengeHeaders = authStrategy.getChallenges(null, response, null);
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
         }
-        if (wwwAuthHeaders == null || wwwAuthHeaders.size() <= 0) {
-            logger.fine("We got a 401 and WWW-Authenticate challenge"
-                    + " but failed parse of the header " + curi.toString());
+        if (hcChallengeHeaders == null || hcChallengeHeaders.size() <= 0) {
+            logger.fine("Failed to get auth challenge headers for " + curi);
             return null;
         }
 
-        // cache for later use in non-library specific way
+        // reorganize in non-library-specific way
         Map<String,String> challenges = new HashMap<String, String>();
-        for (Entry<String, Header> challenge: wwwAuthHeaders.entrySet()) {
+        for (Entry<String, Header> challenge: hcChallengeHeaders.entrySet()) {
             challenges.put(challenge.getKey(), challenge.getValue().getValue());
         }
-        // remember WWW-Authenticate headers for later use 
-        curi.setHttpAuthChallenges(challenges);
 
-        return chooseAuthScheme(challenges);
+        return challenges;
     }
     
-    protected AuthScheme chooseAuthScheme(Map<String, String> challenges) {
+    protected AuthScheme chooseAuthScheme(Map<String, String> challenges, String challengeHeaderKey) {
         HashSet<String> authSchemesLeftToTry = new HashSet<String>(challenges.keySet());
         for (String authSchemeName: new String[]{"digest","basic"}) {
             if (authSchemesLeftToTry.remove(authSchemeName)) {
                 AuthScheme authscheme = httpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
-                BasicHeader challenge = new BasicHeader(HttpHeaders.WWW_AUTHENTICATE, challenges.get(authSchemeName));
+                BasicHeader challenge = new BasicHeader(challengeHeaderKey, challenges.get(authSchemeName));
 
                 try {
                     authscheme.processChallenge(challenge);
@@ -892,17 +915,15 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
     protected void configureProxy(CrawlURI curi, HttpRequestBase request) {
         String host = (String) getAttributeEither(curi, "httpProxyHost");
-        int port = (Integer) getAttributeEither(curi, "httpProxyPort");            
-        String user = (String) getAttributeEither(curi, "httpProxyUser");
-        String password = (String) getAttributeEither(curi, "httpProxyPassword");
+        Integer port = (Integer) getAttributeEither(curi, "httpProxyPort");            
 
-        if (StringUtils.isNotEmpty(host)) {
+        if (StringUtils.isNotEmpty(host) && port != null) {
             HttpHost proxyHost = new HttpHost(host, port);
             ConnRouteParams.setDefaultProxy(request.getParams(), proxyHost);
-            if (StringUtils.isNotEmpty(user) || StringUtils.isNotEmpty(password)) {
-                UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
-                httpClient().getCredentialsProvider().setCredentials(new AuthScope(proxyHost), credentials);
-            }
+
+            // Without this, httpcomponents adds "Proxy-Connection: Keep-Alive".
+            // Not sure if that would cause actual problems.
+            request.addHeader("Proxy-Connection", "close");
         }
     }
     
@@ -912,7 +933,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * settings, in given HostConfiguration
      * @param request 
      */
-    private void configureBindAddress(CrawlURI curi, HttpRequestBase request) {
+    protected void configureBindAddress(CrawlURI curi, HttpRequestBase request) {
         String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
         if (StringUtils.isNotEmpty(addressString)) {
             try {
@@ -968,11 +989,13 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     protected RecordingHttpClient httpClient() {
         if (httpClient == null) {
             httpClient = new RecordingHttpClient(getServerCache());
-            
-            // XXX should this in the constructor? in configureRequest()? somewhere else?
+
+            // some http client config
             HttpClientParams.setRedirecting(httpClient.getParams(), false);
             
-            httpClient.setCookieStore(getCookieStore());
+            if (getCookieStore() != null) {
+                httpClient.setCookieStore(getCookieStore());
+            }
         }
         
         return httpClient;
@@ -1075,8 +1098,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
         super.start();
         
-        // configureHttp();
-
         if (getCookieStore() != null) {     
             getCookieStore().start();
         }
