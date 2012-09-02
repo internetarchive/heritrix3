@@ -46,15 +46,34 @@ public abstract class AbstractPersistProcessor extends Processor {
      * @return true if state should be stored; false to skip persistence
      */
     protected boolean shouldStore(CrawlURI curi) {
-        if (getOnlyStoreIfWriteTagPresent()) {
-            @SuppressWarnings("unchecked")
-            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
-            return history != null && history[0] != null && history[0].containsKey(A_WRITE_TAG);
-        } else {
-            return curi.isSuccess(); 
+        // do this first for quick decision on CURLs postponed by prerequisite
+        if (!curi.isSuccess()) {
+            return false;
         }
+        
+        // DNS query need not be persisted
+        String scheme = curi.getUURI().getScheme();
+        if (!(scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp"))) {
+            return false;
+        }
+        
+        if (getOnlyStoreIfWriteTagPresent() && !hasWriteTag(curi)) { 
+            return false;
+        }
+        
+        return true;
     }
 
+    /**
+     * @param curi
+     * @return true if {@code curi} has WRITE_TAG in the latest fetch history (i.e. this crawl).
+     */
+    @SuppressWarnings("unchecked")
+    protected boolean hasWriteTag(CrawlURI uri) {
+        Map<String,Object>[] history = (Map<String,Object>[])uri.getData().get(A_FETCH_HISTORY);
+        return history != null && history[0] != null && history[0].containsKey(A_WRITE_TAG);
+    }
+    
     /**
      * Whether the current CrawlURI's state should be loaded
      * 
@@ -65,6 +84,5 @@ public abstract class AbstractPersistProcessor extends Processor {
         // TODO: don't load some (prereqs?)
         return true;
     }
-
 
 }
