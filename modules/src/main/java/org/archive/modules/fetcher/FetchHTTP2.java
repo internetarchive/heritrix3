@@ -24,7 +24,6 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
@@ -1112,11 +1111,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         curi.setContentSize(rec.getRecordedInput().getSize());
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
-                && curi.containsDataKey(A_FETCH_HISTORY)) {
-            @SuppressWarnings("unchecked")
-            Map<String, ?> history[] = (Map<String,?>[])curi.getData().get(A_FETCH_HISTORY);
-            if (history[0] != null
-                    && history[0].containsKey(A_REFERENCE_LENGTH)) {
+                && curi.getFetchHistory() != null) {
+            Map<String, Object>[] history = curi.getFetchHistory();
+            if (history[0] != null && history[0].containsKey(A_REFERENCE_LENGTH)) {
                 long referenceLength = (Long) history[0].get(A_REFERENCE_LENGTH);
                 // carry-forward previous 'reference-length' for future
                 curi.getData().put(A_REFERENCE_LENGTH, referenceLength);

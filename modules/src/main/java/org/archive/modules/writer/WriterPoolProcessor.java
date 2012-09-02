@@ -22,7 +22,6 @@ package org.archive.modules.writer;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.File;
@@ -488,8 +487,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      */
     protected void copyForwardWriteTagIfDupe(CrawlURI curi) {
         if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
-            @SuppressWarnings("unchecked")
-            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            Map<String,Object>[] history = curi.getFetchHistory();
             if (history[1].containsKey(A_WRITE_TAG)) {
                 history[0].put(A_WRITE_TAG, history[1].get(A_WRITE_TAG));
             }

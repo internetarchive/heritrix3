@@ -20,7 +20,6 @@
 package org.archive.modules.deciderules.recrawl;
 
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 
 import java.util.Map;
 
@@ -69,20 +68,15 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
      * @return true if last two history entries have identical digests, 
      * otherwise false
      */
-    @SuppressWarnings("unchecked")
     public static boolean hasIdenticalDigest(CrawlURI curi) {
-        if(curi.containsDataKey(A_FETCH_HISTORY)) {
-            Map<String,Object>[] history = 
-                (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
-            return history[0] != null 
-                   && history[0].containsKey(A_CONTENT_DIGEST)
-                   && history[1] != null
-                   && history[1].containsKey(A_CONTENT_DIGEST)
-                   && history[0].get(A_CONTENT_DIGEST).equals(
-                           history[1].get(A_CONTENT_DIGEST));
-        } else {
-            return false;
-        }
+        Map<String,Object>[] history = curi.getFetchHistory();
+
+        return history != null
+                && history[0] != null 
+                && history[0].containsKey(A_CONTENT_DIGEST)
+                && history[1] != null
+                && history[1].containsKey(A_CONTENT_DIGEST)
+                && history[0].get(A_CONTENT_DIGEST).equals(history[1].get(A_CONTENT_DIGEST));
     }
 
 }

@@ -43,6 +43,7 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -747,11 +748,9 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
                 && curi.containsDataKey(A_FETCH_HISTORY)) {
-            @SuppressWarnings("unchecked")
-            Map<String, ?> history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
+            Map<String, Object>[] history = curi.getFetchHistory();
             if (history[0] != null
-                    && history[0]
-                            .containsKey(A_REFERENCE_LENGTH)) {
+                    && history[0].containsKey(A_REFERENCE_LENGTH)) {
                 long referenceLength = (Long) history[0].get(A_REFERENCE_LENGTH);
                 // carry-forward previous 'reference-length' for future
                 curi.getData().put(A_REFERENCE_LENGTH, referenceLength);
@@ -1029,19 +1028,18 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
-    protected void setConditionalGetHeader(CrawlURI curi, HttpMethod method, 
+    protected void setConditionalGetHeader(CrawlURI curi, HttpMethod method,
             boolean conditional, String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
-                @SuppressWarnings("unchecked")
-                Map<String, ?>[] history = (Map[])curi.getData().get(A_FETCH_HISTORY);
+                HashMap<String, Object>[] history = curi.getFetchHistory();
                 int previousStatus = (Integer) history[0].get(A_STATUS);
-                if(previousStatus<=0) {
+                if (previousStatus <= 0) {
                     // do not reuse headers from any broken fetch
-                    return; 
+                    return;
                 }
                 String previousValue = (String) history[0].get(sourceHeader);
-                if(previousValue!=null) {
+                if (previousValue != null) {
                     method.setRequestHeader(targetHeader, previousValue);
                 }
             } catch (RuntimeException e) {
@@ -1049,7 +1047,7 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
             }
         }
     }
-    
+
     /**
      * Setup proxy, based on attributes in CrawlURI and settings, 
      * in given HostConfiguration
