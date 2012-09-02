@@ -106,6 +106,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             -84, 50, 48, 52, 50, 54, 49, 53, 51, -73, -80, -28, 2, 0, -43, 104,
             -33, -11, 37, 0, 0, 0 };
 
+    protected static final byte[] EIGHTY_BYTE_LINE = "1234567890123456789012345678901234567890123456789012345678901234567890123456789\n".getBytes();
+
     protected static final String LOGIN_HTML =
             "<html>" +
             "<head><title>Log In</title></head>" +
@@ -136,6 +138,14 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                 response.setContentType("text/html;charset=US-ASCII");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(LOGIN_HTML.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
+            } else if (target.equals("/200k")) {
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                assertTrue(EIGHTY_BYTE_LINE.length == 80);
+                for (int i = 0; i < 200000 / EIGHTY_BYTE_LINE.length; i++) {
+                    response.getOutputStream().write(EIGHTY_BYTE_LINE);
+                }
                 ((Request)request).setHandled(true);
             } else if (request.getHeader("Accept-Encoding") != null
                     && request.getHeader("Accept-Encoding").contains("gzip")) {
@@ -718,6 +728,18 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         } finally {
             httpProxyServer.stop();
         }
+    }
+    
+    public void testMaxFetchKBSec() throws Exception {
+        ensureHttpServers();
         
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        getFetcher().setMaxFetchKBSec(100);
+        
+        getFetcher().process(curi);
+        
+        assertEquals(200000, curi.getContentLength());
+
+        assertTrue(curi.getFetchDuration() > 1800 && curi.getFetchDuration() < 2200);
     }
 }

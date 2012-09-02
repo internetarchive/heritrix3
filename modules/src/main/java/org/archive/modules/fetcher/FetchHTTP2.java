@@ -334,6 +334,65 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("httpProxyPassword",password);
     }
 
+    {
+        setMaxFetchKBSec(0); // no limit
+    }
+    public int getMaxFetchKBSec() {
+        return (Integer) kp.get("maxFetchKBSec");
+    }
+    /**
+     * The maximum KB/sec to use when fetching data from a server. The default
+     * of 0 means no maximum.
+     */
+    public void setMaxFetchKBSec(int rate) {
+        kp.put("maxFetchKBSec",rate);
+    }
+    
+    {
+        setTimeoutSeconds(20*60); // 20 minutes
+    }
+    public int getTimeoutSeconds() {
+        return (Integer) kp.get("timeoutSeconds");
+    }
+    /**
+     * If the fetch is not completed in this number of seconds, give up (and
+     * retry later).
+     */
+    public void setTimeoutSeconds(int timeout) {
+        kp.put("timeoutSeconds",timeout);
+    }
+
+    {
+        setSoTimeoutMs(20*1000); // 20 seconds
+    }
+    public int getSoTimeoutMs() {
+        return (Integer) kp.get("soTimeoutMs");
+    }
+    /**
+     * If the socket is unresponsive for this number of milliseconds, give up.
+     * Set to zero for no timeout (Not. recommended. Could hang a thread on an
+     * unresponsive server). This timeout is used timing out socket opens and
+     * for timing out each socket read. Make sure this value is &lt;
+     * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
+     * retry read.
+     */
+    public void setSoTimeoutMs(int timeout) {
+        kp.put("soTimeoutMs",timeout);
+    }
+
+    {
+        setMaxLengthBytes(0L); // no limit
+    }
+    public long getMaxLengthBytes() {
+        return (Long) kp.get("maxLengthBytes");
+    }
+    /**
+     * Maximum length in bytes to fetch. Fetch is truncated at this length. A
+     * value of 0 means no limit.
+     */
+    public void setMaxLengthBytes(long timeout) {
+        kp.put("maxLengthBytes",timeout);
+    }
 
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
@@ -457,6 +516,14 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         boolean addedCredentials = populateTargetCredentials(curi, request, targetHost, contextForAuth);
         populateHttpProxyCredential(curi, request, contextForAuth);
         
+        // set hardMax on bytes (if set by operator)
+        long hardMax = getMaxLengthBytes();
+        // set overall timeout (if set by operator)
+        long timeoutMs = 1000 * getTimeoutSeconds();
+        // Get max fetch rate (bytes/ms). It comes in in KB/sec
+        long maxRateKBps = getMaxFetchKBSec();
+        rec.getRecordedInput().setLimits(hardMax, timeoutMs, maxRateKBps);
+
         HttpResponse response = null;
         try {
             response = httpClient().execute(targetHost, request, contextForAuth);
