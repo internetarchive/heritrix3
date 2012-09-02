@@ -99,6 +99,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static final String FORM_AUTH_LOGIN    = "form-auth-login";
     protected static final String FORM_AUTH_PASSWORD = "form-auth-password";
 
+    protected static final String ETAG_TEST_VALUE = "An ETag is an opaque identifier assigned by a web server to a specific version of a resource found at a URL!";
+
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
 
     protected static final byte[] DEFAULT_GZIPPED_PAYLOAD = { 31, -117, 8, 0,
@@ -119,9 +121,10 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             "<div> <input type='submit' /> </div>" +
             "</form>" +
             "</body>" +
-            "</html>";     
+            "</html>";
 
     protected static class TestHandler extends SessionHandler {
+
         public TestHandler() {
             super();
         }
@@ -158,6 +161,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setDateHeader("Last-Modified", 0);
+                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
@@ -763,11 +767,36 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     public void testSendIfModifiedSince() throws Exception {
         ensureHttpServers();
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        
         getFetcher().setSendIfModifiedSince(true);
 
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         getFetcher().process(curi);
         assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since"));
+        assertTrue(curi.getHttpResponseHeader("last-modified").equals("Thu, 01 Jan 1970 00:00:00 GMT"));
+        runDefaultChecks(curi);
+
+        // logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
+        FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
+        fetchHistoryProcessor.process(curi);
+        // logger.info("after FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
+
+        getFetcher().process(curi);
+        // logger.info("\n" + httpRequestString(curi));
+        assertTrue(httpRequestString(curi).contains("If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT\r\n"));
+        runDefaultChecks(curi);
+        // XXX make server send 304 not-modified and check for it here?
+    }
+    
+    public void testSendIfNoneMatch() throws Exception {
+        ensureHttpServers();
+        
+        getFetcher().setSendIfNoneMatch(true);
+        
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().process(curi);
+        assertFalse(httpRequestString(curi).toLowerCase().contains("if-none-match"));
+        assertTrue(curi.getHttpResponseHeader("etag").equals(ETAG_TEST_VALUE));
         runDefaultChecks(curi);
 
         logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
@@ -777,7 +806,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
         getFetcher().process(curi);
         logger.info("\n" + httpRequestString(curi));
-        assertTrue(httpRequestString(curi).contains("If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT\r\n"));
+        assertTrue(httpRequestString(curi).contains("If-None-Match: " + ETAG_TEST_VALUE + "\r\n"));
         runDefaultChecks(curi);
         // XXX make server send 304 not-modified and check for it here?
     }
