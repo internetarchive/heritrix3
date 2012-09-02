@@ -394,6 +394,26 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("maxLengthBytes",timeout);
     }
 
+    /**
+     * Send 'Range' header when a limit ({@link #MAX_LENGTH_BYTES}) on
+     * document size.
+     * <p>
+     * Be polite to the HTTP servers and send the 'Range' header, stating that
+     * you are only interested in the first n bytes. Only pertinent if
+     * {@link #MAX_LENGTH_BYTES} &gt; 0. Sending the 'Range' header results in a
+     * '206 Partial Content' status response, which is better than just cutting
+     * the response mid-download. On rare occasion, sending 'Range' will
+     * generate '416 Request Range Not Satisfiable' response.
+     */
+    {
+        setSendRange(false);
+    }
+    public boolean getSendRange() {
+        return (Boolean) kp.get("sendRange");
+    }
+    public void setSendRange(boolean sendRange) {
+        kp.put("sendRange",sendRange);
+    }
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
             HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
@@ -958,6 +978,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             request.setHeader("From", from);
         }
         
+        if (getMaxLengthBytes() > 0 && getSendRange()) {
+            request.setHeader(RANGE, RANGE_PREFIX.concat(Long
+                    .toString(getMaxLengthBytes() - 1)));
+        }
+
         if (getSendConnectionClose()) {
             request.setHeader(HEADER_SEND_CONNECTION_CLOSE);
         }

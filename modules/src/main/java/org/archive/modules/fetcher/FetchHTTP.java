@@ -219,8 +219,8 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
     public long getMaxLengthBytes() {
         return (Long) kp.get("maxLengthBytes");
     }
-    public void setMaxLengthBytes(long timeout) {
-        kp.put("maxLengthBytes",timeout);
+    public void setMaxLengthBytes(long maxLengthBytes) {
+        kp.put("maxLengthBytes",maxLengthBytes);
     }
 
     /**

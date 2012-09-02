@@ -691,7 +691,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
             @Override
             public boolean authenticate(String userName, String password) {
-                logger.info("username=" + userName + " password=" + password);
+                // logger.info("username=" + userName + " password=" + password);
                 return "http-proxy-user".equals(userName) && "http-proxy-password".equals(password);
             }
         });
@@ -705,7 +705,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             getFetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
@@ -717,7 +717,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
             proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
             getFetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
@@ -732,14 +732,29 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     
     public void testMaxFetchKBSec() throws Exception {
         ensureHttpServers();
-        
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         getFetcher().setMaxFetchKBSec(100);
-        
         getFetcher().process(curi);
-        
         assertEquals(200000, curi.getContentLength());
-
         assertTrue(curi.getFetchDuration() > 1800 && curi.getFetchDuration() < 2200);
+    }
+    
+    public void testMaxLengthBytes() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        getFetcher().setMaxLengthBytes(50000);
+        getFetcher().process(curi);
+        assertEquals(50001, curi.getRecordedSize());
+    }
+
+    public void testSendRange() throws Exception { 
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        getFetcher().setMaxLengthBytes(50000);
+        getFetcher().setSendRange(true);
+        getFetcher().process(curi);
+        logger.info("\n" + httpRequestString(curi));
+        assertTrue(httpRequestString(curi).contains("Range: bytes=0-49999\r\n"));
+        // assertEquals(50000, curi.getRecordedSize());
     }
 }

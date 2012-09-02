@@ -36,4 +36,6 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setHttpProxyUser(String user);
     abstract public void setHttpProxyPassword(String password);
     abstract public void setMaxFetchKBSec(int maxFetchKBSec);
+    abstract public void setMaxLengthBytes(long maxLengthBytes);
+    abstract public void setSendRange(boolean sendRange);
 }
