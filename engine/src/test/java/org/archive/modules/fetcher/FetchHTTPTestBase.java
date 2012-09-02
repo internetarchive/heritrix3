@@ -43,6 +43,7 @@ import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
+import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.OneLineSimpleLogger;
@@ -156,6 +157,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                 ((Request)request).setHandled(true);
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
+                response.setDateHeader("Last-Modified", 0);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
@@ -753,8 +755,30 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().setMaxLengthBytes(50000);
         getFetcher().setSendRange(true);
         getFetcher().process(curi);
-        logger.info("\n" + httpRequestString(curi));
+        // logger.info("\n" + httpRequestString(curi));
         assertTrue(httpRequestString(curi).contains("Range: bytes=0-49999\r\n"));
+        // XXX make server honor range and inspect response?
         // assertEquals(50000, curi.getRecordedSize());
+    }
+    
+    public void testSendIfModifiedSince() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().setSendIfModifiedSince(true);
+
+        getFetcher().process(curi);
+        assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since"));
+        runDefaultChecks(curi);
+
+        logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
+        FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
+        fetchHistoryProcessor.process(curi);
+        logger.info("after FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
+
+        getFetcher().process(curi);
+        logger.info("\n" + httpRequestString(curi));
+        assertTrue(httpRequestString(curi).contains("If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT\r\n"));
+        runDefaultChecks(curi);
+        // XXX make server send 304 not-modified and check for it here?
     }
 }

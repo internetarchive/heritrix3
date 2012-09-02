@@ -24,7 +24,10 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -412,6 +415,36 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     }
     public void setSendRange(boolean sendRange) {
         kp.put("sendRange",sendRange);
+    }
+
+    {
+        // XXX default to false?
+        setSendIfModifiedSince(true);
+    }
+    public boolean getSendIfModifiedSince() {
+        return (Boolean) kp.get("sendIfModifiedSince");
+    }
+    /**
+     * Send 'If-Modified-Since' header, if previous 'Last-Modified' fetch
+     * history information is available in URI history.
+     */
+    public void setSendIfModifiedSince(boolean sendIfModifiedSince) {
+        kp.put("sendIfModifiedSince",sendIfModifiedSince);
+    }
+
+    {
+        // XXX default to false?
+        setSendIfNoneMatch(true);
+    }
+    public boolean getSendIfNoneMatch() {
+        return (Boolean) kp.get("sendIfNoneMatch");
+    }
+    /**
+     * Send 'If-None-Match' header, if previous 'Etag' fetch history information
+     * is available in URI history.
+     */
+    public void setSendIfNoneMatch(boolean sendIfNoneMatch) {
+        kp.put("sendIfNoneMatch",sendIfNoneMatch);
     }
 
     protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
@@ -997,11 +1030,47 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             }
         }
 
+        if (!curi.isPrerequisite()) {
+            setConditionalGetHeader(curi, request, getSendIfModifiedSince(), 
+                    A_LAST_MODIFIED_HEADER, "If-Modified-Since");
+            setConditionalGetHeader(curi, request, getSendIfNoneMatch(), 
+                    A_ETAG_HEADER, "If-None-Match");
+        }
+
         // TODO: What happens if below method adds a header already
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
         configureProxy(curi, request);
         configureBindAddress(curi, request);
+    }
+
+    /**
+     * Set the given conditional-GET header, if the setting is enabled and
+     * a suitable value is available in the URI history. 
+     * @param curi source CrawlURI
+     * @param request HTTP operation pending
+     * @param setting true/false enablement setting name to consult
+     * @param sourceHeader header to consult in URI history
+     * @param targetHeader header to set if possible
+     */
+    protected void setConditionalGetHeader(CrawlURI curi, HttpRequestBase request,
+            boolean conditional, String sourceHeader, String targetHeader) {
+        if (conditional) {
+            try {
+                HashMap<String, Object>[] history = curi.getFetchHistory();
+                int previousStatus = (Integer) history[0].get(A_STATUS);
+                if (previousStatus <= 0) {
+                    // do not reuse headers from any broken fetch
+                    return;
+                }
+                String previousValue = (String) history[0].get(sourceHeader);
+                if (previousValue != null) {
+                    request.setHeader(targetHeader, previousValue);
+                }
+            } catch (RuntimeException e) {
+                // for absent key, bad index, etc. just do nothing
+            }
+        }
     }
 
     protected void configureProxy(CrawlURI curi, HttpRequestBase request) {

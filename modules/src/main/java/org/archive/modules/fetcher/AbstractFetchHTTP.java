@@ -38,4 +38,5 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setMaxFetchKBSec(int maxFetchKBSec);
     abstract public void setMaxLengthBytes(long maxLengthBytes);
     abstract public void setSendRange(boolean sendRange);
+    abstract public void setSendIfModifiedSince(boolean sendIfModifiedSince);
 }
