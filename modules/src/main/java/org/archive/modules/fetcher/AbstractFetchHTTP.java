@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.archive.modules.Processor;
 import org.archive.modules.credential.CredentialStore;
+import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.net.ServerCache;
 
 abstract public class AbstractFetchHTTP extends Processor {
@@ -40,4 +41,6 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setSendRange(boolean sendRange);
     abstract public void setSendIfModifiedSince(boolean sendIfModifiedSince);
     abstract public void setSendIfNoneMatch(boolean sendIfNoneMatch);
+    abstract public void setSendReferer(boolean sendReferer);
+    abstract public void setShouldFetchBodyRule(DecideRule rule);
 }

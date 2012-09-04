@@ -43,6 +43,7 @@ import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
+import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -810,4 +811,26 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         runDefaultChecks(curi);
         // XXX make server send 304 not-modified and check for it here?
     }
+    
+    public void testShouldFetchBodyRule() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().setShouldFetchBodyRule(new RejectDecideRule());
+        getFetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+
+        assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.0\r\n"));
+        assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+        assertTrue(curi.getCredentials().isEmpty());
+        assertTrue(curi.getFetchDuration() >= 0);
+        assertTrue(curi.getFetchStatus() == 200);
+        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        
+        // check for empty body
+        assertEquals(0, curi.getContentLength());
+        assertEquals(curi.getContentSize(), curi.getRecordedSize());
+        assertEquals("", messageBodyString(curi));
+        assertEquals("", entityString(curi));
+    }
+
 }
