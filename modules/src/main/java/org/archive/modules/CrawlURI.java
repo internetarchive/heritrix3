@@ -66,6 +66,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -651,12 +652,12 @@ implements Reporter, Serializable, OverlayContext {
      */
     public Collection<String> getAnnotations() {
         @SuppressWarnings("unchecked")
-        List<String> list = (List<String>)getData().get(A_ANNOTATIONS);
-        if (list == null) {
-            list = new ArrayList<String>();
-            getData().put(A_ANNOTATIONS, list);
+        Collection<String> annotations = (Collection<String>)getData().get(A_ANNOTATIONS);
+        if (annotations == null) {
+            annotations = new LinkedHashSet<String>();
+            getData().put(A_ANNOTATIONS, annotations);
         }
-        return list;
+        return annotations;
     }
 
     /**

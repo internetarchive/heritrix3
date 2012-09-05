@@ -133,18 +133,19 @@ public class Link implements Serializable, Comparable<Link> {
     }
 
     
-    public static void addRelativeToVia(CrawlURI uri, int max,
-            String newUri, LinkContext context, Hop hop) throws URIException {
+    public static void addRelativeToVia(CrawlURI uri, int max, String newUri,
+            LinkContext context, Hop hop) throws URIException {
         UURI relTo = uri.getVia();
-        if(relTo==null) {
-            LOGGER.info("no via where expected; using base instead: "+uri);
-            uri.getAnnotations().add("usedBaseForVia");
+        if (relTo == null) {
+            if (!uri.getAnnotations().contains("usedBaseForVia")) {
+                LOGGER.info("no via where expected; using base instead: " + uri);
+                uri.getAnnotations().add("usedBaseForVia");
+            }
             relTo = uri.getBaseURI();
         }
         UURI dest = UURIFactory.getInstance(relTo, newUri);
         add2(uri, max, dest, context, hop);
     }
-
 
     public static void add(CrawlURI uri, int max, String newUri, 
             LinkContext context, Hop hop) throws URIException {
