@@ -22,7 +22,6 @@ package org.archive.modules.extractor;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.Collections;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
@@ -121,7 +120,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      */
     protected static void assertNoSideEffects(CrawlURI uri) {
         assertEquals(0, uri.getNonFatalFailures().size());
-        assertEquals(Collections.EMPTY_LIST, uri.getAnnotations());        
+        assertTrue(uri.getAnnotations().isEmpty());
     }
     
     
