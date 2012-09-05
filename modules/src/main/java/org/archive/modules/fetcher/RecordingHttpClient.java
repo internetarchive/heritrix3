@@ -55,14 +55,17 @@ import org.archive.util.Recorder;
  */
 public class RecordingHttpClient extends DefaultHttpClient {
     private ServerCache serverCache;
+    private FetchHTTP2 fetcher;
 
     /**
      * 
+     * @param fetchHTTP2 
      * @param serverCache
      */
-    public RecordingHttpClient(ServerCache serverCache) {
+    public RecordingHttpClient(FetchHTTP2 fetchHTTP2, ServerCache serverCache) {
         super();
         
+        this.fetcher = fetchHTTP2;
         this.setServerCache(serverCache);
         
         // XXX uhh? see HeritrixHttpMethodRetryHandler ??
@@ -97,7 +100,8 @@ public class RecordingHttpClient extends DefaultHttpClient {
             @Override
             protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
                 return new RecordingClientConnectionOperator(schreg, 
-                        new ServerCacheResolver(RecordingHttpClient.this.getServerCache()));
+                        new ServerCacheResolver(RecordingHttpClient.this.getServerCache()), 
+                        RecordingHttpClient.this.fetcher);
             }
         };
     }
@@ -168,9 +172,12 @@ public class RecordingHttpClient extends DefaultHttpClient {
      * @contributor nlevitt
      */
     protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
+        private FetchHTTP2 fetcher;
+
         public RecordingClientConnectionOperator(SchemeRegistry schemes,
-                DnsResolver dnsResolver) {
+                DnsResolver dnsResolver, FetchHTTP2 fetcher) {
             super(schemes, dnsResolver);
+            this.fetcher = fetcher;
         }
 
         @Override
@@ -189,13 +196,15 @@ public class RecordingHttpClient extends DefaultHttpClient {
                 @Override
                 public void receiveResponseEntity(HttpResponse response)
                         throws HttpException, IOException {
-                    // XXX is this null check necessary? what happens if proxied, etc?
+
                     Recorder recorder = Recorder.getHttpRecorder();
                     if (recorder != null) {
                         recorder.markContentBegin();
                     }
                     
-                    super.receiveResponseEntity(response);
+                    if (!fetcher.maybeMidfetchAbort()) {
+                        super.receiveResponseEntity(response);
+                    }
                 }
             };
         }

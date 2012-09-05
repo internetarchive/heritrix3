@@ -87,6 +87,9 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
+import org.archive.modules.deciderules.AcceptDecideRule;
+import org.archive.modules.deciderules.DecideResult;
+import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
@@ -153,6 +156,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("userAgentProvider",provider);
     }
 
+
+    protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
+            HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
     {
         setSendConnectionClose(true);
     }
@@ -225,8 +231,8 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      * remote server and can be of assistance to webmasters trying to figure how
      * a crawler got to a particular area on a site.
      */
-    public void setSendReferer(boolean sendClose) {
-        kp.put("sendReferer",sendClose);
+    public void setSendReferer(boolean sendReferer) {
+        kp.put("sendReferer",sendReferer);
     }
 
     {
@@ -447,8 +453,21 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("sendIfNoneMatch",sendIfNoneMatch);
     }
 
-    protected static final Header HEADER_SEND_CONNECTION_CLOSE = new BasicHeader(
-            HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+    {
+        setShouldFetchBodyRule(new AcceptDecideRule());
+    }
+    public DecideRule getShouldFetchBodyRule() {
+        return (DecideRule) kp.get("shouldFetchBodyRule");
+    }
+    /**
+     * DecideRules applied after receipt of HTTP response headers but before we
+     * start to download the body. If any filter returns FALSE, the fetch is
+     * aborted. Prerequisites such as robots.txt by-pass filtering (i.e. they
+     * cannot be midfetch aborted.
+     */
+    public void setShouldFetchBodyRule(DecideRule rule) {
+        kp.put("shouldFetchBodyRule", rule);
+    }
     
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status
@@ -485,14 +504,16 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      */
     protected void setOtherCodings(CrawlURI uri, final Recorder rec,
             final HttpResponse response) {
-        rec.setInputIsChunked(response.getEntity().isChunked()); 
-        Header contentEncodingHeader = response.getEntity().getContentEncoding(); 
-        if (contentEncodingHeader != null) {
-            String ce = contentEncodingHeader.getValue().trim();
-            try {
-                rec.setContentEncoding(ce);
-            } catch (IllegalArgumentException e) {
-                uri.getAnnotations().add("unsatisfiableContentEncoding:" + StringUtils.stripToEmpty(ce));
+        if (response.getEntity() != null) {
+            rec.setInputIsChunked(response.getEntity().isChunked()); 
+            Header contentEncodingHeader = response.getEntity().getContentEncoding(); 
+            if (contentEncodingHeader != null) {
+                String ce = contentEncodingHeader.getValue().trim();
+                try {
+                    rec.setContentEncoding(ce);
+                } catch (IllegalArgumentException e) {
+                    uri.getAnnotations().add("unsatisfiableContentEncoding:" + StringUtils.stripToEmpty(ce));
+                }
             }
         }
     }
@@ -527,8 +548,44 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
     }
 
+    protected boolean checkMidfetchAbort(CrawlURI curi) {
+        if (curi.isPrerequisite()) {
+            return false;
+        }
+        DecideResult r = getShouldFetchBodyRule().decisionFor(curi);
+        if (r != DecideResult.REJECT) {
+            return false;
+        }
+        // method.markContentBegin(conn);
+        return true;
+    }
+    
+    protected void doAbort(CrawlURI curi, HttpRequestBase request,
+            String annotation) {
+        curi.getAnnotations().add(annotation);
+        curi.getRecorder().close();
+        request.abort();
+    }
+
+    // XXX Unfortunately the place where midfetch abort happens is deep in the
+    // bowels of the http library code and it would be tricky and ugly to get
+    // these necessary variables in there. We keep these threadlocals instead.
+    private ThreadLocal<CrawlURI> threadActiveCrawlURI = new ThreadLocal<CrawlURI>();
+    private ThreadLocal<HttpRequestBase> threadActiveRequest = new ThreadLocal<HttpRequestBase>();
+    
+    protected boolean maybeMidfetchAbort() {
+        if (checkMidfetchAbort(threadActiveCrawlURI.get())) {
+            doAbort(threadActiveCrawlURI.get(), threadActiveRequest.get(), "midFetchAbort");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     protected void innerProcess(final CrawlURI curi) throws InterruptedException {
+        threadActiveCrawlURI.set(curi);
+        
         // could call after fetch in finally block, but right here feels even more sure
         resetHttpClient();
         
@@ -559,6 +616,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             curi.setFetchType(FetchType.HTTP_GET);
         }
         
+        threadActiveRequest.set(request);
         configureRequest(curi, request);
 
         HttpHost targetHost = URIUtils.extractHost(request.getURI());
@@ -624,6 +682,11 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             }
             // Note completion time
             curi.setFetchCompletedTime(System.currentTimeMillis());
+            
+            // finished with these (midfetch abort would have happened already)
+            threadActiveCrawlURI.set(null);
+            threadActiveRequest.set(null);
+
             // Set the response charset into the HttpRecord if available.
             setCharacterEncoding(curi, rec, response);
             setSizes(curi, rec);
@@ -1148,7 +1211,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
     
     protected RecordingHttpClient httpClient() {
         if (httpClient == null) {
-            httpClient = new RecordingHttpClient(getServerCache());
+            httpClient = new RecordingHttpClient(this, getServerCache());
 
             // some http client config
             HttpClientParams.setRedirecting(httpClient.getParams(), false);
@@ -1159,13 +1222,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
         
         return httpClient;
-    }
-
-    protected void doAbort(CrawlURI curi, HttpRequestBase request,
-            String annotation) {
-        curi.getAnnotations().add(annotation);
-        curi.getRecorder().close();
-        request.abort();
     }
 
     /**
@@ -1248,6 +1304,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         curi.getNonFatalFailures().add(exception);
         curi.setFetchStatus(status);
         curi.getRecorder().close();
+        
+        threadActiveCrawlURI.set(null);
+        threadActiveRequest.set(null);
     }
     
     public void start() {
@@ -1296,5 +1355,4 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             return null;
         }
     }
-
 }
