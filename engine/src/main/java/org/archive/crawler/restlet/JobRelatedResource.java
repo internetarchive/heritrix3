@@ -92,6 +92,9 @@ public abstract class JobRelatedResource extends BaseResource {
         }
 
         Reference baseRef = getRequest().getResourceRef().getBaseRef();
+        
+        if(baseRef.getPath().endsWith("beans"))
+            baseRef.setPath(baseRef.getPath()+"/");
 
         if (getBeanToNameMap().containsKey(obj)) {
             // this object is itself a named bean
@@ -274,7 +277,7 @@ public abstract class JobRelatedResource extends BaseResource {
                 } else if (beanPathPrefix.endsWith("[")) {
                     beanPath += field + "]";
                 }
-                info.put("url", new Reference(baseRef, "../beans/" + beanPath).getTargetRef());
+                info.put("url", new Reference(baseRef, "../beans/" + TextUtils.urlEscape(beanPath)).getTargetRef());
             }
         }
         String key = getBeanToNameMap().get(object);
