@@ -1305,9 +1305,11 @@ public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
                         + Arrays.toString(headers));
                 continue;
             }
-            AuthScheme authscheme = AuthPolicy.getAuthScheme(key);
-            if (authscheme == null) {
-                logger.fine("Unsupported scheme: " + key);
+            AuthScheme authscheme;
+            try {
+                authscheme = AuthPolicy.getAuthScheme(key);
+            } catch (IllegalStateException e) {
+                logger.info("Unsupported auth scheme '" + key + "' at " + curi + " - " + e);
                 continue;
             }
 
