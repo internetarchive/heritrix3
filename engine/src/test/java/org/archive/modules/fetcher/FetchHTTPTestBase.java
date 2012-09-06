@@ -19,6 +19,7 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -852,8 +853,33 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         getFetcher().setTimeoutSeconds(2);
         getFetcher().process(curi);
         
-        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+        // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertTrue(curi.getAnnotations().contains("timeTrunc"));
-        assertTrue(curi.getFetchDuration() > 2000 && curi.getFetchDuration() < 2200);
+        assertTrue(curi.getFetchDuration() >= 2000 && curi.getFetchDuration() < 2200);
     }
+
+    // see http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error
+    public void testConnectionTimeout() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://10.255.255.1/");
+        getFetcher().setSoTimeoutMs(300);
+        
+        long start = System.currentTimeMillis();
+        getFetcher().process(curi);
+        long elapsed = System.currentTimeMillis() - start;
+        
+        assertTrue(elapsed >= 300 && elapsed < 400);
+        
+        // Httpcomponents throws org.apache.http.conn.ConnectTimeoutException,
+        // commons-httpclient throws java.net.SocketTimeoutException. Both are
+        // instances of InterruptedIOException
+        assertEquals(1, curi.getNonFatalFailures().size());
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof InterruptedIOException);
+        assertTrue(curi.getNonFatalFailures().toArray()[0].toString().matches("(?i).*connect.*timed out.*"));
+
+        assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+        
+        assertEquals(0, curi.getFetchCompletedTime());
+    }
+    
+    // XXX testSocketTimeout() (the other kind) - how to simulate?
 }

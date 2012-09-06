@@ -75,6 +75,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
@@ -1099,6 +1100,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                     A_ETAG_HEADER, "If-None-Match");
         }
 
+        HttpConnectionParams.setConnectionTimeout(request.getParams(), getSoTimeoutMs());
+        HttpConnectionParams.setSoTimeout(request.getParams(), getSoTimeoutMs());
+
         // TODO: What happens if below method adds a header already
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
@@ -1297,9 +1301,10 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      */
     protected void cleanup(final CrawlURI curi, final Exception exception,
             final String message, final int status) {
-        logger.log(Level.WARNING, message, exception);
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(message + ": " + exception);
+        }
         
-        // message ignored!
         curi.getNonFatalFailures().add(exception);
         curi.setFetchStatus(status);
         curi.getRecorder().close();
