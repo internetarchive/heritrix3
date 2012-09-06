@@ -43,4 +43,6 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setSendIfNoneMatch(boolean sendIfNoneMatch);
     abstract public void setSendReferer(boolean sendReferer);
     abstract public void setShouldFetchBodyRule(DecideRule rule);
+    abstract public void setSoTimeoutMs(int timeout);
+    abstract public void setTimeoutSeconds(int timeout);
 }

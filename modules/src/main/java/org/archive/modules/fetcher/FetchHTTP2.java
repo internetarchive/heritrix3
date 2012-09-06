@@ -556,7 +556,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         if (r != DecideResult.REJECT) {
             return false;
         }
-        // method.markContentBegin(conn);
         return true;
     }
     

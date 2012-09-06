@@ -152,6 +152,18 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                     response.getOutputStream().write(EIGHTY_BYTE_LINE);
                 }
                 ((Request)request).setHandled(true);
+            } else if (target.equals("/slow.txt")) {
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                for (int i = 0; i < 60; i++) {
+                    response.getOutputStream().write(EIGHTY_BYTE_LINE);
+                    response.getOutputStream().flush();
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                    }
+                }
+                ((Request)request).setHandled(true);
             } else if (request.getHeader("Accept-Encoding") != null
                     && request.getHeader("Accept-Encoding").contains("gzip")) {
                 response.setHeader("Content-Encoding", "gzip");
@@ -833,4 +845,15 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertEquals("", entityString(curi));
     }
 
+    public void testFetchTimeout() throws Exception {
+        ensureHttpServers();
+        
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/slow.txt");
+        getFetcher().setTimeoutSeconds(2);
+        getFetcher().process(curi);
+        
+        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+        assertTrue(curi.getAnnotations().contains("timeTrunc"));
+        assertTrue(curi.getFetchDuration() > 2000 && curi.getFetchDuration() < 2200);
+    }
 }
