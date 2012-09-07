@@ -18,6 +18,7 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
@@ -71,9 +72,12 @@ import org.mortbay.jetty.security.DigestAuthenticator;
 import org.mortbay.jetty.security.FormAuthenticator;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.HashSessionManager;
 import org.mortbay.jetty.servlet.SessionHandler;
 import org.mortbay.log.Log;
+
+import sun.security.tools.KeyTool;
 
 public abstract class FetchHTTPTestBase extends ProcessorTestBase {
 
@@ -254,8 +258,32 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         authWrapper.setHandler(handlers);
         server.setHandler(authWrapper);
         
-        server.start();
         servers.put(sc.getPort(), server);
+        
+        File keystoreFile = new File(TmpDirTestCase.tmpDir(), "keystore");
+        if (keystoreFile.exists()) {
+            keystoreFile.delete();
+        }
+        final String KEYSTORE_PASSWORD = "keystore-password";
+        KeyTool.main(new String[] {
+                "-keystore", keystoreFile.getPath(),
+                "-storepass", KEYSTORE_PASSWORD,
+                "-keypass", KEYSTORE_PASSWORD,
+                "-alias", "jetty",
+                "-genkey", 
+                "-keyalg", "RSA",
+                "-dname", "CN=127.0.0.1",
+                "-validity","3650"}); // 10 yr validity
+        
+        SslSocketConnector ssc = new SslSocketConnector();
+        ssc.setHost("127.0.0.1");
+        ssc.setPort(7443);
+        ssc.setKeyPassword(KEYSTORE_PASSWORD);
+        ssc.setKeystore(keystoreFile.getPath());
+
+        server.addConnector(ssc);
+        
+        server.start();
 
         // server for digest auth
         server = new Server();
@@ -383,6 +411,8 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         if (!exclusions.contains("httpBindAddress")) {
             assertEquals("127.0.0.1", lastRequest.getRemoteAddr());
         }
+        
+        assertTrue(curi.getNonFatalFailures().isEmpty());
     }
 
     // convenience methods to get strings from raw recorded i/o
@@ -882,4 +912,11 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     }
     
     // XXX testSocketTimeout() (the other kind) - how to simulate?
+    
+    public void testSslTrustLevel() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("https://localhost:7443/");
+        getFetcher().process(curi);
+        runDefaultChecks(curi, "hostHeader");
+    }
 }
