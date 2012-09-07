@@ -931,4 +931,15 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
         assertEquals(0, curi.getFetchCompletedTime());
     }
+    
+    public void testHttp11() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        getFetcher().setUseHTTP11(true);
+        getFetcher().process(curi);
+        assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.1\r\n"));
+        // what else?
+        runDefaultChecks(curi, "requestLine");
+    }
+    
 }

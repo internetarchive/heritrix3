@@ -47,4 +47,5 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setSoTimeoutMs(int timeout);
     abstract public void setTimeoutSeconds(int timeout);
     abstract public void setSslTrustLevel(TrustLevel trustLevel);
+    abstract public void setUseHTTP11(boolean useHTTP11);
 }
