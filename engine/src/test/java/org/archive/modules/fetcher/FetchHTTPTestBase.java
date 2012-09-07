@@ -171,6 +171,13 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                     }
                 }
                 ((Request)request).setHandled(true);
+            } else if (target.equals("/chunked.txt")) {
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setStatus(HttpServletResponse.SC_OK);
+                // response.setContentLength(HttpTokens.CHUNKED_CONTENT);
+                response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                response.getOutputStream().flush();
+                ((Request)request).setHandled(true);
             } else if (request.getHeader("Accept-Encoding") != null
                     && request.getHeader("Accept-Encoding").contains("gzip")) {
                 response.setHeader("Content-Encoding", "gzip");
@@ -941,5 +948,32 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         // what else?
         runDefaultChecks(curi, "requestLine");
     }
-    
+
+    public void testChunked() throws Exception {
+        ensureHttpServers();
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/chunked.txt");
+        getFetcher().setUseHTTP11(true);
+        getFetcher().setSendConnectionClose(false);
+        
+        /* XXX Server expects us to close the connection apparently. But we
+         * don't detect end of chunked transfer. With these small timeouts we
+         * can finish quickly. A couple of SocketTimeoutExceptions will happen
+         * within RecordingInputStream.readFullyOrUntil().
+         */
+        getFetcher().setSoTimeoutMs(500);
+        getFetcher().setTimeoutSeconds(1);
+        
+        getFetcher().process(curi);
+        
+        //        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+        //        logger.info("\n----- rawResponseString -----\n" + rawResponseString(curi));
+        //        logger.info("\n----- contentString -----\n" + contentString(curi));
+        //        logger.info("\n----- entityString -----\n" + entityString(curi));
+        //        logger.info("\n----- messageBodyString -----\n" + messageBodyString(curi));
+        
+        assertEquals("chunked", curi.getHttpResponseHeader("transfer-encoding"));
+        assertEquals("25\r\n" + DEFAULT_PAYLOAD_STRING + "\r\n0\r\n\r\n", messageBodyString(curi));
+        assertEquals(DEFAULT_PAYLOAD_STRING, entityString(curi));
+        assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
+    }
 }

@@ -699,8 +699,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             if (!request.isAborted()) {
                 // Force read-to-end, so that any socket hangs occur here,
                 // not in later modules.
-                
-                // XXX does it matter that we're circumventing the library here? response.getEntity().getContent()
                 rec.getRecordedInput().readFullyOrUntil(softMax); 
             }
         } catch (RecorderTimeoutException ex) {
