@@ -75,7 +75,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
         
         this.fetcher = fetchHTTP2;
         this.sslContext = sslContext;
-        this.setServerCache(serverCache);
+        this.serverCache = serverCache;
         
         // XXX uhh? see HeritrixHttpMethodRetryHandler ??
 //        setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
@@ -95,26 +95,6 @@ public class RecordingHttpClient extends DefaultHttpClient {
         });
     }
     
-    protected ServerCache getServerCache() {
-        return serverCache;
-    }
-
-    protected void setServerCache(ServerCache serverCache) {
-        this.serverCache = serverCache;
-    }
-
-    @Override
-    protected ClientConnectionManager createClientConnectionManager() {
-        return new BasicClientConnectionManager(createSchemeRegistry()) {
-            @Override
-            protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
-                return new RecordingClientConnectionOperator(schreg, 
-                        new ServerCacheResolver(RecordingHttpClient.this.getServerCache()), 
-                        RecordingHttpClient.this.fetcher);
-            }
-        };
-    }
-
     /**
      * Custom scheme registry that uses our special {@link SSLContext} which uses our
      * special trust rules.
@@ -139,6 +119,18 @@ public class RecordingHttpClient extends DefaultHttpClient {
         schemes.register(new Scheme("https", 443, sslSocketFactory));
         
         return schemes;
+    }
+
+    @Override
+    protected ClientConnectionManager createClientConnectionManager() {
+        return new BasicClientConnectionManager(createSchemeRegistry()) {
+            @Override
+            protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
+                return new RecordingClientConnectionOperator(schreg, 
+                        new ServerCacheResolver(RecordingHttpClient.this.serverCache), 
+                        RecordingHttpClient.this.fetcher);
+            }
+        };
     }
     
     /**
