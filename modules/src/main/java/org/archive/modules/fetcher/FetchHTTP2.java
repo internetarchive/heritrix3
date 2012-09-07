@@ -46,6 +46,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -80,6 +83,8 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.archive.httpclient.ConfigurableX509TrustManager;
+import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
@@ -99,12 +104,14 @@ import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+/**
+ * HTTP fetcher that uses <a href="http://hc.apache.org/">Apache HttpComponents</a>.
+ * @contributor nlevitt
+ */
 public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
 
     private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
 
-    protected RecordingHttpClient httpClient;
-    
     public static final String REFERER = "Referer";
     public static final String RANGE = "Range";
     public static final String RANGE_PREFIX = "bytes=0-";
@@ -470,6 +477,42 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("shouldFetchBodyRule", rule);
     }
     
+    protected TrustLevel sslTrustLevel = TrustLevel.OPEN;
+    public TrustLevel getSslTrustLevel() {
+        return sslTrustLevel;
+    }
+    /**
+     * SSL certificate trust level. Range is from the default 'open' (trust all
+     * certs including expired, selfsigned, and those for which we do not have a
+     * CA) through 'loose' (trust all valid certificates including selfsigned),
+     * 'normal' (all valid certificates not including selfsigned) to 'strict'
+     * (Cert is valid and DN must match servername).
+     */
+    public synchronized void setSslTrustLevel(TrustLevel trustLevel) {
+        this.sslTrustLevel = trustLevel;
+        
+        // force http client to be recreated with new trust level
+        cleanupHttpClient();
+    }
+
+    protected transient SSLContext sslContext;
+    protected synchronized SSLContext sslContext() {
+        if (sslContext == null) {
+            try {
+                TrustManager trustManager = new ConfigurableX509TrustManager(
+                        getSslTrustLevel());
+                sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, new TrustManager[] {trustManager}, null);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed configure of ssl context "
+                        + e.getMessage(), e);
+            }
+        }
+
+        return sslContext;
+    }
+
+
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status
      * if this processor would usually handle the CrawlURI, but cannot in
@@ -1210,11 +1253,12 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
                 logger.warning("Invalid accept header: " + hdr);
             }
         }
-}
+    }
     
-    protected RecordingHttpClient httpClient() {
+    protected transient RecordingHttpClient httpClient;
+    protected synchronized RecordingHttpClient httpClient() {
         if (httpClient == null) {
-            httpClient = new RecordingHttpClient(this, getServerCache());
+            httpClient = new RecordingHttpClient(this, sslContext(), getServerCache());
 
             // some http client config
             HttpClientParams.setRedirecting(httpClient.getParams(), false);
@@ -1301,7 +1345,9 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
      */
     protected void cleanup(final CrawlURI curi, final Exception exception,
             final String message, final int status) {
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, message + ": " + exception, exception);
+        } else if (logger.isLoggable(Level.FINE)) {
             logger.fine(message + ": " + exception);
         }
         
@@ -1340,12 +1386,13 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             cookieStore.saveCookies();
             cookieStore.stop();
         }
-        cleanupHttp(); // XXX happens at finish; move to teardown?
+        cleanupHttpClient(); // XXX happens at finish; move to teardown?
     }
 
-    protected void cleanupHttp() {
+    protected void cleanupHttpClient() {
         if (httpClient != null) {
             httpClient.getConnectionManager().shutdown();
+            sslContext = null;
             httpClient = null;
         }
     }

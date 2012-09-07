@@ -25,6 +25,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -35,7 +37,11 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ClientConnectionOperator;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.OperatedClientConnection;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.impl.conn.DefaultClientConnection;
@@ -54,18 +60,21 @@ import org.archive.util.Recorder;
  * @contributor nlevitt
  */
 public class RecordingHttpClient extends DefaultHttpClient {
-    private ServerCache serverCache;
-    private FetchHTTP2 fetcher;
+    protected ServerCache serverCache;
+    protected FetchHTTP2 fetcher;
+    protected SSLContext sslContext;
 
     /**
      * 
      * @param fetchHTTP2 
+     * @param sslContext 
      * @param serverCache
      */
-    public RecordingHttpClient(FetchHTTP2 fetchHTTP2, ServerCache serverCache) {
+    public RecordingHttpClient(FetchHTTP2 fetchHTTP2, SSLContext sslContext, ServerCache serverCache) {
         super();
         
         this.fetcher = fetchHTTP2;
+        this.sslContext = sslContext;
         this.setServerCache(serverCache);
         
         // XXX uhh? see HeritrixHttpMethodRetryHandler ??
@@ -96,7 +105,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
 
     @Override
     protected ClientConnectionManager createClientConnectionManager() {
-        return new BasicClientConnectionManager(SchemeRegistryFactory.createDefault()) {
+        return new BasicClientConnectionManager(createSchemeRegistry()) {
             @Override
             protected ClientConnectionOperator createConnectionOperator(SchemeRegistry schreg) {
                 return new RecordingClientConnectionOperator(schreg, 
@@ -105,10 +114,39 @@ public class RecordingHttpClient extends DefaultHttpClient {
             }
         };
     }
+
+    /**
+     * Custom scheme registry that uses our special {@link SSLContext} which uses our
+     * special trust rules.
+     * 
+     * @see FetchHTTP2#getSslTrustLevel()
+     * @see SchemeRegistryFactory#createDefault()
+     */
+    protected SchemeRegistry createSchemeRegistry() {
+        SchemeRegistry schemes = new SchemeRegistry();
+        schemes.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+        
+        /*
+         * XXX Old FetchHTTP does no hostname verification, so we do none here.
+         * The javadoc says TrustLevel.STRICT is supposed to do hostname
+         * verification, but it's not implemented. See
+         * ConfigurableX509TrustManager#checkServerTrusted(). If we decide to
+         * implement TrustLevel.STRICT then some refactoring around this
+         * X509HostnameVerifier thing might be appropriate.
+         */
+        SSLSocketFactory sslSocketFactory = new SSLSocketFactory(sslContext,
+                (X509HostnameVerifier) null);
+        schemes.register(new Scheme("https", 443, sslSocketFactory));
+        
+        return schemes;
+    }
     
-    // We have separate credentials providers per thread so that FetchHTTP2 can
-    // configure credentials, do the fetch, and clear the credentials, without
-    // affecting fetches going on in other threads.
+    /**
+     * We have separate credentials providers per thread so that FetchHTTP2 can
+     * configure credentials, do the fetch, and clear the credentials, without
+     * affecting fetches going on in other threads.
+     * @return {@link ThreadLocalCredentialsProvider}
+     */
     @Override
     protected CredentialsProvider createCredentialsProvider() {
         return new ThreadLocalCredentialsProvider();

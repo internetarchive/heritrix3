@@ -20,6 +20,7 @@ package org.archive.modules.fetcher;
 
 import java.util.List;
 
+import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.deciderules.DecideRule;
@@ -45,4 +46,5 @@ abstract public class AbstractFetchHTTP extends Processor {
     abstract public void setShouldFetchBodyRule(DecideRule rule);
     abstract public void setSoTimeoutMs(int timeout);
     abstract public void setTimeoutSeconds(int timeout);
+    abstract public void setSslTrustLevel(TrustLevel trustLevel);
 }

@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.prefetch.PreconditionEnforcer;
+import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
@@ -914,9 +916,19 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     // XXX testSocketTimeout() (the other kind) - how to simulate?
     
     public void testSslTrustLevel() throws Exception {
+        // default "open" trust level
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("https://localhost:7443/");
         getFetcher().process(curi);
         runDefaultChecks(curi, "hostHeader");
+        
+        // "normal" trust level
+        curi = makeCrawlURI("https://localhost:7443/");
+        getFetcher().setSslTrustLevel(TrustLevel.NORMAL);
+        getFetcher().process(curi);
+        assertEquals(1, curi.getNonFatalFailures().size());
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLHandshakeException);
+        assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+        assertEquals(0, curi.getFetchCompletedTime());
     }
 }
