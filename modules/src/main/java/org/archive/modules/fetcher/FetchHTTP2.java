@@ -320,7 +320,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         kp.put("httpProxyHost",host);
     }
 
-    public int getHttpProxyPort() {
+    public Integer getHttpProxyPort() {
         return (Integer) kp.get("httpProxyPort");
     }
     /**
