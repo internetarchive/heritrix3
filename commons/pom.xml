@@ -52,48 +52,11 @@
 	</repositories>
 
 	<dependencies>
-
-
-		<!--
-
-		This project requires "overlays".  There are custom patches we
-		apply to existing jar files from other projects (Apache).  Those
-		projects would not/could not accept our patches, so
-
-		Maven doesn't have any sort of notion for this.  It should be
-		a simple matter of ordering classpath elements, but alas.
-
-		We wanted to avoid checking in the complete source code for these
-		other projects into our source control, so it would be obvious
-		which classes we actually altered to suit our needs.
-
-		I tried a number of things to make overlay jars work in maven.
-		Here's what finally worked:
-
-		I manually explode the jar files, then manually delete the few class
-		files that we overlay (including any inner class files).  I then
-		rejar the class files minus the ones we want to generate at
-		compile-time.  I use a name archive-overlay-X-V.jar, where X
-		is the original artifact name, and V is the original version.
-
-		I then manually install these jars into our maven repository.
-		So the below dependencies are these strange, surgically altered
-		jars from other projects.
-
-		It's ugly but it works.  If you make any additional changes to
-		these projects, or heavens forfend you actually want to upgrade
-		them to some later version, you will have to repeat the
-		explode/delete/rejar/reinstall manual process.
-		-->
-
 		<dependency>
-			<groupId>org.archive.overlays</groupId>
-			<artifactId>archive-overlay-commons-httpclient</artifactId>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
 			<version>3.1</version>
-			<scope>compile</scope>
 		</dependency>
-
-		<!-- These are normal dependencies. -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
