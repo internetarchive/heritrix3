@@ -44,7 +44,7 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         Checkpointable {
 
     private static final Logger logger = 
-        Logger.getLogger(AbstractCookieStorage.class.getName());
+        Logger.getLogger(AbstractCookieStore.class.getName());
     
     protected ConfigFile cookiesLoadFile = null;
     public ConfigFile getCookiesLoadFile() {
