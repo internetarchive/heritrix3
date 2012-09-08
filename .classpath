@@ -26,7 +26,6 @@
 	<classpathentry kind="var" path="M2_REPO/poi/poi-scratchpad/2.5.1-final-20040804/poi-scratchpad-2.5.1-final-20040804.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/sleepycat/je/4.1.6/je-4.1.6.jar" sourcepath="/M2_REPO/com/sleepycat/je/4.1.6/je-4.1.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/1.4/commons-io-1.4.jar" sourcepath="/M2_REPO/commons-io/commons-io/1.4/commons-io-1.4-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/archive/overlays/archive-overlay-commons-httpclient/3.1/archive-overlay-commons-httpclient-3.1.jar" sourcepath="/M2_REPO/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/dnsjava/dnsjava/2.0.3/dnsjava-2.0.3.jar" sourcepath="/M2SRC/dnsjava-2.0.3"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-core/3.0.5.RELEASE/spring-core-3.0.5.RELEASE.jar" sourcepath="/M2_REPO/org/springframework/spring-core/3.0.5.RELEASE/spring-core-3.0.5.RELEASE-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/springframework/spring-beans/3.0.5.RELEASE/spring-beans-3.0.5.RELEASE.jar" sourcepath="/M2_REPO/org/springframework/spring-beans/3.0.5.RELEASE/spring-beans-3.0.5.RELEASE-sources.jar"/>
@@ -61,5 +60,6 @@
 	<classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.6.6/slf4j-api-1.6.6.jar" sourcepath="/M2_REPO/org/slf4j/slf4j-api/1.6.6/slf4j-api-1.6.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-jdk14/1.6.6/slf4j-jdk14-1.6.6.jar" sourcepath="/M2_REPO/org/slf4j/slf4j-jdk14/1.6.6/slf4j-jdk14-1.6.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6.jar" sourcepath="/M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar" sourcepath="/M2_REPO/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1-sources.jar"/>
 	<classpathentry kind="output" path="eclipse-build"/>
 </classpath>
