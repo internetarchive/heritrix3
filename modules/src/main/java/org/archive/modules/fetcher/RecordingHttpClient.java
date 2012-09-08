@@ -30,9 +30,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ClientConnectionOperator;
 import org.apache.http.conn.DnsResolver;
@@ -134,41 +131,6 @@ public class RecordingHttpClient extends DefaultHttpClient {
     }
     
     /**
-     * We have separate credentials providers per thread so that FetchHTTP2 can
-     * configure credentials, do the fetch, and clear the credentials, without
-     * affecting fetches going on in other threads.
-     * @return {@link ThreadLocalCredentialsProvider}
-     */
-    @Override
-    protected CredentialsProvider createCredentialsProvider() {
-        return new ThreadLocalCredentialsProvider();
-    }    
-    
-    protected class ThreadLocalCredentialsProvider implements CredentialsProvider {
-        protected ThreadLocal<CredentialsProvider> threadCreds = new ThreadLocal<CredentialsProvider>() {
-            @Override
-            protected CredentialsProvider initialValue() {
-                return RecordingHttpClient.super.createCredentialsProvider();
-            }
-        };
-
-        @Override
-        public void setCredentials(AuthScope authscope, Credentials credentials) {
-            threadCreds.get().setCredentials(authscope, credentials);
-        }
-
-        @Override
-        public Credentials getCredentials(AuthScope authscope) {
-            return threadCreds.get().getCredentials(authscope);
-        }
-
-        @Override
-        public void clear() {
-            threadCreds.get().clear();
-        }
-    }
-
-    /**
      * Implementation of {@link DnsResolver} that uses the server cache which is
      * normally expected to have been populated by FetchDNS.
      * 
@@ -239,5 +201,4 @@ public class RecordingHttpClient extends DefaultHttpClient {
             };
         }
     }
-
 }

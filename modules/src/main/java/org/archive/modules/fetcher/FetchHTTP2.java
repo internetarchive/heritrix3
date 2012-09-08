@@ -492,7 +492,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         this.sslTrustLevel = trustLevel;
         
         // force http client to be recreated with new trust level
-        cleanupHttpClient();
+        disposeHttpClient();
     }
 
     protected transient SSLContext sslContext;
@@ -1252,22 +1252,30 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             }
         }
     }
-    
-    protected transient RecordingHttpClient httpClient;
-    protected synchronized RecordingHttpClient httpClient() {
-        if (httpClient == null) {
-            httpClient = new RecordingHttpClient(this, sslContext(), getServerCache());
 
-            // some http client config
-            HttpClientParams.setRedirecting(httpClient.getParams(), false);
-            
-            if (getCookieStore() != null) {
-                httpClient.setCookieStore(getCookieStore());
-            }
+    protected transient ThreadLocal<RecordingHttpClient> threadHttpClient;
+    protected synchronized RecordingHttpClient httpClient() {
+        if (threadHttpClient == null) {
+            threadHttpClient = new ThreadLocal<RecordingHttpClient>() {
+                protected RecordingHttpClient initialValue() {
+                    RecordingHttpClient httpClient = new RecordingHttpClient(
+                            FetchHTTP2.this, sslContext(), getServerCache());
+                    
+                    // some http client config
+                    HttpClientParams.setRedirecting(httpClient.getParams(), false);
+                    
+                    if (getCookieStore() != null) {
+                        httpClient.setCookieStore(getCookieStore());
+                    }
+                    
+                    return httpClient;
+                }
+            };
         }
         
-        return httpClient;
+        return threadHttpClient.get();
     }
+
 
     /**
      * Update CrawlURI internal sizes based on current transaction (and
@@ -1361,6 +1369,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         if(isRunning()) {
             return; 
         }
+        
         super.start();
         
         if (getCookieStore() != null) {     
@@ -1368,10 +1377,6 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
         }
 
         // setSSLFactory();
-    }
-    
-    public boolean isRunning() {
-        return this.httpClient != null; 
     }
     
     public void stop() {
@@ -1384,15 +1389,12 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             cookieStore.saveCookies();
             cookieStore.stop();
         }
-        cleanupHttpClient(); // XXX happens at finish; move to teardown?
+        disposeHttpClient(); // XXX happens at finish; move to teardown?
     }
 
-    protected void cleanupHttpClient() {
-        if (httpClient != null) {
-            httpClient.getConnectionManager().shutdown();
-            sslContext = null;
-            httpClient = null;
-        }
+    protected void disposeHttpClient() {
+        threadHttpClient = null;
+        sslContext = null;
     }
     
     protected static String getServerKey(CrawlURI uri) {
