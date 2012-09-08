@@ -108,9 +108,9 @@ import org.springframework.context.Lifecycle;
  * HTTP fetcher that uses <a href="http://hc.apache.org/">Apache HttpComponents</a>.
  * @contributor nlevitt
  */
-public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
+public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
 
-    private static Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
+    private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
     public static final String REFERER = "Referer";
     public static final String RANGE = "Range";
@@ -1259,7 +1259,7 @@ public class FetchHTTP2 extends AbstractFetchHTTP implements Lifecycle {
             threadHttpClient = new ThreadLocal<RecordingHttpClient>() {
                 protected RecordingHttpClient initialValue() {
                     RecordingHttpClient httpClient = new RecordingHttpClient(
-                            FetchHTTP2.this, sslContext(), getServerCache());
+                            FetchHTTP.this, sslContext(), getServerCache());
                     
                     // some http client config
                     HttpClientParams.setRedirecting(httpClient.getParams(), false);

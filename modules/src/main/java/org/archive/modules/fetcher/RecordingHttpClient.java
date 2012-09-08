@@ -58,7 +58,7 @@ import org.archive.util.Recorder;
  */
 public class RecordingHttpClient extends DefaultHttpClient {
     protected ServerCache serverCache;
-    protected FetchHTTP2 fetcher;
+    protected FetchHTTP fetcher;
     protected SSLContext sslContext;
 
     /**
@@ -67,7 +67,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
      * @param sslContext 
      * @param serverCache
      */
-    public RecordingHttpClient(FetchHTTP2 fetchHTTP2, SSLContext sslContext, ServerCache serverCache) {
+    public RecordingHttpClient(FetchHTTP fetchHTTP2, SSLContext sslContext, ServerCache serverCache) {
         super();
         
         this.fetcher = fetchHTTP2;
@@ -96,7 +96,7 @@ public class RecordingHttpClient extends DefaultHttpClient {
      * Custom scheme registry that uses our special {@link SSLContext} which uses our
      * special trust rules.
      * 
-     * @see FetchHTTP2#getSslTrustLevel()
+     * @see FetchHTTP#getSslTrustLevel()
      * @see SchemeRegistryFactory#createDefault()
      */
     protected SchemeRegistry createSchemeRegistry() {
@@ -164,10 +164,10 @@ public class RecordingHttpClient extends DefaultHttpClient {
      * @contributor nlevitt
      */
     protected static class RecordingClientConnectionOperator extends DefaultClientConnectionOperator {
-        private FetchHTTP2 fetcher;
+        private FetchHTTP fetcher;
 
         public RecordingClientConnectionOperator(SchemeRegistry schemes,
-                DnsResolver dnsResolver, FetchHTTP2 fetcher) {
+                DnsResolver dnsResolver, FetchHTTP fetcher) {
             super(schemes, dnsResolver);
             this.fetcher = fetcher;
         }

@@ -95,7 +95,7 @@ public class FetchHTTP2Test extends FetchHTTPTestBase {
 
     @Override
     protected AbstractFetchHTTP makeModule() throws IOException {
-        FetchHTTP2 fetchHttp2 = new FetchHTTP2();
+        FetchHTTP fetchHttp2 = new FetchHTTP();
         fetchHttp2.setCookieStore(new SimpleCookieStore());
         fetchHttp2.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
