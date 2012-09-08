@@ -21,9 +21,11 @@ package org.archive.modules.fetcher;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,14 +36,18 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.CookieStore;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.archive.checkpointing.Checkpoint;
 import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
@@ -81,9 +87,9 @@ import org.mortbay.log.Log;
 
 import sun.security.tools.KeyTool;
 
-public abstract class FetchHTTPTestBase extends ProcessorTestBase {
+public class FetchHTTPTest extends ProcessorTestBase {
 
-    private static Logger logger = Logger.getLogger(FetchHTTPTestBase.class.getName());
+    private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
     static {
         Logger.getLogger("").setLevel(Level.FINE);
         for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
@@ -143,7 +149,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
                 ServletException {
             
             if (target.endsWith("/set-cookie")) {
-                response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
+                response.addCookie(new javax.servlet.http.Cookie("test-cookie-name", "test-cookie-value"));
             }
             
             if (target.equals("/login.html")) {
@@ -200,9 +206,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
     protected static Request lastRequest = null;
     protected static Response lastResponse = null;
     
-    protected AbstractFetchHTTP fetcher;
-
-    abstract protected AbstractFetchHTTP makeModule() throws IOException;
+    protected FetchHTTP fetcher;
     
     protected static SecurityHandler makeAuthWrapper(Authenticator authenticator,
             final String role, String realm, final String login,
@@ -343,7 +347,7 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         }
     }
 
-    protected AbstractFetchHTTP getFetcher() throws IOException {
+    protected FetchHTTP getFetcher() throws IOException {
         if (fetcher == null) { 
             fetcher = makeModule();
         }
@@ -712,6 +716,65 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         }
     }
 
+    protected static class SimpleCookieStore extends AbstractCookieStore {
+        protected CookieStore basicCookieStore = new BasicCookieStore();
+    
+        @Override
+        public void startCheckpoint(Checkpoint checkpointInProgress) {
+            throw new RuntimeException("not implemented");
+        }
+    
+        @Override
+        public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+            throw new RuntimeException("not implemented");
+        }
+    
+        @Override
+        public void finishCheckpoint(Checkpoint checkpointInProgress) {
+            throw new RuntimeException("not implemented");
+        }
+    
+        @Override
+        public void doCheckpoint(Checkpoint checkpointInProgress)
+                throws IOException {
+            throw new RuntimeException("not implemented");
+        }
+    
+        @Override
+        public List<Cookie> getCookies() {
+            return basicCookieStore.getCookies();
+        }
+    
+        @Override
+        public boolean clearExpired(Date date) {
+            return basicCookieStore.clearExpired(date);
+        }
+    
+        @Override
+        public void clear() {
+            basicCookieStore.clear();
+        }
+    
+        @Override
+        public void addCookie(Cookie cookie) {
+            basicCookieStore.addCookie(cookie);
+        }
+    
+        @Override
+        protected void saveCookies(String absolutePath) {
+            throw new RuntimeException("not implemented");
+        }
+    
+        @Override
+        protected void prepare() {
+        }
+    
+        @Override
+        protected void loadCookies(Reader reader) {
+            throw new RuntimeException("not implemented");
+        }
+    }
+
     public void testHttpProxy() throws Exception {
         ensureHttpServers();
         
@@ -975,5 +1038,18 @@ public abstract class FetchHTTPTestBase extends ProcessorTestBase {
         assertEquals("25\r\n" + DEFAULT_PAYLOAD_STRING + "\r\n0\r\n\r\n", messageBodyString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, entityString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
+    }
+
+    @Override
+    protected FetchHTTP makeModule() throws IOException {
+        FetchHTTP fetchHttp2 = new FetchHTTP();
+        fetchHttp2.setCookieStore(new SimpleCookieStore());
+        fetchHttp2.setServerCache(new DefaultServerCache());
+        CrawlMetadata uap = new CrawlMetadata();
+        uap.setUserAgentTemplate(getUserAgentString());
+        fetchHttp2.setUserAgentProvider(uap);
+        
+        fetchHttp2.start();
+        return fetchHttp2;
     }
 }

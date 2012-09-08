@@ -89,6 +89,7 @@ import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
+import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.CredentialStore;
 import org.archive.modules.credential.HtmlFormCredential;
@@ -108,7 +109,7 @@ import org.springframework.context.Lifecycle;
  * HTTP fetcher that uses <a href="http://hc.apache.org/">Apache HttpComponents</a>.
  * @contributor nlevitt
  */
-public class FetchHTTP extends AbstractFetchHTTP implements Lifecycle {
+public class FetchHTTP extends Processor implements Lifecycle {
 
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
