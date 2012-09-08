@@ -105,7 +105,7 @@ implements SecureProtocolSocketFactory {
             socket = createSocket(host, port, localAddress, localPort);
         } else {
         	SSLSocketFactory factory = (SSLSocketFactory)params.
-                getParameter(FetchHTTP.SSL_FACTORY_KEY);
+                getParameter(LegacyFetchHTTP.SSL_FACTORY_KEY);
         	SSLSocketFactory f = (factory != null)? factory: this.sslDefaultFactory;
             socket = f.createSocket();
             

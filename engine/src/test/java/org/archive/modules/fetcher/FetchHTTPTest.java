@@ -31,7 +31,7 @@ public class FetchHTTPTest extends FetchHTTPTestBase {
 
     @Override
     protected AbstractFetchHTTP makeModule() throws IOException {
-        FetchHTTP fetchHttp = new FetchHTTP();
+        LegacyFetchHTTP fetchHttp = new LegacyFetchHTTP();
         fetchHttp.setCookieStorage(new SimpleCookieStorage());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();

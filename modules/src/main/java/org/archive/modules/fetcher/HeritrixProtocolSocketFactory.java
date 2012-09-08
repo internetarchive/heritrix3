@@ -35,7 +35,7 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
  * cache -- if its been set into the HttpConnectionParameters.
  * 
  * Copied the guts of DefaultProtocolSocketFactory.  This factory gets
- * setup by {@link FetchHTTP}.
+ * setup by {@link LegacyFetchHTTP}.
  * 
  * @author stack
  * @version $Date$, $Revision$
