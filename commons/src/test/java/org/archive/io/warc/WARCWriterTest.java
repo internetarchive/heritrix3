@@ -144,12 +144,12 @@ extends TmpDirTestCase implements WARCConstants {
     	headerFields.addLabelValue("x", "y");
     	headerFields.addLabelValue("a", "b");
     	
-    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, METADATA);
+    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, WARCRecordType.METADATA.toString());
     	final String content = "Any old content.";
     	for (int i = 0; i < 10; i++) {
     		String body = i + ". " + content;
     		byte [] bodyBytes = body.getBytes(UTF8Bytes.UTF8);
-    		writer.writeRecord(METADATA, "http://www.archive.org/",
+    		writer.writeRecord(WARCRecordType.METADATA, "http://www.archive.org/",
     			ArchiveUtils.get14DigitDate(), "no/type",
     			rid, headerFields, new ByteArrayInputStream(bodyBytes),
     			(long)bodyBytes.length, true);

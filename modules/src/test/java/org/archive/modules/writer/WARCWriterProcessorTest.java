@@ -141,7 +141,7 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
             super(serial, settings);
         }
         @Override
-        protected void writeRecord(String type, String url,
+        public void writeRecord(WARCRecordType type, String url,
                 String create14DigitDate, String mimetype, URI recordId,
                 ANVLRecord xtraHeaders, InputStream contentStream,
                 long contentLength, boolean enforceLength) throws IOException {

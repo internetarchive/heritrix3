@@ -29,13 +29,11 @@ import static org.archive.io.warc.WARCConstants.HEADER_KEY_PROFILE;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.io.warc.WARCConstants.HTTP_REQUEST_MIMETYPE;
 import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
-import static org.archive.io.warc.WARCConstants.METADATA;
 import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_HEAD;
 import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
 import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_NOT_MODIFIED;
-import static org.archive.io.warc.WARCConstants.REQUEST;
 import static org.archive.io.warc.WARCConstants.TYPE;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
@@ -74,6 +72,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.io.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
+import org.archive.io.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.io.warc.WARCWriterPoolSettings;
@@ -446,11 +445,11 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     protected URI writeFtpControlConversation(WARCWriter w, String timestamp,
             URI baseid, CrawlURI curi, ANVLRecord headers,
             String controlConversation) throws IOException {
-        final URI uid = qualifyRecordID(baseid, TYPE, METADATA);
+        final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString());
         byte[] b = controlConversation.getBytes("UTF-8");
-        w.writeMetadataRecord(curi.toString(), timestamp,
-                FTP_CONTROL_CONVERSATION_MIMETYPE, uid, headers,
-                new ByteArrayInputStream(b), b.length);
+        w.writeRecord(WARCRecordType.METADATA, curi.toString(), timestamp,
+        FTP_CONTROL_CONVERSATION_MIMETYPE, uid, headers, new ByteArrayInputStream(b),
+        (long) b.length, true);
         return uid;
     }
 
@@ -459,7 +458,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
-        final URI uid = qualifyRecordID(baseid, TYPE, REQUEST);
+        final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.REQUEST.toString());
         ReplayInputStream 
             ris = curi.getRecorder().getRecordedOutput().getReplayInputStream();
         try {
@@ -588,7 +587,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
-        final URI uid = qualifyRecordID(baseid, TYPE, METADATA);
+        final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString());
         // Get some metadata from the curi.
         // TODO: Get all curi metadata.
         // TODO: Use other than ANVL (or rename ANVL as NameValue or use
@@ -649,8 +648,9 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         // Annotations.
         
         byte [] b = r.getUTF8Bytes();
-        w.writeMetadataRecord(curi.toString(), timestamp, ANVLRecord.MIMETYPE,
-            uid, namedFields, new ByteArrayInputStream(b), b.length);
+        w.writeRecord(WARCRecordType.METADATA, curi.toString(), timestamp,
+        ANVLRecord.MIMETYPE, uid, namedFields, new ByteArrayInputStream(b),
+        (long) b.length, true);
         return uid;
     }
     
@@ -735,10 +735,10 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         buf.append("Processor: " + getClass().getName() + "\n");
         buf.append("  Function:          Writes WARCs\n");
         buf.append("  Total CrawlURIs:   " + urlsWritten + "\n");
-        buf.append("  Revisit records:   " + WARCWriter.getStat(stats, WARCWriter.REVISIT, WARCWriter.NUM_RECORDS) + "\n");
+        buf.append("  Revisit records:   " + WARCWriter.getStat(stats, WARCRecordType.REVISIT.toString(), WARCWriter.NUM_RECORDS) + "\n");
         
-        long bytes = WARCWriter.getStat(stats, WARCWriter.RESPONSE, WARCWriter.CONTENT_BYTES)
-                + WARCWriter.getStat(stats, WARCWriter.RESOURCE, WARCWriter.CONTENT_BYTES);
+        long bytes = WARCWriter.getStat(stats, WARCRecordType.RESPONSE.toString(), WARCWriter.CONTENT_BYTES)
+                + WARCWriter.getStat(stats, WARCRecordType.RESOURCE.toString(), WARCWriter.CONTENT_BYTES);
         buf.append("  Crawled content bytes (including http headers): "
                 + bytes + " (" + ArchiveUtils.formatBytesForDisplay(bytes) + ")\n");
         

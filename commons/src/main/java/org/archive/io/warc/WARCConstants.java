@@ -19,9 +19,6 @@
 
 package org.archive.io.warc;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.archive.io.ArchiveFileConstants;
 
 /**
@@ -119,33 +116,28 @@ public interface WARCConstants extends ArchiveFileConstants {
     /**
      * WARC Record Types.
      */
-    public static final String WARCINFO = "warcinfo";
-    public static final String RESPONSE = "response";
-    public static final String RESOURCE = "resource";
-    public static final String REQUEST = "request";
-    public static final String METADATA = "metadata";
-    public static final String REVISIT = "revisit";
-    public static final String CONVERSION = "conversion";
-    public static final String CONTINUATION = "continuation";
+    enum WARCRecordType {
+        WARCINFO("warcinfo"),
+        RESPONSE("response"),
+        RESOURCE("resource"),
+        REQUEST("request"),
+        METADATA("metadata"),
+        REVISIT("revisit"),
+        CONVERSION("conversion"),
+        CONTINUATION("continuation");
+        
+        private String value;
+        private WARCRecordType(String value) {
+            this.value = value;
+        }
+        
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
     
     public static final String TYPE = "type";
-    
-    // List of all WARC Record TYPES
-    public static final String [] TYPES = {WARCINFO, RESPONSE, RESOURCE,
-    	REQUEST, METADATA, REVISIT, CONVERSION, CONTINUATION};
-    
-    // Indices into TYPES array.
-    public static final int WARCINFO_INDEX = 0;
-    public static final int RESPONSE_INDEX = 1;
-    public static final int RESOURCE_INDEX = 2;
-    public static final int REQUEST_INDEX = 3;
-    public static final int METADATA_INDEX = 4;
-    public static final int REVISIT_INDEX = 5;
-    public static final int CONVERSION_INDEX = 6;
-    public static final int CONTINUATION_INDEX = 7;
-    
-    // TYPES as List.
-    public static final List<String> TYPES_LIST = Arrays.asList(TYPES);
     
     /**
      * WARC-ID

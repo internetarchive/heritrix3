@@ -36,8 +36,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
+import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
@@ -84,7 +86,7 @@ implements WARCConstants {
      * {@link #resetTmpStats()}, write some records, then add
      * {@link #getTmpStats()} into its long-term running totals.
      */
-    private Map<String,Map<String,Long>> tmpStats; 
+    private Map<String, Map<String, Long>> tmpStats;
     
     /**
      * Constructor.
@@ -173,37 +175,38 @@ implements WARCConstants {
         return sb.toString();
     }
 
-    protected String createRecordHeader(final String type,
-    		final String url, final String create14DigitDate,
-    		final String mimetype, final URI recordId,
-    		final ANVLRecord xtraHeaders, final long contentLength)
+//    protected String createRecordHeader(final String type,
+//    		final String url, final String create14DigitDate,
+//    		final String mimetype, final URI recordId,
+//    		final ANVLRecord xtraHeaders, final long contentLength)
+    protected String createRecordHeader(WARCRecordInfo metaRecord)
     throws IllegalArgumentException {
     	final StringBuilder sb =
     		new StringBuilder(2048/*A SWAG: TODO: Do analysis.*/);
     	sb.append(WARC_ID).append(CRLF);
-        sb.append(HEADER_KEY_TYPE).append(COLON_SPACE).append(type).
+        sb.append(HEADER_KEY_TYPE).append(COLON_SPACE).append(metaRecord.getType()).
             append(CRLF);
         // Do not write a subject-uri if not one present.
-        if (url != null && url.length() > 0) {
+        if (!StringUtils.isEmpty(metaRecord.getUrl())) {
             sb.append(HEADER_KEY_URI).append(COLON_SPACE).
-                append(checkHeaderValue(url)).append(CRLF);
+                append(checkHeaderValue(metaRecord.getUrl())).append(CRLF);
         }
         sb.append(HEADER_KEY_DATE).append(COLON_SPACE).
-            append(create14DigitDate).append(CRLF);
-        if (xtraHeaders != null) {
-            for (final Iterator<Element> i = xtraHeaders.iterator(); i.hasNext();) {
+            append(metaRecord.getCreate14DigitDate()).append(CRLF);
+        if (metaRecord.getExtraHeaders() != null) {
+            for (final Iterator<Element> i = metaRecord.getExtraHeaders().iterator(); i.hasNext();) {
                 sb.append(i.next()).append(CRLF);
             }
         }
 
         sb.append(HEADER_KEY_ID).append(COLON_SPACE).append('<').
-            append(recordId.toString()).append('>').append(CRLF);
-        if (contentLength > 0) {
+            append(metaRecord.getRecordId().toString()).append('>').append(CRLF);
+        if (metaRecord.getContentLength() > 0) {
             sb.append(CONTENT_TYPE).append(COLON_SPACE).append(
-                checkHeaderLineMimetypeParameter(mimetype)).append(CRLF);
+                checkHeaderLineMimetypeParameter(metaRecord.getMimetype())).append(CRLF);
         }
         sb.append(CONTENT_LENGTH).append(COLON_SPACE).
-            append(Long.toString(contentLength)).append(CRLF);
+            append(Long.toString(metaRecord.getContentLength())).append(CRLF);
     	
     	return sb.toString();
     }
@@ -211,7 +214,7 @@ implements WARCConstants {
     /**
      * @deprecated Use {@link #writeRecord(String,String,String,String,URI,ANVLRecord,InputStream,long,boolean)} instead
      */
-    protected void writeRecord(final String type, final String url,
+    protected void writeRecord(final WARCRecordType type, final String url,
     		final String create14DigitDate, final String mimetype,
     		final URI recordId, ANVLRecord xtraHeaders,
             final InputStream contentStream, final long contentLength)
@@ -219,30 +222,42 @@ implements WARCConstants {
         writeRecord(type, url, create14DigitDate, mimetype, recordId, xtraHeaders, contentStream, contentLength, true);
     }
 
-    protected void writeRecord(final String type, final String url,
+    /** @deprecated */
+    public void writeRecord(final WARCRecordType type, final String url,
             final String create14DigitDate, final String mimetype,
             final URI recordId, ANVLRecord xtraHeaders,
             final InputStream contentStream, final long contentLength, 
             boolean enforceLength)
     throws IOException {
-        if (!TYPES_LIST.contains(type)) {
-            throw new IllegalArgumentException("Unknown record type: " + type);
-        }
-        if (contentLength == 0 &&
-                (xtraHeaders == null || xtraHeaders.size() <= 0)) {
+        
+        WARCRecordInfo metaRecord = new WARCRecordInfo(type, url);
+        metaRecord.setCreate14DigitDate(create14DigitDate);
+        metaRecord.setMimetype(mimetype);
+        metaRecord.setRecordId(recordId);
+        metaRecord.setExtraHeaders(xtraHeaders);
+        metaRecord.setContentStream(contentStream);
+        metaRecord.setContentLength(contentLength);
+        metaRecord.setEnforceLength(enforceLength);
+        
+        writeRecord(metaRecord);
+    }
+    
+    protected void writeRecord(WARCRecordInfo metaRecord)
+    throws IOException {
+    
+        if (metaRecord.getContentLength() == 0 &&
+                (metaRecord.getExtraHeaders() == null || metaRecord.getExtraHeaders().size() <= 0)) {
             throw new IllegalArgumentException("Cannot write record " +
             "of content-length zero and base headers only.");
         }
 
         String header;
         try {
-            header = createRecordHeader(type, url,
-                    create14DigitDate, mimetype, recordId, xtraHeaders,
-                    contentLength);
+            header = createRecordHeader(metaRecord);
 
         } catch (IllegalArgumentException e) {
-            logger.log(Level.SEVERE,"could not write record type: " + type 
-                    + "for URL: " + url, e);
+            logger.log(Level.SEVERE,"could not write record type: " + metaRecord.getType() 
+                    + "for URL: " + metaRecord.getUrl(), e);
             return;
         }
 
@@ -260,11 +275,13 @@ implements WARCConstants {
             totalBytes += bytes.length;
 
             
-            if (contentStream != null && contentLength > 0) {
+            if (metaRecord.getContentStream() != null && metaRecord.getContentLength() > 0) {
                 // Write out the header/body separator.
                 write(CRLF_BYTES); // TODO: should this be written even for zero-length?
                 totalBytes += CRLF_BYTES.length;
-                contentBytes += copyFrom(contentStream, contentLength, enforceLength);
+                contentBytes += copyFrom(metaRecord.getContentStream(),
+                        metaRecord.getContentLength(),
+                        metaRecord.getEnforceLength());
                 totalBytes += contentBytes;
             }
 
@@ -277,21 +294,21 @@ implements WARCConstants {
         }
         
         // TODO: should this be in the finally block?
-        tally(type, contentBytes, totalBytes, getPosition() - startPosition);
+        tally(metaRecord.getType(), contentBytes, totalBytes, getPosition() - startPosition);
     }
     
     // if compression is enabled, sizeOnDisk means compressed bytes; if not, it
     // should be the same as totalBytes (right?)
-    protected void tally(String recordType, long contentBytes, long totalBytes, long sizeOnDisk) {
+    protected void tally(WARCRecordType warcRecordType, long contentBytes, long totalBytes, long sizeOnDisk) {
         if (tmpStats == null) {
             tmpStats = new HashMap<String, Map<String,Long>>();
         }
 
         // add to stats for this record type
-        Map<String, Long> substats = tmpStats.get(recordType);
+        Map<String, Long> substats = tmpStats.get(warcRecordType.toString());
         if (substats == null) {
             substats = new HashMap<String, Long>();
-            tmpStats.put(recordType, substats);
+            tmpStats.put(warcRecordType.toString(), substats);
         }
         subtally(substats, contentBytes, totalBytes, sizeOnDisk);
         
@@ -395,12 +412,12 @@ implements WARCConstants {
     	final ANVLRecord namedFields, final InputStream fileMetadata,
     	final long fileMetadataLength)
     throws IOException {
-    	final URI recordid = generateRecordId(TYPE, WARCINFO);
+    	final URI recordid = generateRecordId(TYPE, WARCRecordType.WARCINFO.toString());
     	writeWarcinfoRecord(ArchiveUtils.getLog14Date(), mimetype, recordid,
             namedFields, fileMetadata, fileMetadataLength);
     	return recordid;
     }
-    
+
     /**
      * Write a <code>warcinfo</code> to current file.
      * The <code>warcinfo</code> type uses its <code>recordId</code> as its URL.
@@ -416,7 +433,7 @@ implements WARCConstants {
         final String mimetype, final URI recordId, final ANVLRecord namedFields,
     	final InputStream fileMetadata, final long fileMetadataLength)
     throws IOException {
-    	writeRecord(WARCINFO, null, create14DigitDate, mimetype,
+    	writeRecord(WARCRecordType.WARCINFO, null, create14DigitDate, mimetype,
         	recordId, namedFields, fileMetadata, fileMetadataLength, true);
     }
     
@@ -426,7 +443,7 @@ implements WARCConstants {
         final ANVLRecord namedFields, final InputStream request,
         final long requestLength)
     throws IOException {
-        writeRecord(REQUEST, url, create14DigitDate,
+        writeRecord(WARCRecordType.REQUEST, url, create14DigitDate,
             mimetype, recordId, namedFields, request,
             requestLength, true);
     }
@@ -447,7 +464,7 @@ implements WARCConstants {
             final ANVLRecord namedFields, final InputStream response,
             final long responseLength)
     throws IOException {
-        writeRecord(RESOURCE, url, create14DigitDate,
+        writeRecord(WARCRecordType.RESOURCE, url, create14DigitDate,
             mimetype, recordId, namedFields, response,
             responseLength, true);
     }
@@ -458,7 +475,7 @@ implements WARCConstants {
             final ANVLRecord namedFields, final InputStream response,
             final long responseLength)
     throws IOException {
-        writeRecord(RESPONSE, url, create14DigitDate,
+        writeRecord(WARCRecordType.RESPONSE, url, create14DigitDate,
             mimetype, recordId, namedFields, response,
             responseLength, true);
     }
@@ -469,22 +486,11 @@ implements WARCConstants {
             final ANVLRecord namedFields, final InputStream response,
             final long responseLength)
     throws IOException {
-        writeRecord(REVISIT, url, create14DigitDate,
+        writeRecord(WARCRecordType.REVISIT, url, create14DigitDate,
             mimetype, recordId, namedFields, response,
             responseLength, false);
     }
     
-    public void writeMetadataRecord(final String url,
-            final String create14DigitDate, final String mimetype,
-            final URI recordId,
-            final ANVLRecord namedFields, final InputStream metadata,
-            final long metadataLength)
-    throws IOException {
-        writeRecord(METADATA, url, create14DigitDate,
-            mimetype, recordId, namedFields, metadata,
-            metadataLength, true);
-    }
-
     /**
      * @see WARCWriter#tmpStats for usage model
      */
