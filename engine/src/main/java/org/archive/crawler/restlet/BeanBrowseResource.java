@@ -89,16 +89,6 @@ public class BeanBrowseResource extends JobRelatedResource {
         
         Configuration tmpltCfg = new Configuration();
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        
-        //TODO: this is temporary, remove this try-catch block
-        try {
-            tmpltCfg.setDirectoryForTemplateLoading(new File("/0/templates/"));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        //tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
         tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         setTemplateConfiguration(tmpltCfg);
     }
