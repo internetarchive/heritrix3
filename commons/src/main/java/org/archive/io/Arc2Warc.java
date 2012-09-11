@@ -41,7 +41,10 @@ import org.archive.io.arc.ARCReader;
 import org.archive.io.arc.ARCReaderFactory;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCConstants;
+import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
+import org.archive.io.warc.WARCWriterPoolSettings;
 import org.archive.io.warc.WARCWriterPoolSettingsData;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
@@ -145,6 +148,11 @@ public class Arc2Warc {
    
    protected void write(final WARCWriter writer, final ARCRecord r)
    throws IOException {
+       WARCRecordInfo recordInfo = new WARCRecordInfo();
+       recordInfo.setUrl(r.getHeader().getUrl());
+       recordInfo.setContentStream(r);
+       recordInfo.setContentLength(r.getHeader().getLength());
+       recordInfo.setEnforceLength(true);
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
@@ -152,6 +160,7 @@ public class Arc2Warc {
            .withZone(DateTimeZone.UTC)
                .parseDateTime(arcDateString)
                    .toString(ISODateTimeFormat.dateTimeNoMillis());
+       recordInfo.setCreate14DigitDate(warcDateString);
 
        ANVLRecord ar = new ANVLRecord();
        String ip = (String)r.getHeader()
@@ -160,6 +169,7 @@ public class Arc2Warc {
            ar.addLabelValue(WARCConstants.NAMED_FIELD_IP_LABEL, ip);
            r.getMetaData();
        }
+       recordInfo.setExtraHeaders(ar);
 
        // enable reconstruction of ARC from transformed WARC
        // TODO: deferred for further analysis (see HER-1750) 
@@ -167,18 +177,17 @@ public class Arc2Warc {
 
        // If contentBody > 0, assume http headers.  Make the mimetype
        // be application/http.  Otherwise, give it ARC mimetype.
-       String warcMimeTypeString;
        if (r.getHeader().getContentBegin() > 0) {
-           warcMimeTypeString = WARCConstants.HTTP_RESPONSE_MIMETYPE;
-           writer.writeResponseRecord(r.getHeader().getUrl(), warcDateString,
-               warcMimeTypeString, generator.getRecordID(), ar, r, 
-                   r.getHeader().getLength());
+           recordInfo.setType(WARCRecordType.RESPONSE);
+           recordInfo.setMimetype(WARCConstants.HTTP_RESPONSE_MIMETYPE);
+           recordInfo.setRecordId(generator.getRecordID());
        } else {
-           warcMimeTypeString = r.getHeader().getMimetype();
-           writer.writeResourceRecord(r.getHeader().getUrl(), warcDateString,
-               warcMimeTypeString, ar, r, r.getHeader().getLength());
+           recordInfo.setType(WARCRecordType.RESOURCE);
+           recordInfo.setMimetype(r.getHeader().getMimetype());
+           recordInfo.setRecordId(((WARCWriterPoolSettings)writer.settings).getRecordIDGenerator().getRecordID());
        }
 
+       writer.writeRecord(recordInfo);
    }
 
    /**

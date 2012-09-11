@@ -36,8 +36,11 @@ public class WARCRecordInfo {
     protected long contentLength;
     protected boolean enforceLength;
 
-    public WARCRecordInfo(WARCRecordType type, String url) {
+    public void setType(WARCRecordType type) {
         this.type = type;
+    }
+    
+    public void setUrl(String url) {
         this.url = url;
     }
 

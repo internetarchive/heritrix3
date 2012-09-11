@@ -73,6 +73,7 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.io.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPool;
 import org.archive.io.warc.WARCWriterPoolSettings;
@@ -445,12 +446,25 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     protected URI writeFtpControlConversation(WARCWriter w, String timestamp,
             URI baseid, CrawlURI curi, ANVLRecord headers,
             String controlConversation) throws IOException {
-        final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString());
+        
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setMimetype(FTP_CONTROL_CONVERSATION_MIMETYPE);
+        recordInfo.setExtraHeaders(headers);
+        recordInfo.setEnforceLength(true);
+        recordInfo.setType(WARCRecordType.METADATA);
+
+        recordInfo.setRecordId(qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString()));
+        
         byte[] b = controlConversation.getBytes("UTF-8");
-        w.writeRecord(WARCRecordType.METADATA, curi.toString(), timestamp,
-        FTP_CONTROL_CONVERSATION_MIMETYPE, uid, headers, new ByteArrayInputStream(b),
-        (long) b.length, true);
-        return uid;
+        
+        recordInfo.setContentStream(new ByteArrayInputStream(b));
+        recordInfo.setContentLength((long) b.length);
+        
+        w.writeRecord(recordInfo);
+        
+        return recordInfo.getRecordId();
     }
 
     protected URI writeRequest(final WARCWriter w,
@@ -458,17 +472,29 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.REQUEST);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setExtraHeaders(namedFields);
+        recordInfo.setContentLength(curi.getRecorder().getRecordedOutput().getSize());
+        recordInfo.setEnforceLength(true);
+        
         final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.REQUEST.toString());
+        recordInfo.setRecordId(uid);
+        
         ReplayInputStream 
             ris = curi.getRecorder().getRecordedOutput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
         try {
-            w.writeRequestRecord(curi.toString(), timestamp, mimetype, uid,
-                namedFields, ris,
-                curi.getRecorder().getRecordedOutput().getSize());
+            w.writeRecord(recordInfo);
         } finally {
             IOUtils.closeQuietly(ris);
         }
-        return uid;
+        
+        return recordInfo.getRecordId();
     }
     
     protected URI writeResponse(final WARCWriter w,
@@ -476,16 +502,27 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESPONSE);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setRecordId(baseid);
+        recordInfo.setExtraHeaders(namedFields);
+        recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
+        recordInfo.setEnforceLength(true);
+        
         ReplayInputStream ris =
             curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
         try {
-            w.writeResponseRecord(curi.toString(), timestamp, mimetype, baseid,
-                namedFields, ris,
-                curi.getRecorder().getRecordedInput().getSize());
+            w.writeRecord(recordInfo);
         } finally {
             IOUtils.closeQuietly(ris);
         }
-        return baseid;
+        
+        return recordInfo.getRecordId();
     }
     
     protected URI writeResource(final WARCWriter w,
@@ -493,15 +530,25 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESOURCE);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setRecordId(baseid);
+        recordInfo.setExtraHeaders(namedFields);
+        recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
+        recordInfo.setEnforceLength(true);
+        
         ReplayInputStream ris = curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
         try {
-            w.writeResourceRecord(curi.toString(), timestamp, mimetype, baseid,
-                namedFields, ris,
-                curi.getRecorder().getRecordedInput().getSize());
+            w.writeRecord(recordInfo);
         } finally {
             IOUtils.closeQuietly(ris);
         }
-        return baseid;
+        
+        return recordInfo.getRecordId();
     }
 
     protected URI writeRevisitDigest(final WARCWriter w,
@@ -521,20 +568,33 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final String timestamp, final String mimetype, final URI baseid,
             final CrawlURI curi, final ANVLRecord namedFields,
             long contentLength) throws IOException {
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.REVISIT);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setRecordId(baseid);
+        recordInfo.setContentLength(contentLength);
+        recordInfo.setEnforceLength(false);
+        
         namedFields.addLabelValue(
         		HEADER_KEY_PROFILE, PROFILE_REVISIT_IDENTICAL_DIGEST);
         namedFields.addLabelValue(
         		HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
+        recordInfo.setExtraHeaders(namedFields);
+        
         ReplayInputStream ris =
             curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
         try {
-            w.writeRevisitRecord(curi.toString(), timestamp, mimetype, baseid,
-                namedFields, ris, contentLength);
+            w.writeRecord(recordInfo);
         } finally {
             IOUtils.closeQuietly(ris);
         }
         curi.getAnnotations().add("warcRevisit:digest");
-        return baseid;
+        
+        return recordInfo.getRecordId();
     }
     
     protected URI writeRevisitNotModified(final WARCWriter w,
@@ -542,10 +602,22 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI puri,
             final ANVLRecord namedFields) 
     throws IOException {
-    	CrawlURI curi = (CrawlURI) puri;
+        CrawlURI curi = (CrawlURI) puri;
+        
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.REVISIT);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(null);
+        recordInfo.setRecordId(baseid);
+        recordInfo.setContentLength((long) 0);
+        recordInfo.setEnforceLength(false);
+        
         namedFields.addLabelValue(
         		HEADER_KEY_PROFILE, PROFILE_REVISIT_NOT_MODIFIED);
         // save just enough context to understand basis of not-modified
+        recordInfo.setExtraHeaders(namedFields);
+        
         if(curi.isHttpTransaction()) {
             HttpMethod method = curi.getHttpMethod();
             saveHeader(A_ETAG_HEADER,method,namedFields,HEADER_KEY_ETAG);
@@ -557,14 +629,15 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
         ReplayInputStream ris =
             curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
         try {
-            w.writeRevisitRecord(curi.toString(), timestamp, null, baseid,
-                namedFields, ris, 0);
+            w.writeRecord(recordInfo);
         } finally {
             IOUtils.closeQuietly(ris);
         }
         curi.getAnnotations().add("warcRevisit:notModified");
-        return baseid;
+        return recordInfo.getRecordId();
     }
     
     /**
@@ -587,7 +660,16 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final URI baseid, final CrawlURI curi,
             final ANVLRecord namedFields) 
     throws IOException {
-        final URI uid = qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString());
+	    WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.METADATA);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(ANVLRecord.MIMETYPE);
+        recordInfo.setExtraHeaders(namedFields);
+        recordInfo.setEnforceLength(true);
+	    
+        recordInfo.setRecordId(qualifyRecordID(baseid, TYPE, WARCRecordType.METADATA.toString()));
+
         // Get some metadata from the curi.
         // TODO: Get all curi metadata.
         // TODO: Use other than ANVL (or rename ANVL as NameValue or use
@@ -648,10 +730,12 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         // Annotations.
         
         byte [] b = r.getUTF8Bytes();
-        w.writeRecord(WARCRecordType.METADATA, curi.toString(), timestamp,
-        ANVLRecord.MIMETYPE, uid, namedFields, new ByteArrayInputStream(b),
-        (long) b.length, true);
-        return uid;
+        recordInfo.setContentStream(new ByteArrayInputStream(b));
+        recordInfo.setContentLength((long) b.length);
+        
+        w.writeRecord(recordInfo);
+        
+        return recordInfo.getRecordId();
     }
     
     protected URI getRecordID() throws IOException {

@@ -21,8 +21,6 @@ package org.archive.modules.writer;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +30,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.archive.io.WriterPool;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.WriterPoolSettings;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPoolSettingsData;
 import org.archive.modules.CrawlMetadata;
@@ -44,7 +43,6 @@ import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.FileUtils;
 import org.archive.util.TmpDirTestCase;
-import org.archive.util.anvl.ANVLRecord;
 
 /**
  * Unit test for {@link WARCWriterProcessor}.
@@ -140,11 +138,9 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         public FailWARCWriter(AtomicInteger serial, WARCWriterPoolSettingsData settings) {
             super(serial, settings);
         }
+        
         @Override
-        public void writeRecord(WARCRecordType type, String url,
-                String create14DigitDate, String mimetype, URI recordId,
-                ANVLRecord xtraHeaders, InputStream contentStream,
-                long contentLength, boolean enforceLength) throws IOException {
+        public void writeRecord(WARCRecordInfo recordInfo) throws IOException {
             throw new IOException("pretend no space left on device");
         }
     }
