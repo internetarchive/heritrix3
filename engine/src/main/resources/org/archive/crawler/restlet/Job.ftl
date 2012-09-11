@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>${job.shortName} - ${job.status} - Job main page</title>
+	<title>${job.shortName} - ${job.statusDescription} - Job main page</title>
 	<base href='${baseRef}'/>
 	<link rel="stylesheet" type="text/css" href="${cssRef}">
 </head>
@@ -34,14 +34,14 @@
 				<input type='submit' name='action' value='launch' 
 				<#if job.isProfile> disabled='disabled' title='profiles cannot be launched'
 				</#if>
-				<#if !job.isLaunchable>
+				<#if !job.availableActions?seq_contains("launch")>
 				 disabled='disabled'
 				</#if>
 				 />
 			</span>
 			<span class="bgroup">
-				<input <#if !job.isPausable> disabled</#if> type='submit' name='action' value='pause' />
-				<input <#if !job.isUnpausable> disabled</#if> type='submit' name='action' value='unpause' />
+				<input <#if !job.availableActions?seq_contains("pause")> disabled</#if> type='submit' name='action' value='pause' />
+				<input <#if !job.availableActions?seq_contains("unpause")> disabled</#if> type='submit' name='action' value='unpause' />
 				<input <#if !job.isRunning> disabled</#if>  type='submit' name='action' value='checkpoint' />
 			</span>
 			<span class="bgroup">
@@ -75,7 +75,7 @@
 		<div>${line?html}</div>
 		</#list>
 	</div>
-	<h2>Job is ${job.status}</h2>
+	<h2>Job is ${job.statusDescription}</h2>
 	<#if job.hasApplicationContext>
 		<dl id="jobstats">
 			<dt>Totals</dt>
@@ -123,7 +123,7 @@ ${line?html}
 	<h2>Files</h2>
 	<h3>Browser <a href='jobdir'>Job Directory</a></h3>
 	<h3>Configuration-referenced Paths</h3>
-	<#assign refPaths=job.configReferencedPaths! />
+	<#assign refPaths=job.referen! />
 	<#if !refPaths?has_content >
 		<i>build the job to discover referenced paths</i>
 	<#else>

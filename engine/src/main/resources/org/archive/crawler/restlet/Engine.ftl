@@ -19,19 +19,19 @@
 <b>Memory: </b>
 ${engine.heapReport}
 <br/><br/>
-<b>Jobs Directory</b>: <a href='jobsdir'>${engine.jobsDirAbsolutePath}</a>
+<b>Jobs Directory</b>: <a href='jobsdir'>${engine.jobsDir}</a>
          
-<form method='POST'><h2>Job Directories (${engine.jobList?size})
+<form method='POST'><h2>Job Directories (${engine.jobs?size})
        <input type='submit' name='action' value='rescan'></h2>
 </form>
         
 <ul>
-<#list engine.jobList as crawlJob> 
+<#list engine.jobs as crawlJob> 
 <li>
 <div>
 <a href="/engine/job/${crawlJob.shortName}">${crawlJob.shortName}</a>
 <#if crawlJob.hasApplicationContext>
-	&laquo;${crawlJob.status}&raquo;
+	&laquo;${crawlJob.statusDescription}&raquo;
 </#if>
 <#if crawlJob.isLaunchInfoPartial>
 	<span> at least </span>
@@ -39,7 +39,7 @@ ${engine.heapReport}
 ${crawlJob.launchCount} launches
 </div>
 <div style="color:#666">
-${crawlJob.config}
+${crawlJob.primaryConfig}
 </div>
 <#if crawlJob.lastLaunch??>
 	<div>(last at ${crawlJob.lastLaunch})</div>
@@ -52,7 +52,7 @@ ${crawlJob.config}
         
 <form method='POST'>
 Create new job directory with recommended starting configuration<br/>
-<b>Path:</b> ${engine.jobsDirAbsolutePath}${filePathSeparator}
+<b>Path:</b> ${engine.jobsDir}${filePathSeparator}
 <input name='createpath'/>
 <input type='submit' name='action' value='create'>
 </form>
@@ -72,9 +72,9 @@ will then require access to the hosting machine. You should
 cleanly terminate and teardown any jobs in progress first.<div>
 <form method='POST'>
 
-<#list engine.jobList as crawlJob>
+<#list engine.jobs as crawlJob>
 <#if crawlJob.hasApplicationContext>
-<div>Job ${crawlJob.key} still &laquo; ${crawlJob.status} &raquo;</div>
+<div>Job ${crawlJob.key} still &laquo; ${crawlJob.statusDescription} &raquo;</div>
 <input type='checkbox' id="ignore__${crawlJob.key}" name='ignore__${crawlJob.key}'>
 <label for='ignore__${crawlJob.key}'> Ignore job '${crawlJob.key}' and exit anyway</label>
 <br>

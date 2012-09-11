@@ -6,13 +6,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.crawler.framework.CrawlJob;
+import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.reporting.Report;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
@@ -25,31 +28,67 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
     public static final IOFileFilter EDIT_FILTER = FileUtils
             .getRegexFileFilter(".*\\.((c?xml)|(txt))$");
     
-    public CrawlJobModel(CrawlJob crawlJob){
+    public CrawlJobModel(CrawlJob crawlJob, String urlBaseRef){
         super();
         this.crawlJob=crawlJob;
         this.put("shortName",crawlJob.getShortName());
-        this.put("status", crawlJob.getJobStatusDescription());
+        if (crawlJob.getCrawlController() != null) {
+            this.put("crawlControllerState", crawlJob.getCrawlController().getState());
+            if (crawlJob.getCrawlController().getState() == State.FINISHED) {
+                this.put("crawlExitStatus", crawlJob.getCrawlController().getCrawlExitStatus());
+            }
+        }
+
+        this.put("statusDescription", crawlJob.getJobStatusDescription());
+
         this.put("launchCount", crawlJob.getLaunchCount());
-        this.put("config", crawlJob.getPrimaryConfig());
-        this.put("isProfile", crawlJob.isProfile());
-        this.put("isLaunchInfoPartial", crawlJob.isLaunchInfoPartial());
-        this.put("isLaunchable", crawlJob.isLaunchable());
-        this.put("isPausable", crawlJob.isPausable());
-        this.put("isUnpausable", crawlJob.isUnpausable());
-        this.put("isRunning", crawlJob.isRunning());
-        this.put("uriTotalsReport", crawlJob.uriTotalsReport());
-        this.put("sizeTotalsReport", crawlJob.sizeTotalsReport());        
-        this.put("hasApplicationContext",crawlJob.hasApplicationContext());
         this.put("lastLaunch",crawlJob.getLastLaunch());
-        this.put("alertCount", crawlJob.getAlertCount());        
-        this.put("rateReport", crawlJob.rateReport()); 
+        this.put("isProfile", crawlJob.isProfile());
+
+        File primaryConfig = FileUtils.tryToCanonicalize(crawlJob.getPrimaryConfig());
+        this.put("primaryConfig", primaryConfig.getAbsolutePath());
+        this.put("primaryConfigUrl", urlBaseRef + "jobdir/" + primaryConfig.getName());
+        this.put("url",urlBaseRef+"job/"+crawlJob.getShortName());
+
+        this.put("isLaunchInfoPartial", crawlJob.isLaunchInfoPartial());
+        this.put("isRunning", crawlJob.isRunning());
+        this.put("isLaunchable",crawlJob.isLaunchable());
+
+        this.put("uriTotalsReport", crawlJob.uriTotalsReport());
+        this.put("sizeTotalsReport", crawlJob.sizeTotalsReport());
+        this.put("rateReport", crawlJob.rateReport());
         this.put("loadReport", crawlJob.loadReport());
         this.put("elapsedReport", crawlJob.elapsedReport()); 
         this.put("threadReport", crawlJob.threadReport()); 
         this.put("frontierReport", crawlJob.frontierReport()); 
-        this.put("loadReport", crawlJob.loadReport()); 
-        
+
+        this.put("configFiles",generateConfigReferencedPaths(urlBaseRef));
+        this.put("jobLogTail", generateJobLogTail());
+        this.put("crawlLogTail", generateCrawlLogTail());
+
+        this.put("hasApplicationContext",crawlJob.hasApplicationContext());
+        this.put("alertCount", crawlJob.getAlertCount());        
+
+        Set<String> actions = new LinkedHashSet<String>();
+        this.put("availableActions",actions);
+        if (!crawlJob.hasApplicationContext())
+            actions.add("build");
+
+        if (!crawlJob.isProfile() && crawlJob.isLaunchable())
+            actions.add("launch");
+        if (crawlJob.isPausable())
+            actions.add("pause");
+        if (crawlJob.isUnpausable())
+            actions.add("unpause");
+
+        if (crawlJob.getCheckpointService() != null && crawlJob.isRunning())
+            actions.add("checkpoint");
+        if (crawlJob.isRunning())
+            actions.add("terminate");
+        if (crawlJob.hasApplicationContext())
+            actions.add("teardown");
+
+
         this.put("key", "");
     }
     public String getLastLaunchTime(){
@@ -86,14 +125,9 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         return crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile();
     }
     public List<File> getImportedConfigurationFilePaths(){
-//        List<String> configList = new ArrayList<String>();
-//        for( File f : crawlJob.getImportedConfigs(crawlJob.getPrimaryConfig())){
-//            configList.add(f);
-//        }
-//        return configList;
         return crawlJob.getImportedConfigs(crawlJob.getPrimaryConfig());
     }
-    public List<String> getJobLogTail(){
+    public List<String> generateJobLogTail(){
         List<String> jobLog = new ArrayList<String>();
         if (crawlJob.getJobLog().exists()) {
             try {
@@ -105,9 +139,11 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         }
         return jobLog;
     }
-    public List<String> getCrawlLogTail() {
+    public List<String> generateCrawlLogTail() {
         List<String> logLines = new LinkedList<String>();
-        if(crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().exists()) {
+        if ((crawlJob.isRunning() || (crawlJob.hasApplicationContext() && !crawlJob.isLaunchable()))
+                && crawlJob.getCrawlController().getLoggerModule()
+                        .getCrawlLogPath().getFile().exists()) {
             try {
                 FileUtils.pagedLines(crawlJob.getCrawlController()
                         .getLoggerModule().getCrawlLogPath().getFile(), -1,
@@ -132,14 +168,15 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         }
         return reports;
     }
-    public List<Map<String,Object>> getConfigReferencedPaths(){
+    private List<Map<String,Object>> generateConfigReferencedPaths(String baseRef){
         List<Map<String,Object>> referencedPaths = new ArrayList<Map<String,Object>>();
         for (String key : crawlJob.getConfigPaths().keySet()) {
             ConfigPath cp = crawlJob.getConfigPaths().get(key);
             Map<String,Object> configMap = new HashMap<String,Object>();
             configMap.put("key", key);
             configMap.put("name", cp.getName());
-            configMap.put("path",cp.getFile());
+            configMap.put("path",FileUtils.tryToCanonicalize(cp.getFile()).getAbsolutePath());
+            configMap.put("url",baseRef+"engine/anypath/"+configMap.get("path"));
             configMap.put("editable", EDIT_FILTER.accept(cp.getFile()));
             referencedPaths.add(configMap);
         }

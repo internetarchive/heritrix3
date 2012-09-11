@@ -74,16 +74,7 @@ public class EngineResource extends BaseResource {
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         
         Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        
-        //TODO: this is temporary, remove this try-catch block
-        try {
-            tmpltCfg.setDirectoryForTemplateLoading(new File("/0/templates/"));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
+        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");        
         tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
         setTemplateConfiguration(tmpltCfg);
     }
@@ -99,7 +90,7 @@ public class EngineResource extends BaseResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer, "engine", makePresentableMap());
+                    XmlMarshaller.marshalDocument(writer, "engine", makeDataModel());
                 }
             };
         } else {
@@ -213,13 +204,6 @@ public class EngineResource extends BaseResource {
         return builtJobs;
     }
 
-    protected List<String> getAvailableActions() {
-        List<String> actions = new LinkedList<String>();
-        actions.add("rescan");
-        actions.add("add");
-        actions.add("create");
-        return actions;
-    }
 
     /**
      * Constructs a nested Map data structure with the information represented
@@ -228,53 +212,18 @@ public class EngineResource extends BaseResource {
      * 
      * @return the nested Map data structure
      */
-    protected LinkedHashMap<String,Object> makePresentableMap() {
+    protected EngineModel makeDataModel() {
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
+        EngineModel model = new EngineModel(getEngine(), baseRef);
 
-        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
-        Engine engine = getEngine();
-        info.put("heritrixVersion", engine.getHeritrixVersion());
-        File jobsDir = FileUtils.tryToCanonicalize(engine.getJobsDir());
-        info.put("jobsDir", jobsDir.getAbsolutePath());
-        info.put("jobsDirUrl", baseRef + "jobsdir/");
-        info.put("availableActions", getAvailableActions());
-        info.put("heapReport", getEngine().heapReportData());
-
-        // re-scan job configs on each page load
-        ArrayList<CrawlJob> jobs = new ArrayList<CrawlJob>();
-
-        jobs.addAll(engine.getJobConfigs().values());
-        Collections.sort(jobs);
-        Collection<Map<String,Object>> jobsInfo = new LinkedList<Map<String,Object>>();
-        for (CrawlJob cj: jobs) {
-            // cj.writeHtmlTo(pw,"job/");
-            Map<String,Object> jobInfo = new LinkedHashMap<String, Object>();
-            jobInfo.put("shortName", cj.getShortName());
-            jobInfo.put("url", baseRef + "job/" + cj.getShortName());
-            jobInfo.put("isProfile", cj.isProfile());
-            jobInfo.put("launchCount", cj.getLaunchCount());
-            jobInfo.put("lastLaunch", cj.getLastLaunch());
-            File primaryConfig = FileUtils.tryToCanonicalize(cj.getPrimaryConfig());
-            jobInfo.put("primaryConfig", primaryConfig.getAbsolutePath());
-            jobInfo.put("primaryConfigUrl", baseRef + "job/" + cj.getShortName() + "/jobdir/" + primaryConfig.getName());
-            if (cj.getCrawlController() != null) {
-                jobInfo.put("crawlControllerState", cj.getCrawlController().getState());
-                if (cj.getCrawlController().getState() == State.FINISHED) {
-                    jobInfo.put("crawlExitStatus", cj.getCrawlController().getCrawlExitStatus());
-                }
-            }
-            jobsInfo.add(jobInfo);
-        }
-        info.put("jobs", jobsInfo);
-
-        return info;
+        return model;
     }
     
     protected void writeHtml(Writer writer) {
-        Engine engine = getEngine();
+        EngineModel model = makeDataModel();
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
@@ -285,7 +234,7 @@ public class EngineResource extends BaseResource {
         viewModel.setFlashes(Flash.getFlashes(getRequest()));
         viewModel.put("baseRef",baseRef);
         viewModel.put("filePathSeparator", File.pathSeparator);
-        viewModel.put("engine", new EngineModel(engine));
+        viewModel.put("engine", model);
         viewModel.put("cssRef", getStylesheetRef());
 
         try {

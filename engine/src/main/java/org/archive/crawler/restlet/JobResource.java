@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -96,16 +97,6 @@ public class JobResource extends BaseResource {
         
         Configuration tmpltCfg = new Configuration();
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        
-        //TODO: this is temporary, remove this try-catch block
-        try {
-            tmpltCfg.setDirectoryForTemplateLoading(new File("/0/templates/"));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        //tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
         tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         setTemplateConfiguration(tmpltCfg);
     }
@@ -124,8 +115,9 @@ public class JobResource extends BaseResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer, "job",
-                            makePresentableMap());
+                    CrawlJobModel model = makeDataModel();
+                    model.put("heapReport", getEngine().heapReportData());
+                    XmlMarshaller.marshalDocument(writer, "job", model);
                 }
             };
         } else {
@@ -149,112 +141,16 @@ public class JobResource extends BaseResource {
      * 
      * @return the nested Map data structure
      */
-    protected LinkedHashMap<String, Object> makePresentableMap() {
-        LinkedHashMap<String, Object> info = new LinkedHashMap<String, Object>();
+    protected CrawlJobModel makeDataModel() {
 
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if (!baseRef.endsWith("/")) {
             baseRef += "/";
         }
         Reference baseRefRef = new Reference(baseRef);
-
-        info.put("shortName", cj.getShortName());
-        if (cj.getCrawlController() != null) {
-            info.put("crawlControllerState", cj.getCrawlController().getState());
-            if (cj.getCrawlController().getState() == State.FINISHED) {
-                info.put("crawlExitStatus", cj.getCrawlController()
-                        .getCrawlExitStatus());
-            }
-        }
-        info.put("statusDescription", cj.getJobStatusDescription());
-        info.put("availableActions", getAvailableActions());
-
-        info.put("launchCount", cj.getLaunchCount());
-        info.put("lastLaunch", cj.getLastLaunch());
-        info.put("isProfile", cj.isProfile());
-        File primaryConfig = FileUtils.tryToCanonicalize(cj.getPrimaryConfig());
-        info.put("primaryConfig", primaryConfig.getAbsolutePath());
-        info.put("primaryConfigUrl",
-                baseRef + "jobdir/" + primaryConfig.getName());
-
-        if (cj.getJobLog().exists())
-            try {
-                List<String> logLines = new LinkedList<String>();
-                FileUtils.pagedLines(cj.getJobLog(), -1, -5, logLines);
-                info.put("jobLogTail", logLines);
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-
-        if (cj.hasApplicationContext()) {
-            info.put("uriTotalsReport", cj.uriTotalsReportData());
-            info.put("sizeTotalsReport", cj.sizeTotalsReportData());
-            info.put("rateReport", cj.rateReportData());
-            info.put("loadReport", cj.loadReportData());
-            info.put("elapsedReport", cj.elapsedReportData());
-            info.put("threadReport", cj.threadReportData());
-            info.put("frontierReport", cj.frontierReportData());
-            info.put("heapReport", getEngine().heapReportData());
-
-            if ((cj.isRunning() || (cj.hasApplicationContext() && !cj
-                    .isLaunchable()))
-                    && cj.getCrawlController().getLoggerModule()
-                            .getCrawlLogPath().getFile().exists()) {
-                try {
-                    List<String> logLines = new LinkedList<String>();
-                    FileUtils.pagedLines(cj.getCrawlController()
-                            .getLoggerModule().getCrawlLogPath().getFile(), -1,
-                            -10, logLines);
-                    info.put("crawlLogTail", logLines);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
-                }
-            }
-        }
-
-        List<Map<String, String>> configFiles = new LinkedList<Map<String, String>>();
-        for (String cppp : cj.getConfigPaths().keySet()) {
-            Map<String, String> configFileInfo = new LinkedHashMap<String, String>();
-            configFileInfo.put("key", cppp);
-            File path = FileUtils.tryToCanonicalize(cj.getConfigPaths()
-                    .get(cppp).getFile());
-            configFileInfo.put("path", path.getAbsolutePath());
-            Reference urlRef = new Reference(baseRefRef, getHrefPath(path, cj))
-                    .getTargetRef();
-            configFileInfo.put("url", urlRef.toString());
-            configFiles.add(configFileInfo);
-        }
-        info.put("configFiles", configFiles);
-
-        return info;
-    }
-
-    protected Set<String> getAvailableActions() {
-        Set<String> actions = new LinkedHashSet<String>();
-
-        if (!cj.hasApplicationContext()) {
-            actions.add("build");
-        }
-        if (!cj.isProfile() && cj.isLaunchable()) {
-            actions.add("launch");
-        }
-        if (cj.isPausable()) {
-            actions.add("pause");
-        }
-        if (cj.isUnpausable()) {
-            actions.add("unpause");
-        }
-        if (cj.getCheckpointService() != null && cj.isRunning()) {
-            actions.add("checkpoint");
-        }
-        if (cj.isRunning()) {
-            actions.add("terminate");
-        }
-        if (cj.hasApplicationContext()) {
-            actions.add("teardown");
-        }
-
-        return actions;
+        CrawlJobModel model = new CrawlJobModel(cj,baseRef);
+        
+        return model;
     }
 
     protected void writeHtml(Writer writer) {
@@ -268,8 +164,8 @@ public class JobResource extends BaseResource {
         viewModel.setFlashes(Flash.getFlashes(getRequest()));
         viewModel.put("baseRef",baseRef);
         viewModel.put("cssRef", getStylesheetRef());
-        viewModel.put("job",new CrawlJobModel(cj));
-        viewModel.put("engine", new EngineModel(getEngine()));
+        viewModel.put("job", makeDataModel());
+        viewModel.put("engine", new EngineModel(getEngine(),baseRef));
         viewModel.put("cj", cj);
 
         try {
@@ -282,38 +178,6 @@ public class JobResource extends BaseResource {
             throw new RuntimeException(e); 
         }
         
-    }
-
-    /**
-     * Print a link to the given File
-     * 
-     * @param pw
-     *            PrintWriter
-     * @param f
-     *            File
-     */
-    protected void printLinkedFile(PrintWriter pw, File f) {
-        printLinkedFile(pw, f, f.toString(), null);
-    }
-
-    /**
-     * Print a link to the given File, using the given link text
-     * 
-     * @param pw
-     *            PrintWriter
-     * @param f
-     *            File
-     */
-    protected void printLinkedFile(PrintWriter pw, File f, String linktext,
-            String queryString) {
-        String relativePath = JobResource.getHrefPath(f, cj);
-        pw.println("<a href='" + relativePath
-                + ((queryString == null) ? "" : "?" + queryString) + "'>"
-                + linktext + "</a>");
-        if (EDIT_FILTER.accept(f)) {
-            pw.println("[<a href='" + relativePath
-                    + "?format=textedit'>edit</a>]");
-        }
     }
 
     /**
