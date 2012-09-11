@@ -42,9 +42,15 @@ import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILENAME;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.ByteArrayInputStream;
@@ -70,7 +76,6 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.io.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
@@ -243,6 +248,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             // They'll be added to totals below, in finally block, after records
             // have been written.
             writer.resetTmpStats();
+            writer.resetTmpRecordLog();
+            
             // Write a request, response, and metadata all in the one
             // 'transaction'.
             final URI baseid = getRecordID();
@@ -269,33 +276,54 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             throw e;
         } finally {
             if (writer != null) {
-                if (WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
-                     addStats(writer.getTmpStats());
-                     urlsWritten.incrementAndGet();
-                }
-                if (logger.isLoggable(Level.FINE)) { 
-                    logger.fine("wrote " 
-                        + WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) 
-                        + " bytes to " + writer.getFile().getName() + " for " + curi);
-                }
-            	setTotalBytesWritten(getTotalBytesWritten() +
-            	     (writer.getPosition() - position));
+                updateMetadataAfterWrite(curi, writer, position);
                 getPool().returnFile(writer);
-
-                String filename = writer.getFile().getName();
-                if (filename.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
-                    filename = filename.substring(0, filename.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
-                }
-                curi.addExtraInfo("warcFilename", filename);
-
-                @SuppressWarnings("unchecked")
-                Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
-                if (history != null && history[0] != null) {
-                    history[0].put(A_WRITE_TAG, filename);
-                }
             }
         }
         return checkBytesWritten();
+    }
+    
+    protected void updateMetadataAfterWrite(final CrawlURI curi,
+            WARCWriter writer, long startPosition) {
+        if (WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.NUM_RECORDS) > 0l) {
+             addStats(writer.getTmpStats());
+             urlsWritten.incrementAndGet();
+        }
+        if (logger.isLoggable(Level.FINE)) { 
+            logger.fine("wrote " 
+                + WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) 
+                + " bytes to " + writer.getFile().getName() + " for " + curi);
+        }
+        setTotalBytesWritten(getTotalBytesWritten() + (writer.getPosition() - startPosition));
+
+        curi.addExtraInfo("warcFilename", writer.getFilenameWithoutOccupiedSuffix());
+        // curi.addExtraInfo("warcOffset", startPosition);
+
+        // history for uri-based dedupe
+        @SuppressWarnings("unchecked")
+        Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+        if (history != null && history[0] != null) {
+            history[0].put(A_WRITE_TAG, writer.getFilenameWithoutOccupiedSuffix());
+        }
+        
+        // history for uri-agnostic, content digest based dedupe
+        if (curi.getContentDigest() != null) {
+            for (WARCRecordInfo warcRecord: writer.getTmpRecordLog()) {
+                if ((warcRecord.getType() == WARCRecordType.RESPONSE 
+                        || warcRecord.getType() == WARCRecordType.RESOURCE)
+                        && warcRecord.getContentStream() != null
+                        && warcRecord.getContentLength() > 0) {
+                    curi.getContentDigestHistory().put(A_ORIGINAL_URL, warcRecord.getUrl());
+                    curi.getContentDigestHistory().put(A_WARC_RECORD_ID, warcRecord.getRecordId());
+                    curi.getContentDigestHistory().put(A_WARC_FILENAME, warcRecord.getWARCFilename());
+                    curi.getContentDigestHistory().put(A_WARC_FILE_OFFSET, warcRecord.getWARCFileOffset());
+                    curi.getContentDigestHistory().put(A_ORIGINAL_DATE, warcRecord.getCreate14DigitDate());
+                    curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, 1);
+                // } else if (warcRecord.getType() == WARCRecordType.REVISIT) {
+                //    XXX add to content-digest-count IF it's a content digest based revisit record 
+                }
+            }
+        }
     }
 
     protected void addStats(Map<String, Map<String, Long>> substats) {

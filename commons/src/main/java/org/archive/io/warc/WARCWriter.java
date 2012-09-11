@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
+import org.archive.io.ArchiveFileConstants;
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
 import org.archive.modules.writer.WARCWriterProcessor;
@@ -85,6 +87,9 @@ implements WARCConstants {
      * {@link #getTmpStats()} into its long-term running totals.
      */
     private Map<String, Map<String, Long>> tmpStats;
+    
+    /** Temporarily accumulates info on written warc records for use externally. */
+    private LinkedList<WARCRecordInfo> tmpRecordLog = new LinkedList<WARCRecordInfo>();
     
     /**
      * Constructor.
@@ -241,7 +246,6 @@ implements WARCConstants {
             write(bytes);
             totalBytes += bytes.length;
 
-            
             if (recordInfo.getContentStream() != null && recordInfo.getContentLength() > 0) {
                 // Write out the header/body separator.
                 write(CRLF_BYTES); // TODO: should this be written even for zero-length?
@@ -256,12 +260,23 @@ implements WARCConstants {
             write(CRLF_BYTES);
             write(CRLF_BYTES);
             totalBytes += 2 * CRLF_BYTES.length;
+            
+            tally(recordInfo.getType(), contentBytes, totalBytes, getPosition() - startPosition);
+            
+            recordInfo.setWARCFilename(getFilenameWithoutOccupiedSuffix());
+            recordInfo.setWARCFileOffset(startPosition);
+            tmpRecordLog.add(recordInfo);
         } finally {
             postWriteRecordTasks();
         }
-        
-        // TODO: should this be in the finally block?
-        tally(recordInfo.getType(), contentBytes, totalBytes, getPosition() - startPosition);
+    }
+
+    public String getFilenameWithoutOccupiedSuffix() {
+        String name = getFile().getName();
+        if (name.endsWith(ArchiveFileConstants.OCCUPIED_SUFFIX)) {
+            name = name.substring(0, name.length() - ArchiveFileConstants.OCCUPIED_SUFFIX.length());
+        }
+        return name;
     }
     
     // if compression is enabled, sizeOnDisk means compressed bytes; if not, it
@@ -410,5 +425,13 @@ implements WARCConstants {
         } else {
             return 0l;
         }
+    }
+
+    public void resetTmpRecordLog() {
+        tmpRecordLog.clear();
+    }
+
+    public Iterable<WARCRecordInfo> getTmpRecordLog() {
+        return tmpRecordLog;
     }
 }

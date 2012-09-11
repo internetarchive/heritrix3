@@ -19,13 +19,14 @@
 package org.archive.modules.recrawl;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.StringBinding;
@@ -35,6 +36,9 @@ import com.sleepycat.je.DatabaseException;
 
 /** Needs to be a toplevel bean for Lifecyle? */
 public class ContentDigestHistory implements Lifecycle {
+
+    private static final Logger logger = 
+            Logger.getLogger(ContentDigestHistory.class.getName());
 
     protected BdbModule bdb;
     @Autowired
@@ -50,7 +54,8 @@ public class ContentDigestHistory implements Lifecycle {
         this.historyDbName = name; 
     }
 
-    protected StoredSortedMap<String,Map<String,Object>> store;
+    @SuppressWarnings("rawtypes")
+    protected StoredSortedMap<String, Map> store;
     protected Database historyDb;
 
     protected String persistKeyFor(CrawlURI curi) {
@@ -58,19 +63,19 @@ public class ContentDigestHistory implements Lifecycle {
     }
     
     @Override
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"rawtypes"})
     public void start() {
         if (isRunning()) {
             return;
         }
-        StoredSortedMap<String, Map<String, Object>> historyMap;
+        StoredSortedMap<String, Map> historyMap;
         try {
             StoredClassCatalog classCatalog = bdb.getClassCatalog();
             historyDb = bdb.openDatabase(getHistoryDbName(), historyDbConfig(), true);
-            historyMap = new StoredSortedMap<String, Map<String,Object>>(
+            historyMap = new StoredSortedMap<String, Map>(
                         historyDb,
                         new StringBinding(),
-                        (EntityBinding<Map<String, Object>>) new SerialBinding<Map>(classCatalog, Map.class),
+                        new SerialBinding<Map>(classCatalog, Map.class),
                         true);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
@@ -105,16 +110,23 @@ public class ContentDigestHistory implements Lifecycle {
     }
 
     public void load(CrawlURI curi) {
-        String pkey = persistKeyFor(curi);
-        Map<String, Object> prior = store.get(pkey);
-        if (prior != null) {
-            // merge in keys
-            prior.keySet().removeAll(curi.getData().keySet());
-            curi.getData().putAll(prior);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> loadedHistory = store.get(persistKeyFor(curi));
+        if (loadedHistory != null) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("loaded history by digest " + persistKeyFor(curi)
+                        + " for uri " + curi + " - " + loadedHistory);
+            }
+            curi.getContentDigestHistory().putAll(loadedHistory);
         }
     }
     
     public void store(CrawlURI curi) {
-        store.put(persistKeyFor(curi), curi.getPersistentDataMap());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer("storing history by digest " + persistKeyFor(curi)
+                    + " for uri " + curi + " - "
+                    + curi.getContentDigestHistory());
+        }
+        store.put(persistKeyFor(curi), curi.getContentDigestHistory());
     }
 }

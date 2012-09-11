@@ -35,6 +35,8 @@ public class WARCRecordInfo {
     protected InputStream contentStream;
     protected long contentLength;
     protected boolean enforceLength;
+    protected String warcFilename;
+    protected Long warcFileOffset;
 
     public void setType(WARCRecordType type) {
         this.type = type;
@@ -117,5 +119,21 @@ public class WARCRecordInfo {
             extraHeaders = new ANVLRecord();
         }
         extraHeaders.addLabelValue(label, value);
+    }
+
+    public void setWARCFilename(String warcFilenameWithoutOccupiedSuffix) {
+        this.warcFilename = warcFilenameWithoutOccupiedSuffix;
+    }
+    
+    public String getWARCFilename() {
+        return warcFilename;
+    }
+
+    public void setWARCFileOffset(Long startPosition) {
+        this.warcFileOffset = startPosition;
+    }
+    
+    public Long getWARCFileOffset() {
+        return warcFileOffset;
     }
 }

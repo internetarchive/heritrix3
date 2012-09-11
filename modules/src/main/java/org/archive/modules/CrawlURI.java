@@ -55,6 +55,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -1884,4 +1885,17 @@ implements Reporter, Serializable, OverlayContext {
     public void setHttpAuthChallenges(Map<String, String> httpAuthChallenges) {
         getData().put(A_HTTP_AUTH_CHALLENGES, httpAuthChallenges);
     }
+
+    public Map<String, Object> getContentDigestHistory() {
+        @SuppressWarnings("unchecked")
+        Map<String,Object> contentDigestHistory = (Map<String, Object>) getData().get(A_CONTENT_DIGEST_HISTORY);
+        
+        if (contentDigestHistory == null) {
+            contentDigestHistory = new HashMap<String, Object>();
+            getData().put(A_CONTENT_DIGEST_HISTORY, contentDigestHistory);
+        }
+        
+        return contentDigestHistory;
+    }
+
 }
