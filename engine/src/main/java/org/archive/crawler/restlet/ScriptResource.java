@@ -105,16 +105,6 @@ public class ScriptResource extends JobRelatedResource {
         
         Configuration tmpltCfg = new Configuration();
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        
-        //TODO: this is temporary, remove this try-catch block
-        try {
-            tmpltCfg.setDirectoryForTemplateLoading(new File("/0/templates/"));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-        //tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
         tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         setTemplateConfiguration(tmpltCfg);
     }
@@ -190,14 +180,6 @@ public class ScriptResource extends JobRelatedResource {
         // TODO: remove if not necessary in future?
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
-    }
-
-    protected List<String> getAvailableActions() {
-        List<String> actions = new LinkedList<String>();
-        actions.add("rescan");
-        actions.add("add");
-        actions.add("create");
-        return actions;
     }
 
     protected Collection<Map<String,String>> getAvailableScriptEngines() {
