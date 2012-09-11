@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.HashMap;
@@ -41,7 +40,6 @@ import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
 import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.anvl.ANVLRecord;
 import org.archive.util.anvl.Element;
 
 
@@ -345,12 +343,10 @@ implements WARCConstants {
         	filename = filename.substring(0,
         		filename.length() - WriterPoolMember.OCCUPIED_SUFFIX.length());
         }
-        ANVLRecord extraHeaders = new ANVLRecord(2);
-        extraHeaders.addLabelValue(HEADER_KEY_FILENAME, filename);
+        recordInfo.addExtraHeader(HEADER_KEY_FILENAME, filename);
         if (description != null && description.length() > 0) {
-        	extraHeaders.addLabelValue(CONTENT_DESCRIPTION, description);
+            recordInfo.addExtraHeader(CONTENT_DESCRIPTION, description);
         }
-        recordInfo.setExtraHeaders(extraHeaders);
         
         // Add warcinfo body.
         byte [] warcinfoBody = null;

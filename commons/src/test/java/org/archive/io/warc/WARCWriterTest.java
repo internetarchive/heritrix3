@@ -227,9 +227,7 @@ extends TmpDirTestCase implements WARCConstants {
         
         // Add named fields for ip, checksum, and relate the metadata
         // and request to the resource field.
-        ANVLRecord r = new ANVLRecord(1);
-        r.addLabelValue(NAMED_FIELD_IP_LABEL, "127.0.0.1");
-        recordInfo.setExtraHeaders(r);
+        recordInfo.addExtraHeader(NAMED_FIELD_IP_LABEL, "127.0.0.1");
         
         w.writeRecord(recordInfo);
         return record.length;

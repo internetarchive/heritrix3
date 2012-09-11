@@ -320,24 +320,60 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
    
     private void writeDnsRecords(final CrawlURI curi, WARCWriter w,
             final URI baseid, final String timestamp) throws IOException {
-        ANVLRecord headers = null;
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESPONSE);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(curi.getContentType());
+        recordInfo.setRecordId(baseid);
+        
+        recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
+        recordInfo.setEnforceLength(true);
+        
         String ip = (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
         if (ip != null && ip.length() > 0) {
-            headers = new ANVLRecord(1);
-            headers.addLabelValue(HEADER_KEY_IP, ip);
+            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
         }
-        writeResponse(w, timestamp, curi.getContentType(), baseid,
-            curi, headers);
+        
+        ReplayInputStream ris =
+            curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
+        try {
+            w.writeRecord(recordInfo);
+        } finally {
+            IOUtils.closeQuietly(ris);
+        }
+        
+        recordInfo.getRecordId();
     }
 
     private void writeWhoisRecords(WARCWriter w, CrawlURI curi, URI baseid,
             String timestamp) throws IOException {
-        ANVLRecord headers = new ANVLRecord(1);
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESPONSE);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(curi.getContentType());
+        recordInfo.setRecordId(baseid);
+        recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
+        recordInfo.setEnforceLength(true);
+        
         Object whoisServerIP = curi.getData().get(CoreAttributeConstants.A_WHOIS_SERVER_IP);
         if (whoisServerIP != null) {
-            headers.addLabelValue(HEADER_KEY_IP, whoisServerIP.toString());
+            recordInfo.addExtraHeader(HEADER_KEY_IP, whoisServerIP.toString());
         }
-        writeResponse(w, timestamp, curi.getContentType(), baseid, curi, headers);
+        
+        ReplayInputStream ris =
+            curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
+        try {
+            w.writeRecord(recordInfo);
+        } finally {
+            IOUtils.closeQuietly(ris);
+        }
+        recordInfo.getRecordId();
     }
 
     private void writeHttpRecords(final CrawlURI curi, WARCWriter w,
@@ -346,7 +382,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         // and request to the resource field.
         // TODO: Use other than ANVL (or rename ANVL as NameValue or
         // use RFC822 (commons-httpclient?).
-        ANVLRecord headers = new ANVLRecord(5);
+        ANVLRecord headers = new ANVLRecord();
         if (curi.getContentDigest() != null) {
             headers.addLabelValue(HEADER_KEY_PAYLOAD_DIGEST,
                     curi.getContentDigestSchemeString());
@@ -381,7 +417,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             	baseid, curi, headers);
         }
         
-        headers = new ANVLRecord(1);
+        headers = new ANVLRecord();
         headers.addLabelValue(HEADER_KEY_CONCURRENT_TO,
             '<' + rid.toString() + '>');
 
@@ -396,7 +432,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
 
     private void writeFtpRecords(WARCWriter w, final CrawlURI curi, final URI baseid,
             final String timestamp) throws IOException {
-        ANVLRecord headers = new ANVLRecord(3);
+        ANVLRecord headers = new ANVLRecord();
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
         String controlConversation = curi.getData().get(A_FTP_CONTROL_CONVERSATION).toString();
         URI rid = writeFtpControlConversation(w, timestamp, baseid, curi, headers, controlConversation);
@@ -412,7 +448,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                 rid = writeRevisitDigest(w, timestamp, null,
                         baseid, curi, headers, 0);
             } else {
-                headers = new ANVLRecord(3);
+                headers = new ANVLRecord();
                 // Check for truncated annotation
                 String value = null;
                 Collection<String> anno = curi.getAnnotations();
@@ -437,7 +473,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             }
         }
         if (getWriteMetadata()) {
-            headers = new ANVLRecord(1);
+            headers = new ANVLRecord();
             headers.addLabelValue(HEADER_KEY_CONCURRENT_TO, '<' + rid.toString() + '>');
             writeMetadata(w, timestamp, baseid, curi, headers);
         }
@@ -754,7 +790,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (cachedMetadata != null) {
             return cachedMetadata;
         }
-        ANVLRecord record = new ANVLRecord(7);
+        ANVLRecord record = new ANVLRecord();
         record.addLabelValue("software", "Heritrix/" +
                 ArchiveUtils.VERSION + " http://crawler.archive.org");
         try {

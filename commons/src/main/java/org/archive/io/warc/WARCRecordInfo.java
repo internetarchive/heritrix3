@@ -111,4 +111,11 @@ public class WARCRecordInfo {
     public String getUrl() {
         return url;
     }
+
+    public void addExtraHeader(String label, String value) {
+        if (extraHeaders == null) {
+            extraHeaders = new ANVLRecord();
+        }
+        extraHeaders.addLabelValue(label, value);
+    }
 }

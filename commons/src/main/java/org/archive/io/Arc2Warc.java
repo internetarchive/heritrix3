@@ -104,7 +104,7 @@ public class Arc2Warc {
 			       getLength());
 		   firstRecord.dump(baos);
 	       // Add ARC first record content as an ANVLRecord.
-	       ANVLRecord ar = new ANVLRecord(1);
+	       ANVLRecord ar = new ANVLRecord();
 	       ar.addLabelValue("Filedesc", baos.toString());
 	       List<String> metadata = new ArrayList<String>(1);
 	       metadata.add(ar.toString());
