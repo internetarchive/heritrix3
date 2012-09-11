@@ -43,7 +43,6 @@ import org.archive.io.UTF8Bytes;
  * @author stack
  */
 public class ANVLRecord extends LinkedList<Element> implements UTF8Bytes {
-	private static final long serialVersionUID = -4610638888453052958L;
     private static final Logger logger = 
         Logger.getLogger(ANVLRecord.class.getName());
 
