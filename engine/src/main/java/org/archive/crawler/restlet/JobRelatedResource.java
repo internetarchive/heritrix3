@@ -91,10 +91,12 @@ public abstract class JobRelatedResource extends BaseResource {
             return;
         }
 
-        Reference baseRef = getRequest().getResourceRef().getBaseRef();
 
-        if(baseRef.getPath().endsWith("beans"))
-            baseRef.setPath(baseRef.getPath()+"/");
+        Reference baseRef = getRequest().getResourceRef().getBaseRef();
+        
+        if (baseRef.getPath().endsWith("beans")) {
+            baseRef.setPath(baseRef.getPath() + "/");
+        }
 
         if (getBeanToNameMap().containsKey(obj)) {
             // this object is itself a named bean
