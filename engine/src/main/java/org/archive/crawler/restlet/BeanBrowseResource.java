@@ -169,57 +169,6 @@ public class BeanBrowseResource extends JobRelatedResource {
      * 
      * @return the nested Map data structure
      */
-    protected LinkedHashMap<String,Object> makePresentableMap() {
-        HashMap<String,Object> obj = makeDataModel();
-        LinkedHashMap<String,Object> wrapper = new LinkedHashMap<String,Object>();
-        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
-
-        info.put("crawlJobShortName", cj.getShortName());
-        info.put("crawlJobUrl", new Reference(getRequest().getResourceRef().getBaseRef(), "..").getTargetRef());
-        
-        if (StringUtils.isNotBlank(beanPath)) {
-            info.put("beanPath", beanPath);
-            try {
-                int firstDot = beanPath.indexOf(".");
-                String beanName = firstDot<0?beanPath:beanPath.substring(0,firstDot);
-                Object namedBean = appCtx.getBean(beanName);
-                Object target; 
-                if (firstDot < 0) {
-                    target = namedBean;
-                    info.put("bean", makePresentableMapFor(null, target, beanPath));
-                } else {
-                    BeanWrapperImpl bwrap = new BeanWrapperImpl(namedBean);
-                    String propPath = beanPath.substring(firstDot+1);
-                    target = bwrap.getPropertyValue(propPath);
-                    
-                    Class<?> type = bwrap.getPropertyType(propPath);
-                    if(bwrap.isWritableProperty(propPath) 
-                            && (bwrap.getDefaultEditor(type)!=null|| type == String.class)
-                            && !Collection.class.isAssignableFrom(type)) {
-                        info.put("editable", true);
-                        info.put("bean", makePresentableMapFor(null, target));
-                    } else {
-                        info.put("bean", makePresentableMapFor(null, target, beanPath));
-                    }
-                }     
-            } catch (BeansException e) {
-                info.put("problem", e.toString());
-            }
-        }
-
-        Collection<Object> nestedNames = new LinkedList<Object>();
-        Set<Object> alreadyWritten = new HashSet<Object>();
-        addPresentableNestedNames(nestedNames, appCtx.getBean("crawlController"), alreadyWritten);
-        for(String name: appCtx.getBeanDefinitionNames()) {
-            addPresentableNestedNames(nestedNames, appCtx.getBean(name), alreadyWritten);
-        }
-        info.put("allNamedCrawlBeans", nestedNames);
-
-        //return info;
-        wrapper.put("info",info);
-        wrapper.put("model",obj);
-        return wrapper;
-    }
     protected BeansModel makeDataModel(){
         Object bean=null;
         String problem=null;
