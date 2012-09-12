@@ -193,6 +193,8 @@ public interface WARCConstants extends ArchiveFileConstants {
     public static final String HEADER_KEY_FILENAME = "WARC-Filename";
     public static final String HEADER_KEY_ETAG = "WARC-Etag";
     public static final String HEADER_KEY_LAST_MODIFIED = "WARC-Last-Modified";
+    public static final String HEADER_KEY_REFERS_TO = "WARC-Refers-To";
+    public static final String HEADER_KEY_REFERENCE_LOCATION = "X-WARC-Reference-Location";
     
     public static final String PROFILE_REVISIT_IDENTICAL_DIGEST = 
         "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest";

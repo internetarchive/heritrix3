@@ -1886,9 +1886,9 @@ implements Reporter, Serializable, OverlayContext {
         getData().put(A_HTTP_AUTH_CHALLENGES, httpAuthChallenges);
     }
 
-    public Map<String, Object> getContentDigestHistory() {
+    public HashMap<String, Object> getContentDigestHistory() {
         @SuppressWarnings("unchecked")
-        Map<String,Object> contentDigestHistory = (Map<String, Object>) getData().get(A_CONTENT_DIGEST_HISTORY);
+        HashMap<String, Object> contentDigestHistory = (HashMap<String, Object>) getData().get(A_CONTENT_DIGEST_HISTORY);
         
         if (contentDigestHistory == null) {
             contentDigestHistory = new HashMap<String, Object>();

@@ -26,6 +26,8 @@ import static org.archive.io.warc.WARCConstants.HEADER_KEY_IP;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_PROFILE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERENCE_LOCATION;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.io.warc.WARCConstants.HTTP_REQUEST_MIMETYPE;
 import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
@@ -93,6 +95,7 @@ import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
+import org.json.JSONObject;
 
 /**
  * WARCWriterProcessor.
@@ -151,6 +154,9 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     /**
      * Whether to write 'revisit' type records when a URI's history indicates
      * the previous fetch had an identical content digest. Default is true.
+     * 
+     * Decision applies to either URI-based fetch history or URI-agnostic
+     * content digest-based history.
      */
     {
         setWriteRevisitForIdenticalDigests(true);
@@ -346,7 +352,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
     }
    
-    private void writeDnsRecords(final CrawlURI curi, WARCWriter w,
+    protected void writeDnsRecords(final CrawlURI curi, WARCWriter w,
             final URI baseid, final String timestamp) throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setType(WARCRecordType.RESPONSE);
@@ -376,7 +382,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         recordInfo.getRecordId();
     }
 
-    private void writeWhoisRecords(WARCWriter w, CrawlURI curi, URI baseid,
+    protected void writeWhoisRecords(WARCWriter w, CrawlURI curi, URI baseid,
             String timestamp) throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setType(WARCRecordType.RESPONSE);
@@ -404,7 +410,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         recordInfo.getRecordId();
     }
 
-    private void writeHttpRecords(final CrawlURI curi, WARCWriter w,
+    protected void writeHttpRecords(final CrawlURI curi, WARCWriter w,
             final URI baseid, final String timestamp) throws IOException {
         // Add named fields for ip, checksum, and relate the metadata
         // and request to the resource field.
@@ -418,7 +424,11 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
         URI rid;
         
-        if (IdenticalDigestDecideRule.hasIdenticalDigest(curi) && 
+        if (getWriteRevisitForIdenticalDigests() 
+                && curi.getContentDigestHistory().get(A_ORIGINAL_URL) != null) {
+            rid = writeRevisitUriAgnosticDigest(w, timestamp,
+                    HTTP_RESPONSE_MIMETYPE, baseid, curi, headers);
+        } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi) && 
                 getWriteRevisitForIdenticalDigests()) {
             rid = writeRevisitDigest(w, timestamp, HTTP_RESPONSE_MIMETYPE,
                     baseid, curi, headers);
@@ -458,7 +468,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
     }
 
-    private void writeFtpRecords(WARCWriter w, final CrawlURI curi, final URI baseid,
+    protected void writeFtpRecords(WARCWriter w, final CrawlURI curi, final URI baseid,
             final String timestamp) throws IOException {
         ANVLRecord headers = new ANVLRecord();
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
@@ -657,6 +667,51 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             IOUtils.closeQuietly(ris);
         }
         curi.getAnnotations().add("warcRevisit:digest");
+        
+        return recordInfo.getRecordId();
+    }
+    
+    protected URI writeRevisitUriAgnosticDigest(WARCWriter w, String timestamp,
+            String mimetype, URI baseid, CrawlURI curi,
+            ANVLRecord headers) throws IOException {
+
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.REVISIT);
+        recordInfo.setUrl(curi.toString());
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setRecordId(baseid);
+        recordInfo.setEnforceLength(false);
+        
+        long revisedLength = curi.getRecorder().getRecordedInput().getContentBegin();
+        revisedLength = revisedLength > 0 ? revisedLength : curi.getRecorder().getRecordedInput().getSize();
+        recordInfo.setContentLength(revisedLength);
+        
+        headers.addLabelValue(
+                HEADER_KEY_PROFILE, PROFILE_REVISIT_IDENTICAL_DIGEST);
+        headers.addLabelValue(
+                HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
+        
+        headers.addLabelValue(HEADER_KEY_REFERS_TO, 
+                curi.getContentDigestHistory().get(A_WARC_RECORD_ID).toString());
+        
+        JSONObject refLoc = new JSONObject(curi.getContentDigestHistory().clone());
+        refLoc.remove(A_CONTENT_DIGEST_COUNT);
+        refLoc.remove(A_WARC_RECORD_ID);
+        headers.addLabelValue(HEADER_KEY_REFERENCE_LOCATION, refLoc.toString());
+
+        recordInfo.setExtraHeaders(headers);
+        
+        ReplayInputStream ris =
+            curi.getRecorder().getRecordedInput().getReplayInputStream();
+        recordInfo.setContentStream(ris);
+        
+        try {
+            w.writeRecord(recordInfo);
+        } finally {
+            IOUtils.closeQuietly(ris);
+        }
+        curi.getAnnotations().add("warcRevisit:uriAgnosticDigest");
         
         return recordInfo.getRecordId();
     }
