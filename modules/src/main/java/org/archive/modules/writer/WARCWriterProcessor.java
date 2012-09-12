@@ -695,7 +695,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         headers.addLabelValue(HEADER_KEY_REFERS_TO, 
                 curi.getContentDigestHistory().get(A_WARC_RECORD_ID).toString());
         
-        JSONObject refLoc = new JSONObject(curi.getContentDigestHistory().clone());
+        @SuppressWarnings("unchecked")
+        JSONObject refLoc = new JSONObject((HashMap<String,Object>) curi.getContentDigestHistory().clone());
         refLoc.remove(A_CONTENT_DIGEST_COUNT);
         refLoc.remove(A_WARC_RECORD_ID);
         headers.addLabelValue(HEADER_KEY_REFERENCE_LOCATION, refLoc.toString());
