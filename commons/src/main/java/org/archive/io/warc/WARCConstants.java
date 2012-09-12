@@ -20,6 +20,7 @@
 package org.archive.io.warc;
 
 import org.archive.io.ArchiveFileConstants;
+import org.archive.modules.writer.WARCWriterProcessor;
 
 /**
  * WARC Constants used by WARC readers and writers.
@@ -194,7 +195,20 @@ public interface WARCConstants extends ArchiveFileConstants {
     public static final String HEADER_KEY_ETAG = "WARC-Etag";
     public static final String HEADER_KEY_LAST_MODIFIED = "WARC-Last-Modified";
     public static final String HEADER_KEY_REFERS_TO = "WARC-Refers-To";
-    public static final String HEADER_KEY_REFERENCE_LOCATION = "X-WARC-Reference-Location";
+    
+    /**
+     * Information that helps to find the record that
+     * {@value #HEADER_KEY_REFERS_TO} refers to. This header is a heritrix
+     * extension not defined in the WARC spec version 1.0. Current
+     * implementation writes a JSON string that looks something like this:
+     * {"original-url":"http://archive.org/robots.txt"
+     * ,"warc-file-offset":1976,"warc-filename":
+     * "WEB-20120912001108855-00000-6882~desktop-nlevitt.sf.archive.org~6440.warc.gz"
+     * ,"content-written-date":"2012-09-12T00:11:10Z"}.
+     * 
+     * @see WARCWriterProcessor
+     */
+    public static final String HEADER_KEY_REFERENCE_LOCATION = "WARC-Reference-Location";
     
     public static final String PROFILE_REVISIT_IDENTICAL_DIGEST = 
         "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest";

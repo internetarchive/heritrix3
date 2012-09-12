@@ -692,9 +692,16 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         headers.addLabelValue(
                 HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
         
+        /*
+         * ISO 28500 WARC ISO standard draft says: "The WARC-Refers-To field may
+         * also be used to associate a record of type 'revisit' or 'conversion'
+         * with the preceding record which helped determine the present record
+         * content."
+         */
         headers.addLabelValue(HEADER_KEY_REFERS_TO, 
                 curi.getContentDigestHistory().get(A_WARC_RECORD_ID).toString());
         
+        // {"original-url":"http://archive.org/robots.txt","warc-file-offset":1976,"warc-filename":"WEB-20120912001108855-00000-6882~desktop-nlevitt.sf.archive.org~6440.warc.gz","content-written-date":"2012-09-12T00:11:10Z"}
         @SuppressWarnings("unchecked")
         JSONObject refLoc = new JSONObject((HashMap<String,Object>) curi.getContentDigestHistory().clone());
         refLoc.remove(A_CONTENT_DIGEST_COUNT);
