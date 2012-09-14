@@ -26,8 +26,11 @@ import static org.archive.io.warc.WARCConstants.HEADER_KEY_IP;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_PROFILE;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERENCE_LOCATION;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_DATE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILENAME;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILE_OFFSET;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.io.warc.WARCConstants.HTTP_REQUEST_MIMETYPE;
 import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
@@ -95,7 +98,6 @@ import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
-import org.json.JSONObject;
 
 /**
  * WARCWriterProcessor.
@@ -700,13 +702,14 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
          */
         headers.addLabelValue(HEADER_KEY_REFERS_TO, 
                 curi.getContentDigestHistory().get(A_WARC_RECORD_ID).toString());
-        
-        // {"original-url":"http://archive.org/robots.txt","warc-file-offset":1976,"warc-filename":"WEB-20120912001108855-00000-6882~desktop-nlevitt.sf.archive.org~6440.warc.gz","content-written-date":"2012-09-12T00:11:10Z"}
-        @SuppressWarnings("unchecked")
-        JSONObject refLoc = new JSONObject((HashMap<String,Object>) curi.getContentDigestHistory().clone());
-        refLoc.remove(A_CONTENT_DIGEST_COUNT);
-        refLoc.remove(A_WARC_RECORD_ID);
-        headers.addLabelValue(HEADER_KEY_REFERENCE_LOCATION, refLoc.toString());
+        headers.addLabelValue(HEADER_KEY_REFERS_TO_TARGET_URI, 
+                curi.getContentDigestHistory().get(A_ORIGINAL_URL).toString());
+        headers.addLabelValue(HEADER_KEY_REFERS_TO_DATE, 
+                curi.getContentDigestHistory().get(A_ORIGINAL_DATE).toString());
+        headers.addLabelValue(HEADER_KEY_REFERS_TO_FILENAME, 
+                curi.getContentDigestHistory().get(A_WARC_FILENAME).toString());
+        headers.addLabelValue(HEADER_KEY_REFERS_TO_FILE_OFFSET, 
+                curi.getContentDigestHistory().get(A_WARC_FILE_OFFSET).toString());
 
         recordInfo.setExtraHeaders(headers);
         

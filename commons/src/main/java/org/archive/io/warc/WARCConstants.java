@@ -197,18 +197,15 @@ public interface WARCConstants extends ArchiveFileConstants {
     public static final String HEADER_KEY_REFERS_TO = "WARC-Refers-To";
     
     /**
-     * Information that helps to find the record that
-     * {@value #HEADER_KEY_REFERS_TO} refers to. This header is a heritrix
-     * extension not defined in the WARC spec version 1.0. Current
-     * implementation writes a JSON string that looks something like this:
-     * {"original-url":"http://archive.org/robots.txt"
-     * ,"warc-file-offset":1976,"warc-filename":
-     * "WEB-20120912001108855-00000-6882~desktop-nlevitt.sf.archive.org~6440.warc.gz"
-     * ,"content-written-date":"2012-09-12T00:11:10Z"}.
+     * These fields help a consumer of the warc to locate the warc record that
+     * {@value #HEADER_KEY_REFERS_TO} refers to.
      * 
      * @see WARCWriterProcessor
      */
-    public static final String HEADER_KEY_REFERENCE_LOCATION = "WARC-Reference-Location";
+    public static final String HEADER_KEY_REFERS_TO_TARGET_URI = "WARC-Refers-To-Target-URI";
+    public static final String HEADER_KEY_REFERS_TO_DATE = "WARC-Refers-To-Date";
+    public static final String HEADER_KEY_REFERS_TO_FILENAME = "WARC-Refers-To-Filename";
+    public static final String HEADER_KEY_REFERS_TO_FILE_OFFSET = "WARC-Refers-To-File-Offset";
     
     public static final String PROFILE_REVISIT_IDENTICAL_DIGEST = 
         "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest";
