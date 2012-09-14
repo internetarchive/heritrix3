@@ -128,6 +128,12 @@ public class RecordingSocketInputBuffer implements SessionInputBuffer {
         if (bytesRead > 0) {
             metrics.incrementBytesTransferred(bytesRead);
         }
+        
+        if (bytesRead == 0 && b == -1) {
+            // indicate the end of stream
+            return -1;
+        }
+
         return bytesRead;
     }
 

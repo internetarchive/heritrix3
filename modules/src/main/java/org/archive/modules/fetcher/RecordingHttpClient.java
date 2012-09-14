@@ -30,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ClientConnectionOperator;
 import org.apache.http.conn.DnsResolver;
@@ -75,13 +76,13 @@ public class RecordingHttpClient extends DefaultHttpClient {
         this.serverCache = serverCache;
         
         // XXX uhh? see HeritrixHttpMethodRetryHandler ??
-//        setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
-//            @Override
-//            public boolean retryRequest(IOException exception, int executionCount,
-//                    HttpContext context) {
-//                return false;
-//            }
-//        });
+        setHttpRequestRetryHandler(new HttpRequestRetryHandler() {
+            @Override
+            public boolean retryRequest(IOException exception, int executionCount,
+                    HttpContext context) {
+                return false;
+            }
+        });
         
         // never reuse (no keep-alive)
         setReuseStrategy(new ConnectionReuseStrategy() {

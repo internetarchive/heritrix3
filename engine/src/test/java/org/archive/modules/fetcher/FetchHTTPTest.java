@@ -23,6 +23,10 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Date;
@@ -41,6 +45,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -1040,16 +1045,66 @@ public class FetchHTTPTest extends ProcessorTestBase {
         assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
     }
 
+    protected static class NoResponseServer extends Thread {
+        protected String listenAddress;
+        protected int listenPort;
+        protected boolean isTimeToBeDone = false;
+
+        public NoResponseServer(String address, int port) {
+            this.listenAddress = address;
+            this.listenPort = port;
+        }
+
+        @Override
+        public void run() {
+            try {
+                ServerSocket listeningSocket = new ServerSocket(listenPort, 0, Inet4Address.getByName(listenAddress));
+                listeningSocket.setSoTimeout(600);
+                while (!isTimeToBeDone) {
+                    try {
+                        Socket connectionSocket = listeningSocket.accept();
+                        connectionSocket.shutdownOutput();
+                    } catch (SocketTimeoutException e) {
+                    }
+                }
+            } catch (Exception e) {
+                logger.warning("caught exception: " + e);
+            } finally {
+                logger.info("all done suckers");
+            }
+        }
+
+        public void beDone() {
+            isTimeToBeDone = true;
+        }
+    }
+
+    public void testNoResponse() throws Exception {
+        NoResponseServer noResponseServer = new NoResponseServer("localhost", 7780);
+        noResponseServer.start();
+        
+        // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
+        CrawlURI curi = makeCrawlURI("http://localhost:7780");
+        getFetcher().process(curi);
+        assertEquals(1, curi.getNonFatalFailures().size());
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
+        assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+        assertEquals(0, curi.getFetchCompletedTime());
+        
+        noResponseServer.beDone();
+        noResponseServer.join();
+    }
+
     @Override
     protected FetchHTTP makeModule() throws IOException {
-        FetchHTTP fetchHttp2 = new FetchHTTP();
-        fetchHttp2.setCookieStore(new SimpleCookieStore());
-        fetchHttp2.setServerCache(new DefaultServerCache());
+        FetchHTTP fetchHttp = new FetchHTTP();
+        fetchHttp.setCookieStore(new SimpleCookieStore());
+        fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(getUserAgentString());
-        fetchHttp2.setUserAgentProvider(uap);
+        fetchHttp.setUserAgentProvider(uap);
         
-        fetchHttp2.start();
-        return fetchHttp2;
+        fetchHttp.start();
+        return fetchHttp;
     }
 }
