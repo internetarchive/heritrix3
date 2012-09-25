@@ -24,10 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class ContentDigestHistoryStorer extends Processor {
     
-    protected ContentDigestHistory contentDigestHistory;
+    protected BdbContentDigestHistory contentDigestHistory;
     @Autowired
     public void setContentDigestHistory(
-            ContentDigestHistory contentDigestHistory) {
+            BdbContentDigestHistory contentDigestHistory) {
         this.contentDigestHistory = contentDigestHistory;
     }
 

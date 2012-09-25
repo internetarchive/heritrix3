@@ -35,10 +35,10 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
 /** Needs to be a toplevel bean for Lifecyle? */
-public class ContentDigestHistory implements Lifecycle {
+public class BdbContentDigestHistory implements Lifecycle {
 
     private static final Logger logger = 
-            Logger.getLogger(ContentDigestHistory.class.getName());
+            Logger.getLogger(BdbContentDigestHistory.class.getName());
 
     protected BdbModule bdb;
     @Autowired
