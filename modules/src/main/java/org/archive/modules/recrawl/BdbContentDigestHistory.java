@@ -35,7 +35,13 @@ import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
-/** Needs to be a toplevel bean for Lifecyle? */
+/**
+ * Bdb content digest history store. Must be a toplevel bean in
+ * crawler-beans.cxml in order to receive {@link Lifecycle} events.
+ * 
+ * @see AbstractContentDigestHistory
+ * @contributor nlevitt
+ */
 public class BdbContentDigestHistory extends AbstractContentDigestHistory implements Lifecycle {
 
     private static final Logger logger = 
@@ -60,7 +66,7 @@ public class BdbContentDigestHistory extends AbstractContentDigestHistory implem
     protected Database historyDb;
 
     @Override
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings("rawtypes")
     public void start() {
         if (isRunning()) {
             return;
