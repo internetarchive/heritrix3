@@ -18,6 +18,7 @@
  */
 package org.archive.modules.recrawl;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -106,6 +107,10 @@ public class BdbContentDigestHistory extends AbstractContentDigestHistory implem
     }
 
     public void load(CrawlURI curi) {
+        // make this call in all cases so that the value is initialized and
+        // WARCWriterProcessor knows it should put the info in there
+        HashMap<String, Object> contentDigestHistory = curi.getContentDigestHistory();
+        
         @SuppressWarnings("unchecked")
         Map<String, Object> loadedHistory = store.get(persistKeyFor(curi));
         if (loadedHistory != null) {
@@ -113,7 +118,7 @@ public class BdbContentDigestHistory extends AbstractContentDigestHistory implem
                 logger.finer("loaded history by digest " + persistKeyFor(curi)
                         + " for uri " + curi + " - " + loadedHistory);
             }
-            curi.getContentDigestHistory().putAll(loadedHistory);
+            contentDigestHistory.putAll(loadedHistory);
         }
     }
     

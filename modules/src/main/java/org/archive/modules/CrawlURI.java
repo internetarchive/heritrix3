@@ -1898,4 +1898,8 @@ implements Reporter, Serializable, OverlayContext {
         return contentDigestHistory;
     }
 
+    public boolean hasContentDigestHistory() {
+        return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
+    }
+
 }

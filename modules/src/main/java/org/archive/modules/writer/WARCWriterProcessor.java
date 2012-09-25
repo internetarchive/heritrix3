@@ -315,7 +315,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
         
         // history for uri-agnostic, content digest based dedupe
-        if (curi.getContentDigest() != null) {
+        if (curi.getContentDigest() != null && curi.hasContentDigestHistory()) {
             for (WARCRecordInfo warcRecord: writer.getTmpRecordLog()) {
                 if ((warcRecord.getType() == WARCRecordType.RESPONSE 
                         || warcRecord.getType() == WARCRecordType.RESOURCE)
@@ -327,8 +327,14 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     curi.getContentDigestHistory().put(A_WARC_FILE_OFFSET, warcRecord.getWARCFileOffset());
                     curi.getContentDigestHistory().put(A_ORIGINAL_DATE, warcRecord.getCreate14DigitDate());
                     curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, 1);
-                // } else if (warcRecord.getType() == WARCRecordType.REVISIT) {
-                //    XXX add to content-digest-count IF it's a content digest based revisit record 
+                } else if (warcRecord.getType() == WARCRecordType.REVISIT
+                        && curi.getAnnotations().contains("warcRevisit:uriAgnosticDigest")) {
+                     Integer oldCount = (Integer) curi.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT);
+                     if (oldCount == null) {
+                         // shouldn't happen, log a warning?
+                         oldCount = 1;
+                     }
+                     curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, oldCount + 1);
                 }
             }
         }
