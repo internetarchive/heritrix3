@@ -432,7 +432,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
         URI rid;
         
-        if (getWriteRevisitForIdenticalDigests() 
+        if (getWriteRevisitForIdenticalDigests()
+                && curi.hasContentDigestHistory()
                 && curi.getContentDigestHistory().get(A_ORIGINAL_URL) != null) {
             rid = writeRevisitUriAgnosticDigest(w, timestamp,
                     HTTP_RESPONSE_MIMETYPE, baseid, curi, headers);
