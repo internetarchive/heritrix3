@@ -35,7 +35,7 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
 /** Needs to be a toplevel bean for Lifecyle? */
-public class BdbContentDigestHistory implements Lifecycle {
+public class BdbContentDigestHistory extends AbstractContentDigestHistory implements Lifecycle {
 
     private static final Logger logger = 
             Logger.getLogger(BdbContentDigestHistory.class.getName());
@@ -58,10 +58,6 @@ public class BdbContentDigestHistory implements Lifecycle {
     protected StoredSortedMap<String, Map> store;
     protected Database historyDb;
 
-    protected String persistKeyFor(CrawlURI curi) {
-        return curi.getContentDigestSchemeString();
-    }
-    
     @Override
     @SuppressWarnings({"rawtypes"})
     public void start() {
