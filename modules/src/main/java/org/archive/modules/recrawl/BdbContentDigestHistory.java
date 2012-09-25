@@ -123,6 +123,11 @@ public class BdbContentDigestHistory extends AbstractContentDigestHistory implem
     }
     
     public void store(CrawlURI curi) {
+        if (!curi.hasContentDigestHistory() || curi.getContentDigestHistory().isEmpty()) {
+            logger.warning("not saving empty content digest history (do you " +
+            		" have a ContentDigestHistoryLoader in your disposition chain?) - " + curi);
+            return;
+        }
         if (logger.isLoggable(Level.FINER)) {
             logger.finer("storing history by digest " + persistKeyFor(curi)
                     + " for uri " + curi + " - "
