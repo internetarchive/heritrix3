@@ -218,12 +218,12 @@ extends TmpDirTestCase implements WARCConstants {
         String indexStr = Integer.toString(index);
         recordInfo.setUrl("http://www.one.net/id=" + indexStr);
         
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        recordInfo.setContentStream(new ByteArrayInputStream(baos.toByteArray()));
-        
         byte[] record = (getContent(indexStr)).getBytes();
         recordInfo.setContentLength((long) record.length);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(record);
+        recordInfo.setContentStream(new ByteArrayInputStream(baos.toByteArray()));
         
         // Add named fields for ip, checksum, and relate the metadata
         // and request to the resource field.
