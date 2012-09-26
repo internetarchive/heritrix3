@@ -80,8 +80,22 @@
 		<dl id="jobstats">
 			<dt>Totals</dt>
 			<dd>
-				<div>${job.uriTotalsReport}</div>
-				<div>${job.sizeTotalsReport}</div>
+				<div>
+					<#if !job.uriTotalsReport??>
+					<i>n/a</i>
+					<#else>
+					${job.uriTotalsReport.downloadedUriCount} downloaded + ${job.uriTotalsReport.queuedUriCount} queued = ${job.uriTotalsReport.totalUriCount} total
+					<#if (job.uriTotalsReport.futureUriCount > 0)> (${job.uriTotalsReport.futureUriCount} future)</#if>
+					</#if>
+				</div>
+				<div>
+					<#if !job.sizeTotalsReport??>
+						<i>n/a</i>
+					<#else>
+						${job.formatBytes(job.sizeTotalsReport.total)} crawled ( ${job.formatBytes(job.sizeTotalsReport.novel)} novel, ${job.formatBytes(job.sizeTotalsReport.dupByHash)} dupByHash, ${job.formatBytes(job.sizeTotalsReport.notModified)} notModified)
+					</#if>
+
+				</div>
 			</dd>
 			<dt>Alerts</dt>
 			<dd>
@@ -90,17 +104,46 @@
 				</#if>
 			</dd>
 			<dt>Rates</dt>
-			<dd>${job.rateReport}</dd>
+			<dd><#if !job.rateReport??><i>n/a</i>
+				<#else>
+				${job.doubleToString(job.rateReport.currentDocsPerSecond,2)} URIs/sec (${job.doubleToString(job.rateReport.averageDocsPerSecond,2)} avg); ${job.rateReport.currentKiBPerSec} KB/sec (${job.rateReport.averageKiBPerSec} avg)
+				</#if>
+			</dd>
 			<dt>Load</dt>
-			<dd>${job.loadReport}</dd>
+			<dd>
+				<#if !job.loadReport??><i>n/a</i>
+				<#else>
+				${job.loadReport.busyThreads} active of ${job.loadReport.totalThreads} threads; ${job.doubleToString(job.loadReport.congestionRatio,2)}  congestion ratio; ${job.loadReport.deepestQueueDepth}  deepest queue; ${job.loadReport.averageQueueDepth}  average depth
+				</#if>
+			</dd>
 			<dt>Elapsed</dt>
-			<dd>${job.elapsedReport}</dd>
+			<dd>
+				<#if !job.elapsedReport??><i>n/a</i>
+				<#else>
+				${job.elapsedReport.elapsedPretty}
+				</#if>
+			</dd>
 			<dt><a href="report/ToeThreadsReport">Threads</a></dt>
-			<dd>${job.threadReport}</dd>
+			<dd>
+				<#if !job.threadReport??><i>n/a</i>
+				<#else>
+				${job.threadReport.toeCount} threads: 
+				<#list job.threadReport.steps as step>${step.value} ${step.key}<#if step_has_next>, </#if></#list>;
+				<#list job.threadReport.processors as proc>${proc.value} ${proc.key}<#if proc_has_next>, </#if></#list>
+				</#if>
+			</dd>
 			<dt><a href="report/FrontierSummaryReport">Frontier</a></dt>
-			<dd>${job.frontierReport}</dd>
+			<dd>
+				<#if !job.frontierReport??><i>n/a</i>
+				<#else>
+				${job.frontierReport.lastReachedState} - ${job.frontierReport.totalQueues} URI queues: ${job.frontierReport.activeQueues} active (${job.frontierReport.inProcessQueues} in-process; ${job.frontierReport.readyQueues} ready; ${job.frontierReport.snoozedQueues} snoozed); ${job.frontierReport.inactiveQueues} inactive; ${job.frontierReport.ineligibleQueues} ineligible; ${job.frontierReport.retiredQueues} retired; ${job.frontierReport.exhaustedQueues} exhausted
+				</#if>
+			</dd>
 			<dt>Memory</dt>
-			<dd>${engine.heapReport}</dd>
+			<dd>
+				${(heapReport.usedBytes/1024)?string("0")} KiB used; ${(heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(heapReport.maxBytes/1024)?string("0")} KiB max heap
+
+			</dd>
 		</dl>
 
 		<#if (job.isRunning || (job.hasApplicationContext && !job.isLaunchable))>

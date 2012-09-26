@@ -165,8 +165,7 @@ public class JobResource extends BaseResource {
         viewModel.put("baseRef",baseRef);
         viewModel.put("cssRef", getStylesheetRef());
         viewModel.put("job", makeDataModel());
-        viewModel.put("engine", new EngineModel(getEngine(),baseRef));
-        viewModel.put("cj", cj);
+        viewModel.put("heapReport", getEngine().heapReportData());
 
         try {
             Template template = tmpltCfg.getTemplate("Job.ftl");

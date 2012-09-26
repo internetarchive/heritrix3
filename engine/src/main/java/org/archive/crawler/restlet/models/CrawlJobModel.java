@@ -40,7 +40,9 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         }
 
         this.put("statusDescription", crawlJob.getJobStatusDescription());
-
+        Set<String> actions = new LinkedHashSet<String>();
+        this.put("availableActions",actions);
+    
         this.put("launchCount", crawlJob.getLaunchCount());
         this.put("lastLaunch",crawlJob.getLastLaunch());
         this.put("isProfile", crawlJob.isProfile());
@@ -50,27 +52,48 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         this.put("primaryConfigUrl", urlBaseRef + "jobdir/" + primaryConfig.getName());
         this.put("url",urlBaseRef+"job/"+crawlJob.getShortName());
 
+        this.put("jobLogTail", generateJobLogTail());
+        this.put("uriTotalsReport", crawlJob.uriTotalsReportData());
+        
+        
+        Map<String,Long> sizeTotalsReportData = crawlJob.sizeTotalsReportData();
+        if(sizeTotalsReportData==null)
+            sizeTotalsReportData = new HashMap<String,Long>();
+        if(!sizeTotalsReportData.containsKey("dupByHash"))
+            sizeTotalsReportData.put("dupByHash", 0L);
+        if(!sizeTotalsReportData.containsKey("dupByHashCount"))
+            sizeTotalsReportData.put("dupByHashCount", 0L);
+        if(!sizeTotalsReportData.containsKey("novel"))
+            sizeTotalsReportData.put("novel", 0L);
+        if(!sizeTotalsReportData.containsKey("novelCount"))
+            sizeTotalsReportData.put("novelCount", 0L);
+        if(!sizeTotalsReportData.containsKey("notModified"))
+            sizeTotalsReportData.put("notModified", 0L);
+        if(!sizeTotalsReportData.containsKey("notModifiedCount"))
+            sizeTotalsReportData.put("notModifiedCount", 0L);
+        if(!sizeTotalsReportData.containsKey("total"))
+            sizeTotalsReportData.put("total", 0L);
+        if(!sizeTotalsReportData.containsKey("totalCount"))
+            sizeTotalsReportData.put("totalCount", 0L);
+            
+        this.put("sizeTotalsReport", sizeTotalsReportData);
+        
+        this.put("rateReport", crawlJob.rateReportData());
+        this.put("loadReport", crawlJob.loadReportData());
+        this.put("elapsedReport", crawlJob.elapsedReportData()); 
+        this.put("threadReport", crawlJob.threadReportData()); 
+        this.put("frontierReport", crawlJob.frontierReportData());
+        this.put("crawlLogTail", generateCrawlLogTail());
+        this.put("configFiles",generateConfigReferencedPaths(urlBaseRef));
+
+
         this.put("isLaunchInfoPartial", crawlJob.isLaunchInfoPartial());
         this.put("isRunning", crawlJob.isRunning());
         this.put("isLaunchable",crawlJob.isLaunchable());
-
-        this.put("uriTotalsReport", crawlJob.uriTotalsReport());
-        this.put("sizeTotalsReport", crawlJob.sizeTotalsReport());
-        this.put("rateReport", crawlJob.rateReport());
-        this.put("loadReport", crawlJob.loadReport());
-        this.put("elapsedReport", crawlJob.elapsedReport()); 
-        this.put("threadReport", crawlJob.threadReport()); 
-        this.put("frontierReport", crawlJob.frontierReport()); 
-
-        this.put("configFiles",generateConfigReferencedPaths(urlBaseRef));
-        this.put("jobLogTail", generateJobLogTail());
-        this.put("crawlLogTail", generateCrawlLogTail());
-
         this.put("hasApplicationContext",crawlJob.hasApplicationContext());
         this.put("alertCount", crawlJob.getAlertCount());        
 
-        Set<String> actions = new LinkedHashSet<String>();
-        this.put("availableActions",actions);
+        
         if (!crawlJob.hasApplicationContext())
             actions.add("build");
 
@@ -90,6 +113,12 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
 
 
         this.put("key", "");
+    }
+    public String formatBytes(Long bytes){
+        return ArchiveUtils.formatBytesForDisplay(bytes);
+    }
+    public String doubleToString(double number, int digits){
+        return ArchiveUtils.doubleToString(number, digits);
     }
     public String getLastLaunchTime(){
         long ago = System.currentTimeMillis()

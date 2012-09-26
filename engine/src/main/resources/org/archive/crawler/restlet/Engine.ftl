@@ -17,7 +17,8 @@
 </#list>
   
 <b>Memory: </b>
-${engine.heapReport}
+${(engine.heapReport.usedBytes/1024)?string("0")} KiB used; ${(engine.heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(engine.heapReport.maxBytes/1024)?string("0")} KiB max heap
+
 <br/><br/>
 <b>Jobs Directory</b>: <a href='jobsdir'>${engine.jobsDir}</a>
          
