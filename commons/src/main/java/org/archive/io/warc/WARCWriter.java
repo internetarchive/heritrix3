@@ -40,7 +40,6 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.io.ArchiveFileConstants;
 import org.archive.io.UTF8Bytes;
 import org.archive.io.WriterPoolMember;
-import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.Element;
 

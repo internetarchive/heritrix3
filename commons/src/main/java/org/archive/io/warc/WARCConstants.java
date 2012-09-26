@@ -20,7 +20,6 @@
 package org.archive.io.warc;
 
 import org.archive.io.ArchiveFileConstants;
-import org.archive.modules.writer.WARCWriterProcessor;
 
 /**
  * WARC Constants used by WARC readers and writers.
