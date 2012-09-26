@@ -100,7 +100,7 @@
 			<dt>Alerts</dt>
 			<dd>
 				<#if job.alertCount == 0 ><i>none</i><#else>${job.alertCount}
-				<a href="/engine/anypath/${job.alertLogFilePath.absolutePath}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a>
+				<a href="/engine/anypath/${job.alertLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a>
 				</#if>
 			</dd>
 			<dt>Rates</dt>
@@ -147,7 +147,7 @@
 		</dl>
 
 		<#if (job.isRunning || (job.hasApplicationContext && !job.isLaunchable))>
-		<h3>Crawl Log <a href="/engine/anypath/${job.crawlLogFilePath.absolutePath}?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y"><i>more</i></a></h3>
+		<h3>Crawl Log <a href="/engine/anypath/${job.crawlLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y"><i>more</i></a></h3>
 		<pre style='overflow:auto'>
 		<#list job.crawlLogTail as line>
 ${line?html}

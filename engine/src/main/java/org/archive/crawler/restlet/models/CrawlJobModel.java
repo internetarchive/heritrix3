@@ -111,8 +111,24 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         if (crawlJob.hasApplicationContext())
             actions.add("teardown");
 
-
-        this.put("key", "");
+        if (crawlJob.getCheckpointService() != null) {
+            Checkpoint recoveryCheckpoint = crawlJob.getCheckpointService().getRecoveryCheckpoint();
+            if (recoveryCheckpoint != null)
+                this.put("checkpointName", recoveryCheckpoint.getName());
+        }
+        
+        List<String> checkpointFiles = new ArrayList<String>();
+        if (crawlJob.getCheckpointService() != null) {
+            if (crawlJob.getCheckpointService().hasAvailableCheckpoints() && crawlJob.isLaunchable()) {
+                for (File f : crawlJob.getCheckpointService().findAvailableCheckpointDirectories()) {
+                    checkpointFiles.add(f.getName()); 
+                }
+            }
+        }
+        this.put("checkpointFiles",checkpointFiles);
+        this.put("alertLogFilePath",crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile().getAbsolutePath());
+        this.put("crawlLogFilePath",crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().getAbsolutePath());
+        this.put("reports", generateReports());
     }
     public String formatBytes(Long bytes){
         return ArchiveUtils.formatBytesForDisplay(bytes);
@@ -125,37 +141,13 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
                 - crawlJob.getLastLaunch().getMillis();
         return ArchiveUtils.formatMillisecondsToConventional(ago, 2);
     }
-    public String getCheckpointName(){
-        if (crawlJob.getCheckpointService() != null) {
-            Checkpoint recoveryCheckpoint = crawlJob.getCheckpointService().getRecoveryCheckpoint();
-            if (recoveryCheckpoint != null)
-                return recoveryCheckpoint.getName();
-        }
-        return null;
-    }
-    public List<String> getCheckpointFiles(){
-        List<String> checkpointFiles = new ArrayList<String>();
-        if (crawlJob.getCheckpointService() != null) {
-            if (crawlJob.getCheckpointService().hasAvailableCheckpoints() && crawlJob.isLaunchable()) {
-                for (File f : crawlJob.getCheckpointService().findAvailableCheckpointDirectories()) {
-                    checkpointFiles.add(f.getName()); 
-                }
-            }
-        }
-        return checkpointFiles;
-    }
+    /*
+     * Alternative access to the file object, full name stored in base data map.
+     */
     public File getConfigurationFilePath(){
         return crawlJob.getPrimaryConfig();
     }
-    public File getAlertLogFilePath(){
-        return crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile();
-    }
-    public File getCrawlLogFilePath(){
-        return crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile();
-    }
-    public List<File> getImportedConfigurationFilePaths(){
-        return crawlJob.getImportedConfigs(crawlJob.getPrimaryConfig());
-    }
+    
     public List<String> generateJobLogTail(){
         List<String> jobLog = new ArrayList<String>();
         if (crawlJob.getJobLog().exists()) {
@@ -184,7 +176,7 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         }
         return logLines;
     }
-    public List<Map<String,String>> getReports(){
+    public List<Map<String,String>> generateReports(){
         List<Map<String,String>> reports = new ArrayList<Map<String,String>>();
         for (Report report : crawlJob.getCrawlController().getStatisticsTracker().getReports()) {
             if (report.getShouldReportDuringCrawl()) {
