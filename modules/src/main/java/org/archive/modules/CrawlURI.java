@@ -57,6 +57,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -1895,4 +1896,19 @@ implements Reporter, Serializable, OverlayContext {
         return (HashMap<String,Object>[]) getData().get(A_FETCH_HISTORY);
     }
         
+    public HashMap<String, Object> getContentDigestHistory() {
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> contentDigestHistory = (HashMap<String, Object>) getData().get(A_CONTENT_DIGEST_HISTORY);
+        
+        if (contentDigestHistory == null) {
+            contentDigestHistory = new HashMap<String, Object>();
+            getData().put(A_CONTENT_DIGEST_HISTORY, contentDigestHistory);
+        }
+        
+        return contentDigestHistory;
+    }
+
+    public boolean hasContentDigestHistory() {
+        return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
+    }
 }

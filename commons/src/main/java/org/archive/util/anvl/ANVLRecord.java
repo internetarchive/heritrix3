@@ -22,10 +22,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -42,8 +42,7 @@ import org.archive.io.UTF8Bytes;
  * Language (ANVL)</a>
  * @author stack
  */
-public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
-	private static final long serialVersionUID = -4610638888453052958L;
+public class ANVLRecord extends LinkedList<Element> implements UTF8Bytes {
     private static final Logger logger = 
         Logger.getLogger(ANVLRecord.class.getName());
 
@@ -73,8 +72,9 @@ public class ANVLRecord extends ArrayList<Element> implements UTF8Bytes {
         super(c);
     }
 
+    /** @deprecated */
     public ANVLRecord(int initialCapacity) {
-        super(initialCapacity);
+        super();
     }
     
     public boolean addLabel(final String l) {
