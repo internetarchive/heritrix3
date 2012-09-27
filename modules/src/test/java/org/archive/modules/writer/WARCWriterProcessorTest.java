@@ -55,8 +55,14 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
     RecordIDGenerator generator = new UUIDGenerator();
     @Override
     protected Object makeModule() throws Exception {
+        WARCWriterProcessor result = newTestWarcWriter("WARCWriterProcessorTest");
+        result.start();
+        return result;
+    }
+
+    public static WARCWriterProcessor newTestWarcWriter(String name) throws IOException {
         File tmp = TmpDirTestCase.tmpDir();
-        tmp = new File(tmp, "WARCWriterProcessTest");
+        tmp = new File(tmp, name);
         FileUtils.ensureWriteableDirectory(tmp);
 
         WARCWriterProcessor result = new WARCWriterProcessor();
@@ -65,7 +71,6 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         CrawlMetadata metadata = new CrawlMetadata();
         metadata.afterPropertiesSet();
         result.setMetadataProvider(metadata);
-        result.start();
         return result;
     }
 

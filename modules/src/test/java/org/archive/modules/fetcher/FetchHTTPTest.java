@@ -976,15 +976,19 @@ public class FetchHTTPTest extends ProcessorTestBase {
 
     @Override
     protected FetchHTTP makeModule() throws IOException {
+        FetchHTTP fetchHttp = newTestFetchHttp(getUserAgentString());
+        
+        fetchHttp.start();
+        return fetchHttp;
+    }
+
+    public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
-        // fetchHttp.setCookieStore(new SimpleCookieStore());
         fetchHttp.setCookieStorage(new SimpleCookieStorage());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
-        uap.setUserAgentTemplate(getUserAgentString());
+        uap.setUserAgentTemplate(userAgentString);
         fetchHttp.setUserAgentProvider(uap);
-        
-        fetchHttp.start();
         return fetchHttp;
     }
     
