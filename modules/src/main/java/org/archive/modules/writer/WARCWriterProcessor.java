@@ -305,7 +305,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         setTotalBytesWritten(getTotalBytesWritten() + (writer.getPosition() - startPosition));
 
         curi.addExtraInfo("warcFilename", writer.getFilenameWithoutOccupiedSuffix());
-        // curi.addExtraInfo("warcOffset", startPosition);
+        curi.addExtraInfo("warcFileOffset", startPosition);
 
         // history for uri-based dedupe
         @SuppressWarnings("unchecked")
