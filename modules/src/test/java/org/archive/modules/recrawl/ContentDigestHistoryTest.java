@@ -159,72 +159,80 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         return curi;
     }
 
+    /*
+     * fetches two different urls with same content, writes warc records, checks results 
+     */
     public void testWarcDedupe() throws Exception {
         historyStore().store.clear();
         assertTrue(historyStore().store.isEmpty());
-        
-        startHttpServer();
-        
+
+        Server server = newHttpServer();
+
         FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
         WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
         warcWriter.setServerCache(fetcher.getServerCache());
-        warcWriter.start();
-        fetcher.start();
-        
-        CrawlURI curi1 = makeCrawlURI("http://127.0.0.1:7777/url1");
-        CrawlURI curi2 = makeCrawlURI("http://127.0.0.1:7777/url2"); 
 
-        fetcher.process(curi1);
-        assertEquals(200, curi1.getFetchStatus());
-        assertEquals(141, curi1.getContentSize());
-        assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
-        assertFalse(curi1.hasContentDigestHistory());
-        
-        loader().process(curi1);
-        assertTrue(curi1.hasContentDigestHistory());
-        assertTrue(curi1.getContentDigestHistory().isEmpty());
+        try {
+            server.start();
+            warcWriter.start();
+            fetcher.start();
 
-        warcWriter.process(curi1);
-        assertEquals(curi1.getUURI().toString(), curi1.getContentDigestHistory().get(A_ORIGINAL_URL));
-        assertEquals(1, curi1.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
-        String report = warcWriter.report();
-        assertTrue(report.contains("Total CrawlURIs:   1\n"));
-        assertTrue(report.contains("Revisit records:   0\n"));
-        
-        storer().process(curi1);
-        assertEquals(1, historyStore().store.size());
-        assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
-        assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
-        assertEquals(1, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
+            CrawlURI curi1 = makeCrawlURI("http://127.0.0.1:7777/url1");
+            CrawlURI curi2 = makeCrawlURI("http://127.0.0.1:7777/url2"); 
 
-        fetcher.process(curi2);
-        assertEquals(200, curi1.getFetchStatus());
-        assertEquals(141, curi1.getContentSize());
-        assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
-        assertFalse(curi2.hasContentDigestHistory());
+            fetcher.process(curi1);
+            assertEquals(200, curi1.getFetchStatus());
+            assertEquals(141, curi1.getContentSize());
+            assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
+            assertFalse(curi1.hasContentDigestHistory());
 
-        loader().process(curi2);
-        assertTrue(curi2.hasContentDigestHistory());
-        assertEquals(curi1.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
-        assertNotSame(curi2.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
-        assertEquals(1, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
-        
-        warcWriter.process(curi2);
-        assertEquals(curi1.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
-        assertNotSame(curi2.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
-        assertEquals(2, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
-        report = warcWriter.report();
-        assertTrue(report.contains("Total CrawlURIs:   2\n"));
-        assertTrue(report.contains("Revisit records:   1\n"));
-        
-        storer().process(curi2);
-        assertEquals(1, historyStore().store.size());
-        assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
-        assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
-        assertEquals(2, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
-        
-        warcWriter.stop();
-        fetcher.stop();
+            loader().process(curi1);
+            assertTrue(curi1.hasContentDigestHistory());
+            assertTrue(curi1.getContentDigestHistory().isEmpty());
+
+            warcWriter.process(curi1);
+            assertEquals(curi1.getUURI().toString(), curi1.getContentDigestHistory().get(A_ORIGINAL_URL));
+            assertEquals(1, curi1.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
+            String report = warcWriter.report();
+            assertTrue(report.contains("Total CrawlURIs:   1\n"));
+            assertTrue(report.contains("Revisit records:   0\n"));
+
+            storer().process(curi1);
+            assertEquals(1, historyStore().store.size());
+            assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
+            assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
+            assertEquals(1, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
+
+            fetcher.process(curi2);
+            assertEquals(200, curi1.getFetchStatus());
+            assertEquals(141, curi1.getContentSize());
+            assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
+            assertFalse(curi2.hasContentDigestHistory());
+
+            loader().process(curi2);
+            assertTrue(curi2.hasContentDigestHistory());
+            assertEquals(curi1.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
+            assertNotSame(curi2.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
+            assertEquals(1, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
+
+            warcWriter.process(curi2);
+            assertEquals(curi1.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
+            assertNotSame(curi2.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
+            assertEquals(2, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
+            report = warcWriter.report();
+            assertTrue(report.contains("Total CrawlURIs:   2\n"));
+            assertTrue(report.contains("Revisit records:   1\n"));
+
+            storer().process(curi2);
+            assertEquals(1, historyStore().store.size());
+            assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
+            assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
+            assertEquals(2, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
+        } finally {
+            warcWriter.stop();
+            fetcher.stop();
+            server.stop();
+        }
     }
     
 
@@ -239,7 +247,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
     }
 
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
-    protected void startHttpServer() throws Exception {
+    protected Server newHttpServer() throws Exception {
         HandlerCollection handlers = new HandlerCollection();
         handlers.addHandler(new SessionHandler(){
             @Override
@@ -262,6 +270,6 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         sc.setPort(7777);
         server.addConnector(sc);
         
-        server.start();
+        return server;
     }
 }

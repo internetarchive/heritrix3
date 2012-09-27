@@ -83,7 +83,7 @@ import sun.security.tools.KeyTool;
 
 public class FetchHTTPTest extends ProcessorTestBase {
 
-    // private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
+    //  private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
 
     /* uncomment this for detailed logging from jetty and heritrix */
 //    static {
@@ -460,6 +460,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
 
+        // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         runDefaultChecks(curi, "acceptHeaders");
         
         // special checks for this test
@@ -961,17 +962,19 @@ public class FetchHTTPTest extends ProcessorTestBase {
         NoResponseServer noResponseServer = new NoResponseServer("localhost", 7780);
         noResponseServer.start();
         
-        // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
-        CrawlURI curi = makeCrawlURI("http://localhost:7780");
-        fetcher().process(curi);
-        assertEquals(1, curi.getNonFatalFailures().size());
-        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
-        // assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
-        assertEquals(FetchStatusCodes.S_CONNECT_LOST, curi.getFetchStatus());
-        assertEquals(0, curi.getFetchCompletedTime());
-        
-        noResponseServer.beDone();
-        noResponseServer.join();
+        try {
+            // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
+            CrawlURI curi = makeCrawlURI("http://localhost:7780");
+            fetcher().process(curi);
+            assertEquals(1, curi.getNonFatalFailures().size());
+            assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
+            // assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+            assertEquals(FetchStatusCodes.S_CONNECT_LOST, curi.getFetchStatus());
+            assertEquals(0, curi.getFetchCompletedTime());
+        } finally {
+            noResponseServer.beDone();
+            noResponseServer.join();
+        }
     }
 
     @Override
@@ -998,6 +1001,26 @@ public class FetchHTTPTest extends ProcessorTestBase {
             return null;
         } else {
             return header.getValue();
+        }
+    }
+    
+    
+    
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        
+        if (httpServers != null) {
+            for (Server server: httpServers.values()) {
+                server.stop();
+                server.destroy();
+            }
+            httpServers = null;
+        }
+        
+        if (fetcher != null) {
+            fetcher.stop();
+            fetcher = null;
         }
     }
 }
