@@ -18,10 +18,33 @@
  */
 package org.archive.modules.recrawl;
 
+import static org.archive.io.warc.WARCConstants.CONTENT_LENGTH;
+import static org.archive.io.warc.WARCConstants.CONTENT_TYPE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_ID;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_PROFILE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_DATE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILENAME;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILE_OFFSET;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_TRUNCATED;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_TYPE;
+import static org.archive.io.warc.WARCConstants.HEADER_KEY_URI;
+import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
+import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
+import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -31,6 +54,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
+import org.archive.io.ArchiveRecord;
+import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCReader;
+import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPTest;
@@ -171,6 +198,11 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
         WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
         warcWriter.setServerCache(fetcher.getServerCache());
+        for (File dir: warcWriter.calcOutputDirs()) {
+            /* make sure we don't have other stuff hanging around that will
+             * confuse the warc reader checks later */
+            FileUtils.deleteDirectory(dir);
+        }
 
         try {
             server.start();
@@ -179,11 +211,12 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             CrawlURI curi1 = makeCrawlURI("http://127.0.0.1:7777/url1");
             CrawlURI curi2 = makeCrawlURI("http://127.0.0.1:7777/url2"); 
+            final String expectedDigest = "sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ";
 
             fetcher.process(curi1);
             assertEquals(200, curi1.getFetchStatus());
             assertEquals(141, curi1.getContentSize());
-            assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
+            assertEquals(expectedDigest, curi1.getContentDigestSchemeString());
             assertFalse(curi1.hasContentDigestHistory());
 
             loader().process(curi1);
@@ -199,14 +232,14 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             storer().process(curi1);
             assertEquals(1, historyStore().store.size());
-            assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
-            assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
-            assertEquals(1, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
+            assertNotNull(historyStore().store.get(expectedDigest));
+            assertEquals(curi1.getUURI().toString(), historyStore().store.get(expectedDigest).get(A_ORIGINAL_URL));
+            assertEquals(1, historyStore().store.get(expectedDigest).get(A_CONTENT_DIGEST_COUNT));
 
             fetcher.process(curi2);
             assertEquals(200, curi1.getFetchStatus());
             assertEquals(141, curi1.getContentSize());
-            assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi1.getContentDigestSchemeString());
+            assertEquals(expectedDigest, curi1.getContentDigestSchemeString());
             assertFalse(curi2.hasContentDigestHistory());
 
             loader().process(curi2);
@@ -225,9 +258,77 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             storer().process(curi2);
             assertEquals(1, historyStore().store.size());
-            assertNotNull(historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ"));
-            assertEquals(curi1.getUURI().toString(), historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_ORIGINAL_URL));
-            assertEquals(2, historyStore().store.get("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ").get(A_CONTENT_DIGEST_COUNT));
+            assertNotNull(historyStore().store.get(expectedDigest));
+            assertEquals(curi1.getUURI().toString(), historyStore().store.get(expectedDigest).get(A_ORIGINAL_URL));
+            assertEquals(2, historyStore().store.get(expectedDigest).get(A_CONTENT_DIGEST_COUNT));
+
+            warcWriter.stop();
+            
+            String payloadRecordIdWithBrackets = "<"
+                    + historyStore().store.get(expectedDigest).get(
+                            A_WARC_RECORD_ID) + ">";
+            
+            // check the warc records
+            List<File> warcDirs = warcWriter.calcOutputDirs();
+            assertEquals(1, warcDirs.size());
+            String[] warcs = warcDirs.get(0).list();
+            assertEquals(1, warcs.length);
+            WARCReader warcReader = WARCReaderFactory.get(new File(warcDirs.get(0), warcs[0]));
+            Iterator<ArchiveRecord> recordIterator = warcReader.iterator();
+            
+            ArchiveRecord record = recordIterator.next();
+            assertEquals(WARCRecordType.WARCINFO.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.RESPONSE.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals("141", record.getHeader().getHeaderValue(CONTENT_LENGTH));
+            assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
+            assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+            assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_ID));
+            
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+            assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
+            
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+            assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
+            
+            // the all-important revisit record
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.REVISIT.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+            assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO));
+            assertEquals(NAMED_FIELD_TRUNCATED_VALUE_LENGTH, record.getHeader().getHeaderValue(HEADER_KEY_TRUNCATED));
+            assertEquals(HTTP_RESPONSE_MIMETYPE, record.getHeader().getHeaderValue(CONTENT_TYPE));
+            assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
+            assertEquals(PROFILE_REVISIT_IDENTICAL_DIGEST, 
+                    record.getHeader().getHeaderValue(HEADER_KEY_PROFILE));
+            assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_TARGET_URI));
+            assertEquals(historyStore().store.get(expectedDigest).get(A_ORIGINAL_DATE), 
+                    record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_DATE));
+            assertEquals(warcs[0], record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILENAME));
+            assertEquals(historyStore().store.get(expectedDigest).get(A_WARC_FILE_OFFSET).toString(), 
+                    record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILE_OFFSET));
+
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+            
+            assertTrue(recordIterator.hasNext());
+            record = recordIterator.next();
+            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
+
+            assertFalse(recordIterator.hasNext());
+            
         } finally {
             warcWriter.stop();
             fetcher.stop();
