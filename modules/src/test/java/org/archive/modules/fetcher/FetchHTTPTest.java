@@ -22,11 +22,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -626,19 +630,39 @@ public class FetchHTTPTest extends ProcessorTestBase {
         assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
     }
 
-    // Binding to 127.0.0.2 only works on some systems. Fails on my mac. We
-    // could skip the test in that case, but better to leave it in I think, so
-    // we notice if it starts failing on the build box and we can do something
-    // about it.
+    // Test will succeed if there ae at least 2 local Inet4Addresses, and 
+    // each can be bound to in turn. (Works better than trying to use 127.0.0.2
+    // which may not be available as local address by default on MacOS.)
+    // Usually, the minimum 2 addresses will be 127.0.0.1 and another 
+    // routable (perhaps LAN only eg 192.168.x.x or 10.x.x.x) address.
     public void testHttpBindAddress() throws Exception {
+        List<InetAddress> addrList = new ArrayList<InetAddress>();
+        for(NetworkInterface ifc : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+           if(ifc.isUp()) {
+              for(InetAddress addr : Collections.list(ifc.getInetAddresses())) {
+                  if(addr instanceof Inet4Address) {
+                    addrList.add(addr);
+                  }
+              }
+           }
+        }
+        if(addrList.size()<2) {
+            fail("unable to test binding to different local addresses: only "+addrList.size()+" addresses available");
+        }
+        for (InetAddress addr : addrList) {
+            tryHttpBindAddress(addr.getHostAddress());
+        }
+    }
+    
+    public void tryHttpBindAddress(String addr) throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        fetcher().setHttpBindAddress("127.0.0.2");
+        fetcher().setHttpBindAddress(addr);
         fetcher().process(curi);
 
         // the client bind address isn't recorded anywhere in heritrix as
         // far as i can tell, so we get it this way...
-        assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
+        assertEquals(addr, lastRequest.getRemoteAddr());
 
         runDefaultChecks(curi, "httpBindAddress");
     }
