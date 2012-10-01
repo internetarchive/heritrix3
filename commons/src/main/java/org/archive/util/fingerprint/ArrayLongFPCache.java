@@ -28,9 +28,9 @@ public class ArrayLongFPCache implements LongFPSet {
     public static final int DEFAULT_CAPACITY = 1 << 20; // 1 million, 8MB
     public static final int DEFAULT_SMEAR = 5; 
 
-    long cache[] = new long[DEFAULT_CAPACITY];
-    int smear = DEFAULT_SMEAR;
-    int count = 0;
+    protected long cache[] = new long[DEFAULT_CAPACITY];
+    protected int smear = DEFAULT_SMEAR;
+    protected int count = 0;
     
     public void setCapacity(int newCapacity) {
         long[] oldCache = cache;

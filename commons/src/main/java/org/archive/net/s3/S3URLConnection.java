@@ -17,10 +17,10 @@ import org.jets3t.service.S3ServiceException;
  * @author jlee
  */
 public class S3URLConnection extends URLConnection {
-  String id     = "";
-  String secret = "";
+ protected String id     = "";
+ protected String secret = "";
 
-  S3Object object = null;
+ protected S3Object object = null;
   
  /**
   * Contruct a new S3URLConnection.

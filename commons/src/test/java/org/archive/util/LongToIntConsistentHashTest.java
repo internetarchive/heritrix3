@@ -26,7 +26,7 @@ import org.apache.commons.lang.math.RandomUtils;
 import st.ata.util.FPGenerator;
 
 public class LongToIntConsistentHashTest extends TestCase {
-    LongToIntConsistentHash conhash;
+    protected LongToIntConsistentHash conhash;
     
     @Override
     protected void setUp() throws Exception {

@@ -85,8 +85,8 @@ import org.archive.util.FileUtils;
    
    @author Howard Lee Gayle
 */
-@SuppressWarnings("unchecked")
 public class MirrorWriterProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
         Logger.getLogger(MirrorWriterProcessor.class.getName());
@@ -116,7 +116,7 @@ public class MirrorWriterProcessor extends Processor {
      * True if the file system is case-sensitive, like UNIX. False if the file
      * system is case-insensitive, like Macintosh HFS+ and Windows.
      */
-    boolean caseSensitiveFilesystem = true; 
+    protected boolean caseSensitiveFilesystem = true; 
     public boolean getCaseSensitiveFilesystem() {
         return this.caseSensitiveFilesystem;
     }
@@ -132,7 +132,7 @@ public class MirrorWriterProcessor extends Processor {
      * recommended value is [' ' %%20 &quot; %%22 * %%2A : %%3A < %%3C \\> %%3E ?
      * %%3F \\\\ %%5C ^ %%5E | %%7C].
      */
-    List<String> characterMap = new ArrayList<String>(); 
+    protected List<String> characterMap = new ArrayList<String>(); 
     public List<String> getCharacterMap() {
         return this.characterMap;
     }
@@ -150,7 +150,7 @@ public class MirrorWriterProcessor extends Processor {
      * the URI. For example, to force all HTML files to have the same suffix,
      * use [text/html html].
      */
-    List<String> contentTypeMap = new ArrayList<String>(); 
+    protected List<String> contentTypeMap = new ArrayList<String>(); 
     public List<String> getContentTypeMap() {
         return this.contentTypeMap;
     }
@@ -161,7 +161,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * If a segment starts with '.', the '.' is replaced by this.
      */
-    String dotBegin = "%2E";
+    protected String dotBegin = "%2E";
     public String getDotBegin() {
         return this.dotBegin;
     }
@@ -181,7 +181,7 @@ public class MirrorWriterProcessor extends Processor {
      * systems except Windows, '.' is recommended. For Windows, %%2E is
      * recommended.
      */
-    String dotEnd = ".";
+    protected String dotEnd = ".";
     public String getDotEnd() {
         return this.dotEnd;
     }
@@ -193,7 +193,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Implicitly append this to a URI ending with '/'.
      */
-    String directoryFile = "index.html";
+    protected String directoryFile = "index.html";
     public String getDirectoryFile() {
         return this.directoryFile;
     }
@@ -205,7 +205,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Create a subdirectory named for the host in the URI.
      */
-    boolean createHostDirectory = true; 
+    protected boolean createHostDirectory = true; 
     public boolean getCreateHostDirectory() {
         return this.createHostDirectory;
     }
@@ -219,7 +219,7 @@ public class MirrorWriterProcessor extends Processor {
      * pair. This can be used for consistency when several names are used for
      * one host, for example [12.34.56.78 www42.foo.com].
      */
-    List<String> hostMap = new ArrayList<String>(); 
+    protected List<String> hostMap = new ArrayList<String>(); 
     public List<String> getHostMap() {
         return this.hostMap;
     }
@@ -231,7 +231,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Maximum file system path length.
      */
-    int maxPathLength = 1023; 
+    protected int maxPathLength = 1023; 
     public int getMaxPathLength() {
         return maxPathLength;
     }
@@ -242,7 +242,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Maximum file system path segment length.
      */
-    int maxSegLength = 255; 
+    protected int maxSegLength = 255; 
     public int getMaxSegLength() {
         return maxSegLength;
     }
@@ -257,7 +257,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Top-level directory for mirror files.
      */
-    String path = "mirror";
+    protected String path = "mirror";
     public String getPath() {
         return this.path;
     }
@@ -268,7 +268,7 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Create a subdirectory named for the port in the URI.
      */
-    boolean createPortDirectory = false; 
+    protected boolean createPortDirectory = false; 
     public boolean getCreatePortDirectory() {
         return this.createPortDirectory;
     }
@@ -280,7 +280,7 @@ public class MirrorWriterProcessor extends Processor {
      * If true, the suffix is placed at the end of the path, after the query (if
      * any). If false, the suffix is placed before the query.
      */
-    boolean suffixAtEnd = true; 
+    protected boolean suffixAtEnd = true; 
     public boolean getSuffixAtEnd() {
         return this.suffixAtEnd;
     }
@@ -293,7 +293,7 @@ public class MirrorWriterProcessor extends Processor {
      * exceeding, the file system maximum path length, then they are all
      * replaced by this.
      */
-    String tooLongDirectory = "LONG";
+    protected String tooLongDirectory = "LONG";
     public String getTooLongDirectory() {
         return this.tooLongDirectory;
     }
@@ -309,7 +309,7 @@ public class MirrorWriterProcessor extends Processor {
      * com4 com5 com6 com7 com8 com9 lpt1 lpt2 lpt3 lpt4 lpt5 lpt6 lpt7 lpt8
      * lpt9 con nul prn].
      */
-    List<String> underscoreSet = new ArrayList<String>(); 
+    protected List<String> underscoreSet = new ArrayList<String>(); 
     public List<String> getUnderscoreSet() {
         return this.underscoreSet;
     }
@@ -462,7 +462,7 @@ public class MirrorWriterProcessor extends Processor {
        If not, the last element is removed.
        @param list the list
     */
-    private void ensurePairs(List list) {
+    private void ensurePairs(List<?> list) {
         if (1 == (list.size() % 2)) {
             list.remove(list.size() - 1);
         }
@@ -513,7 +513,7 @@ public class MirrorWriterProcessor extends Processor {
         if ((null != ctm) && (ctm.size() > 1)) {
             ensurePairs(ctm);
             String contentType = curi.getContentType().toLowerCase();
-            Iterator i = ctm.iterator();
+            Iterator<String> i = ctm.iterator();
             for (boolean more = true; more && i.hasNext();) {
                 String ct = (String) i.next();
                 String suf = (String) i.next();
@@ -542,7 +542,7 @@ public class MirrorWriterProcessor extends Processor {
             ensurePairs(cm);
             characterMap = new HashMap<String,String>(cm.size()); 
             // Above will be half full.
-            for (Iterator i = cm.iterator(); i.hasNext();) {
+            for (Iterator<String> i = cm.iterator(); i.hasNext();) {
                 String s1 = (String) i.next();
                 String s2 = (String) i.next();
                 if ((null != s1) && (1 == s1.length()) && (null != s2)
@@ -628,15 +628,15 @@ public class MirrorWriterProcessor extends Processor {
        @throws IOException
        if a needed directory could not be created
        @throws IOException
-       if a needed directory is not writeable
+       if a needed directory is not writable
        @throws IOException
        if a non-directory file exists with the same path as a needed directory
     */
     private URIToFileReturn uriToFile(CrawlURI curi, String host, int port,
             String uriPath, String query, String suffix, String baseDir,
             int maxSegLen, int maxPathLen, boolean caseSensitive,
-            String dirFile, Map characterMap, String dotBegin, String dotEnd,
-            String tooLongDir, boolean suffixAtEnd, Set underscoreSet)
+            String dirFile, Map<String, String> characterMap, String dotBegin, String dotEnd,
+            String tooLongDir, boolean suffixAtEnd, Set<String> underscoreSet)
             throws IOException {
         assert (null == host) || (0 != host.length());
         assert 0 != uriPath.length();
@@ -904,7 +904,7 @@ public class MirrorWriterProcessor extends Processor {
     */
     class DirSegment extends PathSegment {
         /** If a segment name is in this set, prepend an underscore.*/
-        private Set underscoreSet;
+        private Set<String> underscoreSet;
 
         /**
            Creates a DirSegment.
@@ -937,8 +937,8 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         DirSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, CrawlURI curi, Map characterMap,
-                   String dotBegin, String dotEnd, Set underscoreSet) {
+                   boolean caseSensitive, CrawlURI curi, Map<String, String> characterMap,
+                   String dotBegin, String dotEnd, Set<String> underscoreSet) {
             super(maxSegLen, caseSensitive, curi);
             mainPart = new LumpyString(uriPath, beginIndex, endIndex,
                                        (null == dotEnd) ? 0 : dotEnd.length(),
@@ -1126,7 +1126,7 @@ public class MirrorWriterProcessor extends Processor {
            maxSegLen is too small.
         */
         EndSegment(String uriPath, int beginIndex, int endIndex, int maxSegLen,
-                   boolean caseSensitive, CrawlURI curi, Map characterMap,
+                   boolean caseSensitive, CrawlURI curi, Map<String, String> characterMap,
                    String dotBegin, String query, String suffix,
                    int maxPathLen, boolean suffixAtEnd) {
             super(maxSegLen - 1, caseSensitive, curi);
@@ -1413,7 +1413,7 @@ public class MirrorWriterProcessor extends Processor {
            dotBegin is non-null but empty.
         */
         LumpyString(String str, int beginIndex, int endIndex, int padding,
-                    int maxLen, Map characterMap, String dotBegin) {
+                    int maxLen, Map<String, String> characterMap, String dotBegin) {
             if (beginIndex < 0) {
                 throw new IllegalArgumentException("beginIndex < 0: "
                                                    + beginIndex);

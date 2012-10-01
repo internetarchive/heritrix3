@@ -61,6 +61,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger logger =
@@ -640,7 +641,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             // the underlying ReplayCharSequence and the link its about
             // to become a part of is expected to outlive the current
             // ReplayCharSequence.
-            HTMLLinkContext hc = new HTMLLinkContext(context.toString());
+            HTMLLinkContext hc = HTMLLinkContext.get(context.toString());
             int max = getExtractorParameters().getMaxOutlinks();
             Link.addRelativeToBase(curi, max, uri.toString(), hc, hop);
         } catch (URIException e) {
@@ -777,7 +778,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * is TRANSIENT data. Make a copy if you want the data to live outside
      * of this extractors' lifetime.
      */
-    void extract(CrawlURI curi, CharSequence cs) {
+    protected void extract(CrawlURI curi, CharSequence cs) {
         Matcher tags = TextUtils.getMatcher(relevantTagPattern,cs);
         while(tags.find()) {
             if(Thread.interrupted()){

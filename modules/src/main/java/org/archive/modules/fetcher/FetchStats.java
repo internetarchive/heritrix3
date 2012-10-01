@@ -23,11 +23,11 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.CrawlURI;
-import org.archive.util.ArchiveUtils;
-import org.archive.util.MultiReporter;
-import org.apache.commons.httpclient.HttpStatus; 
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
+import org.archive.util.ArchiveUtils;
+import org.archive.util.Reporter;
 
 /**
  * Collector of statistics for a 'subset' of a crawl,
@@ -36,7 +36,7 @@ import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
  * 
  * @author gojomo
  */
-public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter {
+public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
     private static final long serialVersionUID = 8624425657056569036L;
 
     public enum Stage {SCHEDULED, RELOCATED, RETRIED, 
@@ -49,27 +49,27 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         public void tally(CrawlURI curi, Stage stage); 
     }
     
-    long totalScheduled;   // anything initially scheduled
+    protected long totalScheduled;   // anything initially scheduled
                            // (totalScheduled - (fetchSuccesses + fetchFailures)
-    long fetchSuccesses;   // anything disposed-success 
+    protected long fetchSuccesses;   // anything disposed-success 
                            // (HTTP 2XX response codes, other non-errors)
-    long fetchFailures;    // anything disposed-failure
-    long fetchDisregards;  // anything disposed-disregard
-    long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
-    long robotsDenials;    // all robots-precluded failures
-    long successBytes;     // total size of all success responses
-    long totalBytes;       // total size of all responses
-    long fetchNonResponses; // processing attempts resulting in no response
+    protected long fetchFailures;    // anything disposed-failure
+    protected long fetchDisregards;  // anything disposed-disregard
+    protected long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
+    protected long robotsDenials;    // all robots-precluded failures
+    protected long successBytes;     // total size of all success responses
+    protected long totalBytes;       // total size of all responses
+    protected long fetchNonResponses; // processing attempts resulting in no response
                            // (both failures and temp deferrals)
     
-    long novelBytes; 
-    long novelUrls;
-    long notModifiedBytes;
-    long notModifiedUrls;
-    long dupByHashBytes;
-    long dupByHashUrls;  
+    protected long novelBytes; 
+    protected long novelUrls;
+    protected long notModifiedBytes;
+    protected long notModifiedUrls;
+    protected long dupByHashBytes;
+    protected long dupByHashUrls;  
     
-    long lastSuccessTime; 
+    protected long lastSuccessTime; 
     
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {
@@ -185,29 +185,18 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
 
     public long getDupByHashUrls() {
         return dupByHashUrls;
-    } 
-    
-    public String[] getReports() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.lang.String, java.io.PrintWriter)
-     */
-    public void reportTo(String name, PrintWriter writer) {
-        // name ignored, only one report
-        writer.println(shortReportLegend());
-        shortReportLineTo(writer);
     }
 
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#reportTo(java.io.PrintWriter)
      */
+    @Override // Reporter
     public void reportTo(PrintWriter writer) {
-        reportTo(null,writer);
+        writer.println(shortReportLegend());
+        shortReportLineTo(writer);
     }
 
+    @Override
     public String shortReportLegend() {
         return "totalScheduled fetchSuccesses fetchFailures fetchDisregards " +
                 "fetchResponses robotsDenials successBytes totalBytes " +
@@ -218,6 +207,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         return ArchiveUtils.shortReportLine(this);
     }
 
+    @Override
     public void shortReportLineTo(PrintWriter writer) {
         writer.print(totalScheduled);
         writer.print(" ");
@@ -240,6 +230,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, MultiReporter
         writer.print(ArchiveUtils.getLog17Date(lastSuccessTime));
     }
 
+    @Override
     public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("totalScheduled", totalScheduled);

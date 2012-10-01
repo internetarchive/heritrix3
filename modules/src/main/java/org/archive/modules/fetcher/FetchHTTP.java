@@ -71,10 +71,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.auth.AuthChallengeParser;
+import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.BasicScheme;
-import org.apache.commons.httpclient.auth.DigestScheme;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -121,6 +120,7 @@ import org.springframework.context.Lifecycle;
  * @version $Id$
  */
 public class FetchHTTP extends Processor implements Lifecycle {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
@@ -275,7 +275,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Which algorithm (for example MD5 or SHA-1) to use to perform an
      * on-the-fly digest hash of retrieved content-bodies.
      */
-    String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1"; 
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }
@@ -316,7 +316,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         setSslTrustLevel(TrustLevel.OPEN);
     }
     public TrustLevel getSslTrustLevel() {
-        return (TrustLevel) kp.get("trustLevel");
+        return (TrustLevel) kp.get("sslTrustLevel");
     }
     public void setSslTrustLevel(TrustLevel trustLevel) {
         kp.put("sslTrustLevel",trustLevel);
@@ -479,7 +479,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public static final String HTTPS_SCHEME = "https";
 
     
-    CookieStorage cookieStorage = new BdbCookieStorage();
+    protected CookieStorage cookieStorage = new BdbCookieStorage();
     @Autowired(required=false)
     public void setCookieStorage(CookieStorage storage) {
         this.cookieStorage = storage; 
@@ -505,12 +505,11 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Local IP address or hostname to use when making connections (binding
      * sockets). When not specified, uses default local address(es).
      */
-    protected String httpBindAddress = "";
     public String getHttpBindAddress(){
-        return this.httpBindAddress;
+        return (String) kp.get(HTTP_BIND_ADDRESS);
     }
     public void setHttpBindAddress(String address) {
-        this.httpBindAddress = address;
+        kp.put(HTTP_BIND_ADDRESS, address);
     }
     public static final String HTTP_BIND_ADDRESS = "httpBindAddress";
 
@@ -632,7 +631,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         if (http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort())) != null) {
             addedCredentials = true;
         }
-        method.setDoAuthentication(addedCredentials);
 
         // set hardMax on bytes (if set by operator)
         long hardMax = getMaxLengthBytes();
@@ -743,14 +741,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param curi CrawlURI
      * @param rec HttpRecorder
      */
-    @SuppressWarnings("unchecked")
     protected void setSizes(CrawlURI curi, Recorder rec) {
         // set reporting size
         curi.setContentSize(rec.getRecordedInput().getSize());
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
                 && curi.containsDataKey(A_FETCH_HISTORY)) {
-            Map history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
+            @SuppressWarnings("unchecked")
+            Map<String, ?> history[] = (Map[])curi.getData().get(A_FETCH_HISTORY);
             if (history[0] != null
                     && history[0]
                             .containsKey(A_REFERENCE_LENGTH)) {
@@ -1024,12 +1022,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
-    @SuppressWarnings("unchecked")
     protected void setConditionalGetHeader(CrawlURI curi, HttpMethod method, 
             boolean conditional, String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
-                Map[] history = (Map[])curi.getData().get(A_FETCH_HISTORY);
+                @SuppressWarnings("unchecked")
+                Map<String, ?>[] history = (Map[])curi.getData().get(A_FETCH_HISTORY);
                 int previousStatus = (Integer) history[0].get(A_STATUS);
                 if(previousStatus<=0) {
                     // do not reuse headers from any broken fetch
@@ -1146,7 +1144,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         if (server.hasCredentials()) {
             for (Credential cred : server.getCredentials()) {
                 if (cred.isEveryTime()) {
-                    cred.populate(curi, this.http, method);
+                    cred.populate(curi, this.http, method, server.getHttpAuthChallenges());
                 }
             }
         }
@@ -1157,7 +1155,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         // by the handle401 method if its a rfc2617 or it'll have been set into
         // the curi by the preconditionenforcer as this login uri came through.
         for (Credential c: curi.getCredentials()) {
-            if (c.populate(curi, this.http, method)) {
+            if (c.populate(curi, this.http, method, curi.getHttpAuthChallenges())) {
                 result = true;
             }
         }
@@ -1186,6 +1184,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
                 CrawlServer cs = serverCache.getServerFor(cd);
                 if (cs != null) {
                     cs.addCredential(c);
+                    cs.setHttpAuthChallenges(curi.getHttpAuthChallenges());
                 }
             }
         }
@@ -1261,7 +1260,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            CrawlURI that got a 401.
      * @return Returns first wholesome authscheme found else null.
      */
-    @SuppressWarnings("unchecked")
     protected AuthScheme getAuthScheme(final HttpMethod method,
             final CrawlURI curi) {
         Header[] headers = method.getResponseHeaders("WWW-Authenticate");
@@ -1271,37 +1269,42 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return null;
         }
 
-        Map authschemes = null;
+        Map<String, String> authChallenges = null;
         try {
-            authschemes = AuthChallengeParser.parseChallenges(headers);
+            @SuppressWarnings("unchecked")
+            Map<String, String> parsedChallenges = AuthChallengeParser.parseChallenges(headers);
+            authChallenges = parsedChallenges;
+            
+            // remember WWW-Authenticate headers for later use 
+            curi.setHttpAuthChallenges(authChallenges);
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
         }
-        if (authschemes == null || authschemes.size() <= 0) {
+        if (authChallenges == null || authChallenges.size() <= 0) {
             logger.fine("We got a 401 and WWW-Authenticate challenge"
                     + " but failed parse of the header " + curi.toString());
             return null;
         }
 
+        // XXX there's a lot of overlap below with AuthChallengeProcessor.processChallenge()
+        
         AuthScheme result = null;
         // Use the first auth found.
-        for (Iterator i = authschemes.keySet().iterator(); result == null
+        for (Iterator<String> i = authChallenges.keySet().iterator(); result == null
                 && i.hasNext();) {
             String key = (String) i.next();
-            String challenge = (String) authschemes.get(key);
+            String challenge = (String) authChallenges.get(key);
             if (key == null || key.length() <= 0 || challenge == null
                     || challenge.length() <= 0) {
                 logger.warning("Empty scheme: " + curi.toString() + ": "
                         + Arrays.toString(headers));
                 continue;
             }
-            AuthScheme authscheme = null;
-            if (key.equals("basic")) {
-                authscheme = new BasicScheme();
-            } else if (key.equals("digest")) {
-                authscheme = new DigestScheme();
-            } else {
-                logger.fine("Unsupported scheme: " + key);
+            AuthScheme authscheme;
+            try {
+                authscheme = AuthPolicy.getAuthScheme(key);
+            } catch (IllegalStateException e) {
+                logger.info("Unsupported auth scheme '" + key + "' at " + curi + " - " + e);
                 continue;
             }
 
@@ -1356,14 +1359,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         super.start();
         
+        setSSLFactory();
         configureHttp();
 
         if (cookieStorage != null) {     
             cookieStorage.start(); 
             http.getState().setCookiesMap(cookieStorage.getCookiesMap());
         }
-
-        setSSLFactory();
     }
     
     public boolean isRunning() {
@@ -1377,7 +1379,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         super.stop();
         // At the end save cookies to the file specified in the order file.
         if (cookieStorage != null) {
-            @SuppressWarnings("unchecked")
             Map<String, Cookie> map = http.getState().getCookiesMap();
             cookieStorage.saveCookiesMap(map);
             cookieStorage.stop();

@@ -30,7 +30,7 @@ import java.util.HashSet;
 public class MemUriUniqFilter
 extends SetBasedUriUniqFilter {
     private static final long serialVersionUID = 1L;
-    HashSet<CharSequence> hashSet; 
+    protected HashSet<CharSequence> hashSet; 
     
     protected synchronized boolean setAdd(CharSequence uri) {
         return hashSet.add(uri);

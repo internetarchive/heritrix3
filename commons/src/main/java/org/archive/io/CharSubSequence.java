@@ -27,9 +27,9 @@ package org.archive.io;
  */
 public class CharSubSequence implements CharSequence {
 
-    CharSequence inner;
-    int start;
-    int end;
+    protected CharSequence inner;
+    protected int start;
+    protected int end;
 
     public CharSubSequence(CharSequence inner, int start, int end) {
         if (end < start) {

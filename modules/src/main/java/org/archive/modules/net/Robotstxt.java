@@ -47,15 +47,15 @@ public class Robotstxt implements Serializable {
     // all user agents contained in this robots.txt
     // in order of declaration
     // TODO: consider discarding irrelevant entries
-    LinkedList<String> namedUserAgents = new LinkedList<String>();
+    protected LinkedList<String> namedUserAgents = new LinkedList<String>();
     // map user-agents to directives
-    Map<String,RobotsDirectives> agentsToDirectives = 
+    protected Map<String,RobotsDirectives> agentsToDirectives = 
         new HashMap<String,RobotsDirectives>();
-    RobotsDirectives wildcardDirectives = null; 
+    protected RobotsDirectives wildcardDirectives = null; 
     
-    boolean hasErrors = false;
+    protected boolean hasErrors = false;
     
-    static RobotsDirectives NO_DIRECTIVES = new RobotsDirectives();
+    protected static RobotsDirectives NO_DIRECTIVES = new RobotsDirectives();
     /** empty, reusable instance for all sites providing no rules */
     public static Robotstxt NO_ROBOTS = new Robotstxt();
     

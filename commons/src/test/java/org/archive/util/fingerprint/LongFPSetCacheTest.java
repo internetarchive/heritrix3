@@ -55,7 +55,7 @@ public class LongFPSetCacheTest extends LongFPSetTestCase {
         return new TestSuite(LongFPSetCacheTest.class);
     }
 
-    LongFPSet makeLongFPSet() {
+    protected LongFPSet makeLongFPSet() {
         return new LongFPSetCache();
     }
 

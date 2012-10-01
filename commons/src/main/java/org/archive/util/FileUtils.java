@@ -600,7 +600,7 @@ public class FileUtils {
             LOGGER.severe(">50 pending Files to delete even after gc/finalization");
         }
     }
-    static LinkedList<File> pendingDeletes = new LinkedList<File>();
+    protected static LinkedList<File> pendingDeletes = new LinkedList<File>();
 
     /**
      * Read the entire stream to EOF into the passed file.

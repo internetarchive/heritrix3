@@ -34,13 +34,14 @@ import org.archive.net.UURIFactory;
  */
 public class ExtractorHTTP extends Extractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     public ExtractorHTTP() {
     }
 
     /** should all HTTP URIs be used to infer a link to the site's root? */
-    boolean inferRootPage = false; 
+    protected boolean inferRootPage = false; 
     public boolean getInferRootPage() {
         return inferRootPage;
     }
@@ -81,7 +82,7 @@ public class ExtractorHTTP extends Extractor {
         // TODO: consider possibility of multiple headers
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), loc.getValue());
-            LinkContext lc = new HTMLLinkContext(loc.getName()+":"); 
+            LinkContext lc = HTMLLinkContext.get(loc.getName()+":"); 
             Link link = new Link(curi.getUURI(), dest, lc, Hop.REFER);
             curi.getOutLinks().add(link);
             numberOfLinksExtracted.incrementAndGet();

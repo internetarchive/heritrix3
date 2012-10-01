@@ -26,7 +26,7 @@ package org.archive.util;
  * @param <V>
  */
 public class Supplier<V> {
-    V instance;
+    protected V instance;
     
     public Supplier() {
         super();

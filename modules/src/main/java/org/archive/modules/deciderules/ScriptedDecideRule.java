@@ -96,7 +96,7 @@ implements ApplicationContextAware, InitializingBean {
         this.isolateThreads = isolateThreads;
     }
 
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }
@@ -141,21 +141,23 @@ implements ApplicationContextAware, InitializingBean {
      * to this thread. 
      * @return ScriptEngine to use
      */
-    protected synchronized ScriptEngine getEngine() {
-        if(sharedEngine==null 
-           && getIsolateThreads()) {
-            // initialize
-            sharedEngine = newEngine();
-        }
-        if(sharedEngine!=null) {
+    protected ScriptEngine getEngine() {
+        if (getIsolateThreads()) {
+            ScriptEngine engine = threadEngine.get();
+            if (engine == null) {
+                engine = newEngine();
+                threadEngine.set(engine);
+            }
+            return engine;
+        } else {
+            // sharing the engine
+            synchronized (this) {
+                if (sharedEngine == null) {
+                    sharedEngine = newEngine();
+                }
+            }
             return sharedEngine;
         }
-        ScriptEngine engine = threadEngine.get(); 
-        if(engine==null) {
-            engine = newEngine(); 
-            threadEngine.set(engine);
-        }
-        return engine; 
     }
 
     /**

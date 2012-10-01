@@ -36,10 +36,11 @@ import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
  * @version $Date: 2006-09-25 20:19:54 +0000 (Mon, 25 Sep 2006) $, $Revision: 4654 $
  */
 public class FetchHistoryProcessor extends Processor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
     
     /** Desired history array length. */
-    int historyLength = 2;
+    protected int historyLength = 2;
     public int getHistoryLength() {
         return this.historyLength;
     }
@@ -57,7 +58,6 @@ public class FetchHistoryProcessor extends Processor {
     public FetchHistoryProcessor() {
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI puri) throws InterruptedException {
     	CrawlURI curi = (CrawlURI) puri;
@@ -92,12 +92,14 @@ public class FetchHistoryProcessor extends Processor {
         
         // get or create proper-sized history array
         int targetHistoryLength = getHistoryLength();
-        HashMap[] history = 
-            (HashMap[]) (curi.containsDataKey(A_FETCH_HISTORY) 
+        @SuppressWarnings("unchecked")
+        HashMap<String, ?>[] history = 
+            (HashMap<String, ?>[]) (curi.containsDataKey(A_FETCH_HISTORY) 
 		    ? curi.getData().get(A_FETCH_HISTORY) 
 		    : new HashMap[targetHistoryLength]);
         if(history.length != targetHistoryLength) {
-            HashMap[] newHistory = new HashMap[targetHistoryLength];
+            @SuppressWarnings("unchecked")
+            HashMap<String, ?>[] newHistory = new HashMap[targetHistoryLength];
             System.arraycopy(
                     history,0,
                     newHistory,0,

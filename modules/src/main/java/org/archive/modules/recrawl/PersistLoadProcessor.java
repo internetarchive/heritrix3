@@ -39,6 +39,7 @@ import com.sleepycat.je.DatabaseException;
  * @version $Date: 2006-09-25 20:19:54 +0000 (Mon, 25 Sep 2006) $, $Revision: 4654 $
  */
 public class PersistLoadProcessor extends PersistOnlineProcessor {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = -1917169316015093131L;
     private static final Logger logger =
         Logger.getLogger(PersistLoadProcessor.class.getName());
@@ -54,7 +55,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * the followup crawl(s).) Only one of {@preloadSource} and
      * {@preloadSourceUrl} may be specified.
      */
-    ConfigPath preloadSource = 
+    protected ConfigPath preloadSource = 
         new ConfigFile("preload source","");
     public ConfigPath getPreloadSource() {
         return preloadSource;
@@ -72,7 +73,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * and then copy and reuse that environment in the followup crawl(s).)
      * Only one of {@preloadSource} and {@preloadSourceUrl} may be specified.
      */
-    String preloadSourceUrl = "";
+    protected String preloadSourceUrl = "";
     public String getPreloadSourceUrl() {
         return preloadSourceUrl;
     }
@@ -80,10 +81,10 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
         this.preloadSourceUrl = preloadSourceUrl;
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         String pkey = persistKeyFor(curi);
+        @SuppressWarnings("unchecked")
         Map<String, Object> prior = 
         	(Map<String,Object>) store.get(pkey);
         if(prior!=null) {

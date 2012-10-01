@@ -123,7 +123,7 @@ public class ResourceNoLongerThanDecideRule extends PredicatedDecideRule {
     }
     
     
-    boolean test(int contentlength) {
+    protected boolean test(int contentlength) {
         return contentlength < getContentLengthThreshold();        
     }
 }

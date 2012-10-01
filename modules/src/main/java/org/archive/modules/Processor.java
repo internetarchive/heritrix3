@@ -57,7 +57,7 @@ implements HasKeyedProperties,
         return kp;
     }
 
-    String beanName; 
+    protected String beanName; 
     public String getBeanName() {
         return this.beanName;
     }
@@ -249,7 +249,7 @@ implements HasKeyedProperties,
         return "Processor: "+getClass().getName()+"\n";
     }
     
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public boolean isRunning() {
         return isRunning;
     }

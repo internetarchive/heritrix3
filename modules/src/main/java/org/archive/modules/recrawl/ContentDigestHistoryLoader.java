@@ -16,31 +16,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.archive.modules.recrawl;
 
-package org.archive.util;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.PrintWriter;
-
-/**
- * @contributor stack
- */
-public interface MultiReporter  extends Reporter {
-    /**
-     * Get an array of report names offered by this Reporter. 
-     * A name in brackets indicates a free-form String, 
-     * in accordance with the informal description inside
-     * the brackets, may yield a useful report.
-     * 
-     * @return String array of report names, empty if there is only
-     * one report type
-     */
-    public String[] getReports();
+public class ContentDigestHistoryLoader extends Processor {
     
-    /**
-     * Make a report of the given name to the passed-in Writer,
-     * If null, give the default report. 
-     * 
-     * @param writer to receive report
-     */
-    public void reportTo(String name, PrintWriter writer);
+    protected AbstractContentDigestHistory contentDigestHistory;
+    @Autowired
+    public void setContentDigestHistory(
+            AbstractContentDigestHistory contentDigestHistory) {
+        this.contentDigestHistory = contentDigestHistory;
+    }
+
+    @Override
+    protected boolean shouldProcess(CrawlURI uri) {
+        return uri.getContentDigest() != null;
+    }
+
+    @Override
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
+        contentDigestHistory.load(curi);
+    }
 }

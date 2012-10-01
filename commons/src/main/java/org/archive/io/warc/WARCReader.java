@@ -43,7 +43,7 @@ import org.archive.io.warc.WARCConstants;
  * @version $Date: 2006-11-27 18:03:03 -0800 (Mon, 27 Nov 2006) $ $Version$
  */
 public class WARCReader extends ArchiveReader implements WARCConstants {
-    WARCReader() {
+    protected WARCReader() {
         super();
     }
     
@@ -192,13 +192,13 @@ public class WARCReader extends ArchiveReader implements WARCConstants {
      * @throws IOException
      * @throws java.text.ParseException
      */
-    @SuppressWarnings("unchecked")
     public static void main(String [] args)
     throws ParseException, IOException, java.text.ParseException {
         Options options = getOptions();
         PosixParser parser = new PosixParser();
         CommandLine cmdline = parser.parse(options, args, false);
-        List cmdlineArgs = cmdline.getArgList();
+        @SuppressWarnings("unchecked")
+        List<String> cmdlineArgs = cmdline.getArgList();
         Option [] cmdlineOptions = cmdline.getOptions();
         HelpFormatter formatter = new HelpFormatter();
 
@@ -264,7 +264,7 @@ public class WARCReader extends ArchiveReader implements WARCConstants {
             r.setStrict(strict);
             outputRecord(r, format);
         } else {
-            for (Iterator i = cmdlineArgs.iterator(); i.hasNext();) {
+            for (Iterator<String> i = cmdlineArgs.iterator(); i.hasNext();) {
                 String urlOrPath = (String)i.next();
                 try {
                 	WARCReader r = WARCReaderFactory.get(urlOrPath);

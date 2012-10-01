@@ -34,7 +34,7 @@ import org.archive.spring.ConfigString;
  * future ReadSource options) might otherwise occur. 
  */
 public class ReadSourceEditor<T> implements PropertyEditor {
-    Object value;
+    protected Object value;
     
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub

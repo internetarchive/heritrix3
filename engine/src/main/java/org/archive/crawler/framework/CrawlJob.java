@@ -85,15 +85,15 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     private final static Logger LOGGER =
         Logger.getLogger(CrawlJob.class.getName());
 
-    File primaryConfig; 
-    PathSharingContext ac; 
-    int launchCount; 
-    boolean isLaunchInfoPartial;
-    DateTime lastLaunch;
-    AlertThreadGroup alertThreadGroup;
+    protected File primaryConfig; 
+    protected PathSharingContext ac; 
+    protected int launchCount; 
+    protected boolean isLaunchInfoPartial;
+    protected DateTime lastLaunch;
+    protected AlertThreadGroup alertThreadGroup;
     
-    DateTime xmlOkAt = new DateTime(0L);
-    Logger jobLogger;
+    protected DateTime xmlOkAt = new DateTime(0L);
+    protected Logger jobLogger;
     
     public CrawlJob(File cxml) {
         primaryConfig = cxml; 

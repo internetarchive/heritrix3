@@ -37,7 +37,7 @@ import org.restlet.resource.Variant;
  * @contributor gojomo
  */
 public class ReportGenResource extends JobRelatedResource {
-    String reportClass;
+    protected String reportClass;
     
     public ReportGenResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);

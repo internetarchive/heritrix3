@@ -34,27 +34,29 @@ import com.anotherbigidea.flash.writers.SWFTagTypesImpl;
  *
  * @author Igor Ranitovic
  */
-@SuppressWarnings("unchecked")
 public class CustomSWFTags extends SWFTagTypesImpl {
-    SWFActions actions;
+    protected SWFActions actions;
 
     public CustomSWFTags(SWFActions a) {
         super(null);
         actions = a;
     }
 
-    public SWFActions tagDefineButton(int id, Vector buttonRecords)
+    @Override
+    public SWFActions tagDefineButton(int id, @SuppressWarnings("rawtypes") Vector buttonRecords)
             throws IOException {
 
         return actions;
     }
 
+    @Override
     public SWFActions tagDefineButton2(int id, boolean trackAsMenu,
-            Vector buttonRecord2s) throws IOException {
+            @SuppressWarnings("rawtypes") Vector buttonRecord2s) throws IOException {
 
         return actions;
     }
 
+    @Override
     public SWFActions tagDoAction() throws IOException {
         return actions;
     }
@@ -63,10 +65,12 @@ public class CustomSWFTags extends SWFTagTypesImpl {
         return actions;
     }
 
+    @Override
     public SWFTagTypes tagDefineSprite(int id) throws IOException {
         return this;
     }
 
+    @Override
     public SWFActions tagPlaceObject2(boolean isMove, int clipDepth,
             int depth, int charId, Matrix matrix, AlphaTransform cxform,
             int ratio, String name, int clipActionFlags) throws IOException {

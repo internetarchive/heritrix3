@@ -48,6 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @contributor gojomo
  */
 public class FrontierPreparer extends Scoper {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     /**

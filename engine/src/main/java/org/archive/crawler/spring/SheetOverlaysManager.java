@@ -53,18 +53,18 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * @contributor gojomo
  */
 public class SheetOverlaysManager implements 
-BeanFactoryAware, OverlayMapsSource, ApplicationListener {
+BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(SheetOverlaysManager.class.getName());
     
 
-    BeanFactory beanFactory; 
+    protected BeanFactory beanFactory; 
     /** all SheetAssociations by DecideRule evaluation */ 
-    SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
+    protected SortedSet<DecideRuledSheetAssociation> ruleAssociations = 
         new ConcurrentSkipListSet<DecideRuledSheetAssociation>();
-    NavigableMap<String,List<String>> sheetNamesBySurt = new ConcurrentSkipListMap<String,List<String>>(); 
+    protected NavigableMap<String,List<String>> sheetNamesBySurt = new ConcurrentSkipListMap<String,List<String>>(); 
     
     /** all sheets by (bean)name*/
-    Map<String,Sheet> sheetsByName = new ConcurrentHashMap<String, Sheet>();
+    protected Map<String,Sheet> sheetsByName = new ConcurrentHashMap<String, Sheet>();
     
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
@@ -186,6 +186,7 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener {
      * properties.
      * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
      */
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ContextRefreshedEvent) {
             for(Sheet s: sheetsByName.values()) {

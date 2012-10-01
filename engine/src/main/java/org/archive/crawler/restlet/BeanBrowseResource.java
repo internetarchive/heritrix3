@@ -55,8 +55,8 @@ import org.springframework.beans.BeansException;
  * @contributor nlevitt
  */
 public class BeanBrowseResource extends JobRelatedResource {
-    PathSharingContext appCtx; 
-    String beanPath; 
+    protected PathSharingContext appCtx; 
+    protected String beanPath; 
     
     public BeanBrowseResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
@@ -123,7 +123,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer, "script", makePresentableMap());
+                    XmlMarshaller.marshalDocument(writer, "beans", makePresentableMap());
                 }
             };
         } else {

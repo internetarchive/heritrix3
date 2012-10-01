@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ObjectIdentityMemCache<V extends IdentityCacheable> 
 implements ObjectIdentityCache<V> {
-    ConcurrentHashMap<String, V> map; 
+    protected ConcurrentHashMap<String, V> map; 
     
     public ObjectIdentityMemCache() {
         map = new ConcurrentHashMap<String, V>();

@@ -64,7 +64,7 @@ public class Warc2Arc {
        System.exit(exitCode);
    }
    
-   static String parseRevision(final String version) {
+   protected static String parseRevision(final String version) {
        final String ID = "$Revision: ";
        int index = version.indexOf(ID);
        return (index < 0)? version:
@@ -173,7 +173,6 @@ public class Warc2Arc {
     * @throws IOException
     * @throws java.text.ParseException
     */
-   @SuppressWarnings("unchecked")
 public static void main(String [] args)
    throws ParseException, IOException, java.text.ParseException {
        Options options = new Options();
@@ -187,7 +186,8 @@ public static void main(String [] args)
            "Suffix to use on created ARC files, else uses default."));
        PosixParser parser = new PosixParser();
        CommandLine cmdline = parser.parse(options, args, false);
-       List cmdlineArgs = cmdline.getArgList();
+       @SuppressWarnings("unchecked")
+       List<String> cmdlineArgs = cmdline.getArgList();
        Option [] cmdlineOptions = cmdline.getOptions();
        HelpFormatter formatter = new HelpFormatter();
        

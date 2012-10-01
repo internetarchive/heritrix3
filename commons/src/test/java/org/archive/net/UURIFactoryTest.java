@@ -79,6 +79,14 @@ public class UURIFactoryTest extends TestCase {
                 "http://www.archive.org/one//index.html"));
     }
     
+    public final void testSchemelessURI() throws URIException {
+        UURI base = UURIFactory.getInstance("https://www.archive.org");
+        UURI uuri = UURIFactory.getInstance(base, "//example.com/monkey?this:uri:has:colons");
+        assertTrue("Doesn't do right thing with a schemeless URI " + uuri,
+            uuri.toString().equals(
+                "https://example.com/monkey?this:uri:has:colons"));
+    }
+    
     public final void testTrailingEncodedSpace() throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.nps-shoes.co.uk%20");
         assertTrue("Doesn't strip trailing encoded space 1 " + uuri,
@@ -363,6 +371,16 @@ public class UURIFactoryTest extends TestCase {
 		getInstance(uri, "/home.html");
 		assertTrue("Not equal",
 				uuriTgt.toString().equals(uuri.toString()));
+	}
+	
+	public void testSchemelessRelative() throws URIException {
+	    UURI base = UURIFactory.getInstance("http://www.itsnicethat.com/articles/laura-hobson");
+	    UURI test1 = UURIFactory.getInstance(base, "//www.facebook.com/plugins/like.php");
+	    assertEquals("schemaless relative 1", "http://www.facebook.com/plugins/like.php", test1.toString());
+	    // reported by Erin Staniland
+	    UURI test2 = UURIFactory.getInstance(base, "//www.facebook.com/plugins/like.php?href=http://www.itsnicethat.com/articles/laura-hobson");
+	    assertEquals("schemeless relative 2", "http://www.facebook.com/plugins/like.php?href=http://www.itsnicethat.com/articles/laura-hobson",
+	            test2.toString());
 	}
 	
 	/**

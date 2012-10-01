@@ -46,10 +46,10 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
     private static final Logger logger =
         Logger.getLogger(StoredQueue.class.getName());
 
-    transient StoredSortedMap<Long,E> queueMap; // Long -> E
-    transient Database queueDb; // Database
-    AtomicLong tailIndex; // next spot for insert
-    transient volatile E peekItem = null;
+    protected transient StoredSortedMap<Long,E> queueMap; // Long -> E
+    protected transient Database queueDb; // Database
+    protected AtomicLong tailIndex; // next spot for insert
+    protected transient volatile E peekItem = null;
     
     /**
      * Create a StoredQueue backed by the given Database. 

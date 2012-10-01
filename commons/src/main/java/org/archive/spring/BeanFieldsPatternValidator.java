@@ -30,9 +30,9 @@ import org.springframework.validation.Validator;
 
 public class BeanFieldsPatternValidator implements Validator {
     public class PropertyPatternRule {
-        String propertyName;
-        Pattern requiredPattern; 
-        String errorMessage;
+        protected String propertyName;
+        protected Pattern requiredPattern; 
+        protected String errorMessage;
         public PropertyPatternRule(String name, String pat, String msg) {
             propertyName = name;
             requiredPattern = Pattern.compile(pat);
@@ -48,8 +48,8 @@ public class BeanFieldsPatternValidator implements Validator {
 
     }
 
-    Class<?> clazz; 
-    List<PropertyPatternRule> rules; 
+    protected Class<?> clazz;
+    protected List<PropertyPatternRule> rules; 
     
     public BeanFieldsPatternValidator(Class<?> clazz, String ... fieldsPatterns) {
         this.clazz = clazz;
@@ -63,8 +63,7 @@ public class BeanFieldsPatternValidator implements Validator {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public boolean supports(Class cls) {
+    public boolean supports(Class<?> cls) {
         return this.clazz.isAssignableFrom(cls);
     }
 

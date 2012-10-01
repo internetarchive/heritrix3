@@ -32,14 +32,30 @@ public interface RecrawlAttributeConstants {
     public static final String A_FETCH_HISTORY = "fetch-history";
     /** content digest */
     public static final String A_CONTENT_DIGEST = "content-digest";
-        /** header name (and AList key) for last-modified timestamp */
+    /** header name (and AList key) for last-modified timestamp */
     public static final String A_LAST_MODIFIED_HEADER = "last-modified";
-        /** header name (and AList key) for ETag */
+    /** header name (and AList key) for ETag */
     public static final String A_ETAG_HEADER = "etag"; 
     /** key for status (when in history) */
     public static final String A_STATUS = "status"; 
     /** reference length (content length or virtual length */
     public static final String A_REFERENCE_LENGTH = "reference-length";
+    
+    // constants for uri-agnostic content digest based dedupe
+    /** content digest history map */
+    public static final String A_CONTENT_DIGEST_HISTORY = "content-digest-history";
+    /** url that the content payload was written for */
+    public static final String A_ORIGINAL_URL = "original-url";
+    /** warc record id of warc record with the content payload */
+    public static final String A_WARC_RECORD_ID = "warc-record-id";
+    /** warc filename containing the content payload */
+    public static final String A_WARC_FILENAME = "warc-filename";
+    /** offset into warc file of warc record with content payload */
+    public static final String A_WARC_FILE_OFFSET = "warc-file-offset";
+    /** date content payload was written */
+    public static final String A_ORIGINAL_DATE = "content-written-date";
+    /** number of times we've seen this content digest (1 original + n duplicates) */
+    public static final String A_CONTENT_DIGEST_COUNT = "content-digest-count";
 
     /**
      * Writer processors of all types are encouraged to put a 'writeTag'

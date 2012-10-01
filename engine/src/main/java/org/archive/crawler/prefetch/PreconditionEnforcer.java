@@ -51,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author gojomo
  */
 public class PreconditionEnforcer extends Processor  {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
         Logger.getLogger(PreconditionEnforcer.class.getName());
@@ -104,7 +105,7 @@ public class PreconditionEnforcer extends Processor  {
      * Auto-discovered module providing configured (or overridden)
      * User-Agent value and RobotsHonoringPolicy
      */
-    CrawlMetadata metadata;
+    protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }

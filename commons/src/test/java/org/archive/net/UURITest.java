@@ -20,6 +20,8 @@ package org.archive.net;
 
 import java.net.URISyntaxException;
 
+import org.apache.commons.httpclient.URIException;
+
 import junit.framework.TestCase;
 
 public class UURITest extends TestCase {
@@ -40,5 +42,14 @@ public class UURITest extends TestCase {
         assertEquals(filename,
             UURI.parseFilename("rsync://archive.org/tmp/one.two/" +
                     filename)); 
+    }
+    
+    public void testSchemalessRelative() throws URIException {
+        UURI base = new UURI("http://www.archive.org/a", true, "UTF-8");
+        UURI relative = new UURI("//www.facebook.com/?href=http://www.archive.org/a", true, "UTF-8");
+        assertEquals(null, relative.getScheme());
+        assertEquals("www.facebook.com", relative.getAuthority());
+        UURI test = new UURI(base, relative);
+        assertEquals("http://www.facebook.com/?href=http://www.archive.org/a", test.toString());
     }
 }

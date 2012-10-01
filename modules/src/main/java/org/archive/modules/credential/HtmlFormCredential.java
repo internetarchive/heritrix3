@@ -43,7 +43,7 @@ import org.archive.net.UURIFactory;
  * @version $Revision$, $Date$
  */
 public class HtmlFormCredential extends Credential {
-    private static final long serialVersionUID = -3L;
+    private static final long serialVersionUID = -4L;
 
     private static final Logger logger =
         Logger.getLogger(HtmlFormCredential.class.getName());
@@ -52,7 +52,7 @@ public class HtmlFormCredential extends Credential {
      * Full URI of page that contains the HTML login form we're to apply these
      * credentials too: E.g. http://www.archive.org
      */
-    String loginUri = "";
+    protected String loginUri = "";
     public String getLoginUri() {
         return this.loginUri;
     }
@@ -63,7 +63,7 @@ public class HtmlFormCredential extends Credential {
     /**
      * Form items.
      */
-    Map<String,String> formItems = new HashMap<String,String>();
+    protected Map<String,String> formItems = new HashMap<String,String>();
     public Map<String,String> getFormItems() {
         return this.formItems;
     }
@@ -79,7 +79,7 @@ public class HtmlFormCredential extends Credential {
     /**
      * GET or POST.
      */
-    Method httpMethod = Method.POST;
+    protected Method httpMethod = Method.POST;
     public Method getHttpMethod() {
         return this.httpMethod;
     }
@@ -133,7 +133,9 @@ public class HtmlFormCredential extends Credential {
         return false;
     }
 
-    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method) {
+    @Override
+    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
+            Map<String, String> httpAuthChallenges) {
         // http is not used
         boolean result = false;
         Map<String,String> formItems = getFormItems();

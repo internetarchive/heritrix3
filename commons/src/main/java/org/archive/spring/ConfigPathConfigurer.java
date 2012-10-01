@@ -61,14 +61,14 @@ implements
     private static final Logger logger =
         Logger.getLogger(ConfigPathConfigurer.class.getName());
 
-    Map<String,Object> allBeans = new HashMap<String,Object>();
+    protected Map<String,Object> allBeans = new HashMap<String,Object>();
     
     
     //// BEAN PROPERTIES
     
     /** 'home' directory for all other paths to be resolved 
      * relative to; defaults to directory of primary XML config file */
-    ConfigPath path; 
+    protected ConfigPath path; 
     public ConfigPath getPath() {
         return path;
     }
@@ -150,7 +150,7 @@ implements
 
     //// APPLICATIONCONTEXTAWARE IMPLEMENTATION
 
-    PathSharingContext appCtx;
+    protected PathSharingContext appCtx;
     /**
      * Remember ApplicationContext, and if possible primary 
      * configuration file's home directory. 
@@ -172,7 +172,7 @@ implements
     }
 
     // REMEMBERED CONFIGPATHS
-    Map<String,ConfigPath> allConfigPaths = new HashMap<String,ConfigPath>();
+    protected Map<String,ConfigPath> allConfigPaths = new HashMap<String,ConfigPath>();
     protected void remember(String key, ConfigPath cp) {
         allConfigPaths.put(key, cp);
     }

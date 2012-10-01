@@ -48,12 +48,13 @@ import org.archive.util.TextUtils;
 
 public class ExtractorURI extends Extractor {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static Logger LOGGER =
         Logger.getLogger(ExtractorURI.class.getName());
 
-    static final String ABS_HTTP_URI_PATTERN = "^https?://[^\\s<>]*$";
+    protected static final String ABS_HTTP_URI_PATTERN = "^https?://[^\\s<>]*$";
 
     /**
      * Constructor

@@ -78,6 +78,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version $Date$, $Revision$
  */
 public class LexicalCrawlMapper extends CrawlMapper {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     /**
@@ -86,7 +87,7 @@ public class LexicalCrawlMapper extends CrawlMapper {
      * range, the second the crawler node to which URIs in the key range should
      * be mapped.  This setting is ignored if MAP_URI is specified.
      */
-    ConfigPath mapPath = new ConfigPath("map specification file","lexicalcrawlmapper.config");
+    protected ConfigPath mapPath = new ConfigPath("map specification file","lexicalcrawlmapper.config");
     public ConfigPath getMapPath() {
         return this.mapPath;
     }
@@ -102,7 +103,7 @@ public class LexicalCrawlMapper extends CrawlMapper {
      * be mapped.  This setting takes precedence over MAP_PATH; if both are
      * specified, then MAP_PATH is ignored.
      */
-    String mapUri = "";
+    protected String mapUri = "";
     public String getMapUri() {
         return this.mapUri;
     }
@@ -123,7 +124,7 @@ public class LexicalCrawlMapper extends CrawlMapper {
      * Mapping of classKey ranges (as represented by their start) to 
      * crawlers (by abstract name/filename)
      */
-    TreeMap<String, String> map = new TreeMap<String, String>();
+    protected TreeMap<String, String> map = new TreeMap<String, String>();
     
     /**
      * Constructor.

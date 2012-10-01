@@ -44,7 +44,7 @@ import org.archive.modules.CrawlURI;
 public class MostFavoredRobotsPolicy extends RobotsPolicy {
     
     /** list of user-agents to try; if any are allowed, a URI will be crawled */
-    List<String> candidateUserAgents = new LinkedList<String>();
+    protected List<String> candidateUserAgents = new LinkedList<String>();
     public List<String> getCandidateUserAgents() {
         return candidateUserAgents;
     }
@@ -53,7 +53,7 @@ public class MostFavoredRobotsPolicy extends RobotsPolicy {
     }
     
     /** whether to adopt the user-agent that is allowed for the fetch */
-    boolean shouldMasquerade = true;
+    protected boolean shouldMasquerade = true;
     public boolean getShouldMasquerade() {
         return shouldMasquerade;
     }
@@ -62,7 +62,7 @@ public class MostFavoredRobotsPolicy extends RobotsPolicy {
     }
     
     /** whether to obey the 'nofollow' directive in an HTML META ROBOTS element */
-    boolean obeyMetaRobotsNofollow = true; 
+    protected boolean obeyMetaRobotsNofollow = true; 
     public boolean isObeyMetaRobotsNofollow() {
         return obeyMetaRobotsNofollow;
     }

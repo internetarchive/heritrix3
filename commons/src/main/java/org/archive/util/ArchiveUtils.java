@@ -128,8 +128,8 @@ public class ArchiveUtils {
         return TIMESTAMP17.get().format(new Date());
     }
     
-    static long LAST_UNIQUE_NOW17 = 0;
-    static String LAST_TIMESTAMP17 = ""; 
+    protected static long LAST_UNIQUE_NOW17 = 0;
+    protected static String LAST_TIMESTAMP17 = ""; 
     /**
      * Utility function for creating UNIQUE-from-this-class 
      * arc-style date stamps in the format yyyMMddHHmmssSSS.
@@ -163,8 +163,8 @@ public class ArchiveUtils {
         return TIMESTAMP14.get().format(new Date());
     }
     
-    static long LAST_UNIQUE_NOW14 = 0;
-    static String LAST_TIMESTAMP14 = ""; 
+    protected static long LAST_UNIQUE_NOW14 = 0;
+    protected static String LAST_TIMESTAMP14 = ""; 
     /**
      * Utility function for creating UNIQUE-from-this-class 
      * arc-style date stamps in the format yyyMMddHHmmss.
@@ -353,15 +353,11 @@ public class ArchiveUtils {
                     d.length());
             }
             StringBuilder sb = new StringBuilder(d);
-            if (sb.length() < 8) {
-                for (int i = sb.length(); sb.length() < 8; i += 2) {
-                    sb.append("01");
-                }
+            while (sb.length() < 8) {
+                sb.append("01");
             }
-            if (sb.length() < 12) {
-                for (int i = sb.length(); sb.length() < 12; i++) {
-                    sb.append("0");
-                }
+            while (sb.length() < 12) {
+                sb.append("0");
             }
             date = ArchiveUtils.parse12DigitDate(sb.toString());
         }
@@ -741,22 +737,6 @@ public class ArchiveUtils {
         pw.flush();
         return sw.toString();
     }
-
-    /**
-     * Compose the requested report into a String. DANGEROUS IF REPORT
-     * CAN BE LARGE.
-     * 
-     * @param rep Reported
-     * @param name String name of report to compose
-     * @return String of report
-     */
-    public static String writeReportToString(MultiReporter rep, String name) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        rep.reportTo(name,pw);
-        pw.flush();
-        return sw.toString();
-    }
     
     /**
      * Enhance given object's default String display for appearing
@@ -765,16 +745,15 @@ public class ArchiveUtils {
      * @param obj Object to prettify
      * @return prettified String
      */
-    @SuppressWarnings("unchecked")
     public static String prettyString(Object obj) {
         // these things have to checked and casted unfortunately
         if (obj instanceof Object[]) {
             return prettyString((Object[]) obj);
         } else if (obj instanceof Map) {
-            return prettyString((Map) obj);
+            return prettyString((Map<?, ?>) obj);
         } else {
-        return "<"+obj+">"; 
-    }
+            return "<"+obj+">"; 
+        }
     }
     
     /**
@@ -783,8 +762,7 @@ public class ArchiveUtils {
      * @param Map
      * @return prettified (in curly brackets) string of Map contents
      */
-    @SuppressWarnings("unchecked")
-    public static String prettyString(Map map) {
+    public static String prettyString(Map<?, ?> map) {
         StringBuilder builder = new StringBuilder();
         builder.append("{ ");
         boolean needsComma = false; 

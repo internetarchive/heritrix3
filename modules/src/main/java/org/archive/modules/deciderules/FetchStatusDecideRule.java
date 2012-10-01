@@ -33,7 +33,7 @@ public class FetchStatusDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = 3L;
 
-    List<Integer> statusCodes = new ArrayList<Integer>();
+    protected List<Integer> statusCodes = new ArrayList<Integer>();
     public List<Integer> getStatusCodes() {
         return this.statusCodes;
     }

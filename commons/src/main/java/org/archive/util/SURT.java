@@ -61,10 +61,10 @@ import org.archive.net.UURIFactory;
  * @author gojomo
  */
 public class SURT {
-    static char DOT = '.';
-    static String BEGIN_TRANSFORMED_AUTHORITY = "(";
-    static String TRANSFORMED_HOST_DELIM = ",";
-    static String END_TRANSFORMED_AUTHORITY = ")";
+    protected static char DOT = '.';
+    protected static String BEGIN_TRANSFORMED_AUTHORITY = "(";
+    protected static String TRANSFORMED_HOST_DELIM = ",";
+    protected static String END_TRANSFORMED_AUTHORITY = ")";
     
     // 1: scheme://
     // 2: userinfo (if present)
@@ -73,7 +73,7 @@ public class SURT {
     // 5: other host
     // 6: :port
     // 7: path
-    static String URI_SPLITTER = 
+    protected static String URI_SPLITTER = 
             "^(\\w+://)(?:([-\\w\\.!~\\*'\\(\\)%;:&=+$,]+?)(@))?"+
     //        1           2                                 3    
             "(?:((?:\\d{1,3}\\.){3}\\d{1,3})|(\\S+?))(:\\d+)?(/\\S*)?$";

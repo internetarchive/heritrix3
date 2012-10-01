@@ -30,7 +30,7 @@ import org.springframework.context.ApplicationEvent;
  */
 public class CheckpointSuccessEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;
-    Checkpoint checkpoint; 
+    protected Checkpoint checkpoint; 
 
     public Checkpoint getCheckpoint() {
         return checkpoint;

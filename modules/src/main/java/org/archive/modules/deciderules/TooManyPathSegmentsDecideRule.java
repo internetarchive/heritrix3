@@ -18,6 +18,8 @@
  */
 package org.archive.modules.deciderules;
 
+import java.util.logging.Logger;
+
 import org.archive.modules.CrawlURI;
 
 /**
@@ -30,6 +32,8 @@ import org.archive.modules.CrawlURI;
 public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = 3L;
+    @SuppressWarnings("unused")
+    private static final Logger logger = Logger.getLogger(TooManyPathSegmentsDecideRule.class.getName()); 
 
     /** default for this class is to REJECT */
     {
@@ -63,11 +67,15 @@ public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
      */
     @Override
     protected boolean evaluate(CrawlURI curi) {
-        String uri = curi.toString();
+        String uriPath = curi.getUURI().getEscapedPath();
+        if (uriPath == null) {
+            // no path means no segments
+            return false;
+        }
         int count = 0;
         int threshold = getMaxPathDepth();
-        for (int i = 0; i < uri.length(); i++) {
-            if (uri.charAt(i) == '/') {
+        for (int i = 0; i < uriPath.length(); i++) {
+            if (uriPath.charAt(i) == '/') {
                 count++;
             }
             if (count > threshold) {

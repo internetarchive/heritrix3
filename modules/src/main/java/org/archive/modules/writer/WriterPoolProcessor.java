@@ -61,8 +61,8 @@ import org.springframework.context.Lifecycle;
  */
 public abstract class WriterPoolProcessor extends Processor 
 implements Lifecycle, Checkpointable, WriterPoolSettings {
-    private static final long serialVersionUID = 1L;
     @SuppressWarnings("unused")
+    private static final long serialVersionUID = 1L;
     private static final Logger logger = 
         Logger.getLogger(WriterPoolProcessor.class.getName());
 
@@ -70,7 +70,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * Whether to gzip-compress files when writing to disk; 
      * by default true, meaning do-compress. 
      */
-    boolean compress = true; 
+    protected boolean compress = true; 
     public boolean getCompress() {
         return compress;
     }
@@ -83,7 +83,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * template (below) as the 'prefix' variable for possible interpolation.
      * In the default/recommended naming formula, the prefix will appear first. 
      */
-    String prefix = WriterPoolMember.DEFAULT_PREFIX; 
+    protected String prefix = WriterPoolMember.DEFAULT_PREFIX; 
     public String getPrefix() {
         return prefix;
     }
@@ -109,7 +109,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * that ARCs/WARCs are carefully named to preserve uniqueness. 
      * 
      */
-    String template = WriterPoolMember.DEFAULT_TEMPLATE; 
+    protected String template = WriterPoolMember.DEFAULT_TEMPLATE; 
     public String getTemplate() {
         return template;
     }
@@ -120,8 +120,8 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     /**
      * Max size of each file.
      */
-    long maxFileSizeBytes = getDefaultMaxFileSize();
-    abstract long getDefaultMaxFileSize();
+    protected long maxFileSizeBytes = getDefaultMaxFileSize();
+    protected abstract long getDefaultMaxFileSize();
     public long getMaxFileSizeBytes() {
         return maxFileSizeBytes;
     }
@@ -133,7 +133,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * Maximum active files in pool. This setting cannot be varied over the life
      * of a crawl.
      */
-    int poolMaxActive = WriterPool.DEFAULT_MAX_ACTIVE;
+    protected int poolMaxActive = WriterPool.DEFAULT_MAX_ACTIVE;
     public int getPoolMaxActive() {
         return poolMaxActive;
     }
@@ -145,7 +145,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * Maximum time to wait on idle writer before (possibly) creating an
      * additional instance. 
      */
-    int maxWaitForIdleMs = WriterPool.DEFAULT_MAX_WAIT_FOR_IDLE;
+    protected int maxWaitForIdleMs = WriterPool.DEFAULT_MAX_WAIT_FOR_IDLE;
     public int getMaxWaitForIdleMs() {
         return maxWaitForIdleMs;
     }
@@ -162,7 +162,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * skipped entirely). 
      * Default is false.
      */
-    boolean skipIdenticalDigests = false; 
+    protected boolean skipIdenticalDigests = false; 
     public boolean getSkipIdenticalDigests() {
         return skipIdenticalDigests;
     }
@@ -180,7 +180,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * exceeded this limit, this processor will stop the crawler. A value of
      * zero means no upper limit.
      */
-    long maxTotalBytesToWrite = 0L;
+    protected long maxTotalBytesToWrite = 0L;
     public long getMaxTotalBytesToWrite() {
         return maxTotalBytesToWrite;
     }
@@ -244,8 +244,8 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * setting is safe to change midcrawl (You can remove and add new 
      * dirs as the crawler progresses).
      */
-    List<ConfigPath> storePaths = getDefaultStorePaths();
-    abstract List<ConfigPath> getDefaultStorePaths();
+    protected List<ConfigPath> storePaths = getDefaultStorePaths();
+    protected abstract List<ConfigPath> getDefaultStorePaths();
     public List<ConfigPath> getStorePaths() {
         return storePaths;
     }

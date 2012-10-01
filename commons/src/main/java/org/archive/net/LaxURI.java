@@ -299,8 +299,8 @@ public class LaxURI extends URI {
         boolean isStartedFromPath = false;
         int atColon = tmp.indexOf(':');
         int atSlash = tmp.indexOf('/');
-        if ((atColon <= 0 && !tmp.startsWith("//"))
-            || (atSlash >= 0 && atSlash < atColon)) {
+        if (!tmp.startsWith("//")
+                && (atColon <= 0 || (atSlash >= 0 && atSlash < atColon))) {
             isStartedFromPath = true;
         }
 

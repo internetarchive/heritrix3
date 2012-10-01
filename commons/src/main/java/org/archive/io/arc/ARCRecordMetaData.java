@@ -253,7 +253,7 @@ public class ARCRecordMetaData implements ArchiveRecordHeader, ARCConstants {
         return this.contentBegin;
     }
     
-    void setContentBegin(final int offset) {
+    protected void setContentBegin(final int offset) {
         this.contentBegin = offset;
     }
 }

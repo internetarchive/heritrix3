@@ -66,11 +66,11 @@ import com.google.common.io.CountingInputStream;
  *  @contributor gojomo
  */
 public class GZIPMembersInputStream extends OpenJDK7GZIPInputStream {
-    long memberNumber = 0; 
-    long holdAtMemberNumber = Long.MAX_VALUE;
-    long currentMemberStart = 0;
-    long currentMemberEnd = -1; 
-    InputStream originalIn;
+    protected long memberNumber = 0; 
+    protected long holdAtMemberNumber = Long.MAX_VALUE;
+    protected long currentMemberStart = 0;
+    protected long currentMemberEnd = -1; 
+    protected InputStream originalIn;
     
     public GZIPMembersInputStream(InputStream in) throws IOException {
         this(in,512);

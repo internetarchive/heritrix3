@@ -21,9 +21,9 @@ package org.archive.crawler.frontier;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.SortedMap;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -60,6 +60,7 @@ import com.sleepycat.je.DatabaseException;
  */
 public class BdbFrontier extends WorkQueueFrontier 
 implements Checkpointable, BeanNameAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =
@@ -86,12 +87,12 @@ implements Checkpointable, BeanNameAware {
         this.bdb = bdb;
     }
     
-    String beanName; 
+    protected String beanName; 
     public void setBeanName(String name) {
         this.beanName = name;
     }
     
-    boolean dumpPendingAtClose = false; 
+    protected boolean dumpPendingAtClose = false; 
     public boolean getDumpPendingAtClose() {
         return dumpPendingAtClose;
     }
@@ -103,7 +104,7 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#getInactiveQueuesByPrecedence()
      */
     @Override
-    SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence() {
+    protected SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence() {
         return inactiveQueuesByPrecedence;
     }
 
@@ -111,7 +112,7 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#getRetiredQueues()
      */
     @Override
-    Queue<String> getRetiredQueues() {
+    protected Queue<String> getRetiredQueues() {
         return retiredQueues;
     }
     
@@ -276,7 +277,7 @@ implements Checkpointable, BeanNameAware {
         dispositionInProgressLock.writeLock().unlock();
     }
 
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint checkpoint) {
         this.recoveryCheckpoint = checkpoint; 
@@ -357,14 +358,14 @@ implements Checkpointable, BeanNameAware {
      * @see org.archive.crawler.frontier.WorkQueueFrontier#createInactiveQueueForPrecedence(int)
      */
     @Override
-    Queue<String> createInactiveQueueForPrecedence(int precedence) {
+    protected Queue<String> createInactiveQueueForPrecedence(int precedence) {
         return createInactiveQueueForPrecedence(precedence, false);
     }
     
     /** 
      * Optionally reuse prior data, for use when resuming from a checkpoint
      */
-    Queue<String> createInactiveQueueForPrecedence(int precedence, boolean usePriorData) {
+    protected Queue<String> createInactiveQueueForPrecedence(int precedence, boolean usePriorData) {
         return bdb.getStoredQueue("inactiveQueues-"+precedence, String.class, usePriorData);
     }
     

@@ -23,8 +23,9 @@ package org.archive.spring;
  * PropertyEditor allowing Strings to become ConfigFile instances.
  * 
  */
-public class ConfigFileEditor<T> extends ConfigPathEditor {
+public class ConfigFileEditor extends ConfigPathEditor {
 
+    @Override
     public Object getValue() {
         ConfigFile c =  new ConfigFile(null,value.toString());
         return c;

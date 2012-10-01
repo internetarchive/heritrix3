@@ -20,6 +20,7 @@ package org.archive.modules.credential;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.management.AttributeNotFoundException;
@@ -45,7 +46,7 @@ import org.archive.modules.net.ServerCache;
  */
 public abstract class Credential implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private static final Logger logger =
         Logger.getLogger(Credential.class.getName());
@@ -53,7 +54,7 @@ public abstract class Credential implements Serializable {
     /**
      * The root domain this credential goes against: E.g. www.archive.org
      */
-    String domain = "";
+    protected String domain = "";
     /**
      * @param context Context to use when searching for credential domain.
      * @return The domain/root URI this credential is to go against.
@@ -167,10 +168,11 @@ public abstract class Credential implements Serializable {
      * @param curi CrawlURI to as for context.
      * @param http Instance of httpclient.
      * @param method Method to populate.
+     * @param httpAuthChallenges 
      * @return True if added a credentials.
      */
     public abstract boolean populate(CrawlURI curi, HttpClient http,
-        HttpMethod method);
+        HttpMethod method, Map<String, String> httpAuthChallenges);
 
     /**
      * @param curi CrawlURI to look at.

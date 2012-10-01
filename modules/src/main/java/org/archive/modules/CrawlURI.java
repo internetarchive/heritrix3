@@ -26,6 +26,7 @@ import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
 import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
 import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import static org.archive.modules.CoreAttributeConstants.A_HTML_BASE;
+import static org.archive.modules.CoreAttributeConstants.A_HTTP_AUTH_CHALLENGES;
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -54,6 +55,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -65,6 +67,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,8 +94,8 @@ import org.archive.spring.OverlayContext;
 import org.archive.spring.OverlayMapsSource;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Base32;
-import org.archive.util.MultiReporter;
 import org.archive.util.Recorder;
+import org.archive.util.Reporter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -110,7 +113,7 @@ import org.json.JSONObject;
  * @author Gordon Mohr
  */
 public class CrawlURI 
-implements MultiReporter, Serializable, OverlayContext {
+implements Reporter, Serializable, OverlayContext {
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =
@@ -176,10 +179,6 @@ implements MultiReporter, Serializable, OverlayContext {
 
     // User agent to masquerade as when crawling this URI. If null, globals should be used
     private String userAgent = null;
-    
-    // From header
-    // TODO: This and user-agent really belong in FetchHTTP
-//    private transient String from = null;
 
     // Once a link extractor has finished processing this curi this will be
     // set as true
@@ -187,7 +186,6 @@ implements MultiReporter, Serializable, OverlayContext {
    
     transient private int discardedOutlinks = 0; 
     
-////////////////////////////////////////////////////////////////////
     private long contentSize = UNCALCULATED;
     private long contentLength = UNCALCULATED;
 
@@ -201,17 +199,8 @@ implements MultiReporter, Serializable, OverlayContext {
      * {@link CoreAttributeConstants} interface.  Use this list to carry
      * data or state produced by custom processors rather change the
      * classes {@link CrawlURI} or this class, CrawlURI.
-     *
-     * Transient to allow more efficient custom serialization.
-     * 
-     * Package-protected so CrawlURI can access it directly.
      */
-    Map<String,Object> data;
-
-    
-//    private transient SheetManager manager;
-//    private transient StateProvider provider;
-
+    protected Map<String,Object> data;
 
     private boolean forceRevisit = false; // even if already visited
 
@@ -263,7 +252,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIALS_KEY});
+            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES});
 
     /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
     private static final int MAX_HOPS_DISPLAYED = 50;
@@ -295,7 +284,7 @@ implements MultiReporter, Serializable, OverlayContext {
             UURIFactory.getInstance(args[2].toString()):
             null;
         LinkContext viaContext = (args.length > 3 && args[2].length()>1) ?
-                new HTMLLinkContext(args[3].toString()): null;
+                HTMLLinkContext.get(args[3].toString()): null;
         CrawlURI caUri = new CrawlURI(u, pathFromSeed, via, viaContext);
         return caUri;
     }
@@ -664,12 +653,12 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public Collection<String> getAnnotations() {
         @SuppressWarnings("unchecked")
-        List<String> list = (List<String>)getData().get(A_ANNOTATIONS);
-        if (list == null) {
-            list = new ArrayList<String>();
-            getData().put(A_ANNOTATIONS, list);
+        Collection<String> annotations = (Collection<String>)getData().get(A_ANNOTATIONS);
+        if (annotations == null) {
+            annotations = new LinkedHashSet<String>();
+            getData().put(A_ANNOTATIONS, annotations);
         }
-        return list;
+        return annotations;
     }
 
     /**
@@ -905,7 +894,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public Set<Credential> getCredentials() {
         @SuppressWarnings("unchecked")
-        Set<Credential> r = (Set)getData().get(A_CREDENTIALS_KEY);
+        Set<Credential> r = (Set<Credential>)getData().get(A_CREDENTIALS_KEY);
         if (r == null) {
             r = new HashSet<Credential>();
             getData().put(A_CREDENTIALS_KEY, r);
@@ -1012,8 +1001,8 @@ implements MultiReporter, Serializable, OverlayContext {
         return Base32.encode(this.contentDigest);
     }
 
-    transient Object holder;
-    transient Object holderKey;
+    transient protected Object holder;
+    transient protected Object holderKey;
 
     /**
      * Remember a 'holder' to which some enclosing/queueing
@@ -1070,7 +1059,7 @@ implements MultiReporter, Serializable, OverlayContext {
 
     /** spot for an integer cost to be placed by external facility (frontier).
      *  cost is truncated to 8 bits at times, so should not exceed 255 */
-    int holderCost = UNCALCULATED;
+    protected int holderCost = UNCALCULATED;
     /**
      * Return the 'holderCost' for convenience of external facility (frontier)
      * @return value of holderCost
@@ -1094,10 +1083,9 @@ implements MultiReporter, Serializable, OverlayContext {
      * The LinksScoper processor converts Link instances in this collection
      * to CrawlURI instances. 
      */
-    transient Collection<Link> outLinks = new HashSet<Link>();
+    protected transient Collection<Link> outLinks = new HashSet<Link>();
     
-    
-    transient Collection<CrawlURI> outCandidates = new HashSet<CrawlURI>();
+    protected transient Collection<CrawlURI> outCandidates = new HashSet<CrawlURI>();
     
     /**
      * Returns discovered links.  The returned collection might be empty if
@@ -1265,7 +1253,7 @@ implements MultiReporter, Serializable, OverlayContext {
     
     public Collection<Throwable> getNonFatalFailures() {
         @SuppressWarnings("unchecked")
-        List<Throwable> list = (List)getData().get(A_NONFATAL_ERRORS);
+        List<Throwable> list = (List<Throwable>)getData().get(A_NONFATAL_ERRORS);
         if (list == null) {
             list = new ArrayList<Throwable>();
             getData().put(A_NONFATAL_ERRORS, list);
@@ -1433,6 +1421,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return ArchiveUtils.shortReportLine(this);
     }
     
+    @Override
     public Map<String, Object> shortReportMap() {
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("class", getClass().getName());
@@ -1442,6 +1431,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return map;
     }
 
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         String className = this.getClass().getName();
         className = className.substring(className.lastIndexOf(".")+1);
@@ -1457,31 +1447,18 @@ implements MultiReporter, Serializable, OverlayContext {
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "className uri hopsPath viaUri";
-    }
-    
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#getReports()
-     */
-    public String[] getReports() {
-        // none but default: empty options
-        return new String[] {};
-    }
-
-    /* (non-Javadoc)
-     * @see org.archive.util.Reporter#reportTo(java.lang.String, java.io.Writer)
-     */
-    public void reportTo(String name, PrintWriter writer) {
-        shortReportLineTo(writer);
-        writer.print("\n");
     }
 
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#reportTo(java.io.Writer)
      */
+    @Override
     public void reportTo(PrintWriter writer) throws IOException {
-        reportTo(null,writer);
+        shortReportLineTo(writer);
+        writer.print("\n");
     }
 
     
@@ -1531,7 +1508,7 @@ implements MultiReporter, Serializable, OverlayContext {
      */
     public void makeNonHeritable(String key) {
         @SuppressWarnings("unchecked")
-        HashSet heritableKeys = (HashSet)data.get(A_HERITABLE_KEYS);
+        HashSet<String> heritableKeys = (HashSet<String>)data.get(A_HERITABLE_KEYS);
         if(heritableKeys == null) {
             return;
         }
@@ -1789,7 +1766,7 @@ implements MultiReporter, Serializable, OverlayContext {
         return this.politenessDelay;
     }
 
-    transient CrawlURI fullVia; 
+    transient protected CrawlURI fullVia; 
     public void setFullVia(CrawlURI curi) {
         this.fullVia = curi; 
     }
@@ -1898,6 +1875,31 @@ implements MultiReporter, Serializable, OverlayContext {
     public boolean containsContentTypeCharsetDeclaration() {
         // TODO can this regex be improved? should the test consider if its legal? 
         return getContentType().matches("(?i).*charset=.*");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String,String> getHttpAuthChallenges() {
+        return (Map<String, String>) getData().get(A_HTTP_AUTH_CHALLENGES);
+    }
+
+    public void setHttpAuthChallenges(Map<String, String> httpAuthChallenges) {
+        getData().put(A_HTTP_AUTH_CHALLENGES, httpAuthChallenges);
+    }
+
+    public HashMap<String, Object> getContentDigestHistory() {
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> contentDigestHistory = (HashMap<String, Object>) getData().get(A_CONTENT_DIGEST_HISTORY);
+        
+        if (contentDigestHistory == null) {
+            contentDigestHistory = new HashMap<String, Object>();
+            getData().put(A_CONTENT_DIGEST_HISTORY, contentDigestHistory);
+        }
+        
+        return contentDigestHistory;
+    }
+
+    public boolean hasContentDigestHistory() {
+        return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
     }
 
 }

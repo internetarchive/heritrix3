@@ -29,7 +29,7 @@ import org.archive.bdb.AutoKryo;
 public class IdentityCacheableWrapper<K> implements IdentityCacheable {
     private static final long serialVersionUID = 1L;
     
-    K wrapped; 
+    protected K wrapped; 
     
     public IdentityCacheableWrapper(String key, K wrapped) {
         super();
@@ -45,7 +45,7 @@ public class IdentityCacheableWrapper<K> implements IdentityCacheable {
     // IdentityCacheable support
     //
     transient private ObjectIdentityCache<?> cache;
-    String key;
+    protected String key;
     @Override
     public String getKey() {
         return key;

@@ -57,6 +57,7 @@ import org.archive.util.TextUtils;
 public class ExtractorCSS extends ContentExtractor {
 
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 2L;
 
     private static Logger logger =
@@ -66,7 +67,7 @@ public class ExtractorCSS extends ContentExtractor {
     // CSS escapes: "Parentheses, commas, whitespace characters, single 
     // quotes (') and double quotes (") appearing in a URL must be 
     // escaped with a backslash"
-    static final String CSS_BACKSLASH_ESCAPE = "\\\\([,'\"\\(\\)\\s])";
+    protected static final String CSS_BACKSLASH_ESCAPE = "\\\\([,'\"\\(\\)\\s])";
     
     /**
      *  CSS URL extractor pattern.
@@ -75,7 +76,7 @@ public class ExtractorCSS extends ContentExtractor {
      **/
 //    static final String CSS_URI_EXTRACTOR =
 //        "url[(]\\s*([\"\']?)([^\\\"\\'].*?)\\1\\s*[)]";
-    static final String CSS_URI_EXTRACTOR =    
+    protected static final String CSS_URI_EXTRACTOR =    
     "(?i)(?:@import (?:url[(]|)|url[(])\\s*([\\\"\']?)" + // G1
     "([^\\\"\'].{0,"+UURI.MAX_URL_LENGTH+"}?)\\1\\s*[);]"; // G2
     // GROUPS:

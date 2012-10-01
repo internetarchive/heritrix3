@@ -130,29 +130,51 @@ extends TmpDirTestCase implements WARCConstants {
     
     private void writeWarcinfoRecord(WARCWriter writer)
     throws IOException {
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.WARCINFO);
+        recordInfo.setUrl(null);
+        recordInfo.setCreate14DigitDate(ArchiveUtils.getLog14Date());
+        recordInfo.setMimetype(ANVLRecord.MIMETYPE);
+        recordInfo.setExtraHeaders(null);
+        recordInfo.setEnforceLength(true);
+        
     	ANVLRecord meta = new ANVLRecord();
     	meta.addLabelValue("size", "1G");
     	meta.addLabelValue("operator", "igor");
     	byte [] bytes = meta.getUTF8Bytes();
-    	writer.writeWarcinfoRecord(ANVLRecord.MIMETYPE, null,
-    		new ByteArrayInputStream(bytes), bytes.length);
+    	recordInfo.setContentStream(new ByteArrayInputStream(bytes));
+    	recordInfo.setContentLength((long) bytes.length);
+    	
+        final URI recordid = writer.generateRecordId(WARCWriter.TYPE, WARCRecordType.WARCINFO.toString());
+        recordInfo.setRecordId(recordid);
+        
+        writer.writeRecord(recordInfo);
 	}
 
 	protected void writeBasicRecords(final WARCWriter writer)
     throws IOException {
+	    WARCRecordInfo recordInfo = new WARCRecordInfo();
+	    recordInfo.setType(WARCRecordType.METADATA);
+	    recordInfo.setUrl("http://www.archive.org/");
+	    recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
+	    recordInfo.setMimetype("no/type");
+	    recordInfo.setEnforceLength(true);
+	    
     	ANVLRecord headerFields = new ANVLRecord();
     	headerFields.addLabelValue("x", "y");
     	headerFields.addLabelValue("a", "b");
+    	recordInfo.setExtraHeaders(headerFields);
     	
-    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, METADATA);
+    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, WARCRecordType.METADATA.toString());
+    	recordInfo.setRecordId(rid);
+    	
     	final String content = "Any old content.";
     	for (int i = 0; i < 10; i++) {
     		String body = i + ". " + content;
     		byte [] bodyBytes = body.getBytes(UTF8Bytes.UTF8);
-    		writer.writeRecord(METADATA, "http://www.archive.org/",
-    			ArchiveUtils.get14DigitDate(), "no/type",
-    			rid, headerFields, new ByteArrayInputStream(bodyBytes),
-    			(long)bodyBytes.length, true);
+    		recordInfo.setContentStream(new ByteArrayInputStream(bodyBytes));
+    		recordInfo.setContentLength((long)bodyBytes.length);
+            writer.writeRecord(recordInfo);
     	}
     }
 
@@ -186,23 +208,29 @@ extends TmpDirTestCase implements WARCConstants {
      */
     protected int writeRandomHTTPRecord(WARCWriter w, int index)
     throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESOURCE);
+        recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
+        recordInfo.setMimetype("text/html; charset=UTF-8");
+        recordInfo.setRecordId(w.generateRecordId(null));
+        recordInfo.setEnforceLength(true);
+        
         String indexStr = Integer.toString(index);
+        recordInfo.setUrl("http://www.one.net/id=" + indexStr);
+        
         byte[] record = (getContent(indexStr)).getBytes();
-        int recordLength = record.length;
+        recordInfo.setContentLength((long) record.length);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(record);
+        recordInfo.setContentStream(new ByteArrayInputStream(baos.toByteArray()));
+        
         // Add named fields for ip, checksum, and relate the metadata
         // and request to the resource field.
-        ANVLRecord r = new ANVLRecord(1);
-        r.addLabelValue(NAMED_FIELD_IP_LABEL, "127.0.0.1");
-        w.writeResourceRecord(
-            "http://www.one.net/id=" + indexStr,
-            ArchiveUtils.get14DigitDate(),
-            "text/html; charset=UTF-8",
-            r,
-            new ByteArrayInputStream(baos.toByteArray()),
-            recordLength);
-        return recordLength;
+        recordInfo.addExtraHeader(NAMED_FIELD_IP_LABEL, "127.0.0.1");
+        
+        w.writeRecord(recordInfo);
+        return record.length;
     }
 
     /**
@@ -352,12 +380,18 @@ extends TmpDirTestCase implements WARCConstants {
     protected static void writeRecord(WARCWriter w, String url,
         String mimetype, int len, ByteArrayOutputStream baos)
     throws IOException {
-        w.writeResourceRecord(url,
-            ArchiveUtils.get14DigitDate(),
-            mimetype,
-            null,
-            new ByteArrayInputStream(baos.toByteArray()),
-            len);
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.RESOURCE);
+        recordInfo.setUrl(url);
+        recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
+        recordInfo.setMimetype(mimetype);
+        recordInfo.setRecordId(w.generateRecordId(null));
+        recordInfo.setExtraHeaders(null);
+        recordInfo.setContentStream(new ByteArrayInputStream(baos.toByteArray()));
+        recordInfo.setContentLength((long) len);
+        recordInfo.setEnforceLength(true);
+        
+        w.writeRecord(recordInfo);
     }
     
     protected int iterateRecords(WARCReader r)

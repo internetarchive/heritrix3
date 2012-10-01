@@ -59,6 +59,7 @@ import org.springframework.context.ApplicationContextAware;
 public class ScriptedProcessor extends Processor 
 implements ApplicationContextAware, InitializingBean {
 
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =
@@ -73,7 +74,7 @@ implements ApplicationContextAware, InitializingBean {
         this.engineName = name;
     }
     
-    ReadSource scriptSource = null;
+    protected ReadSource scriptSource = null;
     public ReadSource getScriptSource() {
         return this.scriptSource;
     }
@@ -96,7 +97,7 @@ implements ApplicationContextAware, InitializingBean {
         this.isolateThreads = isolateThreads;
     }
 
-    ApplicationContext appCtx;
+    protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
     }

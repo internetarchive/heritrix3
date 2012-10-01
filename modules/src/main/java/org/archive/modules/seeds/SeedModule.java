@@ -37,7 +37,7 @@ public abstract class SeedModule implements Serializable
      * from that seed. When present, such source tags appear in the
      * second-to-last crawl.log field.
      */
-    boolean sourceTagSeeds = false;
+    protected boolean sourceTagSeeds = false;
     public boolean getSourceTagSeeds() {
         return sourceTagSeeds;
     }

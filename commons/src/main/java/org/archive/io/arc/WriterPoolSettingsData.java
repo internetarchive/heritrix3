@@ -24,14 +24,14 @@ import java.util.List;
 import org.archive.io.WriterPoolSettings;
 
 public class WriterPoolSettingsData implements WriterPoolSettings {
-    long maxFileSizeBytes;
-    String prefix;
-    String template; 
-    List<File> outputDirs;
-    boolean compress;
-    List<String> metadata;
-    boolean frequentFlushes = true;
-    int writeBufferSize = 16*1024;
+    protected long maxFileSizeBytes;
+    protected String prefix;
+    protected String template; 
+    protected List<File> outputDirs;
+    protected boolean compress;
+    protected List<String> metadata;
+    protected boolean frequentFlushes = true;
+    protected int writeBufferSize = 16*1024;
     
     public WriterPoolSettingsData(String prefix, String template,
             long maxFileSizeBytes, boolean compress, List<File> outputDirs,

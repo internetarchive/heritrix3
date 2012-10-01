@@ -88,7 +88,7 @@ public class UriUtils {
     // naive likely-uri test: 
     //    no whitespace or '<' or '>' 
     //    at least one '.' or '/';
-    static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*";
+    protected static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*";
     
     public static boolean isPossibleUri(CharSequence candidate) {
         return TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate);
@@ -273,10 +273,16 @@ public class UriUtils {
             }
             return true;
         }
-
-        if (TextUtils.matches("^\\.\\.?[^/].*", candidate)) {
+        if (candidate.charAt(0) == '.' && !TextUtils.matches("^\\.{1,2}/.*", candidate)) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("rejected: starts with '.' (but not './' or '../'): " + candidate);
+            }
+            return true;
+        }
+        
+        if (TextUtils.matches("^.*[^:]//.*$", candidate)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("rejected: contains '//' (but not '://'): " + candidate);
             }
             return true;
         }
@@ -350,7 +356,7 @@ public class UriUtils {
     // determines whether a string is likely URI
     // (no whitespace or '<' '>',  has an internal dot or some slash,
     // begins and ends with either '/' or a word-char)
-    static final String STRING_URI_DETECTOR =
+    protected static final String STRING_URI_DETECTOR =
         "(?:\\w|[\\.]{0,2}/)[\\S&&[^<>]]*(?:\\.|/)[\\S&&[^<>]]*(?:\\w|/)";
 
  
@@ -382,7 +388,7 @@ public class UriUtils {
     // without requiring quotes -- this can indicate whether
     // an HTML tag attribute that isn't definitionally a
     // URI might be one anyway, as in form-tag VALUE attributes
-    static final String LIKELY_URI_PATH =
+    protected static final String LIKELY_URI_PATH =
      "(\\.{0,2}[^\\.\\n\\r\\s\"']*(\\.[^\\.\\n\\r\\s\"']+)+)";
 	
 	public static boolean isLikelyUriHtmlContextLegacy(CharSequence candidate) {

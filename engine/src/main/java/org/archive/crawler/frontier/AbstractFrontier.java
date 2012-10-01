@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
@@ -89,12 +88,13 @@ public abstract class AbstractFrontier
                HasKeyedProperties,
                ExtractorParameters,
                CrawlUriReceiver,
-               ApplicationListener {
+               ApplicationListener<ApplicationEvent> {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 555881755284996860L;
     private static final Logger logger = Logger
             .getLogger(AbstractFrontier.class.getName());
 
-    KeyedProperties kp = new KeyedProperties();
+    protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }
@@ -233,7 +233,7 @@ public abstract class AbstractFrontier
         this.scope = scope;
     }
 
-    FrontierPreparer preparer;
+    protected FrontierPreparer preparer;
     public FrontierPreparer getFrontierPreparer() {
         return this.preparer;
     }
@@ -298,12 +298,12 @@ public abstract class AbstractFrontier
      * of URI queues and queues/maps of queues for proper ordering/delay of
      * URI processing. 
      */
-    Thread managerThread;
+    protected Thread managerThread;
     
     /** last Frontier.State reached; used to suppress duplicate notifications */
-    State lastReachedState = null;
+    protected State lastReachedState = null;
     /** Frontier.state that manager thread should seek to reach */
-    volatile State targetState = State.PAUSE;
+    protected volatile State targetState = State.PAUSE;
 
     /**
      * Start the dedicated thread with an independent view of the frontier's
@@ -1131,10 +1131,7 @@ public abstract class AbstractFrontier
         return ArchiveUtils.shortReportLine(this);
     }
 
-    public void reportTo(PrintWriter writer) {
-        reportTo(null, writer);
-    }
-
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof CrawlStateEvent) {
             CrawlStateEvent event1 = (CrawlStateEvent)event;

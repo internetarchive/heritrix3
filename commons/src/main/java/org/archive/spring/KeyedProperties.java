@@ -42,7 +42,7 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
 
     /** the alternate global property-paths leading to this map 
      * TODO: consider if deterministic ordered list is important */
-    HashSet<String> externalPaths = new HashSet<String>(); 
+    protected HashSet<String> externalPaths = new HashSet<String>(); 
     
     /**
      * Add a path by which the outside world can reach this map
@@ -104,7 +104,7 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
     /**
      * ThreadLocal (contextual) collection of pushed override maps
      */
-    static ThreadLocal<ArrayList<OverlayContext>> threadOverrides = 
+    protected static ThreadLocal<ArrayList<OverlayContext>> threadOverrides = 
         new ThreadLocal<ArrayList<OverlayContext>>() {
         protected ArrayList<OverlayContext> initialValue() {
             return new ArrayList<OverlayContext>();

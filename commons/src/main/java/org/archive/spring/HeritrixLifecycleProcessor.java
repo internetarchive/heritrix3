@@ -30,7 +30,7 @@ import org.springframework.context.support.DefaultLifecycleProcessor;
  * @contributor gojomo
  */
 public class HeritrixLifecycleProcessor extends DefaultLifecycleProcessor implements BeanNameAware {
-    String name; 
+    protected String name;
     
     @Override
     public void onRefresh() {

@@ -56,7 +56,7 @@ public class MemLongFPSetTest extends LongFPSetTestCase {
                 return new TestSuite(MemLongFPSetTest.class);
         }
 
-        LongFPSet makeLongFPSet() {
+        protected LongFPSet makeLongFPSet() {
                 return new MemLongFPSet();
         }
 

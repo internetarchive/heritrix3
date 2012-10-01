@@ -83,6 +83,7 @@ import com.sleepycat.je.DatabaseException;
 public abstract class WorkQueueFrontier extends AbstractFrontier
 implements Closeable, 
            ApplicationContextAware {
+    @SuppressWarnings("unused")
     private static final long serialVersionUID = 570384305871965843L;
 
     /**
@@ -98,7 +99,7 @@ implements Closeable,
      * will be "long snoozed" instead of "short snoozed".  A "long snoozed"
      * queue may be swapped to disk because it's not needed soon.  
      */
-    long snoozeLongMs = 5L*60L*1000L; 
+    protected long snoozeLongMs = 5L*60L*1000L; 
     public long getSnoozeLongMs() {
         return snoozeLongMs;
     }
@@ -110,7 +111,7 @@ implements Closeable,
         Logger.getLogger(WorkQueueFrontier.class.getName());
     
     // ApplicationContextAware implementation, for eventing
-    AbstractApplicationContext appCtx;
+    protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
     }
@@ -482,14 +483,14 @@ implements Closeable,
      * Return a sorted map of all queues of WorkQueue keys, keyed by precedence
      * @return SortedMap<Integer, Queue<String>> of inactiveQueues
      */
-    abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
+    protected abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
 
     /**
      * Create an inactiveQueue to hold queue names at the given precedence
      * @param precedence
      * @return Queue<String> for names of inactive queues
      */
-    abstract Queue<String> createInactiveQueueForPrecedence(int precedence);
+    protected abstract Queue<String> createInactiveQueueForPrecedence(int precedence);
 
     /**
      * Put the given queue on the retiredQueues queue
@@ -513,7 +514,7 @@ implements Closeable,
      * 
      * @return Queue<String> of retired queue names
      */
-    abstract Queue<String> getRetiredQueues();
+    protected abstract Queue<String> getRetiredQueues();
 
     /** 
      * Accommodate any changes in retirement-determining settings (like
@@ -624,9 +625,19 @@ implements Closeable,
                     // queue has gone 'in process' 
                     readyQ.considerActive();
                     readyQ.setWakeTime(0); // clear obsolete wake time, if any
-
-                    readyQ.setSessionBudget(getBalanceReplenishAmount());
-                    readyQ.setTotalBudget(getQueueTotalBudget()); 
+                    
+                    // we know readyQ is not empty (getCount()!=0) so peek() shouldn't return null
+                    CrawlURI readyQUri = readyQ.peek(this);
+                    // see HER-1973 and HER-1946
+                    sheetOverlaysManager.applyOverlaysTo(readyQUri);
+                    try {
+                        KeyedProperties.loadOverridesFrom(readyQUri);
+                        readyQ.setSessionBudget(getBalanceReplenishAmount());
+                        readyQ.setTotalBudget(getQueueTotalBudget()); 
+                    } finally {
+                        KeyedProperties.clearOverridesFrom(readyQUri); 
+                    }
+                    
                     if (readyQ.isOverSessionBudget()) {
                         deactivateQueue(readyQ);
                         readyQ.makeDirty();
@@ -721,9 +732,6 @@ implements Closeable,
             // nothing eligible
             return null; 
     }
-    
-    // temporary debugging support
-    int depthFindEligibleURI = 0; 
 
     /**
      * Check for any future-scheduled URIs now eligible for reenqueuing
@@ -1079,15 +1087,8 @@ implements Closeable,
     // Reporter implementation
     //
     
-    public static String STANDARD_REPORT = "standard";
-    public static String ALL_NONEMPTY = "nonempty";
-    public static String ALL_QUEUES = "all";
-    protected static String[] REPORTS = {STANDARD_REPORT,ALL_NONEMPTY,ALL_QUEUES};
     
-    public String[] getReports() {
-        return REPORTS;
-    }
-    
+    @Override
     public Map<String, Object> shortReportMap() {
         if (this.allQueues == null) {
             return null;
@@ -1121,6 +1122,7 @@ implements Closeable,
     /**
      * @param w Where to write to.
      */
+    @Override
     public void shortReportLineTo(PrintWriter w) {
         if (!isRunning()) return; //???
         
@@ -1202,6 +1204,7 @@ implements Closeable,
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
+    @Override
     public String shortReportLegend() {
         return "total active in-process ready snoozed inactive retired exhausted";
     }
@@ -1212,27 +1215,132 @@ implements Closeable,
      * @param name Name of report.
      * @param writer Where to write to.
      */
-    public synchronized void reportTo(String name, PrintWriter writer) {
-        if(ALL_NONEMPTY.equals(name)) {
-            allNonemptyReportTo(writer);
-            return;
+    @Override
+    public synchronized void reportTo(PrintWriter writer) {
+        int allCount = allQueues.size();
+        int inProcessCount = inProcessQueues.size();
+        int readyCount = readyClassQueues.size();
+        int snoozedCount = getSnoozedCount();
+        int activeCount = inProcessCount + readyCount + snoozedCount;
+        int inactiveCount = getTotalInactiveQueues();
+        int retiredCount = getRetiredQueues().size();
+        int exhaustedCount = 
+            allCount - activeCount - inactiveCount - retiredCount;
+        
+        writer.print("Frontier report - ");
+        writer.print(ArchiveUtils.get12DigitDate());
+        writer.print("\n");
+        writer.print(" Job being crawled: ");
+        writer.print(controller.getMetadata().getJobName());
+        writer.print("\n");
+        writer.print("\n -----===== STATS =====-----\n");
+        writer.print(" Discovered:    ");
+        writer.print(Long.toString(discoveredUriCount()));
+        writer.print("\n");
+        writer.print(" Queued:        ");
+        writer.print(Long.toString(queuedUriCount()));
+        writer.print("\n");
+        writer.print(" Finished:      ");
+        writer.print(Long.toString(finishedUriCount()));
+        writer.print("\n");
+        writer.print("  Successfully: ");
+        writer.print(Long.toString(succeededFetchCount()));
+        writer.print("\n");
+        writer.print("  Failed:       ");
+        writer.print(Long.toString(failedFetchCount()));
+        writer.print("\n");
+        writer.print("  Disregarded:  ");
+        writer.print(Long.toString(disregardedUriCount()));
+        writer.print("\n");
+        writer.print("\n -----===== QUEUES =====-----\n");
+        writer.print(" Already included size:     ");
+        writer.print(Long.toString(uriUniqFilter.count()));
+        writer.print("\n");
+        writer.print("               pending:     ");
+        writer.print(Long.toString(uriUniqFilter.pending()));
+        writer.print("\n");
+        writer.print("\n All class queues map size: ");
+        writer.print(Long.toString(allCount));
+        writer.print("\n");
+        writer.print( "             Active queues: ");
+        writer.print(activeCount);
+        writer.print("\n");
+        writer.print("                    In-process: ");
+        writer.print(inProcessCount);
+        writer.print("\n");
+        writer.print("                         Ready: ");
+        writer.print(readyCount);
+        writer.print("\n");
+        writer.print("                       Snoozed: ");
+        writer.print(snoozedCount);
+        writer.print("\n");
+        writer.print("           Inactive queues: ");
+        writer.print(inactiveCount);
+        writer.print(" (");
+        Map<Integer,Queue<String>> inactives = getInactiveQueuesByPrecedence();
+        boolean betwixt = false; 
+        for(Integer k : inactives.keySet()) {
+            if(betwixt) {
+                writer.print("; ");
+            }
+            writer.print("p");
+            writer.print(k);
+            writer.print(": ");
+            writer.print(inactives.get(k).size());
+            betwixt = true; 
         }
-        if(ALL_QUEUES.equals(name)) {
-            allQueuesReportTo(writer);
-            return;
+        writer.print(")\n");
+        writer.print("            Retired queues: ");
+        writer.print(retiredCount);
+        writer.print("\n");
+        writer.print("          Exhausted queues: ");
+        writer.print(exhaustedCount);
+        writer.print("\n");
+        
+        State last = lastReachedState;
+        writer.print("\n             Last state: "+last);        
+        
+        writer.print("\n -----===== MANAGER THREAD =====-----\n");
+        ToeThread.reportThread(managerThread, writer);
+        
+        writer.print("\n -----===== "+largestQueues.size()+" LONGEST QUEUES =====-----\n");
+        appendQueueReports(writer, "LONGEST", largestQueues.getEntriesDescending().iterator(), largestQueues.size(), largestQueues.size());
+        
+        writer.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
+        Collection<WorkQueue> inProcess = inProcessQueues;
+        ArrayList<WorkQueue> copy = extractSome(inProcess, maxQueuesPerReportCategory);
+        appendQueueReports(writer, "IN-PROCESS", copy.iterator(), copy.size(), maxQueuesPerReportCategory);
+        
+        writer.print("\n -----===== READY QUEUES =====-----\n");
+        appendQueueReports(writer, "READY", this.readyClassQueues.iterator(),
+            this.readyClassQueues.size(), maxQueuesPerReportCategory);
+        
+        writer.print("\n -----===== SNOOZED QUEUES =====-----\n");
+        Object[] objs = snoozedClassQueues.toArray();
+        DelayedWorkQueue[] qs = Arrays.copyOf(objs,objs.length,DelayedWorkQueue[].class);
+        Arrays.sort(qs);
+        appendQueueReports(writer, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), maxQueuesPerReportCategory);
+        
+        writer.print("\n -----===== INACTIVE QUEUES =====-----\n");
+        SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
+        for(Integer prec : sortedInactives.keySet()) {
+            Queue<String> inactiveQueues = sortedInactives.get(prec);
+            appendQueueReports(writer, "INACTIVE-p"+prec, inactiveQueues.iterator(),
+                    inactiveQueues.size(), maxQueuesPerReportCategory);
         }
-        if(name!=null && !STANDARD_REPORT.equals(name)) {
-            writer.print(name);
-            writer.print(" unavailable; standard report:\n");
-        }
-        standardReportTo(writer);
-    }   
+        
+        writer.print("\n -----===== RETIRED QUEUES =====-----\n");
+        appendQueueReports(writer, "RETIRED", getRetiredQueues().iterator(),
+            getRetiredQueues().size(), maxQueuesPerReportCategory);
+        
+        writer.flush();
+    }
     
     /** Compact report of all nonempty queues (one queue per line)
      * 
      * @param writer
      */
-    private void allNonemptyReportTo(PrintWriter writer) {
+    public void allNonemptyReportTo(PrintWriter writer) {
         ArrayList<WorkQueue> inProcessQueuesCopy;
         synchronized(this.inProcessQueues) {
             // grab a copy that will be stable against mods for report duration 
@@ -1262,7 +1370,7 @@ implements Closeable,
      * 
      * @param writer
      */
-    private void allQueuesReportTo(PrintWriter writer) {
+    public void allQueuesReportTo(PrintWriter writer) {
         queueSingleLinesTo(writer, allQueues.keySet().iterator());
     }
     
@@ -1307,130 +1415,6 @@ implements Closeable,
         }       
     }
 
-    /**
-     * @param w Writer to print to.
-     */
-    private void standardReportTo(PrintWriter w) {
-        int allCount = allQueues.size();
-        int inProcessCount = inProcessQueues.size();
-        int readyCount = readyClassQueues.size();
-        int snoozedCount = getSnoozedCount();
-        int activeCount = inProcessCount + readyCount + snoozedCount;
-        int inactiveCount = getTotalInactiveQueues();
-        int retiredCount = getRetiredQueues().size();
-        int exhaustedCount = 
-            allCount - activeCount - inactiveCount - retiredCount;
-
-        w.print("Frontier report - ");
-        w.print(ArchiveUtils.get12DigitDate());
-        w.print("\n");
-        w.print(" Job being crawled: ");
-        w.print(controller.getMetadata().getJobName());
-        w.print("\n");
-        w.print("\n -----===== STATS =====-----\n");
-        w.print(" Discovered:    ");
-        w.print(Long.toString(discoveredUriCount()));
-        w.print("\n");
-        w.print(" Queued:        ");
-        w.print(Long.toString(queuedUriCount()));
-        w.print("\n");
-        w.print(" Finished:      ");
-        w.print(Long.toString(finishedUriCount()));
-        w.print("\n");
-        w.print("  Successfully: ");
-        w.print(Long.toString(succeededFetchCount()));
-        w.print("\n");
-        w.print("  Failed:       ");
-        w.print(Long.toString(failedFetchCount()));
-        w.print("\n");
-        w.print("  Disregarded:  ");
-        w.print(Long.toString(disregardedUriCount()));
-        w.print("\n");
-        w.print("\n -----===== QUEUES =====-----\n");
-        w.print(" Already included size:     ");
-        w.print(Long.toString(uriUniqFilter.count()));
-        w.print("\n");
-        w.print("               pending:     ");
-        w.print(Long.toString(uriUniqFilter.pending()));
-        w.print("\n");
-        w.print("\n All class queues map size: ");
-        w.print(Long.toString(allCount));
-        w.print("\n");
-        w.print( "             Active queues: ");
-        w.print(activeCount);
-        w.print("\n");
-        w.print("                    In-process: ");
-        w.print(inProcessCount);
-        w.print("\n");
-        w.print("                         Ready: ");
-        w.print(readyCount);
-        w.print("\n");
-        w.print("                       Snoozed: ");
-        w.print(snoozedCount);
-        w.print("\n");
-        w.print("           Inactive queues: ");
-        w.print(inactiveCount);
-        w.print(" (");
-        Map<Integer,Queue<String>> inactives = getInactiveQueuesByPrecedence();
-        boolean betwixt = false; 
-        for(Integer k : inactives.keySet()) {
-            if(betwixt) {
-                w.print("; ");
-            }
-            w.print("p");
-            w.print(k);
-            w.print(": ");
-            w.print(inactives.get(k).size());
-            betwixt = true; 
-        }
-        w.print(")\n");
-        w.print("            Retired queues: ");
-        w.print(retiredCount);
-        w.print("\n");
-        w.print("          Exhausted queues: ");
-        w.print(exhaustedCount);
-        w.print("\n");
-        
-        State last = lastReachedState;
-        w.print("\n             Last state: "+last);        
-        
-        w.print("\n -----===== MANAGER THREAD =====-----\n");
-        ToeThread.reportThread(managerThread, w);
-        
-        w.print("\n -----===== "+largestQueues.size()+" LONGEST QUEUES =====-----\n");
-        appendQueueReports(w, "LONGEST", largestQueues.getEntriesDescending().iterator(), largestQueues.size(), largestQueues.size());
-        
-        w.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
-        Collection<WorkQueue> inProcess = inProcessQueues;
-        ArrayList<WorkQueue> copy = extractSome(inProcess, maxQueuesPerReportCategory);
-        appendQueueReports(w, "IN-PROCESS", copy.iterator(), copy.size(), maxQueuesPerReportCategory);
-        
-        w.print("\n -----===== READY QUEUES =====-----\n");
-        appendQueueReports(w, "READY", this.readyClassQueues.iterator(),
-            this.readyClassQueues.size(), maxQueuesPerReportCategory);
-
-        w.print("\n -----===== SNOOZED QUEUES =====-----\n");
-        Object[] objs = snoozedClassQueues.toArray();
-        DelayedWorkQueue[] qs = Arrays.copyOf(objs,objs.length,DelayedWorkQueue[].class);
-        Arrays.sort(qs);
-        appendQueueReports(w, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), maxQueuesPerReportCategory);
-        
-        w.print("\n -----===== INACTIVE QUEUES =====-----\n");
-        SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
-        for(Integer prec : sortedInactives.keySet()) {
-            Queue<String> inactiveQueues = sortedInactives.get(prec);
-            appendQueueReports(w, "INACTIVE-p"+prec, inactiveQueues.iterator(),
-                    inactiveQueues.size(), maxQueuesPerReportCategory);
-        }
-        
-        w.print("\n -----===== RETIRED QUEUES =====-----\n");
-        appendQueueReports(w, "RETIRED", getRetiredQueues().iterator(),
-            getRetiredQueues().size(), maxQueuesPerReportCategory);
-
-        w.flush();
-    }
-    
-    
     /**
      * Extract some of the elements in the given collection to an
      * ArrayList.  This method synchronizes on the given collection's

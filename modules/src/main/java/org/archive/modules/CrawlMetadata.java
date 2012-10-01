@@ -49,7 +49,7 @@ implements UserAgentProvider,
            InitializingBean {
     private static final long serialVersionUID = 1L;
 
-    KeyedProperties kp = new KeyedProperties();
+    protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
     }
@@ -71,7 +71,7 @@ implements UserAgentProvider,
     /** Map of all available RobotsPolicies, by name, to choose from. 
      * assembled from declared instances in configuration plus the standard
      * 'obey' (aka 'classic') and 'ignore' policies. */
-    Map<String,RobotsPolicy> availableRobotsPolicies = new HashMap<String,RobotsPolicy>();
+    protected Map<String,RobotsPolicy> availableRobotsPolicies = new HashMap<String,RobotsPolicy>();
     public Map<String,RobotsPolicy> getAvailableRobotsPolicies() {
         return availableRobotsPolicies;
     }
@@ -95,7 +95,7 @@ implements UserAgentProvider,
         return availableRobotsPolicies.get(getRobotsPolicyName());
     } 
 
-    String operator = "";
+    protected String operator = "";
     public String getOperator() {
         return operator;
     }
@@ -103,7 +103,7 @@ implements UserAgentProvider,
         this.operator = operatorName;
     }
 
-    String description = ""; 
+    protected String description = ""; 
     public String getDescription() {
         return description;
     }
@@ -155,7 +155,7 @@ implements UserAgentProvider,
     }
 
 
-    String audience = ""; 
+    protected String audience = ""; 
     public String getAudience() {
         return audience;
     }
@@ -163,7 +163,7 @@ implements UserAgentProvider,
         this.audience = audience;
     }
    
-    String organization = ""; 
+    protected String organization = ""; 
     public String getOrganization() {
         return organization;
     }
@@ -180,7 +180,7 @@ implements UserAgentProvider,
         return userAgent;
     }
 
-    String jobName;
+    protected String jobName;
     public String getJobName() {
         return jobName;
     }
@@ -198,7 +198,7 @@ implements UserAgentProvider,
         ensureStandardPoliciesAvailable();
     }
 
-    static Validator VALIDATOR = new BeanFieldsPatternValidator(
+    protected static Validator VALIDATOR = new BeanFieldsPatternValidator(
             CrawlMetadata.class,
             "userAgentTemplate", 
             "^.*\\+@OPERATOR_CONTACT_URL@.*$", 

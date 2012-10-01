@@ -29,63 +29,75 @@ import java.beans.PropertyEditor;
  * PropertyEditor allowing Strings to become ConfigPath instances.
  * 
  */
-public class ConfigPathEditor<T> implements PropertyEditor {
-    Object value;
+public class ConfigPathEditor implements PropertyEditor {
+    protected Object value;
     
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public String getAsText() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
     public Component getCustomEditor() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
     public String getJavaInitializationString() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
     public String[] getTags() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
     public Object getValue() {
         ConfigPath c =  new ConfigPath(null,value.toString());
         //c.put(value);
         return c;
     }
 
+    @Override
     public boolean isPaintable() {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
     public void paintValue(Graphics gfx, Rectangle box) {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void setAsText(String text) throws IllegalArgumentException {
         setValue(text);
     }
 
+    @Override
     public void setValue(Object value) {
         this.value = value;
     }
 
+    @Override
     public boolean supportsCustomEditor() {
         // TODO Auto-generated method stub
         return false;

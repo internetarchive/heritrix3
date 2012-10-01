@@ -32,8 +32,8 @@ import org.springframework.core.Ordered;
  */
 public class DecideRuledSheetAssociation extends SheetAssociation 
 implements Ordered, Comparable<DecideRuledSheetAssociation>, BeanNameAware {
-    DecideRule rules;
-    int order = 0; 
+    protected DecideRule rules;
+    protected int order = 0; 
     
     public DecideRule getRules() {
         return rules;
@@ -59,7 +59,7 @@ implements Ordered, Comparable<DecideRuledSheetAssociation>, BeanNameAware {
         return name.compareTo(o.name); 
     }
     
-    String name;
+    protected String name;
     public void setBeanName(String name) {
         this.name = name;
     }

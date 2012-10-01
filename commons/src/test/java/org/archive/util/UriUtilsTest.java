@@ -110,7 +110,6 @@ public class UriUtilsTest extends TestCase {
         "cssp!gelui-1/overlay",
         "/wiki/%E0%B4%B8%E0%B4%B9%E0%B4%BE%E0%B4%AF%E0%B4%82:To_Read_in_Malayalam",
         "/wiki/Wikiversity:Why_create_an_account%3F",
-        ";s.channel=d.channel?d.channel:"
     };
     public void testRelatives() {
         tryAll(urisRelative, true);
@@ -211,6 +210,14 @@ public class UriUtilsTest extends TestCase {
         tryAll(startsOrEndsWithPlusFalsePositives, false);
     }
     
+    protected static final String[] doubleSlashFalsePositives = new String[] {
+        ".//*",
+        "http://example.com/monkey//foo/whatever"
+    };
+    public void testDoubleSlashFalsePositives() {
+        tryAll(startsOrEndsWithPlusFalsePositives, false);
+    }
+
     /**
      * Test that all supplied candidates give the expected result, for each of 
      * the 'legacy' (H1) likely-URI-tests
@@ -237,12 +244,7 @@ public class UriUtilsTest extends TestCase {
      */
     protected void tryAll(String[] candidates, boolean expected) {
         for (String candidate : candidates) {
-            assertEquals("new: " + candidate, 
-                    expected, 
-                    UriUtils.isLikelyUri(candidate));
-            assertEquals("html context: " + candidate, 
-                    expected, 
-                    UriUtils.isLikelyUri(candidate));
+            assertEquals(candidate, expected, UriUtils.isLikelyUri(candidate));
         }
     }
 }

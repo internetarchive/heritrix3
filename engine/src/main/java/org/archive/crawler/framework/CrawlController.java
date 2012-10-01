@@ -72,12 +72,12 @@ implements Serializable,
     private static final long serialVersionUID = 1L;
     
     // ApplicationContextAware implementation, for eventing
-    AbstractApplicationContext appCtx;
+    protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
     }
     
-    CrawlMetadata metadata;
+    protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }
@@ -181,7 +181,7 @@ implements Serializable,
     /**
      * Maximum number of threads processing URIs at the same time.
      */
-    int maxToeThreads; 
+    protected int maxToeThreads; 
     public int getMaxToeThreads() {
         return maxToeThreads;
     }
@@ -194,7 +194,7 @@ implements Serializable,
     }
     
     /** whether to keep running (without pause or finish) when frontier is empty */
-    boolean runWhileEmpty = false; 
+    protected boolean runWhileEmpty = false; 
     public boolean getRunWhileEmpty() {
         return runWhileEmpty;
     }
@@ -203,7 +203,7 @@ implements Serializable,
     }
 
     /** whether to pause at crawl start */
-    boolean pauseAtStart = true; 
+    protected boolean pauseAtStart = true; 
     public boolean getPauseAtStart() {
         return pauseAtStart;
     }
@@ -215,7 +215,7 @@ implements Serializable,
      * Size in bytes of in-memory buffer to record outbound traffic. One such 
      * buffer is reserved for every ToeThread. 
      */
-    int recorderOutBufferBytes = 16 * 1024; // 16KiB
+    protected int recorderOutBufferBytes = 16 * 1024; // 16KiB
     public int getRecorderOutBufferBytes() {
         return recorderOutBufferBytes;
     }
@@ -227,7 +227,7 @@ implements Serializable,
      * Size in bytes of in-memory buffer to record inbound traffic. One such 
      * buffer is reserved for every ToeThread.
      */
-    int recorderInBufferBytes = 512 * 1024; // 512KiB
+    protected int recorderInBufferBytes = 512 * 1024; // 512KiB
     public int getRecorderInBufferBytes() {
         return recorderInBufferBytes;
     }
@@ -274,7 +274,7 @@ implements Serializable,
     public CrawlController() {
     }
     
-    transient AlertThreadGroup alertThreadGroup;
+    transient protected AlertThreadGroup alertThreadGroup;
     
     public void start() {
         // cache AlertThreadGroup for later ToePool launch
@@ -300,7 +300,7 @@ implements Serializable,
         isRunning = true; 
     }
     
-    boolean isRunning = false; 
+    protected boolean isRunning = false; 
     public boolean isRunning() {
         return isRunning; 
     }
@@ -328,13 +328,13 @@ implements Serializable,
     
 
     // TODO: provide better knowledge/guard against twice-starting
-    boolean hasStarted = false;
+    protected boolean hasStarted = false;
 
     public boolean hasStarted() {
         return hasStarted; 
     }
 
-    boolean isStopComplete = false;
+    protected boolean isStopComplete = false;
     public boolean isStopComplete() {
         return isStopComplete;
     }
@@ -666,7 +666,7 @@ implements Serializable,
     public void startCheckpoint(Checkpoint checkpointInProgress) {}
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {}
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
-    Checkpoint recoveryCheckpoint;
+    protected Checkpoint recoveryCheckpoint;
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }

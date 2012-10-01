@@ -29,7 +29,7 @@ import java.io.RandomAccessFile;
  * @author gojomo
  */
 public class RandomAccessOutputStream extends OutputStream {
-    RandomAccessFile raf;
+    protected RandomAccessFile raf;
 
     /**
      * Wrap the given RandomAccessFile
