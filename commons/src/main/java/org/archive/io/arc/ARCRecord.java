@@ -649,8 +649,6 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         // Read the status line.  Don't let it into the parseHeaders function.
         // It doesn't know what to do with it.
         bais.read(statusBytes, 0, statusBytes.length);
-        this.httpHeaders = HttpParser.parseHeaders(bais,
-            ARCConstants.DEFAULT_ENCODING);
         this.getMetaData().setStatusCode(Integer.toString(getStatusCode()));
         bais.reset();
         return bais;
