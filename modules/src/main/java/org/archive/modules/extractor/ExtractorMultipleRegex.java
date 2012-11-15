@@ -20,12 +20,11 @@ package org.archive.modules.extractor;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -99,13 +98,13 @@ public class ExtractorMultipleRegex extends Extractor {
         if (!m.matches()) {
             return;
         }
-        String[] uriRegexGroups = new String[m.groupCount() +1];
-        for(int i = 0; i < uriRegexGroups.length; i++) {
-            uriRegexGroups[i] = m.group(i);
+        List<String> uriRegexGroups = new LinkedList<String>();
+        for(int i = 0; i <= m.groupCount(); i++) {
+            uriRegexGroups.add(m.group(i));
         }
         // our data structure to prepopulate with matches for nested iteration
-        SortedMap<String,List<String[]>> allMatches = new TreeMap<String, List<String[]>>();
-        LinkedList<String[]> uriRegexMatchList = new LinkedList<String[]>();
+        LinkedHashMap<String,List<List<String>>> allMatches = new LinkedHashMap<String, List<List<String>>>();
+        LinkedList<List<String>> uriRegexMatchList = new LinkedList<List<String>>();
         uriRegexMatchList.add(uriRegexGroups);
         allMatches.put("uriRegex", uriRegexMatchList);
 
@@ -124,12 +123,12 @@ public class ExtractorMultipleRegex extends Extractor {
             // the matcher for this patternName against the content
             Matcher namedMatcher = TextUtils.getMatcher(getContentRegexes().get(patternName), cs);
             // populate the list of finds for this patternName
-            List<String[]> foundList = new LinkedList<String[]>();
-            while(namedMatcher.find()) {
+            List<List<String>> foundList = new LinkedList<List<String>>();
+            while (namedMatcher.find()) {
                 // +1 to include the full match in addition to the groups
-                String[] groups = new String[namedMatcher.groupCount() +1];
-                for(int i = 0; i < groups.length; i++) {
-                    groups[i] = namedMatcher.group(i);
+                LinkedList<String> groups = new LinkedList<String>();
+                for (int i = 0; i <= namedMatcher.groupCount(); i++) {
+                    groups.add(namedMatcher.group(i));
                 }
                 foundList.add(groups);
             }
@@ -141,15 +140,16 @@ public class ExtractorMultipleRegex extends Extractor {
         while (!done) {
             long tmp = i;
             SimpleBindings matches = new SimpleBindings();
-            matches.put("index", i);
             String[] patternNames = allMatches.keySet().toArray(new String[0]);
             for (int j = 0; j < patternNames.length; j++) {
-                List<String[]> matchList = allMatches.get(patternNames[j]);
+                List<List<String>> matchList = allMatches.get(patternNames[j]);
                 if (j == patternNames.length - 1 && tmp >= matchList.size()) {
                     done = true;
                     break;
                 }
-                matches.put(patternNames[j], matchList.get((int) (tmp % matchList.size())));
+                int index = (int) (tmp % matchList.size());
+                matches.put(patternNames[j], matchList.get(index));
+                matches.put(patternNames[j] + "Index", index);
                 tmp = tmp / matchList.size();
             }
             
@@ -165,14 +165,14 @@ public class ExtractorMultipleRegex extends Extractor {
         GroovyScriptEngineImpl gse = new GroovyScriptEngineImpl();
         String stringUri = null;
         try {
-            stringUri = (String) gse.eval("\""+ StringEscapeUtils.escapeJava(getTemplate()) +"\"", matches);
+            stringUri = gse.eval("\""+ StringEscapeUtils.escapeJava(getTemplate()) +"\"", matches).toString();
         } catch (ScriptException e) {
             logUriError(new URIException(e.toString()), curi.getUURI(), stringUri);
             return;
         }
         try {
-            int max = getExtractorParameters().getMaxOutlinks();
-            Link.addRelativeToBase(curi, max, stringUri, 
+            Link.addRelativeToBase(curi, 
+                    getExtractorParameters().getMaxOutlinks(), stringUri, 
                     HTMLLinkContext.INFERRED_MISC, Hop.INFERRED);
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), stringUri);

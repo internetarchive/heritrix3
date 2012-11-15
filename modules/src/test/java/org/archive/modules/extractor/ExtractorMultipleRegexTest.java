@@ -20,6 +20,7 @@ package org.archive.modules.extractor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.archive.modules.CrawlURI;
@@ -29,12 +30,6 @@ import org.archive.util.Recorder;
 
 public class ExtractorMultipleRegexTest extends StringExtractorTestBase {
     final public static String[] VALID_TEST_DATA = new String[] {
-//        "<a href=\"http://www.slashdot.org\">yellow journalism</a> A",
-//        "http://www.slashdot.org",
-//
-//        "<img src=\"foo.gif\"> IMG",
-//        "http://www.archive.org/start/foo.gif",
-        
         // https://www.facebook.com/NorthCarolinaStateParks some time in the past
         "{\"profile_id\":143412869029,\"start\":1351753200,\"end" +
         "\":1354348799,\"query_type\":31,\"section_pagelet_id\":\"" +
@@ -81,18 +76,49 @@ public class ExtractorMultipleRegexTest extends StringExtractorTestBase {
         "http://nourl.com/dne",
     };
     
-        
     @Override
     protected String[] getValidTestData() {
         return VALID_TEST_DATA;
     }
 
+    /*
+     * Settings for extracting scroll-down ajax urls from facebook, as they are
+     * constructed as of Nov 14 2012.
+     * 
+     * <bean class="org.archive.modules.extractor.ExtractorMultipleRegex">
+     *  <property name="uriRegex" value="^https?://(?:www\.)?facebook\.com/[^/?]+$" />
+     *  <property name="contentRegexes">
+     *   <map>
+     *    <entry key="jsonBlob" value='\{("profile_id":\d+,[^}]+)\}' />
+     *    <entry key="ajaxpipeToken" value='"ajaxpipe_token":"([^"]+)"' />
+     *    <entry key="timeCutoff" value='"setTimeCutoff",[^,]*,\[(\d+)\]\]' />
+     *   </map>
+     *  </property>
+     *  <property name="template">
+     *   <value>/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&amp;ajaxpipe_token=${ajaxpipeToken[1]}&amp;no_script_path=1&amp;data=${java.net.URLEncoder.encode('{' + jsonBlob[1] + ',"time_cutoff":' + timeCutoff[1] + ',"force_no_friend_activity":false}', 'UTF-8')}&amp;__user=0&amp;__a=1&amp;__adt=${jsonBlobIndex+1}</value>
+     *   </property>
+     * </bean>
+     */
     @Override
     protected Extractor makeExtractor() {
-        ExtractorMultipleRegex result = new ExtractorMultipleRegex();
+        ExtractorMultipleRegex extractor = new ExtractorMultipleRegex();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
-        result.setLoggerModule(ulm);
-        return result;
+        extractor.setLoggerModule(ulm);
+        
+        extractor.setUriRegex("^https?://(?:www\\.)?facebook\\.com/[^/?]+$");
+        
+        LinkedHashMap<String, String> contentRegexes = new LinkedHashMap<String,String>();
+        contentRegexes.put("jsonBlob", "\\{(\"profile_id\":\\d+,[^}]+)\\}");
+        contentRegexes.put("ajaxpipeToken", "\"ajaxpipe_token\":\"([^\"]+)\"");
+        contentRegexes.put("timeCutoff", "\"setTimeCutoff\",[^,]*,\\[(\\d+)\\]\\]");
+        extractor.setContentRegexes(contentRegexes);
+        
+        extractor.setTemplate("/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet"
+                        + "?ajaxpipe=1&ajaxpipe_token=${ajaxpipeToken[1]}&no_script_path=1"
+                        + "&data=${java.net.URLEncoder.encode('{' + jsonBlob[1] + ',\"time_cutoff\":' + timeCutoff[1] + ',\"force_no_friend_activity\":false}', 'UTF-8')}"
+                        + "&__user=0&__a=1&__adt=${jsonBlobIndex+1}");
+
+        return extractor;
     }
 
     @Override
@@ -120,6 +146,5 @@ public class ExtractorMultipleRegexTest extends StringExtractorTestBase {
         
         return result;
     }
-
 
 }
