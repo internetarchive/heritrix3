@@ -150,28 +150,25 @@ implements ApplicationContextAware, InitializingBean {
      * @return ScriptEngine to use
      */
     protected synchronized ScriptEngine getEngine() {
-        if(sharedEngine==null 
-           && getIsolateThreads()) {
-            // initialize
-            sharedEngine = newEngine();
-        }
-        if(sharedEngine!=null) {
+        if (getIsolateThreads()) {
+            if (threadEngine.get() == null) {
+                threadEngine.set(newEngine());
+            }
+            return threadEngine.get();
+        } else {
+            if (sharedEngine == null) {
+                sharedEngine = newEngine();
+            }
             return sharedEngine;
         }
-        ScriptEngine engine = threadEngine.get(); 
-        if(engine==null) {
-            engine = newEngine(); 
-            threadEngine.set(engine);
-        }
-        return engine; 
     }
 
     /**
-     * Create a new ScriptEngine instance, preloaded with any supplied
-     * source file and the variables 'self' (this ScriptedDecideRule) 
-     * and 'context' (the ApplicationContext). 
+     * Create a new {@link ScriptEngine} instance, preloaded with any supplied
+     * source file and the variables 'self' (this {@link ScriptedProcessor}) and
+     * 'context' (the {@link ApplicationContext}).
      * 
-     * @return  the new Interpreter instance
+     * @return the new ScriptEngine instance
      */
     protected ScriptEngine newEngine() {
         ScriptEngine interpreter = new ScriptEngineManager().getEngineByName(engineName);
