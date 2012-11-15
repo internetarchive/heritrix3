@@ -22,11 +22,9 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -87,25 +85,34 @@ public class ExtractorMultipleRegex extends Extractor {
         return true;
     }
     
-    protected Template compileTemplate() {
-        try {
-            return new SimpleTemplateEngine(true).createTemplate(getTemplate());
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "problem with groovy template " + getTemplate(), e);
-            return null;
+    protected class MatchList extends LinkedList<GroupList> {
+        private static final long serialVersionUID = 1L;
+        public MatchList(String regex, CharSequence cs) {
+            Matcher matcher = TextUtils.getMatcher(regex, cs);
+            while (matcher.find()) {
+                add(new GroupList(matcher.toMatchResult()));
+            }
         }
-    }
-
+    };
+    protected class GroupList extends LinkedList<String> {
+        private static final long serialVersionUID = 1L;
+        public GroupList(MatchResult matchResult) {
+            for (int i = 0; i <= matchResult.groupCount(); i++) {
+                add(matchResult.group(i));
+            }
+        }
+    };
+    
     @Override
     public void extract(CrawlURI curi) {
         // { regex name -> list of matches }
-        Map<String, List<MatchResult>> matchLists;
+        Map<String, MatchList> matchLists;
 
         // uri regex
         Matcher matcher = TextUtils.getMatcher(getUriRegex(), curi.getURI());
         if (matcher.matches()) {
-            matchLists = new LinkedHashMap<String, List<MatchResult>>();
-            matchLists.put("uriRegex", Arrays.asList(matcher.toMatchResult()));
+            matchLists = new LinkedHashMap<String, ExtractorMultipleRegex.MatchList>();
+            // XXX matchLists.put("uriRegex", );
         } else {
             return; // if uri regex doesn't match, we're done
         }
@@ -123,22 +130,19 @@ public class ExtractorMultipleRegex extends Extractor {
         // run all the regexes on the content and cache results
         for (String patternName: getContentRegexes().keySet()) {
             String regex = getContentRegexes().get(patternName);
-            matcher = TextUtils.getMatcher(regex, cs);
-            // populate the list of finds for this patternName
-            List<MatchResult> matchList = new LinkedList<MatchResult>();
-            while (matcher.find()) {
-                matchList.add(matcher.toMatchResult());
-            }
+            MatchList matchList = new MatchList(regex, cs);
             if (matchList.isEmpty()) {
-                // regex didn't match, so we can stop processing immediately
-                return;
+                return; // no match found for regex, so we can stop now
             }
             matchLists.put(patternName, matchList);
         }
 
-        Template groovyTemplate = compileTemplate();
-        if (groovyTemplate == null) {
-            return; // error has already been logged
+        Template groovyTemplate;
+        try {
+            groovyTemplate = new SimpleTemplateEngine().createTemplate(getTemplate());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "problem with groovy template " + getTemplate(), e);
+            return;
         }
         
         /*
@@ -147,7 +151,7 @@ public class ExtractorMultipleRegex extends Extractor {
          * matches, thus 36 outlinks to extracted.
          */
         int numOutlinks = 1;
-        for (List<MatchResult> matchList: matchLists.values()) {
+        for (MatchList matchList: matchLists.values()) {
             numOutlinks *= matchList.size();
         }
         
@@ -160,25 +164,17 @@ public class ExtractorMultipleRegex extends Extractor {
     
     // bindings are the variables available to populate the template
     // { String patternName => List<String> groups }  
-    protected Map<String,Object> makeBindings(Map<String, List<MatchResult>> allMatches,
+    protected Map<String,Object> makeBindings(Map<String, MatchList> matchLists,
             String[] regexNames, int outlinkIndex) {
         Map<String,Object> bindings = new LinkedHashMap<String,Object>();
 
         int tmp = outlinkIndex;
         for (int regexIndex = 0; regexIndex < regexNames.length; regexIndex++) {
-            List<MatchResult> matchList = allMatches.get(regexNames[regexIndex]);
+            MatchList matchList = matchLists.get(regexNames[regexIndex]);
             
             int matchIndex = tmp % matchList.size();
             
-            MatchResult matchResult = matchList.get(matchIndex);
-            
-            // include group 0
-            String[] matchGroups = new String[matchResult.groupCount()+1];
-            for (int groupIndex = 0; groupIndex <= matchResult.groupCount(); groupIndex++) {
-                matchGroups[groupIndex] = matchResult.group(groupIndex);
-            }
-            
-            bindings.put(regexNames[regexIndex], matchGroups);
+            bindings.put(regexNames[regexIndex], matchList.get(matchIndex));
             
             // make the index of this match available to the template as well
             bindings.put(regexNames[regexIndex] + "Index", matchIndex);
