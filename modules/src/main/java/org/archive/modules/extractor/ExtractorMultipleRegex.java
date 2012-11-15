@@ -93,6 +93,11 @@ public class ExtractorMultipleRegex extends Extractor {
                 add(new GroupList(matcher.toMatchResult()));
             }
         }
+        public MatchList(GroupList... groupList) {
+            for (GroupList x: groupList) {
+                add(x);
+            }
+        }
     };
     protected class GroupList extends LinkedList<String> {
         private static final long serialVersionUID = 1L;
@@ -111,8 +116,8 @@ public class ExtractorMultipleRegex extends Extractor {
         // uri regex
         Matcher matcher = TextUtils.getMatcher(getUriRegex(), curi.getURI());
         if (matcher.matches()) {
-            matchLists = new LinkedHashMap<String, ExtractorMultipleRegex.MatchList>();
-            // XXX matchLists.put("uriRegex", );
+            matchLists = new LinkedHashMap<String,MatchList>();
+            matchLists.put("uriRegex", new MatchList(new GroupList(matcher)));
         } else {
             return; // if uri regex doesn't match, we're done
         }
