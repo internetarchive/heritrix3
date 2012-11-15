@@ -18,6 +18,9 @@
  */
 package org.archive.modules.extractor;
 
+import groovy.text.SimpleTemplateEngine;
+import groovy.text.Template;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,17 +32,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import javax.script.Bindings;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
-
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.util.TextUtils;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 public class ExtractorMultipleRegex extends Extractor {
 
@@ -90,6 +88,21 @@ public class ExtractorMultipleRegex extends Extractor {
         }
         return true;
     }
+    
+    protected Template compileTemplate() {
+        try {
+            return new SimpleTemplateEngine().createTemplate(getTemplate());
+        } catch (CompilationFailedException e) {
+            LOGGER.log(Level.SEVERE, "problem with template", e);
+            return null;
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, "problem with template", e);
+            return null;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "script problem", e);
+            return null;
+        }
+    }
 
     @Override
     public void extract(CrawlURI curi) {
@@ -115,29 +128,34 @@ public class ExtractorMultipleRegex extends Extractor {
             cs = curi.getRecorder().getContentReplayCharSequence();
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
-            LOGGER.log(Level.WARNING,"Failed get of replay char sequence in " +
-                Thread.currentThread().getName(), e);
+            LOGGER.log(Level.WARNING, "Failed get of replay char sequence in "
+                    + Thread.currentThread().getName(), e);
             return;
         }
         
         // the names for regexes given in the config
         Set<String> names = getContentRegexes().keySet();
         for (String patternName: names) {
-            // the matcher for this patternName against the content
-            Matcher namedMatcher = TextUtils.getMatcher(getContentRegexes().get(patternName), cs);
+            String regex = getContentRegexes().get(patternName);
+            Matcher matcher = TextUtils.getMatcher(regex, cs);
             // populate the list of finds for this patternName
             List<List<String>> foundList = new LinkedList<List<String>>();
-            while (namedMatcher.find()) {
+            while (matcher.find()) {
                 LinkedList<String> groups = new LinkedList<String>();
                 // include group 0, the full pattern match
-                for (int i = 0; i <= namedMatcher.groupCount(); i++) {
-                    groups.add(namedMatcher.group(i));
+                for (int i = 0; i <= matcher.groupCount(); i++) {
+                    groups.add(matcher.group(i));
                 }
                 foundList.add(groups);
             }
             allMatches.put(patternName, foundList);
         }
-        
+
+        Template groovyTemplate = compileTemplate();
+        if (groovyTemplate == null) {
+            // already logged error
+            return;
+        }
         
         long i = 0;
         boolean done = false;
@@ -146,7 +164,7 @@ public class ExtractorMultipleRegex extends Extractor {
             
             // bindings are the variables available to populate the template
             // { String patternName => List<String> groups }  
-            Bindings bindings = new SimpleBindings();
+            Map<String,Object> bindings = new LinkedHashMap<String,Object>();
             String[] patternNames = allMatches.keySet().toArray(new String[0]);
             for (int j = 0; j < patternNames.length; j++) {
                 List<List<String>> matchList = allMatches.get(patternNames[j]);
@@ -166,28 +184,22 @@ public class ExtractorMultipleRegex extends Extractor {
             }
             
             if (!done) {
-                addOutlink(curi, bindings);
+                addOutlink(curi, groovyTemplate, bindings);
             }
             
             i++;
         }
     }
     
-    protected void addOutlink(CrawlURI curi, Bindings matches) {
-        GroovyScriptEngineImpl gse = new GroovyScriptEngineImpl();
-        String stringUri = null;
-        try {
-            stringUri = gse.eval("\""+ StringEscapeUtils.escapeJava(getTemplate()) +"\"", matches).toString();
-        } catch (ScriptException e) {
-            logUriError(new URIException(e.toString()), curi.getUURI(), stringUri);
-            return;
-        }
+    protected void addOutlink(CrawlURI curi, Template groovyTemplate, Map<String, Object> bindings) {
+        String outlinkUri = groovyTemplate.make(bindings).toString();
+        
         try {
             Link.addRelativeToBase(curi, 
-                    getExtractorParameters().getMaxOutlinks(), stringUri, 
+                    getExtractorParameters().getMaxOutlinks(), outlinkUri, 
                     HTMLLinkContext.INFERRED_MISC, Hop.INFERRED);
         } catch (URIException e) {
-            logUriError(e, curi.getUURI(), stringUri);
+            logUriError(e, curi.getUURI(), outlinkUri);
         }
     }
     
