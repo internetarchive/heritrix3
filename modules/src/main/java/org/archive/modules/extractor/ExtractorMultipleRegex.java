@@ -98,13 +98,15 @@ public class ExtractorMultipleRegex extends Extractor {
         if (!m.matches()) {
             return;
         }
+        
+        // our data structure to prepopulate with matches for nested iteration
+        Map<String,List<List<String>>> allMatches = new LinkedHashMap<String, List<List<String>>>();
+        
         List<String> uriRegexGroups = new LinkedList<String>();
         for(int i = 0; i <= m.groupCount(); i++) {
             uriRegexGroups.add(m.group(i));
         }
-        // our data structure to prepopulate with matches for nested iteration
-        LinkedHashMap<String,List<List<String>>> allMatches = new LinkedHashMap<String, List<List<String>>>();
-        LinkedList<List<String>> uriRegexMatchList = new LinkedList<List<String>>();
+        List<List<String>> uriRegexMatchList = new LinkedList<List<String>>();
         uriRegexMatchList.add(uriRegexGroups);
         allMatches.put("uriRegex", uriRegexMatchList);
 
@@ -117,16 +119,17 @@ public class ExtractorMultipleRegex extends Extractor {
                 Thread.currentThread().getName(), e);
             return;
         }
+        
         // the names for regexes given in the config
         Set<String> names = getContentRegexes().keySet();
-        for (String patternName : names) {
+        for (String patternName: names) {
             // the matcher for this patternName against the content
             Matcher namedMatcher = TextUtils.getMatcher(getContentRegexes().get(patternName), cs);
             // populate the list of finds for this patternName
             List<List<String>> foundList = new LinkedList<List<String>>();
             while (namedMatcher.find()) {
-                // +1 to include the full match in addition to the groups
                 LinkedList<String> groups = new LinkedList<String>();
+                // include group 0, the full pattern match
                 for (int i = 0; i <= namedMatcher.groupCount(); i++) {
                     groups.add(namedMatcher.group(i));
                 }
@@ -135,26 +138,35 @@ public class ExtractorMultipleRegex extends Extractor {
             allMatches.put(patternName, foundList);
         }
         
+        
         long i = 0;
         boolean done = false;
         while (!done) {
             long tmp = i;
-            SimpleBindings matches = new SimpleBindings();
+            
+            // bindings are the variables available to populate the template
+            // { String patternName => List<String> groups }  
+            Bindings bindings = new SimpleBindings();
             String[] patternNames = allMatches.keySet().toArray(new String[0]);
             for (int j = 0; j < patternNames.length; j++) {
                 List<List<String>> matchList = allMatches.get(patternNames[j]);
+                
                 if (j == patternNames.length - 1 && tmp >= matchList.size()) {
                     done = true;
                     break;
                 }
+                
                 int index = (int) (tmp % matchList.size());
-                matches.put(patternNames[j], matchList.get(index));
-                matches.put(patternNames[j] + "Index", index);
+                bindings.put(patternNames[j], matchList.get(index));
+                
+                // make the index of this match available to the template as well
+                bindings.put(patternNames[j] + "Index", index);
+                
                 tmp = tmp / matchList.size();
             }
             
             if (!done) {
-                addOutlink(curi, matches);
+                addOutlink(curi, bindings);
             }
             
             i++;
