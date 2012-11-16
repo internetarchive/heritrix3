@@ -152,7 +152,7 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
         e.setUriRegex("^https?://(?:www\\.)?facebook\\.com/[^/?]+$");
         
         LinkedHashMap<String, String> contentRegexes = new LinkedHashMap<String,String>();
-        contentRegexes.put("jsonBlob", "\\{(\"profile_id\":\\d+,[^}]+)\\}");
+        contentRegexes.put("jsonBlob", "\\[\"TimelineContentLoader\",\"registerTimePeriod\",[^,]+,[^,]+,[^,]+,\\{(\"profile_id\":[^}]+)\\},false,null,(\\d+),");
         contentRegexes.put("ajaxpipeToken", "\"ajaxpipe_token\":\"([^\"]+)\"");
         contentRegexes.put("timeCutoff", "\"setTimeCutoff\",[^,]*,\\[(\\d+)\\]\\]");
         e.setContentRegexes(contentRegexes);
@@ -160,7 +160,7 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
         e.setTemplate("/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet"
                         + "?ajaxpipe=1&ajaxpipe_token=${ajaxpipeToken[1]}&no_script_path=1"
                         + "&data=${java.net.URLEncoder.encode('{' + jsonBlob[1] + ',\"time_cutoff\":' + timeCutoff[1] + ',\"force_no_friend_activity\":false}', 'UTF-8')}"
-                        + "&__user=0&__a=1&__adt=${jsonBlobIndex}");
+                        + "&__user=0&__a=1&__adt=${jsonBlob[2]}");
 
         return e;
     }
@@ -188,6 +188,10 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
                     + testUri.getOutLinks().contains(expectedLink)
                     + " expected: " + expectedLink.getDestination());
         }
+        
+        for (Link x: testUri.getOutLinks()) {
+            System.out.println("extracted: " + x.getDestination());
+        }
     }
     
     public static void main(String[] args) throws IOException {
@@ -200,9 +204,10 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
 //        }
         PrintStream out = new PrintStream("/tmp/x.out");
         for (String x: TEST_CONTENT_CHUNKS) {
-            if (x.contains("TimelineContentLoader")) {
-                out.println(x);
-            }
+            out.println(x);
+//            if (x.contains("TimelineContentLoader")) {
+//                out.println(x);
+//            }
         }
     }
 
