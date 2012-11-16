@@ -18,8 +18,6 @@
  */
 package org.archive.modules.extractor;
 
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.LinkedHashMap;
 
 import org.archive.modules.CrawlURI;
@@ -43,8 +41,13 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
         "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1293868800%2C%22end%22%3A1325404799%2C%22query_type%22%3A8%2C%22section_pagelet_id%22%3A%22pagelet_timeline_year_last%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=4",
         "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1262332800%2C%22end%22%3A1293868799%2C%22query_type%22%3A8%2C%22section_pagelet_id%22%3A%22pagelet_timeline_year_2010%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=5",
         "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1230796800%2C%22end%22%3A1262332799%2C%22query_type%22%3A8%2C%22section_pagelet_id%22%3A%22pagelet_timeline_year_2009%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=6",
-        "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1291190400%2C%22end%22%3A1293868799%2C%22query_type%22%3A25%2C%22section_pagelet_id%22%3A%22pagelet_timeline_month_all_2010_12%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22parent_key%22%3A%22year_2010%22%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=7",
-        "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1288594800%2C%22end%22%3A1291190399%2C%22query_type%22%3A25%2C%22section_pagelet_id%22%3A%22pagelet_timeline_month_all_2010_11%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22parent_key%22%3A%22year_2010%22%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=8" 
+        
+        /*
+         * these next 2 happened when I scolled far enough, but it appears 
+         * they can't be found using the same technique as the earlier ones
+         */
+        // "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1291190400%2C%22end%22%3A1293868799%2C%22query_type%22%3A25%2C%22section_pagelet_id%22%3A%22pagelet_timeline_month_all_2010_12%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22parent_key%22%3A%22year_2010%22%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=7",
+        // "https://www.facebook.com/ajax/pagelet/generic.php/ProfileTimelineSectionPagelet?ajaxpipe=1&ajaxpipe_token=AXiCHz3XOZzlpLVQ&no_script_path=1&data=%7B%22profile_id%22%3A143412869029%2C%22start%22%3A1288594800%2C%22end%22%3A1291190399%2C%22query_type%22%3A25%2C%22section_pagelet_id%22%3A%22pagelet_timeline_month_all_2010_11%22%2C%22load_immediately%22%3Afalse%2C%22time_cutoff%22%3A1351254247%2C%22parent_key%22%3A%22year_2010%22%2C%22force_no_friend_activity%22%3Afalse%7D&__user=0&__a=1&__adt=8" 
     };
 
     /*
@@ -183,32 +186,7 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
             Link expectedLink = new Link(testUri.getUURI(), 
                     UURIFactory.getInstance(expectedLinkString),
                     HTMLLinkContext.INFERRED_MISC, Hop.INFERRED);
-            // assertTrue(testUri.getOutLinks().contains(expectedLink));
-            System.out.println("found="
-                    + testUri.getOutLinks().contains(expectedLink)
-                    + " expected: " + expectedLink.getDestination());
-        }
-        
-        for (Link x: testUri.getOutLinks()) {
-            System.out.println("extracted: " + x.getDestination());
+            assertTrue(testUri.getOutLinks().contains(expectedLink));
         }
     }
-    
-    public static void main(String[] args) throws IOException {
-//        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/tmp/input.txt"), "UTF-8"));
-//        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-//            String escapedLine = StringEscapeUtils.escapeJava(line.trim());
-//            System.out.print("\"");
-//            System.out.print(escapedLine);
-//            System.out.println("\\n\", ");
-//        }
-        PrintStream out = new PrintStream("/tmp/x.out");
-        for (String x: TEST_CONTENT_CHUNKS) {
-            out.println(x);
-//            if (x.contains("TimelineContentLoader")) {
-//                out.println(x);
-//            }
-        }
-    }
-
 }
