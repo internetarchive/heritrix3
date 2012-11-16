@@ -90,7 +90,7 @@ public class ExtractorMultipleRegex extends Extractor {
         public MatchList(String regex, CharSequence cs) {
             Matcher matcher = TextUtils.getMatcher(regex, cs);
             while (matcher.find()) {
-                add(new GroupList(matcher.toMatchResult()));
+                add(new GroupList(matcher));
             }
         }
         public MatchList(GroupList... groupList) {
@@ -133,13 +133,13 @@ public class ExtractorMultipleRegex extends Extractor {
         }
         
         // run all the regexes on the content and cache results
-        for (String patternName: getContentRegexes().keySet()) {
-            String regex = getContentRegexes().get(patternName);
+        for (String regexName: getContentRegexes().keySet()) {
+            String regex = getContentRegexes().get(regexName);
             MatchList matchList = new MatchList(regex, cs);
             if (matchList.isEmpty()) {
                 return; // no match found for regex, so we can stop now
             }
-            matchLists.put(patternName, matchList);
+            matchLists.put(regexName, matchList);
         }
 
         Template groovyTemplate;
@@ -176,14 +176,8 @@ public class ExtractorMultipleRegex extends Extractor {
         int tmp = outlinkIndex;
         for (int regexIndex = 0; regexIndex < regexNames.length; regexIndex++) {
             MatchList matchList = matchLists.get(regexNames[regexIndex]);
-            
             int matchIndex = tmp % matchList.size();
-            
             bindings.put(regexNames[regexIndex], matchList.get(matchIndex));
-            
-            // make the index of this match available to the template as well
-            bindings.put(regexNames[regexIndex] + "Index", matchIndex);
-            
             tmp = tmp / matchList.size();
         }
         
