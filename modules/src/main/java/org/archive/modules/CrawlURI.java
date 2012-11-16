@@ -1083,9 +1083,9 @@ implements Reporter, Serializable, OverlayContext {
      * The LinksScoper processor converts Link instances in this collection
      * to CrawlURI instances. 
      */
-    protected transient Collection<Link> outLinks = new HashSet<Link>();
+    protected transient Collection<Link> outLinks = new LinkedHashSet<Link>();
     
-    protected transient Collection<CrawlURI> outCandidates = new HashSet<CrawlURI>();
+    protected transient Collection<CrawlURI> outCandidates = new LinkedHashSet<CrawlURI>();
     
     /**
      * Returns discovered links.  The returned collection might be empty if
