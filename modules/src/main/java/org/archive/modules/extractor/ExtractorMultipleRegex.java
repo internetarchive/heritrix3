@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.MatchResult;
@@ -34,6 +36,7 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
+import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 
 /**
@@ -108,7 +111,6 @@ public class ExtractorMultipleRegex extends Extractor {
     {
         setContentRegexes(new LinkedHashMap<String, String>());
     }
-    
     /**
      * A map of { name => regex }. The extractor looks for matches for each
      * regular expression in the content of the URI being processed. If any of
@@ -129,7 +131,6 @@ public class ExtractorMultipleRegex extends Extractor {
     {
         setTemplate("");
     }
-
     /**
      * URI-building template. Provides variable interpolation using the familiar
      * ${...} syntax. The template is evaluated for each combination of regular
@@ -151,6 +152,44 @@ public class ExtractorMultipleRegex extends Extractor {
     public String getTemplate() {
         return (String) kp.get("template");
     }
+    
+    /*
+     * Cache of groovy templates because they're a little expensive to create.
+     * Needs to be a map rather than a single value to handle overrides.
+     * 
+     * XXX confirm Template is thread safe
+     */
+    protected ConcurrentHashMap<String,Template> groovyTemplates = new ConcurrentHashMap<String, Template>();
+    protected Template groovyTemplate() {
+        Template groovyTemplate = groovyTemplates.get(getTemplate());
+        if (groovyTemplate == null) {
+            try {
+                long start = System.nanoTime();
+                SimpleTemplateEngine engine = new SimpleTemplateEngine();
+                long elapsed = System.nanoTime() - start;
+                newEngineElapsedNs.addAndGet(elapsed);
+                newEngineCount.incrementAndGet();
+                
+                start = System.nanoTime();
+                groovyTemplate = engine.createTemplate(getTemplate());
+                elapsed = System.nanoTime() - start;
+                createTemplateElapsedNs.addAndGet(elapsed);
+                createTemplateCount.incrementAndGet();
+                
+                String elapsedStr = ArchiveUtils.formatMillisecondsToConventional(newEngineElapsedNs.get() / 1000000l);
+                LOGGER.info(getBeanName() + " - " + newEngineCount + " new SimpleTemplateEngine() in " + elapsedStr);
+                elapsedStr = ArchiveUtils.formatMillisecondsToConventional(createTemplateElapsedNs.get() / 1000000l);
+                LOGGER.info(getBeanName() + " - " + createTemplateCount + " createTemplate() in " + elapsedStr);
+
+                groovyTemplates.put(getTemplate(), groovyTemplate);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "problem with groovy template " + getTemplate(), e);
+            }
+        }
+        
+        return groovyTemplate;
+    }
+    
     
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
@@ -187,6 +226,11 @@ public class ExtractorMultipleRegex extends Extractor {
         }
     };
     
+    private AtomicLong newEngineElapsedNs = new AtomicLong(0l);
+    private AtomicLong newEngineCount = new AtomicLong(0l);
+    private AtomicLong createTemplateElapsedNs = new AtomicLong(0l);
+    private AtomicLong createTemplateCount = new AtomicLong(0l);
+    
     @Override
     public void extract(CrawlURI curi) {
         // { regex name -> list of matches }
@@ -221,17 +265,6 @@ public class ExtractorMultipleRegex extends Extractor {
             matchLists.put(regexName, matchList);
         }
 
-        // XXX how expensive is this? should we cache it? would we need a
-        // separate one per thread? what about making sure we have the right one
-        // in case of a sheet overlay?
-        Template groovyTemplate;
-        try {
-            groovyTemplate = new SimpleTemplateEngine().createTemplate(getTemplate());
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "problem with groovy template " + getTemplate(), e);
-            return;
-        }
-        
         /*
          * If we have 3 regexes, the first one has 1 match, second has 12
          * matches, third has 3 matches, then we have 36 combinations of
@@ -245,7 +278,7 @@ public class ExtractorMultipleRegex extends Extractor {
         String[] regexNames = matchLists.keySet().toArray(new String[0]);
         for (int i = 0; i < numOutlinks; i++) {
             Map<String, Object> bindings = makeBindings(matchLists, regexNames, i);
-            addOutlink(curi, groovyTemplate, bindings);
+            addOutlink(curi, bindings);
         }
     }
     
@@ -266,8 +299,8 @@ public class ExtractorMultipleRegex extends Extractor {
         return bindings;
     }
     
-    protected void addOutlink(CrawlURI curi, Template groovyTemplate, Map<String, Object> bindings) {
-        String outlinkUri = groovyTemplate.make(bindings).toString();
+    protected void addOutlink(CrawlURI curi, Map<String, Object> bindings) {
+        String outlinkUri = groovyTemplate().make(bindings).toString();
         
         try {
             Link.addRelativeToBase(curi, 
@@ -277,5 +310,4 @@ public class ExtractorMultipleRegex extends Extractor {
             logUriError(e, curi.getUURI(), outlinkUri);
         }
     }
-    
 }
