@@ -26,7 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.MatchResult;
@@ -36,7 +35,6 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.TextUtils;
 
 /**
@@ -156,31 +154,15 @@ public class ExtractorMultipleRegex extends Extractor {
     /*
      * Cache of groovy templates because they're a little expensive to create.
      * Needs to be a map rather than a single value to handle overrides.
-     * 
      * XXX confirm Template is thread safe
      */
     protected ConcurrentHashMap<String,Template> groovyTemplates = new ConcurrentHashMap<String, Template>();
     protected Template groovyTemplate() {
         Template groovyTemplate = groovyTemplates.get(getTemplate());
+        
         if (groovyTemplate == null) {
             try {
-                long start = System.nanoTime();
-                SimpleTemplateEngine engine = new SimpleTemplateEngine();
-                long elapsed = System.nanoTime() - start;
-                newEngineElapsedNs.addAndGet(elapsed);
-                newEngineCount.incrementAndGet();
-                
-                start = System.nanoTime();
-                groovyTemplate = engine.createTemplate(getTemplate());
-                elapsed = System.nanoTime() - start;
-                createTemplateElapsedNs.addAndGet(elapsed);
-                createTemplateCount.incrementAndGet();
-                
-                String elapsedStr = ArchiveUtils.formatMillisecondsToConventional(newEngineElapsedNs.get() / 1000000l);
-                LOGGER.info(getBeanName() + " - " + newEngineCount + " new SimpleTemplateEngine() in " + elapsedStr);
-                elapsedStr = ArchiveUtils.formatMillisecondsToConventional(createTemplateElapsedNs.get() / 1000000l);
-                LOGGER.info(getBeanName() + " - " + createTemplateCount + " createTemplate() in " + elapsedStr);
-
+                groovyTemplate = new SimpleTemplateEngine().createTemplate(getTemplate());
                 groovyTemplates.put(getTemplate(), groovyTemplate);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "problem with groovy template " + getTemplate(), e);
@@ -225,11 +207,6 @@ public class ExtractorMultipleRegex extends Extractor {
             }
         }
     };
-    
-    private AtomicLong newEngineElapsedNs = new AtomicLong(0l);
-    private AtomicLong newEngineCount = new AtomicLong(0l);
-    private AtomicLong createTemplateElapsedNs = new AtomicLong(0l);
-    private AtomicLong createTemplateCount = new AtomicLong(0l);
     
     @Override
     public void extract(CrawlURI curi) {
@@ -278,7 +255,7 @@ public class ExtractorMultipleRegex extends Extractor {
         String[] regexNames = matchLists.keySet().toArray(new String[0]);
         for (int i = 0; i < numOutlinks; i++) {
             Map<String, Object> bindings = makeBindings(matchLists, regexNames, i);
-            addOutlink(curi, bindings);
+            buildAndAddOutlink(curi, bindings);
         }
     }
     
@@ -299,7 +276,7 @@ public class ExtractorMultipleRegex extends Extractor {
         return bindings;
     }
     
-    protected void addOutlink(CrawlURI curi, Map<String, Object> bindings) {
+    protected void buildAndAddOutlink(CrawlURI curi, Map<String, Object> bindings) {
         String outlinkUri = groovyTemplate().make(bindings).toString();
         
         try {
