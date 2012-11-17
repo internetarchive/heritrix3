@@ -22,7 +22,6 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -37,6 +36,54 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.util.TextUtils;
 
+/**
+ * An extractor that uses regular expressions to find strings in the fetched
+ * content of a URI, and constructs outlink URIs from those strings.
+ * 
+ * <p>
+ * The crawl operator configures these parameters:
+ * 
+ * <ul>
+ * <li> <code>uriRegex</code>: a regular expression to match against the url</li>
+ * <li> <code>contentRegexes</code> a map of named regular expressions { name =>
+ * regex } to run against the content</li>
+ * <li> <code>template</code>: the template for constructing the outlinks</li>
+ * </ul>
+ * 
+ * <p>
+ * The URI is checked against <code>uriRegex</code>. The match is done using
+ * {@link Matcher#matches()}, so the full URI string must match, not just a
+ * substring. If it does match, then the matching groups are available to the
+ * URI-building template as <code>${uriRegex[n]}</code>. If it does not match,
+ * processing of the URI is finished and no outlinks are extracted.
+ * 
+ * <p>
+ * Then the extractor looks for matches for each of the
+ * <code>contentRegexes</code> in the fetched content. If any of the regular
+ * expressions produce no matches, processing of the URI is finished and no
+ * outlinks are extracted. If at least one match is found for each regular
+ * expression, then an outlink is constructed, using the URI-building template,
+ * for every combination of matches. The matching groups are available to the
+ * template as <code>${name[n]}</code>.
+ * 
+ * <p>
+ * Outlinks are constructed using the URI-building <code>template</code>.
+ * Variable interpolation using the familiar ${...} syntax is supported. The
+ * template is evaluated for each combination of regular expression matches
+ * found, and the matching groups are available to the template as
+ * <code>${regexName[n]}</code>. An example template might look like:
+ * <code>http://example.org/${uriRegex[1]}/foo?bar=${myContentRegex[0]}</code>.
+ * 
+ * <p>
+ * The template is evaluated as a Groovy Template, so further capabilities
+ * beyond simple variable interpolation are available.
+ * 
+ * @see <a
+ *      href="http://groovy.codehaus.org/Groovy+Templates">http://groovy.codehaus.org/Groovy+Templates</a>
+ * 
+ * @contributor nlevitt
+ * @contributor travis
+ */
 public class ExtractorMultipleRegex extends Extractor {
 
     private static final Logger LOGGER =
@@ -45,18 +92,34 @@ public class ExtractorMultipleRegex extends Extractor {
     {
         setUriRegex("");
     }
-    public void setUriRegex(String reg) {
-        kp.put("uriRegex", reg);
+    /**
+     * Regular expression against which to match the URI. If the URI matches,
+     * then the matching groups are available to the URI-building template as
+     * <code>${uriRegex[n]}</code>. If it does not match, processing of this URI
+     * is finished and no outlinks are extracted.
+     */
+    public void setUriRegex(String uriRegex) {
+        kp.put("uriRegex", uriRegex);
     }
     public String getUriRegex() {
         return (String) kp.get("uriRegex");
     }
     
     {
-        setContentRegexes(new HashMap<String,String>());
+        setContentRegexes(new LinkedHashMap<String, String>());
     }
-    public void setContentRegexes(Map<String, String> regexes) {
-        kp.put("contentRegexes", regexes);
+    
+    /**
+     * A map of { name => regex }. The extractor looks for matches for each
+     * regular expression in the content of the URI being processed. If any of
+     * the regular expressions produce no matches, processing of the URI is
+     * finished and no outlinks are extracted. If at least one match is found
+     * for each regular expression, then an outlink is constructed for every
+     * combination of matches. The matching groups are available to the
+     * URI-building template as <code>${name[n]}</code>.
+     */
+    public void setContentRegexes(Map<String, String> contentRegexes) {
+        kp.put("contentRegexes", contentRegexes);
     }
     @SuppressWarnings("unchecked")
     public Map<String, String> getContentRegexes() {
@@ -66,11 +129,27 @@ public class ExtractorMultipleRegex extends Extractor {
     {
         setTemplate("");
     }
+
+    /**
+     * URI-building template. Provides variable interpolation using the familiar
+     * ${...} syntax. The template is evaluated for each combination of regular
+     * expression matches found, and the matching groups are available to the
+     * template as <code>${regexName[n]}</code>. An example template might look
+     * like:
+     * <code>http://example.org/${uriRegex[1]}/foo?bar=${myContentRegex[0]}</code>.
+     * 
+     * <p>
+     * The template is evaluated as a Groovy Template, so further capabilities
+     * beyond simple variable interpolation are available.
+     * 
+     * @see <a
+     *      href="http://groovy.codehaus.org/Groovy+Templates">http://groovy.codehaus.org/Groovy+Templates</a>
+     */
+    public void setTemplate(String template) {
+        kp.put("template", template);
+    }
     public String getTemplate() {
         return (String) kp.get("template");
-    }
-    public void setTemplate(String templ) {
-        kp.put("template", templ);
     }
     
     @Override
@@ -142,6 +221,9 @@ public class ExtractorMultipleRegex extends Extractor {
             matchLists.put(regexName, matchList);
         }
 
+        // XXX how expensive is this? should we cache it? would we need a
+        // separate one per thread? what about making sure we have the right one
+        // in case of a sheet overlay?
         Template groovyTemplate;
         try {
             groovyTemplate = new SimpleTemplateEngine().createTemplate(getTemplate());
