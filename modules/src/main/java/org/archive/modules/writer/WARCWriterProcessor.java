@@ -302,7 +302,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         setTotalBytesWritten(getTotalBytesWritten() + (writer.getPosition() - startPosition));
 
         curi.addExtraInfo("warcFilename", writer.getFilenameWithoutOccupiedSuffix());
-        // curi.addExtraInfo("warcOffset", startPosition);
+        curi.addExtraInfo("warcFileOffset", startPosition);
 
         // history for uri-based dedupe
         Map<String,Object>[] history = curi.getFetchHistory();
@@ -704,7 +704,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
          * content."
          */
         headers.addLabelValue(HEADER_KEY_REFERS_TO, 
-                curi.getContentDigestHistory().get(A_WARC_RECORD_ID).toString());
+                "<" + curi.getContentDigestHistory().get(A_WARC_RECORD_ID) + ">");
         headers.addLabelValue(HEADER_KEY_REFERS_TO_TARGET_URI, 
                 curi.getContentDigestHistory().get(A_ORIGINAL_URL).toString());
         headers.addLabelValue(HEADER_KEY_REFERS_TO_DATE, 

@@ -8,6 +8,7 @@
 	<classpathentry kind="src" path="commons/src/test/java"/>
 	<classpathentry kind="src" path="dist/src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="var" path="M2_REPO/org/beanshell/bsh/2.0b5/bsh-2.0b5.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-sources.jar"/>
@@ -40,7 +41,7 @@
 	<classpathentry kind="var" path="M2_REPO/org/restlet/org.restlet/1.1.10/org.restlet-1.1.10.jar" sourcepath="/M2_REPO/org/restlet/org.restlet/1.1.10/org.restlet-1.1.10-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.10/com.noelios.restlet-1.1.10.jar" sourcepath="/M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.10/com.noelios.restlet-1.1.10-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.10/com.noelios.restlet.ext.jetty-1.1.10.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3.jar" sourcepath="/M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3-sources.jar"/>
 	<classpathentry kind="lib" path="engine/src/main/resources"/>
 	<classpathentry kind="lib" path="modules/src/main/resources"/>
 	<classpathentry kind="lib" path="commons/src/main/resources"/>
@@ -62,4 +63,9 @@
 	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6.jar" sourcepath="/M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar" sourcepath="/M2_REPO/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1-sources.jar"/>
 	<classpathentry kind="output" path="eclipse-build"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-ajp/6.1.26/jetty-ajp-6.1.26.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.26/jetty-sslengine-6.1.26.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
 </classpath>
