@@ -24,11 +24,15 @@ import java.io.InterruptedIOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,13 +54,11 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.archive.checkpointing.Checkpoint;
-import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessorTestBase;
-import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
@@ -352,7 +354,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         }
     }
 
-    protected FetchHTTP getFetcher() throws IOException {
+    protected FetchHTTP fetcher() throws IOException {
         if (fetcher == null) { 
             fetcher = makeModule();
         }
@@ -458,16 +460,16 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testDefaults() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         runDefaultChecks(curi);
     }
 
     public void testAcceptHeaders() throws Exception {
         ensureHttpServers();
         List<String> headers = Arrays.asList("header1: value1", "header2: value2");
-        getFetcher().setAcceptHeaders(headers);
+        fetcher().setAcceptHeaders(headers);
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
 
         runDefaultChecks(curi, "acceptHeaders");
         
@@ -486,7 +488,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         // second request to see if cookie is sent
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         runDefaultChecks(curi);
         
         String requestString = httpRequestString(curi);
@@ -496,12 +498,12 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testIgnoreCookies() throws Exception {
         ensureHttpServers();
 
-        getFetcher().setIgnoreCookies(true);
+        fetcher().setIgnoreCookies(true);
         checkSetCookieURI();
 
         // second request to see if cookie is NOT sent
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         runDefaultChecks(curi);
 
         String requestString = httpRequestString(curi);
@@ -517,11 +519,11 @@ public class FetchHTTPTest extends ProcessorTestBase {
         basicAuthCredential.setLogin(BASIC_AUTH_LOGIN);
         basicAuthCredential.setPassword(BASIC_AUTH_PASSWORD);
         
-        getFetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
+        fetcher().getCredentialStore().getCredentials().put("basic-auth-credential",
                 basicAuthCredential);
 
         CrawlURI curi = makeCrawlURI("http://localhost:7777/auth/1");
-        getFetcher().process(curi);
+        fetcher().process(curi);
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
@@ -529,7 +531,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
         // fetch again with the credentials
-        getFetcher().process(curi);
+        fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
@@ -538,7 +540,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         // fetch a fresh uri to make sure auth info was cached and we don't get another 401
         curi = makeCrawlURI("http://localhost:7777/auth/2");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
@@ -555,11 +557,11 @@ public class FetchHTTPTest extends ProcessorTestBase {
         digestAuthCred.setLogin(DIGEST_AUTH_LOGIN);
         digestAuthCred.setPassword(DIGEST_AUTH_PASSWORD);
         
-        getFetcher().getCredentialStore().getCredentials().put("digest-auth-credential",
+        fetcher().getCredentialStore().getCredentials().put("digest-auth-credential",
                 digestAuthCred);
 
         CrawlURI curi = makeCrawlURI("http://localhost:7778/auth/1");
-        getFetcher().process(curi);
+        fetcher().process(curi);
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
@@ -568,12 +570,12 @@ public class FetchHTTPTest extends ProcessorTestBase {
 
         // stick a basic auth 401 in there to check it doesn't mess with the digest auth we're working on
         CrawlURI interferingUri = makeCrawlURI("http://localhost:7777/auth/basic");
-        getFetcher().process(interferingUri);
+        fetcher().process(interferingUri);
         assertEquals(401, interferingUri.getFetchStatus());
         // logger.info('\n' + httpRequestString(interferingUri) + "\n\n" + rawResponseString(interferingUri));
 
         // fetch original again with the credentials
-        getFetcher().process(curi);
+        fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(interferingUri));
         assertTrue(httpRequestString.contains("Authorization: Digest"));
@@ -582,71 +584,17 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         // fetch a fresh uri to make sure auth info was cached and we don't get another 401
         curi = makeCrawlURI("http://localhost:7778/auth/2");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         httpRequestString = httpRequestString(curi);
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine", "hostHeader");
     }
     
-    // server for form auth is at localhost:7779
-    public void testFormAuth() throws Exception {
-        ensureHttpServers();
-        
-        HtmlFormCredential cred = new HtmlFormCredential();
-        cred.setDomain("localhost:7779");
-        cred.setLoginUri("/j_security_check");
-        HashMap<String, String> formItems = new HashMap<String,String>();
-        formItems.put("j_username", FORM_AUTH_LOGIN);
-        formItems.put("j_password", FORM_AUTH_PASSWORD);
-        cred.setFormItems(formItems);
-
-        getFetcher().getCredentialStore().getCredentials().put("form-auth-credential",
-                cred);
-        
-        CrawlURI curi = makeCrawlURI("http://localhost:7779/");
-        getFetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + contentString(curi));
-        runDefaultChecks(curi, "hostHeader");
-
-        // jetty needs us to hit a restricted url so it can redirect to the
-        // login page and remember where to redirect back to after successful
-        // login (if not we get a NPE within jetty)
-        curi = makeCrawlURI("http://localhost:7779/auth/1");
-        getFetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
-        assertEquals(302, curi.getFetchStatus());
-        assertTrue(curi.getHttpResponseHeader("Location").startsWith("http://localhost:7779/login.html"));
-        
-        PreconditionEnforcer preconditionEnforcer = new PreconditionEnforcer();
-        preconditionEnforcer.setServerCache(getFetcher().getServerCache());
-        preconditionEnforcer.setCredentialStore(getFetcher().getCredentialStore());
-        boolean result = preconditionEnforcer.credentialPrecondition(curi);
-        assertTrue(result);
-
-        CrawlURI loginUri = curi.getPrerequisiteUri();
-        assertEquals("http://localhost:7779/j_security_check", loginUri.toString());
-        
-        // there's some special logic with side effects in here for the login uri itself 
-        result = preconditionEnforcer.credentialPrecondition(loginUri);
-        assertFalse(result);
-        
-        loginUri.setRecorder(getRecorder());
-        getFetcher().process(loginUri);
-        logger.info('\n' + httpRequestString(loginUri) + "\n\n" + rawResponseString(loginUri));
-        assertEquals(302, loginUri.getFetchStatus()); // 302 on successful login
-        assertEquals("http://localhost:7779/auth/1", loginUri.getHttpResponseHeader("location"));
-        
-        curi = makeCrawlURI("http://localhost:7779/auth/1");
-        getFetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + contentString(curi));
-        runDefaultChecks(curi, "hostHeader", "requestLine");
-    }
-
     protected void checkSetCookieURI() throws URIException, IOException,
             InterruptedException, UnsupportedEncodingException {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/set-cookie");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         runDefaultChecks(curi, "requestLine");
         
         // check for set-cookie header
@@ -658,8 +606,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testAcceptCompression() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().setAcceptCompression(true);
-        getFetcher().process(curi);
+        fetcher().setAcceptCompression(true);
+        fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
         // logger.info("\n----- begin contentString -----\n" + contentString(curi));
@@ -688,19 +636,39 @@ public class FetchHTTPTest extends ProcessorTestBase {
         assertEquals("sha1:6HXUWMO6VPBHU4SIPOVJ3OPMCSN6JJW4", curi.getContentDigestSchemeString());
     }
 
-    // Binding to 127.0.0.2 only works on some systems. Fails on my mac. We
-    // could skip the test in that case, but better to leave it in I think, so
-    // we notice if it starts failing on the build box and we can do something
-    // about it.
+    // Test will succeed if there ae at least 2 local Inet4Addresses, and 
+    // each can be bound to in turn. (Works better than trying to use 127.0.0.2
+    // which may not be available as local address by default on MacOS.)
+    // Usually, the minimum 2 addresses will be 127.0.0.1 and another 
+    // routable (perhaps LAN only eg 192.168.x.x or 10.x.x.x) address.
     public void testHttpBindAddress() throws Exception {
+        List<InetAddress> addrList = new ArrayList<InetAddress>();
+        for(NetworkInterface ifc : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+           if(ifc.isUp()) {
+              for(InetAddress addr : Collections.list(ifc.getInetAddresses())) {
+                  if(addr instanceof Inet4Address) {
+                    addrList.add(addr);
+                  }
+              }
+           }
+        }
+        if(addrList.size()<2) {
+            fail("unable to test binding to different local addresses: only "+addrList.size()+" addresses available");
+        }
+        for (InetAddress addr : addrList) {
+            tryHttpBindAddress(addr.getHostAddress());
+        }
+    }
+
+    public void tryHttpBindAddress(String addr) throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().setHttpBindAddress("127.0.0.2");
-        getFetcher().process(curi);
+        fetcher().setHttpBindAddress(addr);
+        fetcher().process(curi);
 
         // the client bind address isn't recorded anywhere in heritrix as
         // far as i can tell, so we get it this way...
-        assertEquals("127.0.0.2", lastRequest.getRemoteAddr());
+        assertEquals(addr, lastRequest.getRemoteAddr());
 
         runDefaultChecks(curi, "httpBindAddress");
     }
@@ -788,11 +756,11 @@ public class FetchHTTPTest extends ProcessorTestBase {
         httpProxyServer.start(true, false);
 
         try {
-            getFetcher().setHttpProxyHost("localhost");
-            getFetcher().setHttpProxyPort(7877);
+            fetcher().setHttpProxyHost("localhost");
+            fetcher().setHttpProxyPort(7877);
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-            getFetcher().process(curi);
+            fetcher().process(curi);
             // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
@@ -825,13 +793,13 @@ public class FetchHTTPTest extends ProcessorTestBase {
         httpProxyServer.start(true, false);
 
         try {
-            getFetcher().setHttpProxyHost("localhost");
-            getFetcher().setHttpProxyPort(7877);
-            getFetcher().setHttpProxyUser("http-proxy-user");
-            getFetcher().setHttpProxyPassword("http-proxy-password");
+            fetcher().setHttpProxyHost("localhost");
+            fetcher().setHttpProxyPort(7877);
+            fetcher().setHttpProxyUser("http-proxy-user");
+            fetcher().setHttpProxyPassword("http-proxy-password");
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-            getFetcher().process(curi);
+            fetcher().process(curi);
             // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
@@ -843,7 +811,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
             // fetch original again now that credentials should be populated
             proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
-            getFetcher().process(curi);
+            fetcher().process(curi);
             // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             requestString = httpRequestString(curi);
@@ -860,8 +828,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testMaxFetchKBSec() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
-        getFetcher().setMaxFetchKBSec(100);
-        getFetcher().process(curi);
+        fetcher().setMaxFetchKBSec(100);
+        fetcher().process(curi);
         assertEquals(200000, curi.getContentLength());
         assertTrue(curi.getFetchDuration() > 1800 && curi.getFetchDuration() < 2200);
     }
@@ -869,17 +837,17 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testMaxLengthBytes() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
-        getFetcher().setMaxLengthBytes(50000);
-        getFetcher().process(curi);
+        fetcher().setMaxLengthBytes(50000);
+        fetcher().process(curi);
         assertEquals(50001, curi.getRecordedSize());
     }
 
     public void testSendRange() throws Exception { 
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
-        getFetcher().setMaxLengthBytes(50000);
-        getFetcher().setSendRange(true);
-        getFetcher().process(curi);
+        fetcher().setMaxLengthBytes(50000);
+        fetcher().setSendRange(true);
+        fetcher().process(curi);
         // logger.info("\n" + httpRequestString(curi));
         assertTrue(httpRequestString(curi).contains("Range: bytes=0-49999\r\n"));
         // XXX make server honor range and inspect response?
@@ -889,10 +857,10 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testSendIfModifiedSince() throws Exception {
         ensureHttpServers();
         
-        getFetcher().setSendIfModifiedSince(true);
+        fetcher().setSendIfModifiedSince(true);
 
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since"));
         assertTrue(curi.getHttpResponseHeader("last-modified").equals("Thu, 01 Jan 1970 00:00:00 GMT"));
         runDefaultChecks(curi);
@@ -902,7 +870,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         fetchHistoryProcessor.process(curi);
         // logger.info("after FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
 
-        getFetcher().process(curi);
+        fetcher().process(curi);
         // logger.info("\n" + httpRequestString(curi));
         assertTrue(httpRequestString(curi).contains("If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT\r\n"));
         runDefaultChecks(curi);
@@ -912,10 +880,10 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testSendIfNoneMatch() throws Exception {
         ensureHttpServers();
         
-        getFetcher().setSendIfNoneMatch(true);
+        fetcher().setSendIfNoneMatch(true);
         
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         assertFalse(httpRequestString(curi).toLowerCase().contains("if-none-match"));
         assertTrue(curi.getHttpResponseHeader("etag").equals(ETAG_TEST_VALUE));
         runDefaultChecks(curi);
@@ -925,7 +893,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         fetchHistoryProcessor.process(curi);
         logger.info("after FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
 
-        getFetcher().process(curi);
+        fetcher().process(curi);
         logger.info("\n" + httpRequestString(curi));
         assertTrue(httpRequestString(curi).contains("If-None-Match: " + ETAG_TEST_VALUE + "\r\n"));
         runDefaultChecks(curi);
@@ -935,8 +903,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testShouldFetchBodyRule() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().setShouldFetchBodyRule(new RejectDecideRule());
-        getFetcher().process(curi);
+        fetcher().setShouldFetchBodyRule(new RejectDecideRule());
+        fetcher().process(curi);
         logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
         assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.0\r\n"));
@@ -957,8 +925,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
         ensureHttpServers();
         
         CrawlURI curi = makeCrawlURI("http://localhost:7777/slow.txt");
-        getFetcher().setTimeoutSeconds(2);
-        getFetcher().process(curi);
+        fetcher().setTimeoutSeconds(2);
+        fetcher().process(curi);
         
         // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertTrue(curi.getAnnotations().contains("timeTrunc"));
@@ -968,10 +936,10 @@ public class FetchHTTPTest extends ProcessorTestBase {
     // see http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error
     public void testConnectionTimeout() throws Exception {
         CrawlURI curi = makeCrawlURI("http://10.255.255.1/");
-        getFetcher().setSoTimeoutMs(300);
+        fetcher().setSoTimeoutMs(300);
         
         long start = System.currentTimeMillis();
-        getFetcher().process(curi);
+        fetcher().process(curi);
         long elapsed = System.currentTimeMillis() - start;
         
         assertTrue(elapsed >= 300 && elapsed < 400);
@@ -994,13 +962,13 @@ public class FetchHTTPTest extends ProcessorTestBase {
         // default "open" trust level
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("https://localhost:7443/");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         runDefaultChecks(curi, "hostHeader");
         
         // "normal" trust level
         curi = makeCrawlURI("https://localhost:7443/");
-        getFetcher().setSslTrustLevel(TrustLevel.NORMAL);
-        getFetcher().process(curi);
+        fetcher().setSslTrustLevel(TrustLevel.NORMAL);
+        fetcher().process(curi);
         assertEquals(1, curi.getNonFatalFailures().size());
         assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLHandshakeException);
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
@@ -1010,8 +978,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testHttp11() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-        getFetcher().setUseHTTP11(true);
-        getFetcher().process(curi);
+        fetcher().setUseHTTP11(true);
+        fetcher().process(curi);
         assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.1\r\n"));
         // what else?
         runDefaultChecks(curi, "requestLine");
@@ -1020,18 +988,18 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public void testChunked() throws Exception {
         ensureHttpServers();
         CrawlURI curi = makeCrawlURI("http://localhost:7777/chunked.txt");
-        getFetcher().setUseHTTP11(true);
-        getFetcher().setSendConnectionClose(false);
+        fetcher().setUseHTTP11(true);
+        fetcher().setSendConnectionClose(false);
         
         /* XXX Server expects us to close the connection apparently. But we
          * don't detect end of chunked transfer. With these small timeouts we
          * can finish quickly. A couple of SocketTimeoutExceptions will happen
          * within RecordingInputStream.readFullyOrUntil().
          */
-        getFetcher().setSoTimeoutMs(500);
-        getFetcher().setTimeoutSeconds(1);
+        fetcher().setSoTimeoutMs(500);
+        fetcher().setTimeoutSeconds(1);
         
-        getFetcher().process(curi);
+        fetcher().process(curi);
         
         //        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         //        logger.info("\n----- rawResponseString -----\n" + rawResponseString(curi));
@@ -1085,7 +1053,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
         CrawlURI curi = makeCrawlURI("http://localhost:7780");
-        getFetcher().process(curi);
+        fetcher().process(curi);
         assertEquals(1, curi.getNonFatalFailures().size());
         assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
@@ -1094,17 +1062,41 @@ public class FetchHTTPTest extends ProcessorTestBase {
         noResponseServer.beDone();
         noResponseServer.join();
     }
-
+    
     @Override
     protected FetchHTTP makeModule() throws IOException {
+        FetchHTTP fetchHttp = newTestFetchHttp(getUserAgentString());
+        fetchHttp.start();
+        return fetchHttp;
+    }
+    
+    public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
         fetchHttp.setCookieStore(new SimpleCookieStore());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
-        uap.setUserAgentTemplate(getUserAgentString());
+        uap.setUserAgentTemplate(userAgentString);
         fetchHttp.setUserAgentProvider(uap);
-        
+
         fetchHttp.start();
         return fetchHttp;
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        if (httpServers != null) {
+            for (Server server: httpServers.values()) {
+                server.stop();
+                server.destroy();
+            }
+            httpServers = null;
+        }
+
+        if (fetcher != null) {
+            fetcher.stop();
+            fetcher = null;
+        }
     }
 }
