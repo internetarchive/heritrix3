@@ -60,7 +60,7 @@ import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
-import org.archive.modules.fetcher.FetchHTTPTest;
+import org.archive.modules.fetcher.FetchHTTPTests;
 import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.modules.writer.WARCWriterProcessorTest;
 import org.archive.net.UURI;
@@ -195,7 +195,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
         Server server = newHttpServer();
 
-        FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
+        FetchHTTP fetcher = FetchHTTPTests.newTestFetchHttp(getClass().getName());
         WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
