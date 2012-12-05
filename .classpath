@@ -8,7 +8,6 @@
 	<classpathentry kind="src" path="commons/src/test/java"/>
 	<classpathentry kind="src" path="dist/src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="var" path="M2_REPO/org/beanshell/bsh/2.0b5/bsh-2.0b5.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.1/commons-collections-3.1-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-sources.jar"/>
@@ -59,5 +58,6 @@
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.26/jetty-sslengine-6.1.26.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="/M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
