@@ -27,8 +27,6 @@ import static org.archive.modules.fetcher.FetchHTTPTest.DIGEST_AUTH_LOGIN;
 import static org.archive.modules.fetcher.FetchHTTPTest.DIGEST_AUTH_PASSWORD;
 import static org.archive.modules.fetcher.FetchHTTPTest.DIGEST_AUTH_REALM;
 import static org.archive.modules.fetcher.FetchHTTPTest.ETAG_TEST_VALUE;
-import static org.archive.modules.fetcher.FetchHTTPTest.ensureHttpServers;
-import static org.archive.modules.fetcher.FetchHTTPTest.lastRequest;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -157,7 +155,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertEquals(DEFAULT_PAYLOAD_STRING, curi.getRecorder().getContentReplayCharSequence().toString());
         
         if (!exclusions.contains("httpBindAddress")) {
-            assertEquals("127.0.0.1", lastRequest.getRemoteAddr());
+            assertEquals("127.0.0.1", FetchHTTPTest.getLastRequest().getRemoteAddr());
         }
         
         assertTrue(curi.getNonFatalFailures().isEmpty());
@@ -385,7 +383,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         // the client bind address isn't recorded anywhere in heritrix as
         // far as i can tell, so we get it this way...
-        assertEquals(addr, lastRequest.getRemoteAddr());
+        assertEquals(addr, FetchHTTPTest.getLastRequest().getRemoteAddr());
 
         runDefaultChecks(curi, "httpBindAddress");
     }
@@ -628,8 +626,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
 
     public void testChunked() throws Exception {
-        ensureHttpServers();
-        
         /* XXX Server expects us to close the connection apparently. But we
          * don't detect end of chunked transfer. With these small timeouts we
          * can finish quickly. A couple of SocketTimeoutExceptions will happen

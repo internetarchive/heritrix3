@@ -337,4 +337,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
             }
         };
     }
+
+    public static Request getLastRequest() {
+        return lastRequest;
+    }
 }
