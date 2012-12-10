@@ -203,4 +203,14 @@ public abstract class ModuleTestBase extends TestCase {
             Object second, byte[] secondBytes) throws Exception {
         assertTrue(Arrays.equals(firstBytes, secondBytes));
     }
+    
+    @Override
+    protected void runTest() throws Throwable {
+        try {
+            super.runTest();
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw t;
+        }
+    }
 }
