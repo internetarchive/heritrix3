@@ -297,7 +297,6 @@ public class UriUtils {
         return false;
     }
     
-    
     /**
      * Perform additional fixup of likely-URI Strings
      * 
@@ -312,27 +311,24 @@ public class UriUtils {
         retVal = TextUtils.replaceAll("&amp;", retVal, "&");
         
         // uri-decode if begins with encoded 'http(s)?%3A'
-        Matcher m = TextUtils.getMatcher("(?i)^https?%3A.*",retVal); 
-        if(m.matches()) {
+        if(TextUtils.matches("(?i)^https?%3A.*", retVal)) {
             try {
                 retVal = LaxURLCodec.DEFAULT.decode(retVal);
             } catch (DecoderException e) {
                 LOGGER.log(Level.INFO,"unable to decode",e);
             }
         }
-        TextUtils.recycleMatcher(m);
         
         // TODO: more URI-decoding if there are %-encoded parts?
         
         // detect scheme-less intended-absolute-URI
         // intent: "opens with what looks like a dotted-domain, and 
         // last segment is a top-level-domain (eg "com", "org", etc)" 
-        m = TextUtils.getMatcher(
-                "^[^\\./:\\s%]+\\.[^/:\\s%]+\\.([^\\./:\\s%]+)(/.*|)$", 
+        Matcher m = TextUtils.getMatcher("(?:[^./]+\\.)+([^./]+)(?:/.*)?", 
                 retVal);
-        if(m.matches()) {
-            if(ArchiveUtils.isTld(m.group(1))) { 
-                String schemePlus = "http://";       
+        if (m.matches()) {
+            if (ArchiveUtils.isTld(m.group(1))) {
+                String schemePlus = "http://";
                 // if on exact same host preserve scheme (eg https)
                 try {
                     if (retVal.startsWith(base.getHost())) {
@@ -365,7 +361,7 @@ public class UriUtils {
     // added to outLinks
     protected final static String[] STRING_URI_DETECTOR_EXCEPTIONS = {
         "text/javascript"
-        };
+    };
     
     public static boolean isLikelyUriJavascriptContextLegacy(CharSequence candidate) {
     	if(!TextUtils.matches(STRING_URI_DETECTOR,candidate)) {
