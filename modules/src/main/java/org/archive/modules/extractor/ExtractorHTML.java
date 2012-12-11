@@ -67,8 +67,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     private static Logger logger =
         Logger.getLogger(ExtractorHTML.class.getName());
 
-    
-    
     private final static String MAX_ELEMENT_REPLACE = "MAX_ELEMENT";
     
     private final static String MAX_ATTR_NAME_REPLACE = "MAX_ATTR_NAME";
@@ -321,13 +319,26 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * CrawlMetadata provides the robots honoring policy to use when 
      * considering a robots META tag.
      */
-    CrawlMetadata metadata;
+    protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }
     @Autowired
     public void setMetadata(CrawlMetadata provider) {
         this.metadata = provider;
+    }
+    
+    /**
+     * Javascript extractor to use to process inline javascript. Autowired if
+     * available. If null, links will not be extracted from inline javascript.
+     */
+    transient protected ExtractorJS extractorJS;
+    public ExtractorJS getExtractorJS() {
+        return extractorJS;
+    }
+    @Autowired
+    public void setExtractorJS(ExtractorJS extractorJS) {
+        this.extractorJS = extractorJS;
     }
     
     // TODO: convert to Strings
@@ -606,9 +617,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @param cs    CharSequence of javascript code
      */
     protected void processScriptCode(CrawlURI curi, CharSequence cs) {
-        if (getExtractJavascript()) {
+        if (getExtractorJS() != null && getExtractJavascript()) {
             numberOfLinksExtracted.addAndGet(
-                ExtractorJS.considerStrings(this, curi, cs, false));
+                getExtractorJS().considerStrings(this, curi, cs));
         }
     }
 

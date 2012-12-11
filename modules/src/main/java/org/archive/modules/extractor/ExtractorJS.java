@@ -57,7 +57,7 @@ import org.archive.util.UriUtils;
 public class ExtractorJS extends ContentExtractor {
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
 
     private static Logger LOGGER =
         Logger.getLogger("org.archive.crawler.extractor.ExtractorJS");
@@ -72,7 +72,6 @@ public class ExtractorJS extends ContentExtractor {
     // (G2) whitespace-free string delimited on boths ends by G1
 
     protected long numberOfCURIsHandled = 0;
-    protected static long numberOfLinksExtracted = 0;
 
     // URIs known to produce false-positives with the current JS extractor.
     // e.g. currently (2.0.3) the JS extractor produces 13 false-positive 
@@ -81,17 +80,9 @@ public class ExtractorJS extends ContentExtractor {
     // TODO: remove this blacklist when JS extractor is improved 
     protected final static String[] EXTRACTOR_URI_EXCEPTIONS = {
         "http://www.google-analytics.com/urchin.js"
-        };
-    
-    /**
-     * @param name
-     */
-    public ExtractorJS() {
-    }
-
+    };
     
     protected boolean shouldExtract(CrawlURI uri) {
-        
         // special-cases, for when we know our current JS extractor does poorly.
         // TODO: remove this test when JS extractor is improved 
         for (String s: EXTRACTOR_URI_EXCEPTIONS) {
@@ -137,7 +128,7 @@ public class ExtractorJS extends ContentExtractor {
         try {
             cs = curi.getRecorder().getContentReplayCharSequence();
             try {
-                numberOfLinksExtracted += considerStrings(this, curi, cs, true);
+                numberOfLinksExtracted.addAndGet(considerStrings(curi, cs));
             } catch (StackOverflowError e) {
                 DevUtils.warnHandle(e, "ExtractorJS StackOverflowError");
             }
@@ -149,7 +140,16 @@ public class ExtractorJS extends ContentExtractor {
         return false;
     }
 
-    public static long considerStrings(Extractor ext, 
+    protected long considerStrings(CrawlURI curi, CharSequence cs) {
+        return considerStrings(this, curi, cs, true);
+    }
+    
+    public long considerStrings(Extractor ext, 
+            CrawlURI curi, CharSequence cs) {
+        return considerStrings(ext, curi, cs, false);
+    }
+    
+    public long considerStrings(Extractor ext, 
             CrawlURI curi, CharSequence cs, boolean handlingJSFile) {
         long foundLinks = 0;
         Matcher strings =

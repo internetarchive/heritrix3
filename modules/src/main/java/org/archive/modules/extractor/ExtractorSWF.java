@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.util.UriUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.anotherbigidea.flash.interfaces.SWFActions;
 import com.anotherbigidea.flash.interfaces.SWFTagTypes;
@@ -56,6 +57,19 @@ public class ExtractorSWF extends ContentExtractor {
 
     protected static final String JSSTRING = "javascript:";
 
+    /**
+     * Javascript extractor to use to process inline javascript. Autowired if
+     * available. If null, links will not be extracted from inline javascript.
+     */
+    transient protected ExtractorJS extractorJS;
+    public ExtractorJS getExtractorJS() {
+        return extractorJS;
+    }
+    @Autowired
+    public void setExtractorJS(ExtractorJS extractorJS) {
+        this.extractorJS = extractorJS;
+    }
+    
     /**
      * @param name
      */
@@ -315,7 +329,9 @@ public class ExtractorSWF extends ContentExtractor {
         public void getURL(String url, String target)
         throws IOException {
             if (url.startsWith(JSSTRING)) {
-                linkCount += ExtractorJS.considerStrings(ext, curi, url, false);
+                if (getExtractorJS() != null) {
+                    linkCount += getExtractorJS().considerStrings(ext, curi, url);
+                }
             } else {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 Link.addRelativeToVia(curi, max, url, LinkContext.EMBED_MISC,
@@ -332,7 +348,6 @@ public class ExtractorSWF extends ContentExtractor {
                 linkCount++;
             }
         }
-
 
         public void lookupTable(String[] strings) throws IOException {
             for (String str : strings) {
