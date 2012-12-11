@@ -83,6 +83,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         CrawlMetadata metadata = new CrawlMetadata();
         metadata.afterPropertiesSet();
         result.setMetadata(metadata);
+        result.setExtractorJS(new ExtractorJS());
         result.afterPropertiesSet();
         return result;
     }
