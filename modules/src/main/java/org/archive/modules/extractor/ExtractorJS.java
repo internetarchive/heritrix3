@@ -53,43 +53,28 @@ import org.archive.util.UriUtils;
  * browser engines. 
  * 
  * @contributor gojomo
+ * @contributor nlevitt
  */
 public class ExtractorJS extends ContentExtractor {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
-    private static Logger LOGGER =
-        Logger.getLogger("org.archive.crawler.extractor.ExtractorJS");
+    private static Logger LOGGER = 
+            Logger.getLogger(ExtractorJS.class.getName());
 
-    // finds whitespace-free strings in Javascript
+    // finds whitespace- and quote-free strings in Javascript
     // (areas between paired ' or " characters, possibly backslash-quoted
     // on the ends, but not in the middle)
     protected static final String JAVASCRIPT_STRING_EXTRACTOR =
-        "(\\\\{0,8}+(?:\"|\'))(\\S{0,"+UURI.MAX_URL_LENGTH+"}?)(?:\\1)";
+            "(\\\\{0,8}+['\"])([^\\s'\"]{1,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
     // GROUPS:
     // (G1) ' or " with optional leading backslashes
     // (G2) whitespace-free string delimited on boths ends by G1
 
     protected long numberOfCURIsHandled = 0;
 
-    // URIs known to produce false-positives with the current JS extractor.
-    // e.g. currently (2.0.3) the JS extractor produces 13 false-positive 
-    // URIs from http://www.google-analytics.com/urchin.js and only 2 
-    // good URIs, which are merely one pixel images.
-    // TODO: remove this blacklist when JS extractor is improved 
-    protected final static String[] EXTRACTOR_URI_EXCEPTIONS = {
-        "http://www.google-analytics.com/urchin.js"
-    };
-    
     protected boolean shouldExtract(CrawlURI uri) {
-        // special-cases, for when we know our current JS extractor does poorly.
-        // TODO: remove this test when JS extractor is improved 
-        for (String s: EXTRACTOR_URI_EXCEPTIONS) {
-            if (uri.toString().equals(s))
-                return false;
-        }
-        
         String contentType = uri.getContentType();
         if ((contentType == null)) {
             return false;
@@ -154,40 +139,51 @@ public class ExtractorJS extends ContentExtractor {
         long foundLinks = 0;
         Matcher strings =
             TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, cs);
+        
         int startIndex = 0;
         while (strings.find(startIndex)) {
             CharSequence subsequence =
                 cs.subSequence(strings.start(2), strings.end(2));
-            if(UriUtils.isLikelyUri(subsequence)) {
-                String string = subsequence.toString();
-                try {
-                    string = StringEscapeUtils.unescapeJavaScript(string);
-                } catch (NestableRuntimeException e) {
-                    LOGGER.log(Level.WARNING, "problem unescaping some javascript", e);
-                }
-                string = UriUtils.speculativeFixup(string, curi.getUURI());
-                foundLinks++;
-                try {
-                    int max = ext.getExtractorParameters().getMaxOutlinks();
-                    if (handlingJSFile) {
-                        Link.addRelativeToVia(curi, max, string, JS_MISC, 
-                                SPECULATIVE);
-                    } else {
-                        Link.addRelativeToBase(curi, max, string, JS_MISC, 
-                                SPECULATIVE);
-                    }
-                } catch (URIException e) {
-                    ext.logUriError(e, curi.getUURI(), string);
-                }
-            } else {
-               foundLinks += considerStrings(ext, curi, subsequence, 
-                       handlingJSFile);
-            }
             
-            // reconsider the last closing quote as possible opening quote
-            startIndex = strings.end(2);
+            if (UriUtils.isPossibleUri(subsequence)) {
+                if (considerString(ext, curi, handlingJSFile, subsequence.toString())) {
+                    foundLinks++;
+                }
+            }
+
+            startIndex = strings.end(1);
         }
         TextUtils.recycleMatcher(strings);
         return foundLinks;
+    }
+
+
+    protected boolean considerString(Extractor ext, CrawlURI curi,
+            boolean handlingJSFile, String candidate) {
+        try {
+            candidate = StringEscapeUtils.unescapeJavaScript(candidate);
+        } catch (NestableRuntimeException e) {
+            LOGGER.log(Level.WARNING, "problem unescaping some javascript", e);
+        }
+        candidate = UriUtils.speculativeFixup(candidate, curi.getUURI());
+
+        if (UriUtils.isVeryLikelyUri(candidate)) {
+            try {
+                int max = ext.getExtractorParameters().getMaxOutlinks();
+                if (handlingJSFile) {
+                    Link.addRelativeToVia(curi, max, candidate, JS_MISC, 
+                            SPECULATIVE);
+                    return true;
+                } else {
+                    Link.addRelativeToBase(curi, max, candidate, JS_MISC, 
+                            SPECULATIVE);
+                    return true;
+                }
+            } catch (URIException e) {
+                ext.logUriError(e, curi.getUURI(), candidate);
+            }
+        }
+        
+        return false;
     }
 }

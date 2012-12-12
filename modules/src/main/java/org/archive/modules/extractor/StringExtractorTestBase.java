@@ -79,10 +79,11 @@ public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
     private void testOne(String text, String expectedURL) throws Exception {
         Collection<TestData> testDataCol = makeData(text, expectedURL);
         for (TestData testData: testDataCol) {
-            Extractor extractor = makeExtractor();
             extractor.process(testData.uri);
             HashSet<Link> expected = new HashSet<Link>();
-            expected.add(testData.expectedResult);
+            if (testData.expectedResult != null) {
+                expected.add(testData.expectedResult);
+            }
             assertEquals(expected, testData.uri.getOutLinks());
             assertNoSideEffects(testData.uri);
         }
