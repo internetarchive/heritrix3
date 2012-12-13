@@ -39,6 +39,7 @@ import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENG
 import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_NOT_MODIFIED;
+import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST;
 import static org.archive.io.warc.WARCConstants.TYPE;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
@@ -697,7 +698,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         recordInfo.setContentLength(revisedLength);
         
         headers.addLabelValue(
-                HEADER_KEY_PROFILE, PROFILE_REVISIT_IDENTICAL_DIGEST);
+                HEADER_KEY_PROFILE, PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST);
         headers.addLabelValue(
                 HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
         
