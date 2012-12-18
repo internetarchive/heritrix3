@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
-import org.archive.net.LaxURLCodec;
+import org.archive.url.LaxURLCodec;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.TextUtils;

@@ -217,7 +217,7 @@ public abstract class HttpMethodBase implements HttpMethod {
             }
 // BEGIN IA/HERITRIX CHANGES
 //        setURI(new URI(uri, true));
-          setURI(new org.archive.net.LaxURI(uri, true));
+          setURI(new org.archive.url.LaxURI(uri, true));
 // END IA/HERITRIX CHANGES
         } catch (URIException e) {
             throw new IllegalArgumentException("Invalid uri '" 
@@ -264,7 +264,7 @@ public abstract class HttpMethodBase implements HttpMethod {
         }
 //      BEGIN IA/HERITRIX CHANGES
 //      return new URI(buffer.toString(), true);
-        return new org.archive.net.LaxURI(buffer.toString(), true);
+        return new org.archive.url.LaxURI(buffer.toString(), true);
 //      END IA/HERITRIX CHANGES
     }
 
