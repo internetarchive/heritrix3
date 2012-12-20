@@ -30,7 +30,6 @@ import com.esotericsoftware.kryo.CustomSerialization;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.serialize.StringSerializer;
 
-
 /**
  * Usable URI. The bulk of the functionality of this class has moved to
  * {@link UsableURI} in the archive-commons project. This class adds Kryo
@@ -44,8 +43,13 @@ public class UURI extends UsableURI implements CustomSerialization {
         super(fixup, b, charset);
     }
 
-    public UURI(UURI base, UURI uuri) throws URIException {
-        super(base, uuri);
+    public UURI(UsableURI base, UsableURI relative) throws URIException {
+        super(base, relative);
+    }
+    
+    /* needed for kryo serialization */
+    protected UURI() {
+        super();
     }
 
     @Override

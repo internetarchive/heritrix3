@@ -19,6 +19,7 @@
 package org.archive.net;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.url.UsableURI;
 
 public class UURIFactory extends org.archive.url.UsableURIFactory {
     
@@ -49,9 +50,15 @@ public class UURIFactory extends org.archive.url.UsableURIFactory {
         return (UURI) UURIFactory.factory.create(base, relative);
     }
 
-    protected UURI newUURI(String charset, boolean escaped, String fixedUpUri)
+    protected UURI makeOne(String fixedUpUri, boolean escaped, String charset)
             throws URIException {
         return new UURI(fixedUpUri, escaped, charset);
     }
+    
+    protected UsableURI newUURI(UsableURI base, UsableURI relative) throws URIException {
+        // return new UURI(base, relative);
+        return new UURI(base, relative);
+    }
+
 
 }
