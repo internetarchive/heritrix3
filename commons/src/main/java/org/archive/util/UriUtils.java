@@ -24,6 +24,9 @@
  */
 package org.archive.util;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -234,6 +237,10 @@ public class UriUtils {
             "video/x-sgi-movie",
             "video/x-swf"
     };
+    protected static final Set<String> AUDIO_VIDEO_IMAGE_MIMETYPE_SET = new HashSet<String>();
+    static {
+        AUDIO_VIDEO_IMAGE_MIMETYPE_SET.addAll(Arrays.asList(AUDIO_VIDEO_IMAGE_MIMETYPES));
+    }
 
     protected static boolean isLikelyFalsePositive(CharSequence candidate) {
         if (TextUtils.matches("(?:text|application)/[^/]+", candidate)) {
@@ -297,7 +304,6 @@ public class UriUtils {
         return false;
     }
     
-    
     /**
      * Perform additional fixup of likely-URI Strings
      * 
@@ -312,27 +318,24 @@ public class UriUtils {
         retVal = TextUtils.replaceAll("&amp;", retVal, "&");
         
         // uri-decode if begins with encoded 'http(s)?%3A'
-        Matcher m = TextUtils.getMatcher("(?i)^https?%3A.*",retVal); 
-        if(m.matches()) {
+        if(TextUtils.matches("(?i)^https?%3A.*", retVal)) {
             try {
                 retVal = LaxURLCodec.DEFAULT.decode(retVal);
             } catch (DecoderException e) {
                 LOGGER.log(Level.INFO,"unable to decode",e);
             }
         }
-        TextUtils.recycleMatcher(m);
         
         // TODO: more URI-decoding if there are %-encoded parts?
         
         // detect scheme-less intended-absolute-URI
         // intent: "opens with what looks like a dotted-domain, and 
         // last segment is a top-level-domain (eg "com", "org", etc)" 
-        m = TextUtils.getMatcher(
-                "^[^\\./:\\s%]+\\.[^/:\\s%]+\\.([^\\./:\\s%]+)(/.*|)$", 
+        Matcher m = TextUtils.getMatcher("(?:[^./]+\\.)+([^./]+)(?:/.*)?", 
                 retVal);
-        if(m.matches()) {
-            if(ArchiveUtils.isTld(m.group(1))) { 
-                String schemePlus = "http://";       
+        if (m.matches()) {
+            if (ArchiveUtils.isTld(m.group(1))) {
+                String schemePlus = "http://";
                 // if on exact same host preserve scheme (eg https)
                 try {
                     if (retVal.startsWith(base.getHost())) {
@@ -341,14 +344,97 @@ public class UriUtils {
                 } catch (URIException e) {
                     // error retrieving source host - ignore it
                 }
-                retVal = schemePlus + retVal; 
+                retVal = schemePlus + retVal;
             }
         }
         TextUtils.recycleMatcher(m);
         
         return retVal; 
     }
-    
+
+    protected static final Set<String> HTML_TAGS = new HashSet<String>();
+    static {
+        HTML_TAGS.addAll(Arrays.asList("a", "abbr", "acronym", "address",
+                        "applet", "area", "article", "aside", "audio", "b",
+                        "base", "basefont", "bdi", "bdo", "big", "blockquote",
+                        "body", "br", "button", "canvas", "caption", "center",
+                        "cite", "code", "col", "colgroup", "command",
+                        "datalist", "dd", "del", "details", "dfn", "dir",
+                        "div", "dl", "dt", "em", "embed", "fieldset",
+                        "figcaption", "figure", "font", "footer", "form",
+                        "frame", "frameset", "head", "header", "hgroup", "h1",
+                        "h2", "h3", "h4", "h5", "h6", "hr", "html", "i",
+                        "iframe", "img", "input", "ins", "kbd", "keygen",
+                        "label", "legend", "li", "link", "map", "mark", "menu",
+                        "meta", "meter", "nav", "noframes", "noscript",
+                        "object", "ol", "optgroup", "option", "output", "p",
+                        "param", "pre", "progress", "q", "rp", "rt", "ruby",
+                        "s", "samp", "script", "section", "select", "small",
+                        "source", "span", "strike", "strong", "style", "sub",
+                        "summary", "sup", "table", "tbody", "td", "textarea",
+                        "tfoot", "th", "thead", "time", "title", "tr", "track",
+                        "tt", "u", "ul", "var", "video", "wbr"));
+    }
+
+    protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})+"; // name=value for query strings 
+    protected static final String VERY_LIKELY_RELATIVE_URI_PATTERN = 
+            "(?:\\.?/)?"                                    // may start with "/" or "./"
+            + "(?:(?:[\\w-]+|\\.\\.)/)*"                    // may have path/segments/
+            + "(?:[\\w-]+(?:\\.[a-zA-Z0-9]{2,5})?)?"        // may have a filename with or without an extension
+            + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?" // may have a ?query=string
+            + "(?:#[\\w-]+)?";                              // may have a #fragment
+
+    public static boolean isVeryLikelyUri(String candidate) {
+        // must have a . or /
+        if (!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
+            return false;
+        }
+        
+        // absolute uri
+        if (TextUtils.matches("^(?i)https?://[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
+            return true;
+        }
+        
+        // "protocol-relative" uri
+        if (TextUtils.matches("^//[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
+            return true;
+        }
+        
+        // relative or server-relative uri
+        if (!TextUtils.matches(VERY_LIKELY_RELATIVE_URI_PATTERN, candidate)) {
+            return false;
+        }
+        
+        /*
+         * Remaining tests discard stuff that the
+         * VERY_LIKELY_RELATIVE_URI_PATTERN can't catch
+         */
+        
+        // text or application mimetype
+        if (TextUtils.matches("(?:text|application)/[^/]+", candidate)) {
+            return false;
+        }
+
+        // audio, video or image mimetype
+        if (AUDIO_VIDEO_IMAGE_MIMETYPE_SET.contains(candidate)) {
+            return false;
+        }
+        
+        // decimal number
+        if (TextUtils.matches("\\d+(?:\\.\\d+)*", candidate)) {
+            return false;
+        }
+        
+        // likely css class, e.g. "div.menu", "a.help", etc
+        Matcher m = TextUtils.getMatcher("([^./]+)\\.([^./]+)", candidate);
+        if (m.matches() && HTML_TAGS.contains(m.group(1).toLowerCase())) {
+            return false;
+        }
+        
+        return true;
+    }
+
+
     
 //
 // legacy likely-URI test from ExtractorJS
@@ -365,7 +451,7 @@ public class UriUtils {
     // added to outLinks
     protected final static String[] STRING_URI_DETECTOR_EXCEPTIONS = {
         "text/javascript"
-        };
+    };
     
     public static boolean isLikelyUriJavascriptContextLegacy(CharSequence candidate) {
     	if(!TextUtils.matches(STRING_URI_DETECTOR,candidate)) {
@@ -377,8 +463,8 @@ public class UriUtils {
         }
     	// matches detector and not an exception: so a likely URI
     	return true; 
-    	
     }
+    
     
 //
 // legacy likely-URI test from ExtractorHTML

@@ -58,8 +58,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-ajp/6.1.26/jetty-ajp-6.1.26.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="/M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty-sslengine/6.1.26/jetty-sslengine-6.1.26.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar"/>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="/M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
 	<classpathentry kind="output" path="eclipse-build"/>
 </classpath>

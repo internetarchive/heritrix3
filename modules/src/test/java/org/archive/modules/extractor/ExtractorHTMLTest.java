@@ -22,6 +22,7 @@ package org.archive.modules.extractor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -69,7 +70,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         
     };
     
-        
     @Override
     protected String[] getValidTestData() {
         return VALID_TEST_DATA;
@@ -83,8 +83,13 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         CrawlMetadata metadata = new CrawlMetadata();
         metadata.afterPropertiesSet();
         result.setMetadata(metadata);
+        result.setExtractorJS(new ExtractorJS());
         result.afterPropertiesSet();
         return result;
+    }
+    
+    protected ExtractorHTML getExtractor() {
+        return (ExtractorHTML) extractor;
     }
     
     @Override
@@ -94,7 +99,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         UURI src = UURIFactory.getInstance("http://www.archive.org/start/");
         CrawlURI euri = new CrawlURI(src, null, null, 
                 LinkContext.NAVLINK_MISC);
-        Recorder recorder = createRecorder(content);
+        Recorder recorder = createRecorder(content, "UTF-8");
         euri.setContentType("text/html");
         euri.setRecorder(recorder);
         euri.setContentSize(content.length());
@@ -106,7 +111,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         result.add(new TestData(euri, link));
         
         euri = new CrawlURI(src, null, null, LinkContext.NAVLINK_MISC);
-        recorder = createRecorder(content);
+        recorder = createRecorder(content, "UTF-8");
         euri.setContentType("application/xhtml");
         euri.setRecorder(recorder);
         euri.setContentSize(content.length());
@@ -160,8 +165,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     protected void expectSingleLink(String expected, CharSequence source) throws URIException {
         CrawlURI puri = new CrawlURI(UURIFactory
                 .getInstance("http://www.example.com"));
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(puri, source);
+        getExtractor().extract(puri, source);
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
         assertTrue("did not find single link",links.length==1);
         assertTrue("expected link not found", 
@@ -183,8 +187,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<form action=\"http://www.example.com/ok2\" method=\"get\"> "+
             "<form method=\"post\" action=\"http://www.example.com/notok\"> "+
             "<form action=\"http://www.example.com/ok3\"> ";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(puri, cs);
+        getExtractor().extract(puri, cs);
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
         // find exactly 3 (not the POST) action URIs
         assertTrue("incorrect number of links found",links.length==3);
@@ -201,8 +204,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<meta name='robots' content='index,nofollow'>"+
             "<a href='blahblah'>blah</a> "+
             "blahblah";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(puri, cs);
+        getExtractor().extract(puri, cs);
         assertEquals("meta robots content not extracted","index,nofollow",
                 puri.getData().get(ExtractorHTML.A_META_ROBOTS));
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
@@ -222,8 +224,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 .getInstance("http://www.example.com"));
         CharSequence cs = "<a href=\"example.html;jsessionid=deadbeef:deadbeed?parameter=this:value\"/>"
                 + "<a href=\"example.html?parameter=this:value\"/>";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(curi, cs);
+        getExtractor().extract(curi, cs);
 
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
@@ -256,8 +257,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<script type=\"text/javascript\">_parameter=\"www.anotherexample.com\";"
                 + "_anotherparameter=\"www.example.com/index.html\""
                 + ";</script>";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(curi, cs);
+        getExtractor().extract(curi, cs);
 
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
@@ -297,9 +297,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             + "\"google-analytics.com/ga.js' "
             + "type='text/javascript'%3E%3C/script%3E\"));"
             + "</script>";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(curi, cs);
-        assertTrue("outlinks should be empty",curi.getOutLinks().isEmpty());
+        getExtractor().extract(curi, cs);
+        assertEquals(Collections.EMPTY_SET, curi.getOutLinks());
     }
 
     public void testOutLinksWithBaseHref() throws URIException {
@@ -310,8 +309,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<base href=\"http://www.example.com/\">" + 
             "<a href=\"def/another1.html\">" + 
             "<a href=\"ghi/another2.html\">";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(puri, cs);
+        getExtractor().extract(puri, cs);
         Link[] links = puri.getOutLinks().toArray(new Link[0]);
         Arrays.sort(links); 
         String dest1 = "http://www.example.com/def/another1.html";
@@ -353,8 +351,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "    <param name=\"src\" value=\"ZoomifySlideshowViewer.swf\">\n" + 
             "    <embed flashvars=\"zoomifyXMLPath=EmbedZoomifySlideshowViewer.xml\" src=\"ZoomifySlideshowViewer.swf\" menu=\"false\" bgcolor=\"#000000\" pluginspage=\"http://www.adobe.com/go/getflashplayer\" type=\"application/x-shockwave-flash\" name=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
             "</object> ";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(curi, cs);
+        getExtractor().extract(curi, cs);
         String expected = "http://www.example.com/ParamZoomifySlideshowViewer.xml";
         assertTrue("outlinks should contain: "+expected,
                 CollectionUtils.exists(curi.getOutLinks(),destinationsIsPredicate(expected)));
@@ -374,8 +371,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "    <param name=\"src\" value=\"ZoomifySlideshowViewer.swf\">\n" + 
             "    <embed flashvars=\"zoomifyXMLPath=EmbedZoomifySlideshowViewer.xml\" src=\"ZoomifySlideshowViewer.swf\" menu=\"false\" bgcolor=\"#000000\" pluginspage=\"http://www.adobe.com/go/getflashplayer\" type=\"application/x-shockwave-flash\" name=\"ZoomifySlideshowViewer\" height=\"372\" width=\"590\">\n" + 
             "</object> ";
-        ExtractorHTML extractor = (ExtractorHTML)makeExtractor();
-        extractor.extract(curi, cs);
+        getExtractor().extract(curi, cs);
         String expected = "http://www.example.com/EmbedZoomifySlideshowViewer.xml";
         assertTrue("outlinks should contain: "+expected,
                 CollectionUtils.exists(curi.getOutLinks(),destinationsIsPredicate(expected)));
@@ -392,15 +388,14 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<!--[if IE 6]><img src=\"foo.gif\"><![endif]-->" +
             "<!--[if IE 6]><script src=\"foo.js\"><![endif]-->";
  
-        ExtractorHTML extractor = new ExtractorHTML();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
-        extractor.setLoggerModule(ulm);
+        getExtractor().setLoggerModule(ulm);
         CrawlMetadata metadata = new CrawlMetadata();
         metadata.afterPropertiesSet();
-        extractor.setMetadata(metadata);
-        extractor.afterPropertiesSet();
+        getExtractor().setMetadata(metadata);
+        getExtractor().afterPropertiesSet();
         
-        extractor.extract(curi, cs);
+        getExtractor().extract(curi, cs);
         
         Link[] links = curi.getOutLinks().toArray(new Link[0]);
         Arrays.sort(links); 

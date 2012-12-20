@@ -34,7 +34,7 @@ import static org.archive.io.warc.WARCConstants.HEADER_KEY_TYPE;
 import static org.archive.io.warc.WARCConstants.HEADER_KEY_URI;
 import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
 import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
-import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
+import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
@@ -60,7 +60,7 @@ import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
-import org.archive.modules.fetcher.FetchHTTPTest;
+import org.archive.modules.fetcher.FetchHTTPTests;
 import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.modules.writer.WARCWriterProcessorTest;
 import org.archive.net.UURI;
@@ -195,7 +195,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
         Server server = newHttpServer();
 
-        FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
+        FetchHTTP fetcher = FetchHTTPTests.newTestFetchHttp(getClass().getName());
         WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
@@ -309,7 +309,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             assertEquals(NAMED_FIELD_TRUNCATED_VALUE_LENGTH, record.getHeader().getHeaderValue(HEADER_KEY_TRUNCATED));
             assertEquals(HTTP_RESPONSE_MIMETYPE, record.getHeader().getHeaderValue(CONTENT_TYPE));
             assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
-            assertEquals(PROFILE_REVISIT_IDENTICAL_DIGEST, 
+            assertEquals(PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST, 
                     record.getHeader().getHeaderValue(HEADER_KEY_PROFILE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_TARGET_URI));
             assertEquals(historyStore().store.get(expectedDigest).get(A_ORIGINAL_DATE), 

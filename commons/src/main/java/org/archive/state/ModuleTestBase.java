@@ -212,7 +212,7 @@ public abstract class ModuleTestBase extends TestCase {
         try {
             super.runTest();
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "", t);
+            t.printStackTrace();
             throw t;
         }
     }

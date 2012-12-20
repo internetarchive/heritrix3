@@ -206,6 +206,8 @@ public interface WARCConstants extends ArchiveFileConstants {
     public static final String HEADER_KEY_REFERS_TO_FILENAME = "WARC-Refers-To-Filename";
     public static final String HEADER_KEY_REFERS_TO_FILE_OFFSET = "WARC-Refers-To-File-Offset";
     
+    public static final String PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST = 
+            "http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest";
     public static final String PROFILE_REVISIT_IDENTICAL_DIGEST = 
         "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest";
     public static final String PROFILE_REVISIT_NOT_MODIFIED = 
