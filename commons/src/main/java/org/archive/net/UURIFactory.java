@@ -20,10 +20,15 @@ package org.archive.net;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.url.UsableURI;
+import org.archive.url.UsableURIFactory;
 
-public class UURIFactory extends org.archive.url.UsableURIFactory {
-    
-    private static final long serialVersionUID = -2615498094356088387L;
+/**
+ * Factory that returns UURIs. Mostly wraps {@link UsableURIFactory}.
+ * 
+ */
+public class UURIFactory extends UsableURIFactory {
+        
+    private static final long serialVersionUID = -7969477276065915936L;
     
     /**
      * The single instance of this factory.
@@ -50,15 +55,16 @@ public class UURIFactory extends org.archive.url.UsableURIFactory {
         return (UURI) UURIFactory.factory.create(base, relative);
     }
 
+    @Override
     protected UURI makeOne(String fixedUpUri, boolean escaped, String charset)
             throws URIException {
         return new UURI(fixedUpUri, escaped, charset);
     }
     
-    protected UsableURI newUURI(UsableURI base, UsableURI relative) throws URIException {
+    @Override
+    protected UsableURI makeOne(UsableURI base, UsableURI relative) throws URIException {
         // return new UURI(base, relative);
         return new UURI(base, relative);
     }
-
 
 }
