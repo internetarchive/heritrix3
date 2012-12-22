@@ -58,6 +58,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
@@ -65,22 +66,22 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.AbortableHttpRequestBase;
+import org.apache.http.client.methods.BasicAbortableHttpRequest;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.client.utils.URIUtils;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.archive.httpclient.ConfigurableX509TrustManager;
@@ -211,6 +212,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     public void setUseHTTP11(boolean useHTTP11) {
         kp.put("useHTTP11",useHTTP11);
+    }
+
+    protected ProtocolVersion getConfiguredHttpVersion() {
+        if (getUseHTTP11()) {
+            return HttpVersion.HTTP_1_1;
+        } else {
+            return HttpVersion.HTTP_1_0;
+        }
     }
 
     {
@@ -604,7 +613,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         return true;
     }
     
-    protected void doAbort(CrawlURI curi, HttpRequestBase request,
+    protected void doAbort(CrawlURI curi, AbortableHttpRequestBase request,
             String annotation) {
         curi.getAnnotations().add(annotation);
         curi.getRecorder().close();
@@ -615,7 +624,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     // bowels of the http library code and it would be tricky and ugly to get
     // these necessary variables in there. We keep these threadlocals instead.
     private ThreadLocal<CrawlURI> threadActiveCrawlURI = new ThreadLocal<CrawlURI>();
-    private ThreadLocal<HttpRequestBase> threadActiveRequest = new ThreadLocal<HttpRequestBase>();
+    private ThreadLocal<AbortableHttpRequestBase> threadActiveRequest = new ThreadLocal<AbortableHttpRequestBase>();
     
     protected boolean maybeMidfetchAbort() {
         if (checkMidfetchAbort(threadActiveCrawlURI.get())) {
@@ -651,24 +660,39 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
 
         String curiString = curi.getUURI().toString();
-        HttpRequestBase request = null;
+        AbortableHttpRequestBase request = null;
         if (curi.getFetchType() == FetchType.HTTP_POST) {
             request = new HttpPost(curiString);
             curi.setFetchType(FetchType.HTTP_POST);
         } else {
-            request = new HttpGet(curiString);
+            // request = new HttpGet(curiString);
+            try {
+                request = new BasicAbortableHttpRequest("GET", curi.getUURI().getPathQuery(), getConfiguredHttpVersion());
+            } catch (URIException e) {
+                failedExecuteCleanup(request, curi, e);
+                return;
+            }
             curi.setFetchType(FetchType.HTTP_GET);
         }
         
-        threadActiveRequest.set(request);
-        configureRequest(curi, request);
-
-        HttpHost targetHost = URIUtils.extractHost(request.getURI());
+        HttpHost targetHost;
+        try {
+            // HttpHost targetHost = URIUtils.extractHost(request.getURI());
+            targetHost = new HttpHost(curi.getUURI().getHost(), curi.getUURI().getPort(), curi.getUURI().getScheme());
+        } catch (URIException e) {
+            failedExecuteCleanup(request, curi, e);
+            return;
+        }
         
+        threadActiveRequest.set(request);
+
         // Populate credentials. Set config so auth. is not automatic.
-        BasicHttpContext contextForAuth = new BasicHttpContext();
-        boolean addedCredentials = populateTargetCredentials(curi, request, targetHost, contextForAuth);
-        populateHttpProxyCredential(curi, request, contextForAuth);
+        HttpClientContext context = new HttpClientContext();
+        
+        configureRequest(curi, request, context);
+        
+        boolean addedCredentials = populateTargetCredentials(curi, request, targetHost, context);
+        populateHttpProxyCredential(curi, request, context);
         
         // set hardMax on bytes (if set by operator)
         long hardMax = getMaxLengthBytes();
@@ -680,7 +704,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
         HttpResponse response = null;
         try {
-            response = httpClient().execute(targetHost, request, contextForAuth);
+            response = httpClient().execute(targetHost, request, context);
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
@@ -775,7 +799,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     protected void populateHttpProxyCredential(CrawlURI curi,
-            HttpRequestBase request, BasicHttpContext context) {
+            AbortableHttpRequestBase request, HttpContext context) {
         
         // this should have been set earlier
         HttpHost proxyHost = ConnRouteParams.getDefaultProxy(request.getParams());
@@ -799,7 +823,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     protected boolean populateHtmlFormCredential(CrawlURI curi,
-            HttpRequestBase request, HtmlFormCredential cred) {
+            AbortableHttpRequestBase request, HtmlFormCredential cred) {
         if (cred.getFormItems() == null || cred.getFormItems().size() <= 0) {
             logger.severe("No form items for " + curi);
             return false;
@@ -856,7 +880,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * server.
      */
     protected boolean populateTargetCredentials(CrawlURI curi,
-            HttpRequestBase request, HttpHost targetHost, HttpContext context) {
+            AbortableHttpRequestBase request, HttpHost targetHost, HttpContext context) {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
         // return true when we call 'isEveryTime().
@@ -1086,21 +1110,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
         return result;
     }
 
-    protected void configureRequest(CrawlURI curi, HttpRequestBase request) {
+    protected void configureRequest(CrawlURI curi, AbortableHttpRequestBase request, HttpClientContext context) {
+        Builder configBuilder = RequestConfig.custom();
+        
         // ignore cookies?
         if (getIgnoreCookies()) {
-            HttpClientParams.setCookiePolicy(request.getParams(), CookiePolicy.IGNORE_COOKIES);
+            configBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            HttpClientParams.setCookiePolicy(request.getParams(), CookiePolicy.BROWSER_COMPATIBILITY);
+            configBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
         }
 
-        // http 1.1
-        if (getUseHTTP11()) {
-            HttpProtocolParams.setVersion(request.getParams(), HttpVersion.HTTP_1_1);
-        } else {
-            HttpProtocolParams.setVersion(request.getParams(), HttpVersion.HTTP_1_0);
-        }
-        
         // user-agent header
         String userAgent = curi.getUserAgent();
         if (userAgent == null) {
@@ -1142,14 +1161,17 @@ public class FetchHTTP extends Processor implements Lifecycle {
                     A_ETAG_HEADER, "If-None-Match");
         }
 
-        HttpConnectionParams.setConnectionTimeout(request.getParams(), getSoTimeoutMs());
-        HttpConnectionParams.setSoTimeout(request.getParams(), getSoTimeoutMs());
+        configBuilder.setConnectionRequestTimeout(getSoTimeoutMs());
+        configBuilder.setConnectTimeout(getSoTimeoutMs());
+        configBuilder.setSocketTimeout(getSoTimeoutMs());        
 
         // TODO: What happens if below method adds a header already
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
         configureProxy(curi, request);
         configureBindAddress(curi, request);
+        
+        context.setRequestConfig(configBuilder.build());
     }
 
     /**
@@ -1161,7 +1183,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
-    protected void setConditionalGetHeader(CrawlURI curi, HttpRequestBase request,
+    protected void setConditionalGetHeader(CrawlURI curi, AbortableHttpRequestBase request,
             boolean conditional, String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
@@ -1181,7 +1203,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
 
-    protected void configureProxy(CrawlURI curi, HttpRequestBase request) {
+    protected void configureProxy(CrawlURI curi, AbortableHttpRequestBase request) {
         String host = (String) getAttributeEither(curi, "httpProxyHost");
         Integer port = (Integer) getAttributeEither(curi, "httpProxyPort");            
 
@@ -1201,7 +1223,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * settings, in given HostConfiguration
      * @param request 
      */
-    protected void configureBindAddress(CrawlURI curi, HttpRequestBase request) {
+    protected void configureBindAddress(CrawlURI curi, AbortableHttpRequestBase request) {
         String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
         if (StringUtils.isNotEmpty(addressString)) {
             try {
@@ -1234,7 +1256,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         return kp.get(key);
     }
 
-    protected void configureAcceptHeaders(HttpRequestBase request) {
+    protected void configureAcceptHeaders(AbortableHttpRequestBase request) {
         if (getAcceptCompression()) {
             // we match the Firefox header exactly (ordering and whitespace)
             // as a favor to caches
@@ -1332,7 +1354,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * @param exception
      *            Exception we failed with.
      */
-    protected void failedExecuteCleanup(final HttpRequestBase request,
+    protected void failedExecuteCleanup(final AbortableHttpRequestBase request,
             final CrawlURI curi, final Exception exception) {
         cleanup(curi, exception, "executeMethod", S_CONNECT_FAILED);
         request.reset();
