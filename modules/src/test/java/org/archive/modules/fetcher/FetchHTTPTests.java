@@ -197,6 +197,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testDefaults() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + contentString(curi));
         runDefaultChecks(curi);
     }
 
@@ -262,7 +263,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // fetch again with the credentials
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + contentString(curi));
+        logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine");

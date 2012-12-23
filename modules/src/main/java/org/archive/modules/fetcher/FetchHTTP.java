@@ -29,10 +29,16 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIF
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,12 +67,12 @@ import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
-import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.config.RequestConfig.Builder;
@@ -73,17 +80,27 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbortableHttpRequestBase;
 import org.apache.http.client.methods.BasicAbortableHttpRequest;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.SocketClientConnection;
 import org.apache.http.conn.params.ConnRouteParams;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainSocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.DefaultClientConnectionFactory;
+import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.conn.SocketClientConnectionImpl;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
 import org.archive.httpclient.ConfigurableX509TrustManager;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.io.RecorderLengthExceededException;
@@ -665,9 +682,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
             request = new HttpPost(curiString);
             curi.setFetchType(FetchType.HTTP_POST);
         } else {
-            // request = new HttpGet(curiString);
             try {
-                request = new BasicAbortableHttpRequest("GET", curi.getUURI().getPathQuery(), getConfiguredHttpVersion());
+                request = new BasicAbortableHttpRequest("GET", 
+                        curi.getUURI().getPathQuery(), 
+                        getConfiguredHttpVersion());
             } catch (URIException e) {
                 failedExecuteCleanup(request, curi, e);
                 return;
@@ -677,7 +695,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         
         HttpHost targetHost;
         try {
-            // HttpHost targetHost = URIUtils.extractHost(request.getURI());
             targetHost = new HttpHost(curi.getUURI().getHost(), curi.getUURI().getPort(), curi.getUURI().getScheme());
         } catch (URIException e) {
             failedExecuteCleanup(request, curi, e);
@@ -782,8 +799,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             handle401(response, curi);
         } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
             // 407 - remember Proxy-Authenticate headers for later use 
-            kp.put("proxyAuthChallenges", 
-                    extractChallenges(response, curi, httpClient().getProxyAuthenticationStrategy()));
+//            kp.put("proxyAuthChallenges", 
+//                    extractChallenges(response, curi, httpClient().getProxyAuthenticationStrategy()));
         }
 
         if (rec.getRecordedInput().isOpen()) {
@@ -799,7 +816,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     protected void populateHttpProxyCredential(CrawlURI curi,
-            AbortableHttpRequestBase request, HttpContext context) {
+            AbortableHttpRequestBase request, HttpClientContext context) {
         
         // this should have been set earlier
         HttpHost proxyHost = ConnRouteParams.getDefaultProxy(request.getParams());
@@ -819,7 +836,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     
     // clear out any state that could conceivably be left over from a fetch
     protected void resetHttpClient() {
-        httpClient().getCredentialsProvider().clear();
+        // httpClient().getCredentialsProvider().clear();
     }
     
     protected boolean populateHtmlFormCredential(CrawlURI curi,
@@ -843,17 +860,17 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     // http auth credential, either for proxy or target host
-    protected void populateHttpCredential(HttpHost host, HttpContext context, AuthScheme authScheme, String user, String password) {
+    protected void populateHttpCredential(HttpHost host, HttpClientContext context, AuthScheme authScheme, String user, String password) {
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
         
-        AuthCache authCache = (AuthCache) context.getAttribute(ClientContext.AUTH_CACHE);
+        AuthCache authCache = context.getAuthCache();
         if (authCache == null) {
             authCache = new BasicAuthCache();
-            context.setAttribute(ClientContext.AUTH_CACHE, authCache);
+            context.setAuthCache(authCache);
         }
         authCache.put(host, authScheme);
 
-        httpClient().getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
+        // httpClient().getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
     }
     
     /**
@@ -880,7 +897,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * server.
      */
     protected boolean populateTargetCredentials(CrawlURI curi,
-            AbortableHttpRequestBase request, HttpHost targetHost, HttpContext context) {
+            AbortableHttpRequestBase request, HttpHost targetHost, HttpClientContext context) {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
         // return true when we call 'isEveryTime().
@@ -962,7 +979,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            CrawlURI that got a 401.
      */
     protected void handle401(HttpResponse response, final CrawlURI curi) {
-        Map<String, String> challenges = extractChallenges(response, curi, httpClient().getTargetAuthenticationStrategy());
+        // Map<String, String> challenges = extractChallenges(response, curi, httpClient().getTargetAuthenticationStrategy());
+        Map<String, String> challenges = new HashMap<String, String>();
         AuthScheme authscheme = chooseAuthScheme(challenges, HttpHeaders.WWW_AUTHENTICATE);
 
         // remember WWW-Authenticate headers for later use 
@@ -1056,7 +1074,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         HashSet<String> authSchemesLeftToTry = new HashSet<String>(challenges.keySet());
         for (String authSchemeName: new String[]{"digest","basic"}) {
             if (authSchemesLeftToTry.remove(authSchemeName)) {
-                AuthScheme authscheme = httpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
+                // AuthScheme authscheme = httpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
+                BasicScheme authscheme = new BasicScheme();
                 BasicHeader challenge = new BasicHeader(challengeHeaderKey, challenges.get(authSchemeName));
 
                 try {
@@ -1276,22 +1295,64 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
 
-    protected transient ThreadLocal<RecordingHttpClient> threadHttpClient;
-    protected synchronized RecordingHttpClient httpClient() {
+    protected transient ThreadLocal<HttpClient> threadHttpClient;
+    protected synchronized HttpClient httpClient() {
+
         if (threadHttpClient == null) {
-            threadHttpClient = new ThreadLocal<RecordingHttpClient>() {
-                protected RecordingHttpClient initialValue() {
-                    RecordingHttpClient httpClient = new RecordingHttpClient(
-                            FetchHTTP.this, sslContext(), getServerCache());
-                    
-                    // some http client config
-                    HttpClientParams.setRedirecting(httpClient.getParams(), false);
-                    
-                    if (getCookieStore() != null) {
-                        httpClient.setCookieStore(getCookieStore());
-                    }
-                    
-                    return httpClient;
+            threadHttpClient = new ThreadLocal<HttpClient>() {
+                protected HttpClient initialValue() {
+                    HttpClientBuilder builder = HttpClientBuilder.create();
+                    builder.setCookieStore(getCookieStore());
+                    builder.disableRedirectHandling();
+
+
+                    Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                            .register("http", PlainSocketFactory.getSocketFactory())
+                            .register("https", SSLSocketFactory.getSocketFactory())
+                            .build();
+
+                    DefaultClientConnectionFactory connFactory = new DefaultClientConnectionFactory() {
+                        @Override
+                        protected SocketClientConnection create(
+                                CharsetDecoder chardecoder, CharsetEncoder charencoder,
+                                ConnectionConfig cconfig) {
+                            return new SocketClientConnectionImpl(8 * 1024, chardecoder,
+                                    charencoder, cconfig.getMessageConstraints(), null, null, null,
+                                    DefaultHttpResponseParserFactory.INSTANCE) {
+                                @Override
+                                protected InputStream getSocketInputStream(Socket socket)
+                                        throws IOException {
+                                    logger.info("socket=" + socket);
+                                    Recorder recorder = Recorder.getHttpRecorder();
+                                    if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                                        return recorder.inputWrap(super.getSocketInputStream(socket));
+                                    } else {
+                                        return super.getSocketInputStream(socket);
+                                    }
+                                }
+                                @Override
+                                protected OutputStream getSocketOutputStream(
+                                        Socket socket) throws IOException {
+                                    logger.info("socket=" + socket);
+                                    Recorder recorder = Recorder.getHttpRecorder();
+                                    if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                                        return recorder.outputWrap(super.getSocketOutputStream(socket));
+                                    } else {
+                                        return super.getSocketOutputStream(socket);
+                                    }
+                                }
+                            };
+                        }
+                    };
+
+                    PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(
+                            socketFactoryRegistry, connFactory, -1, TimeUnit.MILLISECONDS);
+
+                    builder.setConnectionManager(connManager);
+
+                    // builder.setSSLSocketFactory(sslContext())
+                    // builder.setCredentialsProvider(null)
+                    return builder.build();
                 }
             };
         }
