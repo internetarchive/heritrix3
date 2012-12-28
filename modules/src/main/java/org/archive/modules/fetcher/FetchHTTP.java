@@ -29,7 +29,6 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIF
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,8 +58,10 @@ import javax.net.ssl.TrustManager;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -81,7 +82,7 @@ import org.apache.http.client.methods.AbortableHttpRequestBase;
 import org.apache.http.client.methods.BasicAbortableHttpRequest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.SocketClientConnection;
@@ -89,6 +90,7 @@ import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
@@ -97,9 +99,10 @@ import org.apache.http.impl.conn.DefaultClientConnectionFactory;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SocketClientConnectionImpl;
+import org.apache.http.io.HttpMessageParserFactory;
+import org.apache.http.io.HttpMessageWriterFactory;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.archive.httpclient.ConfigurableX509TrustManager;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
@@ -128,6 +131,66 @@ import org.springframework.context.Lifecycle;
  * @contributor nlevitt
  */
 public class FetchHTTP extends Processor implements Lifecycle {
+
+    protected class RecordingSocketClientConnection extends
+            SocketClientConnectionImpl {
+        private final AbortableHttpRequestBase request;
+
+        private final CrawlURI curi;
+
+        protected RecordingSocketClientConnection(int buffersize,
+                CharsetDecoder chardecoder, CharsetEncoder charencoder,
+                MessageConstraints constraints,
+                ContentLengthStrategy incomingContentStrategy,
+                ContentLengthStrategy outgoingContentStrategy,
+                HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
+                HttpMessageParserFactory<HttpResponse> responseParserFactory,
+                AbortableHttpRequestBase request, CrawlURI curi) {
+            super(buffersize, chardecoder, charencoder, constraints,
+                    incomingContentStrategy, outgoingContentStrategy,
+                    requestWriterFactory, responseParserFactory);
+            this.inbuffer = new RecordingSessionInputBuffer(this.inbuffer);
+            this.request = request;
+            this.curi = curi;
+        }
+
+        @Override
+        protected InputStream getSocketInputStream(Socket socket)
+                throws IOException {
+            logger.info("socket=" + socket);
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                return recorder.inputWrap(super.getSocketInputStream(socket));
+            } else {
+                return super.getSocketInputStream(socket);
+            }
+        }
+
+        @Override
+        protected OutputStream getSocketOutputStream(
+                Socket socket) throws IOException {
+            logger.info("socket=" + socket);
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                return recorder.outputWrap(super.getSocketOutputStream(socket));
+            } else {
+                return super.getSocketOutputStream(socket);
+            }
+        }
+
+        @Override
+        public void receiveResponseEntity(HttpResponse response)
+                throws HttpException, IOException {
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {
+                recorder.markContentBegin();
+            }
+
+            if (!maybeMidfetchAbort(curi, request)) {
+                super.receiveResponseEntity(response);
+            }
+        }
+    }
 
     private static Logger logger = Logger.getLogger(FetchHTTP.class.getName());
 
@@ -517,9 +580,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     public synchronized void setSslTrustLevel(TrustLevel trustLevel) {
         this.sslTrustLevel = trustLevel;
-        
-        // force http client to be recreated with new trust level
-        disposeHttpClient();
     }
 
     protected transient SSLContext sslContext;
@@ -637,15 +697,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
         request.abort();
     }
 
-    // XXX Unfortunately the place where midfetch abort happens is deep in the
-    // bowels of the http library code and it would be tricky and ugly to get
-    // these necessary variables in there. We keep these threadlocals instead.
-    private ThreadLocal<CrawlURI> threadActiveCrawlURI = new ThreadLocal<CrawlURI>();
-    private ThreadLocal<AbortableHttpRequestBase> threadActiveRequest = new ThreadLocal<AbortableHttpRequestBase>();
-    
-    protected boolean maybeMidfetchAbort() {
-        if (checkMidfetchAbort(threadActiveCrawlURI.get())) {
-            doAbort(threadActiveCrawlURI.get(), threadActiveRequest.get(), "midFetchAbort");
+    protected boolean maybeMidfetchAbort(CrawlURI curi, AbortableHttpRequestBase request) {
+        if (checkMidfetchAbort(curi)) {
+            doAbort(curi, request, "midFetchAbort");
             return true;
         } else {
             return false;
@@ -654,11 +708,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     @Override
     protected void innerProcess(final CrawlURI curi) throws InterruptedException {
-        threadActiveCrawlURI.set(curi);
-        
-        // could call after fetch in finally block, but right here feels even more sure
-        resetHttpClient();
-        
         // Note begin time
         curi.setFetchBeginTime(System.currentTimeMillis());
 
@@ -701,7 +750,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return;
         }
         
-        threadActiveRequest.set(request);
+        HttpClient httpClient = buildHttpClient(curi, request);
 
         // Populate credentials. Set config so auth. is not automatic.
         HttpClientContext context = new HttpClientContext();
@@ -721,7 +770,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
         HttpResponse response = null;
         try {
-            response = httpClient().execute(targetHost, request, context);
+            response = httpClient.execute(targetHost, request, context);
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(request, curi, e);
@@ -766,10 +815,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             // Note completion time
             curi.setFetchCompletedTime(System.currentTimeMillis());
             
-            // finished with these (midfetch abort would have happened already)
-            threadActiveCrawlURI.set(null);
-            threadActiveRequest.set(null);
-
             // Set the response charset into the HttpRecord if available.
             setCharacterEncoding(curi, rec, response);
             setSizes(curi, rec);
@@ -815,6 +860,51 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
     
+    protected HttpClient buildHttpClient(final CrawlURI curi, final AbortableHttpRequestBase request) {
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        
+        builder.setCookieStore(getCookieStore());
+        builder.disableRedirectHandling();
+        
+        if (!getAcceptCompression()) {
+            builder.disableContentCompression();
+        }
+
+        // user-agent header
+        String userAgent = curi.getUserAgent();
+        if (userAgent == null) {
+            userAgent = getUserAgentProvider().getUserAgent();
+        }
+        builder.setUserAgent(userAgent);
+
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", PlainSocketFactory.getSocketFactory())
+                .register("https", SSLSocketFactory.getSocketFactory())
+                .build();
+
+        DefaultClientConnectionFactory connFactory = new DefaultClientConnectionFactory() {
+            @Override
+            protected SocketClientConnection create(CharsetDecoder chardecoder,
+                    CharsetEncoder charencoder,
+                    MessageConstraints messageConstraints) {
+                return new RecordingSocketClientConnection(8 * 1024,
+                        chardecoder, charencoder, messageConstraints, null,
+                        null, null, DefaultHttpResponseParserFactory.INSTANCE,
+                        request, curi);
+            }
+        };
+
+        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(
+                socketFactoryRegistry, connFactory, -1, TimeUnit.MILLISECONDS);
+
+        builder.setConnectionManager(connManager);
+
+        // builder.setSSLSocketFactory(sslContext())
+        // builder.setCredentialsProvider(null)
+        return builder.build();
+
+    }
+    
     protected void populateHttpProxyCredential(CrawlURI curi,
             AbortableHttpRequestBase request, HttpClientContext context) {
         
@@ -832,11 +922,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             AuthScheme authScheme = chooseAuthScheme(challenges, HttpHeaders.PROXY_AUTHENTICATE);
             populateHttpCredential(proxyHost, context, authScheme, user, password);
         }
-    }
-    
-    // clear out any state that could conceivably be left over from a fetch
-    protected void resetHttpClient() {
-        // httpClient().getCredentialsProvider().clear();
     }
     
     protected boolean populateHtmlFormCredential(CrawlURI curi,
@@ -1139,14 +1224,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             configBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
         }
 
-        // user-agent header
-        String userAgent = curi.getUserAgent();
-        if (userAgent == null) {
-            userAgent = getUserAgentProvider().getUserAgent();
-        }
-        // request.setHeader(HTTP.USER_AGENT, userAgent);
-        HttpProtocolParams.setUserAgent(request.getParams(), userAgent);
-
         // from header
         String from = getUserAgentProvider().getFrom();
         if (StringUtils.isNotBlank(from)) {
@@ -1276,11 +1353,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
 
     protected void configureAcceptHeaders(AbortableHttpRequestBase request) {
-        if (getAcceptCompression()) {
-            // we match the Firefox header exactly (ordering and whitespace)
-            // as a favor to caches
-            request.setHeader("Accept-Encoding","gzip,deflate"); 
-        }
         List<String> acceptHeaders = getAcceptHeaders();
         if (acceptHeaders.isEmpty()) {
             return;
@@ -1294,72 +1366,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             }
         }
     }
-
-    protected transient ThreadLocal<HttpClient> threadHttpClient;
-    protected synchronized HttpClient httpClient() {
-
-        if (threadHttpClient == null) {
-            threadHttpClient = new ThreadLocal<HttpClient>() {
-                protected HttpClient initialValue() {
-                    HttpClientBuilder builder = HttpClientBuilder.create();
-                    builder.setCookieStore(getCookieStore());
-                    builder.disableRedirectHandling();
-
-
-                    Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                            .register("http", PlainSocketFactory.getSocketFactory())
-                            .register("https", SSLSocketFactory.getSocketFactory())
-                            .build();
-
-                    DefaultClientConnectionFactory connFactory = new DefaultClientConnectionFactory() {
-                        @Override
-                        protected SocketClientConnection create(
-                                CharsetDecoder chardecoder, CharsetEncoder charencoder,
-                                ConnectionConfig cconfig) {
-                            return new SocketClientConnectionImpl(8 * 1024, chardecoder,
-                                    charencoder, cconfig.getMessageConstraints(), null, null, null,
-                                    DefaultHttpResponseParserFactory.INSTANCE) {
-                                @Override
-                                protected InputStream getSocketInputStream(Socket socket)
-                                        throws IOException {
-                                    logger.info("socket=" + socket);
-                                    Recorder recorder = Recorder.getHttpRecorder();
-                                    if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
-                                        return recorder.inputWrap(super.getSocketInputStream(socket));
-                                    } else {
-                                        return super.getSocketInputStream(socket);
-                                    }
-                                }
-                                @Override
-                                protected OutputStream getSocketOutputStream(
-                                        Socket socket) throws IOException {
-                                    logger.info("socket=" + socket);
-                                    Recorder recorder = Recorder.getHttpRecorder();
-                                    if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
-                                        return recorder.outputWrap(super.getSocketOutputStream(socket));
-                                    } else {
-                                        return super.getSocketOutputStream(socket);
-                                    }
-                                }
-                            };
-                        }
-                    };
-
-                    PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(
-                            socketFactoryRegistry, connFactory, -1, TimeUnit.MILLISECONDS);
-
-                    builder.setConnectionManager(connManager);
-
-                    // builder.setSSLSocketFactory(sslContext())
-                    // builder.setCredentialsProvider(null)
-                    return builder.build();
-                }
-            };
-        }
-        
-        return threadHttpClient.get();
-    }
-
 
     /**
      * Update CrawlURI internal sizes based on current transaction (and
@@ -1444,9 +1450,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         curi.getNonFatalFailures().add(exception);
         curi.setFetchStatus(status);
         curi.getRecorder().close();
-        
-        threadActiveCrawlURI.set(null);
-        threadActiveRequest.set(null);
     }
     
     public void start() {
@@ -1473,14 +1476,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             cookieStore.saveCookies();
             cookieStore.stop();
         }
-        disposeHttpClient(); // XXX happens at finish; move to teardown?
     }
 
-    protected void disposeHttpClient() {
-        threadHttpClient = null;
-        sslContext = null;
-    }
-    
     protected static String getServerKey(CrawlURI uri) {
         try {
             return CrawlServer.getServerKey(uri.getUURI());

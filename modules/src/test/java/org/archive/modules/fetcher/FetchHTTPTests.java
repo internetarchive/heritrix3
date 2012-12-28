@@ -207,6 +207,8 @@ public class FetchHTTPTests extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
 
+        logger.info('\n' + httpRequestString(curi) + contentString(curi));
+
         runDefaultChecks(curi, "acceptHeaders");
         
         // special checks for this test
