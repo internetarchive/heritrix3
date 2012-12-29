@@ -851,13 +851,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
         HttpClientBuilder builder = HttpClientBuilder.create();
         
         builder.setAuthSchemeRegistry(AUTH_SCHEME_REGISTRY);
-        builder.setCookieStore(getCookieStore());
-        // builder.setCookieSpecRegistry(Igo)
-        builder.disableRedirectHandling();
         
-        if (!getAcceptCompression()) {
-            builder.disableContentCompression();
-        }
+        // we handle content compression manually
+        builder.disableContentCompression();
+        
+        builder.setCookieStore(getCookieStore());
+        
+        // we handle redirects manually
+        builder.disableRedirectHandling();
 
         // user-agent header
         String userAgent = curi.getUserAgent();
@@ -1214,6 +1215,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
             configBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
             configBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+        }
+
+        if (getAcceptCompression()) {
+            request.addHeader("Accept-Encoding", "gzip,deflate");
         }
 
         // from header

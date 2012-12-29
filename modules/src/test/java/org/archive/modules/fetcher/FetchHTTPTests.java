@@ -173,20 +173,32 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
 
     // convenience methods to get strings from raw recorded i/o
+    /**
+     * Raw response including headers.
+     */
     protected String rawResponseString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
-        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
+    /**
+     * Raw message body, before any unchunking or content-decoding.
+     */ 
+    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
         return new String(buf, "US-ASCII");
     }
+    /**
+     * Message body after unchunking but before content-decoding.
+     */ 
     protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
-        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
+    /**
+     * Unchunked, content-decoded message body.
+     */ 
+    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     protected String httpRequestString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
@@ -340,10 +352,10 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().setAcceptCompression(true);
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
-        // logger.info("\n----- begin contentString -----\n" + contentString(curi));
-        // logger.info("\n----- begin entityString -----\n" + entityString(curi));
-        // logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
+        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+        logger.info("\n----- begin entityString -----\n" + entityString(curi));
+        logger.info("\n----- begin contentString -----\n" + contentString(curi));
         assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
         assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
         assertEquals(curi.getContentSize(), curi.getRecordedSize());
