@@ -76,7 +76,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbortableHttpRequestBase;
 import org.apache.http.client.methods.BasicAbortableHttpRequest;
@@ -1208,7 +1207,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     protected void configureRequest(CrawlURI curi,
             AbortableHttpRequestBase request, HttpClientContext context) {
 
-        Builder configBuilder = RequestConfig.custom();
+        RequestConfig.Builder configBuilder = RequestConfig.custom();
         
         // ignore cookies?
         if (getIgnoreCookies()) {
@@ -1262,7 +1261,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         // added above: e.g. Connection, Range, or Referer?
         configureAcceptHeaders(request);
         configureProxy(curi, request);
-        configureBindAddress(curi, request);
+        configureBindAddress(curi, configBuilder);
         
         context.setRequestConfig(configBuilder.build());
     }
@@ -1313,15 +1312,15 @@ public class FetchHTTP extends Processor implements Lifecycle {
     
     /**
      * Setup local bind address, based on attributes in CrawlURI and 
-     * settings, in given HostConfiguration
-     * @param request 
+     * settings, in given {@link RequestConfig.Builder}
+     * @param configBuilder 
      */
-    protected void configureBindAddress(CrawlURI curi, AbortableHttpRequestBase request) {
+    protected void configureBindAddress(CrawlURI curi, RequestConfig.Builder configBuilder) {
         String addressString = (String) getAttributeEither(curi, HTTP_BIND_ADDRESS);
         if (StringUtils.isNotEmpty(addressString)) {
             try {
                 InetAddress localAddress = InetAddress.getByName(addressString);
-                ConnRouteParams.setLocalAddress(request.getParams(), localAddress);
+                configBuilder.setLocalAddress(localAddress);
             } catch (UnknownHostException e) {
                 // Convert all to RuntimeException so get an exception out
                 // if initialization fails.

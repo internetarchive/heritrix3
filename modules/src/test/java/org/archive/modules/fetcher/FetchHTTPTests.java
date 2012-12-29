@@ -386,17 +386,18 @@ public class FetchHTTPTests extends ProcessorTestBase {
     // routable (perhaps LAN only eg 192.168.x.x or 10.x.x.x) address.
     public void testHttpBindAddress() throws Exception {
         List<InetAddress> addrList = new ArrayList<InetAddress>();
-        for(NetworkInterface ifc : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-           if(ifc.isUp()) {
-              for(InetAddress addr : Collections.list(ifc.getInetAddresses())) {
-                  if(addr instanceof Inet4Address) {
-                    addrList.add(addr);
-                  }
-              }
-           }
+        for (NetworkInterface ifc: Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (ifc.isUp()) {
+                for (InetAddress addr : Collections.list(ifc.getInetAddresses())) {
+                    if (addr instanceof Inet4Address) {
+                        addrList.add(addr);
+                    }
+                }
+            }
         }
-        if(addrList.size()<2) {
-            fail("unable to test binding to different local addresses: only "+addrList.size()+" addresses available");
+        if (addrList.size() < 2) {
+            fail("unable to test binding to different local addresses: only "
+                    + addrList.size() + " addresses available");
         }
         for (InetAddress addr : addrList) {
             tryHttpBindAddress(addr.getHostAddress());
