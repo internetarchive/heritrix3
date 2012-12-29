@@ -19,17 +19,16 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.http.io.HttpTransportMetrics;
-import org.apache.http.io.UmmSessionInputBuffer;
+import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.util.CharArrayBuffer;
 
-class RecordingSessionInputBuffer implements UmmSessionInputBuffer {
+class RecordingSessionInputBuffer implements SessionInputBuffer {
 
-    protected UmmSessionInputBuffer wrapped;
+    protected SessionInputBuffer wrapped;
 
-    public RecordingSessionInputBuffer(UmmSessionInputBuffer wrapped) {
+    public RecordingSessionInputBuffer(SessionInputBuffer wrapped) {
         this.wrapped = wrapped;
     }
 
@@ -69,23 +68,23 @@ class RecordingSessionInputBuffer implements UmmSessionInputBuffer {
         return wrapped.getMetrics();
     }
 
-    @Override
-    public boolean isBound() {
-        return wrapped.isBound();
-    }
-
-    @Override
-    public void bind(InputStream inputStream) {
-        wrapped.bind(inputStream);
-    }
-
-    @Override
-    public boolean hasBufferedData() {
-        return wrapped.hasBufferedData();
-    }
-
-    @Override
-    public int fillBuffer() throws IOException {
-        return wrapped.fillBuffer();
-    }
+//    @Override
+//    public boolean isBound() {
+//        return wrapped.isBound();
+//    }
+//
+//    @Override
+//    public void bind(InputStream inputStream) {
+//        wrapped.bind(inputStream);
+//    }
+//
+//    @Override
+//    public boolean hasBufferedData() {
+//        return wrapped.hasBufferedData();
+//    }
+//
+//    @Override
+//    public int fillBuffer() throws IOException {
+//        return wrapped.fillBuffer();
+//    }
 }

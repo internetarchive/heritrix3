@@ -101,6 +101,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SocketClientConnectionImpl;
 import org.apache.http.io.HttpMessageParserFactory;
 import org.apache.http.io.HttpMessageWriterFactory;
+import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -149,11 +150,15 @@ public class FetchHTTP extends Processor implements Lifecycle {
             super(buffersize, chardecoder, charencoder, constraints,
                     incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory);
-            this.inbuffer = new RecordingSessionInputBuffer(this.inbuffer);
             this.request = request;
             this.curi = curi;
         }
 
+        @Override
+        protected SessionInputBuffer getSessionInputBuffer() {
+            return new RecordingSessionInputBuffer(super.getSessionInputBuffer());
+        }
+        
         @Override
         protected InputStream getSocketInputStream(Socket socket)
                 throws IOException {
