@@ -545,7 +545,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClie
 +import org.apache.http.config.MessageConstraints;
  import org.apache.http.conn.HttpConnectionFactory;
  import org.apache.http.conn.SocketClientConnection;
-+import org.apache.http.impl.io.DefaultSessionBufferFactory;
++import org.apache.http.impl.io.DefaultSessionBufferImplFactory;
  
  /**
   * @since 4.3
@@ -565,7 +565,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClie
                  null, null, null,
 -                DefaultHttpResponseParserFactory.INSTANCE);
 +                DefaultHttpResponseParserFactory.INSTANCE, 
-+                DefaultSessionBufferFactory.INSTANCE);
++                DefaultSessionBufferImplFactory.INSTANCE);
      }
  
  }
@@ -573,11 +573,13 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClien
 ===================================================================
 --- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(revision 1426657)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(working copy)
-@@ -52,9 +52,10 @@
+@@ -50,11 +50,12 @@
+ import org.apache.http.conn.SocketClientConnection;
+ import org.apache.http.entity.ContentLengthStrategy;
  import org.apache.http.impl.DefaultBHttpClientConnection;
++import org.apache.http.impl.io.SessionBufferImplFactory;
  import org.apache.http.io.HttpMessageParserFactory;
  import org.apache.http.io.HttpMessageWriterFactory;
-+import org.apache.http.io.UmmSessionBufferFactory;
  import org.apache.http.protocol.HttpContext;
  
 -class SocketClientConnectionImpl extends DefaultBHttpClientConnection
@@ -604,7 +606,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClien
 -                constraints, incomingContentStrategy, outgoingContentStrategy,
 -                requestWriterFactory, responseParserFactory);
 +            final HttpMessageParserFactory<HttpResponse> responseParserFactory,
-+            final UmmSessionBufferFactory sessionBufferFactory) {
++            final SessionBufferImplFactory sessionBufferFactory) {
 +        super(buffersize, chardecoder, charencoder, constraints,
 +                incomingContentStrategy, outgoingContentStrategy,
 +                requestWriterFactory, responseParserFactory, 
@@ -644,35 +646,18 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.
 ===================================================================
 --- httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(revision 1426657)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(working copy)
-@@ -55,13 +55,15 @@
+@@ -55,9 +55,11 @@
  import org.apache.http.impl.io.ChunkedOutputStream;
  import org.apache.http.impl.io.ContentLengthInputStream;
  import org.apache.http.impl.io.ContentLengthOutputStream;
-+import org.apache.http.impl.io.DefaultSessionBufferFactory;
++import org.apache.http.impl.io.DefaultSessionBufferImplFactory;
  import org.apache.http.impl.io.HttpTransportMetricsImpl;
  import org.apache.http.impl.io.IdentityInputStream;
  import org.apache.http.impl.io.IdentityOutputStream;
--import org.apache.http.impl.io.SessionInputBufferImpl;
--import org.apache.http.impl.io.SessionOutputBufferImpl;
++import org.apache.http.impl.io.SessionBufferImplFactory;
+ import org.apache.http.impl.io.SessionInputBufferImpl;
+ import org.apache.http.impl.io.SessionOutputBufferImpl;
  import org.apache.http.io.SessionInputBuffer;
- import org.apache.http.io.SessionOutputBuffer;
-+import org.apache.http.io.UmmSessionBufferFactory;
-+import org.apache.http.io.UmmSessionInputBuffer;
-+import org.apache.http.io.UmmSessionOutputBuffer;
- import org.apache.http.protocol.HTTP;
- import org.apache.http.util.Args;
- import org.apache.http.util.Asserts;
-@@ -76,8 +78,8 @@
- @NotThreadSafe
- public class BHttpConnectionBase implements HttpConnection, HttpInetConnection {
- 
--    private final SessionInputBufferImpl inbuffer;
--    private final SessionOutputBufferImpl outbuffer;
-+    private final UmmSessionInputBuffer inbuffer;
-+    private final UmmSessionOutputBuffer outbuffer;
-     private final HttpConnectionMetricsImpl connMetrics;
-     private final ContentLengthStrategy incomingContentStrategy;
-     private final ContentLengthStrategy outgoingContentStrategy;
 @@ -99,6 +101,7 @@
       *   {@link LaxContentLengthStrategy#INSTANCE} will be used.
       * @param outgoingContentStrategy outgoing content length strategy. If <code>null</code>
@@ -687,13 +672,13 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.
              final ContentLengthStrategy incomingContentStrategy,
 -            final ContentLengthStrategy outgoingContentStrategy) {
 +            final ContentLengthStrategy outgoingContentStrategy, 
-+            final UmmSessionBufferFactory sessionBufferFactory) {
++            final SessionBufferImplFactory sessionBufferFactory) {
          super();
          Args.positive(buffersize, "Buffer size");
          HttpTransportMetricsImpl inTransportMetrics = new HttpTransportMetricsImpl();
          HttpTransportMetricsImpl outTransportMetrics = new HttpTransportMetricsImpl();
 -        this.inbuffer = new SessionInputBufferImpl(inTransportMetrics, buffersize, -1,
-+        UmmSessionBufferFactory sbf = sessionBufferFactory != null ? sessionBufferFactory : DefaultSessionBufferFactory.INSTANCE;
++        SessionBufferImplFactory sbf = sessionBufferFactory != null ? sessionBufferFactory : DefaultSessionBufferImplFactory.INSTANCE;
 +        this.inbuffer = sbf.createInputBuffer(inTransportMetrics, buffersize, -1,
                  constraints != null ? constraints : MessageConstraints.DEFAULT, chardecoder);
 -        this.outbuffer = new SessionOutputBufferImpl(outTransportMetrics, buffersize, -1,
@@ -705,14 +690,14 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientCo
 ===================================================================
 --- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(revision 1426657)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(working copy)
-@@ -51,6 +51,7 @@
+@@ -47,6 +47,7 @@
+ import org.apache.http.impl.entity.StrictContentLengthStrategy;
+ import org.apache.http.impl.io.DefaultHttpRequestWriterFactory;
+ import org.apache.http.impl.io.DefaultHttpResponseParserFactory;
++import org.apache.http.impl.io.SessionBufferImplFactory;
+ import org.apache.http.io.HttpMessageParser;
  import org.apache.http.io.HttpMessageParserFactory;
  import org.apache.http.io.HttpMessageWriter;
- import org.apache.http.io.HttpMessageWriterFactory;
-+import org.apache.http.io.UmmSessionBufferFactory;
- import org.apache.http.util.Args;
- 
- /**
 @@ -83,6 +84,7 @@
       *   {@link DefaultHttpRequestWriterFactory#INSTANCE} will be used.
       * @param responseParserFactory response parser factory. If <code>null</code>
@@ -729,7 +714,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientCo
 -        super(buffersize, chardecoder, charencoder,
 -                constraints, incomingContentStrategy, outgoingContentStrategy);
 +            final HttpMessageParserFactory<HttpResponse> responseParserFactory, 
-+            final UmmSessionBufferFactory sessionBufferFactory) {
++            final SessionBufferImplFactory sessionBufferFactory) {
 +        super(buffersize, chardecoder, charencoder, constraints,
 +                incomingContentStrategy, outgoingContentStrategy,
 +                sessionBufferFactory);
@@ -763,58 +748,94 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerCo
          this.requestParser = (requestParserFactory != null ? requestParserFactory :
              DefaultHttpRequestParserFactory.INSTANCE).create(getSessionInputBuffer(), constraints);
          this.responseWriter = (responseWriterFactory != null ? responseWriterFactory :
-Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferImplFactory.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java	(revision 0)
-+++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java	(working copy)
-@@ -0,0 +1,28 @@
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferImplFactory.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferImplFactory.java	(working copy)
+@@ -0,0 +1,25 @@
 +package org.apache.http.impl.io;
 +
 +import java.nio.charset.CharsetDecoder;
 +import java.nio.charset.CharsetEncoder;
 +
 +import org.apache.http.config.MessageConstraints;
-+import org.apache.http.io.UmmSessionBufferFactory;
-+import org.apache.http.io.UmmSessionInputBuffer;
-+import org.apache.http.io.UmmSessionOutputBuffer;
 +
-+public class DefaultSessionBufferFactory implements UmmSessionBufferFactory {
++public class DefaultSessionBufferImplFactory implements SessionBufferImplFactory {
 +
-+    public static final UmmSessionBufferFactory INSTANCE = new DefaultSessionBufferFactory();
++    public static final SessionBufferImplFactory INSTANCE = new DefaultSessionBufferImplFactory();
 +
 +    @Override
-+    public UmmSessionInputBuffer createInputBuffer(
++    public SessionInputBufferImpl createInputBuffer(
 +            HttpTransportMetricsImpl metrics, int buffersize, int minChunkLimit,
 +            MessageConstraints constraints, CharsetDecoder chardecoder) {
 +        return new SessionInputBufferImpl(metrics, buffersize, minChunkLimit, constraints, chardecoder);
 +    }
 +
 +    @Override
-+    public UmmSessionOutputBuffer createOutputBuffer(
++    public SessionOutputBufferImpl createOutputBuffer(
 +            HttpTransportMetricsImpl metrics, int buffersize, int minChunkLimit,
 +            CharsetEncoder charencoder) {
 +        return new SessionOutputBufferImpl(metrics, buffersize, minChunkLimit, charencoder);
 +    }
 +}
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionBufferImplFactory.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionBufferImplFactory.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionBufferImplFactory.java	(working copy)
+@@ -0,0 +1,46 @@
++/*
++ * ====================================================================
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ *
++ */
++
++package org.apache.http.impl.io;
++
++import java.nio.charset.CharsetDecoder;
++import java.nio.charset.CharsetEncoder;
++
++import org.apache.http.config.MessageConstraints;
++
++/**
++ * @since 4.3
++ */
++public interface SessionBufferImplFactory {
++
++    SessionInputBufferImpl createInputBuffer(HttpTransportMetricsImpl metrics,
++            int buffersize, int minChunkLimit, MessageConstraints constraints,
++            CharsetDecoder chardecoder);
++
++    SessionOutputBufferImpl createOutputBuffer(HttpTransportMetricsImpl metrics,
++            int buffersize, int i, CharsetEncoder charencoder);
++}
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java
 ===================================================================
 --- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(revision 1426657)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(working copy)
-@@ -39,7 +39,7 @@
- import org.apache.http.config.MessageConstraints;
- import org.apache.http.io.BufferInfo;
- import org.apache.http.io.HttpTransportMetrics;
--import org.apache.http.io.SessionInputBuffer;
-+import org.apache.http.io.UmmSessionInputBuffer;
- import org.apache.http.protocol.HTTP;
- import org.apache.http.util.Args;
- import org.apache.http.util.Asserts;
-@@ -58,16 +58,16 @@
-  * @since 4.3
-  */
+@@ -60,14 +60,14 @@
  @NotThreadSafe
--public class SessionInputBufferImpl implements SessionInputBuffer, BufferInfo {
-+public class SessionInputBufferImpl implements UmmSessionInputBuffer, BufferInfo {
+ public class SessionInputBufferImpl implements SessionInputBuffer, BufferInfo {
  
 -    private final HttpTransportMetricsImpl metrics;
 +    protected final HttpTransportMetricsImpl metrics;
@@ -852,24 +873,6 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBuff
 ===================================================================
 --- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(revision 1426657)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(working copy)
-@@ -37,7 +37,7 @@
- import org.apache.http.annotation.NotThreadSafe;
- import org.apache.http.io.BufferInfo;
- import org.apache.http.io.HttpTransportMetrics;
--import org.apache.http.io.SessionOutputBuffer;
-+import org.apache.http.io.UmmSessionOutputBuffer;
- import org.apache.http.protocol.HTTP;
- import org.apache.http.util.Args;
- import org.apache.http.util.Asserts;
-@@ -55,7 +55,7 @@
-  * @since 4.3
-  */
- @NotThreadSafe
--public class SessionOutputBufferImpl implements SessionOutputBuffer, BufferInfo {
-+public class SessionOutputBufferImpl implements UmmSessionOutputBuffer, BufferInfo {
- 
-     private static final byte[] CRLF = new byte[] {HTTP.CR, HTTP.LF};
- 
 @@ -64,7 +64,7 @@
      private final int minChunkLimit;
      private final CharsetEncoder encoder;
@@ -888,121 +891,6 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBuff
          this.outstream = outstream;
      }
  
-Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java
-===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java	(revision 0)
-+++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java	(working copy)
-@@ -0,0 +1,47 @@
-+/*
-+ * ====================================================================
-+ * Licensed to the Apache Software Foundation (ASF) under one
-+ * or more contributor license agreements.  See the NOTICE file
-+ * distributed with this work for additional information
-+ * regarding copyright ownership.  The ASF licenses this file
-+ * to you under the Apache License, Version 2.0 (the
-+ * "License"); you may not use this file except in compliance
-+ * with the License.  You may obtain a copy of the License at
-+ *
-+ *   http://www.apache.org/licenses/LICENSE-2.0
-+ *
-+ * Unless required by applicable law or agreed to in writing,
-+ * software distributed under the License is distributed on an
-+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-+ * KIND, either express or implied.  See the License for the
-+ * specific language governing permissions and limitations
-+ * under the License.
-+ * ====================================================================
-+ *
-+ * This software consists of voluntary contributions made by many
-+ * individuals on behalf of the Apache Software Foundation.  For more
-+ * information on the Apache Software Foundation, please see
-+ * <http://www.apache.org/>.
-+ *
-+ */
-+
-+package org.apache.http.io;
-+
-+import java.nio.charset.CharsetDecoder;
-+import java.nio.charset.CharsetEncoder;
-+
-+import org.apache.http.config.MessageConstraints;
-+import org.apache.http.impl.io.HttpTransportMetricsImpl;
-+
-+/**
-+ * @since 4.3
-+ */
-+public interface UmmSessionBufferFactory {
-+
-+    UmmSessionInputBuffer createInputBuffer(HttpTransportMetricsImpl metrics,
-+            int buffersize, int minChunkLimit, MessageConstraints constraints,
-+            CharsetDecoder chardecoder);
-+
-+    UmmSessionOutputBuffer createOutputBuffer(HttpTransportMetricsImpl metrics,
-+            int buffersize, int i, CharsetEncoder charencoder);
-+}
-Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java
-===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java	(revision 0)
-+++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java	(working copy)
-@@ -0,0 +1,16 @@
-+package org.apache.http.io;
-+
-+import java.io.IOException;
-+import java.io.InputStream;
-+
-+public interface UmmSessionInputBuffer extends SessionInputBuffer {
-+
-+    boolean isBound();
-+
-+    void bind(InputStream socketInputStream) throws IOException;
-+
-+    boolean hasBufferedData();
-+
-+    int fillBuffer() throws IOException;
-+
-+}
-Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java
-===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java	(revision 0)
-+++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java	(working copy)
-@@ -0,0 +1,37 @@
-+/*
-+ * ====================================================================
-+ * Licensed to the Apache Software Foundation (ASF) under one
-+ * or more contributor license agreements.  See the NOTICE file
-+ * distributed with this work for additional information
-+ * regarding copyright ownership.  The ASF licenses this file
-+ * to you under the Apache License, Version 2.0 (the
-+ * "License"); you may not use this file except in compliance
-+ * with the License.  You may obtain a copy of the License at
-+ *
-+ *   http://www.apache.org/licenses/LICENSE-2.0
-+ *
-+ * Unless required by applicable law or agreed to in writing,
-+ * software distributed under the License is distributed on an
-+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-+ * KIND, either express or implied.  See the License for the
-+ * specific language governing permissions and limitations
-+ * under the License.
-+ * ====================================================================
-+ *
-+ * This software consists of voluntary contributions made by many
-+ * individuals on behalf of the Apache Software Foundation.  For more
-+ * information on the Apache Software Foundation, please see
-+ * <http://www.apache.org/>.
-+ *
-+ */
-+package org.apache.http.io;
-+
-+import java.io.IOException;
-+import java.io.OutputStream;
-+
-+public interface UmmSessionOutputBuffer extends SessionOutputBuffer {
-+
-+    boolean isBound();
-+
-+    void bind(OutputStream outputStream) throws IOException;
-+}
 Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java
 ===================================================================
 --- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(revision 1426657)

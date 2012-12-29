@@ -57,23 +57,6 @@ class RecordingSessionInputBuffer extends SessionInputBufferImpl {
         }
     }
 
-//    @Override
-//    public boolean hasBufferedData() {
-//        throw new RuntimeException("implement me i guess");
-//        if (this.instream != null) {
-//            try {
-//                return in.available() > 0;
-//            } catch (IOException e) {
-//                return false;
-//            }
-//        } else if (this.instream instanceof BufferedInputStream) {
-//            BufferedInputStream in = (BufferedInputStream) this.instream;
-//        } else if (this.instream instanceof RecordingInputStream) {
-//            RecordingInputStream in = (RecordingInputStream) this.instream;
-//            return in.
-//        }
-//    }
-//
     @Override
     public int fillBuffer() throws IOException {
         throw new RuntimeException("don't use me");

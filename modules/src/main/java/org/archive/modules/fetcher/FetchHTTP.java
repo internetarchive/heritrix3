@@ -96,12 +96,9 @@ import org.apache.http.impl.conn.DefaultClientConnectionFactory;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SocketClientConnectionImpl;
-import org.apache.http.impl.io.HttpTransportMetricsImpl;
+import org.apache.http.impl.io.SessionBufferImplFactory;
 import org.apache.http.io.HttpMessageParserFactory;
 import org.apache.http.io.HttpMessageWriterFactory;
-import org.apache.http.io.UmmSessionBufferFactory;
-import org.apache.http.io.UmmSessionInputBuffer;
-import org.apache.http.io.UmmSessionOutputBuffer;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -133,27 +130,6 @@ import org.springframework.context.Lifecycle;
  */
 public class FetchHTTP extends Processor implements Lifecycle {
 
-    protected static class RecordingSessionBufferFactory implements UmmSessionBufferFactory {
-
-        protected static final RecordingSessionBufferFactory INSTANCE = new RecordingSessionBufferFactory();
-        
-        @Override
-        public UmmSessionInputBuffer createInputBuffer(
-                HttpTransportMetricsImpl metrics, int buffersize,
-                int minChunkLimit, MessageConstraints constraints,
-                CharsetDecoder chardecoder) {
-            return new RecordingSessionInputBuffer(metrics, buffersize, minChunkLimit, constraints, chardecoder); 
-        }
-
-        @Override
-        public UmmSessionOutputBuffer createOutputBuffer(
-                HttpTransportMetricsImpl metrics, int buffersize, int minChunkLimit,
-                CharsetEncoder charencoder) {
-            return new RecordingSessionOutputBuffer(metrics, buffersize, minChunkLimit, charencoder);
-        }
-        
-    }
-    
     protected class RecordingSocketClientConnection extends
             SocketClientConnectionImpl {
         private final AbortableHttpRequestBase request;
@@ -167,7 +143,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
                 ContentLengthStrategy outgoingContentStrategy,
                 HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
                 HttpMessageParserFactory<HttpResponse> responseParserFactory,
-                UmmSessionBufferFactory sessionBufferFactory, AbortableHttpRequestBase request, CrawlURI curi) {
+                SessionBufferImplFactory sessionBufferFactory, AbortableHttpRequestBase request, CrawlURI curi) {
             super(buffersize, chardecoder, charencoder, constraints,
                     incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory, sessionBufferFactory);
