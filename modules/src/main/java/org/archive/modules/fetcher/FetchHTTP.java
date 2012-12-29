@@ -65,11 +65,13 @@ import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -91,7 +93,9 @@ import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.TargetAuthenticationStrategy;
 import org.apache.http.impl.conn.DefaultClientConnectionFactory;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -725,7 +729,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         
         HttpClient httpClient = buildHttpClient(curi, request);
 
-        // Populate credentials. Set config so auth. is not automatic.
         HttpClientContext context = new HttpClientContext();
         
         configureRequest(curi, request, context);
@@ -837,6 +840,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         HttpClientBuilder builder = HttpClientBuilder.create();
         
         builder.setCookieStore(getCookieStore());
+        // builder.setCookieSpecRegistry(Igo)
         builder.disableRedirectHandling();
         
         if (!getAcceptCompression()) {
@@ -928,7 +932,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         authCache.put(host, authScheme);
 
-        // httpClient().getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
+        if (context.getCredentialsProvider() == null) {
+            context.setCredentialsProvider(new BasicCredentialsProvider());
+        }
+        context.getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
     }
     
     /**
@@ -1032,13 +1039,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Presence of the credential serves as flag to frontier to requeue
      * promptly. If we already tried this domain and still got a 401, then our
      * credentials are bad. Remove them and let this curi die.
+     * @param httpClient 
      * @param response 401 http response 
      * @param curi
      *            CrawlURI that got a 401.
      */
     protected void handle401(HttpResponse response, final CrawlURI curi) {
-        // Map<String, String> challenges = extractChallenges(response, curi, httpClient().getTargetAuthenticationStrategy());
-        Map<String, String> challenges = new HashMap<String, String>();
+        Map<String, String> challenges = extractChallenges(response, curi, TargetAuthenticationStrategy.INSTANCE);
         AuthScheme authscheme = chooseAuthScheme(challenges, HttpHeaders.WWW_AUTHENTICATE);
 
         // remember WWW-Authenticate headers for later use 
@@ -1186,8 +1193,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
         return result;
     }
+    protected void configureRequest(CrawlURI curi,
+            AbortableHttpRequestBase request, HttpClientContext context) {
 
-    protected void configureRequest(CrawlURI curi, AbortableHttpRequestBase request, HttpClientContext context) {
         Builder configBuilder = RequestConfig.custom();
         
         // ignore cookies?

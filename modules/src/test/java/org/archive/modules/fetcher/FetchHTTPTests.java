@@ -240,6 +240,8 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().process(curi);
         runDefaultChecks(curi);
 
+        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
+
         String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Cookie:"));
     }
@@ -265,7 +267,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // fetch again with the credentials
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + contentString(curi));
+        logger.info('\n' + httpRequestString + rawResponseString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine");
