@@ -65,14 +65,15 @@ import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.config.RequestConfig.Builder;
@@ -81,6 +82,7 @@ import org.apache.http.client.methods.AbortableHttpRequestBase;
 import org.apache.http.client.methods.BasicAbortableHttpRequest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Lookup;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -91,7 +93,8 @@ import org.apache.http.conn.socket.PlainSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.entity.ContentType;
-import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.auth.BasicSchemeFactory;
+import org.apache.http.impl.auth.DigestSchemeFactory;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -176,6 +179,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
     public static final String RANGE_PREFIX = "bytes=0-";
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
+    
+    protected static final Lookup<AuthSchemeProvider> AUTH_SCHEME_REGISTRY;
+    static {
+        RegistryBuilder<AuthSchemeProvider> b = RegistryBuilder.<AuthSchemeProvider>create();
+        b.register(AuthSchemes.BASIC, new BasicSchemeFactory());
+        b.register(AuthSchemes.DIGEST, new DigestSchemeFactory());
+        AUTH_SCHEME_REGISTRY = b.build();
+    }
 
     protected ServerCache serverCache;
     public ServerCache getServerCache() {
@@ -839,6 +850,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     protected HttpClient buildHttpClient(final CrawlURI curi, final AbortableHttpRequestBase request) {
         HttpClientBuilder builder = HttpClientBuilder.create();
         
+        builder.setAuthSchemeRegistry(AUTH_SCHEME_REGISTRY);
         builder.setCookieStore(getCookieStore());
         // builder.setCookieSpecRegistry(Igo)
         builder.disableRedirectHandling();
@@ -1139,28 +1151,27 @@ public class FetchHTTP extends Processor implements Lifecycle {
         HashSet<String> authSchemesLeftToTry = new HashSet<String>(challenges.keySet());
         for (String authSchemeName: new String[]{"digest","basic"}) {
             if (authSchemesLeftToTry.remove(authSchemeName)) {
-                // AuthScheme authscheme = httpClient().getAuthSchemes().getAuthScheme(authSchemeName, null);
-                BasicScheme authscheme = new BasicScheme();
+                AuthScheme authScheme = AUTH_SCHEME_REGISTRY.lookup(authSchemeName).create(null);;
                 BasicHeader challenge = new BasicHeader(challengeHeaderKey, challenges.get(authSchemeName));
 
                 try {
-                    authscheme.processChallenge(challenge);
+                    authScheme.processChallenge(challenge);
                 } catch (MalformedChallengeException e) {
                     logger.fine(e.getMessage() + " " + challenge);
                     continue;
                 }
-                if (authscheme.isConnectionBased()) {
-                    logger.fine("Connection based " + authscheme);
+                if (authScheme.isConnectionBased()) {
+                    logger.fine("Connection based " + authScheme);
                     continue;
                 }
 
-                if (authscheme.getRealm() == null
-                        || authscheme.getRealm().length() <= 0) {
-                    logger.fine("Empty realm " + authscheme);
+                if (authScheme.getRealm() == null
+                        || authScheme.getRealm().length() <= 0) {
+                    logger.fine("Empty realm " + authScheme);
                     continue;
                 }
 
-                return authscheme;
+                return authScheme;
             }
         }
 

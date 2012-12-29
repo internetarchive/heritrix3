@@ -534,6 +534,44 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractH
              }
          } catch(HttpException httpException) {
              throw new ClientProtocolException(httpException);
+Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(revision 1426847)
++++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(working copy)
+@@ -163,7 +163,7 @@
+     private ServiceUnavailableRetryStrategy serviceUnavailStrategy;
+     private Lookup<AuthSchemeProvider> authSchemeRegistry;
+     private Lookup<CookieSpecProvider> cookieSpecRegistry;
+-    private Map<String, AuthSchemeProvider> authShemes;
++    private Map<String, AuthSchemeProvider> authSchemes;
+     private Map<String, CookieSpecProvider> cookieSpecs;
+     private CookieStore cookieStore;
+     private CredentialsProvider credentialsProvider;
+@@ -362,10 +362,10 @@
+ 
+     public final HttpClientBuilder registerAuthScheme(
+             final String name, final AuthSchemeProvider authSchemeProvider) {
+-        if (this.authShemes == null) {
+-            this.authShemes = new HashMap<String, AuthSchemeProvider>();
++        if (this.authSchemes == null) {
++            this.authSchemes = new HashMap<String, AuthSchemeProvider>();
+         }
+-        this.authShemes.put(name, authSchemeProvider);
++        this.authSchemes.put(name, authSchemeProvider);
+         return this;
+     }
+ 
+@@ -653,8 +653,8 @@
+                 .register(AuthSchemes.SPNEGO, new SPNegoSchemeFactory())
+                 .register(AuthSchemes.KERBEROS, new KerberosSchemeFactory())
+                 .build();
+-            if (authShemes != null) {
+-                for (Map.Entry<String, AuthSchemeProvider> entry: authShemes.entrySet()) {
++            if (authSchemes != null) {
++                for (Map.Entry<String, AuthSchemeProvider> entry: authSchemes.entrySet()) {
+                     b.register(entry.getKey(), entry.getValue());
+                 }
+             }
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/InternalHttpClient.java
 ===================================================================
 --- httpclient/httpclient/src/main/java/org/apache/http/impl/client/InternalHttpClient.java	(revision 1426847)
