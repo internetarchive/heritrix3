@@ -197,7 +197,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testDefaults() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + contentString(curi));
+        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
         runDefaultChecks(curi);
     }
 

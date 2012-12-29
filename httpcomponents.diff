@@ -1,0 +1,1060 @@
+Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/AbortableHttpRequestBase.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/client/methods/AbortableHttpRequestBase.java	(revision 0)
++++ httpclient/httpclient/src/main/java/org/apache/http/client/methods/AbortableHttpRequestBase.java	(working copy)
+@@ -0,0 +1,174 @@
++/*
++ * ====================================================================
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ *
++ */
++package org.apache.http.client.methods;
++
++import java.io.IOException;
++import java.util.concurrent.locks.Lock;
++import java.util.concurrent.locks.ReentrantLock;
++
++import org.apache.http.HttpRequest;
++import org.apache.http.client.utils.CloneUtils;
++import org.apache.http.concurrent.Cancellable;
++import org.apache.http.conn.ClientConnectionRequest;
++import org.apache.http.conn.ConnectionReleaseTrigger;
++import org.apache.http.message.AbstractHttpMessage;
++
++@SuppressWarnings("deprecation")
++public abstract class AbortableHttpRequestBase extends AbstractHttpMessage implements
++        HttpExecutionAware, AbortableHttpRequest, Cloneable, HttpRequest {
++
++    private Lock abortLock = new ReentrantLock();
++    private volatile boolean aborted;
++    private Cancellable cancellable;
++    
++    @Deprecated
++    @Override
++    public void setConnectionRequest(final ClientConnectionRequest connRequest) {
++        if (this.aborted) {
++            return;
++        }
++        this.abortLock.lock();
++        try {
++            this.cancellable = new Cancellable() {
++    
++                public boolean cancel() {
++                    connRequest.abortRequest();
++                    return true;
++                }
++    
++            };
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++    @Deprecated
++    @Override
++    public void setReleaseTrigger(final ConnectionReleaseTrigger releaseTrigger) {
++        if (this.aborted) {
++            return;
++        }
++        this.abortLock.lock();
++        try {
++            this.cancellable = new Cancellable() {
++    
++                public boolean cancel() {
++                    try {
++                        releaseTrigger.abortConnection();
++                        return true;
++                    } catch (IOException ex) {
++                        return false;
++                    }
++                }
++    
++            };
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++    protected void cancelExecution() {
++        if (this.cancellable != null) {
++            this.cancellable.cancel();
++            this.cancellable = null;
++        }
++    }
++
++    @Override
++    public void abort() {
++        if (this.aborted) {
++            return;
++        }
++        this.abortLock.lock();
++        try {
++            this.aborted = true;
++            cancelExecution();
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++    @Override
++    public boolean isAborted() {
++        return this.aborted;
++    }
++
++    /**
++     * @since 4.2
++     */
++    @Override
++    public void setCancellable(final Cancellable cancellable) {
++        if (this.aborted) {
++            return;
++        }
++        this.abortLock.lock();
++        try {
++            this.cancellable = cancellable;
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++    @Override
++    protected Object clone() throws CloneNotSupportedException {
++        AbortableHttpRequestBase clone = (AbortableHttpRequestBase) super.clone();
++        clone.abortLock = new ReentrantLock();
++        clone.aborted = false;
++        clone.cancellable = null;
++        clone.headergroup = CloneUtils.cloneObject(this.headergroup);
++        clone.params = CloneUtils.cloneObject(this.params);
++        return clone;
++    }
++
++    /**
++     * @since 4.2
++     */
++    public void completed() {
++        this.abortLock.lock();
++        try {
++            this.cancellable = null;
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++    /**
++     * Resets internal state of the request making it reusable.
++     *
++     * @since 4.2
++     */
++    public void reset() {
++        this.abortLock.lock();
++        try {
++            cancelExecution();
++            this.aborted = false;
++        } finally {
++            this.abortLock.unlock();
++        }
++    }
++
++}
+Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/BasicAbortableHttpRequest.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/client/methods/BasicAbortableHttpRequest.java	(revision 0)
++++ httpclient/httpclient/src/main/java/org/apache/http/client/methods/BasicAbortableHttpRequest.java	(working copy)
+@@ -0,0 +1,85 @@
++package org.apache.http.client.methods;
++
++import org.apache.http.HttpVersion;
++import org.apache.http.ProtocolVersion;
++import org.apache.http.RequestLine;
++import org.apache.http.annotation.NotThreadSafe;
++import org.apache.http.message.BasicRequestLine;
++import org.apache.http.util.Args;
++
++/**
++ *
++ * @since 4.3
++ */
++@NotThreadSafe
++public class BasicAbortableHttpRequest extends AbortableHttpRequestBase {
++
++    private final String method;
++    private final String uri;
++
++    private RequestLine requestline;
++
++    /**
++     * Creates an instance of this class using the given request method
++     * and URI.
++     *
++     * @param method request method.
++     * @param uri request URI.
++     */
++    public BasicAbortableHttpRequest(final String method, final String uri) {
++        super();
++        this.method = Args.notNull(method, "Method name");
++        this.uri = Args.notNull(uri, "Request URI");
++        this.requestline = null;
++    }
++
++    /**
++     * Creates an instance of this class using the given request method, URI
++     * and the HTTP protocol version.
++     *
++     * @param method request method.
++     * @param uri request URI.
++     * @param ver HTTP protocol version.
++     */
++    public BasicAbortableHttpRequest(final String method, final String uri, final ProtocolVersion ver) {
++        this(new BasicRequestLine(method, uri, ver));
++    }
++
++    /**
++     * Creates an instance of this class using the given request line.
++     *
++     * @param requestline request line.
++     */
++    public BasicAbortableHttpRequest(final RequestLine requestline) {
++        super();
++        this.requestline = Args.notNull(requestline, "Request line");
++        this.method = requestline.getMethod();
++        this.uri = requestline.getUri();
++    }
++
++    /**
++     * Returns the HTTP protocol version to be used for this request.
++     *
++     * @see #BasicHttpRequest(String, String)
++     */
++    public ProtocolVersion getProtocolVersion() {
++        return getRequestLine().getProtocolVersion();
++    }
++
++    /**
++     * Returns the request line of this request.
++     *
++     * @see #BasicHttpRequest(String, String)
++     */
++    public RequestLine getRequestLine() {
++        if (this.requestline == null) {
++            this.requestline = new BasicRequestLine(this.method, this.uri, HttpVersion.HTTP_1_1);
++        }
++        return this.requestline;
++    }
++
++    @Override
++    public String toString() {
++        return this.method + " " + this.uri + " " + this.headergroup;
++    }
++}
+Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java	(revision 1426657)
++++ httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java	(working copy)
+@@ -27,20 +27,12 @@
+ 
+ package org.apache.http.client.methods;
+ 
+-import java.io.IOException;
+ import java.net.URI;
+-import java.util.concurrent.locks.Lock;
+-import java.util.concurrent.locks.ReentrantLock;
+ 
+ import org.apache.http.ProtocolVersion;
+ import org.apache.http.RequestLine;
+ import org.apache.http.annotation.NotThreadSafe;
+ import org.apache.http.client.config.RequestConfig;
+-import org.apache.http.client.utils.CloneUtils;
+-import org.apache.http.concurrent.Cancellable;
+-import org.apache.http.conn.ClientConnectionRequest;
+-import org.apache.http.conn.ConnectionReleaseTrigger;
+-import org.apache.http.message.AbstractHttpMessage;
+ import org.apache.http.message.BasicRequestLine;
+ import org.apache.http.params.HttpProtocolParams;
+ 
+@@ -51,22 +43,14 @@
+  */
+ @SuppressWarnings("deprecation")
+ @NotThreadSafe
+-public abstract class HttpRequestBase extends AbstractHttpMessage
+-    implements HttpUriRequest, Configurable, HttpExecutionAware, AbortableHttpRequest, Cloneable {
++public abstract class HttpRequestBase extends AbortableHttpRequestBase
++    implements HttpUriRequest, Configurable {
+ 
+-    private Lock abortLock;
+-    private volatile boolean aborted;
+-
+     private ProtocolVersion version;
+     private URI uri;
+-    private Cancellable cancellable;
+     private RequestConfig config;
+-
+-    public HttpRequestBase() {
+-        super();
+-        this.abortLock = new ReentrantLock();
+-    }
+-
++    
++    @Override
+     public abstract String getMethod();
+ 
+     /**
+@@ -76,6 +60,7 @@
+         this.version = version;
+     }
+ 
++    @Override
+     public ProtocolVersion getProtocolVersion() {
+         return version != null ? version : HttpProtocolParams.getVersion(getParams());
+     }
+@@ -86,10 +71,12 @@
+      * Please note URI remains unchanged in the course of request execution and
+      * is not updated if the request is redirected to another location.
+      */
++    @Override
+     public URI getURI() {
+         return this.uri;
+     }
+ 
++    @Override
+     public RequestLine getRequestLine() {
+         String method = getMethod();
+         ProtocolVersion ver = getProtocolVersion();
+@@ -104,10 +91,8 @@
+         return new BasicRequestLine(method, uritext, ver);
+     }
+ 
+-    public void setURI(final URI uri) {
+-        this.uri = uri;
+-    }
+ 
++    @Override
+     public RequestConfig getConfig() {
+         return config;
+     }
+@@ -116,74 +101,10 @@
+         this.config = config;
+     }
+ 
+-    @Deprecated
+-    public void setConnectionRequest(final ClientConnectionRequest connRequest) {
+-        if (this.aborted) {
+-            return;
+-        }
+-        this.abortLock.lock();
+-        try {
+-            this.cancellable = new Cancellable() {
+-
+-                public boolean cancel() {
+-                    connRequest.abortRequest();
+-                    return true;
+-                }
+-
+-            };
+-        } finally {
+-            this.abortLock.unlock();
+-        }
++    public void setURI(final URI uri) {
++        this.uri = uri;
+     }
+ 
+-    @Deprecated
+-    public void setReleaseTrigger(final ConnectionReleaseTrigger releaseTrigger) {
+-        if (this.aborted) {
+-            return;
+-        }
+-        this.abortLock.lock();
+-        try {
+-            this.cancellable = new Cancellable() {
+-
+-                public boolean cancel() {
+-                    try {
+-                        releaseTrigger.abortConnection();
+-                        return true;
+-                    } catch (IOException ex) {
+-                        return false;
+-                    }
+-                }
+-
+-            };
+-        } finally {
+-            this.abortLock.unlock();
+-        }
+-    }
+-
+-    private void cancelExecution() {
+-        if (this.cancellable != null) {
+-            this.cancellable.cancel();
+-            this.cancellable = null;
+-        }
+-    }
+-
+-    public void abort() {
+-        if (this.aborted) {
+-            return;
+-        }
+-        this.abortLock.lock();
+-        try {
+-            this.aborted = true;
+-            cancelExecution();
+-        } finally {
+-            this.abortLock.unlock();
+-        }
+-    }
+-
+-    public boolean isAborted() {
+-        return this.aborted;
+-    }
+-
+     /**
+      * @since 4.2
+      */
+@@ -191,48 +112,6 @@
+     }
+ 
+     /**
+-     * @since 4.2
+-     */
+-    public void setCancellable(final Cancellable cancellable) {
+-        if (this.aborted) {
+-            return;
+-        }
+-        this.abortLock.lock();
+-        try {
+-            this.cancellable = cancellable;
+-        } finally {
+-            this.abortLock.unlock();
+-        }
+-    }
+-
+-    /**
+-     * @since 4.2
+-     */
+-    public void completed() {
+-        this.abortLock.lock();
+-        try {
+-            this.cancellable = null;
+-        } finally {
+-            this.abortLock.unlock();
+-        }
+-    }
+-
+-    /**
+-     * Resets internal state of the request making it reusable.
+-     *
+-     * @since 4.2
+-     */
+-    public void reset() {
+-        this.abortLock.lock();
+-        try {
+-            cancelExecution();
+-            this.aborted = false;
+-        } finally {
+-            this.abortLock.unlock();
+-        }
+-    }
+-
+-    /**
+      * A convenience method to simplify migration from HttpClient 3.1 API. This method is
+      * equivalent to {@link #reset()}.
+      *
+@@ -243,17 +122,6 @@
+     }
+ 
+     @Override
+-    public Object clone() throws CloneNotSupportedException {
+-        HttpRequestBase clone = (HttpRequestBase) super.clone();
+-        clone.abortLock = new ReentrantLock();
+-        clone.aborted = false;
+-        clone.cancellable = null;
+-        clone.headergroup = CloneUtils.cloneObject(this.headergroup);
+-        clone.params = CloneUtils.cloneObject(this.params);
+-        return clone;
+-    }
+-
+-    @Override
+     public String toString() {
+         return getMethod() + " " + getURI() + " " + getProtocolVersion();
+     }
+Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java	(revision 1426657)
++++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java	(working copy)
+@@ -37,6 +37,7 @@
+ import org.apache.http.HttpHost;
+ import org.apache.http.HttpRequest;
+ import org.apache.http.HttpRequestInterceptor;
++import org.apache.http.HttpResponse;
+ import org.apache.http.HttpResponseInterceptor;
+ import org.apache.http.annotation.GuardedBy;
+ import org.apache.http.annotation.ThreadSafe;
+@@ -821,6 +822,7 @@
+         }
+ 
+         try {
++            HttpResponse response = director.execute(target, request, execContext);
+             if (connectionBackoffStrategy != null && backoffManager != null) {
+                 HttpHost targetForRoute = (target != null) ? target
+                         : (HttpHost) determineParams(request).getParameter(
+@@ -830,7 +832,7 @@
+                 CloseableHttpResponse out;
+                 try {
+                     out = CloseableHttpResponseProxy.newProxy(
+-                            director.execute(target, request, execContext));
++                            response);
+                 } catch (RuntimeException re) {
+                     if (connectionBackoffStrategy.shouldBackoff(re)) {
+                         backoffManager.backOff(route);
+@@ -852,7 +854,7 @@
+                 return out;
+             } else {
+                 return CloseableHttpResponseProxy.newProxy(
+-                        director.execute(target, request, execContext));
++                        response);
+             }
+         } catch(HttpException httpException) {
+             throw new ClientProtocolException(httpException);
+Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java	(revision 1426657)
++++ httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java	(working copy)
+@@ -34,8 +34,10 @@
+ 
+ import org.apache.http.annotation.Immutable;
+ import org.apache.http.config.ConnectionConfig;
++import org.apache.http.config.MessageConstraints;
+ import org.apache.http.conn.HttpConnectionFactory;
+ import org.apache.http.conn.SocketClientConnection;
++import org.apache.http.impl.io.DefaultSessionBufferFactory;
+ 
+ /**
+  * @since 4.3
+@@ -62,11 +64,17 @@
+             charencoder.onMalformedInput(malformedInputAction);
+             charencoder.onUnmappableCharacter(unmappableInputAction);
+         }
++        return create(chardecoder, charencoder, cconfig.getMessageConstraints());
++    }
++
++    protected SocketClientConnection create(CharsetDecoder chardecoder,
++            CharsetEncoder charencoder, MessageConstraints messageConstraints) {
+         return new SocketClientConnectionImpl(8 * 1024,
+                 chardecoder, charencoder,
+-                cconfig.getMessageConstraints(),
++                messageConstraints,
+                 null, null, null,
+-                DefaultHttpResponseParserFactory.INSTANCE);
++                DefaultHttpResponseParserFactory.INSTANCE, 
++                DefaultSessionBufferFactory.INSTANCE);
+     }
+ 
+ }
+Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(revision 1426657)
++++ httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(working copy)
+@@ -52,9 +52,10 @@
+ import org.apache.http.impl.DefaultBHttpClientConnection;
+ import org.apache.http.io.HttpMessageParserFactory;
+ import org.apache.http.io.HttpMessageWriterFactory;
++import org.apache.http.io.UmmSessionBufferFactory;
+ import org.apache.http.protocol.HttpContext;
+ 
+-class SocketClientConnectionImpl extends DefaultBHttpClientConnection
++public class SocketClientConnectionImpl extends DefaultBHttpClientConnection
+                                  implements SocketClientConnection, HttpContext {
+ 
+     private static final AtomicLong COUNT = new AtomicLong();
+@@ -67,27 +68,27 @@
+ 
+     private volatile boolean shutdown;
+ 
+-    public SocketClientConnectionImpl(
+-            int buffersize,
+-            final CharsetDecoder chardecoder,
+-            final CharsetEncoder charencoder,
++    public SocketClientConnectionImpl(int buffersize,
++            final CharsetDecoder chardecoder, final CharsetEncoder charencoder,
+             final MessageConstraints constraints,
+             final ContentLengthStrategy incomingContentStrategy,
+             final ContentLengthStrategy outgoingContentStrategy,
+             final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
+-            final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
+-        super(buffersize, chardecoder, charencoder,
+-                constraints, incomingContentStrategy, outgoingContentStrategy,
+-                requestWriterFactory, responseParserFactory);
++            final HttpMessageParserFactory<HttpResponse> responseParserFactory,
++            final UmmSessionBufferFactory sessionBufferFactory) {
++        super(buffersize, chardecoder, charencoder, constraints,
++                incomingContentStrategy, outgoingContentStrategy,
++                requestWriterFactory, responseParserFactory, 
++                sessionBufferFactory);
+         this.id = "http-outgoing-" + COUNT.incrementAndGet();
+         this.log = LogFactory.getLog(getClass());
+         this.headerlog = LogFactory.getLog("org.apache.http.headers");
+         this.wire = new Wire(LogFactory.getLog("org.apache.http.wire"), this.id);
+-        this.attributes = new ConcurrentHashMap<String, Object>();
++        this.attributes = new ConcurrentHashMap<String,Object>();
+     }
+ 
+     public SocketClientConnectionImpl(int buffersize) {
+-        this(buffersize, null, null, null, null, null, null, null);
++        this(buffersize, null, null, null, null, null, null, null, null);
+     }
+ 
+     @Override
+Index: httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java
+===================================================================
+--- httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java	(revision 1426657)
++++ httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java	(working copy)
+@@ -51,7 +51,11 @@
+             final MessageConstraints constrains,
+             final CharsetDecoder decoder) {
+         super(new HttpTransportMetricsImpl(), buffersize, -1, constrains, decoder);
+-        bind(instream);
++        try {
++            bind(instream);
++        } catch (IOException e) {
++            throw new RuntimeException(e);
++        }
+     }
+ 
+     public SessionInputBufferMock(
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(revision 1426657)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(working copy)
+@@ -55,13 +55,15 @@
+ import org.apache.http.impl.io.ChunkedOutputStream;
+ import org.apache.http.impl.io.ContentLengthInputStream;
+ import org.apache.http.impl.io.ContentLengthOutputStream;
++import org.apache.http.impl.io.DefaultSessionBufferFactory;
+ import org.apache.http.impl.io.HttpTransportMetricsImpl;
+ import org.apache.http.impl.io.IdentityInputStream;
+ import org.apache.http.impl.io.IdentityOutputStream;
+-import org.apache.http.impl.io.SessionInputBufferImpl;
+-import org.apache.http.impl.io.SessionOutputBufferImpl;
+ import org.apache.http.io.SessionInputBuffer;
+ import org.apache.http.io.SessionOutputBuffer;
++import org.apache.http.io.UmmSessionBufferFactory;
++import org.apache.http.io.UmmSessionInputBuffer;
++import org.apache.http.io.UmmSessionOutputBuffer;
+ import org.apache.http.protocol.HTTP;
+ import org.apache.http.util.Args;
+ import org.apache.http.util.Asserts;
+@@ -76,8 +78,8 @@
+ @NotThreadSafe
+ public class BHttpConnectionBase implements HttpConnection, HttpInetConnection {
+ 
+-    private final SessionInputBufferImpl inbuffer;
+-    private final SessionOutputBufferImpl outbuffer;
++    private final UmmSessionInputBuffer inbuffer;
++    private final UmmSessionOutputBuffer outbuffer;
+     private final HttpConnectionMetricsImpl connMetrics;
+     private final ContentLengthStrategy incomingContentStrategy;
+     private final ContentLengthStrategy outgoingContentStrategy;
+@@ -99,6 +101,7 @@
+      *   {@link LaxContentLengthStrategy#INSTANCE} will be used.
+      * @param outgoingContentStrategy outgoing content length strategy. If <code>null</code>
+      *   {@link StrictContentLengthStrategy#INSTANCE} will be used.
++     * @param sessionBufferFactory 
+      */
+     protected BHttpConnectionBase(
+             int buffersize,
+@@ -106,14 +109,16 @@
+             final CharsetEncoder charencoder,
+             final MessageConstraints constraints,
+             final ContentLengthStrategy incomingContentStrategy,
+-            final ContentLengthStrategy outgoingContentStrategy) {
++            final ContentLengthStrategy outgoingContentStrategy, 
++            final UmmSessionBufferFactory sessionBufferFactory) {
+         super();
+         Args.positive(buffersize, "Buffer size");
+         HttpTransportMetricsImpl inTransportMetrics = new HttpTransportMetricsImpl();
+         HttpTransportMetricsImpl outTransportMetrics = new HttpTransportMetricsImpl();
+-        this.inbuffer = new SessionInputBufferImpl(inTransportMetrics, buffersize, -1,
++        UmmSessionBufferFactory sbf = sessionBufferFactory != null ? sessionBufferFactory : DefaultSessionBufferFactory.INSTANCE;
++        this.inbuffer = sbf.createInputBuffer(inTransportMetrics, buffersize, -1,
+                 constraints != null ? constraints : MessageConstraints.DEFAULT, chardecoder);
+-        this.outbuffer = new SessionOutputBufferImpl(outTransportMetrics, buffersize, -1,
++        this.outbuffer = sbf.createOutputBuffer(outTransportMetrics, buffersize, -1,
+                 charencoder);
+         this.connMetrics = new HttpConnectionMetricsImpl(inTransportMetrics, outTransportMetrics);
+         this.incomingContentStrategy = incomingContentStrategy != null ? incomingContentStrategy :
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(revision 1426657)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(working copy)
+@@ -51,6 +51,7 @@
+ import org.apache.http.io.HttpMessageParserFactory;
+ import org.apache.http.io.HttpMessageWriter;
+ import org.apache.http.io.HttpMessageWriterFactory;
++import org.apache.http.io.UmmSessionBufferFactory;
+ import org.apache.http.util.Args;
+ 
+ /**
+@@ -83,6 +84,7 @@
+      *   {@link DefaultHttpRequestWriterFactory#INSTANCE} will be used.
+      * @param responseParserFactory response parser factory. If <code>null</code>
+      *   {@link DefaultHttpResponseParserFactory#INSTANCE} will be used.
++     * @param sessionBufferFactory 
+      */
+     public DefaultBHttpClientConnection(
+             int buffersize,
+@@ -92,9 +94,11 @@
+             final ContentLengthStrategy incomingContentStrategy,
+             final ContentLengthStrategy outgoingContentStrategy,
+             final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
+-            final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
+-        super(buffersize, chardecoder, charencoder,
+-                constraints, incomingContentStrategy, outgoingContentStrategy);
++            final HttpMessageParserFactory<HttpResponse> responseParserFactory, 
++            final UmmSessionBufferFactory sessionBufferFactory) {
++        super(buffersize, chardecoder, charencoder, constraints,
++                incomingContentStrategy, outgoingContentStrategy,
++                sessionBufferFactory);
+         this.requestWriter = (requestWriterFactory != null ? requestWriterFactory :
+             DefaultHttpRequestWriterFactory.INSTANCE).create(getSessionOutputBuffer());
+         this.responseParser = (responseParserFactory != null ? responseParserFactory :
+@@ -106,11 +110,11 @@
+             final CharsetDecoder chardecoder,
+             final CharsetEncoder charencoder,
+             final MessageConstraints constraints) {
+-        this(buffersize, chardecoder, charencoder, constraints, null, null, null, null);
++        this(buffersize, chardecoder, charencoder, constraints, null, null, null, null, null);
+     }
+ 
+     public DefaultBHttpClientConnection(int buffersize) {
+-        this(buffersize, null, null, null, null, null, null, null);
++        this(buffersize, null, null, null, null, null, null, null, null);
+     }
+ 
+     protected void onResponseReceived(final HttpResponse response) {
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java	(revision 1426657)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java	(working copy)
+@@ -94,7 +94,7 @@
+             final HttpMessageWriterFactory<HttpResponse> responseWriterFactory) {
+         super(buffersize, chardecoder, charencoder, constraints,
+                 incomingContentStrategy != null ? incomingContentStrategy :
+-                    DisallowIdentityContentLengthStrategy.INSTANCE, outgoingContentStrategy);
++                    DisallowIdentityContentLengthStrategy.INSTANCE, outgoingContentStrategy, null);
+         this.requestParser = (requestParserFactory != null ? requestParserFactory :
+             DefaultHttpRequestParserFactory.INSTANCE).create(getSessionInputBuffer(), constraints);
+         this.responseWriter = (responseWriterFactory != null ? responseWriterFactory :
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferFactory.java	(working copy)
+@@ -0,0 +1,28 @@
++package org.apache.http.impl.io;
++
++import java.nio.charset.CharsetDecoder;
++import java.nio.charset.CharsetEncoder;
++
++import org.apache.http.config.MessageConstraints;
++import org.apache.http.io.UmmSessionBufferFactory;
++import org.apache.http.io.UmmSessionInputBuffer;
++import org.apache.http.io.UmmSessionOutputBuffer;
++
++public class DefaultSessionBufferFactory implements UmmSessionBufferFactory {
++
++    public static final UmmSessionBufferFactory INSTANCE = new DefaultSessionBufferFactory();
++
++    @Override
++    public UmmSessionInputBuffer createInputBuffer(
++            HttpTransportMetricsImpl metrics, int buffersize, int minChunkLimit,
++            MessageConstraints constraints, CharsetDecoder chardecoder) {
++        return new SessionInputBufferImpl(metrics, buffersize, minChunkLimit, constraints, chardecoder);
++    }
++
++    @Override
++    public UmmSessionOutputBuffer createOutputBuffer(
++            HttpTransportMetricsImpl metrics, int buffersize, int minChunkLimit,
++            CharsetEncoder charencoder) {
++        return new SessionOutputBufferImpl(metrics, buffersize, minChunkLimit, charencoder);
++    }
++}
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(revision 1426657)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(working copy)
+@@ -39,7 +39,7 @@
+ import org.apache.http.config.MessageConstraints;
+ import org.apache.http.io.BufferInfo;
+ import org.apache.http.io.HttpTransportMetrics;
+-import org.apache.http.io.SessionInputBuffer;
++import org.apache.http.io.UmmSessionInputBuffer;
+ import org.apache.http.protocol.HTTP;
+ import org.apache.http.util.Args;
+ import org.apache.http.util.Asserts;
+@@ -58,16 +58,16 @@
+  * @since 4.3
+  */
+ @NotThreadSafe
+-public class SessionInputBufferImpl implements SessionInputBuffer, BufferInfo {
++public class SessionInputBufferImpl implements UmmSessionInputBuffer, BufferInfo {
+ 
+-    private final HttpTransportMetricsImpl metrics;
++    protected final HttpTransportMetricsImpl metrics;
+     private final byte[] buffer;
+-    private final ByteArrayBuffer linebuffer;
++    protected final ByteArrayBuffer linebuffer;
+     private final int minChunkLimit;
+     private final MessageConstraints constraints;
+     private final CharsetDecoder decoder;
+ 
+-    private InputStream instream;
++    protected InputStream instream;
+     private int bufferpos;
+     private int bufferlen;
+     private CharBuffer cbuf;
+@@ -105,7 +105,7 @@
+         this.decoder = chardecoder;
+     }
+ 
+-    public void bind(final InputStream instream) {
++    public void bind(final InputStream instream) throws IOException {
+         this.instream = instream;
+     }
+ 
+@@ -286,7 +286,7 @@
+      * @return HTTP line as a string
+      * @exception  IOException  if an I/O error occurs.
+      */
+-    private int lineFromLineBuffer(final CharArrayBuffer charbuffer)
++    protected int lineFromLineBuffer(final CharArrayBuffer charbuffer)
+             throws IOException {
+         // discard LF if found
+         int len = this.linebuffer.length();
+Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(revision 1426657)
++++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(working copy)
+@@ -37,7 +37,7 @@
+ import org.apache.http.annotation.NotThreadSafe;
+ import org.apache.http.io.BufferInfo;
+ import org.apache.http.io.HttpTransportMetrics;
+-import org.apache.http.io.SessionOutputBuffer;
++import org.apache.http.io.UmmSessionOutputBuffer;
+ import org.apache.http.protocol.HTTP;
+ import org.apache.http.util.Args;
+ import org.apache.http.util.Asserts;
+@@ -55,7 +55,7 @@
+  * @since 4.3
+  */
+ @NotThreadSafe
+-public class SessionOutputBufferImpl implements SessionOutputBuffer, BufferInfo {
++public class SessionOutputBufferImpl implements UmmSessionOutputBuffer, BufferInfo {
+ 
+     private static final byte[] CRLF = new byte[] {HTTP.CR, HTTP.LF};
+ 
+@@ -64,7 +64,7 @@
+     private final int minChunkLimit;
+     private final CharsetEncoder encoder;
+ 
+-    private OutputStream outstream;
++    protected OutputStream outstream;
+     private ByteBuffer bbuf;
+ 
+     /**
+@@ -94,7 +94,7 @@
+         this.encoder = charencoder;
+     }
+ 
+-    public void bind(final OutputStream outstream) {
++    public void bind(final OutputStream outstream) throws IOException {
+         this.outstream = outstream;
+     }
+ 
+Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionBufferFactory.java	(working copy)
+@@ -0,0 +1,47 @@
++/*
++ * ====================================================================
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ *
++ */
++
++package org.apache.http.io;
++
++import java.nio.charset.CharsetDecoder;
++import java.nio.charset.CharsetEncoder;
++
++import org.apache.http.config.MessageConstraints;
++import org.apache.http.impl.io.HttpTransportMetricsImpl;
++
++/**
++ * @since 4.3
++ */
++public interface UmmSessionBufferFactory {
++
++    UmmSessionInputBuffer createInputBuffer(HttpTransportMetricsImpl metrics,
++            int buffersize, int minChunkLimit, MessageConstraints constraints,
++            CharsetDecoder chardecoder);
++
++    UmmSessionOutputBuffer createOutputBuffer(HttpTransportMetricsImpl metrics,
++            int buffersize, int i, CharsetEncoder charencoder);
++}
+Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionInputBuffer.java	(working copy)
+@@ -0,0 +1,16 @@
++package org.apache.http.io;
++
++import java.io.IOException;
++import java.io.InputStream;
++
++public interface UmmSessionInputBuffer extends SessionInputBuffer {
++
++    boolean isBound();
++
++    void bind(InputStream socketInputStream) throws IOException;
++
++    boolean hasBufferedData();
++
++    int fillBuffer() throws IOException;
++
++}
+Index: httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java
+===================================================================
+--- httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java	(revision 0)
++++ httpcore/httpcore/src/main/java/org/apache/http/io/UmmSessionOutputBuffer.java	(working copy)
+@@ -0,0 +1,37 @@
++/*
++ * ====================================================================
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ *
++ */
++package org.apache.http.io;
++
++import java.io.IOException;
++import java.io.OutputStream;
++
++public interface UmmSessionOutputBuffer extends SessionOutputBuffer {
++
++    boolean isBound();
++
++    void bind(OutputStream outputStream) throws IOException;
++}
+Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java
+===================================================================
+--- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(revision 1426657)
++++ httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(working copy)
+@@ -51,7 +51,11 @@
+             final MessageConstraints constrains,
+             final CharsetDecoder decoder) {
+         super(new HttpTransportMetricsImpl(), buffersize, -1, constrains, decoder);
+-        bind(instream);
++        try {
++            bind(instream);
++        } catch (IOException e) {
++            throw new RuntimeException(e);
++        }
+     }
+ 
+     public SessionInputBufferMock(
+Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java
+===================================================================
+--- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java	(revision 1426657)
++++ httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java	(working copy)
+@@ -28,6 +28,7 @@
+ package org.apache.http.impl;
+ 
+ import java.io.ByteArrayOutputStream;
++import java.io.IOException;
+ import java.nio.charset.Charset;
+ import java.nio.charset.CharsetEncoder;
+ 
+@@ -50,7 +51,11 @@
+             int minChunkLimit,
+             final CharsetEncoder encoder) {
+         super(new HttpTransportMetricsImpl(), buffersize, minChunkLimit, encoder);
+-        bind(buffer);
++        try {
++            bind(buffer);
++        } catch (IOException e) {
++            throw new RuntimeException(e);
++        }
+         this.buffer = buffer;
+     }
+ 
+Index: httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java
+===================================================================
+--- httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java	(revision 1426657)
++++ httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java	(working copy)
+@@ -66,7 +66,7 @@
+             final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
+         super(buffersize, chardecoder, charencoder,
+                 constraints, incomingContentStrategy, outgoingContentStrategy,
+-                requestWriterFactory, responseParserFactory);
++                requestWriterFactory, responseParserFactory, null);
+         this.id = "http-outgoing-" + COUNT.incrementAndGet();
+         this.log = LogFactory.getLog(getClass());
+         this.headerlog = LogFactory.getLog("org.apache.http.headers");

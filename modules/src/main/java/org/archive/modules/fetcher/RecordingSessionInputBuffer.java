@@ -18,73 +18,96 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.CharsetDecoder;
 
-import org.apache.http.io.HttpTransportMetrics;
-import org.apache.http.io.SessionInputBuffer;
+import org.apache.http.config.MessageConstraints;
+import org.apache.http.impl.io.HttpTransportMetricsImpl;
+import org.apache.http.impl.io.SessionInputBufferImpl;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.util.Args;
 import org.apache.http.util.CharArrayBuffer;
+import org.archive.util.Recorder;
 
-class RecordingSessionInputBuffer implements SessionInputBuffer {
+class RecordingSessionInputBuffer extends SessionInputBufferImpl {
 
-    protected SessionInputBuffer wrapped;
+    protected int buffersize;
 
-    public RecordingSessionInputBuffer(SessionInputBuffer wrapped) {
-        this.wrapped = wrapped;
+    public RecordingSessionInputBuffer(HttpTransportMetricsImpl metrics,
+            int buffersize, int minChunkLimit, MessageConstraints constraints,
+            CharsetDecoder chardecoder) {
+        super(metrics, buffersize, minChunkLimit, constraints, chardecoder);
+        this.buffersize = buffersize;
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
-        return wrapped.read(b, off, len);
+    public void bind(InputStream inputStream) throws IOException {
+        if (inputStream != null) {
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder == null) {   // XXX || (isSecure() && isProxied())) {
+                // no recorder, OR defer recording for pre-tunnel leg
+                this.instream = new BufferedInputStream(inputStream, buffersize);
+            } else {
+                this.instream = recorder.inputWrap(new BufferedInputStream(inputStream, buffersize));
+            }
+        } else {
+            this.instream = null;
+        }
     }
 
-    @Override
-    public int read(byte[] b) throws IOException {
-        return wrapped.read(b);
-    }
-
-    @Override
-    public int read() throws IOException {
-        return wrapped.read();
-    }
-
-    @Override
-    public int readLine(CharArrayBuffer buffer) throws IOException {
-        return wrapped.readLine(buffer);
-    }
-
-    @Override
-    public String readLine() throws IOException {
-        return wrapped.readLine();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean isDataAvailable(int timeout) throws IOException {
-        return wrapped.isDataAvailable(timeout);
-    }
-
-    @Override
-    public HttpTransportMetrics getMetrics() {
-        return wrapped.getMetrics();
-    }
-
-//    @Override
-//    public boolean isBound() {
-//        return wrapped.isBound();
-//    }
-//
-//    @Override
-//    public void bind(InputStream inputStream) {
-//        wrapped.bind(inputStream);
-//    }
-//
 //    @Override
 //    public boolean hasBufferedData() {
-//        return wrapped.hasBufferedData();
+//        throw new RuntimeException("implement me i guess");
+//        if (this.instream != null) {
+//            try {
+//                return in.available() > 0;
+//            } catch (IOException e) {
+//                return false;
+//            }
+//        } else if (this.instream instanceof BufferedInputStream) {
+//            BufferedInputStream in = (BufferedInputStream) this.instream;
+//        } else if (this.instream instanceof RecordingInputStream) {
+//            RecordingInputStream in = (RecordingInputStream) this.instream;
+//            return in.
+//        }
 //    }
 //
-//    @Override
-//    public int fillBuffer() throws IOException {
-//        return wrapped.fillBuffer();
-//    }
+    @Override
+    public int fillBuffer() throws IOException {
+        throw new RuntimeException("don't use me");
+    }
+
+    @Override
+    public int readLine(CharArrayBuffer charbuffer) throws IOException {
+        Args.notNull(charbuffer, "Char array buffer");
+        int bytesRead = 0;
+        int b = instream.read();
+        while (b >= 0 && b != HTTP.LF) {
+            bytesRead++;
+            linebuffer.append(b);
+            b = instream.read();
+        }
+        if (b >= 0) {
+            bytesRead++; // count LF
+        }
+        
+        // if line ends with CR-LF, get rid of the CR
+        if (bytesRead > 0 && linebuffer.byteAt(linebuffer.length() - 1) == HTTP.CR) {
+            linebuffer.setLength(linebuffer.length() - 1);
+        }
+
+        if (bytesRead > 0) {
+            metrics.incrementBytesTransferred(bytesRead);
+        }
+        
+        if (bytesRead == 0 && b == -1) {
+            // indicate the end of stream
+            return -1;
+        }
+
+        return lineFromLineBuffer(charbuffer);
+    }
+    
 }
