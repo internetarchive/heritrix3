@@ -502,7 +502,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
