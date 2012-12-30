@@ -273,6 +273,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
+        assertEquals("Basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
         assertTrue(curi.getCredentials().contains(basicAuthCredential));
         assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
@@ -539,19 +540,21 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
+
             assertNull(proxiedRequestRememberer.getLastProxiedRequest()); // request didn't make it this far
+            assertNotNull(curi.getHttpResponseHeader("Proxy-Authenticate"));
             assertEquals(407, curi.getFetchStatus());
 
             // fetch original again now that credentials should be populated
             proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));

@@ -64,6 +64,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.auth.BasicSchemeFactory;
 import org.apache.http.impl.auth.DigestSchemeFactory;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
 import org.apache.http.impl.client.TargetAuthenticationStrategy;
 import org.apache.http.message.BasicHeader;
 import org.archive.httpclient.ConfigurableX509TrustManager;
@@ -718,8 +719,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             handle401(response, curi);
         } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED) {
             // 407 - remember Proxy-Authenticate headers for later use 
-//            kp.put("proxyAuthChallenges", 
-//                    extractChallenges(response, curi, httpClient().getProxyAuthenticationStrategy()));
+            kp.put("proxyAuthChallenges", 
+                    extractChallenges(response, curi, ProxyAuthenticationStrategy.INSTANCE));
         }
 
         if (rec.getRecordedInput().isOpen()) {
@@ -843,7 +844,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * 
      * @return Map<authSchemeName -> challenge header value>
      */
-    protected Map<String,String> extractChallenges(HttpResponse response, final CrawlURI curi, AuthenticationStrategy authStrategy) {
+    protected Map<String, String> extractChallenges(HttpResponse response,
+            final CrawlURI curi, AuthenticationStrategy authStrategy) {
         Map<String, Header> hcChallengeHeaders = null;
         try {
             hcChallengeHeaders = authStrategy.getChallenges(null, response, null);

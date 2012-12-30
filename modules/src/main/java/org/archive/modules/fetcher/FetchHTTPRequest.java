@@ -30,6 +30,7 @@ import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -136,6 +137,7 @@ public class FetchHTTPRequest {
     protected AbortableHttpRequestBase request;
     protected HttpHost targetHost;
     protected boolean addedCredentials;
+    protected HttpHost proxyHost;
 
     public FetchHTTPRequest(FetchHTTP fetcher, CrawlURI curi) throws URIException {
         this.fetcher = fetcher;
@@ -150,7 +152,6 @@ public class FetchHTTPRequest {
         String proxyHostname = (String) fetcher.getAttributeEither(curi, "httpProxyHost");
         Integer proxyPort = (Integer) fetcher.getAttributeEither(curi, "httpProxyPort");
                 
-        HttpHost proxyHost = null;
         String requestLineUri;
         if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) {
             proxyHost  = new HttpHost(proxyHostname, proxyPort);
@@ -179,7 +180,8 @@ public class FetchHTTPRequest {
         configureRequestHeaders();
         configureRequest();
         
-        this.addedCredentials = populateTargetCredentials();
+        this.addedCredentials = populateTargetCredential();
+        populateHttpProxyCredential();
     }
     
     protected void configureRequestHeaders() {
@@ -213,9 +215,9 @@ public class FetchHTTPRequest {
         }
 
         if (!curi.isPrerequisite()) {
-            setConditionalGetHeader(fetcher.getSendIfModifiedSince(),
+            maybeAddConditionalGetHeader(fetcher.getSendIfModifiedSince(),
                     A_LAST_MODIFIED_HEADER, "If-Modified-Since");
-            setConditionalGetHeader(fetcher.getSendIfNoneMatch(),
+            maybeAddConditionalGetHeader(fetcher.getSendIfNoneMatch(),
                     A_ETAG_HEADER, "If-None-Match");
         }
 
@@ -236,13 +238,13 @@ public class FetchHTTPRequest {
     }
 
     /**
-     * Set the given conditional-GET header, if the setting is enabled and
+     * Add the given conditional-GET header, if the setting is enabled and
      * a suitable value is available in the URI history. 
      * @param setting true/false enablement setting name to consult
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
-    protected void setConditionalGetHeader(boolean conditional,
+    protected void maybeAddConditionalGetHeader(boolean conditional,
             String sourceHeader, String targetHeader) {
         if (conditional) {
             try {
@@ -314,7 +316,7 @@ public class FetchHTTPRequest {
      * CrawlServer so they are available for all subsequent CrawlURIs on this
      * server.
      */
-    protected boolean populateTargetCredentials() {
+    protected boolean populateTargetCredential() {
         // First look at the server avatars. Add any that are to be volunteered
         // on every request (e.g. RFC2617 credentials). Every time creds will
         // return true when we call 'isEveryTime().
@@ -359,22 +361,16 @@ public class FetchHTTPRequest {
     }
     
     protected void populateHttpProxyCredential() {
-//        HttpClientContext context = httpClientContext;
-//        
-//        // this should have been set earlier
-//        HttpHost proxyHost = ConnRouteParams.getDefaultProxy(request.getParams());
-//        
-//        String user = (String) fetcher.getAttributeEither(curi, "httpProxyUser");
-//        String password = (String) fetcher.getAttributeEither(curi, "httpProxyPassword");
-//        
-//        if (proxyHost != null && kp.get("proxyAuthChallenges") != null && StringUtils.isNotEmpty(user)) {
-//
-//            @SuppressWarnings("unchecked")
-//            Map<String,String> challenges = (Map<String, String>) kp.get("proxyAuthChallenges");
-//            
-//            AuthScheme authScheme = chooseAuthScheme(challenges, HttpHeaders.PROXY_AUTHENTICATE);
-//            populateHttpCredential(proxyHost, context, authScheme, user, password);
-//        }
+        String user = (String) fetcher.getAttributeEither(curi, "httpProxyUser");
+        String password = (String) fetcher.getAttributeEither(curi, "httpProxyPassword");
+        
+        @SuppressWarnings("unchecked")
+        Map<String,String> challenges = (Map<String, String>) fetcher.getKeyedProperties().get("proxyAuthChallenges");
+        
+        if (proxyHost != null && challenges != null && StringUtils.isNotEmpty(user)) {
+            AuthScheme authScheme = fetcher.chooseAuthScheme(challenges, HttpHeaders.PROXY_AUTHENTICATE);
+            populateHttpCredential(proxyHost, authScheme, user, password);
+        }
     }
     
     protected boolean populateHtmlFormCredential(HtmlFormCredential cred) {
