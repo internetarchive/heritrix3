@@ -480,8 +480,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * 'normal' (all valid certificates not including selfsigned) to 'strict'
      * (Cert is valid and DN must match servername).
      */
-    public synchronized void setSslTrustLevel(TrustLevel trustLevel) {
-        this.sslTrustLevel = trustLevel;
+    public synchronized void setSslTrustLevel(TrustLevel sslTrustLevel) {
+        if (sslTrustLevel != this.sslTrustLevel) {
+            this.sslTrustLevel = sslTrustLevel;
+            
+            // force sslContext to be reinitialized with new trust level
+            sslContext = null;
+        }
     }
 
     protected transient SSLContext sslContext;
@@ -1037,8 +1042,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         if (getCookieStore() != null) {     
             getCookieStore().start();
         }
-
-        // setSSLFactory();
     }
     
     public void stop() {

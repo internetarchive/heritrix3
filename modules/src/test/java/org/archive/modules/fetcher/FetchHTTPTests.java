@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
@@ -704,6 +704,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // default "open" trust level
         CrawlURI curi = makeCrawlURI("https://localhost:7443/");
         fetcher().process(curi);
+        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         runDefaultChecks(curi, "hostHeader");
         
         // "normal" trust level
@@ -711,7 +712,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().setSslTrustLevel(TrustLevel.NORMAL);
         fetcher().process(curi);
         assertEquals(1, curi.getNonFatalFailures().size());
-        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLHandshakeException);
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLException);
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
         assertEquals(0, curi.getFetchCompletedTime());
     }

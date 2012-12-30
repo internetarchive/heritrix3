@@ -49,6 +49,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.config.RequestConfig.Builder;
@@ -63,11 +64,11 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.SocketClientConnection;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainSocketFactory;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.DefaultClientConnectionFactory;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
@@ -419,22 +420,10 @@ public class FetchHTTPRequest {
         httpClientBuilder.setUserAgent(userAgent);
         
         httpClientBuilder.setCookieStore(fetcher.getCookieStore());
-    }
-    
-    protected void initHttpClientBuilder() {
-        httpClientBuilder = HttpClientBuilder.create();
         
-        httpClientBuilder.setAuthSchemeRegistry(FetchHTTP.AUTH_SCHEME_REGISTRY);
-        
-        // we handle content compression manually
-        httpClientBuilder.disableContentCompression();
-        
-        // we handle redirects manually
-        httpClientBuilder.disableRedirectHandling();
-     
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainSocketFactory.getSocketFactory())
-                .register("https", SSLSocketFactory.getSocketFactory())
+                .register("https", new SSLSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
                 .build();
 
         DefaultClientConnectionFactory connFactory = new DefaultClientConnectionFactory() {
@@ -455,8 +444,20 @@ public class FetchHTTPRequest {
         httpClientBuilder.setConnectionManager(connManager);
     }
     
+    protected void initHttpClientBuilder() {
+        httpClientBuilder = HttpClientBuilder.create();
+        
+        httpClientBuilder.setAuthSchemeRegistry(FetchHTTP.AUTH_SCHEME_REGISTRY);
+        
+        // we handle content compression manually
+        httpClientBuilder.disableContentCompression();
+        
+        // we handle redirects manually
+        httpClientBuilder.disableRedirectHandling();
+    }
+    
     public HttpResponse execute() throws ClientProtocolException, IOException {
-        CloseableHttpClient httpClient = httpClientBuilder.build();
+        HttpClient httpClient = httpClientBuilder.build();
         
         RequestConfig requestConfig = requestConfigBuilder.build();
         httpClientContext.setRequestConfig(requestConfig);
