@@ -534,6 +534,19 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractH
              }
          } catch(HttpException httpException) {
              throw new ClientProtocolException(httpException);
+Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java
+===================================================================
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java	(revision 1426847)
++++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java	(working copy)
+@@ -76,7 +76,7 @@
+ 
+         if (userPrincipal == null) {
+             HttpConnection conn = clientContext.getConnection();
+-            if (conn instanceof SocketClientConnection) {
++            if (conn instanceof SocketClientConnection && conn.isOpen()) {
+                 SSLSession sslsession = ((SocketClientConnection) conn).getSSLSession();
+                 if (sslsession != null) {
+                     userPrincipal = sslsession.getLocalPrincipal();
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java
 ===================================================================
 --- httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(revision 1426847)
