@@ -61,6 +61,8 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.SocketClientConnection;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainSocketFactory;
@@ -86,9 +88,14 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
+import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
 
+/**
+ * @contributor nlevitt
+ */
 public class FetchHTTPRequest {
 
     protected static class RecordingSocketClientConnection extends SocketClientConnectionImpl {
@@ -125,6 +132,33 @@ public class FetchHTTPRequest {
             if (!fetcher.maybeMidfetchAbort(curi, request)) {
                 super.receiveResponseEntity(response);
             }
+        }
+    }
+    
+    /**
+     * Implementation of {@link DnsResolver} that uses the server cache which is
+     * normally expected to have been populated by FetchDNS.
+     */
+    public static class ServerCacheResolver implements DnsResolver {
+        protected static Logger logger = Logger.getLogger(DnsResolver.class.getName());
+        protected ServerCache serverCache;
+
+        public ServerCacheResolver(ServerCache serverCache) {
+            this.serverCache = serverCache;
+        }
+
+        @Override
+        public InetAddress[] resolve(String host) throws UnknownHostException {
+            CrawlHost crawlHost = this.serverCache.getHostFor(host);
+            if (crawlHost != null) {
+                InetAddress ip = crawlHost.getIP();
+                if (ip != null) {
+                    return new InetAddress[] {ip};
+                }
+            }
+
+            logger.info("host \"" + host + "\" is not in serverCache, allowing java to resolve it");
+            return new InetAddress[] {InetAddress.getByName(host)};
         }
     }
 
@@ -421,6 +455,11 @@ public class FetchHTTPRequest {
         
         httpClientBuilder.setCookieStore(fetcher.getCookieStore());
         
+        HttpClientConnectionManager connManager = makeConnectionManager();
+        httpClientBuilder.setConnectionManager(connManager);
+    }
+
+    protected HttpClientConnectionManager makeConnectionManager() {
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainSocketFactory.getSocketFactory())
                 .register("https", new SSLSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
@@ -438,11 +477,11 @@ public class FetchHTTPRequest {
             }
         };
 
-        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(
-                socketFactoryRegistry, connFactory, -1, TimeUnit.MILLISECONDS);
+        DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
         
-        httpClientBuilder.setConnectionManager(connManager);
-    }
+        return new PoolingHttpClientConnectionManager(socketFactoryRegistry,
+                connFactory, null, dnsResolver, -1, TimeUnit.MILLISECONDS);
+    }    
     
     protected void initHttpClientBuilder() {
         httpClientBuilder = HttpClientBuilder.create();
