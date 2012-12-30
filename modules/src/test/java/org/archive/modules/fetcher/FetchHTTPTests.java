@@ -81,6 +81,7 @@ import org.littleshoot.proxy.ProxyAuthorizationHandler;
 public class FetchHTTPTests extends ProcessorTestBase {
 
     private static Logger logger = Logger.getLogger(FetchHTTPTests.class.getName());
+    
     static {
         Logger.getLogger("").setLevel(Level.FINE);
         for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
@@ -570,7 +571,16 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testMaxFetchKBSec() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         fetcher().setMaxFetchKBSec(100);
+        
+        // if the wire logger is enabled, it can slow things down enough to make
+        // this test failed, so disable it temporarily
+        Level savedWireLevel = Logger.getLogger("org.apache.http.wire").getLevel();
+        Logger.getLogger("org.apache.http.wire").setLevel(Level.INFO);
+        
         fetcher().process(curi);
+        
+        Logger.getLogger("org.apache.http.wire").setLevel(savedWireLevel);
+        
         assertEquals(200000, curi.getContentLength());
         assertTrue(curi.getFetchDuration() > 1800 && curi.getFetchDuration() < 2200);
     }
