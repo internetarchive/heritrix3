@@ -640,13 +640,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return;
         }
         
-        // set hardMax on bytes (if set by operator)
-        long hardMax = getMaxLengthBytes();
-        // set overall timeout (if set by operator)
-        long timeoutMs = 1000 * getTimeoutSeconds();
-        // Get max fetch rate (bytes/ms). It comes in in KB/sec
-        long maxRateKBps = getMaxFetchKBSec();
-        rec.getRecordedInput().setLimits(hardMax, timeoutMs, maxRateKBps);
+        rec.getRecordedInput().setLimits(getMaxLengthBytes(),
+                1000l * (long) getTimeoutSeconds(), (long) getMaxFetchKBSec());
 
         HttpResponse response = null;
         try {

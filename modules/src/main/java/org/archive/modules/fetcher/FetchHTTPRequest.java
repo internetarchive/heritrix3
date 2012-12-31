@@ -61,6 +61,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.SocketClientConnection;
@@ -311,6 +312,12 @@ public class FetchHTTPRequest {
 
         configBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
         configBuilder.setConnectTimeout(fetcher.getSoTimeoutMs());
+
+        /*
+         * XXX This socket timeout seems to be ignored. The one on the
+         * socketConfig on the PoolingHttpClientConnectionManager in the
+         * HttpClientBuilder is respected.
+         */
         configBuilder.setSocketTimeout(fetcher.getSoTimeoutMs());        
 
         // local bind address
@@ -455,11 +462,11 @@ public class FetchHTTPRequest {
         
         httpClientBuilder.setCookieStore(fetcher.getCookieStore());
         
-        HttpClientConnectionManager connManager = makeConnectionManager();
+        HttpClientConnectionManager connManager = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connManager);
     }
 
-    protected HttpClientConnectionManager makeConnectionManager() {
+    protected HttpClientConnectionManager buildConnectionManager() {
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainSocketFactory.getSocketFactory())
                 .register("https", new SSLSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
@@ -479,9 +486,15 @@ public class FetchHTTPRequest {
 
         DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
         
-        return new PoolingHttpClientConnectionManager(socketFactoryRegistry,
+        PoolingHttpClientConnectionManager connMan = new PoolingHttpClientConnectionManager(socketFactoryRegistry,
                 connFactory, null, dnsResolver, -1, TimeUnit.MILLISECONDS);
-    }    
+        
+        SocketConfig.Builder socketConfigBuilder = SocketConfig.custom();
+        socketConfigBuilder.setSoTimeout(fetcher.getSoTimeoutMs());
+        connMan.setDefaultSocketConfig(socketConfigBuilder.build());
+        
+        return connMan;
+    }
     
     protected void initHttpClientBuilder() {
         httpClientBuilder = HttpClientBuilder.create();
