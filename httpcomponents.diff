@@ -49,7 +49,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/Aborta
 +    private Lock abortLock = new ReentrantLock();
 +    private volatile boolean aborted;
 +    private Cancellable cancellable;
-+    
++
 +    @Deprecated
 +    @Override
 +    public void setConnectionRequest(final ClientConnectionRequest connRequest) {
@@ -59,12 +59,12 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/Aborta
 +        this.abortLock.lock();
 +        try {
 +            this.cancellable = new Cancellable() {
-+    
++
 +                public boolean cancel() {
 +                    connRequest.abortRequest();
 +                    return true;
 +                }
-+    
++
 +            };
 +        } finally {
 +            this.abortLock.unlock();
@@ -80,7 +80,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/Aborta
 +        this.abortLock.lock();
 +        try {
 +            this.cancellable = new Cancellable() {
-+    
++
 +                public boolean cancel() {
 +                    try {
 +                        releaseTrigger.abortConnection();
@@ -89,7 +89,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/Aborta
 +                        return false;
 +                    }
 +                }
-+    
++
 +            };
 +        } finally {
 +            this.abortLock.unlock();
@@ -295,7 +295,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/BasicA
 +}
 Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRequestBase.java	(working copy)
 @@ -27,20 +27,12 @@
  
@@ -334,13 +334,12 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRe
      private URI uri;
 -    private Cancellable cancellable;
      private RequestConfig config;
--
+ 
 -    public HttpRequestBase() {
 -        super();
 -        this.abortLock = new ReentrantLock();
 -    }
 -
-+    
 +    @Override
      public abstract String getMethod();
  
@@ -524,7 +523,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/client/methods/HttpRe
      }
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractHttpClient.java	(working copy)
 @@ -37,6 +37,7 @@
  import org.apache.http.HttpHost;
@@ -562,7 +561,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/AbstractH
              throw new ClientProtocolException(httpException);
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUserTokenHandler.java	(working copy)
 @@ -76,7 +76,7 @@
  
@@ -575,7 +574,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/DefaultUs
                      userPrincipal = sslsession.getLocalPrincipal();
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClientBuilder.java	(working copy)
 @@ -163,7 +163,7 @@
      private ServiceUnavailableRetryStrategy serviceUnavailStrategy;
@@ -611,23 +610,9 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/HttpClien
                      b.register(entry.getKey(), entry.getValue());
                  }
              }
-Index: httpclient/httpclient/src/main/java/org/apache/http/impl/client/InternalHttpClient.java
-===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/client/InternalHttpClient.java	(revision 1427064)
-+++ httpclient/httpclient/src/main/java/org/apache/http/impl/client/InternalHttpClient.java	(working copy)
-@@ -171,6 +171,9 @@
-                 config = ((Configurable) request).getConfig();
-             }
-             if (config == null) {
-+                config = localcontext.getRequestConfig();
-+            }
-+            if (config == null) {
-                 config = this.defaultConfig;
-             }
-             if (config == null) {
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClientConnectionFactory.java	(working copy)
 @@ -34,8 +34,10 @@
  
@@ -655,14 +640,14 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/DefaultClie
 +                messageConstraints,
                  null, null, null,
 -                DefaultHttpResponseParserFactory.INSTANCE);
-+                DefaultHttpResponseParserFactory.INSTANCE, 
++                DefaultHttpResponseParserFactory.INSTANCE,
 +                DefaultSessionBufferImplFactory.INSTANCE);
      }
  
  }
 Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java
 ===================================================================
---- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(revision 1427064)
+--- httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(revision 1427210)
 +++ httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClientConnectionImpl.java	(working copy)
 @@ -50,11 +50,12 @@
  import org.apache.http.conn.SocketClientConnection;
@@ -700,7 +685,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClien
 +            final SessionBufferImplFactory sessionBufferFactory) {
 +        super(buffersize, chardecoder, charencoder, constraints,
 +                incomingContentStrategy, outgoingContentStrategy,
-+                requestWriterFactory, responseParserFactory, 
++                requestWriterFactory, responseParserFactory,
 +                sessionBufferFactory);
          this.id = "http-outgoing-" + COUNT.incrementAndGet();
          this.log = LogFactory.getLog(getClass());
@@ -718,7 +703,7 @@ Index: httpclient/httpclient/src/main/java/org/apache/http/impl/conn/SocketClien
      @Override
 Index: httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java
 ===================================================================
---- httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java	(revision 1427064)
+--- httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java	(revision 1427210)
 +++ httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInputBufferMock.java	(working copy)
 @@ -51,7 +51,11 @@
              final MessageConstraints constrains,
@@ -733,9 +718,22 @@ Index: httpclient/httpclient/src/test/java/org/apache/http/impl/conn/SessionInpu
      }
  
      public SessionInputBufferMock(
+Index: httpclient/pom.xml
+===================================================================
+--- httpclient/pom.xml	(revision 1427210)
++++ httpclient/pom.xml	(working copy)
+@@ -65,7 +65,7 @@
+   </scm>
+ 
+   <properties>
+-    <httpcore.version>4.3-alpha1</httpcore.version>
++    <httpcore.version>4.3-alpha2-SNAPSHOT</httpcore.version>
+     <commons-logging.version>1.1.1</commons-logging.version>
+     <commons-codec.version>1.6</commons-codec.version>
+     <ehcache.version>2.2.0</ehcache.version>
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(revision 1427064)
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(revision 1427210)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.java	(working copy)
 @@ -55,9 +55,11 @@
  import org.apache.http.impl.io.ChunkedOutputStream;
@@ -753,7 +751,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.
       *   {@link LaxContentLengthStrategy#INSTANCE} will be used.
       * @param outgoingContentStrategy outgoing content length strategy. If <code>null</code>
       *   {@link StrictContentLengthStrategy#INSTANCE} will be used.
-+     * @param sessionBufferFactory 
++     * @param sessionBufferFactory
       */
      protected BHttpConnectionBase(
              int buffersize,
@@ -762,7 +760,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.
              final MessageConstraints constraints,
              final ContentLengthStrategy incomingContentStrategy,
 -            final ContentLengthStrategy outgoingContentStrategy) {
-+            final ContentLengthStrategy outgoingContentStrategy, 
++            final ContentLengthStrategy outgoingContentStrategy,
 +            final SessionBufferImplFactory sessionBufferFactory) {
          super();
          Args.positive(buffersize, "Buffer size");
@@ -779,7 +777,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/BHttpConnectionBase.
          this.incomingContentStrategy = incomingContentStrategy != null ? incomingContentStrategy :
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(revision 1427064)
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(revision 1427210)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientConnection.java	(working copy)
 @@ -47,6 +47,7 @@
  import org.apache.http.impl.entity.StrictContentLengthStrategy;
@@ -793,7 +791,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientCo
       *   {@link DefaultHttpRequestWriterFactory#INSTANCE} will be used.
       * @param responseParserFactory response parser factory. If <code>null</code>
       *   {@link DefaultHttpResponseParserFactory#INSTANCE} will be used.
-+     * @param sessionBufferFactory 
++     * @param sessionBufferFactory
       */
      public DefaultBHttpClientConnection(
              int buffersize,
@@ -804,7 +802,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientCo
 -            final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
 -        super(buffersize, chardecoder, charencoder,
 -                constraints, incomingContentStrategy, outgoingContentStrategy);
-+            final HttpMessageParserFactory<HttpResponse> responseParserFactory, 
++            final HttpMessageParserFactory<HttpResponse> responseParserFactory,
 +            final SessionBufferImplFactory sessionBufferFactory) {
 +        super(buffersize, chardecoder, charencoder, constraints,
 +                incomingContentStrategy, outgoingContentStrategy,
@@ -828,7 +826,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpClientCo
      protected void onResponseReceived(final HttpResponse response) {
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java	(revision 1427064)
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java	(revision 1427210)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/DefaultBHttpServerConnection.java	(working copy)
 @@ -94,7 +94,7 @@
              final HttpMessageWriterFactory<HttpResponse> responseWriterFactory) {
@@ -843,7 +841,33 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBuf
 ===================================================================
 --- httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferImplFactory.java	(revision 0)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/DefaultSessionBufferImplFactory.java	(working copy)
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,51 @@
++/*
++ * ====================================================================
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ *
++ */
 +package org.apache.http.impl.io;
 +
 +import java.nio.charset.CharsetDecoder;
@@ -922,7 +946,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionBufferImpl
 +}
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(revision 1427064)
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(revision 1427210)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBufferImpl.java	(working copy)
 @@ -60,14 +60,14 @@
  @NotThreadSafe
@@ -962,7 +986,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionInputBuffe
          int len = this.linebuffer.length();
 Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java
 ===================================================================
---- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(revision 1427064)
+--- httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(revision 1427210)
 +++ httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBufferImpl.java	(working copy)
 @@ -64,7 +64,7 @@
      private final int minChunkLimit;
@@ -984,7 +1008,7 @@ Index: httpcore/httpcore/src/main/java/org/apache/http/impl/io/SessionOutputBuff
  
 Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java
 ===================================================================
---- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(revision 1427064)
+--- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(revision 1427210)
 +++ httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMock.java	(working copy)
 @@ -51,7 +51,11 @@
              final MessageConstraints constrains,
@@ -1001,7 +1025,7 @@ Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionInputBufferMo
      public SessionInputBufferMock(
 Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java
 ===================================================================
---- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java	(revision 1427064)
+--- httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java	(revision 1427210)
 +++ httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferMock.java	(working copy)
 @@ -28,6 +28,7 @@
  package org.apache.http.impl;
@@ -1026,7 +1050,7 @@ Index: httpcore/httpcore/src/test/java/org/apache/http/impl/SessionOutputBufferM
  
 Index: httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java
 ===================================================================
---- httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java	(revision 1427064)
+--- httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java	(revision 1427210)
 +++ httpcore/httpcore/src/test/java/org/apache/http/testserver/LoggingBHttpClientConnection.java	(working copy)
 @@ -66,7 +66,7 @@
              final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
