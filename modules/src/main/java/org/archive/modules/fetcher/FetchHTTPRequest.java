@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -55,8 +56,8 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbortableHttpRequestBase;
+import org.apache.http.client.methods.BasicAbortableHttpEntityEnclosingRequest;
 import org.apache.http.client.methods.BasicAbortableHttpRequest;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
@@ -214,7 +215,9 @@ public class FetchHTTPRequest {
         }
 
         if (curi.getFetchType() == FetchType.HTTP_POST) {
-            throw new RuntimeException("fetch type " + FetchType.HTTP_POST + " not implemented");
+            request = new BasicAbortableHttpEntityEnclosingRequest("POST", 
+                    requestLineUri, 
+                    httpVersion);
         } else {
             request = new BasicAbortableHttpRequest("GET", 
                     requestLineUri, 
@@ -444,8 +447,8 @@ public class FetchHTTPRequest {
 
         // XXX should it get charset from somewhere?
         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formParams, HTTP.DEF_CONTENT_CHARSET);
-        HttpPost postRequest = (HttpPost) request;
-        postRequest.setEntity(entity);
+        HttpEntityEnclosingRequest entityEnclosingRequest = (HttpEntityEnclosingRequest) request;
+        entityEnclosingRequest.setEntity(entity);
 
         return true;
     }

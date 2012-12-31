@@ -30,7 +30,6 @@ import static org.archive.modules.fetcher.FetchHTTPTest.ETAG_TEST_VALUE;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -42,7 +41,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,10 +53,6 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NoHttpResponseException;
-import org.apache.http.client.CookieStore;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.archive.checkpointing.Checkpoint;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
@@ -431,65 +425,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         public void clear() {
             lastProxiedRequest = null;
-        }
-    }
-
-    protected static class SimpleCookieStore extends AbstractCookieStore {
-        protected CookieStore basicCookieStore = new BasicCookieStore();
-    
-        @Override
-        public void startCheckpoint(Checkpoint checkpointInProgress) {
-            throw new RuntimeException("not implemented");
-        }
-    
-        @Override
-        public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
-            throw new RuntimeException("not implemented");
-        }
-    
-        @Override
-        public void finishCheckpoint(Checkpoint checkpointInProgress) {
-            throw new RuntimeException("not implemented");
-        }
-    
-        @Override
-        public void doCheckpoint(Checkpoint checkpointInProgress)
-                throws IOException {
-            throw new RuntimeException("not implemented");
-        }
-    
-        @Override
-        public List<Cookie> getCookies() {
-            return basicCookieStore.getCookies();
-        }
-    
-        @Override
-        public boolean clearExpired(Date date) {
-            return basicCookieStore.clearExpired(date);
-        }
-    
-        @Override
-        public void clear() {
-            basicCookieStore.clear();
-        }
-    
-        @Override
-        public void addCookie(Cookie cookie) {
-            basicCookieStore.addCookie(cookie);
-        }
-    
-        @Override
-        protected void saveCookies(String absolutePath) {
-            throw new RuntimeException("not implemented");
-        }
-    
-        @Override
-        protected void prepare() {
-        }
-    
-        @Override
-        protected void loadCookies(Reader reader) {
-            throw new RuntimeException("not implemented");
         }
     }
 
