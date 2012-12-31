@@ -53,7 +53,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbortableHttpRequestBase;
 import org.apache.http.client.methods.BasicAbortableHttpEntityEnclosingRequest;
@@ -98,7 +97,7 @@ import org.archive.util.Recorder;
 /**
  * @contributor nlevitt
  */
-public class FetchHTTPRequest {
+class FetchHTTPRequest {
 
     protected static class RecordingSocketClientConnection extends SocketClientConnectionImpl {
         private final AbortableHttpRequestBase request;
@@ -157,7 +156,7 @@ public class FetchHTTPRequest {
      * Implementation of {@link DnsResolver} that uses the server cache which is
      * normally expected to have been populated by FetchDNS.
      */
-    public static class ServerCacheResolver implements DnsResolver {
+    protected static class ServerCacheResolver implements DnsResolver {
         protected static Logger logger = Logger.getLogger(DnsResolver.class.getName());
         protected ServerCache serverCache;
 
@@ -195,11 +194,12 @@ public class FetchHTTPRequest {
     public FetchHTTPRequest(FetchHTTP fetcher, CrawlURI curi) throws URIException {
         this.fetcher = fetcher;
         this.curi = curi;
-        this.httpClientContext = new HttpClientContext();
-        this.requestConfigBuilder = RequestConfig.custom();
         
         this.targetHost = new HttpHost(curi.getUURI().getHost(), 
                 curi.getUURI().getPort(), curi.getUURI().getScheme());
+        
+        this.httpClientContext = new HttpClientContext();
+        this.requestConfigBuilder = RequestConfig.custom();
 
         ProtocolVersion httpVersion = fetcher.getConfiguredHttpVersion();
         String proxyHostname = (String) fetcher.getAttributeEither(curi, "httpProxyHost");
@@ -207,21 +207,19 @@ public class FetchHTTPRequest {
                 
         String requestLineUri;
         if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) {
-            proxyHost  = new HttpHost(proxyHostname, proxyPort);
-            this.requestConfigBuilder.setDefaultProxy(proxyHost);
+            this.proxyHost = new HttpHost(proxyHostname, proxyPort);
+            this.requestConfigBuilder.setDefaultProxy(this.proxyHost);
             requestLineUri = curi.getUURI().toString();
         } else {
             requestLineUri = curi.getUURI().getPathQuery();
         }
 
         if (curi.getFetchType() == FetchType.HTTP_POST) {
-            request = new BasicAbortableHttpEntityEnclosingRequest("POST", 
-                    requestLineUri, 
-                    httpVersion);
+            this.request = new BasicAbortableHttpEntityEnclosingRequest("POST", 
+                    requestLineUri, httpVersion);
         } else {
-            request = new BasicAbortableHttpRequest("GET", 
-                    requestLineUri, 
-                    httpVersion);
+            this.request = new BasicAbortableHttpRequest("GET", 
+                    requestLineUri, httpVersion);
             curi.setFetchType(FetchType.HTTP_GET);
         }
 
@@ -276,18 +274,14 @@ public class FetchHTTPRequest {
                     A_ETAG_HEADER, "If-None-Match");
         }
 
-        // TODO: What happens if below method adds a header already
-        // added above: e.g. Connection, Range, or Referer?
-        List<String> acceptHeaders = fetcher.getAcceptHeaders();
-        if (acceptHeaders.isEmpty()) {
-            return;
-        }
-        for (String hdr: acceptHeaders) {
-            String[] nvp = hdr.split(": +");
-            if (nvp.length == 2) {
-                request.addHeader(nvp[0], nvp[1]);
+        // TODO: What happens if below method adds a header already added above,
+        // e.g. Connection, Range, or Referer?
+        for (String headerString: fetcher.getAcceptHeaders()) {
+            String[] nameValue = headerString.split(": +");
+            if (nameValue.length == 2) {
+                request.addHeader(nameValue[0], nameValue[1]);
             } else {
-                logger.warning("Invalid accept header: " + hdr);
+                logger.warning("Invalid accept header: " + headerString);
             }
         }
     }
@@ -320,36 +314,32 @@ public class FetchHTTPRequest {
     }
 
     protected void configureRequest() {
-        Builder configBuilder = requestConfigBuilder;
-        
-        // ignore cookies?
         if (fetcher.getIgnoreCookies()) {
-            configBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            configBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
         }
 
-        configBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
-        configBuilder.setConnectTimeout(fetcher.getSoTimeoutMs());
+        requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
+        requestConfigBuilder.setConnectTimeout(fetcher.getSoTimeoutMs());
 
         /*
          * XXX This socket timeout seems to be ignored. The one on the
          * socketConfig on the PoolingHttpClientConnectionManager in the
          * HttpClientBuilder is respected.
          */
-        configBuilder.setSocketTimeout(fetcher.getSoTimeoutMs());        
+        requestConfigBuilder.setSocketTimeout(fetcher.getSoTimeoutMs());        
 
         // local bind address
         String addressString = (String) fetcher.getAttributeEither(curi, FetchHTTP.HTTP_BIND_ADDRESS);
         if (StringUtils.isNotEmpty(addressString)) {
             try {
                 InetAddress localAddress = InetAddress.getByName(addressString);
-                configBuilder.setLocalAddress(localAddress);
+                requestConfigBuilder.setLocalAddress(localAddress);
             } catch (UnknownHostException e) {
                 // Convert all to RuntimeException so get an exception out
                 // if initialization fails.
-                throw new RuntimeException("Unknown host " + addressString
-                        + " in local-address");
+                throw new RuntimeException("failed to resolve configured http bind address " + addressString, e);
             }
         }
     }
@@ -471,12 +461,10 @@ public class FetchHTTPRequest {
     }
     
     protected void configureHttpClientBuilder() {
-        // user-agent header
         String userAgent = curi.getUserAgent();
         if (userAgent == null) {
             userAgent = fetcher.getUserAgentProvider().getUserAgent();
         }
-        
         httpClientBuilder.setUserAgent(userAgent);
         
         httpClientBuilder.setCookieStore(fetcher.getCookieStore());

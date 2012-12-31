@@ -772,8 +772,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            CrawlURI that got a 401.
      */
     protected void handle401(HttpResponse response, final CrawlURI curi) {
-        Map<String, String> challenges = extractChallenges(response, curi, TargetAuthenticationStrategy.INSTANCE);
-        AuthScheme authscheme = chooseAuthScheme(challenges, HttpHeaders.WWW_AUTHENTICATE);
+        Map<String, String> challenges = extractChallenges(response, curi,
+                TargetAuthenticationStrategy.INSTANCE);
+        AuthScheme authscheme = chooseAuthScheme(challenges,
+                HttpHeaders.WWW_AUTHENTICATE);
 
         // remember WWW-Authenticate headers for later use 
         curi.setHttpAuthChallenges(challenges);
@@ -892,7 +894,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
 
         for (String unsupportedSchemeName: authSchemesLeftToTry) {
-            logger.fine("Unsupported scheme: " + unsupportedSchemeName);
+            logger.fine("Unsupported http auth scheme: " + unsupportedSchemeName);
         }
         
         return null;
@@ -1022,13 +1024,13 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     
     public void start() {
-        if(isRunning()) {
-            return; 
+        if (isRunning()) {
+            return;
         }
-        
+
         super.start();
-        
-        if (getCookieStore() != null) {     
+
+        if (getCookieStore() != null) {
             getCookieStore().start();
         }
     }
@@ -1049,8 +1051,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         try {
             return CrawlServer.getServerKey(uri.getUURI());
         } catch (URIException e) {
-            logger.severe(e.getMessage() + ": " + uri);
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.toString() + ": " + uri, e);
             return null;
         }
     }
