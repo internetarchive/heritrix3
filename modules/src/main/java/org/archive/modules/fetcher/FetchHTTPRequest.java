@@ -134,6 +134,22 @@ public class FetchHTTPRequest {
                 super.receiveResponseEntity(response);
             }
         }
+        
+        @Override
+        public void shutdown() throws IOException {
+            super.shutdown();
+
+            /*
+             * Need to do this to avoid "java.io.IOException: RIS already open"
+             * on urls that are retried within httpcomponents. Exercised by
+             * FetchHTTPTests.testNoResponse()
+             */
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {
+                recorder.close();
+                recorder.closeRecorders();
+            }
+        }
     }
     
     /**

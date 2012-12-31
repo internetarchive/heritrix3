@@ -787,6 +787,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         }
     }
 
+    // Implicitly tests the retry cycle within httpcomponents
     public void testNoResponse() throws Exception {
         NoResponseServer noResponseServer = new NoResponseServer("localhost", 7780);
         noResponseServer.start();

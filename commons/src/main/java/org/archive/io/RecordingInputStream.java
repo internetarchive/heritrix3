@@ -137,11 +137,11 @@ public class RecordingInputStream
 
     public void close() throws IOException {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(Thread.currentThread().getName() + " closing " +
-                    this.in + ", " + Thread.currentThread().getName());
+            logger.fine("closing " + this.in + " in thread "
+                    + Thread.currentThread().getName());
         }
         IOUtils.closeQuietly(this.in);
-        this.in = null; 
+        this.in = null;
         IOUtils.closeQuietly(this.recordingOutputStream);
     }
 

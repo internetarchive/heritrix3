@@ -648,10 +648,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
             response = req.execute();
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
-            failedExecuteCleanup(req.request, curi, e);
+            failedExecuteCleanup(curi, e);
             return;
         } catch (IOException e) {
-            failedExecuteCleanup(req.request, curi, e);
+            failedExecuteCleanup(curi, e);
             return;
         }
         
@@ -684,9 +684,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             rec.close();
             // ensure recording has stopped
             rec.closeRecorders();
-            if (!req.request.isAborted()) {
-                req.request.reset();
-            }
             // Note completion time
             curi.setFetchCompletedTime(System.currentTimeMillis());
             
@@ -991,17 +988,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * 
      * @param curi
      *            CrawlURI we failed on.
-     * @param request
-     *            Method we failed on.
      * @param exception
      *            Exception we failed with.
      */
-    protected void failedExecuteCleanup(final AbortableHttpRequestBase request,
-            final CrawlURI curi, final Exception exception) {
+    protected void failedExecuteCleanup(final CrawlURI curi,
+            final Exception exception) {
         cleanup(curi, exception, "executeMethod", S_CONNECT_FAILED);
-        request.reset();
     }
-    
+
     /**
      * Cleanup after a failed method execute.
      * 
