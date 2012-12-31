@@ -610,7 +610,11 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(curi.getFetchDuration() >= 2000 && curi.getFetchDuration() < 2200);
     }
 
-    // see http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error
+    /*
+     * See http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error 
+     * This test seems to fail if not connected to internet, because 
+     * connection fails immediately insted of timing out.
+     */
     public void testConnectionTimeout() throws Exception {
         CrawlURI curi = makeCrawlURI("http://10.255.255.1/");
         fetcher().setSoTimeoutMs(300);
