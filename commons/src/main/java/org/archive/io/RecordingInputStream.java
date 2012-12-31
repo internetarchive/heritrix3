@@ -74,8 +74,10 @@ public class RecordingInputStream
     }
 
     public void open(InputStream wrappedStream) throws IOException {
-        logger.fine(Thread.currentThread().getName() + " opening " +
-            wrappedStream + ", " + Thread.currentThread().getName());
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine("wrapping " + wrappedStream + " in thread "
+                    + Thread.currentThread().getName());
+        }
         if(isOpen()) {
             // error; should not be opening/wrapping in an unclosed 
             // stream remains open
