@@ -46,14 +46,15 @@ class RecordingSessionInputBuffer extends SessionInputBufferImpl {
     public void bind(InputStream inputStream) throws IOException {
         if (inputStream != null) {
             Recorder recorder = Recorder.getHttpRecorder();
+            BufferedInputStream bin = new BufferedInputStream(inputStream, buffersize);
             if (recorder == null) {   // XXX || (isSecure() && isProxied())) {
-                // no recorder, OR defer recording for pre-tunnel leg
-                this.instream = new BufferedInputStream(inputStream, buffersize);
+                super.bind(bin);
             } else {
-                this.instream = recorder.inputWrap(new BufferedInputStream(inputStream, buffersize));
+                InputStream rin = recorder.inputWrap(bin);
+                super.bind(rin);
             }
         } else {
-            this.instream = null;
+            super.bind(null);
         }
     }
 

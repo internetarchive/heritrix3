@@ -58,7 +58,7 @@ import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.AuthSchemes;
-import org.apache.http.client.methods.AbortableHttpRequestBase;
+import org.apache.http.client.methods.AbstractExecutionAwareRequest;
 import org.apache.http.config.Lookup;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.entity.ContentType;
@@ -597,14 +597,14 @@ public class FetchHTTP extends Processor implements Lifecycle {
         return true;
     }
     
-    protected void doAbort(CrawlURI curi, AbortableHttpRequestBase request,
+    protected void doAbort(CrawlURI curi, AbstractExecutionAwareRequest request,
             String annotation) {
         curi.getAnnotations().add(annotation);
         curi.getRecorder().close();
         request.abort();
     }
 
-    protected boolean maybeMidfetchAbort(CrawlURI curi, AbortableHttpRequestBase request) {
+    protected boolean maybeMidfetchAbort(CrawlURI curi, AbstractExecutionAwareRequest request) {
         if (checkMidfetchAbort(curi)) {
             doAbort(curi, request, "midFetchAbort");
             return true;

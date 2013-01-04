@@ -41,14 +41,16 @@ class RecordingSessionOutputBuffer extends SessionOutputBufferImpl {
     public void bind(OutputStream outstream) throws IOException {
         if (outstream != null) {
             Recorder recorder = Recorder.getHttpRecorder();
+            BufferedOutputStream bout = new BufferedOutputStream(outstream, buffersize);
             if (recorder == null) {   // XXX || (isSecure() && isProxied())) {
                 // no recorder, OR defer recording for pre-tunnel leg
-                this.outstream = new BufferedOutputStream(outstream, buffersize);
+                super.bind(bout);
             } else {
-                this.outstream = recorder.outputWrap(new BufferedOutputStream(outstream, buffersize));
+                OutputStream rout = recorder.outputWrap(bout);
+                super.bind(rout);
             }
         } else {
-            this.outstream = null;
+            super.bind(null);
         }
     }
 

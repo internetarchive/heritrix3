@@ -54,9 +54,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.AbortableHttpRequestBase;
-import org.apache.http.client.methods.BasicAbortableHttpEntityEnclosingRequest;
-import org.apache.http.client.methods.BasicAbortableHttpRequest;
+import org.apache.http.client.methods.AbstractExecutionAwareRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
@@ -100,7 +98,7 @@ import org.archive.util.Recorder;
 class FetchHTTPRequest {
 
     protected static class RecordingSocketClientConnection extends SocketClientConnectionImpl {
-        private final AbortableHttpRequestBase request;
+        private final AbstractExecutionAwareRequest request;
         private final CrawlURI curi;
         private FetchHTTP fetcher;
 
@@ -112,7 +110,7 @@ class FetchHTTPRequest {
                 HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
                 HttpMessageParserFactory<HttpResponse> responseParserFactory,
                 SessionBufferImplFactory sessionBufferFactory,
-                AbortableHttpRequestBase request, CrawlURI curi) {
+                AbstractExecutionAwareRequest request, CrawlURI curi) {
             super(buffersize, chardecoder, charencoder, constraints,
                     incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory,
@@ -157,7 +155,8 @@ class FetchHTTPRequest {
      * normally expected to have been populated by FetchDNS.
      */
     protected static class ServerCacheResolver implements DnsResolver {
-        protected static Logger logger = Logger.getLogger(DnsResolver.class.getName());
+        @SuppressWarnings("hiding")
+        private static Logger logger = Logger.getLogger(DnsResolver.class.getName());
         protected ServerCache serverCache;
 
         public ServerCacheResolver(ServerCache serverCache) {
@@ -179,14 +178,14 @@ class FetchHTTPRequest {
         }
     }
 
-    private static Logger logger = Logger.getLogger(FetchHTTPRequest.class.getName());
+    private static final Logger logger = Logger.getLogger(FetchHTTPRequest.class.getName());
 
     protected FetchHTTP fetcher;
     protected CrawlURI curi;
     protected HttpClientBuilder httpClientBuilder;
     protected RequestConfig.Builder requestConfigBuilder;
     protected HttpClientContext httpClientContext;
-    protected AbortableHttpRequestBase request;
+    protected AbstractExecutionAwareRequest request;
     protected HttpHost targetHost;
     protected boolean addedCredentials;
     protected HttpHost proxyHost;
@@ -215,10 +214,10 @@ class FetchHTTPRequest {
         }
 
         if (curi.getFetchType() == FetchType.HTTP_POST) {
-            this.request = new BasicAbortableHttpEntityEnclosingRequest("POST", 
+            this.request = new BasicExecutionAwareEntityEnclosingRequest("POST", 
                     requestLineUri, httpVersion);
         } else {
-            this.request = new BasicAbortableHttpRequest("GET", 
+            this.request = new BasicExecutionAwareRequest("GET", 
                     requestLineUri, httpVersion);
             curi.setFetchType(FetchType.HTTP_GET);
         }
