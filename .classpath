@@ -35,7 +35,7 @@
 	<classpathentry kind="var" path="M2_REPO/joda-time/joda-time/1.6/joda-time-1.6.jar" sourcepath="/M2_REPO/joda-time/joda-time/1.6/joda-time-1.6-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/restlet/org.restlet/1.1.10/org.restlet-1.1.10.jar" sourcepath="/M2_REPO/org/restlet/org.restlet/1.1.10/org.restlet-1.1.10-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.10/com.noelios.restlet-1.1.10.jar" sourcepath="/M2_REPO/com/noelios/restlet/com.noelios.restlet/1.1.10/com.noelios.restlet-1.1.10-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.10/com.noelios.restlet.ext.jetty-1.1.10.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.10/com.noelios.restlet.ext.jetty-1.1.10.jar" sourcepath="/M2_REPO/com/noelios/restlet/com.noelios.restlet.ext.jetty/1.1.10/com.noelios.restlet.ext.jetty-1.1.10-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3.jar" sourcepath="/M2_REPO/org/codehaus/groovy/groovy-all/1.6.3/groovy-all-1.6.3-sources.jar"/>
 	<classpathentry kind="lib" path="engine/src/main/resources"/>
 	<classpathentry kind="lib" path="modules/src/main/resources"/>
