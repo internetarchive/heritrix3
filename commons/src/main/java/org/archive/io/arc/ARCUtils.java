@@ -28,9 +28,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.archive.io.GzipHeader;
-import org.archive.io.NoGzipMagicException;
 import org.archive.net.UURI;
+import org.archive.util.zip.GzipHeader;
+import org.archive.util.zip.NoGzipMagicException;
 
 public class ARCUtils implements ARCConstants {
     /**

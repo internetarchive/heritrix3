@@ -18,13 +18,9 @@
  */
 package org.archive.io;
 
-import java.io.IOException;
-
-public class NoGzipMagicException extends IOException {
-
-    private static final long serialVersionUID = 3084169624430655013L;
-
-    public NoGzipMagicException() {
-        super();
-    }
+/**
+ * @deprecated use {@link org.archive.util.zip.NoGzipMagicException}
+ */
+@Deprecated
+public class NoGzipMagicException extends org.archive.util.zip.NoGzipMagicException {
 }

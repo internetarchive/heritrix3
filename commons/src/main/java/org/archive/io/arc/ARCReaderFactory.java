@@ -32,10 +32,10 @@ import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
-import org.archive.io.GZIPMembersInputStream;
-import org.archive.io.GzipHeader;
-import org.archive.io.NoGzipMagicException;
 import org.archive.util.FileUtils;
+import org.archive.util.zip.GZIPMembersInputStream;
+import org.archive.util.zip.GzipHeader;
+import org.archive.util.zip.NoGzipMagicException;
 
 import com.google.common.io.CountingInputStream;
 
