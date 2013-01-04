@@ -27,6 +27,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 
 /**
@@ -62,7 +63,7 @@ FetchStats.CollectsFetchStats, Serializable {
     }
 
     public String shortReportLine() {
-        return ArchiveUtils.shortReportLine(this);
+        return ReportUtils.shortReportLine(this);
     }
 
     @Override

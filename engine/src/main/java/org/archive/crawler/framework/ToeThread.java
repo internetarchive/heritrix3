@@ -44,6 +44,7 @@ import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.ProgressStatisticsReporter;
 import org.archive.util.Recorder;
+import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 
 import com.sleepycat.util.RuntimeExceptionWrapper;
@@ -573,7 +574,7 @@ implements Reporter, ProgressStatisticsReporter,
     }
 
     public String shortReportLine() {
-        return ArchiveUtils.shortReportLine(this);
+        return ReportUtils.shortReportLine(this);
     }
 
     public void progressStatisticsLine(PrintWriter writer) {

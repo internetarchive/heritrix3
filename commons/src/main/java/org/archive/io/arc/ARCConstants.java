@@ -24,7 +24,7 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 
 import org.archive.io.ArchiveFileConstants;
-import org.archive.io.GzipHeader;
+import org.archive.util.zip.GzipHeader;
 
 /**
  * Constants used by ARC files and in ARC file processing.

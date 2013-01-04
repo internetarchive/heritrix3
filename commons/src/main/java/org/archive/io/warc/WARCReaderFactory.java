@@ -30,10 +30,10 @@ import java.util.Iterator;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.GZIPMembersInputStream;
 import org.archive.io.warc.WARCConstants;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
+import org.archive.util.zip.GZIPMembersInputStream;
 
 import com.google.common.io.CountingInputStream;
 

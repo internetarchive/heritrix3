@@ -39,6 +39,7 @@ import org.archive.modules.fetcher.FetchStats.Stage;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityCache;
+import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 
 /**
@@ -541,7 +542,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     }
     
     public String shortReportLine() {
-        return ArchiveUtils.shortReportLine(this);
+        return ReportUtils.shortReportLine(this);
     }
     
     /**

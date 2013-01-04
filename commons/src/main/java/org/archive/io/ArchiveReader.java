@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.archive.util.MimetypeUtils;
+import org.archive.util.zip.GZIPMembersInputStream;
 
 import com.google.common.io.CountingInputStream;
 

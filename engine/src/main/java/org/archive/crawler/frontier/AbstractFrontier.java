@@ -69,6 +69,7 @@ import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.ReportUtils;
 import org.archive.util.iterator.LineReadingIterator;
 import org.archive.util.iterator.RegexLineIterator;
 import org.json.JSONException;
@@ -1128,7 +1129,7 @@ public abstract class AbstractFrontier
     // Reporter implementation
     // 
     public String shortReportLine() {
-        return ArchiveUtils.shortReportLine(this);
+        return ReportUtils.shortReportLine(this);
     }
 
     @Override

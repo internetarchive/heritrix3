@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 
 /**
@@ -204,7 +205,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
     }
 
     public String shortReportLine() {
-        return ArchiveUtils.shortReportLine(this);
+        return ReportUtils.shortReportLine(this);
     }
 
     @Override
