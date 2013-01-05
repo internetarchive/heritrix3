@@ -280,6 +280,12 @@
 			<groupId>org.archive</groupId>
 			<artifactId>archive-commons</artifactId>
 			<version>1.0-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-httpclient</groupId>
+					<artifactId>commons-httpclient</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 	</dependencies>
