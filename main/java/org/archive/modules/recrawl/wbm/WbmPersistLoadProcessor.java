@@ -69,7 +69,9 @@ public class WbmPersistLoadProcessor extends Processor {
 
     private HttpClient client;
     
-    private String queryURL = "http://web-beta.archive.org/cdx/search";
+    // ~Jan 2, 2013
+    //private String queryURL = "http://web-beta.archive.org/cdx/search";
+    private String queryURL = "http://web.archive.org/cdx/search/cdx";
     public void setQueryURL(String queryURL) {
       this.queryURL = queryURL;
     }
@@ -92,7 +94,7 @@ public class WbmPersistLoadProcessor extends Processor {
     }
     private int socketTimeout = 10000;
     /**
-     * socket timeout (SO_TIMEOUT) for HTTP cient in milliseconds.
+     * socket timeout (SO_TIMEOUT) for HTTP client in milliseconds.
      */
     public void setSocketTimeout(int socketTimeout) {
       this.socketTimeout = socketTimeout;
