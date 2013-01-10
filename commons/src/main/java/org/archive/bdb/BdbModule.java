@@ -42,7 +42,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
-import org.archive.util.CLibrary;
 import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
@@ -526,8 +525,9 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                         LOGGER.log(Level.SEVERE, "unable to delete obstructing file "+destFile);  
                     }
                 }
-                int status = CLibrary.INSTANCE.link(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
-                if (status!=0) {
+                
+                boolean status = FilesystemLinkMaker.makeHardLink(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
+                if (!status) {
                     LOGGER.log(Level.SEVERE, "unable to create required restore link "+destFile); 
                 }
             }
