@@ -10,12 +10,13 @@ import org.springframework.context.ApplicationContext;
 /**
  * Provides syntactic sugar for H3 scripts to reference beans without adding a
  * line like {@code def scope = appCtx.getBean("scope");}. Instead, the script
- * may simply reference {@code scope}. Caveat: access is read only.
+ * may simply reference {@code scope}. Caveat: access to beans is read only.
  * 
  * @contributor travis
  */
 public class BeanLookupBindings extends SimpleBindings {
 
+    public static final Object ENABLE_BEAN_LOOKUP = "beanBindings";
     private ApplicationContext appCtx = null;
 
     public BeanLookupBindings(ApplicationContext appCtx) {
@@ -29,9 +30,22 @@ public class BeanLookupBindings extends SimpleBindings {
         this.appCtx = appCtx;
     }
 
+    /**
+     * @return true if the value bound to the key
+     *         {@value BeanLookupBindings#ENABLE_BEAN_LOOKUP} is either an
+     *         instance of {@link java.lang.Boolean} or is a string that parses
+     *         to {@code true} using {@link Boolean#parseBoolean(String)}.
+     */
+    public boolean isBeanLookupEnabled() {
+        Object beanBindingsValue = super.get(ENABLE_BEAN_LOOKUP);
+        return Boolean.TRUE.equals(beanBindingsValue)
+                || (beanBindingsValue instanceof String
+                    && Boolean.parseBoolean((String) beanBindingsValue));
+    }
+    
     @Override
     public Object get(Object key) {
-        if (key instanceof String) {
+        if (isBeanLookupEnabled() && key instanceof String) {
             try {
                 Object ret = appCtx.getBean((String) key);
                 if (ret != null) {
@@ -44,7 +58,7 @@ public class BeanLookupBindings extends SimpleBindings {
 
     @Override
     public boolean containsKey(Object key) {
-        if (key instanceof String) {
+        if (isBeanLookupEnabled() && key instanceof String) {
             try {
                 boolean ret = appCtx.containsBean((String) key);
                 if (ret == true) {
@@ -58,7 +72,7 @@ public class BeanLookupBindings extends SimpleBindings {
     @Override
     public Object put(String name, Object value) {
         // restrict setting variables that conflict with bean names
-        if (appCtx.containsBean(name)) {
+        if (isBeanLookupEnabled() && appCtx.containsBean(name)) {
             throw new IllegalArgumentException("name conflict: \""+ name +"\" is the name of a bean.");
         }
         return super.put(name, value);
