@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -311,22 +312,20 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
         StringWriter rawString = new StringWriter(); 
         PrintWriter rawOut = new PrintWriter(rawString);
         Exception ex = null;
-        engine.put("rawOut", rawOut);
-        engine.put("appCtx", appCtx);
+        Bindings bindings = new BeanLookupBindings(appCtx);
+        bindings.put("rawOut", rawOut);
+        bindings.put("appCtx", appCtx);
         
         // evaluate and record any exception
         try {
             String script = FileUtils.readFileToString(actionFile);
-            engine.eval(script);
+            engine.eval(script, bindings);
         } catch (IOException e) {
             ex = e;
         } catch (ScriptException e) {
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
-        } finally {
-            engine.put("rawOut", null);
-            engine.put("appCtx", null);
         }
 
         // report output/exception to files paired with script in done dir

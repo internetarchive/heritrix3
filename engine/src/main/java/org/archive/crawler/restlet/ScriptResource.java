@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -38,6 +39,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.archive.crawler.framework.BeanLookupBindings;
 import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
@@ -50,6 +52,7 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
@@ -102,13 +105,15 @@ public class ScriptResource extends JobRelatedResource {
         
         StringWriter rawString = new StringWriter(); 
         PrintWriter rawOut = new PrintWriter(rawString);
+        ApplicationContext appCtx = cj.getJobContext();
+        Bindings bindings = new BeanLookupBindings(appCtx);
         eng.put("rawOut", rawOut);
         StringWriter htmlString = new StringWriter(); 
         PrintWriter htmlOut = new PrintWriter(htmlString);
-        eng.put("htmlOut", htmlOut);
-        eng.put("job", cj);
-        eng.put("appCtx", cj.getJobContext());
-        eng.put("scriptResource", this);
+        bindings.put("htmlOut", htmlOut);
+        bindings.put("job", cj);
+        bindings.put("appCtx", appCtx);
+        bindings.put("scriptResource", this);
         try {
             eng.eval(script);
             linesExecuted = script.split("\r?\n").length;
@@ -121,12 +126,6 @@ public class ScriptResource extends JobRelatedResource {
             rawOutput = rawString.toString();
             htmlOut.flush();
             htmlOutput = htmlString.toString();
-
-            eng.put("rawOut", null);
-            eng.put("htmlOut", null);
-            eng.put("job", null);
-            eng.put("appCtx", null);
-            eng.put("scriptResource", null);
         }
         //TODO: log script, results somewhere; job log INFO? 
         
