@@ -107,7 +107,7 @@ public class ScriptResource extends JobRelatedResource {
         PrintWriter rawOut = new PrintWriter(rawString);
         ApplicationContext appCtx = cj.getJobContext();
         Bindings bindings = new BeanLookupBindings(appCtx);
-        eng.put("rawOut", rawOut);
+        bindings.put("rawOut", rawOut);
         StringWriter htmlString = new StringWriter(); 
         PrintWriter htmlOut = new PrintWriter(htmlString);
         bindings.put("htmlOut", htmlOut);
@@ -115,7 +115,7 @@ public class ScriptResource extends JobRelatedResource {
         bindings.put("appCtx", appCtx);
         bindings.put("scriptResource", this);
         try {
-            eng.eval(script);
+            eng.eval(script, bindings);
             linesExecuted = script.split("\r?\n").length;
         } catch (ScriptException e) {
             ex = e;
@@ -126,6 +126,13 @@ public class ScriptResource extends JobRelatedResource {
             rawOutput = rawString.toString();
             htmlOut.flush();
             htmlOutput = htmlString.toString();
+
+            // the script could create an object that persists and retains a reference to the Bindings
+            bindings.put("rawOut", null);
+            bindings.put("htmlOut", null);
+            bindings.put("job", null);
+            bindings.put("appCtx", null);
+            bindings.put("scriptResource", null);
         }
         //TODO: log script, results somewhere; job log INFO? 
         

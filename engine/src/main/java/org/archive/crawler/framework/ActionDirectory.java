@@ -326,6 +326,10 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
             ex = e;
         } catch (RuntimeException e) {
             ex = e;
+        } finally {
+            // the script could create an object that persists and retains a reference to the Bindings
+            bindings.put("rawOut", null);
+            bindings.put("appCtx", null);
         }
 
         // report output/exception to files paired with script in done dir
