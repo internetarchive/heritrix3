@@ -16,7 +16,6 @@ import org.springframework.context.ApplicationContext;
  */
 public class BeanLookupBindings extends SimpleBindings {
 
-    public static final Object ENABLE_BEAN_LOOKUP = "beanBindings";
     private ApplicationContext appCtx = null;
 
     public BeanLookupBindings(ApplicationContext appCtx) {
@@ -29,52 +28,24 @@ public class BeanLookupBindings extends SimpleBindings {
         assert appCtx != null;
         this.appCtx = appCtx;
     }
-
-    /**
-     * @return true if the value bound to the key
-     *         {@value BeanLookupBindings#ENABLE_BEAN_LOOKUP} is either an
-     *         instance of {@link java.lang.Boolean} or is a string that parses
-     *         to {@code true} using {@link Boolean#parseBoolean(String)}.
-     */
-    public boolean isBeanLookupEnabled() {
-        Object beanBindingsValue = super.get(ENABLE_BEAN_LOOKUP);
-        return Boolean.TRUE.equals(beanBindingsValue)
-                || (beanBindingsValue instanceof String
-                    && Boolean.parseBoolean((String) beanBindingsValue));
-    }
     
     @Override
     public Object get(Object key) {
-        if (isBeanLookupEnabled() && key instanceof String) {
+        Object ret = super.get(key);
+        if (ret == null && key instanceof String) {
             try {
-                Object ret = appCtx.getBean((String) key);
-                if (ret != null) {
-                    return ret;
-                }
+                ret = appCtx.getBean((String) key);
             } catch (BeansException e) {}
         }
-        return super.get(key);
+        return ret;
     }
 
     @Override
     public boolean containsKey(Object key) {
-        if (isBeanLookupEnabled() && key instanceof String) {
-            try {
-                boolean ret = appCtx.containsBean((String) key);
-                if (ret == true) {
-                    return ret;
-                }
-            } catch (BeansException e) {}
+        try {
+            return super.containsKey(key) || appCtx.containsBean((String) key);
+        } catch (Exception e) {
+            return false;
         }
-        return super.containsKey(key);
-    }
-
-    @Override
-    public Object put(String name, Object value) {
-        // restrict setting variables that conflict with bean names
-        if (isBeanLookupEnabled() && appCtx.containsBean(name)) {
-            throw new IllegalArgumentException("name conflict: \""+ name +"\" is the name of a bean.");
-        }
-        return super.put(name, value);
     }
 }
