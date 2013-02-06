@@ -19,6 +19,7 @@
 
 package org.archive.io.arc;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -132,9 +133,26 @@ implements ARCConstants {
     protected ArchiveReader getArchiveReader(final String arc,
 			final InputStream is, final boolean atFirstRecord)
 			throws IOException {
-		// For now, assume stream is compressed. Later add test of input
-		// stream or handle exception thrown when figure not compressed stream.
-		return new CompressedARCReader(arc, is, atFirstRecord);
+
+        // We do this mark() reset() stuff, wrapping in a BufferedInputStream if
+        // necessary to make it work, because testCompressedARCStream() consumes
+        // some bytes from the input stream
+        InputStream possiblyWrapped;
+        if (is.markSupported()) {
+            possiblyWrapped = is;
+        } else {
+            possiblyWrapped = new BufferedInputStream(is);
+        }
+
+        possiblyWrapped.mark(100);
+        boolean compressed = testCompressedARCStream(possiblyWrapped);
+        possiblyWrapped.reset();
+
+        if (compressed) {
+            return new CompressedARCReader(arc, possiblyWrapped, atFirstRecord);
+        } else {
+            return new UncompressedARCReader(arc, possiblyWrapped);
+        }
 	}
     
     /**
@@ -248,8 +266,8 @@ implements ARCConstants {
         GzipHeader gh = null;
         try {
             gh = new GzipHeader(is);
-        } catch (NoGzipMagicException e ) {
-            return compressedARCFile;
+        } catch (NoGzipMagicException e) {
+            return false;
         }
         
         byte[] fextra = gh.getFextra();
@@ -311,7 +329,7 @@ implements ARCConstants {
         public UncompressedARCReader(final String f, final InputStream is) {
             // Arc file has been tested for existence by time it has come
             // to here.
-            setIn(is);
+            setIn(new CountingInputStream(is));
             initialize(f);
         }
     }
