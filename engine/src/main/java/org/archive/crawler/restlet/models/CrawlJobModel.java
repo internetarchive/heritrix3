@@ -126,8 +126,10 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
             }
         }
         this.put("checkpointFiles",checkpointFiles);
-        this.put("alertLogFilePath",crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile().getAbsolutePath());
-        this.put("crawlLogFilePath",crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().getAbsolutePath());
+        if (crawlJob.hasApplicationContext())
+            this.put("alertLogFilePath",crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile().getAbsolutePath());
+        if(crawlJob.isRunning() || (crawlJob.hasApplicationContext() && !crawlJob.isLaunchable()))
+            this.put("crawlLogFilePath",crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().getAbsolutePath());
         this.put("reports", generateReports());
     }
     public String formatBytes(Long bytes){
@@ -178,13 +180,15 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
     }
     public List<Map<String,String>> generateReports(){
         List<Map<String,String>> reports = new ArrayList<Map<String,String>>();
-        for (Report report : crawlJob.getCrawlController().getStatisticsTracker().getReports()) {
-            if (report.getShouldReportDuringCrawl()) {
-                Map<String,String> reportMap = new HashMap<String,String>();
-                String className = report.getClass().getSimpleName();
-                reportMap.put("className", className);
-                reportMap.put("shortName",className.substring(0,className.length() - "Report".length()));
-                reports.add(reportMap);
+        if(crawlJob.hasApplicationContext()){
+            for (Report report : crawlJob.getCrawlController().getStatisticsTracker().getReports()) {
+                if (report.getShouldReportDuringCrawl()) {
+                    Map<String,String> reportMap = new HashMap<String,String>();
+                    String className = report.getClass().getSimpleName();
+                    reportMap.put("className", className);
+                    reportMap.put("shortName",className.substring(0,className.length() - "Report".length()));
+                    reports.add(reportMap);
+                }
             }
         }
         return reports;
