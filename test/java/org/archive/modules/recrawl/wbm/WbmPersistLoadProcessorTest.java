@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,9 +24,10 @@ import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.hq.recrawl.RecrawlDataSchemaBase;
+import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.net.UURIFactory;
+import org.archive.util.DateUtils;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
@@ -37,6 +39,7 @@ import com.google.common.util.concurrent.ExecutionList;
  * 
  * TODO:
  * <ul>
+ * <li>test for pathological cases: illegal chars, incorrect length, etc.
  * <li>test if connection is properly released back to the pool for all possible cases.
  * </ul>
  * @author kenji
@@ -57,21 +60,31 @@ public class WbmPersistLoadProcessorTest {
   }
   
   /**
-   * stub HttpResponse for normal case
+   * stub HttpResponse for normal case.
    * @author kenji
    *
    */
   public static class TestNormalHttpResponse extends BasicHttpResponse {
+    public static final String EXPECTED_TS = "20121101155310";
     public static final String EXPECTED_HASH = "GHN5VKF3TBKNSEZTASOM23BJRTKFFNJK";
     public TestNormalHttpResponse() {
       super(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 0), 200, "OK"));
       setEntity(new ByteArrayEntity(
-	  ("org,archive)/ 20121101155310 http://archive.org/ text/html 200 "+
+	  ("org,archive)/ "+EXPECTED_TS+" http://archive.org/ text/html 200 "+
 	      EXPECTED_HASH+" - - 6908 982548871 "+
 	      "google.es-20121101-155506/IA-FOC-google.es-20121101073708-00001.warc.gz\n"
 	  ).getBytes()
       ));
     }
+  }
+  
+  protected Map<String, Object> getFetchHistory(CrawlURI curi, int idx) {
+    Map<String, Object> data = curi.getData();
+    @SuppressWarnings("unchecked")
+    Map<String, Object>[] historyArray = (Map[])data.get(RecrawlAttributeConstants.A_FETCH_HISTORY);
+    assertNotNull(historyArray);
+    Map<String, Object> history = historyArray[idx];
+    return history;
   }
   
   @Test
@@ -88,13 +101,31 @@ public class WbmPersistLoadProcessorTest {
     t.setHttpClient(client);
     t.setContentDigestScheme(CONTENT_DIGEST_SCHEME);
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
+    
+    // put history entry newer than being loaded
+    long expected_ts = DateUtils.parse14DigitDate(TestNormalHttpResponse.EXPECTED_TS).getTime();
+    Map<String, Object>[] fetchHistory = (Map[])curi.getData().get(RecrawlAttributeConstants.A_FETCH_HISTORY);
+    if (fetchHistory == null) {
+      fetchHistory = new HashMap[2];
+      curi.getData().put(RecrawlAttributeConstants.A_FETCH_HISTORY, fetchHistory);
+    }
+    fetchHistory[0] = new HashMap<String, Object>();
+    fetchHistory[0].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts + 2000);
+    fetchHistory[1] = new HashMap<String, Object>();
+    fetchHistory[1].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts - 2000);
+    
     ProcessResult result = t.innerProcessResult(curi);
     assertEquals("result is PROCEED", ProcessResult.PROCEED, result);
     
-    Map<String, Object> history = RecrawlDataSchemaBase.getFetchHistory(curi);
+    // newly loaded history entry should fall in between two existing entries (index=1)
+    Map<String, Object> history = getFetchHistory(curi, 1);
     assertNotNull("history", history);
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
     assertEquals("CONTENT_DIGEST", CONTENT_DIGEST_SCHEME+TestNormalHttpResponse.EXPECTED_HASH, hash);
+    
+    Long ts = (Long)history.get(FetchHistoryHelper.A_TIMESTAMP);
+    assertNotNull("ts is non-null", ts);
+    assertEquals("'ts' has expected timestamp", expected_ts, ts.longValue());
   }
   
   @Test
@@ -103,7 +134,7 @@ public class WbmPersistLoadProcessorTest {
     //CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.mext.go.jp/null.gif"));
     ProcessResult result = t.innerProcessResult(curi);
-    Map<String, Object> history = RecrawlDataSchemaBase.getFetchHistory(curi);
+    Map<String, Object> history = getFetchHistory(curi, 0);
     assertNotNull("getFetchHistory returns non-null", history);
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
     assertNotNull("CONTENT_DIGEST is non-null", hash);

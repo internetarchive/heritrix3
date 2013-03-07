@@ -23,7 +23,9 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.text.ParseException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,16 +51,17 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.hq.GzipInflatingHttpEntityWrapper;
-import org.archive.modules.hq.recrawl.RecrawlDataSchemaBase;
+import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.DateUtils;
 
 /**
  * A {@link Processor} for retrieving recrawl info from remote Wayback Machine index.
  * This is currently in the early stage of experiment. Both low-level protocol and WBM API
  * semantics will certainly undergo several revisions.
  * <p>Current interface:</p>
- * <p>http://web-beta.archive.org/cdx/search?url=archive.org&startDate=1999 will return raw
+ * <p>http://web-beta.archive.org/cdx/search/cdx?url=archive.org&startDate=1999 will return raw
  * CDX lines for archive.org, since 1999-01-01 00:00:00.
  * </p>
  * <p>As index is updated in a separate batch processing job, there's no "Store" counterpart.</p>
@@ -68,6 +71,15 @@ public class WbmPersistLoadProcessor extends Processor {
   private static final Log log = LogFactory.getLog(WbmPersistLoadProcessor.class);
 
     private HttpClient client;
+    
+    private int historyLength = 2;
+    
+    public void setHistoryLength(int historyLength) {
+      this.historyLength = historyLength;
+    }
+    public int getHistoryLength() {
+      return historyLength;
+    }
     
     // ~Jan 2, 2013
     //private String queryURL = "http://web-beta.archive.org/cdx/search";
@@ -249,17 +261,19 @@ public class WbmPersistLoadProcessor extends Processor {
 	return ProcessResult.PROCEED;
       }
       InputStream is = null;
-      String hash = null;
+      Map<String, Object> info = null;
       try {
-	hash = getLastHash(is = entity.getContent());
+	info = getLastCrawl(is = entity.getContent());
       } catch (IOException ex) {
       } finally {
 	if (is != null)
 	  ArchiveUtils.closeQuietly(is);
       }
-      if (hash != null) {
-	Map<String, Object> history = RecrawlDataSchemaBase.getFetchHistory(curi);
-	history.put(RecrawlAttributeConstants.A_CONTENT_DIGEST, contentDigestScheme + hash);
+      if (info != null) {
+	Map<String, Object> history = FetchHistoryHelper.getFetchHistory(curi,
+	    (Long)info.get(FetchHistoryHelper.A_TIMESTAMP), historyLength);
+	if (history != null)
+	  history.putAll(info);
 	loadedCount.incrementAndGet();
       } else {
 	failedCount.incrementAndGet();
@@ -267,34 +281,37 @@ public class WbmPersistLoadProcessor extends Processor {
       return ProcessResult.PROCEED;
     }
     
-    protected String getLastHash(InputStream is) throws IOException {
+    protected HashMap<String, Object> getLastCrawl(InputStream is) throws IOException {
       // read CDX lines, save most recent (at the end) hash.
       ByteBuffer buffer = ByteBuffer.allocate(32);
+      ByteBuffer tsbuffer = ByteBuffer.allocate(14);
       int field = 0;
       int c;
       do {
-	if (field == 5) {
-	  buffer.clear();
-	  while (buffer.remaining() > 0) {
+	c = is.read();
+	if (field == 1) {
+	  // 14-digits timestamp
+	  tsbuffer.clear();
+	  while (Character.isDigit(c) && tsbuffer.remaining() > 0) {
+	    tsbuffer.put((byte)c);
 	    c = is.read();
-	    if (c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
-		buffer.put((byte)c);
-	    } else {
-	      break;
-	    }
 	  }
-	  if (buffer.remaining() == 0) {
+	  if (c != ' ' || tsbuffer.position() != 14) {
+	    tsbuffer.clear();
+	  }
+	  // fall through to skip the rest
+	} else if (field == 5) {
+	  buffer.clear();
+	  while ((c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') && buffer.remaining() > 0) {
+	    buffer.put((byte)c);
 	    c = is.read();
-	    if (c == ' ') {
-	      field++;
-	      continue;
-	    }
-	  } else {
+	  }
+	  if (c != ' ' || buffer.position() != 32) {
 	    buffer.clear();
 	  }
+	  // fall through to skip the rest
 	}
-	while  (true) {
-	  c = is.read();
+	while (true) {
 	  if (c == -1) {
 	    break;
 	  } else if (c == '\n') {
@@ -304,13 +321,21 @@ public class WbmPersistLoadProcessor extends Processor {
 	    field++;
 	    break;
 	  }
+	  c = is.read();
 	}
       } while (c != -1);
+      
+      HashMap<String, Object> info = new HashMap<String, Object>();
       if (buffer.remaining() == 0) {
-	return new String(buffer.array());
-      } else {
-	return null;
+	info.put(RecrawlAttributeConstants.A_CONTENT_DIGEST, contentDigestScheme + new String(buffer.array()));
       }
+      if (tsbuffer.remaining() == 0) {
+	try {
+	  info.put(FetchHistoryHelper.A_TIMESTAMP, DateUtils.parse14DigitDate(new String(tsbuffer.array())).getTime());
+	} catch (ParseException ex) {
+	}
+      }
+      return info.isEmpty() ? null : info;
     }
 
     /**
