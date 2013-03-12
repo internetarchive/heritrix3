@@ -69,6 +69,7 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.NTCredentials;
+import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.auth.AuthChallengeParser;
 import org.apache.commons.httpclient.auth.AuthPolicy;
@@ -76,6 +77,7 @@ import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
@@ -91,7 +93,9 @@ import org.archive.httpclient.SingleHttpConnectionManager;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecorderTooMuchHeaderException;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.credential.Credential;
@@ -630,6 +634,17 @@ public class FetchHTTP extends Processor implements Lifecycle {
         boolean addedCredentials = populateCredentials(curi, method);
         if (http.getState().getProxyCredentials(new AuthScope(getProxyHost(), getProxyPort())) != null) {
             addedCredentials = true;
+        }
+        
+        // prep POST submit-data, if present
+        if (curi.getFetchType()==FetchType.HTTP_POST 
+                && curi.getData().containsKey(CoreAttributeConstants.A_SUBMIT_DATA)) {
+            if (method instanceof PostMethod) {
+                ((PostMethod)method).setRequestBody(
+                    (NameValuePair[]) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA));
+            } else {
+                logger.severe("method type mismatch");
+            }
         }
 
         // set hardMax on bytes (if set by operator)
