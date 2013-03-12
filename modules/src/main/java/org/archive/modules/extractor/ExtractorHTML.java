@@ -77,6 +77,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     public final static String A_META_ROBOTS = "meta-robots";
     
+    public final static String A_FORM_OFFSETS = "form-offsets";
+    
     {
         setMaxElementLength(64); 
     }
@@ -530,7 +532,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     DevUtils.extraInfo(), e);
             }
         }
-        
+           
         // finish handling form action, now method is available
         if(action != null) {
             if(method == null || "GET".equalsIgnoreCase(method.toString()) 
@@ -809,9 +811,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 int end6 = tags.end(6);
                 assert start6 >= 0: "Start is: " + start6 + ", " + curi;
                 assert end6 >= 0: "End is :" + end6 + ", " + curi;
+                String element = cs.subSequence(start6, end6).toString();
+                CharSequence attributes = cs.subSequence(start5, end5);
                 processGeneralTag(curi,
-                    cs.subSequence(start6, end6),
-                    cs.subSequence(start5, end5));
+                    element,
+                    attributes);
+                // remember FORM to help later extra processing
+                if ("form".equalsIgnoreCase(element)) {
+                    curi.getDataList(A_FORM_OFFSETS).add((Integer)(start6-1));
+                }
+               
 
             } else if (tags.start(1) > 0) {
                 // <script> match
