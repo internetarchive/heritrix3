@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
+import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -36,6 +37,9 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.extractor.UriErrorLoggerModule;
+import org.archive.util.JSONUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.base.Function;
@@ -108,7 +112,7 @@ import com.google.common.collect.MapMaker;
  * @author gojomo
  * @version $Date$, $Revision$
  */
-public class FormLoginProcessor extends Processor {
+public class FormLoginProcessor extends Processor implements Checkpointable {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -1L;
     private static final Logger logger =
@@ -275,5 +279,24 @@ public class FormLoginProcessor extends Processor {
         return eligibleFormsAttemptsCount.get(formProvince).get()
                 +","+eligibleFormsSeenCount.get(formProvince).get()
                 +","+formProvince;
+    }
+    
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = super.toCheckpointJson();
+        json.put("eligibleFormsAttemptsCount", eligibleFormsAttemptsCount);
+        json.put("eligibleFormsSeenCount", eligibleFormsSeenCount);
+        return json;
+    }
+    
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+        JSONUtils.putAllAtomicLongs(
+                eligibleFormsAttemptsCount,
+                json.getJSONObject("eligibleFormsAttemptsCount"));
+        JSONUtils.putAllAtomicLongs(
+                eligibleFormsSeenCount,
+                json.getJSONObject("eligibleFormsSeenCount"));
     }
 }
