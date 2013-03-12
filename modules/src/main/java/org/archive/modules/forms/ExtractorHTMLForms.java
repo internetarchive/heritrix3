@@ -159,8 +159,8 @@ public class ExtractorHTMLForms extends Extractor {
             if (form.seemsLoginForm() || getExtractAllForms()) {
                 curi.getDataList(A_HTML_FORM_OBJECTS).add(form);
                 // DEBUG output
-                 System.err.println("FORM AT ("+curi.getURI()+"): ");
-                 System.err.println(form.toString());
+                // System.err.println("FORM AT ("+curi.getURI()+"): ");
+                // System.err.println(form.toString());
                 curi.getAnnotations().add(form.asAnnotation());
             }
         }
