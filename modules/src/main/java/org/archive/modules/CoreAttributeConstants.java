@@ -116,4 +116,11 @@ public interface CoreAttributeConstants {
     public static final String A_WHOIS_SERVER_IP = "whois-server-ip";
     
     public static final String A_HTTP_AUTH_CHALLENGES = "http-auth-challenges";
+    
+    // FORMS support - a persistent member (survives frontier enqueue/dequeue/retries)
+    public static final String A_SUBMIT_DATA = "submit-data";
+    
+    // arbitrary additions to WARC response record headers
+    public static final String A_WARC_RESPONSE_HEADERS = "warc-response-headers";
+
 }

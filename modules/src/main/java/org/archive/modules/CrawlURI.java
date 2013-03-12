@@ -30,6 +30,8 @@ import static org.archive.modules.CoreAttributeConstants.A_HTTP_AUTH_CHALLENGES;
 import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
+import static org.archive.modules.CoreAttributeConstants.A_SUBMIT_DATA;
+import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 import static org.archive.modules.SchedulingConstants.NORMAL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
@@ -230,9 +232,9 @@ implements Reporter, Serializable, OverlayContext {
      * test must not throw it out because its not a login curi).
      */
     private boolean prerequisite = false;
-
     
-    transient private FetchType fetchType = FetchType.UNKNOWN;
+    /** specified fetch-type: GET, POST, or not-yet-known */ 
+    private FetchType fetchType = FetchType.UNKNOWN;
 
     transient private HttpMethod method = null;
     
@@ -252,7 +254,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES});
+            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES, A_SUBMIT_DATA, A_WARC_RESPONSE_HEADERS});
 
     /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
     private static final int MAX_HOPS_DISPLAYED = 50;
@@ -1315,6 +1317,20 @@ implements Reporter, Serializable, OverlayContext {
         }
         return data;
     }
+    
+    /**
+     * Convenience method: return (creating if necessary) list at 
+     * given data key
+     * @param key
+     * @return List
+     */
+    @SuppressWarnings("unchecked")
+    public List<Object> getDataList(String key) {
+        if (!containsDataKey(key)) {
+            getData().put(key, new ArrayList<Object>());
+        }
+        return (List<Object>) getData().get(key);
+    }
 
     /**
      * Set the <tt>isSeed</tt> attribute of this URI.
@@ -1356,6 +1372,11 @@ implements Reporter, Serializable, OverlayContext {
      */
     public String getPathFromSeed() {
         return this.pathFromSeed;
+    }
+    
+    /** convenience access to last hop character, as string */
+    public String getLastHop() {
+        return StringUtils.isEmpty(pathFromSeed) ? "" : pathFromSeed.substring(pathFromSeed.length()-1);
     }
 
     /**
@@ -1835,6 +1856,9 @@ implements Reporter, Serializable, OverlayContext {
         kryo.autoregister(java.util.HashMap[].class); 
         kryo.autoregister(org.archive.modules.credential.HttpAuthenticationCredential.class);
         kryo.autoregister(org.archive.modules.credential.HtmlFormCredential.class);
+        kryo.autoregister(org.apache.commons.httpclient.NameValuePair.class);
+        kryo.autoregister(org.apache.commons.httpclient.NameValuePair[].class);
+        kryo.autoregister(FetchType.class);
         kryo.setRegistrationOptional(true);
     }
     
@@ -1850,14 +1874,9 @@ implements Reporter, Serializable, OverlayContext {
      */
     public CrawlURI markPrerequisite(String preq) 
     throws URIException {
-        UURI src = getUURI();
-        UURI dest = UURIFactory.getInstance(preq);
-        LinkContext lc = LinkContext.PREREQ_MISC;
-        Hop hop = Hop.PREREQ;
-        Link link = new Link(src, dest, lc, hop);
-        CrawlURI caUri = createCrawlURI(getBaseURI(), link);
+        CrawlURI caUri = makeConsequentCandidate(preq, LinkContext.PREREQ_MISC, Hop.PREREQ);
         caUri.setPrerequisite(true);
-        // TODO: consider moving some of this to candidate-handling
+        // TODO: consider moving some of this to configurable candidate-handling
         int prereqPriority = getSchedulingDirective() - 1;
         if (prereqPriority < 0) {
             prereqPriority = 0;
@@ -1869,6 +1888,25 @@ implements Reporter, Serializable, OverlayContext {
         incrementDeferrals();
         setFetchStatus(S_DEFERRED);
         
+        return caUri;
+    }
+    
+    /**
+     * Create a consequent CrawlURI from this one, given the 
+     * additional parameters
+     *
+     * @param destination URI string
+     * @param lc LinkContext
+     * @param hop Hop 
+     * @return the newly created prerequisite CrawlURI
+     * @throws URIException
+     */
+    public CrawlURI makeConsequentCandidate(String destination, LinkContext lc, Hop hop) 
+    throws URIException {
+        UURI src = getUURI();
+        UURI dest = UURIFactory.getInstance(getBaseURI(),destination);
+        Link link = new Link(src, dest, lc, hop);
+        CrawlURI caUri = createCrawlURI(getBaseURI(), link);
         return caUri;
     }
 
