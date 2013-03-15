@@ -63,7 +63,7 @@
 <td>
 <#if bean.propValuePreviouslyDescribed??>
 	&uarr;
-<#elseif !bean.propValue?? && !bean.properties??>
+<#elseif !bean.propValue?? && !bean.properties?? && !bean.get("class")??>
 	<#if bean.key?? && bean.field??>
 	<a href='../beans/${bean.key}'>${bean.key}</a>
 	<#else>
@@ -79,7 +79,7 @@
 	</#if>
 </#if>
 
-<#if bean.properties?? || (bean.propValue?? && bean.propValue?is_collection)>
+<#if (!bean.propValue?? && !bean.properties?? && bean.get("class")??) || bean.properties?? || (bean.propValue?? && bean.propValue?is_collection)>
 <fieldset style='display:inline;vertical-align:top'>
 	<legend>${bean.get("class")}</legend>
 	<table>

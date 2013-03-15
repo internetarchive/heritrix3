@@ -44,9 +44,7 @@
 			<option<#if selectedEngine=scriptEngine.engine> selected='selected'</#if> value='${scriptEngine.engine}'>${scriptEngine.language}</option>
 			</#list>
 		</select>
-		<textarea rows='20' style='width:100%' name='script' id='editor'>
-			${script}
-		</textarea>
+		<textarea rows='20' style='width:100%' name='script' id='editor'>${script}</textarea>
 		<input type='submit' value='execute'></input>
 	</form>
 	The script will be executed in an engine preloaded

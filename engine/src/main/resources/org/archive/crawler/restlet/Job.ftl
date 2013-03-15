@@ -166,18 +166,18 @@ ${line?html}
 	<h2>Files</h2>
 	<h3>Browser <a href='jobdir'>Job Directory</a></h3>
 	<h3>Configuration-referenced Paths</h3>
-	<#assign refPaths=job.referen! />
-	<#if !refPaths?has_content >
+	<#assign configRefPaths=job.configFiles! />
+	<#if !configRefPaths?has_content >
 		<i>build the job to discover referenced paths</i>
 	<#else>
 		<dl>
-			<#list refPaths as config>
+			<#list configRefPaths as config>
 			<dt>
 				${config.key}: ${config.name}
 			</dt>
 			<dd>
 				<#if config.path??>
-				<a href='/engine/anypath/${config.path.absolutePath}<#if config.path.absolutePath?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path.absolutePath}</a><#if config.editable> [<a href="/engine/anypath/${config.path.absolutePath}?format=textedit">edit</a>]</#if>
+				<a href='/engine/anypath/${config.path}<#if config.path?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path}</a><#if config.editable> [<a href="/engine/anypath/${config.path}?format=textedit">edit</a>]</#if>
 				<#else>
 				<i>unset</i>
 				</#if>
