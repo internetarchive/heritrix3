@@ -219,7 +219,7 @@ public abstract class PersistProcessor extends AbstractPersistProcessor {
      * @throws IOException
      */
     public static int populatePersistEnv(String sourcePath, File envFile)
-        throws DatabaseException, IOException {
+        throws IOException {
         int count = 0;
         StoredSortedMap<String,Map> historyMap = null;
         EnhancedEnvironment targetEnv = null;

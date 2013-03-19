@@ -20,11 +20,14 @@
 package org.archive.io.arc;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 
+import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveRecord;
 import org.archive.util.TmpDirTestCase;
 
@@ -94,4 +97,33 @@ public class ARCReaderFactoryTest extends TmpDirTestCase {
         reader.close();
         doGetFileUrl(arc);
     }   
+    
+    public void testGetCompressedArcStream() throws IOException {
+        testGetArcStream(true);
+    }
+    
+    public void testGetUncompressedArcStream() throws IOException {
+        testGetArcStream(false);
+    }
+
+    protected void testGetArcStream(boolean compress) throws IOException, FileNotFoundException {
+        File arc = ARCWriterTest.createARCFile(getTmpDir(), true);
+        ArchiveReader reader = ARCReaderFactory.get(null, new FileInputStream(arc), compress);
+        assertNotNull(reader);
+        Iterator<ArchiveRecord> i = reader.iterator();
+        
+        // ARC header
+        assertTrue(i.hasNext());
+        ARCRecord r = (ARCRecord)i.next();
+        assertEquals("filedesc://test.arc", r.getHeader().getHeaderValue("subject-uri"));
+        
+        // 1 fake http record
+        assertTrue(i.hasNext());
+        r = (ARCRecord)i.next();
+        assertEquals(200, r.getStatusCode());
+        assertEquals("http://www.archive.org/test/", r.getHeader().getHeaderValue("subject-uri"));
+        
+        assertFalse(i.hasNext());
+        reader.close();
+    }
 }
