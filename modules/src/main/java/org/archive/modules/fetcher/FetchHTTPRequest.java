@@ -23,22 +23,29 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIF
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -56,26 +63,27 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbstractExecutionAwareRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.conn.SocketClientConnection;
+import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
+import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.DefaultClientConnectionFactory;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
+import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.conn.SocketClientConnectionImpl;
-import org.apache.http.impl.io.SessionBufferImplFactory;
+import org.apache.http.impl.io.DefaultHttpRequestWriterFactory;
 import org.apache.http.io.HttpMessageParserFactory;
 import org.apache.http.io.HttpMessageWriterFactory;
 import org.apache.http.message.BasicNameValuePair;
@@ -96,66 +104,12 @@ import org.archive.util.Recorder;
  * @contributor nlevitt
  */
 class FetchHTTPRequest {
-
-    protected static class RecordingSocketClientConnection extends SocketClientConnectionImpl {
-        private final AbstractExecutionAwareRequest request;
-        private final CrawlURI curi;
-        private FetchHTTP fetcher;
-
-        protected RecordingSocketClientConnection(FetchHTTP fetcher,
-                int buffersize, CharsetDecoder chardecoder,
-                CharsetEncoder charencoder, MessageConstraints constraints,
-                ContentLengthStrategy incomingContentStrategy,
-                ContentLengthStrategy outgoingContentStrategy,
-                HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
-                HttpMessageParserFactory<HttpResponse> responseParserFactory,
-                SessionBufferImplFactory sessionBufferFactory,
-                AbstractExecutionAwareRequest request, CrawlURI curi) {
-            super(buffersize, chardecoder, charencoder, constraints,
-                    incomingContentStrategy, outgoingContentStrategy,
-                    requestWriterFactory, responseParserFactory,
-                    sessionBufferFactory);
-            this.fetcher = fetcher;
-            this.request = request;
-            this.curi = curi;
-        }
-
-        @Override
-        public void receiveResponseEntity(HttpResponse response)
-                throws HttpException, IOException {
-            Recorder recorder = Recorder.getHttpRecorder();
-            if (recorder != null) {
-                recorder.markContentBegin();
-            }
-
-            if (!fetcher.maybeMidfetchAbort(curi, request)) {
-                super.receiveResponseEntity(response);
-            }
-        }
-        
-        @Override
-        public void shutdown() throws IOException {
-            super.shutdown();
-
-            /*
-             * Need to do this to avoid "java.io.IOException: RIS already open"
-             * on urls that are retried within httpcomponents. Exercised by
-             * FetchHTTPTests.testNoResponse()
-             */
-            Recorder recorder = Recorder.getHttpRecorder();
-            if (recorder != null) {
-                recorder.close();
-                recorder.closeRecorders();
-            }
-        }
-    }
     
     /**
      * Implementation of {@link DnsResolver} that uses the server cache which is
      * normally expected to have been populated by FetchDNS.
      */
     protected static class ServerCacheResolver implements DnsResolver {
-        @SuppressWarnings("hiding")
         private static Logger logger = Logger.getLogger(DnsResolver.class.getName());
         protected ServerCache serverCache;
 
@@ -207,7 +161,7 @@ class FetchHTTPRequest {
         String requestLineUri;
         if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) {
             this.proxyHost = new HttpHost(proxyHostname, proxyPort);
-            this.requestConfigBuilder.setDefaultProxy(this.proxyHost);
+            this.requestConfigBuilder.setProxy(this.proxyHost);
             requestLineUri = curi.getUURI().toString();
         } else {
             requestLineUri = curi.getUURI().getPathQuery();
@@ -466,7 +420,7 @@ class FetchHTTPRequest {
         }
         httpClientBuilder.setUserAgent(userAgent);
         
-        httpClientBuilder.setCookieStore(fetcher.getCookieStore());
+        httpClientBuilder.setDefaultCookieStore(fetcher.getCookieStore());
         
         HttpClientConnectionManager connManager = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connManager);
@@ -478,22 +432,35 @@ class FetchHTTPRequest {
                 .register("https", new SSLSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
                 .build();
 
-        DefaultClientConnectionFactory connFactory = new DefaultClientConnectionFactory() {
+        DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
+
+        ManagedHttpClientConnectionFactory connFactory = new ManagedHttpClientConnectionFactory(){
+            private static final int DEFAULT_BUFSIZE = 8 * 1024;
+
             @Override
-            protected SocketClientConnection create(CharsetDecoder chardecoder,
-                    CharsetEncoder charencoder,
-                    MessageConstraints messageConstraints) {
-                return new RecordingSocketClientConnection(fetcher, 8 * 1024,
-                        chardecoder, charencoder, messageConstraints, null,
-                        null, null, DefaultHttpResponseParserFactory.INSTANCE,
-                        RecordingSessionBufferFactory.INSTANCE, request, curi);
+            public ManagedHttpClientConnection create(ConnectionConfig config) {
+                final ConnectionConfig cconfig = config != null ? config : ConnectionConfig.DEFAULT;
+                CharsetDecoder chardecoder = null;
+                CharsetEncoder charencoder = null;
+                final Charset charset = cconfig.getCharset();
+                final CodingErrorAction malformedInputAction = cconfig.getMalformedInputAction() != null ?
+                        cconfig.getMalformedInputAction() : CodingErrorAction.REPORT;
+                final CodingErrorAction unmappableInputAction = cconfig.getUnmappableInputAction() != null ?
+                        cconfig.getUnmappableInputAction() : CodingErrorAction.REPORT;
+                if (charset != null) {
+                    chardecoder = charset.newDecoder();
+                    chardecoder.onMalformedInput(malformedInputAction);
+                    chardecoder.onUnmappableCharacter(unmappableInputAction);
+                    charencoder = charset.newEncoder();
+                    charencoder.onMalformedInput(malformedInputAction);
+                    charencoder.onUnmappableCharacter(unmappableInputAction);
+                }
+                return new RecordingHttpClientConnection(DEFAULT_BUFSIZE, chardecoder, charencoder,
+                        cconfig.getMessageConstraints(), null, null,
+                        DefaultHttpRequestWriterFactory.INSTANCE, DefaultHttpResponseParserFactory.INSTANCE);
             }
         };
-
-        DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
-        
-        PoolingHttpClientConnectionManager connMan = new PoolingHttpClientConnectionManager(socketFactoryRegistry,
-                connFactory, null, dnsResolver, -1, TimeUnit.MILLISECONDS);
+        PoolingHttpClientConnectionManager connMan = new PoolingHttpClientConnectionManager(socketFactoryRegistry, connFactory, dnsResolver);
         
         SocketConfig.Builder socketConfigBuilder = SocketConfig.custom();
         socketConfigBuilder.setSoTimeout(fetcher.getSoTimeoutMs());
@@ -502,10 +469,74 @@ class FetchHTTPRequest {
         return connMan;
     }
     
+    protected static class RecordingHttpClientConnection extends DefaultBHttpClientConnection
+    implements ManagedHttpClientConnection {
+
+        private static final AtomicLong COUNTER = new AtomicLong();
+        private String id;
+
+        public RecordingHttpClientConnection(
+                final int buffersize,
+                final CharsetDecoder chardecoder,
+                final CharsetEncoder charencoder,
+                final MessageConstraints constraints,
+                final ContentLengthStrategy incomingContentStrategy,
+                final ContentLengthStrategy outgoingContentStrategy,
+                final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
+                final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
+            super(buffersize, chardecoder, charencoder,
+                    constraints, incomingContentStrategy, outgoingContentStrategy,
+                    requestWriterFactory, responseParserFactory);
+            id = "recording-http-connection-" + Long.toString(COUNTER.getAndIncrement());
+        }
+
+        @Override
+        protected InputStream getSocketInputStream(final Socket socket) throws IOException {
+            logger.info("socket=" + socket);
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                return recorder.inputWrap(super.getSocketInputStream(socket));
+            } else {
+                return super.getSocketInputStream(socket);
+            }
+        }
+
+        @Override
+        protected OutputStream getSocketOutputStream(final Socket socket) throws IOException {
+            logger.info("socket=" + socket);
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+                return recorder.outputWrap(super.getSocketOutputStream(socket));
+            } else {
+                return super.getSocketOutputStream(socket);
+            }
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public SSLSession getSSLSession() {
+            final Socket socket = super.getSocket();
+            if (socket instanceof SSLSocket) {
+                return ((SSLSocket) socket).getSession();
+            } else {
+                return null;
+            }
+        }
+        
+        @Override
+        public Socket getSocket() {
+            return super.getSocket();
+        }
+    }
+    
     protected void initHttpClientBuilder() {
         httpClientBuilder = HttpClientBuilder.create();
         
-        httpClientBuilder.setAuthSchemeRegistry(FetchHTTP.AUTH_SCHEME_REGISTRY);
+        httpClientBuilder.setDefaultAuthSchemeRegistry(FetchHTTP.AUTH_SCHEME_REGISTRY);
         
         // we handle content compression manually
         httpClientBuilder.disableContentCompression();
