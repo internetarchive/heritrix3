@@ -60,6 +60,6 @@
 	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.2/junit-3.8.2.jar" sourcepath="/M2_REPO/junit/junit/3.8.2/junit-3.8.2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar" sourcepath="M2_REPO/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/httpcomponents"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/archive-commons"/>
 	<classpathentry kind="output" path="eclipse-build"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ia-web-commons"/>
 </classpath>
