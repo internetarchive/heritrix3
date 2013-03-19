@@ -132,6 +132,23 @@ public class RecordingOutputStream extends OutputStream {
      */
     protected long messageBodyBeginMark;
 
+    /*
+     * This class does automatic detection of http message body begin.
+     * Unfortunately httpcomponents did not want to add functionality to help us
+     * with this, see https://issues.apache.org/jira/browse/HTTPCORE-325
+     * 
+     * It works like this: while messageBodyBeginMark is not set, we remember
+     * the last two bytes seen, and look at each byte we write. If the
+     * lastTwoBytes+currentByte is "\n\r\n", or lastTwoBytes[1]+currentByte is
+     * "\n\n" then we call markMessageBodyBegin() at the position after
+     * currentByte.
+     * 
+     * An assumption here is that protocols other than http don't have headers,
+     * and the user of this class will call markMessageBodyBegin() at position 0
+     * before writing anything.
+     */
+    protected int[] lastTwoBytes = new int[] {-1, -1};
+
     /**
      * Stream to record.
      */
@@ -215,6 +232,20 @@ public class RecordingOutputStream extends OutputStream {
         if (this.out != null) {
             this.out.write(b);
         }
+        
+        // see comment on int[] lastTwoBytes
+        if (messageBodyBeginMark < 0l) {
+            // looking for "\n\n" or "\n\r\n"
+            if (b == '\n' 
+                    && (lastTwoBytes[1] == '\n'
+                    || (lastTwoBytes[0] == '\n' && lastTwoBytes[1] == '\r'))) {
+                markMessageBodyBegin();
+            } else {
+                lastTwoBytes[0] = lastTwoBytes[1];
+                lastTwoBytes[1] = b;
+            }
+        }
+        
         checkLimits();
     }
 
@@ -231,6 +262,14 @@ public class RecordingOutputStream extends OutputStream {
             off += consumeRange;
             len -= consumeRange; 
         }
+        
+        // see comment on int[] lastTwoBytes
+        while (messageBodyBeginMark < 0 && len > 0) {
+            write(b[off]);
+            off++;
+            len--;
+        }
+        
         if(recording) {
             record(b, off, len);
         }
