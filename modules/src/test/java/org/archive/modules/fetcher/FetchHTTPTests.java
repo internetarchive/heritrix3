@@ -714,6 +714,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
                 while (!isTimeToBeDone) {
                     try {
                         Socket connectionSocket = listeningSocket.accept();
+                        logger.info("accepted connection from " + connectionSocket + ", shutting it down immediately");
                         connectionSocket.shutdownOutput();
                     } catch (SocketTimeoutException e) {
                     }

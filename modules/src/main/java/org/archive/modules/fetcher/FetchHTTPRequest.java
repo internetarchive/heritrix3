@@ -514,6 +514,22 @@ class FetchHTTPRequest {
                 return super.getSocketOutputStream(socket);
             }
         }
+        
+        @Override
+        public void close() throws IOException {
+        	super.close();
+        	
+            /*
+             * Need to do this to avoid "java.io.IOException: RIS already open"
+             * on urls that are retried within httpcomponents. Exercised by
+             * FetchHTTPTests.testNoResponse()
+             */
+            Recorder recorder = Recorder.getHttpRecorder();
+            if (recorder != null) {
+                recorder.close();
+                recorder.closeRecorders();
+            }
+        }
 
         @Override
         public String getId() {
