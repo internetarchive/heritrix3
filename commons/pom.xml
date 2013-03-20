@@ -314,35 +314,11 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>generate-timestamp-properties-file</id>
-						<phase>process-resources</phase>
-						<goals><goal>run</goal></goals>
-						<configuration>
-							<tasks>
-								<tstamp>
-									<format property="timestamp"
-										pattern="yyyyMMdd.HHmmss"/>
-								</tstamp>
-								<delete
-									file="target/classes/org/archive/util/timestamp.txt"
-									failonerror="false"/>
-								<echo message="timestamp=${timestamp}"
-									file="target/classes/org/archive/util/timestamp.txt"/>
-							</tasks>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.5</source>
-					<target>1.5</target>
+					<source>1.6</source>
+					<target>1.6</target>
 				</configuration>
 				<version>2.3.2</version>
 			</plugin>
