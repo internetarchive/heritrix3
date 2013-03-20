@@ -5,3 +5,6 @@ engine/target
 dist/target
 .classpath
 .project
+*/.classpath
+*/.project
+*/.settings
