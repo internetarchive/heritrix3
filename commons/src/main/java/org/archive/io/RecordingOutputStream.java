@@ -84,7 +84,7 @@ public class RecordingOutputStream extends OutputStream {
     private byte[] buffer;
 
     /** current virtual position in the recording */
-    private long position;
+    long position;
     
     /** flag to disable recording */
     private boolean recording;

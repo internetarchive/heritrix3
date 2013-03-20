@@ -655,17 +655,16 @@ public class FetchHTTP extends Processor implements Lifecycle {
             return;
         }
         
-        // set softMax on bytes to get (if implied by content-length)
-        long softMax = -1l;
+        long contentLength = -1l;
         Header h = response.getLastHeader("content-length");
         if (h != null) {
-            softMax = Long.parseLong(h.getValue());
+            contentLength = Long.parseLong(h.getValue());
         }
         try {
             if (!req.request.isAborted()) {
                 // Force read-to-end, so that any socket hangs occur here,
                 // not in later modules.
-                rec.getRecordedInput().readFullyOrUntil(softMax); 
+                rec.getRecordedInput().readToEndOfContent(contentLength); 
             }
         } catch (RecorderTimeoutException ex) {
             doAbort(curi, req.request, TIMER_TRUNC);

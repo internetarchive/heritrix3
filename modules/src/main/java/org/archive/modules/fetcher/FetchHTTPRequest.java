@@ -455,9 +455,11 @@ class FetchHTTPRequest {
                     charencoder.onMalformedInput(malformedInputAction);
                     charencoder.onUnmappableCharacter(unmappableInputAction);
                 }
-                return new RecordingHttpClientConnection(DEFAULT_BUFSIZE, chardecoder, charencoder,
+                return new RecordingHttpClientConnection(DEFAULT_BUFSIZE,
+                        DEFAULT_BUFSIZE, chardecoder, charencoder,
                         cconfig.getMessageConstraints(), null, null,
-                        DefaultHttpRequestWriterFactory.INSTANCE, DefaultHttpResponseParserFactory.INSTANCE);
+                        DefaultHttpRequestWriterFactory.INSTANCE,
+                        DefaultHttpResponseParserFactory.INSTANCE);
             }
         };
         PoolingHttpClientConnectionManager connMan = new PoolingHttpClientConnectionManager(socketFactoryRegistry, connFactory, dnsResolver);
@@ -477,6 +479,7 @@ class FetchHTTPRequest {
 
         public RecordingHttpClientConnection(
                 final int buffersize,
+                final int fragmentSizeHint,
                 final CharsetDecoder chardecoder,
                 final CharsetEncoder charencoder,
                 final MessageConstraints constraints,
@@ -484,7 +487,7 @@ class FetchHTTPRequest {
                 final ContentLengthStrategy outgoingContentStrategy,
                 final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
                 final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
-            super(buffersize, chardecoder, charencoder,
+            super(buffersize, fragmentSizeHint, chardecoder, charencoder,
                     constraints, incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory);
             id = "recording-http-connection-" + Long.toString(COUNTER.getAndIncrement());

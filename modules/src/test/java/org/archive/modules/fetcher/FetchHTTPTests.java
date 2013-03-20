@@ -462,7 +462,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
             @Override
             public boolean authenticate(String userName, String password) {
-                // logger.info("username=" + userName + " password=" + password);
+                logger.info("username=" + userName + " password=" + password);
                 return "http-proxy-user".equals(userName) && "http-proxy-password".equals(password);
             }
         });
