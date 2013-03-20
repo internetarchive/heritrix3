@@ -407,4 +407,11 @@ public class RecordingInputStream
     public int getRecordedBufferLength() {
         return recordingOutputStream.getBufferLength();
     }
+
+    /**
+     * See doc on {@link RecordingOutputStream#chopAtMessageBodyBegin()}
+     */
+    public void chopAtMessageBodyBegin() {
+        recordingOutputStream.chopAtMessageBodyBegin();
+    }
 }

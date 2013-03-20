@@ -607,6 +607,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     protected boolean maybeMidfetchAbort(CrawlURI curi, AbstractExecutionAwareRequest request) {
         if (checkMidfetchAbort(curi)) {
             doAbort(curi, request, "midFetchAbort");
+            curi.getRecorder().getRecordedInput().chopAtMessageBodyBegin();
             return true;
         } else {
             return false;
@@ -654,6 +655,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             failedExecuteCleanup(curi, e);
             return;
         }
+        
+        maybeMidfetchAbort(curi, req.request);
         
         long contentLength = -1l;
         Header h = response.getLastHeader("content-length");

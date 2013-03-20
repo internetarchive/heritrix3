@@ -132,20 +132,26 @@ public class RecordingOutputStream extends OutputStream {
      */
     protected long messageBodyBeginMark;
 
-    /*
-     * This class does automatic detection of http message body begin.
-     * Unfortunately httpcomponents did not want to add functionality to help us
-     * with this, see https://issues.apache.org/jira/browse/HTTPCORE-325
+    /**
+     * While messageBodyBeginMark is not set, the last two bytes seen.
      * 
+     * <p>
+     * This class does automatic detection of http message body begin (i.e. end
+     * of http headers). Unfortunately httpcomponents did not want to add
+     * functionality to help us with this, see
+     * https://issues.apache.org/jira/browse/HTTPCORE-325
+     * 
+     * <p>
      * It works like this: while messageBodyBeginMark is not set, we remember
      * the last two bytes seen, and look at each byte we write. If the
      * lastTwoBytes+currentByte is "\n\r\n", or lastTwoBytes[1]+currentByte is
      * "\n\n" then we call markMessageBodyBegin() at the position after
      * currentByte.
      * 
+     * <p>
      * An assumption here is that protocols other than http don't have headers,
-     * and the user of this class will call markMessageBodyBegin() at position 0
-     * before writing anything.
+     * and for those protocols the user of this class will call
+     * markMessageBodyBegin() at position 0 before writing anything.
      */
     protected int[] lastTwoBytes = new int[] {-1, -1};
 
@@ -605,6 +611,18 @@ public class RecordingOutputStream extends OutputStream {
      */
     public long getRemainingLength() {
         return maxLength - position; 
+    }
+
+    /**
+     * Forget about anything past the point where the content-body starts. This
+     * is needed to support FetchHTTP's shouldFetchBody setting. See also the
+     * docs on {@link #lastTwoBytes}
+     */
+    public void chopAtMessageBodyBegin() {
+        if (messageBodyBeginMark >= 0) {
+            this.size = messageBodyBeginMark;
+            this.position = messageBodyBeginMark;
+        }
     }
 }
 

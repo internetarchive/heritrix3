@@ -581,17 +581,21 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
     
     public void testShouldFetchBodyRule() throws Exception {
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        // CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         fetcher().setShouldFetchBodyRule(new RejectDecideRule());
         fetcher().process(curi);
         logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
-        assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.0\r\n"));
+        assertTrue(httpRequestString(curi).startsWith("GET /200k HTTP/1.0\r\n"));
         assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
         assertTrue(curi.getFetchStatus() == 200);
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        
+        assertEquals(1, curi.getAnnotations().size());
+        assertTrue(curi.getAnnotations().contains("midFetchAbort"));
         
         // check for empty body
         assertEquals(0, curi.getContentLength());
