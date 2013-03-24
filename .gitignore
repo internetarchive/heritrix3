@@ -3,3 +3,8 @@ commons/target
 modules/target
 engine/target
 dist/target
+.classpath
+.project
+*/.classpath
+*/.project
+*/.settings
