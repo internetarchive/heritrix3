@@ -41,8 +41,10 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_U
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -129,6 +131,13 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
     public void testBasics() throws InterruptedException, IOException {
         CrawlURI curi1 = new CrawlURI(UURIFactory.getInstance("http://example.org/1"));
+        // without Recorder, CrawlURI#getContentLength() returns zero, which makes
+        // loader().shoudProcess() return false.
+        Recorder rec = new Recorder(getTmpDir(), "rec");
+        curi1.setRecorder(rec);
+        // give Recorder some content so that getContentLength() returns non-zero.
+        InputStream is = rec.inputWrap(new ByteArrayInputStream("HTTP/1.0 200 OK\r\n\r\ntext.".getBytes()));
+        is.read(new byte[1024]);
         
         assertFalse(loader().shouldProcess(curi1));
         assertFalse(storer().shouldProcess(curi1));
@@ -168,6 +177,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         
         CrawlURI curi2 = new CrawlURI(UURIFactory.getInstance("http://example.org/2"));
         curi2.setContentDigest("sha1", Base32.decode("orfjublpcrnymm4seg5uk6vfoeu7kw6c"));
+        curi2.setRecorder(rec);
         
         assertFalse(curi2.hasContentDigestHistory());
         
