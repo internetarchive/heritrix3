@@ -31,6 +31,7 @@ import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.util.EncodingUtil;
 import org.archive.io.arc.ARCConstants;
+import org.archive.util.LaxHttpParser;
 
 /**
  * An ArchiveRecord whose content has a preamble of RFC822-like headers: e.g.
@@ -142,7 +143,7 @@ public class HeaderedArchiveRecord extends ArchiveRecord {
         if (!hasContentHeaders()) {
             return null;
         }
-        byte [] statusBytes = HttpParser.readRawLine(getIn());
+        byte [] statusBytes = LaxHttpParser.readRawLine(getIn());
         int eolCharCount = getEolCharsCount(statusBytes);
         if (eolCharCount <= 0) {
             throw new IOException("Failed to read raw lie where one " +
@@ -178,7 +179,7 @@ public class HeaderedArchiveRecord extends ArchiveRecord {
         // Now read rest of the header lines looking for the separation
         // between header and body.
         for (byte [] lineBytes = null; true;) {
-            lineBytes = HttpParser.readRawLine(getIn());
+            lineBytes = LaxHttpParser.readRawLine(getIn());
             eolCharCount = getEolCharsCount(lineBytes);
             if (eolCharCount <= 0) {
                 throw new IOException("Failed reading headers: " +
@@ -204,7 +205,7 @@ public class HeaderedArchiveRecord extends ArchiveRecord {
         // Read the status line.  Don't let it into the parseHeaders function.
         // It doesn't know what to do with it.
         bais.read(statusBytes, 0, statusBytes.length);
-        this.contentHeaders = HttpParser.parseHeaders(bais,
+        this.contentHeaders = LaxHttpParser.parseHeaders(bais,
             ARCConstants.DEFAULT_ENCODING);
         bais.reset();
         return bais;
