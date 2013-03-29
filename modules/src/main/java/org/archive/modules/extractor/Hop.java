@@ -54,7 +54,10 @@ public enum Hop {
      * Inferred/implied links -- not necessarily literally in the source 
      * material, but deduced by convention.
      */
-    INFERRED('I');
+    INFERRED('I'),
+    
+    /** Synthesized form-submit */ 
+    SUBMIT('S');
     
     /** The hop character for logs. */
     private char hopChar;

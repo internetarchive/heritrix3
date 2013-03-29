@@ -48,6 +48,7 @@ import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
+import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
@@ -431,6 +432,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     curi.getContentDigestSchemeString());
         }
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
+
         URI rid;
         
         if (getWriteRevisitForIdenticalDigests()
@@ -584,8 +586,17 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     protected URI writeResponse(final WARCWriter w,
             final String timestamp, final String mimetype,
             final URI baseid, final CrawlURI curi,
-            final ANVLRecord namedFields) 
+            final ANVLRecord suppliedFields) 
     throws IOException {
+        ANVLRecord namedFields = suppliedFields;
+        if(curi.getData().containsKey(A_WARC_RESPONSE_HEADERS)) {
+           namedFields = namedFields.clone(); 
+           for (Object headerObj : curi.getDataList(A_WARC_RESPONSE_HEADERS)) {
+               String[] kv = StringUtils.split(((String)headerObj),":",2);
+               namedFields.addLabelValue(kv[0].trim(), kv[1].trim());
+           }
+        }
+        
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setType(WARCRecordType.RESPONSE);
         recordInfo.setUrl(curi.toString());
