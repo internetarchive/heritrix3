@@ -161,7 +161,8 @@ public class CandidatesProcessor extends Processor {
      */
     protected int runCandidateChain(CrawlURI candidate, CrawlURI source) throws InterruptedException {
         // at least for duration of candidatechain, offer
-        // access to full CrawlURI of viacandidate.setFullVia(source); 
+        // access to full CrawlURI of via
+        candidate.setFullVia(source); 
         sheetOverlaysManager.applyOverlaysTo(candidate);
         try {
             KeyedProperties.clearOverridesFrom(source); 
