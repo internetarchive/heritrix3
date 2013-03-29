@@ -21,40 +21,23 @@ package org.archive.crawler.restlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.checkpointing.Checkpoint;
-import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.reporting.AlertHandler;
 import org.archive.crawler.reporting.AlertThreadGroup;
-import org.archive.crawler.reporting.Report;
 import org.archive.crawler.restlet.models.CrawlJobModel;
-import org.archive.crawler.restlet.models.EngineModel;
 import org.archive.crawler.restlet.models.ViewModel;
-import org.archive.spring.ConfigPath;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.Representation;
@@ -63,7 +46,6 @@ import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
 
 import freemarker.template.Configuration;
-import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.ObjectWrapper;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -142,15 +124,11 @@ public class JobResource extends BaseResource {
      * @return the nested Map data structure
      */
     protected CrawlJobModel makeDataModel() {
-
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if (!baseRef.endsWith("/")) {
             baseRef += "/";
         }
-        Reference baseRefRef = new Reference(baseRef);
-        CrawlJobModel model = new CrawlJobModel(cj,baseRef);
-        
-        return model;
+        return new CrawlJobModel(cj,baseRef);
     }
 
     protected void writeHtml(Writer writer) {
