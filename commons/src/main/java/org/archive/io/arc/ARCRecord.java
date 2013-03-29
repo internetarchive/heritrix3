@@ -41,6 +41,7 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.RecoverableIOException;
 import org.archive.util.InetAddressUtil;
+import org.archive.util.LaxHttpParser;
 import org.archive.util.TextUtils;
 
 /**
@@ -569,7 +570,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
             getHeader().getLength() <= MIN_HTTP_HEADER_LENGTH) {
             return null;
         }
-        byte [] statusBytes = HttpParser.readRawLine(getIn());
+        byte [] statusBytes = LaxHttpParser.readRawLine(getIn());
         int eolCharCount = getEolCharsCount(statusBytes);
         if (eolCharCount <= 0) {
             throw new RecoverableIOException(
@@ -613,7 +614,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         // Now read rest of the header lines looking for the separation
         // between header and body.
         for (byte [] lineBytes = null; true;) {
-            lineBytes = HttpParser.readRawLine(getIn());
+            lineBytes = LaxHttpParser.readRawLine(getIn());
             eolCharCount = getEolCharsCount(lineBytes);
             if (eolCharCount <= 0) {
             	if (getIn().available() == 0) {
@@ -649,7 +650,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         // Read the status line.  Don't let it into the parseHeaders function.
         // It doesn't know what to do with it.
         bais.read(statusBytes, 0, statusBytes.length);
-        this.httpHeaders = HttpParser.parseHeaders(bais,
+        this.httpHeaders = LaxHttpParser.parseHeaders(bais,
             ARCConstants.DEFAULT_ENCODING);
         this.getMetaData().setStatusCode(Integer.toString(getStatusCode()));
         bais.reset();
