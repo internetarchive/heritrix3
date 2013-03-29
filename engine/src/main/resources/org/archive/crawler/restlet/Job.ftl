@@ -128,8 +128,8 @@
 				<#if !job.threadReport??><i>n/a</i>
 				<#else>
 				${job.threadReport.toeCount} threads: 
-				<#list job.threadReport.steps as step>${step.value} ${step.key}<#if step_has_next>, </#if></#list>;
-				<#list job.threadReport.processors as proc>${proc.value} ${proc.key}<#if proc_has_next>, </#if></#list>
+				<#list job.threadReport.steps as step>${step}<#if step_has_next>, </#if></#list>;
+				<#list job.threadReport.processors as proc>${proc}<#if proc_has_next>, </#if></#list>
 				</#if>
 			</dd>
 			<dt><a href="report/FrontierSummaryReport">Frontier</a></dt>

@@ -22,6 +22,7 @@ package org.archive.crawler.framework;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
@@ -259,8 +260,18 @@ public class ToePool extends ThreadGroup implements Reporter {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
 
         data.put("toeCount", getToeCount());
-        data.put("steps", steps.getSortedByCounts());
-        data.put("processors", processors.getSortedByCounts());
+        
+        LinkedList<String> unwound = new LinkedList<String>(); 
+        for (Entry<?, Long> step: steps.getSortedByCounts()) {
+            unwound.add(step.getValue() + " " + step.getKey());
+        }
+        data.put("steps", unwound);
+
+        unwound = new LinkedList<String>(); 
+        for (Entry<?, Long> proc: processors.getSortedByCounts()) {
+            unwound.add(proc.getValue() + " " + proc.getKey());
+        }
+        data.put("processors", unwound);
         
         return data;
     }
