@@ -40,8 +40,8 @@ import org.archive.io.arc.ARCConstants;
 import org.archive.io.arc.ARCReader;
 import org.archive.io.arc.ARCReaderFactory;
 import org.archive.io.arc.ARCRecord;
-import org.archive.io.warc.WARCConstants;
-import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.format.warc.WARCConstants;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
 import org.archive.io.warc.WARCWriterPoolSettings;
@@ -178,11 +178,11 @@ public class Arc2Warc {
        // If contentBody > 0, assume http headers.  Make the mimetype
        // be application/http.  Otherwise, give it ARC mimetype.
        if (r.getHeader().getContentBegin() > 0) {
-           recordInfo.setType(WARCRecordType.RESPONSE);
+           recordInfo.setType(WARCRecordType.response);
            recordInfo.setMimetype(WARCConstants.HTTP_RESPONSE_MIMETYPE);
            recordInfo.setRecordId(generator.getRecordID());
        } else {
-           recordInfo.setType(WARCRecordType.RESOURCE);
+           recordInfo.setType(WARCRecordType.resource);
            recordInfo.setMimetype(r.getHeader().getMimetype());
            recordInfo.setRecordId(((WARCWriterPoolSettings)writer.settings).getRecordIDGenerator().getRecordID());
        }

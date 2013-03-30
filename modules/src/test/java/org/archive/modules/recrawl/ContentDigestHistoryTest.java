@@ -57,7 +57,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
@@ -288,11 +288,11 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             Iterator<ArchiveRecord> recordIterator = warcReader.iterator();
             
             ArchiveRecord record = recordIterator.next();
-            assertEquals(WARCRecordType.WARCINFO.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.warcinfo.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.RESPONSE.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.response.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals("141", record.getHeader().getHeaderValue(CONTENT_LENGTH));
             assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
@@ -300,20 +300,20 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.request.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.metadata.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
             
             // the all-important revisit record
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REVISIT.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.revisit.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO));
             assertEquals(NAMED_FIELD_TRUNCATED_VALUE_LENGTH, record.getHeader().getHeaderValue(HEADER_KEY_TRUNCATED));
@@ -330,12 +330,12 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.request.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.metadata.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
 
             assertFalse(recordIterator.hasNext());

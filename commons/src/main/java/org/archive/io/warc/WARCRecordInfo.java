@@ -21,7 +21,7 @@ package org.archive.io.warc;
 import java.io.InputStream;
 import java.net.URI;
 
-import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.util.anvl.ANVLRecord;
 
 public class WARCRecordInfo {

@@ -131,7 +131,7 @@ extends TmpDirTestCase implements WARCConstants {
     private void writeWarcinfoRecord(WARCWriter writer)
     throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.WARCINFO);
+        recordInfo.setType(WARCRecordType.warcinfo);
         recordInfo.setUrl(null);
         recordInfo.setCreate14DigitDate(ArchiveUtils.getLog14Date());
         recordInfo.setMimetype(ANVLRecord.MIMETYPE);
@@ -145,7 +145,7 @@ extends TmpDirTestCase implements WARCConstants {
     	recordInfo.setContentStream(new ByteArrayInputStream(bytes));
     	recordInfo.setContentLength((long) bytes.length);
     	
-        final URI recordid = writer.generateRecordId(WARCWriter.TYPE, WARCRecordType.WARCINFO.toString());
+        final URI recordid = writer.generateRecordId(WARCWriter.TYPE, WARCRecordType.warcinfo.toString());
         recordInfo.setRecordId(recordid);
         
         writer.writeRecord(recordInfo);
@@ -154,7 +154,7 @@ extends TmpDirTestCase implements WARCConstants {
 	protected void writeBasicRecords(final WARCWriter writer)
     throws IOException {
 	    WARCRecordInfo recordInfo = new WARCRecordInfo();
-	    recordInfo.setType(WARCRecordType.METADATA);
+	    recordInfo.setType(WARCRecordType.metadata);
 	    recordInfo.setUrl("http://www.archive.org/");
 	    recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
 	    recordInfo.setMimetype("no/type");
@@ -165,7 +165,7 @@ extends TmpDirTestCase implements WARCConstants {
     	headerFields.addLabelValue("a", "b");
     	recordInfo.setExtraHeaders(headerFields);
     	
-    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, WARCRecordType.METADATA.toString());
+    	URI rid = (new UUIDGenerator()).getQualifiedRecordID(TYPE, WARCRecordType.metadata.toString());
     	recordInfo.setRecordId(rid);
     	
     	final String content = "Any old content.";
@@ -209,7 +209,7 @@ extends TmpDirTestCase implements WARCConstants {
     protected int writeRandomHTTPRecord(WARCWriter w, int index)
     throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.RESOURCE);
+        recordInfo.setType(WARCRecordType.resource);
         recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
         recordInfo.setMimetype("text/html; charset=UTF-8");
         recordInfo.setRecordId(w.generateRecordId(null));
@@ -381,7 +381,7 @@ extends TmpDirTestCase implements WARCConstants {
         String mimetype, int len, ByteArrayOutputStream baos)
     throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.RESOURCE);
+        recordInfo.setType(WARCRecordType.resource);
         recordInfo.setUrl(url);
         recordInfo.setCreate14DigitDate(ArchiveUtils.get14DigitDate());
         recordInfo.setMimetype(mimetype);
