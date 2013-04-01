@@ -285,7 +285,11 @@ implements ARCConstants {
         			compressedARCFile = true;
         		}
         	}
+        } else {
+        	// Some old arcs don't have an extra header at all, but they're still compressed
+        	compressedARCFile = true;
         }
+        
         return compressedARCFile;
     }
 
