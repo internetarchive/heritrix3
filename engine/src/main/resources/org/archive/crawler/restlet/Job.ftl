@@ -164,7 +164,7 @@ ${line?html}
 	</#if>
 
 	<h2>Files</h2>
-	<h3>Browser <a href='jobdir'>Job Directory</a></h3>
+	<h3>Browse <a href='jobdir'>Job Directory</a></h3>
 	<h3>Configuration-referenced Paths</h3>
 	<#assign configRefPaths=job.configFiles! />
 	<#if !configRefPaths?has_content >

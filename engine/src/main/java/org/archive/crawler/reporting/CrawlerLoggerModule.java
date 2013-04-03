@@ -235,7 +235,7 @@ public class CrawlerLoggerModule
         closeLogFiles();
     }
     
-    private void setupLogs() throws IOException {
+    protected void setupLogs() throws IOException {
         String logsPath = getPath().getFile().getAbsolutePath() + File.separatorChar;
         uriProcessing = Logger.getLogger(LOGNAME_CRAWL + "." + logsPath);
         runtimeErrors = Logger.getLogger(LOGNAME_RUNTIME_ERRORS + "." +
