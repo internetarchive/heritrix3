@@ -16,11 +16,15 @@
 	</div>
 </#list>
   
-<b>Memory: </b>
-${(engine.heapReport.usedBytes/1024)?string("0")} KiB used; ${(engine.heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(engine.heapReport.maxBytes/1024)?string("0")} KiB max heap
+<form method='POST'>
+	<b>Memory: </b>
+	${(engine.heapReport.usedBytes/1024)?string("0")} KiB used; ${(engine.heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(engine.heapReport.maxBytes/1024)?string("0")} KiB max heap
+	<button type='submit' name='action' value='gc'>run garbage collector</button>
+</form>
 
-<br/><br/>
+<p>
 <b>Jobs Directory</b>: <a href='jobsdir'>${engine.jobsDir}</a>
+</p>
          
 <form method='POST'><h2>Job Directories (${engine.jobs?size})
        <input type='submit' name='action' value='rescan'></h2>

@@ -177,6 +177,8 @@ public class EngineResource extends BaseResource {
             if(!cancel) {
                 System.exit(0); 
             }
+        } else if ("gc".equals(action)) {
+            System.gc();
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
