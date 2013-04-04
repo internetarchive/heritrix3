@@ -6,13 +6,12 @@
 	<link rel="stylesheet" type="text/css" href="${cssRef}">
 </head>
 <body>
-	<h1>
-
-
-
+	<h1 style="margin-bottom:0">
 		Job <i>${job.shortName}</i> (<#if job.isLaunchInfoPartial>at least </#if>${job.launchCount} 
 		launches<#if job.lastLaunch??>, last ${job.lastLaunchTime} ago</#if>)
 	</h1>
+	<div style="margin-bottom:1em"><a href="/engine">up to engine</a></div>
+
 	<!--flashed message -->
 	<#list flashes as flash>
 		<div class='flash${flash.kind}'>
