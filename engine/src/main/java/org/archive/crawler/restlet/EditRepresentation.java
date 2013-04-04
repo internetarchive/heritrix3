@@ -74,8 +74,6 @@ public class EditRepresentation extends CharacterRepresentation {
         pw.println("<script src='" + getStaticRef("codemirror/codemirror.js") + "'></script>");
         pw.println("<script src='" + getStaticRef("codemirror/mode/xmlpure.js") + "'></script>");
         pw.println("<script src='" + getStaticRef("codemirror/util/dialog.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/util/searchcursor.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/util/search.js") + "'></script>");
         pw.println("<style>.CodeMirror { background: #fff; }</style>");
         pw.println("</head>");
         pw.println("<body style='background-color:#ddd'>");
