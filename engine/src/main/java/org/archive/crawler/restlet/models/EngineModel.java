@@ -4,18 +4,18 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
-import org.archive.crawler.framework.CrawlController.State;
 import org.archive.util.FileUtils;
 
 @SuppressWarnings("serial")
-public class EngineModel extends HashMap<String, Object> {
+public class EngineModel extends LinkedHashMap<String, Object> {
     
     public EngineModel(Engine engine, String urlBaseRef){
         super();
@@ -47,7 +47,7 @@ public class EngineModel extends HashMap<String, Object> {
         
         for(Map.Entry<String,CrawlJob> jobConfig : jobConfigurations) {
             CrawlJob job = jobConfig.getValue();
-            HashMap<String, Object> crawlJobModel = new HashMap<String, Object>();
+            Map<String, Object> crawlJobModel = new LinkedHashMap<String, Object>();
             crawlJobModel.put("shortName",job.getShortName());
             crawlJobModel.put("url",urlBaseRef+"job/"+job.getShortName());
             crawlJobModel.put("isProfile",job.isProfile());

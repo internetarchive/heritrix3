@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,15 +14,15 @@ import java.util.Set;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
-import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.CrawlController.State;
+import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.reporting.Report;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 
 @SuppressWarnings("serial")
-public class CrawlJobModel extends HashMap<String, Object> implements Serializable{
+public class CrawlJobModel extends LinkedHashMap<String, Object> implements Serializable{
 
     private CrawlJob crawlJob;
     public static final IOFileFilter EDIT_FILTER = FileUtils
@@ -56,26 +56,34 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         this.put("uriTotalsReport", crawlJob.uriTotalsReportData());
         
         
-        Map<String,Long> sizeTotalsReportData = crawlJob.sizeTotalsReportData();
-        if(sizeTotalsReportData==null)
-            sizeTotalsReportData = new HashMap<String,Long>();
-        if(!sizeTotalsReportData.containsKey("dupByHash"))
+        Map<String, Long> sizeTotalsReportData = crawlJob.sizeTotalsReportData();
+        if (sizeTotalsReportData == null) {
+            sizeTotalsReportData = new LinkedHashMap<String, Long>();
+        }
+        if (!sizeTotalsReportData.containsKey("dupByHash")) {
             sizeTotalsReportData.put("dupByHash", 0L);
-        if(!sizeTotalsReportData.containsKey("dupByHashCount"))
+        }
+        if (!sizeTotalsReportData.containsKey("dupByHashCount")) {
             sizeTotalsReportData.put("dupByHashCount", 0L);
-        if(!sizeTotalsReportData.containsKey("novel"))
+        }
+        if (!sizeTotalsReportData.containsKey("novel")) {
             sizeTotalsReportData.put("novel", 0L);
-        if(!sizeTotalsReportData.containsKey("novelCount"))
+        }
+        if (!sizeTotalsReportData.containsKey("novelCount")) {
             sizeTotalsReportData.put("novelCount", 0L);
-        if(!sizeTotalsReportData.containsKey("notModified"))
+        }
+        if (!sizeTotalsReportData.containsKey("notModified")) {
             sizeTotalsReportData.put("notModified", 0L);
-        if(!sizeTotalsReportData.containsKey("notModifiedCount"))
+        }
+        if (!sizeTotalsReportData.containsKey("notModifiedCount")) {
             sizeTotalsReportData.put("notModifiedCount", 0L);
-        if(!sizeTotalsReportData.containsKey("total"))
+        }
+        if (!sizeTotalsReportData.containsKey("total")) {
             sizeTotalsReportData.put("total", 0L);
-        if(!sizeTotalsReportData.containsKey("totalCount"))
+        }
+        if (!sizeTotalsReportData.containsKey("totalCount")) {
             sizeTotalsReportData.put("totalCount", 0L);
-            
+        }
         this.put("sizeTotalsReport", sizeTotalsReportData);
         
         this.put("rateReport", crawlJob.rateReportData());
@@ -183,7 +191,7 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         if(crawlJob.hasApplicationContext()){
             for (Report report : crawlJob.getCrawlController().getStatisticsTracker().getReports()) {
                 if (report.getShouldReportDuringCrawl()) {
-                    Map<String,String> reportMap = new HashMap<String,String>();
+                    Map<String,String> reportMap = new LinkedHashMap<String,String>();
                     String className = report.getClass().getSimpleName();
                     reportMap.put("className", className);
                     reportMap.put("shortName",className.substring(0,className.length() - "Report".length()));
@@ -197,7 +205,7 @@ public class CrawlJobModel extends HashMap<String, Object> implements Serializab
         List<Map<String,Object>> referencedPaths = new ArrayList<Map<String,Object>>();
         for (String key : crawlJob.getConfigPaths().keySet()) {
             ConfigPath cp = crawlJob.getConfigPaths().get(key);
-            Map<String,Object> configMap = new HashMap<String,Object>();
+            Map<String,Object> configMap = new LinkedHashMap<String,Object>();
             configMap.put("key", key);
             configMap.put("name", cp.getName());
             configMap.put("path",FileUtils.tryToCanonicalize(cp.getFile()).getAbsolutePath());

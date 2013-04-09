@@ -2,13 +2,14 @@ package org.archive.crawler.restlet.models;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.archive.crawler.restlet.Flash;
 
 @SuppressWarnings("serial")
-public class ViewModel extends HashMap<String,Object> {
+public class ViewModel extends LinkedHashMap<String,Object> {
     public ViewModel(){
         super();
     }
