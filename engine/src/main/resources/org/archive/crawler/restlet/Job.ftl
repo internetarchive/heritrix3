@@ -91,7 +91,7 @@
 					<#if !job.sizeTotalsReport??>
 						<i>n/a</i>
 					<#else>
-						${job.formatBytes(job.sizeTotalsReport.total)} crawled ( ${job.formatBytes(job.sizeTotalsReport.novel)} novel, ${job.formatBytes(job.sizeTotalsReport.dupByHash)} dupByHash, ${job.formatBytes(job.sizeTotalsReport.notModified)} notModified)
+						${job.formatBytes(job.sizeTotalsReport.total)} crawled (${job.formatBytes(job.sizeTotalsReport.novel)} novel, ${job.formatBytes(job.sizeTotalsReport.dupByHash)} dupByHash, ${job.formatBytes(job.sizeTotalsReport.notModified)} notModified)
 					</#if>
 
 				</div>
