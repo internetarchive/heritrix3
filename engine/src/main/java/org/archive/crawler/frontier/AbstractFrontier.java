@@ -386,13 +386,14 @@ public abstract class AbstractFrontier
                         }
                         break;
                     case FINISH:
+                        logger.fine("FINISH requested, waiting for in process urls to finish");
                         // prevent all outbound takes
                         outboundLock.writeLock().lock();
                         // process all inbound
                         while (getInProcessCount()>0) {
                             Thread.sleep(1000);
                         }
-
+                        logger.fine("0 urls in process, running final tasks");
                         finalTasks(); 
                         // TODO: more cleanup?
                         reachedState(State.FINISH);
@@ -437,6 +438,7 @@ public abstract class AbstractFrontier
      */
     protected void reachedState(State justReached) {
         if(justReached != lastReachedState) {
+            logger.fine("reached Frontier.State " + this.lastReachedState + ", notifying listeners");
             controller.noteFrontierState(justReached);
             lastReachedState = justReached;
         }

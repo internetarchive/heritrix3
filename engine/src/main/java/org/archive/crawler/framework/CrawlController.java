@@ -321,7 +321,8 @@ implements Serializable,
             // suppress duplicate state-reports
             return;
         }
-        this.state = newState; 
+        this.state = newState;
+        LOGGER.fine("reached CrawlController.State " + this.state + ", notifying listeners");
         CrawlStateEvent event = new CrawlStateEvent(this,newState,status.getDescription());
         appCtx.publishEvent(event); 
     }
