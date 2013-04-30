@@ -22,7 +22,6 @@ package org.archive.crawler.restlet;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,7 +43,6 @@ import org.restlet.data.Response;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.InvalidPropertyException;
 
 /**
  * Shared superclass for resources that represent functional aspects
