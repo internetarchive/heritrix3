@@ -18,7 +18,7 @@
 
     <#if model.scriptExec??>
 	<#if (model.scriptExec.linesExecuted > 0)>
-	<span class='success'>${model.scriptExec.linesExecuted} lines executed<span>
+	<span class='success'>${model.scriptExec.linesExecuted} ${(model.scriptExec.linesExecuted>1)?string("lines","line")} executed<span>
 	</#if>
 	<#if model.scriptExec.failure>
 	<pre style='color:red; height:150px; overflow:auto'>${model.scriptExec.stackTrace}
@@ -52,11 +52,9 @@
 	The script will be executed in an engine preloaded
 	with (global) variables:
 	<ul>
-	<li><code>rawOut</code>: a PrintWriter for arbitrary text output to this page</li>
-	<li><code>htmlOut</code>: a PrintWriter for HTML output to this page</li>
-	<li><code>job</code>: the current CrawlJob instance</li>
-	<li><code>appCtx</code>: current job ApplicationContext, if any</li>
-	<li><code>scriptResource</code>: the ScriptResource implementing this page, which offers utility methods</li>
+	<#list model.availableGlobalVariables as v>
+	<li><code>${v.variable}</code>: ${v.description?html}</li>
+	</#list>
 	</ul>
 	<script>
 		var modemap = {beanshell: 'text/x-java', groovy: 'groovy', js: 'javascript'};
