@@ -16,35 +16,37 @@
 <body>
 	<h1>Execute script for job <i><a href='/engine/job/${model.crawlJobShortName}'>${model.crawlJobShortName}</a></i></h1>
 
-	<#if model.linesExecuted??>
-	<span class='success'>${model.linesExecuted} lines executed<span>
+    <#if model.scriptExec??>
+	<#if (model.scriptExec.linesExecuted > 0)>
+	<span class='success'>${model.scriptExec.linesExecuted} lines executed<span>
 	</#if>
-	<#if model.ex??>
-	<pre style='color:red; height:150px; overflow:auto'>
-	${model.ex.printStackTrace()}
+	<#if model.scriptExec.failure>
+	<pre style='color:red; height:150px; overflow:auto'>${model.scriptExec.stackTrace}
 	</pre>
 	</#if>
-	<#if model.htmlOutput??>
+	<#assign htmlOutput=model.scriptExec.htmlOutput>
+	<#if (htmlOutput?length > 0)>
 	<fieldset><legend>htmlOut</legend>
-	${model.htmlOutput}
+	${htmlOutput}
 	</fieldset>
 	</#if>
-	<#if model.rawOutput??>
+	<#assign rawOutput=model.scriptExec.rawOutput>
+	<#if (rawOutput?length > 0)>
 	<fieldset><legend>rawOutput</legend>
-		<pre>
-	${model.rawOutput?html}
+		<pre style="margin:0;">${rawOutput}
 		</pre>
 	</fieldset>
+	</#if>
 	</#if>
 
 	<form method="POST">
 		<input type="submit" value="execute">
 		<select name="engine" id="selectEngine">
 			<#list model.availableScriptEngines as scriptEngine>
-			<option<#if selectedEngine=scriptEngine.engine> selected='selected'</#if> value='${scriptEngine.engine}'>${scriptEngine.language}</option>
+			<option<#if selectedEngine=scriptEngine.engine> selected="selected"</#if> value="${scriptEngine.engine}">${scriptEngine.language}</option>
 			</#list>
 		</select>
-		<textarea rows='20' style='width:100%' name='script' id='editor'>${script}</textarea>
+		<textarea rows='20' style='width:100%' name='script' id='editor'>${(model.scriptExec.script)!""}</textarea>
 		<input type='submit' value='execute'></input>
 	</form>
 	The script will be executed in an engine preloaded

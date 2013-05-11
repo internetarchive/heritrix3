@@ -6,29 +6,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.archive.crawler.restlet.ScriptResource.ScriptExecution;
 
 @SuppressWarnings("serial")
 public class ScriptModel  extends LinkedHashMap<String, Object> {
 
-    public ScriptModel(String crawlJobShortName, String crawlJobUrl, Collection<Map<String,String>> scriptEngines, int linesExecuted, Exception exception, String rawOutput, String htmlOutput){
+	public ScriptModel(String crawlJobShortName, String crawlJobUrl,
+			Collection<Map<String, String>> scriptEngines,
+			ScriptExecution scriptExec) {// int linesExecuted, Exception
+											// exception, String rawOutput,
+											// String htmlOutput){
         super();
         this.put("crawlJobUrl",crawlJobUrl);
         this.put("crawlJobShortName", crawlJobShortName);
         this.put("availableScriptEngines", scriptEngines);
         
-        if (linesExecuted > 0) {
-            this.put("linesExecuted", linesExecuted);
-        }
-        if (exception != null) {
-            this.put("exception", exception);
-        }
-        if (StringUtils.isNotBlank(rawOutput)) {
-            this.put("rawOutput", rawOutput);
-        }
-        if (StringUtils.isNotBlank(htmlOutput)) {
-            this.put("htmlOutput", htmlOutput);
-        }
+        if (scriptExec != null)
+        	this.put("scriptExec", scriptExec);
         
         List<Map<String,String>> vars = new LinkedList<Map<String,String>>();
         Map<String,String> var;
