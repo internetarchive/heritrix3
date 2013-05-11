@@ -84,11 +84,6 @@ public class ScriptResource extends JobRelatedResource {
             }
         });
     }
-    //protected String script = "";
-    //protected Exception ex = null;
-    //protected int linesExecuted = 0; 
-    //protected String rawOutput = ""; 
-    //protected String htmlOutput = "";
     ScriptExecution scriptExec = null;
     
     protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
