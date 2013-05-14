@@ -141,14 +141,12 @@ public class Link implements Serializable, Comparable<Link> {
     }
     
     /**
-     * Same as {@link Link#getData()} except null will be returned if the underlying map is null 
-     * instead of creating a new map
-     * @return
+     * @return true if data map is not null
      */
-    public Map<String, Object> getRawData() {
-    	return data;
+    public boolean hasData() {
+        return data != null;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Link)) {
