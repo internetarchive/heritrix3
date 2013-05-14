@@ -156,9 +156,6 @@ public class ExtractorHTMLForms extends Extractor {
             }
             if (form.seemsLoginForm() || getExtractAllForms()) {
                 curi.getDataList(A_HTML_FORM_OBJECTS).add(form);
-                // DEBUG output
-                // System.err.println("FORM AT ("+curi.getURI()+"): ");
-                // System.err.println(form.toString());
                 curi.getAnnotations().add(form.asAnnotation());
             }
         }
@@ -186,7 +183,16 @@ public class ExtractorHTMLForms extends Extractor {
         Matcher m = TextUtils.getMatcher(pattern, cs);
         try {
             if(m.find()) {
-                return StringUtils.strip(m.group(groupNumber),"\'\""); // strip quotes if present
+                String value = m.group(groupNumber);
+                /*
+                 * In a case like this <input name="foo"/> the group here will
+                 * be "foo"/ ... it's difficult to adjust the regex to avoid
+                 * slurping that trailing slash, so handle it here
+                 */
+                value = StringUtils.removeEnd(value, "'/");
+                value = StringUtils.removeEnd(value, "\"/");
+                value = StringUtils.strip(value, "\'\""); // strip quotes if present
+                return value;
             } else {
                 return null; 
             }
