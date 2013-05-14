@@ -61,7 +61,8 @@ public class HTMLForm {
         input.name = name;
         input.value = value; 
         allInputs.add(input);
-        if("text".equalsIgnoreCase(type)||"email".equalsIgnoreCase(type)) {
+        // default input type is text per html standard
+        if(type == null || "text".equalsIgnoreCase(type) || "email".equalsIgnoreCase(type)) {
             candidateUsernameInputs.add(input);
         } else if ("password".equalsIgnoreCase(type)) {
             candidatePasswordInputs.add(input);
