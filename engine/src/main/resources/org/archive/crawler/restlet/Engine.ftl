@@ -57,7 +57,7 @@ ${crawlJob.primaryConfig}
         
 <form method='POST'>
 Create new job directory with recommended starting configuration<br/>
-<b>Path:</b> ${engine.jobsDir}${filePathSeparator}
+<b>Path:</b> ${engine.jobsDir}${fileSeparator}
 <input name='createpath'/>
 <input type='submit' name='action' value='create'>
 </form>

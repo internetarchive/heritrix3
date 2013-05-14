@@ -223,7 +223,7 @@ public class EngineResource extends BaseResource {
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));
         viewModel.put("baseRef",baseRef);
-        viewModel.put("filePathSeparator", File.pathSeparator);
+        viewModel.put("fileSeparator", File.separator);
         viewModel.put("engine", model);
         viewModel.put("cssRef", getStylesheetRef());
 
