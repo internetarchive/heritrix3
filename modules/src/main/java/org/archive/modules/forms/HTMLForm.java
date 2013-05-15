@@ -58,11 +58,14 @@ public class HTMLForm {
     public void addField(String type, String name, String value) {
         FormInput input = new FormInput();
         input.type = type;
+        // default input type is text per html standard
+        if (input.type == null) {
+            input.type = "text";
+        }
         input.name = name;
         input.value = value; 
         allInputs.add(input);
-        // default input type is text per html standard
-        if(type == null || "text".equalsIgnoreCase(type) || "email".equalsIgnoreCase(type)) {
+        if("text".equalsIgnoreCase(input.type) || "email".equalsIgnoreCase(input.type)) {
             candidateUsernameInputs.add(input);
         } else if ("password".equalsIgnoreCase(type)) {
             candidatePasswordInputs.add(input);
