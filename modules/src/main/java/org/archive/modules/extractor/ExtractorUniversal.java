@@ -405,12 +405,10 @@ public class ExtractorUniversal extends ContentExtractor {
 
                         // And add the URL to speculative embeds.
                         numberOfLinksExtracted.incrementAndGet();
-                        UURI src = curi.getUURI();
                         UURI dest = UURIFactory.getInstance(newURL);
                         LinkContext lc = LinkContext.SPECULATIVE_MISC;
                         Hop hop = Hop.SPECULATIVE;
-                        Link link = new Link(src, dest, lc, hop);
-                        curi.getOutLinks().add(link);
+                        addOutlink(curi,  dest, lc, hop);
                     }
                     // Reset lookat for next string.
                     lookat = new StringBuffer();

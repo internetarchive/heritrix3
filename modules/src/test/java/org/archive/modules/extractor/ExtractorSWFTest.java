@@ -109,9 +109,9 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                     + elapsed + "ms to process " + url);
 
             boolean foundIt = false;
-            for (Link link : curi.getOutLinks()) {
+            for (CrawlURI link : curi.getOutLinks()) {
                 logger.info("found link: " + link);
-                foundIt = foundIt || link.getDestination().toString().endsWith(testUrls.get(url));
+                foundIt = foundIt || link.getURI().endsWith(testUrls.get(url));
             }
 
             assertTrue("failed to extract link \"" + testUrls.get(url)
@@ -165,9 +165,9 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                     + elapsed + "ms to process " + url);
 
             boolean foundIt = false;
-            for (Link link : curi.getOutLinks()) {
+            for (CrawlURI link : curi.getOutLinks()) {
                 logger.info("found link: " + link);
-                foundIt = foundIt || link.getDestination().toString().endsWith(testUrls.get(url));
+                foundIt = foundIt || link.getURI().endsWith(testUrls.get(url));
             }
 
             if (!foundIt)

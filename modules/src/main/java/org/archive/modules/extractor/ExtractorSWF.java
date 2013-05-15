@@ -334,7 +334,7 @@ public class ExtractorSWF extends ContentExtractor {
                 }
             } else {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToVia(curi, max, url, LinkContext.EMBED_MISC,
+                addRelativeToVia(curi, max, url, LinkContext.EMBED_MISC,
                         Hop.EMBED);
                 linkCount++;
             }
@@ -343,7 +343,7 @@ public class ExtractorSWF extends ContentExtractor {
         public void considerStringAsUri(String str) throws IOException {
             if (UriUtils.isLikelyUri(str)) {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToVia(curi, max, str, 
+                addRelativeToVia(curi, max, str, 
                         LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
                 linkCount++;
             }

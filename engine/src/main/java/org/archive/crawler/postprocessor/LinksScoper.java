@@ -27,14 +27,12 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHE
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Scoper;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
 
 /**
  * Determine which extracted links are within scope.
@@ -151,18 +149,11 @@ public class LinksScoper extends Scoper {
         final boolean redirectsNewSeeds = getSeedsRedirectNewSeeds(); 
         int preferenceDepthHops = getPreferenceDepthHops(); 
         
-        for (Link wref: curi.getOutLinks()) try {
-            int directive = getSchedulingFor(curi, wref, preferenceDepthHops);
-            CrawlURI caURI = curi.createCrawlURI(curi.getBaseURI(), 
-                    wref, directive, 
-                    considerAsSeed(curi, wref, redirectsNewSeeds));
-            if (isInScope(caURI)) {
-                curi.getOutCandidates().add(caURI);
-            }
-        } catch (URIException e) {
-            loggerModule.logUriError(e, curi.getUURI(), 
-                    wref.getDestination().toString());
-        }
+        for (CrawlURI caURI: curi.getOutLinks()) {
+            int directive = getSchedulingFor(curi, caURI, preferenceDepthHops);
+            caURI.setSchedulingDirective(directive );
+            caURI.setSeed(considerAsSeed(curi, caURI, redirectsNewSeeds));
+        } 
         curi.getOutLinks().clear();
     }
     
@@ -197,10 +188,10 @@ public class LinksScoper extends Scoper {
         }
     }
     
-    private boolean considerAsSeed(final CrawlURI curi, final Link wref,
+    private boolean considerAsSeed(final CrawlURI curi, final CrawlURI link,
             final boolean redirectsNewSeeds) {
         return redirectsNewSeeds && curi.isSeed()
-                && wref.getHopType() == Hop.REFER;
+                && link.getLastHopType() == Hop.REFER;
     }
     
     /**
@@ -210,14 +201,14 @@ public class LinksScoper extends Scoper {
      * Imports into the frontier similarly do not pass through here, 
      * but are given NORMAL priority.
      */
-    protected int getSchedulingFor(final CrawlURI curi, final Link wref,
+    protected int getSchedulingFor(final CrawlURI curi, final CrawlURI link,
             final int preferenceDepthHops) {
-        final Hop c = wref.getHopType();
+        final Hop c = link.getLastHopType();
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest(curi + " with path=" + curi.getPathFromSeed() +
                 " isSeed=" + curi.isSeed() + " with fetchStatus=" +
-                curi.getFetchStatus() + " -> " + wref.getDestination() +
-                " type " + c + " with context=" + wref.getContext());
+                curi.getFetchStatus() + " -> " + link.getURI() +
+                " type " + c + " with context=" + link.getViaContext());
         }
 
         switch (c) {

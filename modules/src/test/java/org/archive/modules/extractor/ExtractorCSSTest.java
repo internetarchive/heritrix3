@@ -19,21 +19,16 @@
 
 package org.archive.modules.extractor;
 
+import static org.archive.modules.extractor.LinkContext.EMBED_MISC;
+import static org.archive.modules.extractor.LinkContext.NAVLINK_MISC;
+
 import java.util.Collection;
 import java.util.Collections;
 
 import org.archive.modules.CrawlURI;
-import org.archive.modules.extractor.Extractor;
-import org.archive.modules.extractor.ExtractorCSS;
-import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
-import org.archive.modules.extractor.StringExtractorTestBase;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
-
-import static org.archive.modules.extractor.LinkContext.EMBED_MISC;
-import static org.archive.modules.extractor.LinkContext.NAVLINK_MISC;
 
 
 /**
@@ -81,8 +76,9 @@ public class ExtractorCSSTest extends StringExtractorTestBase {
         euri.setRecorder(recorder);
         euri.setContentSize(content.length());
         
+        // TODO: This test was naively modified to account for the abscense of LINK, but no effort was made to confirm that it is actually testing anything useful
         UURI dest = UURIFactory.getInstance(uri);
-        Link link = new Link(src, dest, EMBED_MISC, Hop.EMBED);
+        CrawlURI link = euri.createCrawlURI(dest, EMBED_MISC, Hop.EMBED);
         TestData td = new TestData(euri, link);
         return Collections.singleton(td);
     }

@@ -83,8 +83,7 @@ public class ExtractorHTTP extends Extractor {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), loc.getValue());
             LinkContext lc = HTMLLinkContext.get(loc.getName()+":"); 
-            Link link = new Link(curi.getUURI(), dest, lc, Hop.REFER);
-            curi.getOutLinks().add(link);
+            addOutlink(curi, dest.toString(), lc, Hop.REFER);
             numberOfLinksExtracted.incrementAndGet();
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), loc.getValue());

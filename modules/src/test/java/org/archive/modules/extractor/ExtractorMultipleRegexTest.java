@@ -188,7 +188,7 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
         extractor.process(testUri);
         
         for (String expectedLinkString: EXPECTED_OUTLINKS) {
-            Link expectedLink = new Link(testUri.getUURI(), 
+            CrawlURI expectedLink = testUri.createCrawlURI( 
                     UURIFactory.getInstance(expectedLinkString),
                     HTMLLinkContext.INFERRED_MISC, Hop.INFERRED);
             assertTrue(testUri.getOutLinks().contains(expectedLink));
