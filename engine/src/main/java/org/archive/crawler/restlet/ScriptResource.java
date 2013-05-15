@@ -188,6 +188,9 @@ public class ScriptResource extends JobRelatedResource {
     	public String getHtmlOutput() {
     		return htmlString.toString();
     	}
+    	public String getScript() {
+            return script;
+        }
     }
     
     @Override
