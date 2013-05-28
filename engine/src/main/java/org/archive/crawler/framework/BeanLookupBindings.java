@@ -16,16 +16,16 @@ import org.springframework.context.ApplicationContext;
  */
 public class BeanLookupBindings extends SimpleBindings {
 
-    private ApplicationContext appCtx = null;
+    private final ApplicationContext appCtx;
 
     public BeanLookupBindings(ApplicationContext appCtx) {
-        assert appCtx != null;
+        if (appCtx == null) throw new NullPointerException("appCtx");
         this.appCtx = appCtx;
     }
 
     public BeanLookupBindings(ApplicationContext appCtx, Map<String, Object> m) {
         super(m);
-        assert appCtx != null;
+        if (appCtx == null) throw new NullPointerException("appCtx");
         this.appCtx = appCtx;
     }
     
