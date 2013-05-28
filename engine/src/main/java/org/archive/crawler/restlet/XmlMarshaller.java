@@ -19,10 +19,23 @@
 
 package org.archive.crawler.restlet;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
+
+import org.apache.commons.lang.StringUtils;
 import org.restlet.util.XmlWriter;
 import org.xml.sax.SAXException;
 
@@ -90,6 +103,88 @@ public class XmlMarshaller {
             }
         }
     }
+    /**
+     * sort PropertyDescriptors according to propOrder.
+     * properties listed in propOrder come first, in the order they are listed, and
+     * then come remaining unlisted properties, in arbitrary order (likely alphabetical).
+     * this semantics is rather relaxed compared to original JAXB semantics, where props
+     * and propOrder must be the same set (except for those marked XmlTransient).
+     * @param props PropertyDescriptor array to be sorted in-place.
+     * @param propOrder list of property names in order of desired appearance. 
+     */
+    protected static void orderProperties(PropertyDescriptor[] props, final String[] propOrder) {
+        if (propOrder == null || propOrder.length == 0) return;
+        final Map<String, Integer> order = new HashMap<String, Integer>();
+        for (int i = 0; i < propOrder.length; i++) {
+            order.put(propOrder[i], i);
+        }
+        final Integer LAST = Integer.valueOf(propOrder.length);
+        Arrays.sort(props, new Comparator<PropertyDescriptor>() {
+            @Override
+            public int compare(PropertyDescriptor o1, PropertyDescriptor o2) {
+                Integer c1 = order.get(o1.getName());
+                Integer c2 = order.get(o2.getName());
+                return (c1 != null ? c1 : LAST).compareTo(c2 != null ? c2 : LAST);
+            } 
+        });
+    }
+    /**
+     * test if {@code obj} has {@link XmlRootElement} annotation.
+     * to avoid unexpected side effects, objects are mapped to nested XML structure
+     * only when its class has {@link XmlRootElement} annotation.
+     * note semantics is slightly different from JAXB - just borrowing XmlRootElement
+     * as substitute of XmlElement, because Map entry cannot be annotated.
+     * @param obj object to test
+     * @return true if obj's class has XmlRootElement annotation.
+     */
+    protected static boolean marshalAsElement(Object obj) {
+    	XmlRootElement ann = obj.getClass().getAnnotation(XmlRootElement.class);
+    	return ann != null;
+    }
+    /**
+     * generate nested XML structure for a bean {@code obj}. enclosing element
+     * will not be generated if {@code key} is empty. each readable JavaBeans property
+     * is mapped to an nested element named after its name. Those properties
+     * annotated with {@link XmlTransient} are ignored.
+     * @param xmlWriter XmlWriter
+     * @param key name of enclosing element
+     * @param obj bean
+     * @throws SAXException
+     */
+    protected static void marshalBean(XmlWriter xmlWriter, String key, Object obj) throws SAXException {
+        if (!StringUtils.isEmpty(key))
+            xmlWriter.startElement(key);
+        try {
+            BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass(), Object.class);
+            PropertyDescriptor[] props = beanInfo.getPropertyDescriptors();
+            XmlType xmlType = obj.getClass().getAnnotation(XmlType.class);
+            if (xmlType != null) {
+                String[] propOrder = xmlType.propOrder();
+                if (propOrder != null) {
+                    // TODO: should cache this sorted version?
+                    orderProperties(props, propOrder);
+                }
+            }
+            for (PropertyDescriptor prop : props) {
+                Method m = prop.getReadMethod();
+                if (m == null || m.getAnnotation(XmlTransient.class) != null)
+                    continue;
+                try {
+                    Object propValue = m.invoke(obj);
+                    if (propValue != null && !"".equals(propValue)) {
+                        marshal(xmlWriter, prop.getName(), propValue);
+                    }
+                } catch (Exception ex) {
+                    // generate empty element, for now. generate comment?
+                    xmlWriter.emptyElement(prop.getName());
+                }
+            }
+        } catch (IntrospectionException ex) {
+            // ignored, for now.
+        }
+        if (!StringUtils.isEmpty(key))
+            xmlWriter.endElement(key);
+    }
 
     protected static void marshal(XmlWriter xmlWriter, String key, Object value) throws SAXException {
         if (value == null) {
@@ -98,6 +193,8 @@ public class XmlMarshaller {
             marshal(xmlWriter, key, (Map<?,?>) value);
         } else if (value instanceof Iterable<?>) {
             marshal(xmlWriter, key, (Iterable<?>) value);
+        } else if (marshalAsElement(value)) {
+            marshalBean(xmlWriter, key, value);
         } else {
             xmlWriter.dataElement(key, value.toString());
         }
