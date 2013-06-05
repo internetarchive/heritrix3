@@ -3,27 +3,15 @@ package org.archive.modules.extractor;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
-import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.net.RobotsPolicy;
-import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
-import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
-import org.archive.util.UriUtils;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,6 +27,25 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
 	private static Logger logger =
             Logger.getLogger(ExtractorYoutubeFormatStream.class.getName());
 
+	// XXX we need extractIndependently=true so that earlier ExtractorHTML
+	// extraction doesn't stop us from extracting here
+	protected static final ExtractorParameters PARAMETERS = new ExtractorParameters() {
+		public int getMaxOutlinks() {
+			return 6000;
+		}
+		public boolean getExtractIndependently() {
+			return true;
+		}
+		public boolean getExtract404s() {
+			return false;
+		}
+	};
+
+	@Override
+	public ExtractorParameters getExtractorParameters() {
+		return PARAMETERS;
+	}
+	
     /**
      * Maximum number of videos to extract
      */
@@ -122,10 +129,9 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
 							   return false;
 
 							try {
-								videoUri = new java.net.URI(prefix+"%26signature="+suffix).getPath();
-							}
-							catch(java.net.URISyntaxException e) {
-								logger.warning("problem decoding link " + prefix+"%26signature="+suffix + " - " + e);
+								videoUri = URLDecoder.decode(prefix+"%26signature="+suffix, "UTF-8");
+							} catch (UnsupportedEncodingException e) {
+								throw new RuntimeException(e); // impossible
 							}
 
 							TextUtils.recycleMatcher(videoMatchPre);
