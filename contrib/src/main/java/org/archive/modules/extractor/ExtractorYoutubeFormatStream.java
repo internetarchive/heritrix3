@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -72,14 +73,13 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
 
 	@Override
 	protected boolean shouldExtract(CrawlURI uri){
-	    return true;
-	    // if (uri.getFetchStatus() != 200) {
-	    // 	//verify we are a youtube watch page
-	    // 	return false;
-	    // }
-	    // else {
-	    // 	return true;
-     //    }                                                                                                                                                                                                  
+	    if (uri.getFetchStatus() != 200) {
+	    	//TODO: verify we are a youtube watch page
+	    	return false;
+	    }
+	    else {
+	    	return true;
+        }                                                                                                                                                                                                  
     }
     @Override
     protected boolean innerExtract(CrawlURI uri) {
@@ -96,7 +96,7 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
         if (matcher.find()) {                                                                                                                                                                          
             String jsonStr = matcher.group(1);                                                                                                                                                           
             
-            logger.info("Just Extracted: "+jsonStr);
+            //logger.fine("Just Extracted: "+jsonStr);
             JSONObject json;
             try {                                                                                                                                                                                        
             json = new JSONObject(jsonStr);
@@ -105,54 +105,65 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
                 	if(args.has("url_encoded_fmt_stream_map")) {
 						String stream_map = args.getString("url_encoded_fmt_stream_map");
 
-						logger.info("Just Extracted: "+stream_map);
+						//logger.info("Just Extracted: "+stream_map);
 
-						String[] videos = stream_map.split(",");
+						String[] rawVideoList = stream_map.split(",");
+						LinkedHashMap<String,String> parsedVideoMap = new LinkedHashMap<String,String>();
 
-						for(int i=0; i < videos.length; i++) {
-							String[] videoParams = videos[i].split("\u0026");
+						//Parse Video Map into itag,url pair
+						for(int i=0; i < rawVideoList.length; i++) {
+							String[] videoParams = rawVideoList[i].split("\\u0026");
+							String videoURLParam, itagParam, sigParam;
+							videoURLParam = itagParam = sigParam = "";
 
-							Matcher videoMatchPre = TextUtils.getMatcher("(?is)sig=([^&]*).*url=(http[^&]*)", videos[i]);
-							Matcher videoMatchPost = TextUtils.getMatcher("(?is)url=(http[^&]*).*sig=([^&]*)", videos[i]);
-							String videoUri="";
-							String prefix,suffix;
-
-							if(videoMatchPre.find()) {
-								prefix = videoMatchPre.group(2);
-								suffix = videoMatchPre.group(1);
-							}
-							else if(videoMatchPost.find()) {
-								prefix = videoMatchPost.group(1);
-								suffix = videoMatchPost.group(2);
-							}                        
-							else
-							   return false;
-
-							try {
-								videoUri = URLDecoder.decode(prefix+"%26signature="+suffix, "UTF-8");
-							} catch (UnsupportedEncodingException e) {
-								throw new RuntimeException(e); // impossible
+							for(String param : videoParams){
+								
+								String[] keyValuePair = param.split("=");
+								if(keyValuePair.length!=2){
+									logger.warning("Invalid Video Parameter: "+param);
+									continue;
+								}
+								
+								if(keyValuePair[0].equals("url"))
+									videoURLParam=keyValuePair[1];
+								if(keyValuePair[0].equals("itag"))
+									itagParam=keyValuePair[1];
+								if(keyValuePair[0].equals("sig"))
+									sigParam=keyValuePair[1];
 							}
 
-							TextUtils.recycleMatcher(videoMatchPre);
-							TextUtils.recycleMatcher(videoMatchPost);
+							if(videoURLParam.length()>0 && itagParam.length()>0 && sigParam.length()>0) {
+								try {
+									String fixupURL = URLDecoder.decode(videoURLParam+"%26signature="+sigParam, "UTF-8");
+									parsedVideoMap.put(itagParam,fixupURL);
+								}
+								catch(java.io.UnsupportedEncodingException e) {
+									logger.warning("Error decoding youtube video URL: "+videoURLParam+"%26signature="+sigParam);
+								}
+							}
+						}
+						// for(String itag : getItagPriority()){
+						// 	logger.warning("itag Priority List has: "+itag);
+						// }
+						// for(String itag : parsedVideoMap.keySet()) {
+						// 	logger.warning("parsed List has itag: "+itag);
+						// }
+						//Add videos as outlinks by priority list
+						int extractionCount=0;
+						for(String itag : getItagPriority()) {
+							if(parsedVideoMap.containsKey(itag) && extractionCount<getExtractLimit()) {
+								int hostnameEndIndex = parsedVideoMap.get(itag).lastIndexOf("/");
+								if(hostnameEndIndex<1)
+									continue;
+								String gen204 = parsedVideoMap.get(itag).substring(0,hostnameEndIndex)+"/generate_204";
 
-
-							logger.info("found video: "+videoUri);
-							int max = getExtractorParameters().getMaxOutlinks();
-							String gen204 = videoUri.substring(0,videoUri.lastIndexOf("/"))+"/generate_204";
-
-							addOutlink(uri,gen204.toString(), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
-
-							logger.warning("creating gen204: "+gen204);
-							logger.warning("newOutlinkCount: "+numberOfLinksExtracted.incrementAndGet());
-
-							addOutlink(uri,videoUri.toString(), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
-
-							logger.warning("adding video: "+videoUri);
-							logger.warning("newOutlinkCount: "+numberOfLinksExtracted.incrementAndGet());
-
-						} 
+								logger.warning("creating gen204: "+gen204);
+								addOutlink(uri,gen204.toString(), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
+								logger.warning("adding video: "+parsedVideoMap.get(itag));
+								addOutlink(uri,parsedVideoMap.get(itag), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
+								extractionCount++;
+							}
+						}
                 	}
                 }
             }
