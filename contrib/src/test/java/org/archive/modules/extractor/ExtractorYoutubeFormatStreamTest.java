@@ -1,14 +1,15 @@
 package org.archive.modules.extractor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
@@ -36,7 +37,6 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     protected static final String[] EXPECTED_OUTLINKS_SUBSET = {
     	"http://r3---sn-a5m7znek.c.youtube.com/generate_204",
 	    "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&factor=1.25&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=34&sparams=algorithm%2Cburst%2Ccp%2Cfactor%2Cid%2Cip%2Cipbits%2Citag%2Csource%2Cupn%2Cexpire&source=youtube&mv=m&sver=3&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&ms=au&algorithm=throttle-factor&id=fc114937ada1669d&expire=1370493270&burst=40&ipbits=8&upn=t-LMF5MC9BA&mt=1370471490&signature=78D14935180C9DA87E1C562719525D0BB6BE21F9.9BC13425338E5DD6C255EA77136CC424830BCD21"
-	
     };
 
     @Override
@@ -44,27 +44,11 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         ExtractorYoutubeFormatStream e = new ExtractorYoutubeFormatStream();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
         e.setLoggerModule(ulm);
-
         return e;
     }
+    
     public void testYoutubeExtractAll() throws Exception {
-        UURI testUuri = UURIFactory.getInstance(TEST_URI);
-        CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);
-
-        InputStream is = ExtractorYoutubeFormatStreamTest.class.getClassLoader().getResourceAsStream("ExtractorYoutubeFormatStream.txt");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-		StringBuilder content = new StringBuilder();
-		String line = "";
-		while ((line = reader.readLine()) != null) {
-		    content.append(line);
-		}
-        Recorder recorder = createRecorder(content.toString(), "UTF-8");
-        IOUtils.closeQuietly(is);
-
-        testUri.setContentType("text/html");
-        testUri.setFetchStatus(200);
-        testUri.setRecorder(recorder);
-        testUri.setContentSize(content.length());
+        CrawlURI testUri = createTestUri(TEST_URI);
         
         ArrayList<String> itagPriorityList = new ArrayList<String>();
         itagPriorityList.add("44");
@@ -89,25 +73,16 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         }
         assertEquals(expected, testUri.getOutLinks());
     }
+    
+    public void testDontExtract() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
+    	// not a youtube watch url so shouldProcess() will return false
+        CrawlURI testUri = createTestUri("http://archive.org/watch?w=blah");
+        extractor.process(testUri);
+        assertEquals(Collections.EMPTY_SET, testUri.getOutLinks());
+    }
 
     public void testYoutubeExtractSubset() throws Exception {
-        UURI testUuri = UURIFactory.getInstance(TEST_URI);
-        CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);
-
-        InputStream is = ExtractorYoutubeFormatStreamTest.class.getClassLoader().getResourceAsStream("ExtractorYoutubeFormatStream.txt");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-		StringBuilder content = new StringBuilder();
-		String line = "";
-		while ((line = reader.readLine()) != null) {
-		    content.append(line);
-		}
-        Recorder recorder = createRecorder(content.toString(), "UTF-8");
-        IOUtils.closeQuietly(is);
-
-        testUri.setContentType("text/html");
-        testUri.setFetchStatus(200);
-        testUri.setRecorder(recorder);
-        testUri.setContentSize(content.length());
+        CrawlURI testUri = createTestUri(TEST_URI);
         
         ArrayList<String> itagPriorityList = new ArrayList<String>();
         itagPriorityList.add("37");
@@ -129,10 +104,29 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(expected, testUri.getOutLinks());
 
     }
+	private CrawlURI createTestUri(String urlStr) throws URIException,
+			UnsupportedEncodingException, IOException {
+		UURI testUuri = UURIFactory.getInstance(urlStr);
+        CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);
+
+        InputStream is = ExtractorYoutubeFormatStreamTest.class.getClassLoader().getResourceAsStream("ExtractorYoutubeFormatStream.txt");
+		BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+		StringBuilder content = new StringBuilder();
+		String line = "";
+		while ((line = reader.readLine()) != null) {
+		    content.append(line);
+		}
+        Recorder recorder = createRecorder(content.toString(), "UTF-8");
+        IOUtils.closeQuietly(is);
+
+        testUri.setContentType("text/html");
+        testUri.setFetchStatus(200);
+        testUri.setRecorder(recorder);
+        testUri.setContentSize(content.length());
+		return testUri;
+	}
 }
 class UnitTestUriLoggerModule implements UriErrorLoggerModule {
-    private static final long serialVersionUID = 1L;
-    
     final private static Logger LOGGER = 
         Logger.getLogger(UnitTestUriLoggerModule.class.getName());
 

@@ -53,14 +53,10 @@ public class ExtractorYoutubeFormatStream extends Extractor {
 	
 	@Override
     protected boolean shouldProcess(CrawlURI uri) {
-        if (uri.getContentLength() <= 0) {
-            return false;
-        }
-        if (uri.getFetchStatus() != 200) {
-        	//TODO: verify we are a youtube watch page
-        	return false;
-        }
-        return true;
+		return uri.getContentLength() > 0
+				&& uri.getFetchStatus() == 200
+				&& TextUtils.matches("^https?://([^.]+\\.)?youtube\\.com/watch.*$", 
+						uri.getUURI().toCustomString());
     }
 
     @Override
