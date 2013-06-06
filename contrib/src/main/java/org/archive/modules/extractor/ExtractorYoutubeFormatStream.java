@@ -124,23 +124,15 @@ public class ExtractorYoutubeFormatStream extends Extractor {
 								}
 							}
 						}
-						// for(String itag : getItagPriority()){
-						// 	logger.warning("itag Priority List has: "+itag);
-						// }
-						// for(String itag : parsedVideoMap.keySet()) {
-						// 	logger.warning("parsed List has itag: "+itag);
-						// }
+						
 						//Add videos as outlinks by priority list
 						int extractionCount=0;
 						for(String itag : getItagPriority()) {
 							if(parsedVideoMap.containsKey(itag) && extractionCount<getExtractLimit()) {
 								int hostnameEndIndex = parsedVideoMap.get(itag).lastIndexOf("/");
-								if(hostnameEndIndex<1)
+								if(hostnameEndIndex<1) {
 									continue;
-								String gen204 = parsedVideoMap.get(itag).substring(0,hostnameEndIndex)+"/generate_204";
-
-								logger.warning("creating gen204: "+gen204);
-								addOutlink(uri,gen204.toString(), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
+								}
 								logger.warning("adding video: "+parsedVideoMap.get(itag));
 								addOutlink(uri,parsedVideoMap.get(itag), org.archive.modules.extractor.LinkContext.EMBED_MISC, org.archive.modules.extractor.Hop.EMBED);
 								extractionCount++;
