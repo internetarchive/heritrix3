@@ -1,11 +1,10 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -24,29 +23,10 @@ import org.json.JSONObject;
  * @contributor adam
  *
  */
-public class ExtractorYoutubeFormatStream extends ContentExtractor {
+public class ExtractorYoutubeFormatStream extends Extractor {
 	private static Logger logger =
             Logger.getLogger(ExtractorYoutubeFormatStream.class.getName());
 
-	// XXX we need extractIndependently=true so that earlier ExtractorHTML
-	// extraction doesn't stop us from extracting here
-	protected static final ExtractorParameters PARAMETERS = new ExtractorParameters() {
-		public int getMaxOutlinks() {
-			return 6000;
-		}
-		public boolean getExtractIndependently() {
-			return true;
-		}
-		public boolean getExtract404s() {
-			return false;
-		}
-	};
-
-	@Override
-	public ExtractorParameters getExtractorParameters() {
-		return PARAMETERS;
-	}
-	
     /**
      * Maximum number of videos to extract
      */
@@ -70,19 +50,21 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
     public void setItagPriority(List<String> itagPriority) {
         kp.put("itagPriority", itagPriority);
     }
-
+	
 	@Override
-	protected boolean shouldExtract(CrawlURI uri){
-	    if (uri.getFetchStatus() != 200) {
-	    	//TODO: verify we are a youtube watch page
-	    	return false;
-	    }
-	    else {
-	    	return true;
-        }                                                                                                                                                                                                  
+    protected boolean shouldProcess(CrawlURI uri) {
+        if (uri.getContentLength() <= 0) {
+            return false;
+        }
+        if (uri.getFetchStatus() != 200) {
+        	//TODO: verify we are a youtube watch page
+        	return false;
+        }
+        return true;
     }
+
     @Override
-    protected boolean innerExtract(CrawlURI uri) {
+    protected void extract(CrawlURI uri) {
 		ReplayCharSequence cs;
         try {
             cs = uri.getRecorder().getContentReplayCharSequence();
@@ -90,7 +72,7 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
             uri.getNonFatalFailures().add(e);
             logger.log(Level.WARNING,"Failed get of replay char sequence in " +
                 Thread.currentThread().getName(), e);
-            return false;
+            return;
         }
         Matcher matcher = TextUtils.getMatcher("(?is)ytplayer.config = ([^;]*);", cs);
         if (matcher.find()) {                                                                                                                                                                          
@@ -119,17 +101,21 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
 							for(String param : videoParams){
 								
 								String[] keyValuePair = param.split("=");
-								if(keyValuePair.length!=2){
-									logger.warning("Invalid Video Parameter: "+param);
+								if (keyValuePair.length != 2) {
+									logger.warning("Invalid Video Parameter: "
+											+ param);
 									continue;
 								}
-								
-								if(keyValuePair[0].equals("url"))
-									videoURLParam=keyValuePair[1];
-								if(keyValuePair[0].equals("itag"))
-									itagParam=keyValuePair[1];
-								if(keyValuePair[0].equals("sig"))
-									sigParam=keyValuePair[1];
+
+								if (keyValuePair[0].equals("url")) {
+									videoURLParam = keyValuePair[1];
+								}
+								if (keyValuePair[0].equals("itag")) {
+									itagParam = keyValuePair[1];
+								}
+								if (keyValuePair[0].equals("sig")) {
+									sigParam = keyValuePair[1];
+								}
 							}
 
 							if(videoURLParam.length()>0 && itagParam.length()>0 && sigParam.length()>0) {
@@ -172,7 +158,6 @@ public class ExtractorYoutubeFormatStream extends ContentExtractor {
                }
         }
         TextUtils.recycleMatcher(matcher);
-        return true;
     }
 
 
