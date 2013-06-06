@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +38,10 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     protected static final String[] EXPECTED_OUTLINKS_SUBSET = {
 	    "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&factor=1.25&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=34&sparams=algorithm%2Cburst%2Ccp%2Cfactor%2Cid%2Cip%2Cipbits%2Citag%2Csource%2Cupn%2Cexpire&source=youtube&mv=m&sver=3&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&ms=au&algorithm=throttle-factor&id=fc114937ada1669d&expire=1370493270&burst=40&ipbits=8&upn=t-LMF5MC9BA&mt=1370471490&signature=78D14935180C9DA87E1C562719525D0BB6BE21F9.9BC13425338E5DD6C255EA77136CC424830BCD21"
     };
+    
+    protected static final String[] EXPECTED_SINGLE_DEFAULT_OUTLINK = {
+	    "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&factor=1.25&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=35&sparams=algorithm%2Cburst%2Ccp%2Cfactor%2Cid%2Cip%2Cipbits%2Citag%2Csource%2Cupn%2Cexpire&source=youtube&mv=m&sver=3&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&ms=au&algorithm=throttle-factor&id=fc114937ada1669d&expire=1370493270&burst=40&ipbits=8&upn=t-LMF5MC9BA&mt=1370471490&signature=A23283ED964AA8EF061249CCA6199EDDA6543FF2.89798F8181F2250FCFF24F19B2E59D880D054703",
+    };
 
     @Override
     protected Extractor makeExtractor() {
@@ -45,31 +51,66 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         return e;
     }
     
-    public void testYoutubeExtractAll() throws Exception {
+    public void testAllInItagPriority() throws Exception {
         CrawlURI testUri = createTestUri(TEST_URI);
         
-        ArrayList<String> itagPriorityList = new ArrayList<String>();
-        itagPriorityList.add("44");
-        itagPriorityList.add("35");
-        itagPriorityList.add("43");
-        itagPriorityList.add("34");
-        itagPriorityList.add("18");
-        itagPriorityList.add("5");
-        itagPriorityList.add("36");
-        itagPriorityList.add("17");
-        ((ExtractorYoutubeFormatStream)extractor).setItagPriority(itagPriorityList);
-        ((ExtractorYoutubeFormatStream)extractor).setExtractLimit(10);
+        List<String> itagPriorityList = Arrays.asList("44", "35", "43", "34", "18", "5", "36", "17"); 
+        extractor().setItagPriority(itagPriorityList);
+        extractor().setExtractLimit(10);
 
         extractor.process(testUri);
 
-		HashSet<Link> expected = new HashSet<Link>();
-        for (String expectedLinkString : EXPECTED_OUTLINKS_ALL) {
-        	expected.add(new Link(testUri.getUURI(), 
-                    UURIFactory.getInstance(expectedLinkString),
-                    HTMLLinkContext.EMBED_MISC, Hop.EMBED)
-        	);
-        }
+		Set<Link> expected = makeLinkSet(testUri, EXPECTED_OUTLINKS_ALL);
         assertEquals(expected, testUri.getOutLinks());
+    }
+
+    public void testAllNoPriority() throws Exception {
+        CrawlURI testUri = createTestUri(TEST_URI);
+        
+        extractor().setExtractLimit(0);
+        extractor.process(testUri);
+
+		Set<Link> expected = makeLinkSet(testUri, EXPECTED_OUTLINKS_ALL);
+        assertEquals(expected, testUri.getOutLinks());
+    }
+
+	// test that only itags in the priority list are extracted, even though
+	// extract limit is large
+    public void testOnlyInItagPriorityBigLimit() throws Exception {
+        CrawlURI testUri = createTestUri(TEST_URI);
+        
+        List<String> itagPriorityList = Arrays.asList("44", "35", "43"); 
+        extractor().setItagPriority(itagPriorityList);
+        extractor().setExtractLimit(10);
+
+        extractor.process(testUri);
+
+		assertEquals(3, testUri.getOutLinks().size());
+    }
+
+	// test that only itags in the priority list are extracted, even though
+	// extract limit is unset
+    public void testOnlyInItagPriorityNoLimit() throws Exception {
+        CrawlURI testUri = createTestUri(TEST_URI);
+        
+        List<String> itagPriorityList = Arrays.asList("44", "35", "43"); 
+        extractor().setItagPriority(itagPriorityList);
+        extractor().setExtractLimit(0);
+
+        extractor.process(testUri);
+
+		assertEquals(3, testUri.getOutLinks().size());
+    }
+    
+
+    public void testNoPriorityWithLimit() throws InterruptedException, URIException, UnsupportedEncodingException, IOException {
+        CrawlURI testUri = createTestUri(TEST_URI);
+        
+        extractor().setExtractLimit(4);
+
+        extractor.process(testUri);
+
+		assertEquals(4, testUri.getOutLinks().size());
     }
     
     public void testDontExtract() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
@@ -79,29 +120,48 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(Collections.EMPTY_SET, testUri.getOutLinks());
     }
 
-    public void testYoutubeExtractSubset() throws Exception {
+    public void testPriority() throws Exception {
         CrawlURI testUri = createTestUri(TEST_URI);
-        
-        ArrayList<String> itagPriorityList = new ArrayList<String>();
-        itagPriorityList.add("37");
-        itagPriorityList.add("24");
-        itagPriorityList.add("34");
-        itagPriorityList.add("35");
-        ((ExtractorYoutubeFormatStream)extractor).setItagPriority(itagPriorityList);
-        ((ExtractorYoutubeFormatStream)extractor).setExtractLimit(1);
+
+		// 37, 24 are not in url_stream_map; 35 appears before 34 in there, but
+		// with this list we should get 34
+        extractor().setItagPriority(Arrays.asList("37", "24", "34", "35"));
+        extractor().setExtractLimit(1);
 
         extractor.process(testUri);
 
-		HashSet<Link> expected = new HashSet<Link>();
-        for (String expectedLinkString : EXPECTED_OUTLINKS_SUBSET) {
-        	expected.add(new Link(testUri.getUURI(), 
-                    UURIFactory.getInstance(expectedLinkString),
+		Set<Link> expected = makeLinkSet(testUri, EXPECTED_OUTLINKS_SUBSET);
+        assertEquals(expected, testUri.getOutLinks());
+    }
+
+    public void testDefaultItag() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
+        CrawlURI testUri = createTestUri(TEST_URI);
+        
+        extractor().setExtractLimit(1);
+        
+        assertEquals(Collections.EMPTY_LIST, extractor().getItagPriority());
+    
+        extractor.process(testUri);
+
+        Set<Link> expected = makeLinkSet(testUri, EXPECTED_SINGLE_DEFAULT_OUTLINK);
+        assertEquals(expected, testUri.getOutLinks());
+    }
+
+	private Set<Link> makeLinkSet(CrawlURI sourceUri, String[] urlStrs) throws URIException {
+		HashSet<Link> linkSet = new HashSet<Link>();
+        for (String urlStr : urlStrs) {
+        	linkSet.add(new Link(sourceUri.getUURI(), 
+                    UURIFactory.getInstance(urlStr),
                     HTMLLinkContext.EMBED_MISC, Hop.EMBED)
         	);
         }
-        assertEquals(expected, testUri.getOutLinks());
+		return linkSet;
+	}
 
-    }
+	private ExtractorYoutubeFormatStream extractor() {
+		return (ExtractorYoutubeFormatStream)extractor;
+	}
+    
 	private CrawlURI createTestUri(String urlStr) throws URIException,
 			UnsupportedEncodingException, IOException {
 		UURI testUuri = UURIFactory.getInstance(urlStr);
@@ -124,6 +184,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 		return testUri;
 	}
 }
+
 class UnitTestUriLoggerModule implements UriErrorLoggerModule {
     final private static Logger LOGGER = 
         Logger.getLogger(UnitTestUriLoggerModule.class.getName());
