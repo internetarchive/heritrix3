@@ -92,6 +92,8 @@ public class ScriptResource extends JobRelatedResource {
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
         tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         setTemplateConfiguration(tmpltCfg);
+        
+        scriptingConsole = new ScriptingConsole(cj);
     }
     public void setTemplateConfiguration(Configuration tmpltCfg) {
         _templateConfiguration=tmpltCfg;
@@ -100,7 +102,7 @@ public class ScriptResource extends JobRelatedResource {
         return _templateConfiguration;
     }
         
-    private ScriptModel scriptModel;
+    private ScriptingConsole scriptingConsole;
     
     @Override
     public void acceptRepresentation(Representation entity) throws ResourceException {
@@ -113,10 +115,9 @@ public class ScriptResource extends JobRelatedResource {
 
         ScriptEngine eng = MANAGER.getEngineByName(chosenEngine);
         
-        scriptModel = makeDataModel();
-        scriptModel.bind("scriptResource", this);
-        scriptModel.execute(eng, script);
-        scriptModel.unbind("scriptResource");
+        scriptingConsole.bind("scriptResource",  this);
+        scriptingConsole.execute(eng, script);
+        scriptingConsole.unbind("scriptResource");
         
         //TODO: log script, results somewhere; job log INFO? 
         
@@ -124,14 +125,11 @@ public class ScriptResource extends JobRelatedResource {
     }
     
     public Representation represent(Variant variant) throws ResourceException {
-        if (scriptModel == null) {
-            scriptModel = makeDataModel();
-        }
         Representation representation;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer,"script", scriptModel);
+                    XmlMarshaller.marshalDocument(writer,"script", makeDataModel());
                 }
             };
         } else {
@@ -172,7 +170,7 @@ public class ScriptResource extends JobRelatedResource {
         }
         Reference baseRefRef = new Reference(baseRef);
         
-        ScriptModel model = new ScriptModel(cj,
+        ScriptModel model = new ScriptModel(scriptingConsole,
                 new Reference(baseRefRef, "..").getTargetRef().toString(),
                 getAvailableScriptEngines());
 
@@ -193,7 +191,7 @@ public class ScriptResource extends JobRelatedResource {
         viewModel.put("cssRef", getStylesheetRef());
         viewModel.put("staticRef", getStaticRef(""));
         viewModel.put("baseResourceRef",getRequest().getRootRef().toString()+"/engine/static/");
-        viewModel.put("model", scriptModel);
+        viewModel.put("model", makeDataModel());
         viewModel.put("selectedEngine", chosenEngine);
 
         try {
