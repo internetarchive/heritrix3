@@ -1,56 +1,71 @@
 package org.archive.crawler.restlet.models;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.archive.crawler.restlet.ScriptResource.ScriptExecution;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
-@SuppressWarnings("serial")
-public class ScriptModel  extends LinkedHashMap<String, Object> {
+import org.archive.crawler.restlet.ScriptingConsole;
 
-	public ScriptModel(String crawlJobShortName, String crawlJobUrl,
-			Collection<Map<String, String>> scriptEngines,
-			ScriptExecution scriptExec) {// int linesExecuted, Exception
-											// exception, String rawOutput,
-											// String htmlOutput){
-        super();
-        this.put("crawlJobUrl",crawlJobUrl);
-        this.put("crawlJobShortName", crawlJobShortName);
-        this.put("availableScriptEngines", scriptEngines);
-        
-        if (scriptExec != null)
-        	this.put("scriptExec", scriptExec);
-        
-        List<Map<String,String>> vars = new LinkedList<Map<String,String>>();
-        Map<String,String> var;
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "rawOut");
-        var.put("description", "a PrintWriter for arbitrary text output to this page");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "htmlOut");
-        var.put("description", "a PrintWriter for HTML output to this page");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "job");
-        var.put("description", "the current CrawlJob instance");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "appCtx");
-        var.put("description", "current job ApplicationContext, if any");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "scriptResource");
-        var.put("description", "the ScriptResource implementing this page, which offers utility methods");
-        vars.add(var);
-        this.put("availableGlobalVariables", vars);
+@XmlRootElement(name="script")
+@XmlType(propOrder={
+        "crawlJobUrl", "crawlJobShortName", "availableScriptEngines", 
+        "script", "linesExecuted", "exception", "rawOutput", "htmlOutput",
+        "availableGlobalVariables"
+})
+public class ScriptModel {
+    private String crawlJobUrl;
+    private Collection<Map<String, String>> availableScriptEngines;
+    private ScriptingConsole scriptingConsole;
+
+	public ScriptModel(ScriptingConsole cc,
+	        String crawlJobUrl,
+			Collection<Map<String, String>> scriptEngines) {
+	    scriptingConsole = cc;
+	    this.crawlJobUrl = crawlJobUrl;
+	    this.availableScriptEngines = scriptEngines;
+    }
+	
+    public boolean isFailure() {
+        return scriptingConsole.getException() != null;
+    }
+    public String getStackTrace() {
+        Throwable exception = scriptingConsole.getException();
+        if (exception == null) return "";
+        StringWriter s = new StringWriter();
+        exception.printStackTrace(new PrintWriter(s));
+        return s.toString();
+    }
+    public Throwable getException() {
+        return scriptingConsole.getException();
+    }
+    public int getLinesExecuted() {
+        return scriptingConsole.getLinesExecuted();
+    }
+    public String getRawOutput() {
+        return scriptingConsole.getRawOutput();
+    }
+    public String getHtmlOutput() {
+        return scriptingConsole.getHtmlOutput();
+    }
+    public String getScript() {
+        return scriptingConsole.getScript();
+    }
+    
+    public String getCrawlJobShortName() {
+        return scriptingConsole.getCrawlJob().getShortName();
+    }
+    public Collection<Map<String, String>> getAvailableScriptEngines() {
+        return availableScriptEngines;
+    }
+    public List<Map<String, String>> getAvailableGlobalVariables() {
+        return scriptingConsole.getAvailableGlobalVariables();
+    }
+    public String getCrawlJobUrl() {
+        return crawlJobUrl;
     }
 }
