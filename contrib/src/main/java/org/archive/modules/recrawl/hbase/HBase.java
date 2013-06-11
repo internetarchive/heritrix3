@@ -18,15 +18,9 @@
  */
 package org.archive.modules.recrawl.hbase;
 
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
-
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.apache.hadoop.conf.Configuration;
@@ -35,9 +29,6 @@ import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.archive.modules.CrawlURI;
-import org.archive.modules.recrawl.FetchHistoryProcessor;
-import org.archive.net.UURIFactory;
 import org.springframework.context.Lifecycle;
 
 /**
@@ -47,71 +38,71 @@ import org.springframework.context.Lifecycle;
  */
 public class HBase implements Lifecycle {
 
-	private static final Logger logger =
-			Logger.getLogger(HBase.class.getName());
+    private static final Logger logger =
+            Logger.getLogger(HBase.class.getName());
 
-	protected Configuration conf = null;
+    protected Configuration conf = null;
 
-	private Map<String,String> properties;
-	
-	public Map<String,String> getProperties() {
-		return properties;
-	}
-	
-	public void setProperties(Map<String,String> properties) {
-		this.properties = properties;
+    private Map<String,String> properties;
 
-		if (conf == null) {
-			conf = HBaseConfiguration.create();
-		}
-		for (Entry<String, String> entry: getProperties().entrySet()) {
-			conf.set(entry.getKey(), entry.getValue());
-		}
-	}
+    public Map<String,String> getProperties() {
+        return properties;
+    }
 
-	public synchronized Configuration configuration() {
-		if (conf == null) {
-			conf = HBaseConfiguration.create();
-		}
+    public void setProperties(Map<String,String> properties) {
+        this.properties = properties;
 
-		return conf;
-	}
+        if (conf == null) {
+            conf = HBaseConfiguration.create();
+        }
+        for (Entry<String, String> entry: getProperties().entrySet()) {
+            conf.set(entry.getKey(), entry.getValue());
+        }
+    }
 
-	protected transient HBaseAdmin admin;
+    public synchronized Configuration configuration() {
+        if (conf == null) {
+            conf = HBaseConfiguration.create();
+        }
 
-	public synchronized HBaseAdmin admin() throws MasterNotRunningException, ZooKeeperConnectionException {
-		if (admin == null) {
-			admin = new HBaseAdmin(configuration());
-		}
+        return conf;
+    }
 
-		return admin;
-	}
+    protected transient HBaseAdmin admin;
 
-	@Override
-	public synchronized void stop() {
-		isRunning = false;
-		if (admin != null) {
-			try {
-				admin.close();
-			} catch (IOException e) {
-				logger.warning("problem closing HBaseAdmin " + admin + " - " + e);
-			}
-			
-			admin = null;
-		}
-		if (conf != null) {
-			HConnectionManager.deleteConnection(conf, true);
-		}
-	}
+    public synchronized HBaseAdmin admin() throws MasterNotRunningException, ZooKeeperConnectionException {
+        if (admin == null) {
+            admin = new HBaseAdmin(configuration());
+        }
 
-	protected transient boolean isRunning = false;
-	@Override
-	public boolean isRunning() {
-		return isRunning;
-	}
+        return admin;
+    }
 
-	@Override
-	public void start() {
-		isRunning = true;
-	}
+    @Override
+    public synchronized void stop() {
+        isRunning = false;
+        if (admin != null) {
+            try {
+                admin.close();
+            } catch (IOException e) {
+                logger.warning("problem closing HBaseAdmin " + admin + " - " + e);
+            }
+
+            admin = null;
+        }
+        if (conf != null) {
+            HConnectionManager.deleteConnection(conf, true);
+        }
+    }
+
+    protected transient boolean isRunning = false;
+    @Override
+    public boolean isRunning() {
+        return isRunning;
+    }
+
+    @Override
+    public void start() {
+        isRunning = true;
+    }
 }

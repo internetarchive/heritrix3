@@ -19,21 +19,21 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public abstract class HBasePersistProcessor extends AbstractPersistProcessor {
 
-	protected HBaseTable table;
-	public void setTable(HBaseTable table) {
-		this.table = table;
-	}
+    protected HBaseTable table;
+    public void setTable(HBaseTable table) {
+        this.table = table;
+    }
 
-	protected RecrawlDataSchema schema;
-	public RecrawlDataSchema getSchema() {
-		return schema;
-	}
-	@Required
-	public void setSchema(RecrawlDataSchema schema) {
-		this.schema = schema;
-	}
+    protected RecrawlDataSchema schema;
+    public RecrawlDataSchema getSchema() {
+        return schema;
+    }
+    @Required
+    public void setSchema(RecrawlDataSchema schema) {
+        this.schema = schema;
+    }
 
-	public HBasePersistProcessor() {
-		super();
-	}
+    public HBasePersistProcessor() {
+        super();
+    }
 }

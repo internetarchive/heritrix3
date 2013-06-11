@@ -27,7 +27,7 @@ import org.archive.modules.CrawlURI;
  * @contributor kenji
  */
 public interface RecrawlDataSchema {
-	public String getColumnFamily();
-	public Put createPut(CrawlURI uri);
-	public void load(Result result, CrawlURI curi);
+    public String getColumnFamily();
+    public Put createPut(CrawlURI uri);
+    public void load(Result result, CrawlURI curi);
 }
