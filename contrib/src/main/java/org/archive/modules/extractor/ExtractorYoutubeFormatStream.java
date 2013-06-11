@@ -88,7 +88,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
 		}
 
 		Matcher matcher = TextUtils.getMatcher(
-				"(?is)ytplayer.config = ([^;]*);", cs);
+				"(?is)ytplayer\\.config = (\\{.*?\\})(;|</script>|$)", cs);
 		if (matcher.find()) {
 			String jsonStr = matcher.group(1);
 

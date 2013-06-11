@@ -24,6 +24,8 @@ import org.archive.util.Recorder;
 public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
 	protected static final String TEST_URI = "http://www.youtube.com/watch?v=_BFJN62hZp0";
+	protected static final String TEST_RESOURCE_FILE_NAME = "ExtractorYoutubeFormatStream.txt";
+	
     protected static final String[] EXPECTED_OUTLINKS_ALL = {
 	    "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=44&mt=1370471490&source=youtube&mv=m&sver=3&ratebypass=yes&ms=au&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&ipbits=8&expire=1370493270&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&id=fc114937ada1669d&upn=t-LMF5MC9BA&signature=98D0AC4D1B545DE6D5C531A5DB7902877511632A.5700D588C7659DE8A8621EC5110CB638D0EF4A39",
 	    "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&factor=1.25&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=35&sparams=algorithm%2Cburst%2Ccp%2Cfactor%2Cid%2Cip%2Cipbits%2Citag%2Csource%2Cupn%2Cexpire&source=youtube&mv=m&sver=3&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&ms=au&algorithm=throttle-factor&id=fc114937ada1669d&expire=1370493270&burst=40&ipbits=8&upn=t-LMF5MC9BA&mt=1370471490&signature=A23283ED964AA8EF061249CCA6199EDDA6543FF2.89798F8181F2250FCFF24F19B2E59D880D054703",
@@ -52,7 +54,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     }
     
     public void testAllInItagPriority() throws Exception {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         List<String> itagPriorityList = Arrays.asList("44", "35", "43", "34", "18", "5", "36", "17"); 
         extractor().setItagPriority(itagPriorityList);
@@ -65,7 +67,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     }
 
     public void testAllNoPriority() throws Exception {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         extractor().setExtractLimit(0);
         extractor.process(testUri);
@@ -77,7 +79,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 	// test that only itags in the priority list are extracted, even though
 	// extract limit is large
     public void testOnlyInItagPriorityBigLimit() throws Exception {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         List<String> itagPriorityList = Arrays.asList("44", "35", "43"); 
         extractor().setItagPriority(itagPriorityList);
@@ -91,7 +93,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 	// test that only itags in the priority list are extracted, even though
 	// extract limit is unset
     public void testOnlyInItagPriorityNoLimit() throws Exception {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         List<String> itagPriorityList = Arrays.asList("44", "35", "43"); 
         extractor().setItagPriority(itagPriorityList);
@@ -104,7 +106,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     
 
     public void testNoPriorityWithLimit() throws InterruptedException, URIException, UnsupportedEncodingException, IOException {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         extractor().setExtractLimit(4);
 
@@ -115,13 +117,13 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     
     public void testDontExtract() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
     	// not a youtube watch url so shouldProcess() will return false
-        CrawlURI testUri = createTestUri("http://archive.org/watch?w=blah");
+        CrawlURI testUri = createTestUri("http://archive.org/watch?w=blah", TEST_RESOURCE_FILE_NAME);
         extractor.process(testUri);
         assertEquals(Collections.EMPTY_SET, testUri.getOutLinks());
     }
 
     public void testPriority() throws Exception {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
 
 		// 37, 24 are not in url_stream_map; 35 appears before 34 in there, but
 		// with this list we should get 34
@@ -133,9 +135,17 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 		Set<Link> expected = makeLinkSet(testUri, EXPECTED_OUTLINKS_SUBSET);
         assertEquals(expected, testUri.getOutLinks());
     }
+    
+    public void testAlternatePage() throws Exception {
+        CrawlURI testUri = createTestUri("http://www.youtube.com/watch?v=OyJ3CafAM1Q","ExtractorYoutubeFormatStream2.txt");
 
+        extractor().setExtractLimit(0);
+        extractor.process(testUri);
+
+        assertEquals(true, testUri.getOutLinks().size()>0);
+    }
     public void testDefaultItag() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
-        CrawlURI testUri = createTestUri(TEST_URI);
+        CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
         
         extractor().setExtractLimit(1);
         
@@ -162,12 +172,12 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 		return (ExtractorYoutubeFormatStream)extractor;
 	}
     
-	private CrawlURI createTestUri(String urlStr) throws URIException,
+	private CrawlURI createTestUri(String urlStr, String resourceFileName) throws URIException,
 			UnsupportedEncodingException, IOException {
 		UURI testUuri = UURIFactory.getInstance(urlStr);
         CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);
 
-        InputStream is = ExtractorYoutubeFormatStreamTest.class.getClassLoader().getResourceAsStream("ExtractorYoutubeFormatStream.txt");
+        InputStream is = ExtractorYoutubeFormatStreamTest.class.getClassLoader().getResourceAsStream(resourceFileName);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 		StringBuilder content = new StringBuilder();
 		String line = "";
