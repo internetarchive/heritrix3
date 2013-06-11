@@ -97,7 +97,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
                 } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
                     dupByHashBytes += curi.getContentSize();
                     dupByHashUrls++;
-                } else if (curi.getAnnotations().contains("warcRevisit:uriAgnosticDigest")) {
+                } else if (curi.getAnnotations().contains("duplicate:uriAgnosticDigest")) {
                     dupByHashBytes += curi.getContentSize();
                     dupByHashUrls++;
                 } else {

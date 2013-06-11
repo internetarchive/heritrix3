@@ -48,7 +48,7 @@ implements CoreAttributeConstants {
         } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
             tally(DUPLICATE,curi.getContentSize());
             tally(DUPLICATECOUNT,1);
-        } else if (curi.getAnnotations().contains("warcRevisit:uriAgnosticDigest")) {
+        } else if (curi.getAnnotations().contains("duplicate:uriAgnosticDigest")) {
             tally(DUPLICATE,curi.getContentSize());
             tally(DUPLICATECOUNT,1);
         } else {
