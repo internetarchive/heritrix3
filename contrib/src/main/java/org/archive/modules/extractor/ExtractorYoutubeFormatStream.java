@@ -24,7 +24,23 @@ import org.json.JSONObject;
  * This will check the content of the youtube watch page looking for the url_encoded_fmt_stream_map json value.
  * The json object is decoded and the stream URIs are constructed and queued.
  * 
+ * <bean id="extractorYoutubeFormatStream" class="org.archive.modules.extractor.ExtractorYoutubeFormatStream">
+ *  <property name="enabled" value="false" /> <!-- enable via sheet for http://(com,youtube, -->
+ *  <property name="extractLimit" value="1" />
+ *  <property name="itagPriority" >
+ *   <list>
+ *     <value>38</value> <!-- MP4 3072p -->
+ *     <value>37</value> <!-- MP4 1080p -->
+ *     <value>22</value> <!-- MP4 720p -->
+ *     <value>18</value> <!-- MP4 270p/360p -->
+ *     <value>35</value> <!-- FLV 480p -->
+ *     <value>34</value> <!-- FLV 360p -->
+ *   </list>
+ *  </property>
+ * </bean>
+ * 
  * @contributor adam
+ * @contributor nlevitt
  *
  */
 public class ExtractorYoutubeFormatStream extends Extractor {
