@@ -21,11 +21,13 @@ package org.archive.modules.recrawl.hbase;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
+import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 
 /**
@@ -53,7 +55,7 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
      * @see org.archive.modules.hq.recrawl.RecrawlDataSchema#createPut()
      */
     public Put createPut(CrawlURI uri) {
-        byte[] uriBytes = Bytes.toBytes(uri.toString());
+        byte[] uriBytes = rowKeyForURI(uri);
         byte[] key = uriBytes;
         Put p = new Put(key);
         String digest = uri.getContentDigestSchemeString();
@@ -63,16 +65,16 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
         p.add(columnFamily, COLUMN_STATUS, Bytes.toBytes(Integer.toString(uri.getFetchStatus())));
         org.apache.commons.httpclient.HttpMethod method = uri.getHttpMethod();
         if (method != null) {
-            String etag = getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
+            String etag = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
             if (etag != null) {
                 // Etqg is usually quoted
                 if (etag.length() >= 2 && etag.charAt(0) == '"' && etag.charAt(etag.length() - 1) == '"')
                     etag = etag.substring(1, etag.length() - 1);
                 p.add(columnFamily, COLUMN_ETAG, Bytes.toBytes(etag));
             }
-            String lastmod = getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
+            String lastmod = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
             if (lastmod != null) {
-                long lastmod_sec = parseHttpDate(lastmod);
+                long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
                 if (lastmod_sec == 0) {
                     try {
                         lastmod_sec = uri.getFetchCompletedTime();
@@ -109,8 +111,10 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
             curi.getAnnotations().add("nocrawl");
             return;
         }
-
-        Map<String, Object> history = getFetchHistory(curi);
+        // all column should have identical timestamp.
+        KeyValue rkv = result.getColumnLatest(columnFamily, COLUMN_STATUS);
+        long timestamp = rkv.getTimestamp();
+        Map<String, Object> history = FetchHistoryHelper.getFetchHistory(curi, timestamp, historyLength);
         // FetchHTTP ignores history with status <= 0
         byte[] status = result.getValue(columnFamily, COLUMN_STATUS);
         if (status != null) {
@@ -124,7 +128,7 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
             byte[] lastmod = result.getValue(columnFamily, COLUMN_LAST_MODIFIED);
             if (lastmod != null) {
                 long lastmod_sec = Bytes.toLong(lastmod);
-                history.put(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER, formatHttpDate(lastmod_sec));
+                history.put(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER, FetchHistoryHelper.formatHttpDate(lastmod_sec));
             }
             byte[] digest = result.getValue(columnFamily, COLUMN_CONTENT_DIGEST);
             if (digest != null) {

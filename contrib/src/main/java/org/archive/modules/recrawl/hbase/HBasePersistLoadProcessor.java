@@ -19,23 +19,21 @@
 package org.archive.modules.recrawl.hbase;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.recrawl.PersistProcessor;
-import org.archive.modules.recrawl.RecrawlAttributeConstants;
+import org.archive.modules.recrawl.FetchHistoryProcessor;
 
 /**
  * A {@link Processor} for retrieving recrawl info from HBase table.
  * See {@link HBasePersistProcessor} for table schema.
+ * As with other fetch history processors, this needs to be combined with {@link FetchHistoryProcessor}
+ * (set up after FetchHTTP, before WarcWriter) to work.
  * @see HBasePersistStoreProcessor
  * @contributor kenji
  */
@@ -43,22 +41,9 @@ public class HBasePersistLoadProcessor extends HBasePersistProcessor {
     private static final Logger logger =
             Logger.getLogger(HBasePersistLoadProcessor.class.getName());
 
-    @SuppressWarnings("unchecked")
-    protected static Map<String, Object>[] getFetchHistory(CrawlURI uri) {
-        Map<String, Object> data = uri.getData();
-        Map<String, Object>[] history = (Map[])data.get(RecrawlAttributeConstants.A_FETCH_HISTORY);
-        if (history == null) {
-            // only the first element is used by FetchHTTP, WarcWriterProcessor etc.
-            // FetchHistoryProcessor casts history to HashMap[]. So it must be new HashMap[1].
-            history = new HashMap[2];
-            data.put(RecrawlAttributeConstants.A_FETCH_HISTORY, history);
-        }
-        return history;
-    }
-
     @Override
     protected ProcessResult innerProcessResult(CrawlURI uri) throws InterruptedException {
-        byte[] key = Bytes.toBytes(PersistProcessor.persistKeyFor(uri));
+        byte[] key = rowKeyForURI(uri);
         Get g = new Get(key);
         try {
             Result r = table.get(g);
@@ -75,6 +60,10 @@ public class HBasePersistLoadProcessor extends HBasePersistProcessor {
             }
         } catch (IOException e) {
             logger.warning("problem retrieving persist data from hbase, proceeding without, for " + uri + " - " + e);
+        } catch (Exception ex) {
+            // get() throws RuntimeException upon ZooKeeper connection failures.
+            // no crawl history load failure should make fetch of URL fail.
+            logger.log(Level.WARNING, "Get failed for " + uri + ": ", ex);
         }
         return ProcessResult.PROCEED;
     }

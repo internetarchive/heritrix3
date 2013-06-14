@@ -67,6 +67,14 @@ public class HBase implements Lifecycle {
 
         return conf;
     }
+    
+    // convenience setters
+    public void setZookeeperQuorum(String value) {
+        configuration().set("hbase.zookeeper.quorum", value);
+    }
+    public void setZookeeperClientPort(int port) {
+        configuration().setInt("hbase.zookeeper.property.clientPort", port);
+    }
 
     protected transient HBaseAdmin admin;
 

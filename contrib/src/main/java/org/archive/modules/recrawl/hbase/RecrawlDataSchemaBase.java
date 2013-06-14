@@ -1,18 +1,14 @@
 package org.archive.modules.recrawl.hbase;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.canonicalize.CanonicalizationRule;
+import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
-import org.archive.modules.recrawl.RecrawlAttributeConstants;
+import org.archive.modules.recrawl.PersistProcessor;
 
 /**
  * implements common utility methods for implementing {@link RecrawlDataSchema}.
@@ -27,79 +23,101 @@ import org.archive.modules.recrawl.RecrawlAttributeConstants;
 abstract public class RecrawlDataSchemaBase implements RecrawlDataSchema {
     private static final Logger logger = Logger.getLogger(RecrawlDataSchemaBase.class.getName());
 
+    /**
+     * default value for {@link #columnFamily}.
+     */
     public static final byte[] DEFAULT_COLUMN_FAMILY = Bytes.toBytes("f");
     protected byte[] columnFamily = DEFAULT_COLUMN_FAMILY;
 
     public static final byte[] COLUMN_NOCRAWL = Bytes.toBytes("z");
+    
+    /**
+     * default value for {@link #useCanonicalString}.
+     */
+    public static boolean DEFAULT_USE_CANONICAL_STRING = true;
 
-    protected static String getHeaderValue(org.apache.commons.httpclient.HttpMethod method, String name) {
-        org.apache.commons.httpclient.Header header = method.getResponseHeader(name);
-        return header != null ? header.getValue() : null;
+    private boolean useCanonicalString = DEFAULT_USE_CANONICAL_STRING;
+    private CanonicalizationRule keyRule = null;
+
+    protected int historyLength = 2;
+
+    public RecrawlDataSchemaBase() {
+        super();
     }
 
     public void setColumnFamily(String colf) {
         columnFamily = Bytes.toBytes(colf);
     }
 
-    @Override
+    public boolean isUseCanonicalString() {
+        return useCanonicalString;
+    }
+    /**
+     * if set to true, canonicalized string will be used as row key, rather than URI
+     * @param useCanonicalString
+     */
+    public void setUseCanonicalString(boolean useCanonicalString) {
+        this.useCanonicalString = useCanonicalString;
+    }
+
     public String getColumnFamily() {
         return Bytes.toString(columnFamily);
     }
 
+
+    public CanonicalizationRule getKeyRule() {
+        return keyRule;
+    }
     /**
-     * returns a Map to store recrawl data, which is properly stored in CrawlURI's
-     * fetch history array property ({@link RecrawlAttributeConstants#A_FETCH_HISTORY} member of {@link CrawlURI#getData()}.)
-     * if {@code uri} has no fetch history yet, it is first initialized with an array of length two so that
-     * {@linkplain FetchHistoryProcessor} do not need to reallocate it (this only works for historyLength == 2, though).
+     * alternative canonicalization rule for generating row key from URI.
+     * TODO: currently unused.
+     * @param keyRule
+     */
+    public void setKeyRule(CanonicalizationRule keyRule) {
+        this.keyRule = keyRule;
+    }
+
+    public int getHistoryLength() {
+        return historyLength;
+    }
+
+    /**
+     * maximum number of crawl history entries to retain in {@link CrawlURI}.
+     * when more than this number of crawl history entry is being added by
+     * {@link #getFetchHistory(CrawlURI, long)}, oldest entry will be discarded.
+     * {@code historyLength} should be the same number as
+     * {@link FetchHistoryProcessor#setHistoryLength(int)}, or FetchHistoryProcessor will
+     * reallocate the crawl history array.
+     * @param historyLength
+     * @see FetchHistoryProcessor#setHistoryLength(int)
+     */
+    public void setHistoryLength(int historyLength) {
+        this.historyLength = historyLength;
+    }
+
+    /**
+     * calls {@link FetchHistoryHelper#getFetchHistory(CrawlURI, long, int)} with {@link #historyLength}.
      * @param uri CrawlURI from which fetch history is obtained.
      * @return Map object for storing re-crawl data (never null).
+     * @see FetchHistoryHelper#getFetchHistory(CrawlURI, long, int)
      * @see FetchHistoryProcessor
      */
-    @SuppressWarnings("unchecked")
-    protected static Map<String, Object> getFetchHistory(CrawlURI uri) {
-        Map<String, Object> data = uri.getData();
-        Map<String, Object>[] history = (Map[])data.get(RecrawlAttributeConstants.A_FETCH_HISTORY);
-        if (history == null) {
-            // only the first element is used by FetchHTTP, WarcWriterProcessor etc.
-            // FetchHistoryProcessor casts history to HashMap[]. So it must be new HashMap[2], not Map[2]
-            history = new HashMap[2];
-            history[0] = new HashMap<String, Object>();
-            // no need to set history[1]. it would simply be discarded by FetchHistoryProcessor.
-            data.put(RecrawlAttributeConstants.A_FETCH_HISTORY, history);
-        }
-        return history[0];
+    protected Map<String, Object> getFetchHistory(CrawlURI uri, long timestamp) {
+        return FetchHistoryHelper.getFetchHistory(uri, timestamp, historyLength);
     }
-
-    public RecrawlDataSchemaBase() {
-        super();
-    }
-
-    protected static final DateFormat HTTP_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 
     /**
-     * converts time in HTTP Date format {@code dateStr} to seconds
-     * since epoch. 
-     * @param dateStr time in HTTP Date format.
-     * @return seconds since epoch
+     * return row key for {@code curi}.
+     * TODO: move this to HBasePersistProcessor by redesigning {@link RecrawlDataSchema}.
+     * @param curi {@link CrawlURI} for which a row is being fetched.
+     * @return row key
      */
-    protected long parseHttpDate(String dateStr) {
-        synchronized (HTTP_DATE_FORMAT) {
-            try {
-                Date d = HTTP_DATE_FORMAT.parse(dateStr);
-                return d.getTime() / 1000;
-            } catch (ParseException ex) {
-                if (logger.isLoggable(Level.FINER))
-                    logger.fine("bad HTTP DATE: " + dateStr);
-                return 0;
-            }
+    public byte[] rowKeyForURI(CrawlURI curi) {
+        if (useCanonicalString) {
+            // TODO: use keyRule if specified.
+            return Bytes.toBytes(PersistProcessor.persistKeyFor(curi));
+        } else {
+            return Bytes.toBytes(curi.toString());
         }
     }
-
-    protected String formatHttpDate(long time) {
-        synchronized (HTTP_DATE_FORMAT) {
-            // format is not thread safe either
-            return HTTP_DATE_FORMAT.format(new Date(time * 1000));
-        }
-    }
-
 }

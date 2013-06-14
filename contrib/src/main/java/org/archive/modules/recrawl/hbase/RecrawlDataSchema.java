@@ -30,4 +30,6 @@ public interface RecrawlDataSchema {
     public String getColumnFamily();
     public Put createPut(CrawlURI uri);
     public void load(Result result, CrawlURI curi);
+    // TODO: drop this method by revising createPut(CrawlURI) method.
+    public byte[] rowKeyForURI(CrawlURI curi);
 }

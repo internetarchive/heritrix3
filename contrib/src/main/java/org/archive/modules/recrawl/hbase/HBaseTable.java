@@ -29,35 +29,15 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
-import org.archive.modules.recrawl.PersistOnlineProcessor;
-import org.springframework.context.Lifecycle;
 
 /**
  * @contributor kenji
  * @contributor nlevitt
  */
-public class HBaseTable implements Lifecycle {
+public class HBaseTable extends HBaseTableBean {
 
-    private static final Logger logger =
+    static final Logger logger =
             Logger.getLogger(HBaseTable.class.getName());
-
-    // XXX this default doesn't really belong here if this is supposed to be a
-    // generic hbase table class
-    protected String name = PersistOnlineProcessor.URI_HISTORY_DBNAME;
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getName() {
-        return name;
-    }
-
-    protected HBase hbase = new HBase();
-    public void setHbase(HBase hbase) {
-        this.hbase = hbase;
-    }
-    public HBase getHbase() {
-        return hbase;
-    }
 
     protected boolean create = false;
     public boolean getCreate() {
@@ -83,8 +63,9 @@ public class HBaseTable implements Lifecycle {
         return htablePool;
     }
 
+    @Override
     public void put(Put p) throws IOException {
-        HTableInterface table = htablePool().getTable(name);
+        HTableInterface table = htablePool().getTable(htableName);
         try {
             table.put(p);
         } finally {
@@ -93,8 +74,9 @@ public class HBaseTable implements Lifecycle {
         }
     }
 
+    @Override
     public Result get(Get g) throws IOException {
-        HTableInterface table = htablePool().getTable(name);
+        HTableInterface table = htablePool().getTable(htableName);
         try {
             return table.get(g);
         } finally {
@@ -104,7 +86,7 @@ public class HBaseTable implements Lifecycle {
     }
 
     public HTableDescriptor getHtableDescriptor() throws IOException {
-        HTableInterface table = htablePool().getTable(name);
+        HTableInterface table = htablePool().getTable(htableName);
         try {
             return table.getTableDescriptor();
         } finally {
@@ -112,34 +94,27 @@ public class HBaseTable implements Lifecycle {
         }
     }
 
-    protected boolean isRunning = false;
-
-    @Override
-    public boolean isRunning() {
-        return isRunning;
-    }
-
     @Override
     public void start() {
         try {
             if (getCreate()) {
                 HBaseAdmin admin = hbase.admin();
-                if (!admin.tableExists(name)) {
-                    HTableDescriptor desc = new HTableDescriptor(name);
-                    logger.info("hbase table '" + name + "' does not exist, creating it... " + desc);
+                if (!admin.tableExists(htableName)) {
+                    HTableDescriptor desc = new HTableDescriptor(htableName);
+                    logger.info("hbase table '" + htableName + "' does not exist, creating it... " + desc);
                     admin.createTable(desc);
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "problem creating hbase table " + name, e);
+            logger.log(Level.SEVERE, "problem creating hbase table " + htableName, e);
         }
 
-        isRunning = true;
+        super.start();
     }
 
     @Override
     public synchronized void stop() {
-        isRunning = false;
+        super.stop();
         // org.apache.hadoop.io.IOUtils.closeStream(htablePool); // XXX hbase 0.92
         if (htablePool != null) {
             try {

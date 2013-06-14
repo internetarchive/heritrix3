@@ -23,12 +23,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStatusCodes;
-import org.archive.modules.recrawl.PersistProcessor;
+import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -71,7 +72,7 @@ implements RecrawlDataSchema {
      * @see org.archive.modules.hq.recrawl.RecrawlDataSchema#createPut(org.archive.modules.CrawlURI)
      */
     public Put createPut(CrawlURI uri) {
-        byte[] key = Bytes.toBytes(PersistProcessor.persistKeyFor(uri));
+        byte[] key = rowKeyForURI(uri);
         Put p = new Put(key);
         JSONObject jo = new JSONObject();
         try {
@@ -83,17 +84,16 @@ implements RecrawlDataSchema {
             jo.put(PROPERTY_STATUS, uri.getFetchStatus());
             HttpMethod method = uri.getHttpMethod();
             if (method != null) {
-                String etag = getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
+                String etag = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
                 if (etag != null) {
                     // Etag is usually quoted
                     if (etag.length() >= 2 && etag.charAt(0) == '"' && etag.charAt(etag.length() - 1) == '"')
                         etag = etag.substring(1, etag.length() - 1);
                     jo.put(PROPERTY_ETAG, etag);
                 }
-                String lastmod = getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
+                String lastmod = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
                 if (lastmod != null) {
-                    // XXX value is not used anywhere, should it be?
-                    long lastmod_sec = parseHttpDate(lastmod);
+                    long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
                     if (lastmod_sec == 0) {
                         try {
                             lastmod_sec = uri.getFetchCompletedTime();
@@ -134,8 +134,15 @@ implements RecrawlDataSchema {
             return;
         }
 
-        Map<String, Object> history = getFetchHistory(curi);
-        byte[] jsonBytes = result.getValue(columnFamily, column);
+        KeyValue rkv = result.getColumnLatest(columnFamily, column);
+        long timestamp = rkv.getTimestamp();
+        Map<String, Object> history = FetchHistoryHelper.getFetchHistory(curi, timestamp, historyLength);
+        if (history == null) {
+            // crawl history array is fully occupied by crawl history entries
+            // newer than timestamp.
+            return;
+        }
+        byte[] jsonBytes = rkv.getValue();
         if (jsonBytes != null) {
             JSONObject jo = null;
             try {
@@ -159,7 +166,7 @@ implements RecrawlDataSchema {
                 }
                 long lastmod = jo.optLong(PROPERTY_LAST_MODIFIED);
                 if (lastmod > 0) {
-                    history.put(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER, formatHttpDate(lastmod));
+                    history.put(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER, FetchHistoryHelper.formatHttpDate(lastmod));
                 }
             }
         }
