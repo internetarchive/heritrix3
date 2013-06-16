@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
+import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
@@ -301,8 +302,13 @@ public class SingleHBaseTable extends HBaseTableBean {
             table = t;
             tableError = 0;
             return true;
+        } catch (TableNotFoundException ex) {
+            // ex.getMessage() only has table name. be a little bit more friendly.
+            LOG.warn("failed to connect to HTable \"" + htableName + "\": Table Not Found");
+            tableError = System.currentTimeMillis();
+            return false;
         } catch (IOException ex) {
-            LOG.warn("failed to connecto HTable \"" + htableName + "\" (" + ex.getMessage() + ")");
+            LOG.warn("failed to connect to HTable \"" + htableName + "\" (" + ex.getMessage() + ")");
             tableError = System.currentTimeMillis();
             return false;
         }
