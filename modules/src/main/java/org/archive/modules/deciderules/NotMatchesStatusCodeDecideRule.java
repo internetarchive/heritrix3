@@ -4,11 +4,11 @@ import org.archive.modules.CrawlURI;
 import org.apache.commons.httpclient.HttpMethod;
 
 /**
- * Provides a rule that returns "true" for any URIs which has an HTTP
- * status code that does not fall within the provided inclusive
- * range. For instance, to reject any URIs with a "client error"
- * status code you must provide the range 400 to 499.
- *
+ * Provides a rule that returns "true" for any CrawlURIs which has a fetch
+ * status code that does not fall within the provided inclusive range. For
+ * instance, to reject any URIs with a "client error" status code you must
+ * provide the range 400 to 499.
+ * 
  * @author cmiles74
  */
 public class NotMatchesStatusCodeDecideRule extends PredicatedDecideRule {
@@ -86,33 +86,28 @@ public class NotMatchesStatusCodeDecideRule extends PredicatedDecideRule {
     }
 
     /**
-     * Returns "true" if the provided CrawlURI has an HttpMethod with
-     * a status code that does not fall within this instance's
-     * specified range.
-     *
-     * @param CrawlURI The URI to be evaluated
-     * @return true If the URI has an HttpMethod with a status code
-     * within this instances bounds
+     * Returns "true" if the provided CrawlURI has a fetch status that does not
+     * fall within this instance's specified range.
+     * 
+     * @param CrawlURI
+     *            The URI to be evaluated
+     * @return true If the CrawlURI has a fetch status outside the specified
+     *         range
      */
     @Override
     protected boolean evaluate(CrawlURI uri) {
 
-        // by default, we'll return true
+        // by default, we'll return false
         boolean value = false;
 
-        HttpMethod httpMethod = uri.getHttpMethod();
+        int statusCode = uri.getFetchStatus();
 
-        if(httpMethod != null) {
+        if (statusCode <= getLowerBound().intValue()
+                || statusCode >= getUpperBound().intValue()) {
 
-            int statusCode = httpMethod.getStatusCode();
-
-            if(statusCode <= getLowerBound().intValue()
-               || statusCode >= getUpperBound().intValue()) {
-
-                value = true;
-            }
+            value = true;
         }
 
-        return(value);
+        return (value);
     }
 }

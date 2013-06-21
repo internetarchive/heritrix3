@@ -20,10 +20,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Youtube stream URI extractor.
- * This will check the content of the youtube watch page looking for the url_encoded_fmt_stream_map json value.
- * The json object is decoded and the stream URIs are constructed and queued.
+ * Youtube stream URI extractor. This will check the content of the youtube
+ * watch page looking for the url_encoded_fmt_stream_map json value. The json
+ * object is decoded and the stream URIs are constructed and queued.
  * 
+ * <pre>
+ * {@code
  * <bean id="extractorYoutubeFormatStream" class="org.archive.modules.extractor.ExtractorYoutubeFormatStream">
  *  <property name="enabled" value="false" /> <!-- enable via sheet for http://(com,youtube, -->
  *  <property name="extractLimit" value="1" />
@@ -38,10 +40,12 @@ import org.json.JSONObject;
  *   </list>
  *  </property>
  * </bean>
+ * }
+ * </pre>
  * 
  * @contributor adam
  * @contributor nlevitt
- *
+ * 
  */
 public class ExtractorYoutubeFormatStream extends Extractor {
     private static Logger logger =
@@ -72,9 +76,8 @@ public class ExtractorYoutubeFormatStream extends Extractor {
     /**
      * Itag priority list. Youtube itag parameter specifies the video and audio
      * format and quality. The default is an empty list, which tells the
-     * extractor to extract up to extractLimit video urls. When the
-     * list is not empty, only video urls with itag values in the list are
-     * extracted.
+     * extractor to extract up to extractLimit video urls. When the list is not
+     * empty, only video urls with itag values in the list are extracted.
      * 
      * @see <a
      *      href="http://en.wikipedia.org/wiki/YouTube">http://en.wikipedia.org/wiki/YouTube</a>
