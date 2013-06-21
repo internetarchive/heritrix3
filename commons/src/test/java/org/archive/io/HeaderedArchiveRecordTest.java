@@ -82,6 +82,7 @@ public class HeaderedArchiveRecordTest extends TestCase {
 
     public void testParseHttpHeadersInARC() throws IOException {
         final int len = HTTPHEADER.length() + BODY.length();
+        final int contentLength = BODY.length();
         final String url = "http://www.ly.gov.tw:80/accpart.htm";
         final String hdr = HTTPHEADER + BODY;
         // Interesting difference between ARCRecord and WARCRecord is that the
@@ -121,6 +122,10 @@ public class HeaderedArchiveRecordTest extends TestCase {
 
             public long getLength() {
                 return len;
+            }
+            
+            public long getContentLength() {
+            	return contentLength;
             }
 
             public String getMimetype() {

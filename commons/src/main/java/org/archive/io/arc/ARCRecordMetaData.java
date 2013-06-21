@@ -129,6 +129,14 @@ public class ARCRecordMetaData implements ArchiveRecordHeader, ARCConstants {
         return Long.parseLong((String)this.headerFields.
             get(LENGTH_FIELD_KEY));
     }
+    
+    /**
+     * @return Return Content-Length of the contents of the record
+     * Same as record length for arcs? TODO
+     */
+    public long getContentLength() {
+    	return getLength();
+    }
 
     /**
      * @return Header url.

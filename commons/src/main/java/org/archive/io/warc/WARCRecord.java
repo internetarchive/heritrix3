@@ -168,14 +168,21 @@ public class WARCRecord extends ArchiveRecord implements WARCConstants {
 				return this.headers.get(key);
 			}
 
-			public long getLength() {
+			// Returns just the Content-Length of the warc record
+			public long getContentLength() {
 				Object o = this.headers.get(CONTENT_LENGTH);
 				if (o == null) {
 					return -1;
 				}
 				long contentLength = (o instanceof Long)?
                     ((Long)o).longValue(): Long.parseLong((String)o);
-                return contentLength + contentOffset;
+                return contentLength;
+			}
+			
+			// Returns the full record length
+			public long getLength()
+			{
+				return getContentLength() + contentOffset;
 			}
 
 			public String getMimetype() {

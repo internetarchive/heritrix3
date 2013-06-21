@@ -38,6 +38,12 @@ public interface ArchiveRecordHeader {
      * @return Return length of record.
      */
     public abstract long getLength();
+    
+    /**
+     * @return Return Content-Length of the contents of the record
+     */
+    public abstract long getContentLength();
+
 
     /**
      * @return Record subject-url.
