@@ -126,7 +126,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
                 }
             } catch (JSONException e) {
                 logger.log(Level.WARNING,
-                        "Error parsing JSON object - Skipping: " + jsonStr, e);
+                        "Error parsing JSON object - Skipping extraction", e);
             }
         }
         TextUtils.recycleMatcher(matcher);
