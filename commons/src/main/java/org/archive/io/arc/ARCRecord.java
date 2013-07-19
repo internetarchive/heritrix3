@@ -573,6 +573,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         String statusLine;
         byte[] statusBytes;
         int eolCharCount = 0;
+        int errOffset = 0;
         
         // Read status line, skipping any errant http headers found before it
         // This allows a larger number of 'corrupt' arcs -- where headers were accidentally
@@ -599,6 +600,13 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         	if (!statusLine.contains(":") && StatusLine.startsWithHTTP(statusLine)) {
         		break;
         	}
+        	
+        	// Add bytes read to error "offset" to add to position
+        	errOffset += statusBytes.length;
+        }
+        
+        if (errOffset > 0) {
+            this.incrementPosition(errOffset);
         }
         
         if ((statusLine == null) ||
