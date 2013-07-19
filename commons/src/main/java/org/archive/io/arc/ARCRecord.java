@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.util.EncodingUtil;
 import org.apache.commons.lang.StringUtils;
@@ -570,15 +569,38 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
             getHeader().getLength() <= MIN_HTTP_HEADER_LENGTH) {
             return null;
         }
-        byte [] statusBytes = LaxHttpParser.readRawLine(getIn());
-        int eolCharCount = getEolCharsCount(statusBytes);
-        if (eolCharCount <= 0) {
-            throw new RecoverableIOException(
+        
+        String statusLine;
+        byte[] statusBytes;
+        int eolCharCount = 0;
+        
+        // Read status line, skipping any errant http headers found before it
+        // This allows a larger number of 'corrupt' arcs -- where headers were accidentally
+        // inserted before the status line to be readable
+        while (true) {
+        	statusBytes = LaxHttpParser.readRawLine(getIn());
+        	eolCharCount = getEolCharsCount(statusBytes);
+        	if (eolCharCount <= 0) {
+        		throw new RecoverableIOException(
                 "Failed to read http status where one was expected: " 
                 + ((statusBytes == null) ? "" : new String(statusBytes)));
+        	}
+        
+        	statusLine = EncodingUtil.getString(statusBytes, 0,
+        			statusBytes.length - eolCharCount, ARCConstants.DEFAULT_ENCODING);
+        	
+        	// If a null or DELETED break immediately
+        	if ((statusLine == null) || statusLine.startsWith("DELETED")) {
+        		break;
+        	}
+        	
+        	// If it's actually the status line, break, otherwise continue skipping any
+        	// previous header values
+        	if (!statusLine.contains(":") && StatusLine.startsWithHTTP(statusLine)) {
+        		break;
+        	}
         }
-        String statusLine = EncodingUtil.getString(statusBytes, 0,
-            statusBytes.length - eolCharCount, ARCConstants.DEFAULT_ENCODING);
+        
         if ((statusLine == null) ||
                 !StatusLine.startsWithHTTP(statusLine)) {
             if (statusLine.startsWith("DELETED")) {
