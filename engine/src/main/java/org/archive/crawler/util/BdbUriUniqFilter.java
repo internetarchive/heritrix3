@@ -320,11 +320,11 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         
         OperationStatus status = null;
         try {
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.FINE)) {
                 started = System.currentTimeMillis();
             }
             status = alreadySeen.putNoOverwrite(null, key, ZERO_LENGTH_ENTRY);
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.FINE)) {
                 aggregatedLookupTime +=
                     (System.currentTimeMillis() - started);
             }
