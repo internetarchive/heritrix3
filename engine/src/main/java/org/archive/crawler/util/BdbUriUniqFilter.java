@@ -38,6 +38,7 @@ import org.springframework.context.Lifecycle;
 import st.ata.util.FPGenerator;
 
 import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
@@ -302,16 +303,18 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
      */
     public static long createKey(CharSequence uri) {
         String url = uri.toString();
+        long schemeHostKeyPart = calcSchemeHostKeyPart(url);
+        return schemeHostKeyPart | (FPGenerator.std40.fp(url) >>> 24);
+    }
+
+    protected static long calcSchemeHostKeyPart(String url) {
         int index = url.indexOf(COLON_SLASH_SLASH);
         if (index > 0) {
             index = url.indexOf('/', index + COLON_SLASH_SLASH.length());
         }
         CharSequence hostPlusScheme = (index == -1)? url: url.subSequence(0, index);
-        long tmp = FPGenerator.std24.fp(hostPlusScheme);
-        return tmp | (FPGenerator.std40.fp(url) >>> 24);
+        return FPGenerator.std24.fp(hostPlusScheme);
     }
-
-
 
     protected boolean setAdd(CharSequence uri) {
         DatabaseEntry key = new DatabaseEntry();
@@ -395,4 +398,33 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }
+
+    /**
+     * Forget all entries that match the scheme+host+port of the given key, so
+     * that they can be crawled again if discovered again. Expensive operation.
+     * 
+     * <p>
+     * Because of the way keys are calculated, scheme+host+port is the only
+     * grouping of urls that is feasible to forget in bulk. See
+     * {@link #createKey(CharSequence)}
+     * 
+     * @param schemeHost
+     */
+    public void forgetSchemeHost(String schemeHost) {
+        long schemeHostKeyPart = calcSchemeHostKeyPart(schemeHost);
+        
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        Cursor cursor = alreadySeen.openCursor(null, null);
+        while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
+            long alreadySeenKey = LongBinding.entryToLong(key);
+            System.out.printf("schemeHostKeyPart=%017x alreadySeenKey=%017x\n", schemeHostKeyPart, alreadySeenKey);
+            if ((alreadySeenKey & 0xffffff0000000000l) == schemeHostKeyPart) {
+                cursor.delete();
+                count.decrementAndGet();
+            }
+        }
+        cursor.close(); 
+    }
+    
 } //EOC
