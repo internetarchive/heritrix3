@@ -197,7 +197,6 @@ implements UriUniqFilter.CrawlUriReceiver {
                 "https://forgetme.com/baz",
         }) {
             CrawlURI curi = new CrawlURI(UURIFactory.getInstance(uri));
-            System.out.println(uri + " => " + curi);
             this.filter.add(curi.getUURI().toCustomString(), curi);
         }
 

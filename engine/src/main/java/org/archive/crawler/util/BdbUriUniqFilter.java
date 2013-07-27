@@ -416,15 +416,18 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         Cursor cursor = alreadySeen.openCursor(null, null);
+        long forgottenCount = 0l;
         while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
             long alreadySeenKey = LongBinding.entryToLong(key);
-            System.out.printf("schemeHostKeyPart=%017x alreadySeenKey=%017x\n", schemeHostKeyPart, alreadySeenKey);
+            // System.out.printf("schemeHostKeyPart=%017x alreadySeenKey=%017x\n", schemeHostKeyPart, alreadySeenKey);
             if ((alreadySeenKey & 0xffffff0000000000l) == schemeHostKeyPart) {
                 cursor.delete();
                 count.decrementAndGet();
+                forgottenCount++;
             }
         }
-        cursor.close(); 
+        cursor.close();
+        logger.info("forgot " + forgottenCount + " urls from scheme+host+port " + schemeHost + " (" + count.get() + " urls left)");
     }
     
 } //EOC
