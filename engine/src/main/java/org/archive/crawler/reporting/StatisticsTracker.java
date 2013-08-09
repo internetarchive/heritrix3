@@ -338,6 +338,8 @@ public class StatisticsTracker
     public void stop() {
         isRunning = false;
         executor.shutdownNow();
+        progressStatisticsEvent();
+        dumpReports();
     }
     
     @SuppressWarnings("unchecked")
@@ -560,10 +562,8 @@ public class StatisticsTracker
     }
 
     public void crawlEnded(String sExitMessage) {
-        logNote("CRAWL ENDED - " + sExitMessage);
         crawlEndTime = System.currentTimeMillis();
-        progressStatisticsEvent();
-        dumpReports();
+        logNote("CRAWL ENDED - " + sExitMessage);
     }
 
     /**

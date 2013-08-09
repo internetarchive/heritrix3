@@ -22,9 +22,9 @@ package org.archive.crawler.framework;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.reporting.AlertThreadGroup;
@@ -70,6 +70,9 @@ public class ToePool extends ThreadGroup implements Reporter {
                 toe.interrupt();
             }
         }
+        
+        // see HER-2036
+        this.controller = null;
     }
 
     /**
@@ -259,8 +262,18 @@ public class ToePool extends ThreadGroup implements Reporter {
         Map<String,Object> data = new LinkedHashMap<String, Object>();
 
         data.put("toeCount", getToeCount());
-        data.put("steps", steps.getSortedByCounts());
-        data.put("processors", processors.getSortedByCounts());
+        
+        LinkedList<String> unwound = new LinkedList<String>(); 
+        for (Entry<?, Long> step: steps.getSortedByCounts()) {
+            unwound.add(step.getValue() + " " + step.getKey());
+        }
+        data.put("steps", unwound);
+
+        unwound = new LinkedList<String>(); 
+        for (Entry<?, Long> proc: processors.getSortedByCounts()) {
+            unwound.add(proc.getValue() + " " + proc.getKey());
+        }
+        data.put("processors", unwound);
         
         return data;
     }
@@ -272,30 +285,32 @@ public class ToePool extends ThreadGroup implements Reporter {
         w.print(map.get("toeCount"));
         w.print(" threads: ");
         
-        TreeSet<Map.Entry<Object,Long>> sortedSteps = (TreeSet<Entry<Object, Long>>) map.get("steps");
-        if(sortedSteps.size()==0) {
-            return;
+        LinkedList<String> sortedSteps = (LinkedList<String>)map.get("steps");
+        {
+        	Iterator<String> iter = sortedSteps.iterator();
+        	if (!iter.hasNext()) {
+        		return;
+        	}
+        	w.print(iter.next());
+        	if (iter.hasNext()) {
+        		w.print(", ");
+        		w.print(iter.next());
+        		if (iter.hasNext()) {
+        			w.print(", etc...");
+        		}
+        	}
+        	w.print("; ");
         }
-        w.print(Histotable.entryString(sortedSteps.first()));
-        if(sortedSteps.size()>1) {
-            Iterator<Map.Entry<Object,Long>> iter = sortedSteps.iterator();
-            iter.next();
-            w.print(", ");
-            w.print(Histotable.entryString(iter.next()));
-        }
-        if(sortedSteps.size()>2) {
-            w.print(", etc...");
-        }
-        w.print("; ");
-        TreeSet<Map.Entry<Object,Long>> sortedProcessors = (TreeSet<Entry<Object, Long>>) map.get("processors");
-        w.print(Histotable.entryString(sortedProcessors.first()));
-        if(sortedProcessors.size()>1) {
-            Iterator<Map.Entry<Object,Long>> iter = sortedProcessors.iterator();
-            iter.next();
-            while(iter.hasNext()) {
-                w.print(", ");
-                w.print(Histotable.entryString(iter.next()));
-            }
+        LinkedList<String> sortedProcesses = (LinkedList<String>)map.get("processors");
+        {
+        	Iterator<String> iter = sortedProcesses.iterator();
+        	if (iter.hasNext()) {
+        		w.print(iter.next());
+        		while (iter.hasNext()) {
+        			w.print(", ");
+        			w.print(iter.next());
+        		}
+        	}
         }
 
     }

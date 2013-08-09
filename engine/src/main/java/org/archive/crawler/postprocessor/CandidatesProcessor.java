@@ -146,33 +146,88 @@ public class CandidatesProcessor extends Processor {
         return true;
     }
 
-    /* (non-Javadoc)
+    /**
+     * Run candidatesChain on a single candidate CrawlURI; if its
+     * reported status is nonnegative, schedule to frontier. 
+     * 
+     * Also applies special handling of discovered URIs that by
+     * convention we want to treat as seeds (which then may be
+     * scheduled indirectly via addSeed). 
+     * 
+     * @param candidate CrawlURI to consider 
+     * @param source CrawlURI from which candidate was discovered/derived
+     * @return candidate's status code at end of candidate chain execution
+     * @throws InterruptedException
+     */
+    protected int runCandidateChain(CrawlURI candidate, CrawlURI source) throws InterruptedException {
+        // at least for duration of candidatechain, offer
+        // access to full CrawlURI of via
+        candidate.setFullVia(source); 
+        sheetOverlaysManager.applyOverlaysTo(candidate);
+        try {
+            KeyedProperties.clearOverridesFrom(source); 
+            KeyedProperties.loadOverridesFrom(candidate);
+            
+            // apply special seed-status promotion
+            if(getSeedsRedirectNewSeeds() && source.isSeed() 
+                    && candidate.getLastHop().equals(Hop.REFER.getHopString())
+                    && candidate.getHopCount() < SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS) {
+                candidate.setSeed(true); 
+            }
+            
+            getCandidateChain().process(candidate, null);
+            int statusAfterCandidateChain = candidate.getFetchStatus();
+            if(statusAfterCandidateChain>=0) {
+                if(checkForSeedPromotion(candidate)) {
+                    /*
+                     * We want to guarantee crawling of seed version of
+                     * CrawlURI even if same url has already been enqueued,
+                     * see https://webarchive.jira.com/browse/HER-1891
+                     */
+                    candidate.setForceFetch(true);
+                    getSeeds().addSeed(candidate); // triggers scheduling
+                } else {
+                    
+                    frontier.schedule(candidate);
+                    
+                }
+            } 
+            return statusAfterCandidateChain;
+        } finally {
+            KeyedProperties.clearOverridesFrom(candidate); 
+            KeyedProperties.loadOverridesFrom(source);
+        }        
+    }
+    
+    /**
+     * Run candidates chain on each of (1) any prerequisite, if present; 
+     * (2) any outCandidates, if present; (3) all outlinks, if appropriate
+     * 
      * @see org.archive.modules.Processor#innerProcess(org.archive.modules.CrawlURI)
      */
     @Override
     protected void innerProcess(final CrawlURI curi) throws InterruptedException {
-        // Handle any prerequisites when S_DEFERRED for prereqs
+        // (1) Handle any prerequisites when S_DEFERRED for prereqs
         if (curi.hasPrerequisiteUri() && curi.getFetchStatus() == S_DEFERRED) {
             CrawlURI prereq = curi.getPrerequisiteUri();
-            prereq.setFullVia(curi); 
-            sheetOverlaysManager.applyOverlaysTo(prereq);
-            try {
-                KeyedProperties.clearOverridesFrom(curi); 
-                KeyedProperties.loadOverridesFrom(prereq);
-                
-                getCandidateChain().process(prereq, null);
-                if(prereq.getFetchStatus()>=0) {
-                    frontier.schedule(prereq);
-                } else {
-                    curi.setFetchStatus(S_PREREQUISITE_UNSCHEDULABLE_FAILURE);
-                }
-            } finally {
-                KeyedProperties.clearOverridesFrom(prereq); 
-                KeyedProperties.loadOverridesFrom(curi);
+            
+            int prereqStatus = runCandidateChain(prereq, curi);
+            
+            if (prereqStatus<0) {
+                curi.setFetchStatus(S_PREREQUISITE_UNSCHEDULABLE_FAILURE);
             }
             return;
         }
 
+        // (2) NEW: also (and before-outlinks) run outCandidates (usually empty;
+        // only current use is a form-submission CrawlURI; could 
+        // potentially take over prerequisite duties for consistency
+        for(CrawlURI candidate : curi.getOutCandidates()) {
+            
+            runCandidateChain(candidate, curi);
+            
+        }
+        
         // Only consider candidate links of error pages if configured to do so
         if (!getProcessErrorOutlinks() 
                 && (curi.getFetchStatus() < 200 || curi.getFetchStatus() >= 400)) {
@@ -180,49 +235,22 @@ public class CandidatesProcessor extends Processor {
             return;
         }
 
+        // (3) Handle outlinks (usual bulk of discoveries) 
         for (Link wref: curi.getOutLinks()) {
             CrawlURI candidate;
             try {
                 candidate = curi.createCrawlURI(curi.getBaseURI(),wref);
-                // at least for duration of candidatechain, offer
-                // access to full CrawlURI of via
-                candidate.setFullVia(curi); 
             } catch (URIException e) {
                 loggerModule.logUriError(e, curi.getUURI(), 
                         wref.getDestination().toString());
                 continue;
             }
-            sheetOverlaysManager.applyOverlaysTo(candidate);
-            try {
-                KeyedProperties.clearOverridesFrom(curi); 
-                KeyedProperties.loadOverridesFrom(candidate);
-                
-                if(getSeedsRedirectNewSeeds() && curi.isSeed() 
-                        && wref.getHopType() == Hop.REFER
-                        && candidate.getHopCount() < SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS) {
-                    candidate.setSeed(true); 
-                }
-                getCandidateChain().process(candidate, null); 
-                if(candidate.getFetchStatus()>=0) {
-                    if(checkForSeedPromotion(candidate)) {
-                        /*
-                         * We want to guarantee crawling of seed version of
-                         * CrawlURI even if same url has already been enqueued,
-                         * see https://webarchive.jira.com/browse/HER-1891
-                         */
-                        candidate.setForceFetch(true);
-                        
-                        getSeeds().addSeed(candidate);
-                    } else {
-                        frontier.schedule(candidate);
-                    }
-                    curi.getOutCandidates().add(candidate);
-                }
-                
-            } finally {
-                KeyedProperties.clearOverridesFrom(candidate); 
-                KeyedProperties.loadOverridesFrom(curi);
-            }
+            
+            runCandidateChain(candidate, curi);
+
+            // TODO: evaluate if this necessary (anyone uses?); wise (bloat?) 
+            curi.getOutCandidates().add(candidate);
+
         }
         curi.getOutLinks().clear();
     }

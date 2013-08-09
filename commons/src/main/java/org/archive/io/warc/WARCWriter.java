@@ -348,7 +348,7 @@ implements WARCConstants {
     public URI writeWarcinfoRecord(String filename, final String description)
         	throws IOException {
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.WARCINFO);
+        recordInfo.setType(WARCRecordType.warcinfo);
         recordInfo.setCreate14DigitDate(ArchiveUtils.getLog14Date());
         recordInfo.setMimetype("application/warc-fields");
 
@@ -379,7 +379,7 @@ implements WARCConstants {
         recordInfo.setContentLength((long) warcinfoBody.length);
         recordInfo.setEnforceLength(true);
         
-        recordInfo.setRecordId(generateRecordId(TYPE, WARCRecordType.WARCINFO.toString()));
+        recordInfo.setRecordId(generateRecordId(TYPE, WARCRecordType.warcinfo.toString()));
         
         writeRecord(recordInfo);
         

@@ -19,9 +19,12 @@
 package org.archive.modules.extractor;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -57,6 +60,14 @@ public class Link implements Serializable, Comparable<Link> {
 
     /** hop-type */
     private Hop hop;
+
+    /**
+     * Flexible dynamic attributes list.
+     * <p>
+     * See further {@link Link#getData()}
+     */
+    protected Map<String,Object> data;
+
     
     /**
      * Create a Link with the given fields.
@@ -106,8 +117,36 @@ public class Link implements Serializable, Comparable<Link> {
     public String toString() {
         return this.destination + " " + hop.getHopChar() + " " + this.context;
     }
+    /** 
+     * Attribute list
+     * <p>
+     * By convention the attribute list is keyed by constants found in the
+     * {@link CoreAttributeConstants} interface.  Use this list to carry
+     * data or state produced by custom processors rather change the
+     * classes {@link CrawlURI} or this class, CrawlURI.
+     * <p>
+     * This list becomes {@link CrawlURI#getData()} when the Link is promoted to CrawlURI via
+     * {@link CrawlURI#createCrawlURI(UURI, Link)} 
+     * <p>
+     * If the list is null when this method is invoked, a new instance will be created and returned.
+     * 
+     * @returns a flexible map of key/value pairs for storing
+     *   status of this URI for use by other processors. 
+    */
+    public Map<String, Object> getData() {
+        if (data == null) {
+            data = new HashMap<String,Object>();
+        }
+        return data;
+    }
     
-    
+    /**
+     * @return true if data map is not null
+     */
+    public boolean hasData() {
+        return data != null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Link)) {

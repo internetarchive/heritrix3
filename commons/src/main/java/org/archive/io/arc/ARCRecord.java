@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.util.EncodingUtil;
 import org.apache.commons.lang.StringUtils;
@@ -41,6 +40,7 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.RecoverableIOException;
 import org.archive.util.InetAddressUtil;
+import org.archive.util.LaxHttpParser;
 import org.archive.util.TextUtils;
 
 /**
@@ -569,15 +569,46 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
             getHeader().getLength() <= MIN_HTTP_HEADER_LENGTH) {
             return null;
         }
-        byte [] statusBytes = HttpParser.readRawLine(getIn());
-        int eolCharCount = getEolCharsCount(statusBytes);
-        if (eolCharCount <= 0) {
-            throw new RecoverableIOException(
+        
+        String statusLine;
+        byte[] statusBytes;
+        int eolCharCount = 0;
+        int errOffset = 0;
+        
+        // Read status line, skipping any errant http headers found before it
+        // This allows a larger number of 'corrupt' arcs -- where headers were accidentally
+        // inserted before the status line to be readable
+        while (true) {
+        	statusBytes = LaxHttpParser.readRawLine(getIn());
+        	eolCharCount = getEolCharsCount(statusBytes);
+        	if (eolCharCount <= 0) {
+        		throw new RecoverableIOException(
                 "Failed to read http status where one was expected: " 
                 + ((statusBytes == null) ? "" : new String(statusBytes)));
+        	}
+        
+        	statusLine = EncodingUtil.getString(statusBytes, 0,
+        			statusBytes.length - eolCharCount, ARCConstants.DEFAULT_ENCODING);
+        	
+        	// If a null or DELETED break immediately
+        	if ((statusLine == null) || statusLine.startsWith("DELETED")) {
+        		break;
+        	}
+        	
+        	// If it's actually the status line, break, otherwise continue skipping any
+        	// previous header values
+        	if (!statusLine.contains(":") && StatusLine.startsWithHTTP(statusLine)) {
+        		break;
+        	}
+        	
+        	// Add bytes read to error "offset" to add to position
+        	errOffset += statusBytes.length;
         }
-        String statusLine = EncodingUtil.getString(statusBytes, 0,
-            statusBytes.length - eolCharCount, ARCConstants.DEFAULT_ENCODING);
+        
+        if (errOffset > 0) {
+            this.incrementPosition(errOffset);
+        }
+        
         if ((statusLine == null) ||
                 !StatusLine.startsWithHTTP(statusLine)) {
             if (statusLine.startsWith("DELETED")) {
@@ -613,7 +644,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         // Now read rest of the header lines looking for the separation
         // between header and body.
         for (byte [] lineBytes = null; true;) {
-            lineBytes = HttpParser.readRawLine(getIn());
+            lineBytes = LaxHttpParser.readRawLine(getIn());
             eolCharCount = getEolCharsCount(lineBytes);
             if (eolCharCount <= 0) {
             	if (getIn().available() == 0) {
@@ -649,7 +680,7 @@ public class ARCRecord extends ArchiveRecord implements ARCConstants {
         // Read the status line.  Don't let it into the parseHeaders function.
         // It doesn't know what to do with it.
         bais.read(statusBytes, 0, statusBytes.length);
-        this.httpHeaders = HttpParser.parseHeaders(bais,
+        this.httpHeaders = LaxHttpParser.parseHeaders(bais,
             ARCConstants.DEFAULT_ENCODING);
         this.getMetaData().setStatusCode(Integer.toString(getStatusCode()));
         bais.reset();

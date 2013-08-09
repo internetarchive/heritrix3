@@ -22,7 +22,7 @@ package org.archive.crawler.restlet;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,7 +44,6 @@ import org.restlet.data.Response;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.InvalidPropertyException;
 
 /**
  * Shared superclass for resources that represent functional aspects
@@ -91,6 +90,7 @@ public abstract class JobRelatedResource extends BaseResource {
             return;
         }
 
+
         Reference baseRef = getRequest().getResourceRef().getBaseRef();
         
         if (baseRef.getPath().endsWith("beans")) {
@@ -135,84 +135,6 @@ public abstract class JobRelatedResource extends BaseResource {
                 }
             }
         }
-    }
-    
-    /**
-     * Starting at (and including) the given object, write a hierarchical
-     * list of named beans in HTML to the PrintWriter. 
-     * 
-     * @param pw PrintWriter
-     * @param obj object to write, if it has a beanName, as a <LI>
-     * @param prefix URI prefix to apply before names for browse links
-     * @param alreadyWritten Set of already-written objects whose display 
-     * should be suppressed
-     */
-    @SuppressWarnings("unchecked")
-    protected void writeNestedNames(PrintWriter pw, Object obj, String prefix, Set<Object> alreadyWritten) {
-        // don't consider nulls, objects already shown, or spring classes
-        if(obj==null 
-            || alreadyWritten.contains(obj) 
-            || obj.getClass().getName().startsWith("org.springframework.")) {
-            return;
-        }
-        
-        String close = "";
-        if(getBeanToNameMap().containsKey(obj)) {        
-            String name = getBeanToNameMap().get(obj);
-            pw.println("<li><a href='"+prefix+name+"'>"+name+"</a>");
-            pw.println("<span style='color:#999'>"+obj.getClass().getName()+"</span><ul>");
-            close = "</ul></li>\n";
-        }
-        if(!alreadyWritten.contains(obj)) {
-            alreadyWritten.add(obj);
-            try {
-                BeanWrapperImpl bwrap = new BeanWrapperImpl(obj); 
-                for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
-                    if(pd.getReadMethod()!=null) {
-                        String propName = pd.getName();
-                        writeNestedNames(pw, bwrap.getPropertyValue(propName), prefix, alreadyWritten);
-                    } 
-                }
-                if(obj.getClass().isArray()) {
-                    List<?> list = Arrays.asList(obj);
-                    for(int i = 0; i < list.size(); i++) {
-                        writeNestedNames(pw, list.get(i), prefix, alreadyWritten);
-                    }
-                }
-                if(obj instanceof Iterable) {
-                    for (Object next : (Iterable<Object>)obj) {
-                        writeNestedNames(pw, next, prefix, alreadyWritten);
-                    }
-                }
-            } catch (InvalidPropertyException ipe) {
-                pw.println("<span style='color:red'>"+ipe.getMessage()+"</span>");
-            }
-        }
-        pw.print(close);
-    }
-
-
-    /**
-     * Write an HTML representation of the given object to the PrintWriter. 
-     * 
-     * @param pw PrintWriter
-     * @param field field name to display for object
-     * @param object object to write
-     */
-    protected void writeObject(PrintWriter pw, String field, Object object) {
-        writeObject(pw, field, object, new HashSet<Object>(), null);
-    }
-
-    /**
-     * Write an HTML representation of the given object to the PrintWriter. 
-     * 
-     * @param pw PrintWriter
-     * @param field field name to display for object
-     * @param object object to write
-     * @param beanPath beanPath prefix to apply to sub fields browse links
-     */
-    protected void writeObject(PrintWriter pw, String field, Object object, String beanPath) {
-        writeObject(pw, field, object, new HashSet<Object>(), beanPath);
     }
 
     /**
@@ -293,7 +215,7 @@ public abstract class JobRelatedResource extends BaseResource {
             return info;
         }
         if (alreadyWritten.contains(object)) {
-            info.put("propValuePreviouslyDescribed", null);
+            info.put("propValuePreviouslyDescribed", true);
             return info;
         }
 
@@ -328,13 +250,15 @@ public abstract class JobRelatedResource extends BaseResource {
         
         Collection<Object> propValues = new LinkedList<Object>();
         if(object.getClass().isArray()) {
-            Object[] array = (Object[])object;
-            for(int i = 0; i < array.length; i++) {
+        	// TODO: may want a special handling for an array of
+        	// primitive types?
+        	int len = Array.getLength(object);
+        	for (int i = 0; i < len; i++) {
                 if(beanPath!=null) {
                     beanPathPrefix = beanPath+"[";
                 }
                 // TODO: protect against overlong content? 
-                propValues.add(makePresentableMapFor(i + "", array[i],
+                propValues.add(makePresentableMapFor(i + "", Array.get(object, i),
                         alreadyWritten, beanPathPrefix));
             }
         }
@@ -404,120 +328,6 @@ public abstract class JobRelatedResource extends BaseResource {
         }
         return beanToNameMap;
     }
-        
-    /**
-     * Write an HTML representation of the given object to the PrintWriter. 
-     * 
-     * @param pw PrintWriter
-     * @param field field name to display for object
-     * @param object object to write
-     * @param alreadyWritten Set of objects to not redundantly write
-     * @param beanPathPrefix beanPath prefix to apply to sub fields browse links
-     */
-    protected void writeObject(PrintWriter pw, String field, Object object, HashSet<Object> alreadyWritten, String beanPathPrefix) {
-            String key = getBeanToNameMap().get(object);
-            String close = "";
-            String beanPath = beanPathPrefix;
-            if(StringUtils.isNotBlank(field)) {
-                pw.write("<tr>\n<td style='text-align:right;vertical-align:top'><b>");
-                String closeAnchor ="";
-                if(StringUtils.isNotBlank(beanPathPrefix)) {
-                    if(beanPathPrefix.endsWith(".")) {
-                        beanPath += field;
-                    } else if (beanPathPrefix.endsWith("[")) {
-                        beanPath += field + "]";
-                    }
-                    // url-encode because brackets are not allowed here according to validator.w3.org 
-                    pw.print("<a href='../beans/" + TextUtils.urlEscape(beanPath) + "'>");
-                    closeAnchor = "</a>";
-                }
-                pw.write(field);
-                pw.write(closeAnchor);
-                pw.write(":</b></td>\n<td>");
-                close="</td>\n</tr>\n";
-            }
-            if(object == null) {
-                pw.write("<i>null</i>");
-                pw.write(close);
-                return; 
-            }
-            if(object instanceof String) {
-                pw.write("\""+object+"\"");
-                pw.write(close);
-                return; 
-            }
-            if(BeanUtils.isSimpleValueType(object.getClass()) 
-                    || object instanceof File
-                    //|| BeanUtils.findEditorByConvention(object.getClass())!=null
-                    ) {     
-                pw.write(object.toString());
-                pw.write(close);
-                return;
-            }
-            if(alreadyWritten.contains(object)) {
-                pw.println("&uarr;");
-                pw.write(close);
-                return;
-            }
-            alreadyWritten.add(object); // guard against repeats and cycles
-            if(StringUtils.isNotBlank(key) && StringUtils.isNotBlank(field)) {
-                pw.println("<a href='../beans/"+key+"'>"+key+"</a>");
-                pw.write(close);
-                return;
-            }
-            pw.print("<fieldset style='display:inline;vertical-align:top'><legend>");
-
-            pw.println(object.getClass().getName()+"</legend>");
-            pw.println("<table>");
-            BeanWrapperImpl bwrap = new BeanWrapperImpl(object); 
-            for(PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
-                if(pd.getReadMethod()!=null && !pd.isHidden()) {
-                    String propName = pd.getName();
-                    if(beanPath!=null) {
-                        beanPathPrefix = beanPath+".";
-                    }
-                    writeObject(pw, propName, bwrap.getPropertyValue(propName), alreadyWritten, beanPathPrefix);
-                } 
-            }
-            if(object.getClass().isArray()) {
-                Object[] array = (Object[])object;
-                for(int i = 0; i < array.length; i++) {
-                    if(beanPath!=null) {
-                        beanPathPrefix = beanPath+"[";
-                    }
-                    // TODO: protect against overlong content? 
-                    writeObject(pw, i+"", array[i], alreadyWritten, beanPathPrefix);
-                }
-            }
-            if(object instanceof List) {
-                List<?> list = (List<?>)object;
-                for(int i = 0; i < list.size(); i++) {
-                    if(beanPath!=null) {
-                        beanPathPrefix = beanPath+"[";
-                    }
-                    // TODO: protect against overlong content? 
-                    writeObject(pw, i+"", list.get(i), alreadyWritten, beanPathPrefix);
-                }
-            } else if(object instanceof Iterable) {
-                @SuppressWarnings("unchecked")
-                Iterable<Object> itbl = (Iterable<Object>)object;
-                for (Object next : itbl) {
-                    writeObject(pw, "#", next, alreadyWritten, null);
-                }
-            }
-            if(object instanceof Map) {
-                for (Map.Entry<?, ?> entry : ((Map<?, ?>)object).entrySet()) {
-                    // TODO: protect against giant maps?
-                    if(beanPath!=null) {
-                        beanPathPrefix = beanPath+"[";
-                    }
-                    writeObject(pw, entry.getKey().toString(), entry.getValue(), alreadyWritten, beanPathPrefix);
-                }
-            }
-            pw.println("</table>");
-            pw.print("</fieldset>");
-            pw.write(close);
-        }
 
     /** suppress problematic properties */
     protected static HashSet<String> HIDDEN_PROPS = new HashSet<String>(

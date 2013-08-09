@@ -41,8 +41,10 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_U
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -55,7 +57,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.warc.WARCConstants.WARCRecordType;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
@@ -129,6 +131,13 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
     public void testBasics() throws InterruptedException, IOException {
         CrawlURI curi1 = new CrawlURI(UURIFactory.getInstance("http://example.org/1"));
+        // without Recorder, CrawlURI#getContentLength() returns zero, which makes
+        // loader().shoudProcess() return false.
+        Recorder rec = new Recorder(getTmpDir(), "rec");
+        curi1.setRecorder(rec);
+        // give Recorder some content so that getContentLength() returns non-zero.
+        InputStream is = rec.inputWrap(new ByteArrayInputStream("HTTP/1.0 200 OK\r\n\r\ntext.".getBytes()));
+        is.read(new byte[1024]);
         
         assertFalse(loader().shouldProcess(curi1));
         assertFalse(storer().shouldProcess(curi1));
@@ -168,6 +177,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         
         CrawlURI curi2 = new CrawlURI(UURIFactory.getInstance("http://example.org/2"));
         curi2.setContentDigest("sha1", Base32.decode("orfjublpcrnymm4seg5uk6vfoeu7kw6c"));
+        curi2.setRecorder(rec);
         
         assertFalse(curi2.hasContentDigestHistory());
         
@@ -278,11 +288,11 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             Iterator<ArchiveRecord> recordIterator = warcReader.iterator();
             
             ArchiveRecord record = recordIterator.next();
-            assertEquals(WARCRecordType.WARCINFO.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.warcinfo.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.RESPONSE.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.response.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals("141", record.getHeader().getHeaderValue(CONTENT_LENGTH));
             assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
@@ -290,20 +300,20 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.request.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.metadata.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_CONCURRENT_TO));
             
             // the all-important revisit record
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REVISIT.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.revisit.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO));
             assertEquals(NAMED_FIELD_TRUNCATED_VALUE_LENGTH, record.getHeader().getHeaderValue(HEADER_KEY_TRUNCATED));
@@ -320,12 +330,12 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.REQUEST.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.request.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
-            assertEquals(WARCRecordType.METADATA.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(WARCRecordType.metadata.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(curi2.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
 
             assertFalse(recordIterator.hasNext());

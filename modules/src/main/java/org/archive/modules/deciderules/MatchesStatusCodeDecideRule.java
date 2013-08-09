@@ -3,9 +3,10 @@ package org.archive.modules.deciderules;
 import org.archive.modules.CrawlURI;
 
 /**
- * Provides a rule that returns "true" for any URIs whose status falls within
- * the provided inclusive range. For instance, to select only URIs with a
- * "success" status code you must provide the range 200 to 299.
+ * Provides a rule that returns "true" for any CrawlURIs which have a fetch
+ * status code that falls within the provided inclusive range. For instance, to
+ * select only URIs with a "success" status code you must provide the range 200
+ * to 299.
  * 
  * @author cmiles74
  */
@@ -84,14 +85,28 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     }
 
     /**
+     * Returns "true" if the provided CrawlURI has a fetch status that falls
+     * within this instance's specified range.
+     * 
      * @param CrawlURI
      *            The URI to be evaluated
-     * @return true if {@link CrawlURI#getFetchStatus()} is within the specified
-     *         inclusive range
+     * @return true If the CrawlURI has a fetch status code within the specified
+     *         range.
      */
     @Override
     protected boolean evaluate(CrawlURI uri) {
-        return uri.getFetchStatus() >= getLowerBound().intValue()
-                && uri.getFetchStatus() <= getUpperBound().intValue();
+
+        // by default, we'll return false
+        boolean value = false;
+
+        int statusCode = uri.getFetchStatus();
+
+        if (statusCode >= getLowerBound().intValue()
+                && statusCode <= getUpperBound().intValue()) {
+
+            value = true;
+        }
+
+        return (value);
     }
 }

@@ -47,6 +47,9 @@ public class ReportGenResource extends JobRelatedResource {
 
     public Representation represent(Variant variant) throws ResourceException {
         // generate report
+        if (cj == null || cj.getCrawlController() == null) {
+            throw new ResourceException(500);
+        }
         File f = cj.getCrawlController().getStatisticsTracker().writeReportFile(reportClass); 
         if (f==null) {
             throw new ResourceException(500);

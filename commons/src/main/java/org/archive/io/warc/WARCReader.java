@@ -34,7 +34,6 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.commons.lang.NotImplementedException;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveRecord;
-import org.archive.io.warc.WARCConstants;
 
 /**
  * WARCReader.

@@ -20,8 +20,6 @@
 package org.archive.crawler.restlet;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,16 +29,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.crawler.framework.BeanLookupBindings;
-import org.archive.util.TextUtils;
+import org.archive.crawler.restlet.models.ScriptModel;
+import org.archive.crawler.restlet.models.ViewModel;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -52,7 +47,11 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.restlet.resource.WriterRepresentation;
-import org.springframework.context.ApplicationContext;
+
+import freemarker.template.Configuration;
+import freemarker.template.ObjectWrapper;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 /**
  * Restlet Resource which runs an arbitrary script, which is supplied
@@ -63,6 +62,7 @@ import org.springframework.context.ApplicationContext;
  * classpath will be available from a drop-down selector. 
  * 
  * @contributor gojomo
+ * @contributor adam-miller
  */
 public class ScriptResource extends JobRelatedResource {
     protected static ScriptEngineManager MANAGER = new ScriptEngineManager();
@@ -78,62 +78,47 @@ public class ScriptResource extends JobRelatedResource {
             }
         });
     }
-    protected String script = "";
-    protected Exception ex = null;
-    protected int linesExecuted = 0; 
-    protected String rawOutput = ""; 
-    protected String htmlOutput = "";
+    
     protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
+    private Configuration _templateConfiguration;
     
     public ScriptResource(Context ctx, Request req, Response res) throws ResourceException {
         super(ctx, req, res);
         setModifiable(true);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        
+        Configuration tmpltCfg = new Configuration();
+        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
+        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
+        setTemplateConfiguration(tmpltCfg);
+        
+        scriptingConsole = new ScriptingConsole(cj);
     }
+    public void setTemplateConfiguration(Configuration tmpltCfg) {
+        _templateConfiguration=tmpltCfg;
+    }
+    public Configuration getTemplateConfiguration(){
+        return _templateConfiguration;
+    }
+        
+    private ScriptingConsole scriptingConsole;
     
     @Override
     public void acceptRepresentation(Representation entity) throws ResourceException {
         Form form = getRequest().getEntityAsForm();
         chosenEngine = form.getFirstValue("engine");
-        script = form.getFirstValue("script");
+        String script = form.getFirstValue("script");
         if(StringUtils.isBlank(script)) {
             script="";
         }
 
         ScriptEngine eng = MANAGER.getEngineByName(chosenEngine);
         
-        StringWriter rawString = new StringWriter(); 
-        PrintWriter rawOut = new PrintWriter(rawString);
-        ApplicationContext appCtx = cj.getJobContext();
-        Bindings bindings = new BeanLookupBindings(appCtx);
-        bindings.put("rawOut", rawOut);
-        StringWriter htmlString = new StringWriter(); 
-        PrintWriter htmlOut = new PrintWriter(htmlString);
-        bindings.put("htmlOut", htmlOut);
-        bindings.put("job", cj);
-        bindings.put("appCtx", appCtx);
-        bindings.put("scriptResource", this);
-        try {
-            eng.eval(script, bindings);
-            linesExecuted = script.split("\r?\n").length;
-        } catch (ScriptException e) {
-            ex = e;
-        } catch (RuntimeException e) {
-            ex = e;
-        } finally {
-            rawOut.flush();
-            rawOutput = rawString.toString();
-            htmlOut.flush();
-            htmlOutput = htmlString.toString();
-
-            // the script could create an object that persists and retains a reference to the Bindings
-            bindings.put("rawOut", null);
-            bindings.put("htmlOut", null);
-            bindings.put("job", null);
-            bindings.put("appCtx", null);
-            bindings.put("scriptResource", null);
-        }
+        scriptingConsole.bind("scriptResource",  this);
+        scriptingConsole.execute(eng, script);
+        scriptingConsole.unbind("scriptResource");
+        
         //TODO: log script, results somewhere; job log INFO? 
         
         getResponse().setEntity(represent());
@@ -144,7 +129,7 @@ public class ScriptResource extends JobRelatedResource {
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
-                    XmlMarshaller.marshalDocument(writer,"script", makePresentableMap());
+                    XmlMarshaller.marshalDocument(writer,"script", makeDataModel());
                 }
             };
         } else {
@@ -159,14 +144,6 @@ public class ScriptResource extends JobRelatedResource {
         return representation;
     }
 
-    protected List<String> getAvailableActions() {
-        List<String> actions = new LinkedList<String>();
-        actions.add("rescan");
-        actions.add("add");
-        actions.add("create");
-        return actions;
-    }
-
     protected Collection<Map<String,String>> getAvailableScriptEngines() {
         List<Map<String,String>> engines = new LinkedList<Map<String,String>>();
         for (ScriptEngineFactory f: FACTORIES) {
@@ -178,38 +155,6 @@ public class ScriptResource extends JobRelatedResource {
         return engines;
     }
 
-    protected Collection<Map<String,String>> getAvailableGlobalVariables() {
-        List<Map<String,String>> vars = new LinkedList<Map<String,String>>();
-        Map<String,String> var;
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "rawOut");
-        var.put("description", "a PrintWriter for arbitrary text output to this page");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "htmlOut");
-        var.put("description", "a PrintWriter for HTML output to this page");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "job");
-        var.put("description", "the current CrawlJob instance");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "appCtx");
-        var.put("description", "current job ApplicationContext, if any");
-        vars.add(var);
-        
-        var = new LinkedHashMap<String,String>();
-        var.put("variable", "scriptResource");
-        var.put("description", "the ScriptResource implementing this page, which offers utility methods");
-        vars.add(var);
-        
-        return vars;
-    }
-
     /**
      * Constructs a nested Map data structure with the information represented
      * by this Resource. The result is particularly suitable for use with with
@@ -217,118 +162,47 @@ public class ScriptResource extends JobRelatedResource {
      * 
      * @return the nested Map data structure
      */
-    protected LinkedHashMap<String,Object> makePresentableMap() {
-        LinkedHashMap<String,Object> info = new LinkedHashMap<String,Object>();
-
+    protected ScriptModel makeDataModel() {
+        
         String baseRef = getRequest().getResourceRef().getBaseRef().toString();
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
         Reference baseRefRef = new Reference(baseRef);
+        
+        ScriptModel model = new ScriptModel(scriptingConsole,
+                new Reference(baseRefRef, "..").getTargetRef().toString(),
+                getAvailableScriptEngines());
 
-        info.put("crawlJobShortName", cj.getShortName());
-        info.put("crawlJobUrl", new Reference(baseRefRef, "..").getTargetRef());
-        info.put("availableScriptEngines", getAvailableScriptEngines());
-        info.put("availableGlobalVariables", getAvailableGlobalVariables());
-
-        if(linesExecuted>0) {
-            info.put("linesExecuted", linesExecuted);
-        }
-        if(ex!=null) {
-            info.put("exception", ex);
-        }
-        if(StringUtils.isNotBlank(rawOutput)) {
-            info.put("rawOutput", rawOutput);
-        }
-        if(StringUtils.isNotBlank(htmlOutput)) {
-            info.put("htmlOutput", htmlOutput);
-        }
-
-        return info;
+        return model;
     }
 
     protected void writeHtml(Writer writer) {
-        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if (!baseRef.endsWith("/")) baseRef += "/";
-        PrintWriter pw = new PrintWriter(writer);
-        pw.println("<!DOCTYPE html>");
-        pw.println("<html>");
-        pw.println("<head>");
-        pw.println("<title>Script in "+cj.getShortName()+"</title>");
-        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + getStylesheetRef() + "\">");
-        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/codemirror.css") + "'>");
-        pw.println("<link rel='stylesheet' href='" + getStaticRef("codemirror/util/dialog.css") + "'>");
-        pw.println("<script src='" + getStaticRef("codemirror/codemirror.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/mode/groovy.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/mode/clike.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/mode/javascript.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/util/dialog.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/util/searchcursor.js") + "'></script>");
-        pw.println("<script src='" + getStaticRef("codemirror/util/search.js") + "'></script>");
-        pw.println("</head>");
-        pw.println("<body>");
-        pw.println("<h1>Execute script for job <i><a href='/engine/job/"
-                    +TextUtils.urlEscape(cj.getShortName())
-                    +"'>"+cj.getShortName()+"</a></i></h1>");
-
-        // output of previous script, if any
-        if(linesExecuted>0) {
-            pw.println("<span class='success'>"+linesExecuted+" lines executed</span>");
-        }
-        if(ex!=null) {
-            pw.println("<pre style='color:red; height:150px; overflow:auto'>");
-            ex.printStackTrace(pw);
-            pw.println("</pre>");
-        }
-        if(StringUtils.isNotBlank(htmlOutput)) {
-            pw.println("<fieldset><legend>htmlOut</legend>");
-            pw.println(htmlOutput);
-            pw.println("</fieldset>");
-        }
         
-        if(StringUtils.isNotBlank(rawOutput)) {
-            pw.println("<fieldset><legend>rawOut</legend><pre>");
-            pw.println(StringEscapeUtils.escapeHtml(rawOutput));
-            pw.println("</pre></fieldset>");
+        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
+        if(!baseRef.endsWith("/")) {
+            baseRef += "/";
+        }
+        Configuration tmpltCfg = getTemplateConfiguration();
+
+        ViewModel viewModel = new ViewModel();
+        viewModel.setFlashes(Flash.getFlashes(getRequest()));
+        viewModel.put("baseRef",baseRef);
+        viewModel.put("cssRef", getStylesheetRef());
+        viewModel.put("staticRef", getStaticRef(""));
+        viewModel.put("baseResourceRef",getRequest().getRootRef().toString()+"/engine/static/");
+        viewModel.put("model", makeDataModel());
+        viewModel.put("selectedEngine", chosenEngine);
+
+        try {
+            Template template = tmpltCfg.getTemplate("Script.ftl");
+            template.process(viewModel, writer);
+            writer.flush();
+        } catch (IOException e) { 
+            throw new RuntimeException(e); 
+        } catch (TemplateException e) { 
+            throw new RuntimeException(e); 
         }
 
-        pw.println("<form method='POST'>");
-        pw.println("<input type='submit' value='execute'>");
-        pw.println("<select name='engine' id='selectEngine'>");;
-        for(ScriptEngineFactory f : FACTORIES) {
-            String opt = f.getNames().get(0);
-            pw.println("<option "
-                    +(opt.equals(chosenEngine)?" selected='selected' ":"")
-                    +"value='"+opt+"'>"+f.getLanguageName()+"</option>");
-        }
-        pw.println("</select>");
-        pw.println("<textarea rows='20' style='width:100%' name=\'script\' id='editor'>"+script+"</textarea>");
-        pw.println("<input type='submit' value='execute'></input>");
-        pw.println("</form>");
-        pw.println(
-                "The script will be executed in an engine preloaded " +
-                "with (global) variables:\n<ul>\n" +
-                "<li><code>rawOut</code>: a PrintWriter for arbitrary text output to this page</li>\n" +
-                "<li><code>htmlOut</code>: a PrintWriter for HTML output to this page</li>\n" +
-                "<li><code>job</code>: the current CrawlJob instance</li>\n" +
-                "<li><code>appCtx</code>: current job ApplicationContext, if any</li>\n" +
-                "<li><code>scriptResource</code>: the ScriptResource implementing this " +
-                "page, which offers utility methods</li>\n" +
-                "</ul>");
-        pw.println("<script>");
-        pw.println("var modemap = {beanshell: 'text/x-java', groovy: 'groovy', js: 'javascript'};");
-        pw.println("var selectEngine = document.getElementById('selectEngine');");
-        pw.println("var editor = document.getElementById('editor');");
-        pw.println("var cmopts = {");
-        pw.println("    mode: modemap[selectEngine.value],");
-        pw.println("    lineNumbers: true, autofocus: true, indentUnit: 4");
-        pw.println("}");
-        pw.println("var cm = CodeMirror.fromTextArea(editor, cmopts);");
-        pw.println("selectEngine.onchange = function(e) { cm.setOption('mode', modemap[selectEngine.value]); }");
-        pw.println("</script>");
-        pw.println("</body>");
-        pw.println("</html>");
-
-        pw.flush();
     }
 }

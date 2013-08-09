@@ -42,7 +42,6 @@ import org.archive.modules.FetchChain;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
-import org.archive.util.ArchiveUtils;
 import org.archive.util.ReportUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -322,7 +321,8 @@ implements Serializable,
             // suppress duplicate state-reports
             return;
         }
-        this.state = newState; 
+        this.state = newState;
+        LOGGER.fine("reached CrawlController.State " + this.state + ", notifying listeners");
         CrawlStateEvent event = new CrawlStateEvent(this,newState,status.getDescription());
         appCtx.publishEvent(event); 
     }

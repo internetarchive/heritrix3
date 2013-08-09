@@ -33,6 +33,7 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpParser;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
+import org.archive.util.LaxHttpParser;
 
 
 /**
@@ -110,7 +111,7 @@ public class WARCRecord extends ArchiveRecord implements WARCConstants {
             startPosition = ((RepositionableStream)in).position();
         }
         String firstLine =
-            new String(HttpParser.readLine(in, WARC_HEADER_ENCODING));
+            new String(LaxHttpParser.readLine(in, WARC_HEADER_ENCODING));
         if (firstLine == null || firstLine.length() <=0) {
             throw new IOException("Failed to read WARC_MAGIC");
         }
@@ -122,7 +123,7 @@ public class WARCRecord extends ArchiveRecord implements WARCConstants {
         // keep count of bytes read, digest and fail properly if EOR too soon...
         // We don't want digesting while reading Headers.
         // 
-        Header [] h = HttpParser.parseHeaders(in, WARC_HEADER_ENCODING);
+        Header [] h = LaxHttpParser.parseHeaders(in, WARC_HEADER_ENCODING);
         for (int i = 0; i < h.length; i++) {
             m.put(h[i].getName(), h[i].getValue());
         }
@@ -167,14 +168,21 @@ public class WARCRecord extends ArchiveRecord implements WARCConstants {
 				return this.headers.get(key);
 			}
 
-			public long getLength() {
+			// Returns just the Content-Length of the warc record
+			public long getContentLength() {
 				Object o = this.headers.get(CONTENT_LENGTH);
 				if (o == null) {
 					return -1;
 				}
 				long contentLength = (o instanceof Long)?
                     ((Long)o).longValue(): Long.parseLong((String)o);
-                return contentLength + contentOffset;
+                return contentLength;
+			}
+			
+			// Returns the full record length
+			public long getLength()
+			{
+				return getContentLength() + contentOffset;
 			}
 
 			public String getMimetype() {
