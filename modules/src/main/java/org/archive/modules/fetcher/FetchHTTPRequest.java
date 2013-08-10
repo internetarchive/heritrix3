@@ -71,10 +71,11 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.ManagedHttpClientConnection;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
@@ -428,8 +429,8 @@ class FetchHTTPRequest {
 
     protected HttpClientConnectionManager buildConnectionManager() {
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("http", PlainSocketFactory.getSocketFactory())
-                .register("https", new SSLSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
+                .register("http", PlainConnectionSocketFactory.INSTANCE)
+                .register("https", new SSLConnectionSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
                 .build();
 
         DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
@@ -438,7 +439,8 @@ class FetchHTTPRequest {
             private static final int DEFAULT_BUFSIZE = 8 * 1024;
 
             @Override
-            public ManagedHttpClientConnection create(ConnectionConfig config) {
+            public ManagedHttpClientConnection create(HttpRoute route,
+                    ConnectionConfig config) {
                 final ConnectionConfig cconfig = config != null ? config : ConnectionConfig.DEFAULT;
                 CharsetDecoder chardecoder = null;
                 CharsetEncoder charencoder = null;
