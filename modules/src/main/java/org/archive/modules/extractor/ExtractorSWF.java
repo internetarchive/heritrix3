@@ -341,7 +341,7 @@ public class ExtractorSWF extends ContentExtractor {
         }
 
         public void considerStringAsUri(String str) throws IOException {
-            if (UriUtils.isLikelyUri(str)) {
+            if (UriUtils.isVeryLikelyUri(str)) {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 Link.addRelativeToVia(curi, max, str, 
                         LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);

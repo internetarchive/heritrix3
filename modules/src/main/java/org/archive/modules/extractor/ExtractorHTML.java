@@ -606,7 +606,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      */
     protected void considerIfLikelyUri(CrawlURI curi, CharSequence candidate, 
             CharSequence valueContext, Hop hop) {
-        if(UriUtils.isLikelyUri(candidate)) {
+        if(UriUtils.isVeryLikelyUri(candidate)) {
             addLinkFromString(curi,candidate,valueContext,hop);
         }
     }
