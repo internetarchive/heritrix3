@@ -181,19 +181,8 @@ public class RecordingOutputStream extends OutputStream {
             throw new IOException("ROS already open for "
                     +Thread.currentThread().getName());
         }
+        clearForReuse();
         this.out = wrappedStream;
-        this.position = 0;
-        this.markPosition = 0;
-        this.maxPosition = 0; 
-        this.size = 0;
-        this.messageBodyBeginMark = -1;
-        // ensure recording turned on
-        this.recording = true;
-        // Always begins false; must use startDigest() to begin
-        this.shouldDigest = false;
-        if (this.diskStream != null) {
-            closeDiskStream();
-        }
         if (this.diskStream == null) {
             // TODO: Fix so we only make file when its actually needed.
             FileOutputStream fis = new FileOutputStream(this.backingFilename);
@@ -566,6 +555,22 @@ public class RecordingOutputStream extends OutputStream {
      */
     public long getRemainingLength() {
         return maxLength - position; 
+    }
+
+    public void clearForReuse() throws IOException {
+        this.out = null;
+        this.position = 0;
+        this.markPosition = 0;
+        this.maxPosition = 0;
+        this.size = 0;
+        this.messageBodyBeginMark = -1;
+        // ensure recording turned on
+        this.recording = true;
+        // Always begins false; must use startDigest() to begin
+        this.shouldDigest = false;
+        if (this.diskStream != null) {
+            closeDiskStream();
+        }
     }
 }
 

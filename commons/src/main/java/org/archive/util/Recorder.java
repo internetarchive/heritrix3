@@ -577,5 +577,17 @@ public class Recorder {
     public void endReplays() {
         ArchiveUtils.closeQuietly(replayCharSequence);
         replayCharSequence = null;
+
+        // like closeQuietly
+        try {
+            ris.clearForReuse();
+        } catch (IOException ioe) {
+        }
+
+        // like closeQuietly
+        try {
+            ros.clearForReuse();
+        } catch (IOException e) {
+        }
     }
 }

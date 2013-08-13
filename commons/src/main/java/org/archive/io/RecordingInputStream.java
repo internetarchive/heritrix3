@@ -348,4 +348,8 @@ public class RecordingInputStream
     public int getRecordedBufferLength() {
         return recordingOutputStream.getBufferLength();
     }
+
+    public void clearForReuse() throws IOException {
+        recordingOutputStream.clearForReuse();
+    }
 }
