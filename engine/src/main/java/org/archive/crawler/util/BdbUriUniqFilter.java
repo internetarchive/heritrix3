@@ -419,21 +419,25 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
      *            is ignored)
      */
     public void forgetAllSchemeAuthorityMatching(String url) {
-        long schemeAuthorityKeyBytes = calcSchemeAuthorityKeyBytes(url);
+        long schemeAuthorityKeyLong = calcSchemeAuthorityKeyBytes(url);
         
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         
-        LongBinding.longToEntry(schemeAuthorityKeyBytes, key);
+        LongBinding.longToEntry(schemeAuthorityKeyLong, key);
+        byte[] schemeAuthorityKeyBytes = key.getData();
+        
         Cursor cursor = alreadySeen.openCursor(null, null);
         long forgottenCount = 0l;
         
         for (OperationStatus status = cursor.getSearchKeyRange(key, value, null);
                 status == OperationStatus.SUCCESS;
                 status = cursor.getNext(key, value, null)) {
-            
-            long alreadySeenKey = LongBinding.entryToLong(key);
-            if ((alreadySeenKey & 0xffffff0000000000l) == schemeAuthorityKeyBytes) {
+
+            byte[] keyData = key.getData();
+            if (keyData[0] == schemeAuthorityKeyBytes[0]
+                    && keyData[1] == schemeAuthorityKeyBytes[1]
+                    && keyData[2] == schemeAuthorityKeyBytes[2]) {
                 cursor.delete();
                 forgottenCount++;
             } else {
