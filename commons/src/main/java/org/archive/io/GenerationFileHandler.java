@@ -91,29 +91,50 @@ public class GenerationFileHandler extends FileHandler {
     public GenerationFileHandler rotate(String storeSuffix,
             String activeSuffix)
     throws IOException {
+        return rotate(storeSuffix, activeSuffix, false);
+    }
+    
+    public GenerationFileHandler rotate(String storeSuffix,
+            String activeSuffix, boolean mergeOld) throws IOException {
         close();
-        String filename = (String)filenameSeries.getFirst();
+        String filename = (String) filenameSeries.getFirst();
         if (!filename.endsWith(activeSuffix)) {
-            throw new FileNotFoundException("Active file does not have" +
-                " expected suffix");
+            throw new FileNotFoundException("Active file does not have"
+                    + " expected suffix");
         }
-        String storeFilename = filename.substring(0,
-             filename.length() - activeSuffix.length()) +
-             storeSuffix;
+        String storeFilename = filename.substring(0, filename.length()
+                - activeSuffix.length())
+                + storeSuffix;
         File activeFile = new File(filename);
         File storeFile = new File(storeFilename);
         FileUtils.moveAsideIfExists(storeFile);
-        if (!activeFile.renameTo(storeFile)) {
-            throw new IOException("Unable to move " + filename + " to " +
-                storeFilename);
+
+        if (mergeOld) {
+            File fileToAppendTo = new File(filenameSeries.getLast());
+            for (int i = filenameSeries.size() - 2; i >= 0; i--) {
+                File f = new File(filenameSeries.get(i));
+                FileUtils.appendTo(fileToAppendTo, f);
+                f.delete();
+            }
+            filenameSeries.clear();
+            filenameSeries.add(filename);
+            if (!fileToAppendTo.renameTo(storeFile)) {
+                throw new IOException("Unable to move " + fileToAppendTo + " to "
+                        + storeFilename);
+            }
+        } else {
+            if (!activeFile.renameTo(storeFile)) {
+                throw new IOException("Unable to move " + filename + " to "
+                        + storeFilename);
+            }
         }
         filenameSeries.add(1, storeFilename);
-        GenerationFileHandler newGfh = 
-            new GenerationFileHandler(filenameSeries, shouldManifest);
+        GenerationFileHandler newGfh = new GenerationFileHandler(
+                filenameSeries, shouldManifest);
         newGfh.setFormatter(this.getFormatter());
         return newGfh;
     }
-    
+
     /**
      * @return True if should manifest.
      */

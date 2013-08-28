@@ -20,6 +20,7 @@ package org.archive.crawler.framework;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.archive.checkpointing.Checkpoint;
@@ -68,35 +70,55 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     
     protected Checkpoint checkpointInProgress;
     
+    protected Checkpoint lastCheckpoint; 
+    
     protected CrawlStatSnapshot lastCheckpointSnapshot = null;
     
     /** service for auto-checkpoint tasks at an interval */
     protected Timer timer = new Timer(true);
     protected TimerTask checkpointTask = null; 
-    /**
-     * Checkpoints directory
-     */
     protected ConfigPath checkpointsDir = 
         new ConfigPath("checkpoints subdirectory","checkpoints");
     public ConfigPath getCheckpointsDir() {
         return checkpointsDir;
     }
+    /**
+     * Checkpoints directory
+     */
     public void setCheckpointsDir(ConfigPath checkpointsDir) {
         this.checkpointsDir = checkpointsDir;
     }
     
+    protected long checkpointIntervalMinutes = -1;
+
+    public long getCheckpointIntervalMinutes() {
+        return checkpointIntervalMinutes;
+    }
     /**
      * Period at which to create automatic checkpoints; -1 means
      * no auto checkpointing. 
      */
-    protected long checkpointIntervalMinutes = -1;
-    public long getCheckpointIntervalMinutes() {
-        return checkpointIntervalMinutes;
-    }
     public void setCheckpointIntervalMinutes(long interval) {
         long oldVal = checkpointIntervalMinutes; 
         this.checkpointIntervalMinutes = interval;
         if(checkpointIntervalMinutes!=oldVal) {
+            setupCheckpointTask();
+        }
+    }
+    
+    protected boolean forgetAllButLatest = false;
+    public boolean getForgetAllButLatest() {
+        return forgetAllButLatest;
+    }
+    
+    /**
+     * True to save only the latest checkpoint, false to save all of them.
+     * Default is false.
+     */
+    public void setForgetAllButLatest(boolean forgetAllButLatest) {
+        boolean oldVal = this.forgetAllButLatest; 
+        this.forgetAllButLatest = forgetAllButLatest;
+        if (this.forgetAllButLatest != oldVal) {
             setupCheckpointTask();
         }
     }
@@ -185,7 +207,8 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
                 periodMs + " milliseconds.");
     }
     
-    protected boolean isRunning = false; 
+    protected boolean isRunning = false;
+
     public synchronized boolean isRunning() {
         return isRunning; 
     }
@@ -221,6 +244,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
             }
         }
         
+        long checkpointStart = System.currentTimeMillis();
         Map<String,Checkpointable> toCheckpoint = appCtx.getBeansOfType(Checkpointable.class);
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("checkpointing beans " + toCheckpoint);
@@ -228,25 +252,48 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         
         checkpointInProgress = new Checkpoint();
         try {
-            checkpointInProgress.generateFrom(getCheckpointsDir(),getNextCheckpointNumber());
-            
+            checkpointInProgress.setForgetAllButLatest(getForgetAllButLatest());
+            checkpointInProgress.generateFrom(getCheckpointsDir(),
+                    getNextCheckpointNumber());
+
             // pre (incl. acquire necessary locks)
-//            long startMs = System.currentTimeMillis();
-            for(Checkpointable c : toCheckpoint.values()) {
+            long startStart = System.currentTimeMillis();
+            for (Checkpointable c : toCheckpoint.values()) {
                 c.startCheckpoint(checkpointInProgress);
             }
-//            long duration = System.currentTimeMillis() - startMs; 
-//            System.err.println("all startCheckpoint() completed in "+duration+"ms");
-            
+            LOGGER.info("all startCheckpoint() completed in "
+                    + (System.currentTimeMillis() - startStart) + "ms");
+
             // flush/write
-            for(Checkpointable c : toCheckpoint.values()) {
-//                long doMs = System.currentTimeMillis();
+            long doStart = System.currentTimeMillis();
+            for (Checkpointable c : toCheckpoint.values()) {
+                long doMs = System.currentTimeMillis();
                 c.doCheckpoint(checkpointInProgress);
-//                long doDuration = System.currentTimeMillis() - doMs; 
-//                System.err.println("doCheckpoint() "+c+" in "+doDuration+"ms");
+                long doDuration = System.currentTimeMillis() - doMs;
+                LOGGER.fine("doCheckpoint() " + c + " in " + doDuration + "ms");
             }
-            checkpointInProgress.setSuccess(true); 
-            appCtx.publishEvent(new CheckpointSuccessEvent(this,checkpointInProgress));
+            LOGGER.info("all doCheckpoint() completed in "
+                    + (System.currentTimeMillis() - doStart) + "ms");
+            
+            if (getForgetAllButLatest() && lastCheckpoint != null) {
+                try {
+                    long deleteStart = System.currentTimeMillis();
+                    FileUtils.deleteDirectory(lastCheckpoint.getCheckpointDir().getFile());
+                    lastCheckpoint = null;
+                    LOGGER.info("deleted old checkpoint in "
+                            + (System.currentTimeMillis() - deleteStart) + "ms");
+                } catch (IOException e) {
+                    LOGGER.log(Level.SEVERE,
+                            "problem deleting last checkpoint directory "
+                                    + lastCheckpoint.getCheckpointDir().getFile(),
+                                    e);
+                }
+            }
+            
+            checkpointInProgress.setSuccess(true);
+            
+            appCtx.publishEvent(new CheckpointSuccessEvent(this,
+                    checkpointInProgress));
         } catch (Exception e) {
             checkpointFailed(e);
         } finally {
@@ -254,14 +301,19 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
                 controller.getStatisticsTracker().getProgressStamp());
             lastCheckpointSnapshot = controller.getStatisticsTracker().getSnapshot();
             // close (incl. release locks)
-            for(Checkpointable c : toCheckpoint.values()) {
+            long finishStart = System.currentTimeMillis();
+            for (Checkpointable c : toCheckpoint.values()) {
                 c.finishCheckpoint(checkpointInProgress);
             }
+            LOGGER.info("all finishCheckpoint() completed in "
+                    + (System.currentTimeMillis() - finishStart) + "ms");
         }
-
+        LOGGER.info("completed checkpoint " + checkpointInProgress.getName()
+                + " in " + (System.currentTimeMillis() - checkpointStart) + "ms");
+        
         this.nextCheckpointNumber++;
-        LOGGER.info("finished checkpoint "+checkpointInProgress.getName());
         String nameToReport = checkpointInProgress.getSuccess() ? checkpointInProgress.getName() : null;
+        this.lastCheckpoint = this.checkpointInProgress;
         this.checkpointInProgress = null;
         return nameToReport;
     }
