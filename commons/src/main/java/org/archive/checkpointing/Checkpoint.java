@@ -176,7 +176,7 @@ public class Checkpoint implements InitializingBean {
 
     private boolean forgetAllButLatest = false;
     public void setForgetAllButLatest(boolean b) {
-        this.forgetAllButLatest = true;
+        this.forgetAllButLatest = b;
     }
     public boolean getForgetAllButLatest() {
         return forgetAllButLatest;
