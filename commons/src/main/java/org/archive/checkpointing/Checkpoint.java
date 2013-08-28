@@ -174,7 +174,7 @@ public class Checkpoint implements InitializingBean {
         return (new File(checkpointDirectory,Checkpoint.VALIDITY_STAMP_FILENAME)).exists();
     }
 
-    private boolean forgetAllButLatest = false;
+    protected boolean forgetAllButLatest = false;
     public void setForgetAllButLatest(boolean b) {
         this.forgetAllButLatest = b;
     }
