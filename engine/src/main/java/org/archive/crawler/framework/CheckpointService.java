@@ -235,8 +235,8 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
             throw new IllegalStateException("Checkpoint already running.");
         }
         
-        // prevent redundant auto-checkpoints when crawler paused
-        if(controller.isPaused()) {
+        // prevent redundant auto-checkpoints when crawler paused or stopping
+        if(controller.isPaused() || controller.getState().equals(CrawlController.State.STOPPING)) {
             if (controller.getStatisticsTracker().getSnapshot().sameProgressAs(lastCheckpointSnapshot)) {
                 LOGGER.info("no progress since last checkpoint; ignoring");
                 System.err.println("no progress since last checkpoint; ignoring");
