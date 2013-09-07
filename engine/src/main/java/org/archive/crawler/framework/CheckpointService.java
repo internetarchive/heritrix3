@@ -21,6 +21,7 @@ package org.archive.crawler.framework;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -167,7 +168,15 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
                     +"' missing validity stamp file; checkpoint data "
                     +"may be missing or otherwise corrupt.");
             }
-        }
+            this.lastCheckpoint = getRecoveryCheckpoint();
+            String serial = getRecoveryCheckpoint().getShortName().substring(2);
+            try {
+                Number lastCheckpointNumber = Checkpoint.INDEX_FORMAT.parse(serial);
+                this.nextCheckpointNumber = lastCheckpointNumber.intValue() + 1;
+            } catch (ParseException e) {
+                LOGGER.warning("failed to parse serial from " + lastCheckpoint.getShortName() + " - " + e);
+            }
+        }   
         this.isRunning = true; 
         setupCheckpointTask();
     }
