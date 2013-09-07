@@ -911,7 +911,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     }
 
     public void terminate() {
-        getCrawlController().requestCrawlStop();
+        if (getCrawlController() != null) {
+            getCrawlController().requestCrawlStop();
+        }
     }
 
     /**
