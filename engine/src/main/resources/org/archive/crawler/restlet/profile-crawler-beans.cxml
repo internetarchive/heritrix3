@@ -543,6 +543,7 @@ http://example.example/example
    class="org.archive.crawler.framework.CheckpointService">
   <!-- <property name="checkpointIntervalMinutes" value="-1"/> -->
   <!-- <property name="checkpointsDir" value="checkpoints"/> -->
+  <!-- <property name="forgetAllButLatest" value="true"/> -->
  </bean>
  
  <!-- 
