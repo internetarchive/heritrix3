@@ -371,6 +371,10 @@ implements Serializable,
      * Called when the last toethread exits.
      */
     protected void completeStop() {
+        if (!isRunning) {
+            return;
+        }
+        
         LOGGER.fine("Entered complete stop.");
 
         statisticsTracker.getSnapshot(); // ???
@@ -384,7 +388,9 @@ implements Serializable,
         LOGGER.fine("Finished crawl.");
 
         try {
-            appCtx.stop(); 
+            if (appCtx.isRunning()) {
+                appCtx.stop();
+            }
         } catch (RuntimeException re) {
             LOGGER.log(Level.SEVERE,re.getMessage(),re);
         }
