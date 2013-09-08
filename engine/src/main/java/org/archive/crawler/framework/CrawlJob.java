@@ -680,9 +680,11 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                     (ac.getCurrentLaunchId() != null ? " " + ac.getCurrentLaunchId() : ""));
         }
         
-        synchronized (this) {
-            if (needTeardown && event instanceof StopCompleteEvent) {
-                doTeardown();
+        if (event instanceof StopCompleteEvent) {
+            synchronized (this) {
+                if (needTeardown) {
+                    doTeardown();
+                }
             }
         }
         
