@@ -45,13 +45,13 @@
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-engine</artifactId>
-			<version>3.1.2-SNAPSHOT</version>
+			<version>${project.version}</version>
 			<!-- scope>compile</scope -->
 		</dependency>
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-modules</artifactId>
-			<version>3.1.2-SNAPSHOT</version>
+			<version>${project.version}</version>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
