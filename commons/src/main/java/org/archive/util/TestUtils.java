@@ -75,7 +75,7 @@ public class TestUtils {
     }
 
 
-    private static byte[] serialize(Object o) throws Exception {
+    public static byte[] serialize(Object o) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);    
         oout.writeObject(o);

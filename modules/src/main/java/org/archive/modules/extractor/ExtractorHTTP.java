@@ -91,8 +91,6 @@ public class ExtractorHTTP extends Extractor {
         if (urlIndex > 0) {
             String refreshUri = refreshHeader.getValue().substring(urlIndex);
             addHeaderLink(curi, refreshHeader.getName(), refreshUri);
-        } else {
-            logger.warning("failed to parse refresh header \"" + refreshHeader.toExternalForm() + "\" from " + curi);
         }
     }
     

@@ -100,6 +100,8 @@ import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * WARCWriterProcessor.
@@ -959,9 +961,47 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             record.addLabelValue(label, value);
         }
     }
+    
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = super.toCheckpointJson();
+        json.put("urlsWritten", urlsWritten);
+        json.put("stats", stats);
+        return json;
+    }
+    
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+
+        // conditionals below are for backward compatibility with old checkpoints
+        
+        if (json.has("urlsWritten")) {
+            urlsWritten.set(json.getLong("urlsWritten"));
+        }
+        
+        if (json.has("stats")) {
+            HashMap<String, Map<String, Long>> cpStats = new HashMap<String, Map<String, Long>>();
+            JSONObject jsonStats = json.getJSONObject("stats");
+            for (String key1: JSONObject.getNames(jsonStats)) {
+                JSONObject jsonSubstats = jsonStats.getJSONObject(key1);
+                if (!cpStats.containsKey(key1)) {
+                    cpStats.put(key1, new HashMap<String, Long>());
+                }
+                Map<String, Long> substats = cpStats.get(key1);
+
+                for (String key2: JSONObject.getNames(jsonSubstats)) {
+                    long value = jsonSubstats.getLong(key2);
+                    substats.put(key2, value);
+                }
+            }
+            addStats(cpStats);
+        }
+    }
 
     @Override
     public String report() {
+        // XXX note in report that stats include recovered checkpoint?
         logger.info("final stats: " + stats);
         
         StringBuilder buf = new StringBuilder();
