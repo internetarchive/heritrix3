@@ -24,8 +24,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -83,12 +85,72 @@ public class WbmPersistLoadProcessor extends Processor {
 
     // ~Jan 2, 2013
     //private String queryURL = "http://web-beta.archive.org/cdx/search";
-    private String queryURL = "http://web.archive.org/cdx/search/cdx";
+    //private String queryURL = "http://web.archive.org/cdx/search/cdx";
+    // ~Sep 26, 2013
+    private String queryURL = "http://wwwb-front2.us.archive.org:8083/web/timemap/cdx?url=$u&limit=-1";
     public void setQueryURL(String queryURL) {
         this.queryURL = queryURL;
+        prepareQueryURL();
     }
     public String getQueryURL() {
         return queryURL;
+    }
+    
+    public interface FormatSegment {
+        void print(StringBuilder sb, String[] args);
+    }
+    private static class StaticSegment implements FormatSegment {
+        String s;
+        public StaticSegment(String s) {
+            this.s = s;
+        }
+        public void print(StringBuilder sb, String[] args) {
+            sb.append(s);
+        }
+    }
+    private static class InterpolateSegment implements FormatSegment {
+        int aidx;
+        public InterpolateSegment(int aidx) {
+            this.aidx = aidx;
+        }
+        public void print(StringBuilder sb, String[] args) {
+            sb.append(args[aidx]);
+        }
+    }
+    private FormatSegment[] preparedQueryURL;
+    
+    /**
+     * pre-scan queryURL template so that actual queryURL can be built
+     * with minimal processing.
+     */
+    private void prepareQueryURL() {
+        List<FormatSegment> segments = new ArrayList<FormatSegment>();
+        final int l = queryURL.length();
+        int p = 0;
+        int q;
+        while (p < l && (q = queryURL.indexOf('$', p)) >= 0) {
+            if (q + 2 > l) {
+                // '$' at the end. keep it as if it were '$$'
+                break;
+            }
+            if (q > p) {
+                segments.add(new StaticSegment(queryURL.substring(p, q)));
+            }
+            char c = queryURL.charAt(q + 1);
+            if (c == 'u') {
+                segments.add(new InterpolateSegment(0));
+            } else if (c == 's') {
+                segments.add(new InterpolateSegment(1));
+            } else {
+                // copy '$'-sequence so that it's easy to spot errors
+                segments.add(new StaticSegment(queryURL.substring(q, q + 2)));
+            }
+            p = q + 2;
+        }
+        if (p < l) {
+            segments.add(new StaticSegment(queryURL.substring(p)));
+        }
+        preparedQueryURL = segments.toArray(new FormatSegment[segments.size()]);
     }
 
     private String contentDigestScheme = "sha1:";
@@ -208,26 +270,39 @@ public class WbmPersistLoadProcessor extends Processor {
         return queryRangeSecs;
     }
 
+    private String buildStartDate() {
+        final long range = queryRangeSecs;
+        if (range <= 0)
+            return ArchiveUtils.get14DigitDate(new Date(0));
+        Date now = new Date();
+        Date startDate = new Date(now.getTime() - range*1000);
+        return ArchiveUtils.get14DigitDate(startDate);
+    }
+    
     protected String buildURL(CrawlURI curi) {
         // we don't need to pass scheme part, but no problem passing it.
-        StringBuilder sb = new StringBuilder(queryURL);
-        sb.append("?url=");
+        StringBuilder sb = new StringBuilder();
+        final FormatSegment[] segments = preparedQueryURL;
+        String encodedURL;
         try {
-            sb.append(URLEncoder.encode(curi.toString(), "UTF-8"));
+            encodedURL = URLEncoder.encode(curi.toString(), "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-            // expecting it's never thrown
+            encodedURL = curi.toString();
         }
-        long range = queryRangeSecs;
-        if (range > 0) {
-            Date now = new Date();
-            Date startDate = new Date(now.getTime() - range*1000);
-            sb.append("&startDate=");
-            sb.append(ArchiveUtils.get14DigitDate(startDate));
+        final String[] args = new String[] {
+          encodedURL,
+          buildStartDate()
+        };
+        for (FormatSegment fs : segments) {
+            fs.print(sb, args);
         }
-        sb.append("&limit=1&last=true");
         return sb.toString();
     }
 
+    public WbmPersistLoadProcessor() {
+        prepareQueryURL();
+    }
+    
     @Override
     protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
         final String url = buildURL(curi);

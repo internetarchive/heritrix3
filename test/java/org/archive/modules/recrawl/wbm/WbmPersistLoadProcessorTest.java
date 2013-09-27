@@ -49,6 +49,7 @@ public class WbmPersistLoadProcessorTest {
   @Test
   public void testBuildURL() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
+    t.setQueryURL("http://web.archive.org/cdx/search/cdx?url=$u&startDate=$s&limit=1");
     final String URL = "http://archive.org/";
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance(URL));
     String url = t.buildURL(curi);
@@ -56,7 +57,7 @@ public class WbmPersistLoadProcessorTest {
     assertTrue("has encode URL", Pattern.matches(".*[&?]url="+URLEncoder.encode(URL, "UTF-8")+"([&].*)?", url));
     assertTrue("has startDate", Pattern.matches(".*[&?]startDate=\\d{14}([&].*)?", url));
     assertTrue("has limit", Pattern.matches(".*[&?]limit=\\d+([&].*)?", url));
-    assertTrue("has last=true", Pattern.matches(".*[&?]last=true([&].*)?", url));
+    //assertTrue("has last=true", Pattern.matches(".*[&?]last=true([&].*)?", url));
   }
   
   /**
