@@ -51,8 +51,7 @@ public class WbmPersistLoadProcessorTest {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     t.setQueryURL("http://web.archive.org/cdx/search/cdx?url=$u&startDate=$s&limit=1");
     final String URL = "http://archive.org/";
-    CrawlURI curi = new CrawlURI(UURIFactory.getInstance(URL));
-    String url = t.buildURL(curi);
+    String url = t.buildURL(URL);
     System.err.println(url);
     assertTrue("has encode URL", Pattern.matches(".*[&?]url="+URLEncoder.encode(URL, "UTF-8")+"([&].*)?", url));
     assertTrue("has startDate", Pattern.matches(".*[&?]startDate=\\d{14}([&].*)?", url));

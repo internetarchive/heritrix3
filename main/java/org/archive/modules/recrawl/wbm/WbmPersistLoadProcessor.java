@@ -25,10 +25,13 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
@@ -200,6 +203,47 @@ public class WbmPersistLoadProcessor extends Processor {
             .setDefaultMaxPerRoute(this.maxConnections);
         }
     }
+    private boolean gzipAccepted = false;
+    public boolean isGzipAccepted() {
+        return gzipAccepted;
+    }
+    /**
+     * if set to true, {@link WbmPersistLoadProcessor} adds a header
+     * {@code Accept-Encoding: gzip} to HTTP requests. New CDX server
+     * see this header to decide whether to compress the response. it is also
+     * possible to override gzipAccepted=true setting with gzip=false 
+     * request parameter.
+     * It is off by default, as it should make little sense to compress single
+     * line of CDX.
+     * @param gzipAccepted true to allow gzip compression.
+     */
+    public void setGzipAccepted(boolean gzipAccepted) {
+        this.gzipAccepted = gzipAccepted;
+    }
+    
+    private Map<String, String> requestHeaders = new ConcurrentHashMap<String, String>(1, 0.75f, 2);
+    public Map<String, String> getRequestHeaders() {
+        return requestHeaders;
+    }
+    /**
+     * all key-value pairs in this map will be added as HTTP headers.
+     * typically used for providing authentication cookies. this method
+     * makes a copy of {@requestHeaders}.
+     * <em>note:</em> this property may be dropped in the future if
+     * I come up with better interface.
+     * @param requestHeaders map of &lt;header-name, header-value>.
+     */
+    public void setRequestHeaders(Map<String, String> requestHeaders) {
+        if (requestHeaders == null) {
+            this.requestHeaders.clear();
+        } else {
+            // TODO: mmm, ConcurrentHashMap may be overkill. simple synchronized Hashtable would work
+            // just okay?
+            ConcurrentHashMap<String, String> m = new ConcurrentHashMap<String, String>(1, 0.75f, 2);
+            m.putAll(requestHeaders);
+            this.requestHeaders = m;
+        }
+    }    
 
     // statistics
     private AtomicLong loadedCount = new AtomicLong();
@@ -237,8 +281,14 @@ public class WbmPersistLoadProcessor extends Processor {
                 @Override
                 public void process(final HttpRequest request, final HttpContext context)
                         throws HttpException, IOException {
-                    if (!request.containsHeader("Accept-Encoding")) {
+                    if (gzipAccepted && !request.containsHeader("Accept-Encoding")) {
                         request.addHeader("Accept-Encoding", "gzip");
+                    }
+                    // add extra headers configured.
+                    if (requestHeaders != null) {
+                        for (Entry<String, String> ent : requestHeaders.entrySet()) {
+                            request.addHeader(ent.getKey(), ent.getValue());
+                        }
                     }
                 }
             });
@@ -279,15 +329,15 @@ public class WbmPersistLoadProcessor extends Processor {
         return ArchiveUtils.get14DigitDate(startDate);
     }
     
-    protected String buildURL(CrawlURI curi) {
+    protected String buildURL(String url) {
         // we don't need to pass scheme part, but no problem passing it.
         StringBuilder sb = new StringBuilder();
         final FormatSegment[] segments = preparedQueryURL;
         String encodedURL;
         try {
-            encodedURL = URLEncoder.encode(curi.toString(), "UTF-8");
+            encodedURL = URLEncoder.encode(url, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-            encodedURL = curi.toString();
+            encodedURL = url;
         }
         final String[] args = new String[] {
           encodedURL,
@@ -303,9 +353,8 @@ public class WbmPersistLoadProcessor extends Processor {
         prepareQueryURL();
     }
     
-    @Override
-    protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
-        final String url = buildURL(curi);
+    protected InputStream getCDX(String qurl) throws InterruptedException, IOException {
+        final String url = buildURL(qurl);
         HttpGet m = new HttpGet(url);
         HttpEntity entity = null;
         int attempts = 0;
@@ -331,15 +380,26 @@ public class WbmPersistLoadProcessor extends Processor {
             }
         } while (entity == null && ++attempts < 3);
         if (entity == null) {
-            log.error("giving up on GET " + url + " after " + attempts + " attempts");
+            throw new IOException("giving up on GET " + url + " after " + attempts + " attempts");
+        }
+        return entity.getContent();
+    }
+    
+    @Override
+    protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
+        InputStream is;
+        try {
+            is = getCDX(curi.toString());
+        } catch (IOException ex) {
+            log.error(ex.getMessage());
             failedCount.incrementAndGet();
             return ProcessResult.PROCEED;
         }
-        InputStream is = null;
         Map<String, Object> info = null;
         try {
-            info = getLastCrawl(is = entity.getContent());
+            info = getLastCrawl(is);
         } catch (IOException ex) {
+            log.error("error parsing response", ex);
         } finally {
             if (is != null)
                 ArchiveUtils.closeQuietly(is);
@@ -427,5 +487,25 @@ public class WbmPersistLoadProcessor extends Processor {
         String scheme = uri.getUURI().getScheme();
         if (!(scheme.equals("http") || scheme.equals("https"))) return false;
         return true;
+    }
+    
+    /**
+     * main entry point for quick test.
+     * @param args
+     */
+    public static void main(String[] args) throws Exception {
+        String url = args[0];
+        String cookie = args.length > 1 ? args[1] : null;
+        WbmPersistLoadProcessor wp = new WbmPersistLoadProcessor();
+        if (cookie != null) {
+            wp.setRequestHeaders(Collections.singletonMap("Cookie", cookie));
+        }
+        InputStream is = wp.getCDX(url);
+        byte[] b = new byte[1024];
+        int n;
+        while ((n = is.read(b)) > 0) {
+            System.out.write(b, 0, n);
+        }
+        is.close();
     }
 }
