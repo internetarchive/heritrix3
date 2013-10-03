@@ -199,8 +199,11 @@ public class WbmPersistLoadProcessor extends Processor {
     public void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
         if (client != null) {
-            ((ThreadSafeClientConnManager)client.getConnectionManager())
-            .setDefaultMaxPerRoute(this.maxConnections);
+            ThreadSafeClientConnManager conman = 
+                    (ThreadSafeClientConnManager)client.getConnectionManager();
+            if (conman.getMaxTotal() < this.maxConnections)
+                conman.setMaxTotal(this.maxConnections);
+            conman.setDefaultMaxPerRoute(this.maxConnections);
         }
     }
     private boolean gzipAccepted = false;
@@ -247,12 +250,39 @@ public class WbmPersistLoadProcessor extends Processor {
 
     // statistics
     private AtomicLong loadedCount = new AtomicLong();
+    /**
+     * number of times successfully loaded recrawl info.
+     * @return long
+     */
     public long getLoadedCount() {
         return loadedCount.get();
     }
-    private AtomicLong failedCount = new AtomicLong();
-    public long getFailedCount() {
-        return failedCount.get();
+    private AtomicLong missedCount = new AtomicLong();
+    /**
+     * number of times getting no recrawl info.
+     * @return long
+     */
+    public long getMissedCount() {
+        return missedCount.get();
+    }
+    private AtomicLong errorCount = new AtomicLong();
+    /**
+     * number of times cdx-server API call failed. 
+     * @return long
+     */
+    public long getErrorCount() {
+        return errorCount.get();
+    }
+    
+    private AtomicLong cumulativeFetchTime = new AtomicLong();
+    /**
+     * total milliseconds spent in API call.
+     * it is a sum of time waited for next available connection,
+     * and actual HTTP request-response round-trip, across all threads.
+     * @return
+     */
+    public long getCumulativeFetchTime() {
+        return cumulativeFetchTime.get();
     }
 
     public void setHttpClient(HttpClient client) {
@@ -272,6 +302,7 @@ public class WbmPersistLoadProcessor extends Processor {
         if (client == null) {
             ThreadSafeClientConnManager conman = new ThreadSafeClientConnManager();
             conman.setDefaultMaxPerRoute(maxConnections);
+            conman.setMaxTotal(Math.max(conman.getMaxTotal(), maxConnections));
             final DefaultHttpClient client = new DefaultHttpClient(conman);
             HttpParams params = client.getParams();
             params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, socketTimeout);
@@ -365,7 +396,9 @@ public class WbmPersistLoadProcessor extends Processor {
                 Thread.sleep(5000);
             }
             try {
+                long t0 = System.currentTimeMillis();
                 HttpResponse resp = getHttpClient().execute(m);
+                cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
                 if (sl.getStatusCode() != 200) {
                     log.error("GET " + url + " failed with status=" + sl.getStatusCode() + " " + sl.getReasonPhrase());
@@ -375,8 +408,10 @@ public class WbmPersistLoadProcessor extends Processor {
                     continue;
                 }
                 entity = resp.getEntity();
+            } catch (IOException ex) {
+                log.error("GEt " + url + " failed with error " + ex.getMessage());
             } catch (Exception ex) {
-                log.error("GET " + url + " failed with error " + ex.getMessage());
+                log.error("GET " + url + " failed with error ", ex);
             }
         } while (entity == null && ++attempts < 3);
         if (entity == null) {
@@ -392,7 +427,7 @@ public class WbmPersistLoadProcessor extends Processor {
             is = getCDX(curi.toString());
         } catch (IOException ex) {
             log.error(ex.getMessage());
-            failedCount.incrementAndGet();
+            errorCount.incrementAndGet();
             return ProcessResult.PROCEED;
         }
         Map<String, Object> info = null;
@@ -411,7 +446,7 @@ public class WbmPersistLoadProcessor extends Processor {
                 history.putAll(info);
             loadedCount.incrementAndGet();
         } else {
-            failedCount.incrementAndGet();
+            missedCount.incrementAndGet();
         }
         return ProcessResult.PROCEED;
     }
