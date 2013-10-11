@@ -983,19 +983,21 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (json.has("stats")) {
             HashMap<String, Map<String, Long>> cpStats = new HashMap<String, Map<String, Long>>();
             JSONObject jsonStats = json.getJSONObject("stats");
-            for (String key1: JSONObject.getNames(jsonStats)) {
-                JSONObject jsonSubstats = jsonStats.getJSONObject(key1);
-                if (!cpStats.containsKey(key1)) {
-                    cpStats.put(key1, new HashMap<String, Long>());
-                }
-                Map<String, Long> substats = cpStats.get(key1);
+            if (JSONObject.getNames(jsonStats) != null) {
+                for (String key1: JSONObject.getNames(jsonStats)) {
+                    JSONObject jsonSubstats = jsonStats.getJSONObject(key1);
+                    if (!cpStats.containsKey(key1)) {
+                        cpStats.put(key1, new HashMap<String, Long>());
+                    }
+                    Map<String, Long> substats = cpStats.get(key1);
 
-                for (String key2: JSONObject.getNames(jsonSubstats)) {
-                    long value = jsonSubstats.getLong(key2);
-                    substats.put(key2, value);
+                    for (String key2: JSONObject.getNames(jsonSubstats)) {
+                        long value = jsonSubstats.getLong(key2);
+                        substats.put(key2, value);
+                    }
                 }
+                addStats(cpStats);
             }
-            addStats(cpStats);
         }
     }
 
