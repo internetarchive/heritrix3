@@ -235,7 +235,19 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     public void setDirectory(ConfigPath directory) {
         this.directory = directory;
     }
-    
+
+    protected boolean startNewFilesOnCheckpoint = true;
+    public boolean getStartNewFilesOnCheckpoint() {
+        return startNewFilesOnCheckpoint;
+    }
+    /**
+     * Whether to close output files and start new ones on checkpoint. True by
+     * default. If false, merely flushes writers.
+     */
+    public void setStartNewFilesOnCheckpoint(boolean startNewFilesOnCheckpoint) {
+        this.startNewFilesOnCheckpoint = startNewFilesOnCheckpoint;
+    }
+
     /**
      * Where to save files. Supply absolute or relative directory paths. 
      * If relative, paths will be interpreted relative to the local
@@ -391,19 +403,18 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         return h.getIP().getHostAddress();
     }
 
-    // TODO: add non-urgent checkpoint request, that waits for a good
-    // moment (when (W)ARCs are already rolling over)? 
-    public void doCheckpoint(Checkpoint checkpointInProgress) 
-    throws IOException {
-        // close all ARCs on checkpoint
-        this.pool.close();
-        
-        super.doCheckpoint(checkpointInProgress);
-   
-        // reopen post checkpoint
-        setupPool(this.serial);
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        if (getStartNewFilesOnCheckpoint()) {
+            this.pool.close();
+            super.doCheckpoint(checkpointInProgress);
+            setupPool(this.serial);
+        } else {
+            pool.flush();
+            super.doCheckpoint(checkpointInProgress);
+        }
     }
-    
+
     @Override
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();

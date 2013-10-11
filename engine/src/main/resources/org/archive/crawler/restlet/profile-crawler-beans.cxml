@@ -354,6 +354,7 @@ http://example.example/example
   <!-- <property name="writeMetadata" value="true" /> -->
   <!-- <property name="writeRevisitForIdenticalDigests" value="true" /> -->
   <!-- <property name="writeRevisitForNotModified" value="true" /> -->
+  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->

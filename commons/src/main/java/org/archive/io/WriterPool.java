@@ -21,6 +21,7 @@ package org.archive.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -276,5 +277,20 @@ public abstract class WriterPool {
      */
     public AtomicInteger getSerialNo() {
         return serialNo;
+    }
+
+    public void flush() {
+        LinkedList<WriterPoolMember> writers = new LinkedList<WriterPoolMember>();
+        availableWriters.drainTo(writers);
+
+        for (WriterPoolMember writer: writers) {
+            try {
+                writer.flush();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "problem flushing writer " + writer, e);
+            }
+        }
+
+        availableWriters.addAll(writers);
     }
 }
