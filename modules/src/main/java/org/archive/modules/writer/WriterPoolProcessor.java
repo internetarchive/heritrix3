@@ -48,6 +48,7 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -419,6 +420,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
         json.put("serialNumber", getSerialNo().get());
+        json.put("poolStatus", pool.jsonStatus());
         return json;
     }
     

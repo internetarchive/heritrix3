@@ -21,6 +21,7 @@ package org.archive.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -28,6 +29,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Pool of Writers.
@@ -238,14 +243,13 @@ public abstract class WriterPool {
 	 * Close all {@link WriterPoolMember}s in pool.
 	 */
     public void close() {
-        WriterPoolMember writer = availableWriters.poll(); 
-        while (writer!=null) {
+        Collection<WriterPoolMember> writers = drainAllWriters();
+        for (WriterPoolMember writer: writers) {
             try {
                 destroyWriter(writer);
             } catch (IOException e) {
                 logger.log(Level.WARNING,"problem closing writer",e); 
             }
-            writer = availableWriters.poll();
         }
     }
 
@@ -278,11 +282,38 @@ public abstract class WriterPool {
     public AtomicInteger getSerialNo() {
         return serialNo;
     }
-
-    public void flush() {
+    
+    /**
+     * Drains all the active writers from {@link #availableWriters}, blocking to
+     * wait for any writers currently in use to become available.
+     * 
+     * <p>
+     * When finished with writers, call availableWriters.addAll(...) to put them
+     * back into the rotation.
+     * 
+     * @return all the active writers
+     */
+    protected synchronized Collection<WriterPoolMember> drainAllWriters() {
         LinkedList<WriterPoolMember> writers = new LinkedList<WriterPoolMember>();
         availableWriters.drainTo(writers);
 
+        while (writers.size() < currentActive) {
+            try {
+                WriterPoolMember w = availableWriters.take();
+                writers.add(w);
+            } catch (InterruptedException e) {
+                logger.severe("caught " + e + " while waiting for writers to free up; returning only "
+                        + writers.size() + " of " + currentActive + " active writers");
+                break;
+            }
+        }
+        
+        return writers;
+    }
+
+    public void flush() {
+        Collection<WriterPoolMember> writers = drainAllWriters();
+        
         for (WriterPoolMember writer: writers) {
             try {
                 writer.flush();
@@ -292,5 +323,21 @@ public abstract class WriterPool {
         }
 
         availableWriters.addAll(writers);
+    }
+    
+    public JSONArray jsonStatus() throws JSONException {
+        Collection<WriterPoolMember> writers = drainAllWriters();
+        
+        JSONArray ja = new JSONArray();
+        for (WriterPoolMember w: writers) {
+            JSONObject jo = new JSONObject();
+            jo.put("file", w.getFile());
+            jo.put("position", w.getPosition());
+            ja.put(jo);
+        }
+        
+        availableWriters.addAll(writers);
+        
+        return ja;
     }
 }
