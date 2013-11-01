@@ -185,6 +185,41 @@ implements UriUniqFilter.CrawlUriReceiver {
         assertEquals("Didn't forget", 0, this.filter.count());
     }
     
+    public void testForgetAllSchemeAuthorityMatching() throws URIException {
+        long countBefore = this.filter.count();
+        
+        for (String uri: new String[] {
+                "http://forgetme.com/",
+                "http://forgetme.com/foo",
+                "hTtP://fOrGeTmE.cOm/bar",
+                "http://forgetme.com:80/toot/spuh",
+                "http://forgetme.com:90/toot/spuh",
+                "https://forgetme.com/baz",
+        }) {
+            CrawlURI curi = new CrawlURI(UURIFactory.getInstance(uri));
+            this.filter.add(curi.getUURI().toCustomString(), curi);
+        }
+
+        assertEquals(countBefore + 6, this.filter.count());
+
+        BdbUriUniqFilter bdbFilter = (BdbUriUniqFilter) filter;
+        assertFalse(bdbFilter.setAdd("http://forgetme.com/foo"));
+
+        bdbFilter.forgetAllSchemeAuthorityMatching("http://forgetme.com");
+        assertEquals(countBefore + 2, this.filter.count());
+
+        assertTrue(bdbFilter.setAdd("http://forgetme.com/foo"));
+        assertFalse(bdbFilter.setAdd("http://forgetme.com/foo"));
+        assertTrue(bdbFilter.setRemove("http://forgetme.com/foo"));
+        assertFalse(bdbFilter.setRemove("http://forgetme.com/foo"));
+
+        bdbFilter.forgetAllSchemeAuthorityMatching("https://forgetme.com/extra-stuff-ignored");
+        assertEquals(countBefore + 1, this.filter.count());
+
+        bdbFilter.forgetAllSchemeAuthorityMatching("http://forgetme.com:90/");
+        assertEquals(countBefore, this.filter.count());
+    }
+    
     // TODO: Add testForget when non-empty
     
 	public void receive(CrawlURI item) {

@@ -35,7 +35,7 @@ import org.archive.modules.net.CrawlHost;
 public class HostsReport extends Report {
 
     protected String fixup(String hostName) {
-        if ("dns:".equals(hostName)) {
+        if ("dns:".equals(hostName) || "whois:".equals(hostName)) {
             return hostName;
         } else {
             try {

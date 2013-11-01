@@ -47,22 +47,22 @@ import com.google.common.collect.MapMaker;
 
 /**
  * A step, post-ExtractorHTMLForms, where a followup CrawlURI to 
- * attempt a form-=submission may be synthesized. 
+ * attempt a form submission may be synthesized. 
  * 
- * If an HTMLForm was previously discovered (by ExtractorHTMLForms),
+ * <p>If an HTMLForm was previously discovered (by ExtractorHTMLForms),
  * and that form appears to be a login form, and at the very least
  * the loginUsername setting is non-empty, and the current 
  * (NOT 'action') URI fits under a configured SURT prefix, then a
  * submission CrawlURI will be composed.
  * 
- * This submission CrawlURI will be added to the current URI's
+ * <p>This submission CrawlURI will be added to the current URI's
  * outCandidates, and prefilled with settings for a POST and 
  * input values that are a merging of: (a) original discovered 
  * in-page values; (b) the 'loginUsername' into the first plausible
  * text/email-type input field; (c) the 'loginPassword' into the 
  * first password-type input field. 
  * 
- * Typically the settings 'applicableSurtPrefix', 'loginUsername', 
+ * <p>Typically the settings 'applicableSurtPrefix', 'loginUsername', 
  * and 'loginPassword' would be set in an overlay sheet and only
  * applied to one or more sites (by SURT prefix), rather than 
  * set globally.  An example minimal set of beans to add to CXML
@@ -95,12 +95,12 @@ import com.google.common.collect.MapMaker;
  * }
  * </pre>
  * 
- * (Remember: https URIs are always collapsed to http form before
+ * <p>(Remember: https URIs are always collapsed to http form before
  * overlay-surt-prefix comparisons, so surtPrefixes in the above
  * association should always be in http form, even if the actual 
  * target URIs are https.)
  * 
- * Finally, while there is not yet support for testing if the 
+ * <p>Finally, while there is not yet support for testing if the 
  * submitted CrawlURI succeeded, this processor keeps track of 
  * a count of FORMS seen that are eligible for attempts, and 
  * attempts made (for now, just once), per 'formTrackingDomain'

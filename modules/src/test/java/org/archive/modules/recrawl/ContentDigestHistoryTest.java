@@ -138,6 +138,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         // give Recorder some content so that getContentLength() returns non-zero.
         InputStream is = rec.inputWrap(new ByteArrayInputStream("HTTP/1.0 200 OK\r\n\r\ntext.".getBytes()));
         is.read(new byte[1024]);
+        is.close();
         
         assertFalse(loader().shouldProcess(curi1));
         assertFalse(storer().shouldProcess(curi1));

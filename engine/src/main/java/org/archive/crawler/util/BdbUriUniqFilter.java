@@ -38,6 +38,7 @@ import org.springframework.context.Lifecycle;
 import st.ata.util.FPGenerator;
 
 import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
@@ -302,16 +303,18 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
      */
     public static long createKey(CharSequence uri) {
         String url = uri.toString();
+        long schemeAuthorityKeyPart = calcSchemeAuthorityKeyBytes(url);
+        return schemeAuthorityKeyPart | (FPGenerator.std40.fp(url) >>> 24);
+    }
+
+    protected static long calcSchemeAuthorityKeyBytes(String url) {
         int index = url.indexOf(COLON_SLASH_SLASH);
         if (index > 0) {
             index = url.indexOf('/', index + COLON_SLASH_SLASH.length());
         }
-        CharSequence hostPlusScheme = (index == -1)? url: url.subSequence(0, index);
-        long tmp = FPGenerator.std24.fp(hostPlusScheme);
-        return tmp | (FPGenerator.std40.fp(url) >>> 24);
+        CharSequence schemeAuthority = (index == -1)? url: url.subSequence(0, index);
+        return FPGenerator.std24.fp(schemeAuthority);
     }
-
-
 
     protected boolean setAdd(CharSequence uri) {
         DatabaseEntry key = new DatabaseEntry();
@@ -320,11 +323,11 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         
         OperationStatus status = null;
         try {
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.FINE)) {
                 started = System.currentTimeMillis();
             }
             status = alreadySeen.putNoOverwrite(null, key, ZERO_LENGTH_ENTRY);
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.FINE)) {
                 aggregatedLookupTime +=
                     (System.currentTimeMillis() - started);
             }
@@ -395,4 +398,56 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }
+
+    /**
+     * Forget all entries that match the scheme+host+port of the given url, so
+     * that they can be crawled again if discovered again. Expensive operation.
+     * 
+     * <p>
+     * Because of the way keys are calculated, scheme+host+port is the only
+     * grouping of urls that is feasible to forget in bulk. See
+     * {@link #createKey(CharSequence)}
+     * 
+     * <p>
+     * WARNING: Value collisions in this 24-bit schemeAuthority part are going
+     * to be fairly common, by 'birthday problem' over 50% likely to show up
+     * with as few as 2^12 unique schemeAuthority strings. So the forgetting may
+     * forget other hosts.
+     * 
+     * @param url
+     *            whose scheme+host+port should be forgotten (remainder of url
+     *            is ignored)
+     */
+    public void forgetAllSchemeAuthorityMatching(String url) {
+        long schemeAuthorityKeyLong = calcSchemeAuthorityKeyBytes(url);
+        
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        
+        LongBinding.longToEntry(schemeAuthorityKeyLong, key);
+        byte[] schemeAuthorityKeyBytes = key.getData();
+        
+        Cursor cursor = alreadySeen.openCursor(null, null);
+        long forgottenCount = 0l;
+        
+        for (OperationStatus status = cursor.getSearchKeyRange(key, value, null);
+                status == OperationStatus.SUCCESS;
+                status = cursor.getNext(key, value, null)) {
+
+            byte[] keyData = key.getData();
+            if (keyData[0] == schemeAuthorityKeyBytes[0]
+                    && keyData[1] == schemeAuthorityKeyBytes[1]
+                    && keyData[2] == schemeAuthorityKeyBytes[2]) {
+                cursor.delete();
+                forgottenCount++;
+            } else {
+                break;
+            }
+        }
+        
+        cursor.close();
+        long newCount = count.addAndGet(-forgottenCount);
+        logger.info("forgot " + forgottenCount + " urls from scheme+authority of url " + url + " (leaving " + newCount + " urls from other scheme+authorities)");
+    }
+    
 } //EOC

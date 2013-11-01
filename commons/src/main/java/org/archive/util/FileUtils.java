@@ -696,4 +696,17 @@ public class FileUtils {
             return file;
         }
     }
+
+    public static void appendTo(File fileToAppendTo, File fileToAppendFrom) throws IOException {
+        // optimal io block size according to http://lingrok.org/xref/coreutils/src/ioblksize.h
+        byte[] buf = new byte[65536];
+        FileOutputStream out = new FileOutputStream(fileToAppendTo, true);
+        FileInputStream in = new FileInputStream(fileToAppendFrom);
+        for (int n = in.read(buf); n > 0; n = in.read(buf)) {
+            out.write(buf, 0, n);
+        }
+        in.close();
+        out.flush();
+        out.close();
+    }
 }
