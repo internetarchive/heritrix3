@@ -107,6 +107,9 @@ public class DefaultServerCache extends ServerCache implements Closeable, Serial
                         String hkey = new String(hostname); // ensure private minimal key
                         return new CrawlHost(hkey);
                     }});
+        if ("0.0.0.0".equals(host.getIP().getHostAddress())) {
+            throw new IllegalStateException("got suspicious value 0.0.0.0 for " + hostname);
+        }
         return host;
     }
 
