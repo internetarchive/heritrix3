@@ -2338,11 +2338,11 @@ form.custom {
     font-size: 16px; }
     .top-bar .name h1 {
       line-height: 45px;
-      color: white;
       font-size: 1.0625em;
       margin: 0; }
       .top-bar .name h1 a {
         font-weight: bold;
+        color: white;
         width: 50%;
         display: block;
         padding: 0 15px; }
@@ -3840,28 +3840,9 @@ table {
   .f-dropdown.large {
     max-width: 800px; }
   .monospace{
-    /*font-family:courier;*/
-   	font-family: monospace;
-	white-space: normal;
+    font-family:courier;
   }
   .scroll_y {
     overflow:auto;
     white-space:nowrap;
   }
-
-.flashACK {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: palegreen;
-}
-.flashNACK {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: pink;
-}
-.flashADVISORY {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: khaki;
-}
-

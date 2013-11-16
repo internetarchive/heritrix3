@@ -1,0 +1,47 @@
+.flashACK {
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: palegreen;
+}
+.flashNACK {
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: pink;
+}
+.flashADVISORY {
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: khaki;
+}
+fieldset table.beans {
+    display: inline;
+    table-layout: fixed;
+    width: 100%;
+    border:none;
+}
+fieldset table.beans tbody {
+    border: solid 1px #dddddd;
+}
+fieldset table.beans tbody td {
+    word-wrap:break-word;
+}
+fieldset table.beans tbody tr {
+    text-align:right;
+    vertical-align:top
+}
+fieldset table.beans tbody td {
+    text-align:left;
+}
+div.panel ul {
+    margin-left: 1.25em;
+}
+.scroll_y {
+    overflow:auto;
+    white-space:nowrap;
+}
+.monospace{
+    /*font-family:courier;*/
+   	font-family: monospace;
+	white-space: pre;
+	line-height:0.6;	
+}
