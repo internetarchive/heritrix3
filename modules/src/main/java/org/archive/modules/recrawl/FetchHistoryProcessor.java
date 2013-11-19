@@ -25,6 +25,7 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
+import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.*;
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
@@ -106,14 +107,18 @@ public class FetchHistoryProcessor extends Processor {
                     Math.min(history.length,newHistory.length));
             history = newHistory; 
         }
-        
+
         // rotate all history entries up one slot, insert new at [0]
         for(int i = history.length-1; i >0; i--) {
             history[i] = history[i-1];
         }
         history[0]=latestFetch;
-        
+
         curi.getData().put(A_FETCH_HISTORY,history);
+
+        if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
+            curi.getAnnotations().add("duplicate:digest");
+        }
     }
 
     /**

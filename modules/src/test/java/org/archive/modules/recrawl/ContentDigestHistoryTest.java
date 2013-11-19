@@ -260,7 +260,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             assertEquals(1, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));
 
             warcWriter.process(curi2);
-            assertTrue(curi2.getAnnotations().contains("warcRevisit:uriAgnosticDigest"));
+            assertTrue(curi2.getAnnotations().contains("warcRevisit:digest"));
             assertEquals(curi1.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
             assertNotSame(curi2.getUURI().toString(), curi2.getContentDigestHistory().get(A_ORIGINAL_URL));
             assertEquals(2, curi2.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT));

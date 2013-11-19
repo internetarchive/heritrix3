@@ -40,18 +40,8 @@ public class ContentDigestHistoryLoader extends Processor {
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         contentDigestHistory.load(curi);
 
-        /*
-         * We add this annotation here because later on there's not always a
-         * straightforward way to tell if the content is a duplicate, because
-         * the history may or may not have been populated with the current fetch
-         * (depending for example on whether WARCWriterProcessor has processed
-         * the url). If WARCWriterProcessor writes a revisit record, it adds the
-         * annotation "warcRevisit:uriAgnosticDigest", so this annotation is
-         * often redundant to that. But sometimes it is useful to know about
-         * duplicate content even when no warc records are written.
-         */
         if (!curi.getContentDigestHistory().isEmpty()) {
-            curi.getAnnotations().add("duplicate:uriAgnosticDigest");
+            curi.getAnnotations().add("duplicate:digest");
         }
     }
 }

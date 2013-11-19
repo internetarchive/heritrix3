@@ -332,7 +332,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                     curi.getContentDigestHistory().put(A_ORIGINAL_DATE, warcRecord.getCreate14DigitDate());
                     curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, 1);
                 } else if (warcRecord.getType() == WARCRecordType.revisit
-                        && curi.getAnnotations().contains("warcRevisit:uriAgnosticDigest")) {
+                        && curi.getAnnotations().contains("warcRevisit:digest")) {
                      Integer oldCount = (Integer) curi.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT);
                      if (oldCount == null) {
                          // shouldn't happen, log a warning?
@@ -743,7 +743,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         } finally {
             IOUtils.closeQuietly(ris);
         }
-        curi.getAnnotations().add("warcRevisit:uriAgnosticDigest");
+        curi.getAnnotations().add("warcRevisit:digest");
         
         return recordInfo.getRecordId();
     }

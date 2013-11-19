@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
@@ -94,10 +93,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
                 if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) {
                     notModifiedBytes += curi.getContentSize();
                     notModifiedUrls++;
-                } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
-                    dupByHashBytes += curi.getContentSize();
-                    dupByHashUrls++;
-                } else if (curi.getAnnotations().contains("duplicate:uriAgnosticDigest")) {
+                } else if (curi.getAnnotations().contains("duplicate:digest")) {
                     dupByHashBytes += curi.getContentSize();
                     dupByHashUrls++;
                 } else {
@@ -123,8 +119,7 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
                     if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED) { 
                         notModifiedBytes += curi.getContentSize();
                         notModifiedUrls++;
-                    } else if (IdenticalDigestDecideRule.
-                            hasIdenticalDigest(curi)) {
+                    } else if (curi.getAnnotations().contains("duplicate:digest")) {
                         dupByHashBytes += curi.getContentSize();
                         dupByHashUrls++;
                     } else {
