@@ -23,6 +23,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.bdb.DisposableStoredSortedMap;
 import org.archive.modules.net.CrawlHost;
@@ -33,6 +35,9 @@ import org.archive.modules.net.CrawlHost;
  * @contributor gojomo
  */
 public class HostsReport extends Report {
+    
+    private final static Logger logger =
+            Logger.getLogger(HostsReport.class.getName());
 
     protected String fixup(String hostName) {
         if ("dns:".equals(hostName) || "whois:".equals(hostName)) {
@@ -53,19 +58,23 @@ public class HostsReport extends Report {
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining] [#novel-urls] [#novel-bytes] [#dup-by-hash-urls] [#dup-by-hash-bytes] [#not-modified-urls] [#not-modified-bytes]\n"); 
         for (Map.Entry<Long,String> entry : hd.entrySet()) {
             // key is -count, value is hostname
-            CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
-            writeReportLine(writer,
-                    host.getSubstats().getFetchSuccesses(),
-                    host.getSubstats().getTotalBytes(),
-                    fixup(host.getHostName()),
-                    host.getSubstats().getRobotsDenials(),
-                    host.getSubstats().getRemaining(), 
-                    host.getSubstats().getNovelUrls(),
-                    host.getSubstats().getNovelBytes(),
-                    host.getSubstats().getDupByHashUrls(),
-                    host.getSubstats().getDupByHashBytes(),
-                    host.getSubstats().getNotModifiedUrls(),
-                    host.getSubstats().getNotModifiedBytes()); 
+            try {
+                CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
+                writeReportLine(writer,
+                        host.getSubstats().getFetchSuccesses(),
+                        host.getSubstats().getTotalBytes(),
+                        fixup(host.getHostName()),
+                        host.getSubstats().getRobotsDenials(),
+                        host.getSubstats().getRemaining(), 
+                        host.getSubstats().getNovelUrls(),
+                        host.getSubstats().getNovelBytes(),
+                        host.getSubstats().getDupByHashUrls(),
+                        host.getSubstats().getDupByHashBytes(),
+                        host.getSubstats().getNotModifiedUrls(),
+                        host.getSubstats().getNotModifiedBytes());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "unable to tally host stats for " + entry.getValue(), e);
+            }
         }
         hd.dispose();
     }
