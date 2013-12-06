@@ -186,12 +186,6 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>fastutil</groupId>
-			<artifactId>fastutil</artifactId>
-			<version>5.0.7</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>net.java.dev.jets3t</groupId>
 			<artifactId>jets3t</artifactId>
 			<version>0.5.0</version>
@@ -233,11 +227,6 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-expression</artifactId>
 			<version>3.0.5.RELEASE</version>
-		</dependency>
-		<dependency>
-			<groupId>joda-time</groupId>
-			<artifactId>joda-time</artifactId>
-			<version>1.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
