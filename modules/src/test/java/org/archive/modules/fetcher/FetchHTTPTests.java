@@ -718,6 +718,14 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(httpRequestString(curi).startsWith("GET /99% HTTP/1.0\r\n"));
         runDefaultChecks(curi, "requestLine");
     }
+    
+    public void testTwoQuestionMarks() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/??blahblah");
+        fetcher().process(curi);
+        // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
+        assertTrue(httpRequestString(curi).startsWith("GET /??blahblah HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
+    }
 
     @Override
     protected FetchHTTP makeModule() throws IOException {
