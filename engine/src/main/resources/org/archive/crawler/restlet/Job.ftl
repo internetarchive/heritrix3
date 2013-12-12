@@ -207,7 +207,7 @@
 								</#if>
 							</ul>
 						</li>
-						<li><a href="#report/ToeThreadsReport">Threads</a>
+						<li><a href="report/ToeThreadsReport">Threads</a>
 							<ul class="no-bullet">
 								<#if !job.threadReport??>
 									<li><i>n/a</i></li>
@@ -220,7 +220,7 @@
 								</#if>
 							</ul>
 						</li>
-						<li><a href="#report/FrontierSummaryReport">Frontier</a>
+						<li><a href="report/FrontierSummaryReport">Frontier</a>
 							<ul class="no-bullet">
 								<#if !job.frontierReport??>
 									<li><i>n/a</i></li>
