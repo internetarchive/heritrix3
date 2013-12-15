@@ -64,6 +64,11 @@
 
 		<!-- These are normal dependencies. -->
 		<dependency>
+                  <groupId>org.netpreserve.commons</groupId>
+                  <artifactId>commons-web</artifactId>
+                  <version>1.1.0</version>
+		</dependency>
+		<dependency>
 			<groupId>com.sleepycat</groupId>
 			<artifactId>je</artifactId>
 			<version>4.1.6</version>
