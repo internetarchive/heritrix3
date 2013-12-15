@@ -57,10 +57,6 @@
 	</dependencies>
 	<repositories>
 		<repository>
-			<id>builds.archive.org#8080,maven2</id>
-			<url>http://builds.archive.org:8080/maven2</url>
-		</repository>
-		<repository>
 			<id>repository.cloudera.com,artifactory,cloudera-repos</id>
 			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
 		</repository>

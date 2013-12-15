@@ -13,25 +13,7 @@
 
 	<repositories>
 		<repository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>daily</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>internetarchive</id>
-			<name>Internet Archive Maven Repository</name>
-			<url>http://builds.archive.org:8080/maven2</url>
-			<layout>default</layout>
-		</repository>
-
-		<repository>
 			<id>maven-restlet</id>
-			<name>Public online Restlet repository</name>
 			<url>http://maven.restlet.org</url>
 		</repository>
 	</repositories>
