@@ -18,27 +18,26 @@
  */
 package org.archive.modules.recrawl;
 
-import static org.archive.io.warc.WARCConstants.CONTENT_LENGTH;
-import static org.archive.io.warc.WARCConstants.CONTENT_TYPE;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_ID;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_PROFILE;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_DATE;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILENAME;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILE_OFFSET;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_TRUNCATED;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_TYPE;
-import static org.archive.io.warc.WARCConstants.HEADER_KEY_URI;
-import static org.archive.io.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
-import static org.archive.io.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
-import static org.archive.io.warc.WARCConstants.PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST;
+import static org.archive.format.warc.WARCConstants.CONTENT_LENGTH;
+import static org.archive.format.warc.WARCConstants.CONTENT_TYPE;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_ID;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_PROFILE;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_DATE;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILENAME;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_FILE_OFFSET;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_TYPE;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_URI;
+import static org.archive.format.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
+import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
+import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
 import java.io.ByteArrayInputStream;
@@ -56,8 +55,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
-import org.archive.io.ArchiveRecord;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
+import org.archive.io.ArchiveRecord;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
@@ -320,14 +319,13 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             assertEquals(NAMED_FIELD_TRUNCATED_VALUE_LENGTH, record.getHeader().getHeaderValue(HEADER_KEY_TRUNCATED));
             assertEquals(HTTP_RESPONSE_MIMETYPE, record.getHeader().getHeaderValue(CONTENT_TYPE));
             assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
-            assertEquals(PROFILE_REVISIT_URI_AGNOSTIC_IDENTICAL_DIGEST, 
+            assertEquals(PROFILE_REVISIT_IDENTICAL_DIGEST, 
                     record.getHeader().getHeaderValue(HEADER_KEY_PROFILE));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_TARGET_URI));
             assertEquals(historyStore().store.get(expectedDigest).get(A_ORIGINAL_DATE), 
                     record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_DATE));
-            assertEquals(warcs[0], record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILENAME));
-            assertEquals(historyStore().store.get(expectedDigest).get(A_WARC_FILE_OFFSET).toString(), 
-                    record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILE_OFFSET));
+            assertNull(record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILENAME));
+            assertNull(record.getHeader().getHeaderValue(HEADER_KEY_REFERS_TO_FILE_OFFSET));
 
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
