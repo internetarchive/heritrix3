@@ -37,16 +37,15 @@ See the User Manual at <https://webarchive.jira.com/wiki/display/Heritrix/Heritr
 
 4. Developer Documentation
 ---------------------------
-See ./docs/articles/developer_manual/index.html or
-<http://crawler.archive.org/articles/developer_manual/index.html>.
+See <http://crawler.archive.org/articles/developer_manual/index.html>.
 For API documentation, see <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.x+API+Guide>
-and <http://builds.archive.org:8080/javadoc/heritrix-3.x-snapshot/>
+and <http://builds.archive.org/javadoc/heritrix-3.2.0/>
 
 
 5. Release History
 -------------------
 See the Heritrix Release Notes at
-<https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.1.1>
+<https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.2.0>
 
 6. License
 -----------
