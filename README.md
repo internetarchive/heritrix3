@@ -1,1 +1,1 @@
-dist/README.md
+dist/README.txt
