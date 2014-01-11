@@ -188,7 +188,6 @@ public class ScriptResource extends JobRelatedResource {
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));
         viewModel.put("baseRef",baseRef);
-        viewModel.put("cssRef", getStylesheetRef());
         viewModel.put("staticRef", getStaticRef(""));
         viewModel.put("baseResourceRef",getRequest().getRootRef().toString()+"/engine/static/");
         viewModel.put("model", makeDataModel());

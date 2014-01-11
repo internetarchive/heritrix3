@@ -225,7 +225,6 @@ public class EngineResource extends BaseResource {
         viewModel.put("baseRef",baseRef);
         viewModel.put("fileSeparator", File.separator);
         viewModel.put("engine", model);
-        viewModel.put("cssRef", getStylesheetRef());
 
         try {
             Template template = tmpltCfg.getTemplate("Engine.ftl");

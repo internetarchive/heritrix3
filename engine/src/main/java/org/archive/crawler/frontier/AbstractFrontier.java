@@ -622,10 +622,14 @@ public abstract class AbstractFrontier
             server.getSubstats().tally(curi, stage);
             server.makeDirty(); 
         }
-        CrawlHost host = getServerCache().getHostFor(curi.getUURI());
-        if (host != null) {
-            host.getSubstats().tally(curi, stage);
-            host.makeDirty();
+        try {
+            CrawlHost host = getServerCache().getHostFor(curi.getUURI());
+            if (host != null) {
+                host.getSubstats().tally(curi, stage);
+                host.makeDirty();
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "unable to tally host stats for " + curi, e);
         }
         FrontierGroup group = getGroup(curi);
         group.tally(curi, stage);

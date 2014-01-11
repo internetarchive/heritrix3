@@ -5,12 +5,12 @@
       <format>zip</format>
    </formats>
    <includeBaseDirectory>true</includeBaseDirectory>
-         <dependencySets>
-            <dependencySet>
-              <outputDirectory>/lib</outputDirectory>
-            </dependencySet>
-         </dependencySets>
-
+   <dependencySets>
+    <dependencySet>
+     <useProjectArtifact>false</useProjectArtifact>
+     <outputDirectory>/lib</outputDirectory>
+    </dependencySet>
+   </dependencySets>
    <fileSets>
     <fileSet>
      <directory>.</directory>

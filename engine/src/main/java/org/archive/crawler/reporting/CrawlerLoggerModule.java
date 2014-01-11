@@ -322,21 +322,26 @@ public class CrawlerLoggerModule
     
     protected void rotateLogFiles(String generationSuffix)
     throws IOException {
-        for (Logger l: fileHandlers.keySet()) {
-            GenerationFileHandler gfh =
-                (GenerationFileHandler)fileHandlers.get(l);
-            GenerationFileHandler newGfh =
-                gfh.rotate(generationSuffix, "");
+        rotateLogFiles(generationSuffix, false);
+    }
+
+    protected void rotateLogFiles(String generationSuffix, boolean mergeOld)
+            throws IOException {
+        for (Logger l : fileHandlers.keySet()) {
+            GenerationFileHandler gfh = (GenerationFileHandler) fileHandlers.get(l);
+            GenerationFileHandler newGfh = gfh.rotate(generationSuffix, "", mergeOld);
+            
             if (gfh.shouldManifest()) {
                 addToManifest((String) newGfh.getFilenameSeries().get(1),
-                    MANIFEST_LOG_FILE, newGfh.shouldManifest());
+                        MANIFEST_LOG_FILE, newGfh.shouldManifest());
             }
+            
             l.removeHandler(gfh);
             l.addHandler(newGfh);
             fileHandlers.put(l, newGfh);
         }
     }
-
+    
     /**
      * Close all log files and remove handlers from loggers.
      */
@@ -382,7 +387,8 @@ public class CrawlerLoggerModule
      */
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // Rotate off crawler logs.
-        rotateLogFiles("." + checkpointInProgress.getName());
+        rotateLogFiles("." + checkpointInProgress.getName(), 
+                checkpointInProgress.getForgetAllButLatest());
     }
 
     public void finishCheckpoint(Checkpoint checkpointInProgress) {}
@@ -411,11 +417,9 @@ public class CrawlerLoggerModule
         return uriErrors;
     }
 
-
     public Logger getUriProcessing() {
         return uriProcessing;
     }
-
     
     public int getAlertCount() {
         if (atg != null) {
@@ -424,7 +428,6 @@ public class CrawlerLoggerModule
             return -1;
         }
     }
-    
     
     public void resetAlertCount() {
         if (atg != null) {

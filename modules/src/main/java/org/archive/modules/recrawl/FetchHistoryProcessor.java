@@ -32,6 +32,7 @@ import java.util.Map;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
+import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 
 /**
  * Maintain a history of fetch information inside the CrawlURI's attributes. 
@@ -104,8 +105,12 @@ public class FetchHistoryProcessor extends Processor {
         history[0] = latestFetch;
 
         curi.getData().put(A_FETCH_HISTORY, history);
+
+        if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
+            curi.getAnnotations().add("duplicate:digest");
+        }
     }
-    
+
     /** Get or create proper-sized history array */
     @SuppressWarnings("unchecked")
     protected HashMap<String, Object>[] historyRealloc(CrawlURI curi) {

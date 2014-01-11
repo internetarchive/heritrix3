@@ -303,17 +303,17 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
      */
     public static long createKey(CharSequence uri) {
         String url = uri.toString();
-        long schemeHostKeyPart = calcSchemeHostKeyPart(url);
-        return schemeHostKeyPart | (FPGenerator.std40.fp(url) >>> 24);
+        long schemeAuthorityKeyPart = calcSchemeAuthorityKeyBytes(url);
+        return schemeAuthorityKeyPart | (FPGenerator.std40.fp(url) >>> 24);
     }
 
-    protected static long calcSchemeHostKeyPart(String url) {
+    protected static long calcSchemeAuthorityKeyBytes(String url) {
         int index = url.indexOf(COLON_SLASH_SLASH);
         if (index > 0) {
             index = url.indexOf('/', index + COLON_SLASH_SLASH.length());
         }
-        CharSequence hostPlusScheme = (index == -1)? url: url.subSequence(0, index);
-        return FPGenerator.std24.fp(hostPlusScheme);
+        CharSequence schemeAuthority = (index == -1)? url: url.subSequence(0, index);
+        return FPGenerator.std24.fp(schemeAuthority);
     }
 
     protected boolean setAdd(CharSequence uri) {
@@ -400,7 +400,7 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     }
 
     /**
-     * Forget all entries that match the scheme+host+port of the given key, so
+     * Forget all entries that match the scheme+host+port of the given url, so
      * that they can be crawled again if discovered again. Expensive operation.
      * 
      * <p>
@@ -408,26 +408,46 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
      * grouping of urls that is feasible to forget in bulk. See
      * {@link #createKey(CharSequence)}
      * 
-     * @param schemeHost
+     * <p>
+     * WARNING: Value collisions in this 24-bit schemeAuthority part are going
+     * to be fairly common, by 'birthday problem' over 50% likely to show up
+     * with as few as 2^12 unique schemeAuthority strings. So the forgetting may
+     * forget other hosts.
+     * 
+     * @param url
+     *            whose scheme+host+port should be forgotten (remainder of url
+     *            is ignored)
      */
-    public void forgetSchemeHost(String schemeHost) {
-        long schemeHostKeyPart = calcSchemeHostKeyPart(schemeHost);
+    public void forgetAllSchemeAuthorityMatching(String url) {
+        long schemeAuthorityKeyLong = calcSchemeAuthorityKeyBytes(url);
         
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
+        
+        LongBinding.longToEntry(schemeAuthorityKeyLong, key);
+        byte[] schemeAuthorityKeyBytes = key.getData();
+        
         Cursor cursor = alreadySeen.openCursor(null, null);
         long forgottenCount = 0l;
-        while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
-            long alreadySeenKey = LongBinding.entryToLong(key);
-            // System.out.printf("schemeHostKeyPart=%017x alreadySeenKey=%017x\n", schemeHostKeyPart, alreadySeenKey);
-            if ((alreadySeenKey & 0xffffff0000000000l) == schemeHostKeyPart) {
+        
+        for (OperationStatus status = cursor.getSearchKeyRange(key, value, null);
+                status == OperationStatus.SUCCESS;
+                status = cursor.getNext(key, value, null)) {
+
+            byte[] keyData = key.getData();
+            if (keyData[0] == schemeAuthorityKeyBytes[0]
+                    && keyData[1] == schemeAuthorityKeyBytes[1]
+                    && keyData[2] == schemeAuthorityKeyBytes[2]) {
                 cursor.delete();
-                count.decrementAndGet();
                 forgottenCount++;
+            } else {
+                break;
             }
         }
+        
         cursor.close();
-        logger.info("forgot " + forgottenCount + " urls from scheme+host+port " + schemeHost + " (" + count.get() + " urls left)");
+        long newCount = count.addAndGet(-forgottenCount);
+        logger.info("forgot " + forgottenCount + " urls from scheme+authority of url " + url + " (leaving " + newCount + " urls from other scheme+authorities)");
     }
     
 } //EOC

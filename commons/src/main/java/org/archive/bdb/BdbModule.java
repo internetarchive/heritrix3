@@ -22,6 +22,7 @@ package org.archive.bdb;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -46,6 +47,7 @@ import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
+import org.archive.util.TextUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -440,7 +442,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     
     public void startCheckpoint(Checkpoint checkpointInProgress) {}
 
-    public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
+    public void doCheckpoint(final Checkpoint checkpointInProgress) throws IOException {
         // First sync objectCaches
         for (@SuppressWarnings("rawtypes") ObjectIdentityCache oic : oiCaches.values()) {
             oic.sync();
@@ -498,6 +500,19 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
             }
         } catch (DatabaseException e) {
             throw new IOException(e);
+        }
+        
+        if (checkpointInProgress.getForgetAllButLatest()) {
+            File[] oldEnvCpDirs = dir.getFile().listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return !name.equals(checkpointInProgress.getName()) 
+                            && TextUtils.matches("cp\\d{5}-\\d{14}", name);
+                }
+            });
+            for (File d: oldEnvCpDirs) {
+                FileUtils.deleteDirectory(d);
+            }
         }
     }
     
