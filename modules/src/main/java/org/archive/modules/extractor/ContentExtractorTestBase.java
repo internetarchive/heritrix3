@@ -137,6 +137,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
         byte[] b = content.getBytes(charset);
         ByteArrayInputStream bais = new ByteArrayInputStream(b);
         InputStream is = recorder.inputWrap(bais);
+        recorder.markContentBegin();
         for (int x = is.read(); x >= 0; x = is.read());
         is.close();
         return recorder;
