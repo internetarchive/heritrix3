@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.archive.modules.CrawlURI;
@@ -42,11 +41,6 @@ public class FetchHistoryHelper {
    * key for storing timestamp in crawl history map.
    */
   public static final String A_TIMESTAMP = ".ts";
-
-  public static String getHeaderValue(HttpMethod method, String name) {
-      org.apache.commons.httpclient.Header header = method.getResponseHeader(name);
-      return header != null ? header.getValue() : null;
-  }
 
   /**
    * returns a Map to store recrawl data, positioned properly in CrawlURI's

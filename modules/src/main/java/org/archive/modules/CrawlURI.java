@@ -844,9 +844,6 @@ implements Reporter, Serializable, OverlayContext {
     /**
      * Return true if this is a http transaction.
      *
-     * TODO: Compound this and {@link #isPost()} method so that there is one
-     * place to go to find out if get http, post http, ftp, dns.
-     *
      * @return True if this is a http transaction.
      */
     public boolean isHttpTransaction() {
