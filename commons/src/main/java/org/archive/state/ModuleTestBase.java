@@ -22,8 +22,6 @@ package org.archive.state;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
@@ -37,7 +35,6 @@ import org.apache.commons.lang.SerializationUtils;
  */
 public abstract class ModuleTestBase extends TestCase {
 
-    private static Logger logger = Logger.getLogger(ModuleTestBase.class.getName());
 
     /**
      * Magical constructor that attempts to auto-create static key field

@@ -63,7 +63,6 @@ import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.OneLineSimpleLogger;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -72,17 +71,14 @@ import org.littleshoot.proxy.HttpFilter;
 import org.littleshoot.proxy.HttpRequestFilter;
 import org.littleshoot.proxy.ProxyAuthorizationHandler;
 
+/**
+ * These are the tests that FetchHTTPTest runs. FetchHTTPTest sets up a
+ * TestSuite that starts up the test servers, and shuts them down after all the
+ * tests in this class has been run. This class should not be named to match
+ * *Test, Test*, or *TestCase, or surefire will try to run it outside of the
+ * FetchHTTPTest suite.
+ */
 public class FetchHTTPTests extends ProcessorTestBase {
-
-    private static Logger logger = Logger.getLogger(FetchHTTPTests.class.getName());
-    
-    static {
-        Logger.getLogger("").setLevel(Level.FINE);
-        for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
-            h.setLevel(Level.ALL);
-            h.setFormatter(new OneLineSimpleLogger());
-        }
-    }
 
     protected FetchHTTP fetcher;
 
@@ -177,21 +173,21 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
     /**
      * Raw message body, before any unchunking or content-decoding.
-     */ 
+     */
     protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     /**
      * Message body after unchunking but before content-decoding.
-     */ 
+     */
     protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     /**
      * Unchunked, content-decoded message body.
-     */ 
+     */
     protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
         return new String(buf, "US-ASCII");
@@ -204,7 +200,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testDefaults() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
+        // logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
         runDefaultChecks(curi);
     }
 
@@ -213,8 +209,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().setAcceptHeaders(headers);
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
-
-        logger.info('\n' + httpRequestString(curi) + contentString(curi));
 
         runDefaultChecks(curi, "acceptHeaders");
         
@@ -247,8 +241,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().process(curi);
         runDefaultChecks(curi);
 
-        logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
-
         String requestString = httpRequestString(curi);
         assertFalse(requestString.contains("Cookie:"));
     }
@@ -275,7 +267,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // fetch again with the credentials
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + rawResponseString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine");
@@ -348,10 +339,10 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().setAcceptCompression(true);
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
-        logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
-        logger.info("\n----- begin entityString -----\n" + entityString(curi));
-        logger.info("\n----- begin contentString -----\n" + contentString(curi));
+        // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
+        // logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+        // logger.info("\n----- begin entityString -----\n" + entityString(curi));
+        // logger.info("\n----- begin contentString -----\n" + contentString(curi));
         assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
         assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
         assertEquals(curi.getContentSize(), curi.getRecordedSize());
@@ -439,7 +430,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
@@ -462,7 +452,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
             @Override
             public boolean authenticate(String userName, String password) {
-                logger.info("username=" + userName + " password=" + password);
+                // logger.info("username=" + userName + " password=" + password);
                 return "http-proxy-user".equals(userName) && "http-proxy-password".equals(password);
             }
         });
@@ -473,13 +463,13 @@ public class FetchHTTPTests extends ProcessorTestBase {
             fetcher().setHttpProxyPort(7877);
             fetcher().setHttpProxyUser("http-proxy-user");
             fetcher().setHttpProxyPassword("http-proxy-password");
+            fetcher().setUseHTTP11(true); // proxy auth is a http 1.1 feature
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
-            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
 
             assertNull(proxiedRequestRememberer.getLastProxiedRequest()); // request didn't make it this far
@@ -490,10 +480,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
             proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             requestString = httpRequestString(curi);
-            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
             assertNotNull(curi.getHttpResponseHeader("Via"));
             assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
@@ -568,13 +557,10 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(curi.getHttpResponseHeader("etag").equals(ETAG_TEST_VALUE));
         runDefaultChecks(curi);
 
-        logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
         FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
         fetchHistoryProcessor.process(curi);
-        logger.info("after FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
 
         fetcher().process(curi);
-        logger.info("\n" + httpRequestString(curi));
         assertTrue(httpRequestString(curi).contains("If-None-Match: " + ETAG_TEST_VALUE + "\r\n"));
         runDefaultChecks(curi);
         // XXX make server send 304 not-modified and check for it here?
@@ -585,7 +571,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         fetcher().setShouldFetchBodyRule(new RejectDecideRule());
         fetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
         assertTrue(httpRequestString(curi).startsWith("GET /200k HTTP/1.0\r\n"));
         assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
@@ -647,7 +632,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // default "open" trust level
         CrawlURI curi = makeCrawlURI("https://localhost:7443/");
         fetcher().process(curi);
-        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         runDefaultChecks(curi, "hostHeader");
         
         // "normal" trust level
@@ -714,15 +698,15 @@ public class FetchHTTPTests extends ProcessorTestBase {
                 while (!isTimeToBeDone) {
                     try {
                         Socket connectionSocket = listeningSocket.accept();
-                        logger.info("accepted connection from " + connectionSocket + ", shutting it down immediately");
+                        // logger.info("accepted connection from " + connectionSocket + ", shutting it down immediately");
                         connectionSocket.shutdownOutput();
                     } catch (SocketTimeoutException e) {
                     }
                 }
             } catch (Exception e) {
-                logger.warning("caught exception: " + e);
+                // logger.warning("caught exception: " + e);
             } finally {
-                logger.info("all done suckers");
+                // logger.info("all done suckers");
             }
         }
 
