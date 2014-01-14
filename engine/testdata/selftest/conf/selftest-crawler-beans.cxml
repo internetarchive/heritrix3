@@ -186,7 +186,7 @@ crawlController.pauseAtStart=false
  </bean>
  
  <!-- cookie storage for FetchHTTP -->
- <bean id="cookieStorage" class="org.archive.modules.fetcher.BdbCookieStorage">
+ <bean id="cookieStore" class="org.archive.modules.fetcher.BdbCookieStore">
  </bean>
  
  <!-- shared cache of server/host info -->

@@ -677,12 +677,12 @@ http://example.example/example
   <!-- <property name="expectedConcurrency" value="25" /> -->
  </bean>
  
- <!-- BDBCOOKIESTORAGE: disk-based cookie storage for FetchHTTP -->
- <bean id="cookieStorage" 
-   class="org.archive.modules.fetcher.BdbCookieStorage">
+ <!-- BDBCOOKIESTORE: disk-based cookie storage for FetchHTTP -->
+ <bean id="cookieStore" 
+   class="org.archive.modules.fetcher.BdbCookieStore">
   <!-- <property name="cookiesLoadFile"><null/></property> -->
   <!-- <property name="cookiesSaveFile"><null/></property> -->
-  <!-- <property name="bdb">
+  <!-- <property name="bdbModule">
         <ref bean="bdb"/>
        </property> -->
  </bean>

@@ -1,7 +1,7 @@
 package org.archive.modules.deciderules;
 
 import org.archive.modules.CrawlURI;
-import org.apache.commons.httpclient.HttpMethod;
+
 
 /**
  * Provides a rule that returns "true" for any CrawlURIs which has a fetch
@@ -11,52 +11,7 @@ import org.apache.commons.httpclient.HttpMethod;
  * 
  * @author cmiles74
  */
-public class NotMatchesStatusCodeDecideRule extends PredicatedDecideRule {
-
-    /** Default lower bound */
-    public final static Integer DEFAULT_LOWER_BOUND = new Integer(0);
-
-    /** Default upper bound */
-    public final static Integer DEFAULT_UPPER_BOUND = new Integer(600);
-
-    /**
-     * Creates a new NotMatchesStatusCodeDecideRule instance. Note
-     * that this will return a rule that will return "true" for all
-     * valid status codes (and some invalide ones, too).
-     */
-    public NotMatchesStatusCodeDecideRule() {
-
-        // set our default bounds
-        kp.put("lowerBound", DEFAULT_LOWER_BOUND);
-        kp.put("upperBound", DEFAULT_UPPER_BOUND);
-    }
-
-    /**
-     * Sets the lower bound on the range of acceptable status codes.
-     *
-     * @param Integer Status code
-     */
-    public void setLowerBound(Integer statusCode) {
-
-        kp.put("lowerBound", statusCode);
-    }
-
-    /**
-     * Returns the lower bound on the range of acceptable status codes.
-     *
-     * @returns Integer Status code
-     */
-    public Integer getLowerBound() {
-
-        Object value = kp.get("lowerBound");
-
-        if(value != null) {
-
-            return((Integer) value);
-        }
-
-        return(null);
-    }
+public class NotMatchesStatusCodeDecideRule extends MatchesStatusCodeDecideRule {
 
     /**
      * Sets the upper bound on the range of acceptable status codes.

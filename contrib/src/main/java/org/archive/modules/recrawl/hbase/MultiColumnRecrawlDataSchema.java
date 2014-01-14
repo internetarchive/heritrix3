@@ -63,16 +63,16 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
             p.add(columnFamily, COLUMN_CONTENT_DIGEST, Bytes.toBytes(digest));
         }
         p.add(columnFamily, COLUMN_STATUS, Bytes.toBytes(Integer.toString(uri.getFetchStatus())));
-        org.apache.commons.httpclient.HttpMethod method = uri.getHttpMethod();
-        if (method != null) {
-            String etag = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
+        
+        if (uri.isHttpTransaction()) {
+            String etag = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_ETAG_HEADER);
             if (etag != null) {
                 // Etqg is usually quoted
                 if (etag.length() >= 2 && etag.charAt(0) == '"' && etag.charAt(etag.length() - 1) == '"')
                     etag = etag.substring(1, etag.length() - 1);
                 p.add(columnFamily, COLUMN_ETAG, Bytes.toBytes(etag));
             }
-            String lastmod = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
+            String lastmod = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
             if (lastmod != null) {
                 long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
                 if (lastmod_sec == 0) {

@@ -1,7 +1,6 @@
 package org.archive.modules.deciderules;
 
 import org.archive.modules.CrawlURI;
-import org.apache.commons.httpclient.HttpMethod;
 
 /**
  * Provides a rule that returns "true" for any CrawlURIs which have a fetch

@@ -82,16 +82,15 @@ implements RecrawlDataSchema {
                 jo.put(PROPERTY_CONTENT_DIGEST, digest);
             }
             jo.put(PROPERTY_STATUS, uri.getFetchStatus());
-            HttpMethod method = uri.getHttpMethod();
-            if (method != null) {
-                String etag = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_ETAG_HEADER);
+            if (uri.isHttpTransaction()) {
+                String etag = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_ETAG_HEADER);
                 if (etag != null) {
                     // Etag is usually quoted
                     if (etag.length() >= 2 && etag.charAt(0) == '"' && etag.charAt(etag.length() - 1) == '"')
                         etag = etag.substring(1, etag.length() - 1);
                     jo.put(PROPERTY_ETAG, etag);
                 }
-                String lastmod = FetchHistoryHelper.getHeaderValue(method, RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
+                String lastmod = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
                 if (lastmod != null) {
                     long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
                     if (lastmod_sec == 0) {

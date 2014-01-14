@@ -29,6 +29,7 @@ import static org.archive.modules.fetcher.FetchHTTPTest.DIGEST_AUTH_REALM;
 import static org.archive.modules.fetcher.FetchHTTPTest.ETAG_TEST_VALUE;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -44,13 +45,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NoHttpResponseException;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
@@ -162,20 +164,32 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
 
     // convenience methods to get strings from raw recorded i/o
+    /**
+     * Raw response including headers.
+     */
     protected String rawResponseString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
-        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
+    /**
+     * Raw message body, before any unchunking or content-decoding.
+     */
+    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
         return new String(buf, "US-ASCII");
     }
+    /**
+     * Message body after unchunking but before content-decoding.
+     */
     protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
-        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
+    /**
+     * Unchunked, content-decoded message body.
+     */
+    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+        byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     protected String httpRequestString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
@@ -186,6 +200,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testDefaults() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
+        // logger.info('\n' + httpRequestString(curi) + rawResponseString(curi));
         runDefaultChecks(curi);
     }
 
@@ -195,7 +210,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
 
-        // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         runDefaultChecks(curi, "acceptHeaders");
         
         // special checks for this test
@@ -246,13 +260,13 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
+        assertEquals("Basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
         assertTrue(curi.getCredentials().contains(basicAuthCredential));
         assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
         // fetch again with the credentials
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
-        // logger.info('\n' + httpRequestString + contentString(curi));
         assertTrue(httpRequestString.contains("Authorization: Basic YmFzaWMtYXV0aC1sb2dpbjpiYXNpYy1hdXRoLXBhc3N3b3Jk\r\n"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine");
@@ -326,9 +340,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().process(curi);
         String httpRequestString = httpRequestString(curi);
         // logger.info('\n' + httpRequestString + "\n\n" + rawResponseString(curi));
-        // logger.info("\n----- begin contentString -----\n" + contentString(curi));
-        // logger.info("\n----- begin entityString -----\n" + entityString(curi));
         // logger.info("\n----- begin messageBodyString -----\n" + messageBodyString(curi));
+        // logger.info("\n----- begin entityString -----\n" + entityString(curi));
+        // logger.info("\n----- begin contentString -----\n" + contentString(curi));
         assertTrue(httpRequestString.contains("Accept-Encoding: gzip,deflate\r\n"));
         assertEquals(DEFAULT_GZIPPED_PAYLOAD.length, curi.getContentLength());
         assertEquals(curi.getContentSize(), curi.getRecordedSize());
@@ -359,23 +373,24 @@ public class FetchHTTPTests extends ProcessorTestBase {
     // routable (perhaps LAN only eg 192.168.x.x or 10.x.x.x) address.
     public void testHttpBindAddress() throws Exception {
         List<InetAddress> addrList = new ArrayList<InetAddress>();
-        for(NetworkInterface ifc : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-           if(ifc.isUp()) {
-              for(InetAddress addr : Collections.list(ifc.getInetAddresses())) {
-                  if(addr instanceof Inet4Address) {
-                    addrList.add(addr);
-                  }
-              }
-           }
+        for (NetworkInterface ifc: Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (ifc.isUp()) {
+                for (InetAddress addr : Collections.list(ifc.getInetAddresses())) {
+                    if (addr instanceof Inet4Address) {
+                        addrList.add(addr);
+                    }
+                }
+            }
         }
-        if(addrList.size()<2) {
-            fail("unable to test binding to different local addresses: only "+addrList.size()+" addresses available");
+        if (addrList.size() < 2) {
+            fail("unable to test binding to different local addresses: only "
+                    + addrList.size() + " addresses available");
         }
         for (InetAddress addr : addrList) {
             tryHttpBindAddress(addr.getHostAddress());
         }
     }
-    
+
     public void tryHttpBindAddress(String addr) throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().setHttpBindAddress(addr);
@@ -415,11 +430,10 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
-            assertNotNull(getHttpResponseHeader(curi, "Via"));
+            assertNotNull(curi.getHttpResponseHeader("Via"));
             
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
             
@@ -432,8 +446,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         }
     }
     
-    // XXX test disabled because proxy auth doesn't work correctly
-    public void xestHttpProxyAuth() throws Exception {
+    public void testHttpProxyAuth() throws Exception {
         ProxiedRequestRememberer proxiedRequestRememberer = new ProxiedRequestRememberer();
         DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877, proxiedRequestRememberer, new HashMap<String, HttpFilter>());
         httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
@@ -454,24 +467,24 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
+
             assertNull(proxiedRequestRememberer.getLastProxiedRequest()); // request didn't make it this far
+            assertNotNull(curi.getHttpResponseHeader("Proxy-Authenticate"));
             assertEquals(407, curi.getFetchStatus());
 
             // fetch original again now that credentials should be populated
             proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
-            // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
 
             requestString = httpRequestString(curi);
-            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
+            assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
-            assertNotNull(getHttpResponseHeader(curi, "Via"));
+            assertNotNull(curi.getHttpResponseHeader("Via"));
             assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
             runDefaultChecks(curi, "requestLine");
         } finally {
@@ -482,7 +495,16 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testMaxFetchKBSec() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         fetcher().setMaxFetchKBSec(100);
+        
+        // if the wire logger is enabled, it can slow things down enough to make
+        // this test failed, so disable it temporarily
+        Level savedWireLevel = Logger.getLogger("org.apache.http.wire").getLevel();
+        Logger.getLogger("org.apache.http.wire").setLevel(Level.INFO);
+        
         fetcher().process(curi);
+        
+        Logger.getLogger("org.apache.http.wire").setLevel(savedWireLevel);
+        
         assertEquals(200000, curi.getContentLength());
         assertTrue(curi.getFetchDuration() > 1800 && curi.getFetchDuration() < 2200);
     }
@@ -511,7 +533,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
         assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since"));
-        assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", getHttpResponseHeader(curi, "last-modified"));
+        assertTrue(curi.getHttpResponseHeader("last-modified").equals("Thu, 01 Jan 1970 00:00:00 GMT"));
         runDefaultChecks(curi);
 
         // logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
@@ -532,7 +554,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/");
         fetcher().process(curi);
         assertFalse(httpRequestString(curi).toLowerCase().contains("if-none-match"));
-        assertTrue(getHttpResponseHeader(curi, "etag").equals(ETAG_TEST_VALUE));
+        assertTrue(curi.getHttpResponseHeader("etag").equals(ETAG_TEST_VALUE));
         runDefaultChecks(curi);
 
         FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
@@ -545,16 +567,20 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
     
     public void testShouldFetchBodyRule() throws Exception {
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        // CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
         fetcher().setShouldFetchBodyRule(new RejectDecideRule());
         fetcher().process(curi);
 
-        assertTrue(httpRequestString(curi).startsWith("GET / HTTP/1.0\r\n"));
+        assertTrue(httpRequestString(curi).startsWith("GET /200k HTTP/1.0\r\n"));
         assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
         assertTrue(curi.getFetchStatus() == 200);
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        
+        assertEquals(1, curi.getAnnotations().size());
+        assertTrue(curi.getAnnotations().contains("midFetchAbort"));
         
         // check for empty body
         assertEquals(0, curi.getContentLength());
@@ -573,12 +599,14 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(curi.getFetchDuration() >= 2000 && curi.getFetchDuration() < 2200);
     }
 
-    // see http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error
+    /*
+     * See http://stackoverflow.com/questions/100841/artificially-create-a-connection-timeout-error 
+     * This test seems to fail if not connected to internet, because 
+     * connection fails immediately insted of timing out.
+     */
     public void testConnectionTimeout() throws Exception {
         CrawlURI curi = makeCrawlURI("http://10.255.255.1/");
-        fetcher().stop();
         fetcher().setSoTimeoutMs(300);
-        fetcher().start();
         
         long start = System.currentTimeMillis();
         fetcher().process(curi);
@@ -586,8 +614,11 @@ public class FetchHTTPTests extends ProcessorTestBase {
         
         assertTrue(elapsed >= 300 && elapsed < 400);
         
+        // Httpcomponents throws org.apache.http.conn.ConnectTimeoutException,
+        // commons-httpclient throws java.net.SocketTimeoutException. Both are
+        // instances of InterruptedIOException
         assertEquals(1, curi.getNonFatalFailures().size());
-        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SocketTimeoutException);
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof InterruptedIOException);
         assertTrue(curi.getNonFatalFailures().toArray()[0].toString().matches("(?i).*connect.*timed out.*"));
 
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
@@ -605,13 +636,10 @@ public class FetchHTTPTests extends ProcessorTestBase {
         
         // "normal" trust level
         curi = makeCrawlURI("https://localhost:7443/");
-        fetcher().stop();
         fetcher().setSslTrustLevel(TrustLevel.NORMAL);
-        fetcher().start();
-        
         fetcher().process(curi);
         assertEquals(1, curi.getNonFatalFailures().size());
-        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLHandshakeException);
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLException);
         assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
         assertEquals(0, curi.getFetchCompletedTime());
     }
@@ -626,20 +654,18 @@ public class FetchHTTPTests extends ProcessorTestBase {
     }
 
     public void testChunked() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/chunked.txt");
+        fetcher().setUseHTTP11(true);
+        fetcher().setSendConnectionClose(false);
+        
         /* XXX Server expects us to close the connection apparently. But we
          * don't detect end of chunked transfer. With these small timeouts we
          * can finish quickly. A couple of SocketTimeoutExceptions will happen
          * within RecordingInputStream.readFullyOrUntil().
          */
-        fetcher().stop();
         fetcher().setSoTimeoutMs(500);
         fetcher().setTimeoutSeconds(1);
-        fetcher().start();
-
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/chunked.txt");
-        fetcher().setUseHTTP11(true);
-        fetcher().setSendConnectionClose(false);
-
+        
         fetcher().process(curi);
         
         //        logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
@@ -648,7 +674,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         //        logger.info("\n----- entityString -----\n" + entityString(curi));
         //        logger.info("\n----- messageBodyString -----\n" + messageBodyString(curi));
         
-        assertEquals("chunked", getHttpResponseHeader(curi, "transfer-encoding"));
+        assertEquals("chunked", curi.getHttpResponseHeader("transfer-encoding"));
         assertEquals("25\r\n" + DEFAULT_PAYLOAD_STRING + "\r\n0\r\n\r\n", messageBodyString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, entityString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
@@ -672,11 +698,15 @@ public class FetchHTTPTests extends ProcessorTestBase {
                 while (!isTimeToBeDone) {
                     try {
                         Socket connectionSocket = listeningSocket.accept();
+                        // logger.info("accepted connection from " + connectionSocket + ", shutting it down immediately");
                         connectionSocket.shutdownOutput();
                     } catch (SocketTimeoutException e) {
                     }
                 }
             } catch (Exception e) {
+                // logger.warning("caught exception: " + e);
+            } finally {
+                // logger.info("all done suckers");
             }
         }
 
@@ -685,23 +715,21 @@ public class FetchHTTPTests extends ProcessorTestBase {
         }
     }
 
+    // Implicitly tests the retry cycle within httpcomponents
     public void testNoResponse() throws Exception {
         NoResponseServer noResponseServer = new NoResponseServer("localhost", 7780);
         noResponseServer.start();
         
-        try {
-            // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
-            CrawlURI curi = makeCrawlURI("http://localhost:7780");
-            fetcher().process(curi);
-            assertEquals(1, curi.getNonFatalFailures().size());
-            assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
-            // assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
-            assertEquals(FetchStatusCodes.S_CONNECT_LOST, curi.getFetchStatus());
-            assertEquals(0, curi.getFetchCompletedTime());
-        } finally {
-            noResponseServer.beDone();
-            noResponseServer.join();
-        }
+        // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
+        CrawlURI curi = makeCrawlURI("http://localhost:7780");
+        fetcher().process(curi);
+        assertEquals(1, curi.getNonFatalFailures().size());
+        assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof NoHttpResponseException);
+        assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+        assertEquals(0, curi.getFetchCompletedTime());
+        
+        noResponseServer.beDone();
+        noResponseServer.join();
     }
     
     /**
@@ -730,34 +758,26 @@ public class FetchHTTPTests extends ProcessorTestBase {
     @Override
     protected FetchHTTP makeModule() throws IOException {
         FetchHTTP fetchHttp = newTestFetchHttp(getUserAgentString());
-        
         fetchHttp.start();
         return fetchHttp;
     }
-
+    
     public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
-        fetchHttp.setCookieStorage(new SimpleCookieStorage());
+        fetchHttp.setCookieStore(new SimpleCookieStore());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(userAgentString);
         fetchHttp.setUserAgentProvider(uap);
+
+        fetchHttp.start();
         return fetchHttp;
     }
-    
-    protected String getHttpResponseHeader(CrawlURI curi, String name) {
-        Header header = curi.getHttpMethod().getResponseHeader(name);
-        if (header == null) {
-            return null;
-        } else {
-            return header.getValue();
-        }
-    }
-    
+
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        
+
         if (fetcher != null) {
             fetcher.stop();
             fetcher = null;

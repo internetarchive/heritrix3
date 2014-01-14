@@ -36,6 +36,7 @@ import org.archive.io.warc.WARCWriterPoolSettingsData;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
+import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
@@ -96,7 +97,7 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         curi.setFetchStatus(200);
         curi.setContentSize(1);
         // necessary to pass shouldWrite() test.
-        curi.setHttpMethod(new GetMethod());
+        curi.setFetchType(FetchType.HTTP_GET);
         // make a first call. FailWARCWriter throws an IOException
         // upon first call to getPosition() - this situation can be
         // easily overlooked as method name does not suggest it's

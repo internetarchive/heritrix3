@@ -16,7 +16,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.archive.modules.fetcher;
 
 import it.unimi.dsi.mg4j.util.MutableString;
@@ -24,34 +23,28 @@ import it.unimi.dsi.mg4j.util.MutableString;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Date;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.CookieStore;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
 
-/**
- * @author pjack
- *
- */
-public abstract class AbstractCookieStorage 
-    implements CookieStorage, 
-               Lifecycle, // InitializingBean, 
-               Closeable {
+public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Closeable,
+        Checkpointable {
 
-    final private static Logger LOGGER = 
-        Logger.getLogger(AbstractCookieStorage.class.getName());
+    private static final Logger logger = 
+        Logger.getLogger(AbstractCookieStore.class.getName());
     
     protected ConfigFile cookiesLoadFile = null;
     public ConfigFile getCookiesLoadFile() {
@@ -60,7 +53,6 @@ public abstract class AbstractCookieStorage
     public void setCookiesLoadFile(ConfigFile cookiesLoadFile) {
         this.cookiesLoadFile = cookiesLoadFile;
     }
-
     
     protected ConfigPath cookiesSaveFile = null;
     public ConfigPath getCookiesSaveFile() {
@@ -70,28 +62,53 @@ public abstract class AbstractCookieStorage
         this.cookiesSaveFile = cookiesSaveFile;
     }
 
+    @Override
+    public void close() throws IOException {
+        // XXX only here because old BdbCookie also implements Closeable and does nothing... why?
+    }
+
     protected boolean isRunning = false; 
+
+    @Override
     public void start() {
-        if(isRunning()) {
+        if (isRunning()) {
             return;
         }
-        SortedMap<String,Cookie> cookies = prepareMap();
+        prepare();
         if (getCookiesLoadFile()!=null) {
-            loadCookies(getCookiesLoadFile(), cookies);
+            loadCookies(getCookiesLoadFile());
         }
-        isRunning = true; 
+        isRunning = true;
     }
-    
-    public boolean isRunning() {
-        return isRunning;
-    }
-    
+
+
+    @Override
     public void stop() {
         isRunning = false; 
     }
 
-    protected abstract SortedMap<String,Cookie> prepareMap();
+    @Override
+    public boolean isRunning() {
+        return isRunning;
+    }
+
+    public void saveCookies() {
+        if (getCookiesSaveFile()!=null) {
+            saveCookies(getCookiesSaveFile().getFile().getAbsolutePath());
+        }
+    }
     
+    protected void loadCookies(ConfigFile file) {
+        Reader reader = null;
+        try {
+            reader = file.obtainReader();
+            loadCookies(reader);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+
+    }
+
     /**
      * Load cookies. The input is text in the Netscape's 'cookies.txt' file
      * format. Example entry of cookies.txt file:
@@ -115,12 +132,9 @@ public abstract class AbstractCookieStorage
      * </ol>
      * 
      * @param reader
-     *            input
-     * @param cookiesFile
-     *            file in the Netscape's 'cookies.txt' format.
+     *            input in the Netscape's 'cookies.txt' format.
      */
-    public static void loadCookies(Reader reader,
-            SortedMap<String, Cookie> cookies) {
+    public static void loadCookies(Reader reader, Set<Cookie> cookies) {
         BufferedReader br = new BufferedReader(reader);
         try {
             String line;
@@ -131,57 +145,28 @@ public abstract class AbstractCookieStorage
                     if (tokens.length == 7) {
                         long epochSeconds = Long.parseLong(tokens[4]);
                         Date expirationDate = (epochSeconds >= 0 ? new Date(epochSeconds * 1000) : null);
-                        Cookie cookie = new Cookie(tokens[0], tokens[5],
-                                tokens[6], tokens[2], expirationDate, 
-                                Boolean.valueOf(tokens[3]).booleanValue());
-                        cookie.setDomainAttributeSpecified(Boolean.valueOf(tokens[1]).booleanValue());
-                        
-                        LOGGER.fine("Adding cookie: domain " + cookie.getDomain() + " cookie " + cookie.toExternalForm());
-                        cookies.put(cookie.getSortKey(), cookie);
+                        BasicClientCookie cookie = new BasicClientCookie(tokens[5], tokens[6]);
+                        cookie.setDomain(tokens[0]);
+                        cookie.setExpiryDate(expirationDate);
+                        cookie.setSecure(Boolean.valueOf(tokens[3]).booleanValue());
+                        cookie.setPath(tokens[2]);
+// XXX httpclient cookie doesn't have this thing?
+//                        cookie.setDomainAttributeSpecified(Boolean.valueOf(tokens[1]).booleanValue());
+                        logger.fine("Adding cookie: domain " + cookie.getDomain() + " cookie " + cookie);
+                        cookies.add(cookie);
                     } else {
-                        LOGGER.warning("cookies input line " + lineNo + " invalid, expected 7 tab-delimited tokens");
+                        logger.warning("cookies input line " + lineNo + " invalid, expected 7 tab-delimited tokens");
                     }
                 }
                 
                 lineNo++;
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING,e.getMessage(), e);
-        }
-    }
-
-    protected static void loadCookies(ConfigFile file,
-            SortedMap<String, Cookie> cookies) {
-        
-        Reader reader = null;
-        try {
-            reader = file.obtainReader();
-            loadCookies(reader, cookies);
-        } finally {
-            IOUtils.closeQuietly(reader);
-        }
-    }
-
-    public static void loadCookies(String cookiesFile, 
-            SortedMap<String,Cookie> result) {
-
-        // Do nothing if cookiesFile is not specified.
-        if (cookiesFile == null || cookiesFile.length() <= 0) {
-            return;
-        }
-        
-        FileReader reader = null;
-        try {
-            reader = new FileReader(cookiesFile);
-            loadCookies(reader, result);
-        } catch (FileNotFoundException e) {
-            LOGGER.log(Level.WARNING,"Could not find file: " + cookiesFile, e);
-        } finally {
-            IOUtils.closeQuietly(reader);
+            logger.log(Level.WARNING,e.getMessage(), e);
         }
     }
     
-    public static void saveCookies(String saveCookiesFile, Map<String,Cookie> cookies) { 
+    public static void saveCookies(String saveCookiesFile, Set<Cookie> cookies) { 
         // Do nothing if cookiesFile is not specified. 
         if (saveCookiesFile == null || saveCookiesFile.length() <= 0) { 
             return; 
@@ -193,16 +178,17 @@ public abstract class AbstractCookieStorage
             String tab ="\t"; 
             out.write("# Heritrix Cookie File\n".getBytes()); 
             out.write("# This file is the Netscape cookies.txt format\n\n".getBytes()); 
-            for (Cookie cookie: cookies.values()) { 
+            for (Cookie cookie: cookies) { 
                 // Guess an initial size 
                 MutableString line = new MutableString(1024 * 2); 
                 line.append(cookie.getDomain()); 
                 line.append(tab);
-                line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE"); 
+                // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE"); 
+                line.append("TRUE");
                 line.append(tab); 
                 line.append(cookie.getPath());
                 line.append(tab); 
-                line.append(cookie.getSecure() ? "TRUE" : "FALSE"); 
+                line.append(cookie.isSecure() ? "TRUE" : "FALSE"); 
                 line.append(tab);
                 line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
                 line.append(tab);
@@ -213,24 +199,13 @@ public abstract class AbstractCookieStorage
                 out.write(line.toString().getBytes()); 
             } 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
+            logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
         } finally {
             IOUtils.closeQuietly(out);
         } 
     }
 
-    public abstract SortedMap<String,Cookie> getCookiesMap();
-
-    public void saveCookiesMap(Map<String, Cookie> map) {
-        innerSaveCookiesMap(map);
-        if (getCookiesSaveFile()!=null) {
-            saveCookies(getCookiesSaveFile().getFile().getAbsolutePath(), map);
-        }
-    }
-    
-    protected abstract void innerSaveCookiesMap(Map<String,Cookie> map);
-
-    public void close() throws IOException {
-    }
-
+    abstract protected void prepare();
+    abstract protected void loadCookies(Reader reader);
+    abstract protected void saveCookies(String absolutePath);
 }

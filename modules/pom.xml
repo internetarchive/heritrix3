@@ -34,17 +34,21 @@
 			<artifactId>groovy-all</artifactId>
 			<version>1.6.3</version>
 		</dependency>
-
-		<!-- testing -->
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty-util</artifactId>
+			<version>6.1.26</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty-sslengine</artifactId>
+			<version>6.1.26</version>
+			<scope>test</scope>
+		</dependency>
                 <dependency>
                         <groupId>org.mortbay.jetty</groupId>
                         <artifactId>jetty</artifactId>
-                        <version>6.1.26</version>
-                        <scope>test</scope>
-                </dependency>
-                <dependency>
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>jetty-sslengine</artifactId>
                         <version>6.1.26</version>
                         <scope>test</scope>
                 </dependency>
@@ -66,7 +70,6 @@
 			<version>1.6.6</version>
 			<scope>test</scope>
 		</dependency>
-
 	</dependencies>
 	<build>
 		<plugins>

@@ -45,11 +45,9 @@ import org.mortbay.jetty.security.BasicAuthenticator;
 import org.mortbay.jetty.security.Constraint;
 import org.mortbay.jetty.security.ConstraintMapping;
 import org.mortbay.jetty.security.DigestAuthenticator;
-import org.mortbay.jetty.security.FormAuthenticator;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.jetty.security.SslSocketConnector;
-import org.mortbay.jetty.servlet.HashSessionManager;
 import org.mortbay.jetty.servlet.SessionHandler;
 import org.mortbay.log.Log;
 
@@ -58,8 +56,6 @@ import sun.security.tools.KeyTool;
 public class FetchHTTPTest extends ProcessorTestBase {
 
 //    private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
-//
-//    /* uncomment this for detailed logging from jetty and heritrix */
 //    static {
 //        Logger.getLogger("").setLevel(Level.FINE);
 //        for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
@@ -78,11 +74,6 @@ public class FetchHTTPTest extends ProcessorTestBase {
     protected static final String DIGEST_AUTH_LOGIN    = "digest-auth-login";
     protected static final String DIGEST_AUTH_PASSWORD = "digest-auth-password";
 
-    protected static final String FORM_AUTH_REALM    = "form-auth-realm";
-    protected static final String FORM_AUTH_ROLE     = "form-auth-role";
-    protected static final String FORM_AUTH_LOGIN    = "form-auth-login";
-    protected static final String FORM_AUTH_PASSWORD = "form-auth-password";
-
     protected static final String ETAG_TEST_VALUE = "An ETag is an opaque identifier assigned by a web server to a specific version of a resource found at a URL!";
 
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
@@ -94,18 +85,6 @@ public class FetchHTTPTest extends ProcessorTestBase {
             -33, -11, 37, 0, 0, 0 };
 
     protected static final byte[] EIGHTY_BYTE_LINE = "1234567890123456789012345678901234567890123456789012345678901234567890123456789\n".getBytes();
-
-    protected static final String LOGIN_HTML =
-            "<html>" +
-            "<head><title>Log In</title></head>" +
-            "<body>" +
-            "<form action='/j_security_check' method='post'>" +
-            "<div> username: <input name='j_username' type='text'/> </div>" +
-            "<div> password: <input name='j_password' type='password'/> </div>" +
-            "<div> <input type='submit' /> </div>" +
-            "</form>" +
-            "</body>" +
-            "</html>";
 
     protected static class TestHandler extends SessionHandler {
 
@@ -122,12 +101,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 response.addCookie(new javax.servlet.http.Cookie("test-cookie-name", "test-cookie-value"));
             }
             
-            if (target.equals("/login.html")) {
-                response.setContentType("text/html;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getOutputStream().write(LOGIN_HTML.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
-            } else if (target.equals("/200k")) {
+            if (target.equals("/200k")) {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(HttpServletResponse.SC_OK);
                 assertTrue(EIGHTY_BYTE_LINE.length == 80);
@@ -283,29 +257,6 @@ public class FetchHTTPTest extends ProcessorTestBase {
         server.start();
         servers.put(sc.getPort(), server);
         
-        // server for form auth
-        server = new Server();
-        
-        sc = new SocketConnector();
-        sc.setHost("127.0.0.1");
-        sc.setPort(7779);
-        server.addConnector(sc);
-        
-        FormAuthenticator formAuthenticatrix = new FormAuthenticator();
-        formAuthenticatrix.setLoginPage("/login.html");
-        
-        authWrapper = makeAuthWrapper(formAuthenticatrix,
-                FORM_AUTH_ROLE, FORM_AUTH_REALM, FORM_AUTH_LOGIN,
-                FORM_AUTH_PASSWORD);
-        authWrapper.setHandler(handlers);
-        SessionHandler sessionHandler = new SessionHandler();
-        sessionHandler.setSessionManager(new HashSessionManager());
-        sessionHandler.setHandler(authWrapper);
-        server.setHandler(sessionHandler);
-        
-        server.start();
-        servers.put(sc.getPort(), server);
-
         return servers;
     }
     
@@ -341,4 +292,5 @@ public class FetchHTTPTest extends ProcessorTestBase {
     public static Request getLastRequest() {
         return lastRequest;
     }
+
 }

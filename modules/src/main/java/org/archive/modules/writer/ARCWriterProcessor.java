@@ -19,7 +19,6 @@
 
 package org.archive.modules.writer;
 
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.IOException;
@@ -168,8 +167,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
                 }
                 curi.addExtraInfo("arcFilename", filename);
                 
-                @SuppressWarnings("unchecked")
-                Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+                Map<String,Object>[] history = curi.getFetchHistory();
                 if (history != null && history[0] != null) {
                     history[0].put(A_WRITE_TAG, filename);
                 }

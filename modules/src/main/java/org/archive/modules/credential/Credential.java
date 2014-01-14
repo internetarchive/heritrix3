@@ -20,13 +20,10 @@ package org.archive.modules.credential;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.management.AttributeNotFoundException;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -163,16 +160,6 @@ public abstract class Credential implements Serializable {
      * on each visit to the server (e.g. Rfc2617 is such a type).
      */
     public abstract boolean isEveryTime();
-
-    /**
-     * @param curi CrawlURI to as for context.
-     * @param http Instance of httpclient.
-     * @param method Method to populate.
-     * @param httpAuthChallenges 
-     * @return True if added a credentials.
-     */
-    public abstract boolean populate(CrawlURI curi, HttpClient http,
-        HttpMethod method, Map<String, String> httpAuthChallenges);
 
     /**
      * @param curi CrawlURI to look at.

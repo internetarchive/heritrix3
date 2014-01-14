@@ -19,10 +19,6 @@
 
 package org.archive.modules.extractor;
 
-import java.util.logging.Logger;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -38,9 +34,6 @@ public class ExtractorHTTP extends Extractor {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
-    
-    private static Logger logger =
-            Logger.getLogger(ExtractorHTTP.class.getName());
 
     public ExtractorHTTP() {
     }
@@ -63,17 +56,16 @@ public class ExtractorHTTP extends Extractor {
         FetchType ft = uri.getFetchType();
         return (ft == FetchType.HTTP_GET) || (ft == FetchType.HTTP_POST);
     }
-    
-    
+
+
     @Override
     protected void extract(CrawlURI curi) {
-        HttpMethod method = curi.getHttpMethod();
         // discover headers if present
-        addHeaderLink(curi, method.getResponseHeader("Location"));
-        addHeaderLink(curi, method.getResponseHeader("Content-Location"));
-        
-        addRefreshHeaderLink(curi, method.getResponseHeader("Refresh"));
-        
+        addHeaderLink(curi, "Location");
+        addHeaderLink(curi, "Content-Location");
+
+        addRefreshHeaderLink(curi, "Refresh");
+
         // try /favicon.ico for every HTTP(S) URI
         addOutlink(curi, "/favicon.ico", LinkContext.INFERRED_MISC, Hop.INFERRED);
         if(getInferRootPage()) {
@@ -81,25 +73,25 @@ public class ExtractorHTTP extends Extractor {
         }
     }
 
-    protected void addRefreshHeaderLink(CrawlURI curi, Header refreshHeader) {
-        if (refreshHeader == null) {
-            return;
-        }
-        
-        // parsing logic copied from ExtractorHTML meta-refresh handling
-        int urlIndex = refreshHeader.getValue().indexOf("=") + 1;
-        if (urlIndex > 0) {
-            String refreshUri = refreshHeader.getValue().substring(urlIndex);
-            addHeaderLink(curi, refreshHeader.getName(), refreshUri);
-        }
-    }
-    
-    protected void addHeaderLink(CrawlURI curi, Header loc) {
-        if (loc != null) {
-            addHeaderLink(curi, loc.getName(), loc.getValue());
+    protected void addRefreshHeaderLink(CrawlURI curi, String headerKey) {
+        String headerValue = curi.getHttpResponseHeader(headerKey);
+        if (headerValue != null) {
+            // parsing logic copied from ExtractorHTML meta-refresh handling
+            int urlIndex = headerValue.indexOf("=") + 1;
+            if (urlIndex > 0) {
+                String refreshUri = headerValue.substring(urlIndex);
+                addHeaderLink(curi, headerKey, refreshUri);
+            }
         }
     }
-    
+
+    protected void addHeaderLink(CrawlURI curi, String headerKey) {
+        String headerValue = curi.getHttpResponseHeader(headerKey);
+        if (headerValue != null) {
+            addHeaderLink(curi, headerKey, headerValue);
+        }
+    }
+
     protected void addHeaderLink(CrawlURI curi, String headerName, String url) {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), url);

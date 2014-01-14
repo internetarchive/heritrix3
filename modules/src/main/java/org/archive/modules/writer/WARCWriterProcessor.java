@@ -48,7 +48,6 @@ import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
@@ -75,8 +74,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -309,8 +306,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         curi.addExtraInfo("warcFileOffset", startPosition);
 
         // history for uri-based dedupe
-        @SuppressWarnings("unchecked")
-        Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+        Map<String,Object>[] history = curi.getFetchHistory();
         if (history != null && history[0] != null) {
             history[0].put(A_WRITE_TAG, writer.getFilenameWithoutOccupiedSuffix());
         }
@@ -763,10 +759,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         recordInfo.setExtraHeaders(namedFields);
         
         if(curi.isHttpTransaction()) {
-            HttpMethod method = curi.getHttpMethod();
-            saveHeader(A_ETAG_HEADER,method,namedFields,HEADER_KEY_ETAG);
-            saveHeader(A_LAST_MODIFIED_HEADER,method,namedFields,
-            		HEADER_KEY_LAST_MODIFIED);
+            saveHeader(curi, namedFields, A_ETAG_HEADER, HEADER_KEY_ETAG);
+            saveHeader(curi, namedFields, A_LAST_MODIFIED_HEADER, HEADER_KEY_LAST_MODIFIED);
         }
         // truncate to zero-length (all necessary info is above)
         namedFields.addLabelValue(HEADER_KEY_TRUNCATED,
@@ -785,17 +779,14 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     }
     
     /**
-     * Save a header from the given HTTP operation into the 
+     * Saves a header from the given HTTP operation into the 
      * provider headers under a new name
-     * 
-     * @param origName header name to get if present
-     * @param method http operation containing headers
      */
-    protected void saveHeader(String origName, HttpMethod method, 
-    		ANVLRecord headers, String newName) {
-        Header header = method.getResponseHeader(origName);
-        if(header!=null) {
-            headers.addLabelValue(newName, header.getValue());
+    protected void saveHeader(CrawlURI curi, ANVLRecord warcHeaders,
+            String origName, String newName) {
+        String value = curi.getHttpResponseHeader(origName);
+        if (value != null) {
+            warcHeaders.addLabelValue(newName, value);
         }
     }
 
