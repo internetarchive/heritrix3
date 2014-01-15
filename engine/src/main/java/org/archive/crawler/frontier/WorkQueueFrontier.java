@@ -1080,7 +1080,6 @@ implements Closeable,
                 	count += delCount;
                 }
                 wq.makeDirty();
-            
             }
         }
         decrementQueuedCount(count);
