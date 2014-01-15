@@ -1075,8 +1075,12 @@ implements Closeable,
             if (queuePat.matcher(qname).matches()) {
                 WorkQueue wq = getQueueFor(qname);
                 wq.unpeek(null);
-                count += wq.deleteMatching(this, uriRegex);
+                long delCount = wq.deleteMatching(this, uriRegex);
+                if (!wq.isRetired()) {
+                	count += delCount;
+                }
                 wq.makeDirty();
+            
             }
         }
         decrementQueuedCount(count);
