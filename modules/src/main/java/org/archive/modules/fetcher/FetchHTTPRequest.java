@@ -497,7 +497,6 @@ class FetchHTTPRequest {
 
         @Override
         protected InputStream getSocketInputStream(final Socket socket) throws IOException {
-            logger.info("socket=" + socket);
             Recorder recorder = Recorder.getHttpRecorder();
             if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
                 return recorder.inputWrap(super.getSocketInputStream(socket));
@@ -508,7 +507,6 @@ class FetchHTTPRequest {
 
         @Override
         protected OutputStream getSocketOutputStream(final Socket socket) throws IOException {
-            logger.info("socket=" + socket);
             Recorder recorder = Recorder.getHttpRecorder();
             if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
                 return recorder.outputWrap(super.getSocketOutputStream(socket));
