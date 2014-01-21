@@ -24,13 +24,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import org.apache.http.cookie.Cookie;
-import org.apache.http.cookie.CookieIdentityComparator;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
-import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.sleepycat.bind.serial.SerialBinding;
@@ -100,6 +97,7 @@ public class BdbCookieStore extends AbstractCookieStore {
     @Override
     public synchronized List<Cookie> getCookies() {
         if (cookies != null) {
+            // create defensive copy so it won't be concurrently modified
             return new ArrayList<Cookie>(cookies.values());
         } else {
             return null;
