@@ -26,9 +26,6 @@ import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PROFILE;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_DATE;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.format.warc.WARCConstants.HTTP_REQUEST_MIMETYPE;
 import static org.archive.format.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
@@ -74,7 +71,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
@@ -87,8 +83,8 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.extractor.Link;
+import org.archive.modules.revisit.RevisitProfile;
 import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
@@ -430,19 +426,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
 
         URI rid;
         
-        if (getWriteRevisitForIdenticalDigests()
-                && curi.hasContentDigestHistory()
-                && curi.getContentDigestHistory().get(A_ORIGINAL_URL) != null) {
-            rid = writeRevisitUriAgnosticDigest(w, timestamp,
-                    HTTP_RESPONSE_MIMETYPE, baseid, curi, headers);
-        } else if (IdenticalDigestDecideRule.hasIdenticalDigest(curi) && 
-                getWriteRevisitForIdenticalDigests()) {
-            rid = writeRevisitDigest(w, timestamp, HTTP_RESPONSE_MIMETYPE,
-                    baseid, curi, headers);
-        } else if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED && 
-                getWriteRevisitForNotModified()) {
-            rid = writeRevisitNotModified(w, timestamp,
-                    baseid, curi, headers);
+        if (curi.isRevisit()) {
+            rid = writeRevisit(w, timestamp, HTTP_RESPONSE_MIMETYPE, baseid, curi, headers);
         } else {
             // Check for truncated annotation
             String value = null;
@@ -488,9 +473,8 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
             
         if (curi.getRecorder() != null) {
-            if (IdenticalDigestDecideRule.hasIdenticalDigest(curi) && 
-                    getWriteRevisitForIdenticalDigests()) {
-                rid = writeRevisitDigest(w, timestamp, null,
+            if (curi.isRevisit() && getWriteRevisitForIdenticalDigests()) {
+                rid = writeRevisit(w, timestamp, null,
                         baseid, curi, headers, 0);
             } else {
                 headers = new ANVLRecord();
@@ -641,23 +625,31 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         return recordInfo.getRecordId();
     }
 
-    protected URI writeRevisitDigest(final WARCWriter w,
+    protected URI writeRevisit(final WARCWriter w,
             final String timestamp, final String mimetype,
             final URI baseid, final CrawlURI curi,
-            final ANVLRecord namedFields) 
-    throws IOException {
-        long revisedLength = curi.getRecorder().getRecordedInput().getContentBegin();
-        revisedLength = revisedLength > 0 
-            ? revisedLength 
-            : curi.getRecorder().getRecordedInput().getSize();
-        return writeRevisitDigest(w, timestamp, mimetype, baseid, curi,
-                namedFields, revisedLength);
+            final ANVLRecord headers)  
+            	    throws IOException {
+        long revisedLength = 0; // By default, truncate all data 
+        
+        if (curi.getRevisitProfile().getProfileName().equals(PROFILE_REVISIT_IDENTICAL_DIGEST) ) {
+        	// Save response from identical digest matches
+        	curi.getRecorder().getRecordedInput().getContentBegin();
+        	revisedLength = revisedLength > 0 
+        			? revisedLength 
+        			: curi.getRecorder().getRecordedInput().getSize();
+        }
+        return writeRevisit(w, timestamp, mimetype, baseid, curi,
+                headers, revisedLength);
     }
-
-    protected URI writeRevisitDigest(final WARCWriter w,
-            final String timestamp, final String mimetype, final URI baseid,
-            final CrawlURI curi, final ANVLRecord namedFields,
-            long contentLength) throws IOException {
+    
+    protected URI writeRevisit(final WARCWriter w,
+            final String timestamp, final String mimetype,
+            final URI baseid, final CrawlURI curi,
+            final ANVLRecord headers,
+            final long contentLength)  
+            	    throws IOException {
+    
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setType(WARCRecordType.revisit);
         recordInfo.setUrl(curi.toString());
@@ -666,77 +658,34 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         recordInfo.setRecordId(baseid);
         recordInfo.setContentLength(contentLength);
         recordInfo.setEnforceLength(false);
+    	
+        RevisitProfile revisitProfile = curi.getRevisitProfile();
         
-        namedFields.addLabelValue(
-        		HEADER_KEY_PROFILE, PROFILE_REVISIT_IDENTICAL_DIGEST);
-        namedFields.addLabelValue(
-        		HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
-        recordInfo.setExtraHeaders(namedFields);
+        headers.addLabelValue(HEADER_KEY_PROFILE, revisitProfile.getProfileName());
+        headers.addLabelValue(HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
+
+        Map<String, String> revisitHeaders = revisitProfile.getWarcHeaders();
         
-        ReplayInputStream ris =
-            curi.getRecorder().getRecordedInput().getReplayInputStream();
-        recordInfo.setContentStream(ris);
-        
-        try {
-            w.writeRecord(recordInfo);
-        } finally {
-            IOUtils.closeQuietly(ris);
+        if (!revisitHeaders.isEmpty()) {
+        	recordInfo.setExtraHeaders(headers);
+	        for ( String key : revisitHeaders.keySet()) {
+	            headers.addLabelValue(key, "<" + revisitHeaders.get(key) + ">");        	
+	        }
         }
-        curi.getAnnotations().add("warcRevisit:digest");
         
-        return recordInfo.getRecordId();
+		ReplayInputStream ris = curi.getRecorder().getRecordedInput().getReplayInputStream();
+		recordInfo.setContentStream(ris);
+
+		try {
+			w.writeRecord(recordInfo);
+		} finally {
+			IOUtils.closeQuietly(ris);
+		}
+		return recordInfo.getRecordId();
     }
     
-    protected URI writeRevisitUriAgnosticDigest(WARCWriter w, String timestamp,
-            String mimetype, URI baseid, CrawlURI curi,
-            ANVLRecord headers) throws IOException {
-
-        WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.revisit);
-        recordInfo.setUrl(curi.toString());
-        recordInfo.setCreate14DigitDate(timestamp);
-        recordInfo.setMimetype(mimetype);
-        recordInfo.setRecordId(baseid);
-        recordInfo.setEnforceLength(false);
-        
-        long revisedLength = curi.getRecorder().getRecordedInput().getContentBegin();
-        revisedLength = revisedLength > 0 ? revisedLength : curi.getRecorder().getRecordedInput().getSize();
-        recordInfo.setContentLength(revisedLength);
-        
-        headers.addLabelValue(
-                HEADER_KEY_PROFILE, PROFILE_REVISIT_IDENTICAL_DIGEST);
-        headers.addLabelValue(
-                HEADER_KEY_TRUNCATED, NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
-        
-        /*
-         * ISO 28500 WARC ISO standard draft says: "The WARC-Refers-To field may
-         * also be used to associate a record of type 'revisit' or 'conversion'
-         * with the preceding record which helped determine the present record
-         * content."
-         */
-        headers.addLabelValue(HEADER_KEY_REFERS_TO, 
-                "<" + curi.getContentDigestHistory().get(A_WARC_RECORD_ID) + ">");
-        headers.addLabelValue(HEADER_KEY_REFERS_TO_TARGET_URI, 
-                curi.getContentDigestHistory().get(A_ORIGINAL_URL).toString());
-        headers.addLabelValue(HEADER_KEY_REFERS_TO_DATE, 
-                curi.getContentDigestHistory().get(A_ORIGINAL_DATE).toString());
-
-        recordInfo.setExtraHeaders(headers);
-        
-        ReplayInputStream ris =
-            curi.getRecorder().getRecordedInput().getReplayInputStream();
-        recordInfo.setContentStream(ris);
-        
-        try {
-            w.writeRecord(recordInfo);
-        } finally {
-            IOUtils.closeQuietly(ris);
-        }
-        curi.getAnnotations().add("warcRevisit:digest");
-        
-        return recordInfo.getRecordId();
-    }
     
+    @Deprecated
     protected URI writeRevisitNotModified(final WARCWriter w,
             final String timestamp, 
             final URI baseid, final CrawlURI puri,
