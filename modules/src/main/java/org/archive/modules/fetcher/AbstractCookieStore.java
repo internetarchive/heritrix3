@@ -26,18 +26,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collection;
 import java.util.Date;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieIdentityComparator;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
+import org.json.JSONArray;
 import org.springframework.context.Lifecycle;
 
 public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Closeable,
@@ -134,7 +138,8 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
      * @param reader
      *            input in the Netscape's 'cookies.txt' format.
      */
-    public static void loadCookies(Reader reader, Set<Cookie> cookies) {
+    public static Collection<Cookie> readCookies(Reader reader) {
+        LinkedList<Cookie> cookies = new LinkedList<Cookie>(); 
         BufferedReader br = new BufferedReader(reader);
         try {
             String line;
@@ -164,9 +169,10 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         } catch (IOException e) {
             logger.log(Level.WARNING,e.getMessage(), e);
         }
+        return cookies;
     }
     
-    public static void saveCookies(String saveCookiesFile, Set<Cookie> cookies) { 
+    public static void saveCookies(String saveCookiesFile, Collection<Cookie> collection) { 
         // Do nothing if cookiesFile is not specified. 
         if (saveCookiesFile == null || saveCookiesFile.length() <= 0) { 
             return; 
@@ -178,7 +184,7 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
             String tab ="\t"; 
             out.write("# Heritrix Cookie File\n".getBytes()); 
             out.write("# This file is the Netscape cookies.txt format\n\n".getBytes()); 
-            for (Cookie cookie: cookies) { 
+            for (Cookie cookie: collection) { 
                 // Guess an initial size 
                 MutableString line = new MutableString(1024 * 2); 
                 line.append(cookie.getDomain()); 
@@ -186,7 +192,7 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
                 // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE"); 
                 line.append("TRUE");
                 line.append(tab); 
-                line.append(cookie.getPath());
+                line.append(cookie.getPath() != null ? cookie.getPath() : "/");
                 line.append(tab); 
                 line.append(cookie.isSecure() ? "TRUE" : "FALSE"); 
                 line.append(tab);
@@ -203,6 +209,31 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         } finally {
             IOUtils.closeQuietly(out);
         } 
+    }
+    
+    /**
+     * @see {@link CookieIdentityComparator#compare(Cookie, Cookie)}
+     */
+    protected String makeKey(Cookie cookie) {
+        JSONArray a = new JSONArray();
+        a.put(cookie.getName());
+        
+        String d = cookie.getDomain();
+        if (d == null) {
+            d = "";
+        } else if (d.indexOf('.') == -1) {
+            d = d + ".local";
+        }
+        d = d.toLowerCase(Locale.ENGLISH);
+        a.put(d);
+        
+        String p = cookie.getPath();
+        if (p == null) {
+            p = "/";
+        }
+        a.put(p);
+        
+        return a.toString();
     }
 
     abstract protected void prepare();
