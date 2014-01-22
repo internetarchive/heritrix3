@@ -19,13 +19,11 @@
 
 package org.archive.modules.deciderules.recrawl;
 
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST;
-
-import java.util.Map;
-
+import org.archive.format.warc.WARCConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
+import org.archive.modules.revisit.RevisitProfile;
 
 /**
  * Rule applies configured decision to any CrawlURIs whose prior-history
@@ -69,14 +67,11 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
      * otherwise false
      */
     public static boolean hasIdenticalDigest(CrawlURI curi) {
-        Map<String,Object>[] history = curi.getFetchHistory();
-
-        return history != null
-                && history[0] != null 
-                && history[0].containsKey(A_CONTENT_DIGEST)
-                && history[1] != null
-                && history[1].containsKey(A_CONTENT_DIGEST)
-                && history[0].get(A_CONTENT_DIGEST).equals(history[1].get(A_CONTENT_DIGEST));
+        RevisitProfile revisit = curi.getRevisitProfile();
+        if (revisit==null) {
+        	return false;
+        }
+        return revisit.getProfileName().equals(WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST);
     }
 
 }
