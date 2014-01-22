@@ -1,16 +1,13 @@
 package org.archive.modules.revisit;
 
-import static org.archive.format.warc.WARCConstants.*;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_ETAG;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.archive.format.warc.WARCConstants;
 
-public class ServerNotModifiedRevisit implements RevisitProfile {
-	
-	protected String refersToDate;
-	protected String refersToRecordID;
+public class ServerNotModifiedRevisit extends AbstractProfile {
 	
 	// From HTTP response
 	protected String eTag;
@@ -30,15 +27,7 @@ public class ServerNotModifiedRevisit implements RevisitProfile {
 
 	@Override
 	public Map<String, String> getWarcHeaders() {
-		Map<String, String> headers = new HashMap<String, String>();
-		
-		if (refersToDate!=null) {
-			headers.put(HEADER_KEY_REFERS_TO_DATE, refersToDate);
-		}
-		
-		if (refersToRecordID!=null) {
-			headers.put(HEADER_KEY_REFERS_TO, refersToRecordID);
-		}
+		Map<String, String> headers = super.getWarcHeaders();
 		
 		if (eTag!=null) {
 			headers.put(HEADER_KEY_ETAG, eTag);
@@ -50,27 +39,6 @@ public class ServerNotModifiedRevisit implements RevisitProfile {
 		
 		return headers;
 	}
-
-
-	public String getRefersToDate() {
-		return refersToDate;
-	}
-
-
-	public void setRefersToDate(String refersToDate) {
-		this.refersToDate = refersToDate;
-	}
-
-
-	public String getRefersToRecordID() {
-		return refersToRecordID;
-	}
-
-
-	public void setRefersToRecordID(String refersToRecordID) {
-		this.refersToRecordID = refersToRecordID;
-	}
-
 
 	public String geteTag() {
 		return eTag;

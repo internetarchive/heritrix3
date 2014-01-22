@@ -1,23 +1,16 @@
 package org.archive.modules.revisit;
 
-import static org.archive.format.warc.WARCConstants.*;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.archive.format.warc.WARCConstants;
 
-public class IdenticalPayloadDigestRevisit implements RevisitProfile {
-	// Required field
+public class IdenticalPayloadDigestRevisit extends AbstractProfile {
+
 	protected final String payloadDigest;
-	
-	// Strongly recommended fields
 	protected String refersToTargetURI;
-	protected String refersToDate;
-	
-	// Optional fields
-	protected String refersToRecordID;
-	
+		
 	/**
 	 * Minimal constructor.
 	 * @param payloadDigest The digest of the original record
@@ -37,7 +30,7 @@ public class IdenticalPayloadDigestRevisit implements RevisitProfile {
 
 	@Override
 	public Map<String, String> getWarcHeaders() {
-		Map<String, String> headers = new HashMap<String, String>();
+		Map<String, String> headers = super.getWarcHeaders();
 		
 		// Written automatically by WarcWriterProcessor for all HTTP responses
 		// headers.put(HEADER_KEY_PAYLOAD_DIGEST, payloadDigest); 
@@ -46,14 +39,7 @@ public class IdenticalPayloadDigestRevisit implements RevisitProfile {
 			headers.put(HEADER_KEY_REFERS_TO_TARGET_URI, refersToTargetURI);
 		}
 		
-		if (refersToDate!=null) {
-			headers.put(HEADER_KEY_REFERS_TO_DATE, refersToDate);
-		}
-		
-		if (refersToRecordID!=null) {
-			headers.put(HEADER_KEY_REFERS_TO, refersToRecordID);
-		}
-		
+	
 		return headers;
 	}
 
@@ -68,30 +54,8 @@ public class IdenticalPayloadDigestRevisit implements RevisitProfile {
 	}
 
 
-	public String getRefersToDate() {
-		return refersToDate;
-	}
-
-
-	public void setRefersToDate(String refersToDate) {
-		this.refersToDate = refersToDate;
-	}
-
-
-	public String getRefersToRecordID() {
-		return refersToRecordID;
-	}
-
-
-	public void setRefersToRecordID(String refersToRecordID) {
-		this.refersToRecordID = refersToRecordID;
-	}
-
-
 	public String getPayloadDigest() {
 		return payloadDigest;
 	}
-
-	
 	
 }
