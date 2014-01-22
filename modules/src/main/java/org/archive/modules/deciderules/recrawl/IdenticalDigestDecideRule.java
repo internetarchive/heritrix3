@@ -26,8 +26,8 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.revisit.RevisitProfile;
 
 /**
- * Rule applies configured decision to any CrawlURIs whose prior-history
- * content-digest matches the latest fetch. 
+ * Rule applies configured decision to any CrawlURIs whose revisit profile is set with a profile matching
+ * {@link WARCConstants#PROFILE_REVISIT_IDENTICAL_DIGEST}
  *
  * @author gojomo
  */
@@ -46,11 +46,10 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
     }
 
     /**
-     * Evaluate whether given CrawlURI's content-digest exactly 
-     * matches that of preceding fetch. 
+     * Evaluate whether given CrawlURI's revisit profile has been set to identical digest
      *
      * @param object should be CrawlURI
-     * @return true if current-fetch content-digest matches previous
+     * @return true if CrawlURI has been flagged as an identical digest revist
      */
     protected boolean evaluate(CrawlURI curi) {
         return hasIdenticalDigest(curi);
@@ -58,13 +57,10 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
 
 
     /**
-     * Utility method for testing if a CrawlURI's last two history 
-     * entries (one being the most recent fetch) have identical 
-     * content-digest information. 
+     * Utility method for testing if a CrawlURI's revisit profile matches an identical payload digest.
      * 
      * @param curi CrawlURI to test
-     * @return true if last two history entries have identical digests, 
-     * otherwise false
+     * @return true if revisit profile is set to identical payload digest, false otherwise
      */
     public static boolean hasIdenticalDigest(CrawlURI curi) {
         RevisitProfile revisit = curi.getRevisitProfile();
