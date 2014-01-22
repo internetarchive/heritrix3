@@ -274,7 +274,7 @@ implements Reporter, Serializable, OverlayContext {
      * If this value is non-null, a determination has been made that this CrawlURI instance is a revisit or 
      * recrawl. Details are provided by the RevisitProfile object. 
      */
-    private RevisitProfile revisitProfile = null;
+    transient private RevisitProfile revisitProfile = null;
 
     /**
      * Create a new instance of CrawlURI from a {@link UURI}.
@@ -877,6 +877,8 @@ implements Reporter, Serializable, OverlayContext {
         extraInfo = null;
         outCandidates = null;
         outLinks = null;
+        
+        this.revisitProfile = null;
         
         // XXX er uh surprised this wasn't here before?
         fetchType = FetchType.UNKNOWN;
