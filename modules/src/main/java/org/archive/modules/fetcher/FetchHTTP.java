@@ -318,8 +318,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
     /**
      * Proxy port (set only if needed).
      */
-    public void setHttpProxyPort(int port) {
-        kp.put("httpProxyPort",port);
+    public void setHttpProxyPort(Integer port) {
+        kp.put("httpProxyPort", port);
     }
 
     public String getHttpProxyUser() {
