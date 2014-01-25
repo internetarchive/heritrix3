@@ -75,7 +75,7 @@ public class AMQPPublishProcessor extends Processor {
 			Channel channel = getChannel();
 			if(channel != null) {
 				JSONObject message = new JSONObject();
-				message.put("url", uri.canonicalString);
+				message.put("url", uri.toString());
 				channel.basicPublish("umbra", "url", null, message.toString().getBytes());
 			}
 		} catch (Exception e) {
