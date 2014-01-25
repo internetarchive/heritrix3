@@ -81,9 +81,9 @@ import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.DefaultHttpResponseParserFactory;
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.io.DefaultHttpRequestWriterFactory;
 import org.apache.http.io.HttpMessageParserFactory;
 import org.apache.http.io.HttpMessageWriterFactory;
@@ -144,6 +144,8 @@ class FetchHTTPRequest {
     protected HttpHost targetHost;
     protected boolean addedCredentials;
     protected HttpHost proxyHost;
+    // make this a member variable so it doesn't get gc'd prematurely
+    protected HttpClientConnectionManager connMan;
 
     public FetchHTTPRequest(FetchHTTP fetcher, CrawlURI curi) throws URIException {
         this.fetcher = fetcher;
@@ -423,8 +425,8 @@ class FetchHTTPRequest {
         
         httpClientBuilder.setDefaultCookieStore(fetcher.getCookieStore());
         
-        HttpClientConnectionManager connManager = buildConnectionManager();
-        httpClientBuilder.setConnectionManager(connManager);
+        connMan = buildConnectionManager();
+        httpClientBuilder.setConnectionManager(connMan);
     }
 
     protected HttpClientConnectionManager buildConnectionManager() {
@@ -464,11 +466,12 @@ class FetchHTTPRequest {
                         DefaultHttpResponseParserFactory.INSTANCE);
             }
         };
-        PoolingHttpClientConnectionManager connMan = new PoolingHttpClientConnectionManager(socketFactoryRegistry, connFactory, dnsResolver);
+        BasicHttpClientConnectionManager connMan = new BasicHttpClientConnectionManager(
+                socketFactoryRegistry, connFactory, null, dnsResolver);
         
         SocketConfig.Builder socketConfigBuilder = SocketConfig.custom();
         socketConfigBuilder.setSoTimeout(fetcher.getSoTimeoutMs());
-        connMan.setDefaultSocketConfig(socketConfigBuilder.build());
+        connMan.setSocketConfig(socketConfigBuilder.build());
         
         return connMan;
     }
