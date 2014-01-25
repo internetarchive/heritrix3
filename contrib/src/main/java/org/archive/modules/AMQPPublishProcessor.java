@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.modules.fetcher.FetchHTTP;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -59,6 +60,16 @@ public class AMQPPublishProcessor extends Processor {
 	transient protected ThreadLocal<Channel> threadChannel = 
 			new ThreadLocal<Channel>();
 
+	private String queueName = "umbra";
+
+	public String getQueueName() {
+		return queueName;
+	}
+
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
+	}
+
 	/**
 	 * Constructor.
 	 */
@@ -67,6 +78,10 @@ public class AMQPPublishProcessor extends Processor {
 	}
 
 	protected boolean shouldProcess(CrawlURI curi) {
+        if (!(curi.getUURI().getScheme().equals(FetchHTTP.HTTP_SCHEME) || curi.getUURI().getScheme().equals(FetchHTTP.HTTPS_SCHEME))) {
+            // handles only plain http and https
+            return false;
+        }
 		return true;
 	}
 
@@ -76,10 +91,10 @@ public class AMQPPublishProcessor extends Processor {
 			if(channel != null) {
 				JSONObject message = new JSONObject();
 				message.put("url", uri.toString());
-				channel.basicPublish("umbra", "url", null, message.toString().getBytes());
+				channel.basicPublish(queueName, "url", null, message.toString().getBytes());
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Attempting to send URI to umbra failed!", e);
+			logger.log(Level.SEVERE, "Attempting to send URI to AMQP server failed!", e);
 		}
 	};
 
@@ -93,7 +108,7 @@ public class AMQPPublishProcessor extends Processor {
 						threadChannel.set(connection.createChannel());
 				}
 			} catch (IOException e) {
-				logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection to umbra failed!", e);
+				logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection to AMQP server failed!", e);
 			}
 		}
 		return threadChannel.get();
@@ -105,7 +120,7 @@ public class AMQPPublishProcessor extends Processor {
 			factory.setUri(amqpUri);
 			connection =  factory.newConnection();
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Attempting to connect to AMQP for umbra failed!", e);
+			logger.log(Level.SEVERE, "Attempting to connect to AMQP for AMQP server failed!", e);
 		}
 	}
 	
