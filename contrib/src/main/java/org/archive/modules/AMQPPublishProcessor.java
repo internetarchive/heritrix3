@@ -108,7 +108,7 @@ public class AMQPPublishProcessor extends Processor {
 						threadChannel.set(connection.createChannel());
 				}
 			} catch (IOException e) {
-				logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection to AMQP server failed!", e);
+				logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection failed!", e);
 			}
 		}
 		return threadChannel.get();
@@ -120,7 +120,7 @@ public class AMQPPublishProcessor extends Processor {
 			factory.setUri(amqpUri);
 			connection =  factory.newConnection();
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Attempting to connect to AMQP for AMQP server failed!", e);
+			logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
 		}
 	}
 	
