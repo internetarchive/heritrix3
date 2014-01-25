@@ -54,6 +54,11 @@
 			<version>${project.version}</version>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.rabbitmq</groupId>
+			<artifactId>amqp-client</artifactId>
+			<version>3.2.1</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>
