@@ -142,7 +142,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
-        assertTrue(curi.getFetchStatus() == 200);
+        if (!exclusions.contains("fetchStatus")) {
+            assertTrue(curi.getFetchStatus() == 200);
+        }
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
         
         // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
@@ -320,6 +322,13 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine", "hostHeader");
+    }
+    
+    public void test401NoChallenge() throws URIException, IOException, InterruptedException {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/401-no-challenge");
+        fetcher().process(curi);
+        assertEquals(401, curi.getFetchStatus());
+        runDefaultChecks(curi, "requestLine", "fetchStatus");
     }
     
     protected void checkSetCookieURI() throws URIException, IOException,
