@@ -135,6 +135,13 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_GZIPPED_PAYLOAD);
                 ((Request)request).setHandled(true);
+            } else if (target.equals("/401-no-challenge")) {
+                response.setStatus(401);
+                response.setContentType("text/plain;charset=US-ASCII");
+                response.setDateHeader("Last-Modified", 0);
+                response.setHeader("ETag", ETAG_TEST_VALUE);
+                response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setDateHeader("Last-Modified", 0);

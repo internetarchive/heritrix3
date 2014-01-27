@@ -852,10 +852,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
             hcChallengeHeaders = authStrategy.getChallenges(null, response, null);
         } catch (MalformedChallengeException e) {
             logger.fine("Failed challenge parse: " + e.getMessage());
+            hcChallengeHeaders = new HashMap<String, Header>();
         }
-        if (hcChallengeHeaders == null || hcChallengeHeaders.size() <= 0) {
-            logger.fine("Failed to get auth challenge headers for " + curi);
-            return null;
+        if (hcChallengeHeaders.size() < 1) {
+            logger.warning("Failed to extract auth challenge headers for uri with response status 401: " + curi);
         }
 
         // reorganize in non-library-specific way
