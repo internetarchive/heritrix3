@@ -763,6 +763,18 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(httpRequestString(curi).startsWith("GET /??blahblah HTTP/1.0\r\n"));
         runDefaultChecks(curi, "requestLine");
     }
+    
+    public void testUrlWithSpaces() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/url with spaces");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).startsWith("GET /url%20with%20spaces HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
+
+        curi = makeCrawlURI("http://localhost:7777/url%20with%20spaces");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).startsWith("GET /url%20with%20spaces HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
+    }
 
     @Override
     protected FetchHTTP makeModule() throws IOException {
