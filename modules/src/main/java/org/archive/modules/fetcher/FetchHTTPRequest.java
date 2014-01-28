@@ -167,7 +167,7 @@ class FetchHTTPRequest {
             this.requestConfigBuilder.setProxy(this.proxyHost);
             requestLineUri = curi.getUURI().toString();
         } else {
-            requestLineUri = curi.getUURI().getPathQuery();
+            requestLineUri = curi.getUURI().getEscapedPathQuery();
         }
 
         if (curi.getFetchType() == FetchType.HTTP_POST) {
