@@ -577,12 +577,21 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     protected void setCharacterEncoding(CrawlURI curi, final Recorder rec,
             final HttpResponse response) {
-        Charset charset = ContentType.getOrDefault(response.getEntity()).getCharset();
-        if (charset != null) {
-            rec.setCharset(charset);
-        } else {
-            // curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(encoding));
-            rec.setCharset(getDefaultCharset());
+        rec.setCharset(getDefaultCharset());
+        try {
+            Charset charset = ContentType.getOrDefault(response.getEntity()).getCharset();
+            if (charset != null) {
+                rec.setCharset(charset);
+            }
+        } catch (IllegalArgumentException e) {
+            // exception could be UnsupportedCharsetException or IllegalCharsetNameException
+            String unsatisfiableCharset;
+            try {
+                unsatisfiableCharset = response.getFirstHeader("content-type").getElements()[0].getParameterByName("charset").getValue();
+            } catch (Exception f) {
+                unsatisfiableCharset = "<failed-to-parse>";
+            }
+            curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(unsatisfiableCharset));
         }
     }
 
