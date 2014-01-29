@@ -29,6 +29,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -577,12 +578,20 @@ public class FetchHTTP extends Processor implements Lifecycle {
      */
     protected void setCharacterEncoding(CrawlURI curi, final Recorder rec,
             final HttpResponse response) {
-        Charset charset = ContentType.getOrDefault(response.getEntity()).getCharset();
-        if (charset != null) {
-            rec.setCharset(charset);
-        } else {
-            // curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(encoding));
-            rec.setCharset(getDefaultCharset());
+        rec.setCharset(getDefaultCharset());
+        try {
+            Charset charset = ContentType.getOrDefault(response.getEntity()).getCharset();
+            if (charset != null) {
+                rec.setCharset(charset);
+            }
+        } catch (UnsupportedCharsetException e) {
+            String unsatisfiableCharset;
+            try {
+                unsatisfiableCharset = response.getFirstHeader("content-type").getElements()[0].getParameterByName("charset").getValue();
+            } catch (Exception f) {
+                unsatisfiableCharset = "<failed-to-parse>";
+            }
+            curi.getAnnotations().add("unsatisfiableCharsetInHeader:"+StringUtils.stripToEmpty(unsatisfiableCharset));
         }
     }
 
