@@ -184,8 +184,15 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(CP1251_PAYLOAD);
                 ((Request)request).setHandled(true);
-            } else if (target.equals("/bad-charset")) {
-                response.setContentType("text/plain;charset=BAD-CHARSET");
+            } else if (target.equals("/unsupported-charset")) {
+                response.setContentType("text/plain;charset=UNSUPPORTED-CHARSET");
+                response.setDateHeader("Last-Modified", 0);
+                response.setHeader("ETag", ETAG_TEST_VALUE);
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                ((Request)request).setHandled(true);
+            } else if (target.equals("/invalid-charset")) {
+                response.setContentType("text/plain;charset=%%INVALID-CHARSET%%");
                 response.setDateHeader("Last-Modified", 0);
                 response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);

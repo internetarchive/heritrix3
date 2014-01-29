@@ -806,10 +806,17 @@ public class FetchHTTPTests extends ProcessorTestBase {
                 + "\u0438\u043E\u0432.\n", 
                 curi.getRecorder().getContentReplayCharSequence().toString());
 
-        curi = makeCrawlURI("http://localhost:7777/bad-charset");
+        curi = makeCrawlURI("http://localhost:7777/unsupported-charset");
         fetcher().process(curi);
-        assertEquals("text/plain;charset=BAD-CHARSET", curi.getHttpResponseHeader("content-type"));
-        assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:BAD-CHARSET"));
+        assertEquals("text/plain;charset=UNSUPPORTED-CHARSET", curi.getHttpResponseHeader("content-type"));
+        assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:UNSUPPORTED-CHARSET"));
+        assertEquals(Charset.forName("latin1"), curi.getRecorder().getCharset()); // default fallback
+        runDefaultChecks(curi, "requestLine", "contentType");
+        
+        curi = makeCrawlURI("http://localhost:7777/invalid-charset");
+        fetcher().process(curi);
+        assertEquals("text/plain;charset=%%INVALID-CHARSET%%", curi.getHttpResponseHeader("content-type"));
+        assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:%%INVALID-CHARSET%%"));
         assertEquals(Charset.forName("latin1"), curi.getRecorder().getCharset()); // default fallback
         runDefaultChecks(curi, "requestLine", "contentType");
     }

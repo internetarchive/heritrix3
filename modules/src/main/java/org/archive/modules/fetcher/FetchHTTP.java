@@ -29,7 +29,6 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -584,7 +583,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
             if (charset != null) {
                 rec.setCharset(charset);
             }
-        } catch (UnsupportedCharsetException e) {
+        } catch (IllegalArgumentException e) {
+            // exception could be UnsupportedCharsetException or IllegalCharsetNameException
             String unsatisfiableCharset;
             try {
                 unsatisfiableCharset = response.getFirstHeader("content-type").getElements()[0].getParameterByName("charset").getValue();
