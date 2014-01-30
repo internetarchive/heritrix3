@@ -52,8 +52,10 @@ import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.NoHttpResponseException;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
+import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -138,11 +140,15 @@ public class FetchHTTPTests extends ProcessorTestBase {
         
         // check various 
         assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi.getContentDigestSchemeString());
-        assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
-        assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
+        if (!exclusions.contains("contentType")) {
+            assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
+            assertEquals(Charset.forName("US-ASCII"), curi.getRecorder().getCharset());
+        }
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
-        assertTrue(curi.getFetchStatus() == 200);
+        if (!exclusions.contains("fetchStatus")) {
+            assertTrue(curi.getFetchStatus() == 200);
+        }
         assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
         
         // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
@@ -320,6 +326,13 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(httpRequestString.contains("Authorization: Digest"));
         // otherwise should be a normal 200 response
         runDefaultChecks(curi, "requestLine", "hostHeader");
+    }
+    
+    public void test401NoChallenge() throws URIException, IOException, InterruptedException {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/401-no-challenge");
+        fetcher().process(curi);
+        assertEquals(401, curi.getFetchStatus());
+        runDefaultChecks(curi, "requestLine", "fetchStatus");
     }
     
     protected void checkSetCookieURI() throws URIException, IOException,
@@ -753,6 +766,59 @@ public class FetchHTTPTests extends ProcessorTestBase {
         // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertTrue(httpRequestString(curi).startsWith("GET /??blahblah HTTP/1.0\r\n"));
         runDefaultChecks(curi, "requestLine");
+    }
+    
+    public void testUrlWithSpaces() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/url with spaces?query%20with%20spaces");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).startsWith("GET /url%20with%20spaces?query%20with%20spaces HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
+
+        curi = makeCrawlURI("http://localhost:7777/url%20with%20spaces?query with spaces");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).startsWith("GET /url%20with%20spaces?query%20with%20spaces HTTP/1.0\r\n"));
+        runDefaultChecks(curi, "requestLine");
+    }
+    
+    public void testCharsets() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/cp1251");
+        fetcher().process(curi);
+        assertEquals("text/plain;charset=cp1251", curi.getHttpResponseHeader("content-type"));
+        assertEquals(Charset.forName("cp1251"), curi.getRecorder().getCharset());
+        assertTrue(Arrays.equals(FetchHTTPTest.CP1251_PAYLOAD, IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream())));
+        assertEquals("\u041A\u043E\u0447\u0430\u043D\u0438 \u041E\u0440\u043A"
+                + "\u0435\u0441\u0442\u0430\u0440 \u0435 \u0435\u0434\u0435"
+                + "\u043D \u043E\u0434 \u043D\u0430\u0458\u043F\u043E\u0437"
+                + "\u043D\u0430\u0442\u0438\u0442\u0435 \u0438 \u043D\u0430"
+                + "\u0458\u043F\u043E\u043F\u0443\u043B\u0430\u0440\u043D"
+                + "\u0438\u0442\u0435 \u0431\u043B\u0435\u0445-\u043E\u0440"
+                + "\u043A\u0435\u0441\u0442\u0440\u0438 \u0432\u043E \u0441"
+                + "\u0432\u0435\u0442\u043E\u0442, \u043A\u043E\u0458 \u0433"
+                + "\u043E \u0441\u043E\u0447\u0438\u043D\u0443\u0432\u0430"
+                + "\u0430\u0442 \u0434\u0435\u0441\u0435\u0442\u043C\u0438"
+                + "\u043D\u0430 \u0420\u043E\u043C\u0438-\u041C\u0430\u043A"
+                + "\u0435\u0434\u043E\u043D\u0446\u0438 \u043F\u043E \u043F"
+                + "\u043E\u0442\u0435\u043A\u043B\u043E \u043E\u0434 \u041A"
+                + "\u043E\u0447\u0430\u043D\u0438, \u043F\u0440\u0435\u0434"
+                + "\u0432\u043E\u0434\u0435\u043D\u0438 \u043E\u0434 \u0442"
+                + "\u0440\u0443\u0431\u0430\u0447\u043E\u0442 \u041D\u0430"
+                + "\u0430\u0442 (\u041D\u0435\u0430\u0442) \u0412\u0435\u043B"
+                + "\u0438\u043E\u0432.\n", 
+                curi.getRecorder().getContentReplayCharSequence().toString());
+
+        curi = makeCrawlURI("http://localhost:7777/unsupported-charset");
+        fetcher().process(curi);
+        assertEquals("text/plain;charset=UNSUPPORTED-CHARSET", curi.getHttpResponseHeader("content-type"));
+        assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:UNSUPPORTED-CHARSET"));
+        assertEquals(Charset.forName("latin1"), curi.getRecorder().getCharset()); // default fallback
+        runDefaultChecks(curi, "requestLine", "contentType");
+        
+        curi = makeCrawlURI("http://localhost:7777/invalid-charset");
+        fetcher().process(curi);
+        assertEquals("text/plain;charset=%%INVALID-CHARSET%%", curi.getHttpResponseHeader("content-type"));
+        assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:%%INVALID-CHARSET%%"));
+        assertEquals(Charset.forName("latin1"), curi.getRecorder().getCharset()); // default fallback
+        runDefaultChecks(curi, "requestLine", "contentType");
     }
 
     @Override
