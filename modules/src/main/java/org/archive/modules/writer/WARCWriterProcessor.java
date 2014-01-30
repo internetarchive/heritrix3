@@ -669,7 +669,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (!revisitHeaders.isEmpty()) {
         	recordInfo.setExtraHeaders(headers);
 	        for ( String key : revisitHeaders.keySet()) {
-	            headers.addLabelValue(key, "<" + revisitHeaders.get(key) + ">");        	
+	            headers.addLabelValue(key, revisitHeaders.get(key));        	
 	        }
         }
         
