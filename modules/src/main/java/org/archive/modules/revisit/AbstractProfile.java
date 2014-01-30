@@ -10,15 +10,15 @@ import org.archive.util.ArchiveUtils;
 
 public abstract class AbstractProfile implements RevisitProfile {
 
-	protected long refersToDate=1L; //1L is the default fetchBeganTime in CrawlURI
+	protected String refersToDate; 
 	protected String refersToRecordID;
 
 	@Override
 	public Map<String, String> getWarcHeaders() {
 		Map<String, String> headers = new HashMap<String, String>();
 		
-		if (refersToDate!=1L) {
-			headers.put(HEADER_KEY_REFERS_TO_DATE, ArchiveUtils.getLog14Date(refersToDate));
+		if (refersToDate!=null) {
+			headers.put(HEADER_KEY_REFERS_TO_DATE, refersToDate);
 		}
 		
 		if (refersToRecordID!=null) {
@@ -28,12 +28,27 @@ public abstract class AbstractProfile implements RevisitProfile {
 		return headers;
 	}
 	
-	public long getRefersToDate() {
+	/**
+	 * Set the refers to date
+	 * @param refersToDate Must be a string representation of a data conforming to 
+	 *    W3C/ISO8601 format, assuming UTC. Format is yyyy-MM-dd'T'HH:mm:ss'Z'
+	 *    
+	 * @see ArchiveUtils#getLog14Date(java.util.Date)
+	 */
+	public void setRefersToDate(String refersToDate) {
+		this.refersToDate = refersToDate;
+	}
+	
+	public String getRefersToDate() {
 		return refersToDate;
 	}
 
+	/**
+	 * Set the refers to date
+	 * @param refersToDate 
+	 */
 	public void setRefersToDate(long refersToDate) {
-		this.refersToDate = refersToDate;
+		this.refersToDate = ArchiveUtils.getLog14Date(refersToDate);
 	}
 
 
