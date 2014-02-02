@@ -219,6 +219,8 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
 
+            curi.getAnnotations().add("receivedViaAMQP");
+
             return curi;
         }
     }
