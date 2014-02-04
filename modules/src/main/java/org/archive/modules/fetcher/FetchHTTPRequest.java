@@ -244,6 +244,14 @@ class FetchHTTPRequest {
                 logger.warning("Invalid accept header: " + headerString);
             }
         }
+        
+        @SuppressWarnings("unchecked")
+        Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
+        if (uriCustomHeaders != null) {
+            for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
+                request.addHeader(h.getKey(), h.getValue());
+            }
+        }
     }
 
     /**
