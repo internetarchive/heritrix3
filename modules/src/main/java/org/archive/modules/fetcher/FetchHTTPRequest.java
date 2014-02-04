@@ -46,6 +46,7 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -72,6 +73,7 @@ import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
@@ -89,6 +91,8 @@ import org.apache.http.io.HttpMessageParserFactory;
 import org.apache.http.io.HttpMessageWriterFactory;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.Args;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.Processor;
@@ -555,6 +559,36 @@ class FetchHTTPRequest {
         }
     }
     
+    protected static final HttpRoutePlanner ROUTE_PLANNER = new HttpRoutePlanner() {
+        @Override
+        public HttpRoute determineRoute(HttpHost host, HttpRequest request,
+                HttpContext context) throws HttpException {
+            Args.notNull(host, "Target host");
+            Args.notNull(request, "Request");
+            final HttpClientContext clientContext = HttpClientContext.adapt(context);
+            final RequestConfig config = clientContext.getRequestConfig();
+            final InetAddress local = config.getLocalAddress();
+            HttpHost proxy = config.getProxy();
+
+            final HttpHost target;
+            if (host.getPort() > 0
+                    && (host.getSchemeName().equalsIgnoreCase("http") && host.getPort() == 80
+                    || host.getSchemeName().equalsIgnoreCase("https") && host.getPort() == 443)) {
+                target = new HttpHost(host.getHostName(), -1, host.getSchemeName());
+            } else {
+                target = host;
+            }
+            final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
+            if (proxy == null) {
+                return new HttpRoute(target, local, secure);
+            } else {
+                return new HttpRoute(target, local, proxy, secure);
+            }
+
+        }
+        
+    };
+    
     protected void initHttpClientBuilder() {
         httpClientBuilder = HttpClientBuilder.create();
         
@@ -565,6 +599,8 @@ class FetchHTTPRequest {
         
         // we handle redirects manually
         httpClientBuilder.disableRedirectHandling();
+        
+        httpClientBuilder.setRoutePlanner(ROUTE_PLANNER);
     }
     
     public HttpResponse execute() throws ClientProtocolException, IOException {

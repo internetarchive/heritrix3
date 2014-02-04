@@ -52,10 +52,8 @@ import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.NoHttpResponseException;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
-import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -819,6 +817,17 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertTrue(curi.getAnnotations().contains("unsatisfiableCharsetInHeader:%%INVALID-CHARSET%%"));
         assertEquals(Charset.forName("latin1"), curi.getRecorder().getCharset()); // default fallback
         runDefaultChecks(curi, "requestLine", "contentType");
+    }
+
+    // see https://webarchive.jira.com/browse/HER-2063
+    public void testHostHeaderDefaultPort() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://example.com/");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).contains("Host: example.com\r\n"));
+
+        curi = makeCrawlURI("https://example.com/");
+        fetcher().process(curi);
+        assertTrue(httpRequestString(curi).contains("Host: example.com\r\n"));
     }
 
     @Override
