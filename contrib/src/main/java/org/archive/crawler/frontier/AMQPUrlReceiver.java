@@ -22,6 +22,7 @@ package org.archive.crawler.frontier;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,13 +47,18 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
-public class AMQPUrlReceiver implements Lifecycle, Runnable {
+/**
+ * @contributor nlevitt
+ */
+public class AMQPUrlReceiver implements Lifecycle {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger = 
             Logger.getLogger(AMQPUrlReceiver.class.getName());
+
+    public static final String A_RECEIVED_FROM_AMQP = "receivedFromAMQP";
 
     protected Frontier frontier;
     public Frontier getFrontier() {
@@ -79,35 +85,40 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
         this.queueName = queueName;
     }
 
-    transient protected Thread fred = null;
+    protected boolean isRunning = false; 
+    @Override
+    public boolean isRunning() {
+        return isRunning;
+    }
 
     @Override
     public void start() {
-        if (isRunning()) {
-            return;
+        while (!isRunning) {
+            try {
+                Consumer consumer = new UrlConsumer(channel());
+                channel().basicConsume(getQueueName(), false, consumer);
+                isRunning = true;
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                try {
+                    Thread.sleep(30000);
+                } catch (InterruptedException e1) {
+                }
+            }
         }
 
-        fred = new Thread(this, getClass().getSimpleName());
-        fred.start();
     }
 
     @Override
     public void stop() {
         logger.info("shutting down");
-        boolean joined = false;
-        while (!joined) {
-            fred.interrupt();
+        if (connection != null && connection.isOpen()) {
             try {
-                fred.join();
-                joined = true;
-            } catch (InterruptedException e) {
+                connection.close();
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "problem closing AMQP connection", e);
             }
         }
-    }
-
-    @Override
-    public boolean isRunning() {
-        return fred != null && fred.isAlive();
     }
 
     transient protected Connection connection = null;
@@ -145,6 +156,12 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
         return channel;
     }
 
+    // XXX should we be using QueueingConsumer because of possible blocking in
+    // frontier.schedule()?
+    // "Note: all methods of this interface are invoked inside the Connection's
+    // thread. This means they a) should be non-blocking and generally do little
+    // work, b) must not call Channel or Connection methods, or a deadlock will
+    // ensue. One way of ensuring this is to use/subclass QueueingConsumer."
     protected class UrlConsumer extends DefaultConsumer {
         public UrlConsumer(Channel channel) {
             super(channel);
@@ -152,11 +169,7 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
 
         @Override
         public void handleDelivery(String consumerTag, Envelope envelope,
-                BasicProperties properties, byte[] body) {
-            // logger.info("consumerTag=" + consumerTag
-            // + " envelope=" + envelope
-            // + " properties=" + properties
-            // + " body=" + body);
+                BasicProperties properties, byte[] body) throws IOException {
             String decodedBody;
             try {
                 decodedBody = new String(body, "UTF-8");
@@ -169,7 +182,9 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
                 curi = makeCrawlUri(jo);
                 // bypasses scoping (unless rechecking is configured)
                 getFrontier().schedule(curi);
-                logger.info("scheduled " + curi);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("scheduled " + curi);
+                }
             } catch (URIException e) {
                 logger.log(Level.SEVERE,
                         "problem creating CrawlURI from json received via AMQP "
@@ -179,16 +194,18 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
                         "problem creating CrawlURI from json received via AMQP "
                                 + decodedBody, e);
             }
+
+            this.getChannel().basicAck(envelope.getDeliveryTag(), false);
         }
 
         // {
         //  "headers": {
-        //  "Referer": "https://archive.org/",
-        //  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/32.0.1700.102 Chrome/32.0.1700.102 Safari/537.36",
-        //  "Accept": "image/webp,*/*;q=0.8"
-        // },
-        // "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
-        // "method": "GET"
+        //   "Referer": "https://archive.org/",
+        //   "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/32.0.1700.102 Chrome/32.0.1700.102 Safari/537.36",
+        //   "Accept": "image/webp,*/*;q=0.8"
+        //  },
+        //  "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
+        //  "method": "GET"
         // }
         protected CrawlURI makeCrawlUri(JSONObject jo) throws URIException,
                 JSONException {
@@ -205,7 +222,7 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
             // XXX pathFromSeed? viaContext?
             CrawlURI curi = new CrawlURI(uuri, "?", via, LinkContext.INFERRED_MISC);
 
-            HashMap<String, String> customHttpRequestHeaders = new HashMap<String, String>();
+            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
             for (Object key : joHeaders.keySet()) {
                 customHttpRequestHeaders.put(key.toString(),
                         joHeaders.getString(key.toString()));
@@ -219,52 +236,9 @@ public class AMQPUrlReceiver implements Lifecycle, Runnable {
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
 
-            curi.getAnnotations().add("receivedViaAMQP");
+            curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
 
             return curi;
         }
-    }
-
-    @Override
-    public void run() {
-        logger.info(Thread.currentThread() + " starting");
-        while (true) {
-            try {
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-
-                try {
-                    Consumer consumer = new UrlConsumer(channel());
-                    channel().basicConsume(getQueueName(), false, consumer);
-                } catch (IOException e) {
-                    logger.log(Level.SEVERE, "problem consuming AMQP (will try again after 10 seconds)", e);
-                    Thread.sleep(10000);
-                }
-
-            } catch (InterruptedException e) {
-                logger.info(Thread.currentThread() + " interrupted, shutting down");
-                shutdown();
-                return;
-            }
-        }
-    }
-
-    protected void shutdown() {
-        if (connection != null && connection.isOpen()) {
-            try {
-                connection.close();
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "problem closing AMQP connection", e);
-            }
-        }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        AMQPUrlReceiver x = new AMQPUrlReceiver();
-        // x.setAmqpUri("amqp://guest:guest@desktop-nlevitt.sf.archive.org:5672/%2f");
-        x.start();
-        Thread.sleep(90000);
-        x.stop();
     }
 }
