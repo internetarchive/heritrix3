@@ -92,7 +92,7 @@ public class AMQPUrlReceiver implements Lifecycle {
     }
 
     @Override
-    public void start() {
+    synchronized public void start() {
         while (!isRunning) {
             try {
                 Consumer consumer = new UrlConsumer(channel());
@@ -110,7 +110,7 @@ public class AMQPUrlReceiver implements Lifecycle {
     }
 
     @Override
-    public void stop() {
+    synchronized public void stop() {
         logger.info("shutting down");
         if (connection != null && connection.isOpen()) {
             try {
