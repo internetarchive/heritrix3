@@ -22,18 +22,21 @@ package org.archive.crawler.frontier;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.Frontier;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
+import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,22 +180,27 @@ public class AMQPUrlReceiver implements Lifecycle {
                 throw new RuntimeException(e); // can't happen
             }
             JSONObject jo = new JSONObject(decodedBody);
-            CrawlURI curi;
-            try {
-                curi = makeCrawlUri(jo);
-                // bypasses scoping (unless rechecking is configured)
-                getFrontier().schedule(curi);
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("scheduled " + curi);
+            
+            if ("GET".equals(jo.getString("method"))) {
+                CrawlURI curi;
+                try {
+                    curi = makeCrawlUri(jo);
+                    // bypasses scoping (unless rechecking is configured)
+                    getFrontier().schedule(curi);
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("scheduled " + curi);
+                    }
+                } catch (URIException e) {
+                    logger.log(Level.WARNING,
+                            "problem creating CrawlURI from json received via AMQP "
+                                    + decodedBody, e);
+                } catch (JSONException e) {
+                    logger.log(Level.SEVERE,
+                            "problem creating CrawlURI from json received via AMQP "
+                                    + decodedBody, e);
                 }
-            } catch (URIException e) {
-                logger.log(Level.SEVERE,
-                        "problem creating CrawlURI from json received via AMQP "
-                                + decodedBody, e);
-            } catch (JSONException e) {
-                logger.log(Level.SEVERE,
-                        "problem creating CrawlURI from json received via AMQP "
-                                + decodedBody, e);
+            } else {
+                logger.warning("ignoring url with method other than GET - " + decodedBody);
             }
 
             this.getChannel().basicAck(envelope.getDeliveryTag(), false);
@@ -207,21 +215,39 @@ public class AMQPUrlReceiver implements Lifecycle {
         //  "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
         //  "method": "GET"
         // }
+        @SuppressWarnings("unchecked")
         protected CrawlURI makeCrawlUri(JSONObject jo) throws URIException,
                 JSONException {
             JSONObject joHeaders = jo.getJSONObject("headers");
 
             UURI uuri = UURIFactory.getInstance(jo.getString("url"));
-            UURI via = null;
-            if (joHeaders.has("Referer")) {
-                String referer = joHeaders.getString("Referer");
-                if (StringUtils.isNotEmpty(referer)) {
-                    via = UURIFactory.getInstance(referer);
+            UURI via = UURIFactory.getInstance(jo.getString("parentUrl"));
+
+            JSONObject parentUrlMetadata = jo.getJSONObject("parentUrlMetadata");
+            String parentHopPath = parentUrlMetadata.getString("pathFromSeed");
+            String hopPath = parentHopPath + Hop.INFERRED.getHopString();
+
+            CrawlURI curi = new CrawlURI(uuri, hopPath, via, LinkContext.INFERRED_MISC);
+            
+            // set the heritable data from the parent url, passed back to us via amqp
+            // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
+            // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+            JSONObject heritableData = parentUrlMetadata.getJSONObject("heritableData");
+            for (String key: (Set<String>) heritableData.keySet()) {
+                Object value = heritableData.get(key);
+                if (value instanceof JSONArray) {
+                    Set<String> valueSet = new HashSet<String>();
+                    JSONArray arr = ((JSONArray) value);
+                    for (int i = 0; i < arr.length(); i++) {
+                        valueSet.add(arr.getString(i));
+                    }
+                    curi.getData().put(key, valueSet);
+                } else {
+                    curi.getData().put(key, heritableData.get(key));
                 }
             }
-            // XXX pathFromSeed? viaContext?
-            CrawlURI curi = new CrawlURI(uuri, "?", via, LinkContext.INFERRED_MISC);
 
+            // set the http headers from the amqp message
             Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
             for (Object key : joHeaders.keySet()) {
                 customHttpRequestHeaders.put(key.toString(),
