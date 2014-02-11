@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.Frontier;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
@@ -40,6 +41,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -53,7 +55,7 @@ import com.rabbitmq.client.Envelope;
 /**
  * @contributor nlevitt
  */
-public class AMQPUrlReceiver implements Lifecycle {
+public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStateEvent> {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
@@ -109,7 +111,6 @@ public class AMQPUrlReceiver implements Lifecycle {
                 }
             }
         }
-
     }
 
     @Override
@@ -265,6 +266,29 @@ public class AMQPUrlReceiver implements Lifecycle {
             curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
 
             return curi;
+        }
+    }
+
+    @Override
+    public void onApplicationEvent(CrawlStateEvent event) {
+        switch(event.getState()) {
+        case PAUSING: case PAUSED: case STOPPING: case FINISHED:
+            try {
+                channel().flow(false);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "failed to pause flow on amqp channel", e);
+            }
+            break;
+            
+        case RUNNING: case EMPTY: case PREPARING:
+            try {
+                channel().flow(true);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "failed to resume flow on amqp channel", e);
+            }
+            break;
+
+        default:
         }
     }
 }
