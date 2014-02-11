@@ -19,7 +19,11 @@
 
 package org.archive.modules;
 
+import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
+
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,7 +102,8 @@ public class AMQPPublishProcessor extends Processor {
 		try {
 			Channel channel = getChannel();
 			if (channel != null) {
-				JSONObject message = new JSONObject().put("url", curi.toString());
+			    JSONObject message = buildJsonMessage(curi);
+				
 				BasicProperties props = new AMQP.BasicProperties.Builder().
 						contentType("application/json").build();
 				channel.basicPublish(getExchange(), getRoutingKey(), props, 
@@ -120,7 +125,37 @@ public class AMQPPublishProcessor extends Processor {
 		return ProcessResult.PROCEED;
 	}
 	
-	@Override
+    /**
+     * Constructs the json to send via AMQP. This includes the url, and some
+     * metadata from the CrawlURI. The metadata should be passed back to
+     * heritrix with each url discovered from this url. (XXX need context in
+     * class javadoc)
+     * 
+     * @return the message to send via AMQP
+     * @see CrawlURI#inheritFrom(CrawlURI)
+     */
+	protected JSONObject buildJsonMessage(CrawlURI curi) {
+        JSONObject message = new JSONObject().put("url", curi.toString());
+        
+        HashMap<String, Object> metadata = new HashMap<String,Object>();
+        metadata.put("pathFromSeed", curi.getPathFromSeed());
+        
+        @SuppressWarnings("unchecked")
+        Set<String> heritableKeys = (Set<String>) curi.getData().get(A_HERITABLE_KEYS);
+        HashMap<String, Object> heritableData = new HashMap<String,Object>();
+        if (heritableKeys != null) {
+            for (String key: heritableKeys) {
+                heritableData.put(key, curi.getData().get(key));
+            }
+        }
+        metadata.put("heritableData", heritableData);
+        
+        message.put("metadata", metadata);
+        
+        return message;
+    }
+	
+    @Override
 	protected void innerProcess(CrawlURI uri) throws InterruptedException {
 		throw new RuntimeException("should never be called");
 	}
