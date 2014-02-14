@@ -272,7 +272,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     @Override
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
-        case PAUSING: case PAUSED: case STOPPING: case FINISHED:
+        case PAUSING: case PAUSED:
             try {
                 channel().flow(false);
             } catch (IOException e) {
