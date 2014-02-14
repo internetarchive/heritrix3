@@ -80,10 +80,23 @@ public class AMQPPublishProcessor extends Processor {
     public void setRoutingKey(String routingKey) {
         this.routingKey = routingKey;
     }
+    
+    protected String clientId = null;
+    public String getClientId() {
+        return clientId;
+    }
+    /**
+     * Client id to include in the json payload. AMQPUrlReceiver queueName
+     * should have the same value, since umbra will route request urls based on
+     * this key.
+     */
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
 
-    /*
-     * Don't send urls received via AMQP back to AMQP, don't handle robots.txt,
-     * only handle http/s urls.
+    /**
+     * @return true iff url is http or https, is not robots.txt, was not
+     *         received via AMQP
      */
     protected boolean shouldProcess(CrawlURI curi) {
         try {
@@ -100,16 +113,18 @@ public class AMQPPublishProcessor extends Processor {
     protected ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
         try {
-            Channel channel = getChannel();
+            Channel channel = channel();
             if (channel != null) {
                 JSONObject message = buildJsonMessage(curi);
 
                 BasicProperties props = new AMQP.BasicProperties.Builder().
                         contentType("application/json").build();
+                channel.exchangeDeclare(getExchange(), "direct", true);
                 channel.basicPublish(getExchange(), getRoutingKey(), props, 
                         message.toString().getBytes("UTF-8"));
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("sent to amqp exchange=" + getExchange() + " routingKey=" + routingKey + ": " + message);
+                    logger.fine("sent to amqp exchange=" + getExchange()
+                            + " routingKey=" + routingKey + ": " + message);
                 }
 
                 curi.setFetchStatus(S_SENT_TO_AMQP);
@@ -137,6 +152,10 @@ public class AMQPPublishProcessor extends Processor {
     protected JSONObject buildJsonMessage(CrawlURI curi) {
         JSONObject message = new JSONObject().put("url", curi.toString());
 
+        if (getClientId() != null) {
+            message.put("clientId", getClientId());
+        }
+
         HashMap<String, Object> metadata = new HashMap<String,Object>();
         metadata.put("pathFromSeed", curi.getPathFromSeed());
 
@@ -151,7 +170,7 @@ public class AMQPPublishProcessor extends Processor {
         metadata.put("heritableData", heritableData);
 
         message.put("metadata", metadata);
-
+        
         return message;
     }
 
@@ -160,13 +179,13 @@ public class AMQPPublishProcessor extends Processor {
         throw new RuntimeException("should never be called");
     }
 
-    protected synchronized Channel getChannel() {
+    protected synchronized Channel channel() {
         if (threadChannel.get() == null) {
-            if(connection == null) {
+            if (connection == null) {
                 connect();
             }
             try {
-                if(connection != null) {
+                if (connection != null) {
                     threadChannel.set(connection.createChannel());
                 }
             } catch (IOException e) {
@@ -179,7 +198,7 @@ public class AMQPPublishProcessor extends Processor {
     private synchronized void connect() {
         ConnectionFactory factory = new ConnectionFactory();
         try {
-            factory.setUri(amqpUri);
+            factory.setUri(getAmqpUri());
             connection =  factory.newConnection();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
