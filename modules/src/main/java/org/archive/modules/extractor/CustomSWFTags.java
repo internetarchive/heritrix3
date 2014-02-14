@@ -59,13 +59,7 @@ public class CustomSWFTags extends SWFTagTypesImpl {
     @Override
     public SWFActions tagDoAction() throws IOException {
         return actions;
-    }
-    
-    //added for https://webarchive.jira.com/browse/HER-2064
-    @Override
-    public SWFActions tagDoInitAction( int spriteId ) throws IOException{
-    	return actions;
-    }     
+    } 
     
     public SWFActions tagDoInActions(int spriteId) throws IOException {
         return actions;
