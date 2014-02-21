@@ -19,7 +19,6 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -282,9 +281,6 @@ public class BdbCookieStoreTest extends TmpDirTestCase {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                NumberFormat fmt = NumberFormat.getInstance();
-                fmt.setMinimumFractionDigits(4);
-                fmt.setMaximumFractionDigits(4);
                 try {
                     while (!Thread.interrupted()) {
                         Collection<Cookie> cookies = bdbCookieStore().getCookies();
