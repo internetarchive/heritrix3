@@ -18,7 +18,6 @@
  */
 package org.archive.modules.fetcher;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -280,12 +278,6 @@ public class BdbCookieStoreTest extends TmpDirTestCase {
     
     public void testConcurrentLoad() throws IOException, InterruptedException {
         bdbCookieStore().clear();
-        
-        logger.info("level=" + logger.getLevel());
-        FileInputStream finp = new FileInputStream("/Users/nlevitt/workspace/heritrix3/dist/src/main/conf/logging.properties");
-        LogManager.getLogManager().readConfiguration(finp);
-        finp.close();
-        logger.warning("new logging config! level=" + logger.getLevel());
 
         Runnable runnable = new Runnable() {
             @Override
@@ -295,24 +287,10 @@ public class BdbCookieStoreTest extends TmpDirTestCase {
                 fmt.setMaximumFractionDigits(4);
                 try {
                     while (!Thread.interrupted()) {
-                        long start = System.nanoTime();
                         Collection<Cookie> cookies = bdbCookieStore().getCookies();
-                        long elapsedNs = System.nanoTime() - start;
-                        String elapsedSec = fmt.format((double) elapsedNs / 1000000000); 
-                        logger.warning(elapsedSec + " sec retrieving " + cookies.size() + " cookies");
-                        
-                        start = System.nanoTime();
-                        ArrayList<Cookie> cookiesCopy = new ArrayList<Cookie>(cookies);
-                        elapsedNs = System.nanoTime() - start;
-                        elapsedSec = fmt.format((double) elapsedNs / 1000000000); 
-                        logger.warning(elapsedSec + " sec making a copy of the cookie list with " + cookiesCopy.size() + " cookies");
-                        
+                        new ArrayList<Cookie>(cookies);
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-                        start = System.nanoTime();
                         bdbCookieStore().addCookie(cookie);
-                        elapsedNs = System.nanoTime() - start;
-                        elapsedSec = fmt.format((double) elapsedNs / 1000000000); 
-                        logger.warning(elapsedSec + " sec adding one cookie");
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
