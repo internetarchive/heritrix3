@@ -144,6 +144,18 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         }
         return jobLogger;
     }
+
+	/**
+	 * Cleanup when jobdir is removed. closes job.log file
+	 */
+	public void cleanup() {
+		Logger jobLogLogger = getJobLogger();
+		Handler[] handlers = jobLogLogger.getHandlers();
+		for(Handler handler: handlers) {
+			jobLogLogger.removeHandler(handler);
+			handler.close();
+		}
+	}
     
     public DateTime getLastLaunch() {
         return lastLaunch;
