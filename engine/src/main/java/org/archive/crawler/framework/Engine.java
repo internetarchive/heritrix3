@@ -86,8 +86,6 @@ public class Engine {
         for(String jobName: jobConfigs.keySet().toArray(new String[0])) {
             CrawlJob cj = jobConfigs.get(jobName);
             if(!cj.getJobDir().exists()) {
-				CrawlJob job = jobConfigs.get(jobName);
-				job.cleanup();
                 jobConfigs.remove(jobName); 
             }
         }
