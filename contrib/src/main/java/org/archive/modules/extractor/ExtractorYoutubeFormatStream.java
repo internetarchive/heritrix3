@@ -31,12 +31,15 @@ import org.json.JSONObject;
  *  <property name="extractLimit" value="1" />
  *  <property name="itagPriority" >
  *   <list>
- *     <value>38</value> <!-- MP4 3072p -->
- *     <value>37</value> <!-- MP4 1080p -->
+ *     <value>38</value> <!-- MP4 3072p (Discontinued) -->
+ *     <value>37</value> <!-- MP4 1080p (Discontinued) -->
  *     <value>22</value> <!-- MP4 720p -->
  *     <value>18</value> <!-- MP4 270p/360p -->
- *     <value>35</value> <!-- FLV 480p -->
- *     <value>34</value> <!-- FLV 360p -->
+ *     <value>35</value> <!-- FLV 480p (Discontinued) -->
+ *     <value>34</value> <!-- FLV 360p (Discontinued) -->
+ *     <value>36</value> <!-- 3GP 240p -->
+ *     <value>5</value> <!-- FLV 240p -->
+ *     <value>17</value> <!-- 3GP 144p -->
  *   </list>
  *  </property>
  * </bean>
@@ -139,38 +142,54 @@ public class ExtractorYoutubeFormatStream extends Extractor {
      */
     private static final List<String> DEFAULT_ITAG_PRIORITY = Arrays.asList(
             /*
-             * traditional streams that include video+audio; prefer high
-             * quality (720p), then very high quality (1080p), then lower
-             * qualities
+             * Prioritize traditional streams that include video+audio in order of quality.
+             * Some are marked as discontinued according to wikipedia (does that mean youtube will
+             * never have them anymore?)
+             * 
+             */
+            
+            /*
+             * Highest quality traditional stream.
+             */
+            "37",   // (discontinued) MP4   1080p   H.264   High    3–5.9   AAC     192 
+            
+            /*
+             * Traditional streams that are currently in use
              */
             "22",   // MP4  720p    H.264   High    2-3     AAC     192 
-            "84",   // MP4  720p    H.264   3D      2-3     AAC     192 
-            "85",   // MP4  1080p   H.264   3D      3-4     AAC     192 
-            "100",  // WebM 360p    VP8     3D      N/A     Vorbis  128 
             "43",   // WebM 360p    VP8     N/A     0.5     Vorbis  128 
-            "82",   // MP4  360p    H.264   3D      0.5     AAC     96  
             "18",   // MP4  270p/360p       H.264   Baseline        0.5     AAC     96  
-            "83",   // MP4  240p    H.264   3D      0.5     AAC     96  
             "5",    // FLV  240p    Sorenson H.263  N/A     0.25    MP3     64  
             "36",   // 3GP  240p    MPEG-4 Visual   Simple  0.175   AAC     36  
             "17",   // 3GP  144p    MPEG-4 Visual   Simple  0.05    AAC     24
-
+            
             /*
-             * discontinued according to wikipedia (does that mean youtube will
-             * never have them anymore?)
+             * Discontinued FLV Standard Def
+             */
+            "35",   // (discontinued) FLV   480p    H.264   Main    0.8-1   AAC     128 
+            "34",   // (discontinued) FLV   360p    H.264   Main    0.5     AAC     128 
+            
+            /*
+             * 3D  streams that include video+audio
+             */
+            "85",   // MP4  1080p   H.264   3D      3-4     AAC     192 
+            "84",   // MP4  720p    H.264   3D      2-3     AAC     192 
+            "100",  // WebM 360p    VP8     3D      N/A     Vorbis  128 
+            "82",   // MP4  360p    H.264   3D      0.5     AAC     96  
+            "83",   // MP4  240p    H.264   3D      0.5     AAC     96  
+            
+            /*
+             * Discontinued (but maybe not completely phased out?)
              */
             "6",    // (discontinued) FLV   270p    Sorenson H.263  N/A     0.8     MP3     64  
             "13",   // (discontinued) 3GP   N/A     MPEG-4 Visual   N/A     0.5     AAC     N/A 
-            "34",   // (discontinued) FLV   360p    H.264   Main    0.5     AAC     128 
-            "35",   // (discontinued) FLV   480p    H.264   Main    0.8-1   AAC     128 
-            "37",   // (discontinued) MP4   1080p   H.264   High    3–5.9   AAC     192 
             "38",   // (discontinued) MP4   3072p   H.264   High    3.5-5   AAC     192 
             "44",   // (discontinued) WebM  480p    VP8     N/A     1       Vorbis  128 
             "45",   // (discontinued) WebM  720p    VP8     N/A     2       Vorbis  192 
             "46",   // (discontinued) WebM  1080p   VP8     N/A     N/A     Vorbis  192 
             "101",  // (discontinued) WebM  360p    VP8     3D      N/A     Vorbis  192 
             "102",  // (discontinued) WebM  720p    VP8     3D      N/A     Vorbis  192
-
+            
             /*
              * live streaming - not sure what happens if we try to download one
              * of these
@@ -182,7 +201,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "92",   // (live streaming) MP4 240p    H.264   Main    0.15-0.3        AAC     48
             "132",  // (live streaming) MP4 240p    H.264   Baseline        0.15-0.2        AAC     48
             "151",  // (live streaming) MP4 72p     H.264   Baseline        0.05    AAC     24
-
+            
             /*
              * http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
              * separate video and audio streams, not preferred because we
