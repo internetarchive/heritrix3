@@ -42,7 +42,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     };
 
     protected static final String[] EXPECTED_SINGLE_DEFAULT_OUTLINK = {
-        "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&factor=1.25&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=35&sparams=algorithm%2Cburst%2Ccp%2Cfactor%2Cid%2Cip%2Cipbits%2Citag%2Csource%2Cupn%2Cexpire&source=youtube&mv=m&sver=3&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&ms=au&algorithm=throttle-factor&id=fc114937ada1669d&expire=1370493270&burst=40&ipbits=8&upn=t-LMF5MC9BA&mt=1370471490&signature=A23283ED964AA8EF061249CCA6199EDDA6543FF2.89798F8181F2250FCFF24F19B2E59D880D054703",
+        "http://r3---sn-a5m7znek.c.youtube.com/videoplayback?ip=208.70.31.237&key=yt1&newshard=yes&cp=U0hWRVRUUV9MSkNONl9MTlVDOjRtUl9JQzM2NENr&itag=43&mt=1370471490&source=youtube&mv=m&sver=3&ratebypass=yes&ms=au&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&ipbits=8&expire=1370493270&fexp=900352%2C924605%2C928201%2C901208%2C929123%2C929121%2C929915%2C929906%2C925714%2C929919%2C929119%2C931202%2C928017%2C912512%2C912518%2C906906%2C904830%2C930807%2C919373%2C906836%2C933701%2C900816%2C912711%2C929606%2C910075&id=fc114937ada1669d&upn=t-LMF5MC9BA&signature=2E2A7F8D5A61497159C2A2CFBB07F62B98062500.33826449E77B3A5F5FE40D028857064D7313D60A"
     };
 
     @Override
@@ -144,6 +144,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
         assertEquals(true, testUri.getOutLinks().size()>0);
     }
+    
     public void testDefaultItag() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
         CrawlURI testUri = createTestUri(TEST_URI, TEST_RESOURCE_FILE_NAME);
 

@@ -132,11 +132,77 @@ public class ExtractorYoutubeFormatStream extends Extractor {
         TextUtils.recycleMatcher(matcher);
     }
 
-    // 34 and 35 are most common medium quality flvs, others are in arbitrary order
+    /*
+     * itag information from "Comparison of YouTube media encoding options" at
+     * http://en.wikipedia.org/w/index.php?title=YouTube&oldid=596563824#
+     * Quality_and_codecs
+     */
     private static final List<String> DEFAULT_ITAG_PRIORITY = Arrays.asList(
-            "35", "34", "5", "6", "13", "17", "18", "22", "36", "37", "38",
-            "43", "44", "45", "46", "82", "83", "84", "85", "100", "101",
-            "102", "120");
+            /*
+             * traditional streams that include video+audio; prefer high
+             * quality (720p), then very high quality (1080p), then lower
+             * qualities
+             */
+            "22",   // MP4  720p    H.264   High    2-3     AAC     192 
+            "84",   // MP4  720p    H.264   3D      2-3     AAC     192 
+            "85",   // MP4  1080p   H.264   3D      3-4     AAC     192 
+            "100",  // WebM 360p    VP8     3D      N/A     Vorbis  128 
+            "43",   // WebM 360p    VP8     N/A     0.5     Vorbis  128 
+            "82",   // MP4  360p    H.264   3D      0.5     AAC     96  
+            "18",   // MP4  270p/360p       H.264   Baseline        0.5     AAC     96  
+            "83",   // MP4  240p    H.264   3D      0.5     AAC     96  
+            "5",    // FLV  240p    Sorenson H.263  N/A     0.25    MP3     64  
+            "36",   // 3GP  240p    MPEG-4 Visual   Simple  0.175   AAC     36  
+            "17",   // 3GP  144p    MPEG-4 Visual   Simple  0.05    AAC     24
+
+            /*
+             * discontinued according to wikipedia (does that mean youtube will
+             * never have them anymore?)
+             */
+            "6",    // (discontinued) FLV   270p    Sorenson H.263  N/A     0.8     MP3     64  
+            "13",   // (discontinued) 3GP   N/A     MPEG-4 Visual   N/A     0.5     AAC     N/A 
+            "34",   // (discontinued) FLV   360p    H.264   Main    0.5     AAC     128 
+            "35",   // (discontinued) FLV   480p    H.264   Main    0.8-1   AAC     128 
+            "37",   // (discontinued) MP4   1080p   H.264   High    3–5.9   AAC     192 
+            "38",   // (discontinued) MP4   3072p   H.264   High    3.5-5   AAC     192 
+            "44",   // (discontinued) WebM  480p    VP8     N/A     1       Vorbis  128 
+            "45",   // (discontinued) WebM  720p    VP8     N/A     2       Vorbis  192 
+            "46",   // (discontinued) WebM  1080p   VP8     N/A     N/A     Vorbis  192 
+            "101",  // (discontinued) WebM  360p    VP8     3D      N/A     Vorbis  192 
+            "102",  // (discontinued) WebM  720p    VP8     3D      N/A     Vorbis  192
+
+            /*
+             * live streaming - not sure what happens if we try to download one
+             * of these
+             */
+            "95",   // (live streaming) MP4 720p    H.264   Main    1.5-3   AAC     256     
+            "96",   // (live streaming) MP4 1080p   H.264   High    2.5-6   AAC     256     
+            "94",   // (live streaming) MP4 480p    H.264   Main    0.8-1.25        AAC     128     
+            "93",   // (live streaming) MP4 360p    H.264   Main    0.5-1   AAC     128     
+            "92",   // (live streaming) MP4 240p    H.264   Main    0.15-0.3        AAC     48
+            "132",  // (live streaming) MP4 240p    H.264   Baseline        0.15-0.2        AAC     48
+            "151",  // (live streaming) MP4 72p     H.264   Baseline        0.05    AAC     24
+
+            /*
+             * http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
+             * separate video and audio streams, not preferred because we
+             * haven't even begun to look at playback
+             */
+            "136",  // (MPEG-DASH video only) MP4   720p    H.264   Main    1-1.5
+            "137",  // (MPEG-DASH video only) MP4   1080p   H.264   High    2-3
+            "135",  // (MPEG-DASH video only) MP4   480p    H.264   Main    0.5-1
+            "264",  // (MPEG-DASH video only) MP4   1440p   H.264   High    4-5
+            "134",  // (MPEG-DASH video only) MP4   360p    H.264   Main    0.3-0.4
+            "133",  // (MPEG-DASH video only) MP4   240p    H.264   Main    0.2-0.3
+            "160",  // (MPEG-DASH video only) MP4   144p    H.264   Main    0.1
+            "172",  // (MPEG-DASH audio only) WebM  Vorbis  192
+            "140",  // (MPEG-DASH audio only) MP4   AAC     128
+            "171",  // (MPEG-DASH audio only) WebM  Vorbis  128
+            "120",  // (discontinued; live streaming) FLV   720p    H.264   Main@L3.1       2       AAC     128
+            "141",  // (discontinued; MPEG-DASH audio only) MP4     AAC     256
+            "139"   // (discontinued; MPEG-DASH audio only) MP4     AAC     48
+            );
+    
     private static final Set<String> KNOWN_ITAGS = new HashSet<String>(DEFAULT_ITAG_PRIORITY);
 
     // Add videos as outlinks by priority list
