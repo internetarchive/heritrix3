@@ -195,9 +195,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.archive</groupId>
-			<artifactId>ia-web-commons</artifactId>
-			<version>1.1.1-SNAPSHOT</version>
+			<groupId>org.netpreserve.commons</groupId>
+			<artifactId>webarchive-commons</artifactId>
+			<version>1.1.1-IA-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.hadoop</groupId>
