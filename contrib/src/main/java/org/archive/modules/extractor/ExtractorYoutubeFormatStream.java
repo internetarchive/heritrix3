@@ -141,18 +141,18 @@ public class ExtractorYoutubeFormatStream extends Extractor {
      * Quality_and_codecs
      */
     private static final List<String> DEFAULT_ITAG_PRIORITY = Arrays.asList(
-    		/*
-    		 * Prioritize traditional streams that include video+audio in order of quality.
-    		 * Some are marked as discontinued according to wikipedia (does that mean youtube will
+            /*
+             * Prioritize traditional streams that include video+audio in order of quality.
+             * Some are marked as discontinued according to wikipedia (does that mean youtube will
              * never have them anymore?)
-    		 * 
-    		 */
-    		
-    		/*
+             * 
+             */
+            
+            /*
              * Highest quality traditional stream.
-    		 */
+             */
             "37",   // (discontinued) MP4   1080p   H.264   High    3–5.9   AAC     192 
-    
+            
             /*
              * Traditional streams that are currently in use
              */
@@ -163,12 +163,12 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "36",   // 3GP  240p    MPEG-4 Visual   Simple  0.175   AAC     36  
             "17",   // 3GP  144p    MPEG-4 Visual   Simple  0.05    AAC     24
             
-    		/*
+            /*
              * Discontinued FLV Standard Def
-    		 */
+             */
             "35",   // (discontinued) FLV   480p    H.264   Main    0.8-1   AAC     128 
             "34",   // (discontinued) FLV   360p    H.264   Main    0.5     AAC     128 
-
+            
             /*
              * 3D  streams that include video+audio
              */
@@ -177,7 +177,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "100",  // WebM 360p    VP8     3D      N/A     Vorbis  128 
             "82",   // MP4  360p    H.264   3D      0.5     AAC     96  
             "83",   // MP4  240p    H.264   3D      0.5     AAC     96  
-
+            
             /*
              * Discontinued (but maybe not completely phased out?)
              */
@@ -189,7 +189,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "46",   // (discontinued) WebM  1080p   VP8     N/A     N/A     Vorbis  192 
             "101",  // (discontinued) WebM  360p    VP8     3D      N/A     Vorbis  192 
             "102",  // (discontinued) WebM  720p    VP8     3D      N/A     Vorbis  192
-
+            
             /*
              * live streaming - not sure what happens if we try to download one
              * of these
@@ -201,7 +201,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "92",   // (live streaming) MP4 240p    H.264   Main    0.15-0.3        AAC     48
             "132",  // (live streaming) MP4 240p    H.264   Baseline        0.15-0.2        AAC     48
             "151",  // (live streaming) MP4 72p     H.264   Baseline        0.05    AAC     24
-
+            
             /*
              * http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
              * separate video and audio streams, not preferred because we
