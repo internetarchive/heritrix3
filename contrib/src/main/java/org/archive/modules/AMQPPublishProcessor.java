@@ -127,11 +127,7 @@ public class AMQPPublishProcessor extends Processor {
                             + " routingKey=" + routingKey + ": " + message);
                 }
 
-                curi.setFetchStatus(S_SENT_TO_AMQP);
                 curi.getAnnotations().add(A_SENT_TO_AMQP);
-
-                // no further processing on this url
-                return ProcessResult.FINISH;
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Attempting to send URI to AMQP server failed! " + curi, e);
