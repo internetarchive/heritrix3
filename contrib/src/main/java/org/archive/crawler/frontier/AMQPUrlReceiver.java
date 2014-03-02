@@ -82,6 +82,14 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         this.amqpUri = uri;
     }
 
+    protected String exchange = "umbra";
+    public String getExchange() {
+        return exchange;
+    }
+    public void setExchange(String exchange) {
+        this.exchange = exchange;
+    }
+
     protected String queueName = "requests";
     public String getQueueName() {
         return queueName;
@@ -101,6 +109,8 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         while (!isRunning) {
             try {
                 Consumer consumer = new UrlConsumer(channel());
+                channel.queueDeclare(getQueueName(), false, false, true, null);
+                channel().queueBind(getQueueName(), exchange, getQueueName());
                 channel().basicConsume(getQueueName(), false, consumer);
                 isRunning = true;
             } catch (IOException e) {

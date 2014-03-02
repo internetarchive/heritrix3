@@ -132,9 +132,9 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         if(jobLogger == null) {
             jobLogger = Logger.getLogger(getShortName());
             try {
-                Handler h = new FileHandler(getJobLog().getAbsolutePath(),true);
-                h.setFormatter(new JobLogFormatter());
-                jobLogger.addHandler(h);
+                mainJobLogHandler = new FileHandler(getJobLog().getAbsolutePath(),true);
+                mainJobLogHandler.setFormatter(new JobLogFormatter());
+                jobLogger.addHandler(mainJobLogHandler);
             } catch (SecurityException e) {
                 throw new RuntimeException(e);
             } catch (IOException e) {
@@ -144,7 +144,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         }
         return jobLogger;
     }
-    
+
     public DateTime getLastLaunch() {
         return lastLaunch;
     }
@@ -442,6 +442,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         }
     }
     
+    protected transient Handler mainJobLogHandler;
     protected transient Handler currentLaunchJobLogHandler;
 
     protected boolean needTeardown = false;
@@ -581,7 +582,14 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 currentLaunchJobLogHandler = null;
             }
 
-            getJobLogger().log(Level.INFO,"Job instance discarded");
+            getJobLogger().log(Level.INFO, "Job instance discarded");
+            
+            if (mainJobLogHandler != null) {
+                getJobLogger().removeHandler(mainJobLogHandler);
+                mainJobLogHandler.close();
+                mainJobLogHandler = null;
+            }
+            jobLogger = null;
         }
     }
 
