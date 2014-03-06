@@ -147,12 +147,12 @@ public class ExtractorYoutubeFormatStream extends Extractor {
              * never have them anymore?)
              * 
              */
-            
+
             /*
              * Highest quality traditional stream.
              */
             "37",   // (discontinued) MP4   1080p   H.264   High    3–5.9   AAC     192 
-            
+
             /*
              * Traditional streams that are currently in use
              */
@@ -162,13 +162,13 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "5",    // FLV  240p    Sorenson H.263  N/A     0.25    MP3     64  
             "36",   // 3GP  240p    MPEG-4 Visual   Simple  0.175   AAC     36  
             "17",   // 3GP  144p    MPEG-4 Visual   Simple  0.05    AAC     24
-            
+
             /*
              * Discontinued FLV Standard Def
              */
             "35",   // (discontinued) FLV   480p    H.264   Main    0.8-1   AAC     128 
             "34",   // (discontinued) FLV   360p    H.264   Main    0.5     AAC     128 
-            
+
             /*
              * 3D  streams that include video+audio
              */
@@ -177,7 +177,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "100",  // WebM 360p    VP8     3D      N/A     Vorbis  128 
             "82",   // MP4  360p    H.264   3D      0.5     AAC     96  
             "83",   // MP4  240p    H.264   3D      0.5     AAC     96  
-            
+
             /*
              * Discontinued (but maybe not completely phased out?)
              */
@@ -189,7 +189,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "46",   // (discontinued) WebM  1080p   VP8     N/A     N/A     Vorbis  192 
             "101",  // (discontinued) WebM  360p    VP8     3D      N/A     Vorbis  192 
             "102",  // (discontinued) WebM  720p    VP8     3D      N/A     Vorbis  192
-            
+
             /*
              * live streaming - not sure what happens if we try to download one
              * of these
@@ -201,7 +201,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "92",   // (live streaming) MP4 240p    H.264   Main    0.15-0.3        AAC     48
             "132",  // (live streaming) MP4 240p    H.264   Baseline        0.15-0.2        AAC     48
             "151",  // (live streaming) MP4 72p     H.264   Baseline        0.05    AAC     24
-            
+
             /*
              * http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
              * separate video and audio streams, not preferred because we
@@ -221,7 +221,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
             "141",  // (discontinued; MPEG-DASH audio only) MP4     AAC     256
             "139"   // (discontinued; MPEG-DASH audio only) MP4     AAC     48
             );
-    
+
     private static final Set<String> KNOWN_ITAGS = new HashSet<String>(DEFAULT_ITAG_PRIORITY);
 
     // Add videos as outlinks by priority list
@@ -271,8 +271,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
         // Parse Video Map into itag,url pair
         for (int i = 0; i < rawVideoList.length; i++) {
             String[] videoParams = rawVideoList[i].split("\\u0026");
-            String videoURLParam, itagParam, sigParam;
-            videoURLParam = itagParam = sigParam = "";
+            String videoURLParam=null, itagParam=null, sigParam=null;
 
             for (String param : videoParams) {
 
@@ -288,16 +287,17 @@ public class ExtractorYoutubeFormatStream extends Extractor {
                 if (keyValuePair[0].equals("itag")) {
                     itagParam = keyValuePair[1];
                 }
-                if (keyValuePair[0].equals("sig")) {
+                if (keyValuePair[0].equals("sig") || keyValuePair[0].equals("s")) {
                     sigParam = keyValuePair[1];
                 }
             }
 
-            if (videoURLParam.length() > 0 && itagParam.length() > 0
-                    && sigParam.length() > 0) {
+            if (videoURLParam != null && itagParam != null) {
                 try {
-                    String fixupURL = URLDecoder.decode(videoURLParam
-                            + "%26signature=" + sigParam, "UTF-8");
+                    String fixupURL = URLDecoder.decode(videoURLParam, "UTF-8");
+                    if (sigParam != null) {
+                        fixupURL = fixupURL + "&signature=" + sigParam;
+                    }
                     parsedVideoMap.put(itagParam, fixupURL);
                 } catch (java.io.UnsupportedEncodingException e) {
                     logger.warning("Error decoding youtube video URL: "
