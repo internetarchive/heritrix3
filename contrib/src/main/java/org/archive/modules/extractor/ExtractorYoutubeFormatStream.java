@@ -1,6 +1,7 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,10 +299,13 @@ public class ExtractorYoutubeFormatStream extends Extractor {
                     if (sigParam != null) {
                         fixupURL = fixupURL + "&signature=" + sigParam;
                     }
+                    if (!fixupURL.contains("signature=")) {
+                        logger.warning("no 'signature' parameter in raw url or in stream map: " + fixupURL);
+                    }
                     parsedVideoMap.put(itagParam, fixupURL);
-                } catch (java.io.UnsupportedEncodingException e) {
+                } catch (UnsupportedEncodingException e) {
                     logger.warning("Error decoding youtube video URL: "
-                            + videoURLParam + "%26signature=" + sigParam);
+                            + videoURLParam);
                 }
             }
         }
