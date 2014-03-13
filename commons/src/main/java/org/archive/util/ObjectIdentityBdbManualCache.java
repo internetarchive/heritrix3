@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -114,6 +115,7 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<Stri
         super();
         dirtyItems = CacheBuilder.newBuilder()
                 .maximumSize(10000)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
                 .<String, V>build()
                 .asMap();
     }
