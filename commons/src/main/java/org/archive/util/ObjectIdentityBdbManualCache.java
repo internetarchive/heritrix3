@@ -26,15 +26,16 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.KryoBinding;
 
-import com.google.common.collect.MapEvictionListener;
 import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.TupleBinding;
@@ -64,8 +65,9 @@ import com.sleepycat.je.Environment;
  * @author paul baclace (conversion to ConcurrentMap)
  *  
  */
-public class ObjectIdentityBdbManualCache<V extends IdentityCacheable> 
-implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<String, V> {
+@SuppressWarnings("ALL")
+public class ObjectIdentityBdbManualCache<V extends IdentityCacheable>
+implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<String, V> {
     private static final long serialVersionUID = 1L;
     private static final Logger logger =
         Logger.getLogger(ObjectIdentityBdbManualCache.class.getName());
@@ -110,6 +112,10 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
      */
     public ObjectIdentityBdbManualCache() {
         super();
+        dirtyItems = CacheBuilder.newBuilder()
+                .maximumSize(10000)
+                .<String, V>build()
+                .asMap();
     }
     
     /**
@@ -128,15 +134,12 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
         // TODO: tune capacity for actual threads, expected size of key caches? 
-        this.memMap = new MapMaker().concurrencyLevel(64).initialCapacity(8192).softValues().makeMap();    
+        this.memMap = new MapMaker().concurrencyLevel(64).initialCapacity(8192).softValues().makeMap();
         this.db = openDatabase(env, dbName);
         this.diskMap = createDiskMap(this.db, classCatalog, valueClass);
         // keep a record of items that must be persisted; auto-persist if 
         // unchanged after 5 minutes, or more than 10K would collect
-        this.dirtyItems = new MapMaker().concurrencyLevel(64)
-            .maximumSize(10000).expireAfterWrite(5,TimeUnit.MINUTES)
-            .evictionListener(this).makeMap();
-            
+
         this.count = new AtomicLong(diskMap.size());
     }
 
@@ -364,8 +367,8 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, MapEvictionListener<
     }
 
     @Override
-    public void onEviction(String key, V val) {
+    public void onRemoval(RemovalNotification<String, V> stringVRemovalNotification) {
         evictions.incrementAndGet();
-        diskMap.put(key, val);
+        diskMap.put(stringVRemovalNotification.getKey(), stringVRemovalNotification.getValue());
     }
 }
