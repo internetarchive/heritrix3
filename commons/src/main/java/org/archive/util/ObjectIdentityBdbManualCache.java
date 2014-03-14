@@ -67,7 +67,7 @@ import com.sleepycat.je.Environment;
  */
 @SuppressWarnings("ALL")
 public class ObjectIdentityBdbManualCache<V extends IdentityCacheable>
-implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<String, V> {
+implements ObjectIdentityCache<V>, Closeable, Serializable {
     private static final long serialVersionUID = 1L;
     private static final Logger logger =
         Logger.getLogger(ObjectIdentityBdbManualCache.class.getName());
@@ -115,6 +115,13 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<Stri
         dirtyItems = CacheBuilder.newBuilder()
                 .maximumSize(10000)
                 .expireAfterWrite(5, TimeUnit.MINUTES)
+                .removalListener(new RemovalListener<String, V>() {
+                    @Override
+                    public void onRemoval(RemovalNotification<String, V> stringVRemovalNotification) {
+                        evictions.incrementAndGet();
+                        diskMap.put(stringVRemovalNotification.getKey(), stringVRemovalNotification.getValue());
+                    }
+                })
                 .<String, V>build()
                 .asMap();
     }
@@ -372,9 +379,9 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<Stri
        dirtyItems.put(key,val); 
     }
 
-    @Override
+    /*@Override
     public void onRemoval(RemovalNotification<String, V> stringVRemovalNotification) {
         evictions.incrementAndGet();
         diskMap.put(stringVRemovalNotification.getKey(), stringVRemovalNotification.getValue());
-    }
+    }*/
 }
