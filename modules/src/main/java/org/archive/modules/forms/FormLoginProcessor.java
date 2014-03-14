@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpointable;
@@ -41,9 +44,6 @@ import org.archive.util.JSONUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
 
 /**
  * A step, post-ExtractorHTMLForms, where a followup CrawlURI to 
@@ -119,22 +119,24 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
         Logger.getLogger(FormLoginProcessor.class.getName());
     
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsSeenCount = 
-            new MapMaker().makeComputingMap(new Function<String, AtomicLong>() {
-                @Override
-                public AtomicLong apply(String arg0) {
-                    return new AtomicLong(0L);
-                }
-            });
+    ConcurrentMap<String, AtomicLong> eligibleFormsSeenCount =
+            CacheBuilder.newBuilder()
+                .build(
+                    new CacheLoader<String, AtomicLong>() {
+                        public AtomicLong load(String arg0) {
+                            return new AtomicLong(0L);
+                        }
+                    }).asMap();
 
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsAttemptsCount = 
-            new MapMaker().makeComputingMap(new Function<String, AtomicLong>() {
-                @Override
-                public AtomicLong apply(String arg0) {
-                    return new AtomicLong(0L);
-                }
-            });
+    ConcurrentMap<String, AtomicLong> eligibleFormsAttemptsCount =
+            CacheBuilder.newBuilder()
+                    .build(
+                            new CacheLoader<String, AtomicLong>() {
+                                public AtomicLong load(String arg0) {
+                                    return new AtomicLong(0L);
+                                }
+                            }).asMap();
     
     /**
      * SURT prefix against which configured username/password is
