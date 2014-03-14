@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 
 import org.archive.bdb.KryoBinding;
 
-import com.google.common.collect.MapMaker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
@@ -135,8 +134,13 @@ implements ObjectIdentityCache<V>, Closeable, Serializable, RemovalListener<Stri
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
-        // TODO: tune capacity for actual threads, expected size of key caches? 
-        this.memMap = new MapMaker().concurrencyLevel(64).initialCapacity(8192).softValues().makeMap();
+        // TODO: tune capacity for actual threads, expected size of key caches?
+        this.memMap = CacheBuilder.newBuilder()
+                .concurrencyLevel(64)
+                .initialCapacity(8192)
+                .softValues()
+                .<String, V>build()
+                .asMap();
         this.db = openDatabase(env, dbName);
         this.diskMap = createDiskMap(this.db, classCatalog, valueClass);
         // keep a record of items that must be persisted; auto-persist if 
