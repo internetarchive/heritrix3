@@ -121,7 +121,7 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     // formProvince (String) -> count
     ConcurrentMap<String, AtomicLong> eligibleFormsSeenCount =
             CacheBuilder.newBuilder()
-                .build(
+                .<String, AtomicLong>build(
                     new CacheLoader<String, AtomicLong>() {
                         public AtomicLong load(String arg0) {
                             return new AtomicLong(0L);
@@ -131,7 +131,7 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     // formProvince (String) -> count
     ConcurrentMap<String, AtomicLong> eligibleFormsAttemptsCount =
             CacheBuilder.newBuilder()
-                    .build(
+                    .<String, AtomicLong>build(
                             new CacheLoader<String, AtomicLong>() {
                                 public AtomicLong load(String arg0) {
                                     return new AtomicLong(0L);
