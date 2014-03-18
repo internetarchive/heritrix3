@@ -31,7 +31,7 @@ import org.archive.modules.CrawlURI;
 /**
  * Example usage:
  * <pre> &lt;bean class="org.archive.modules.deciderules.ExpressionDecideRule">
- *     &lt;property name="groovyExpression" value='${curi.via == null &amp;&amp; curi ==~ "^https?://(?:www\\.)?(facebook|vimeo|flickr)\\.com/.*"}'/>
+ *     &lt;property name="groovyExpression" value='curi.via == null &amp;amp;&amp;amp; curi ==~ "^https?://(?:www\\.)?(facebook|vimeo|flickr)\\.com/.*"'/>
  * &lt/bean></pre>
  *
  * @contributor nlevitt
@@ -58,7 +58,7 @@ public class ExpressionDecideRule extends PredicatedDecideRule {
 
         if (groovyTemplate == null) {
             try {
-                groovyTemplate = new SimpleTemplateEngine().createTemplate(getGroovyExpression());
+                groovyTemplate = new SimpleTemplateEngine().createTemplate("${" + getGroovyExpression() + "}");
                 groovyTemplates.put(getGroovyExpression(), groovyTemplate);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "problem with groovy expression " + getGroovyExpression(), e);
