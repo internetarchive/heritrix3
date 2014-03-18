@@ -25,9 +25,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 
+import com.google.common.cache.CacheBuilder;
 import org.archive.util.Histotable;
-
-import com.google.common.collect.MapMaker;
 
 /**
  * Counting Set which only remembers the 'top N' of all String values 
@@ -56,7 +55,7 @@ public class TopNSet implements Serializable {
     
     public TopNSet(int size){
         maxsize = size;
-        set = new MapMaker().concurrencyLevel(64).makeMap();
+        set = CacheBuilder.newBuilder().concurrencyLevel(64).<String, Long>build().asMap();
     }
     
     /**
