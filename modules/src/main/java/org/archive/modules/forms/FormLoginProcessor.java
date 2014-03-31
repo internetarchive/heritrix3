@@ -21,14 +21,11 @@ package org.archive.modules.forms;
 
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpointable;
@@ -44,6 +41,10 @@ import org.archive.util.JSONUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 /**
  * A step, post-ExtractorHTMLForms, where a followup CrawlURI to 
@@ -119,24 +120,24 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
         Logger.getLogger(FormLoginProcessor.class.getName());
     
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsSeenCount =
+    protected LoadingCache<String, AtomicLong> eligibleFormsSeenCount =
             CacheBuilder.newBuilder()
                 .<String, AtomicLong>build(
                     new CacheLoader<String, AtomicLong>() {
                         public AtomicLong load(String arg0) {
                             return new AtomicLong(0L);
                         }
-                    }).asMap();
+                    });
 
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsAttemptsCount =
+    protected LoadingCache<String, AtomicLong> eligibleFormsAttemptsCount =
             CacheBuilder.newBuilder()
                     .<String, AtomicLong>build(
                             new CacheLoader<String, AtomicLong>() {
                                 public AtomicLong load(String arg0) {
                                     return new AtomicLong(0L);
                                 }
-                            }).asMap();
+                            });
     
     /**
      * SURT prefix against which configured username/password is
@@ -219,13 +220,17 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
             for( Object formObject : curi.getDataList(ExtractorHTMLForms.A_HTML_FORM_OBJECTS)) {
                 HTMLForm form = (HTMLForm) formObject;
                 if(form.seemsLoginForm()) {
-                    eligibleFormsSeenCount.get(formProvince).incrementAndGet();
-                    if(eligibleFormsAttemptsCount.get(formProvince).get()<1) {
-                        eligibleFormsAttemptsCount.get(formProvince).incrementAndGet();
-                        createFormSubmissionAttempt(curi,form,formProvince); 
-                    } else {
-                        // note decline-to-submit: in volume, may be signal of failed first login
-                        curi.getAnnotations().add("nosubmit:"+submitStatusFor(formProvince));
+                    try {
+                        eligibleFormsSeenCount.get(formProvince).incrementAndGet();
+                        if(eligibleFormsAttemptsCount.get(formProvince).get()<1) {
+                            eligibleFormsAttemptsCount.get(formProvince).incrementAndGet();
+                            createFormSubmissionAttempt(curi,form,formProvince); 
+                        } else {
+                            // note decline-to-submit: in volume, may be signal of failed first login
+                            curi.getAnnotations().add("nosubmit:"+submitStatusFor(formProvince));
+                        }
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);  // can't happen?
                     }
                     return;
                 }
@@ -278,9 +283,13 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     }
     
     protected String submitStatusFor(String formProvince) {
-        return eligibleFormsAttemptsCount.get(formProvince).get()
-                +","+eligibleFormsSeenCount.get(formProvince).get()
-                +","+formProvince;
+        try {
+            return eligibleFormsAttemptsCount.get(formProvince).get()
+                    +","+eligibleFormsSeenCount.get(formProvince).get()
+                    +","+formProvince;
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     @Override
@@ -295,10 +304,10 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     protected void fromCheckpointJson(JSONObject json) throws JSONException {
         super.fromCheckpointJson(json);
         JSONUtils.putAllAtomicLongs(
-                eligibleFormsAttemptsCount,
+                eligibleFormsAttemptsCount.asMap(),
                 json.getJSONObject("eligibleFormsAttemptsCount"));
         JSONUtils.putAllAtomicLongs(
-                eligibleFormsSeenCount,
+                eligibleFormsSeenCount.asMap(),
                 json.getJSONObject("eligibleFormsSeenCount"));
     }
 }
