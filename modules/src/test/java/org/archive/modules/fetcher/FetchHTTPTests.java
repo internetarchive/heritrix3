@@ -62,9 +62,6 @@ import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
-import org.archive.util.Recorder;
-import org.archive.util.TmpDirTestCase;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
@@ -92,25 +89,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
     protected String getUserAgentString() {
         return getClass().getName();
-    }
-
-    protected Recorder getRecorder() throws IOException {
-        if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
-                    getClass().getName(), 16 * 1024, 512 * 1024);
-            Recorder.setHttpRecorder(httpRecorder);
-        }
-
-        return Recorder.getHttpRecorder();
-    }
-    
-    protected CrawlURI makeCrawlURI(String uri) throws URIException,
-            IOException {
-        UURI uuri = UURIFactory.getInstance(uri);
-        CrawlURI curi = new CrawlURI(uuri);
-        curi.setSeed(true);
-        curi.setRecorder(getRecorder());
-        return curi;
     }
 
     protected void runDefaultChecks(CrawlURI curi, String... exclusionsArray)
