@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -52,8 +53,12 @@ import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
 import org.apache.http.NoHttpResponseException;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -62,9 +67,6 @@ import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
-import org.archive.util.Recorder;
-import org.archive.util.TmpDirTestCase;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
@@ -94,25 +96,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
         return getClass().getName();
     }
 
-    protected Recorder getRecorder() throws IOException {
-        if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
-                    getClass().getName(), 16 * 1024, 512 * 1024);
-            Recorder.setHttpRecorder(httpRecorder);
-        }
-
-        return Recorder.getHttpRecorder();
-    }
-    
-    protected CrawlURI makeCrawlURI(String uri) throws URIException,
-            IOException {
-        UURI uuri = UURIFactory.getInstance(uri);
-        CrawlURI curi = new CrawlURI(uuri);
-        curi.setSeed(true);
-        curi.setRecorder(getRecorder());
-        return curi;
-    }
-
     protected void runDefaultChecks(CrawlURI curi, String... exclusionsArray)
         throws IOException, UnsupportedEncodingException {
 
@@ -130,7 +113,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
         if (!exclusions.contains("hostHeader")) {
             assertTrue(requestString.contains("Host: localhost:7777\r\n"));
         }
-        assertTrue(requestString.endsWith("\r\n\r\n"));
+        if (!exclusions.contains("trailingCRLFCRLF")) {
+            assertTrue(requestString.endsWith("\r\n\r\n"));
+        }
         
         // check sizes
         assertEquals(DEFAULT_PAYLOAD_STRING.length(), curi.getContentLength());
@@ -147,7 +132,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
         if (!exclusions.contains("fetchStatus")) {
             assertTrue(curi.getFetchStatus() == 200);
         }
-        assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        if (!exclusions.contains("fetchTypeGET")) {
+            assertTrue(curi.getFetchType() == FetchType.HTTP_GET);
+        }
         
         // check message body, i.e. "raw, possibly chunked-transfer-encoded message contents not including the leading headers"
         assertEquals(DEFAULT_PAYLOAD_STRING, messageBodyString(curi));
@@ -703,8 +690,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         @Override
         public void run() {
+            ServerSocket listeningSocket = null;
             try {
-                ServerSocket listeningSocket = new ServerSocket(listenPort, 0, Inet4Address.getByName(listenAddress));
+                listeningSocket  = new ServerSocket(listenPort, 0, Inet4Address.getByName(listenAddress));
                 listeningSocket.setSoTimeout(600);
                 while (!isTimeToBeDone) {
                     try {
@@ -718,6 +706,12 @@ public class FetchHTTPTests extends ProcessorTestBase {
                 // logger.warning("caught exception: " + e);
             } finally {
                 // logger.info("all done suckers");
+                if (listeningSocket != null) {
+                    try {
+                        listeningSocket.close();
+                    } catch (IOException e) {
+                    }
+                }
             }
         }
 
@@ -828,6 +822,26 @@ public class FetchHTTPTests extends ProcessorTestBase {
         curi = makeCrawlURI("https://example.com/");
         fetcher().process(curi);
         assertTrue(httpRequestString(curi).contains("Host: example.com\r\n"));
+    }
+    
+    public void testHttpPost() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        curi.setFetchType(FetchType.HTTP_POST);
+
+        List<NameValuePair> params = new LinkedList<NameValuePair>();
+        params.add(new BasicNameValuePair("name1", "value1"));
+        params.add(new BasicNameValuePair("name1", "value2"));
+        params.add(new BasicNameValuePair("funky name 2", "whoa crazy\t && 🍺 🍻 \n crazier \rooo"));
+        String submitData = URLEncodedUtils.format(params, "UTF-8");
+        assertEquals("name1=value1&name1=value2&funky+name+2=whoa+crazy%09+%26%26+%F0%9F%8D%BA+%F0%9F%8D%BB+%0A+crazier+%0Dooo", submitData);
+
+        curi.getData().put(CoreAttributeConstants.A_SUBMIT_DATA, submitData); 
+        fetcher().process(curi);
+        
+        assertTrue(httpRequestString(curi).startsWith("POST / HTTP/1.0\r\n"));
+        assertTrue(httpRequestString(curi).endsWith("\r\n\r\nname1=value1&name1=value2&funky+name+2=whoa+crazy%09+%26%26+%F0%9F%8D%BA+%F0%9F%8D%BB+%0A+crazier+%0Dooo"));
+        assertEquals(FetchType.HTTP_POST, curi.getFetchType());
+        runDefaultChecks(curi, "requestLine", "trailingCRLFCRLF", "fetchTypeGET");
     }
 
     @Override

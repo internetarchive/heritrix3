@@ -20,12 +20,19 @@ package org.archive.state;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.SerializationUtils;
+import org.archive.modules.CrawlURI;
+import org.archive.net.UURI;
+import org.archive.net.UURIFactory;
+import org.archive.util.Recorder;
+import org.archive.util.TmpDirTestCase;
 
 
 /**
@@ -212,5 +219,26 @@ public abstract class ModuleTestBase extends TestCase {
             t.printStackTrace();
             throw t;
         }
+    }
+
+
+    protected Recorder getRecorder() throws IOException {
+        if (Recorder.getHttpRecorder() == null) {
+            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
+                    getClass().getName(), 16 * 1024, 512 * 1024);
+            Recorder.setHttpRecorder(httpRecorder);
+        }
+    
+        return Recorder.getHttpRecorder();
+    }
+
+
+    protected CrawlURI makeCrawlURI(String uri) throws URIException,
+            IOException {
+        UURI uuri = UURIFactory.getInstance(uri);
+        CrawlURI curi = new CrawlURI(uuri);
+        curi.setSeed(true);
+        curi.setRecorder(getRecorder());
+        return curi;
     }
 }

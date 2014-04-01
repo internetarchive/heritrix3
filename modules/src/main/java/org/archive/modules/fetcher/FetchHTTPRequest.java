@@ -64,6 +64,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbstractExecutionAwareRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
@@ -79,6 +80,8 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -93,6 +96,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.Args;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.Processor;
@@ -175,8 +179,16 @@ class FetchHTTPRequest {
         }
 
         if (curi.getFetchType() == FetchType.HTTP_POST) {
-            this.request = new BasicExecutionAwareEntityEnclosingRequest("POST", 
-                    requestLineUri, httpVersion);
+            BasicExecutionAwareEntityEnclosingRequest postRequest = new BasicExecutionAwareEntityEnclosingRequest(
+                    "POST", requestLineUri, httpVersion);
+            this.request = postRequest;
+            String submitData = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
+            if (submitData != null) {
+                // XXX brittle, doesn't support multipart form data etc
+                ContentType contentType = ContentType.create(URLEncodedUtils.CONTENT_TYPE, "UTF-8");
+                StringEntity formEntity = new StringEntity(submitData, contentType);
+                postRequest.setEntity(formEntity);
+            }
         } else {
             this.request = new BasicExecutionAwareRequest("GET", 
                     requestLineUri, httpVersion);
@@ -196,7 +208,7 @@ class FetchHTTPRequest {
         this.addedCredentials = populateTargetCredential();
         populateHttpProxyCredential();
     }
-    
+
     protected void configureRequestHeaders() {
         if (fetcher.getAcceptCompression()) {
             request.addHeader("Accept-Encoding", "gzip,deflate");
