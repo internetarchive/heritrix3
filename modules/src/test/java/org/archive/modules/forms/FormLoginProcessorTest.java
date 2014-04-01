@@ -21,13 +21,10 @@ package org.archive.modules.forms;
 
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.util.EncodingUtil;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.CrawlURI.FetchType;
-import org.archive.modules.forms.FormLoginProcessor;
+import org.archive.modules.ProcessorTestBase;
 
 public class FormLoginProcessorTest extends ProcessorTestBase {
 
@@ -69,8 +66,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         CrawlURI submitCuri = curi.getOutCandidates().toArray(new CrawlURI[0])[0];
         assertEquals("http://example.com/login", submitCuri.toString());
         assertEquals(FetchType.HTTP_POST, submitCuri.getFetchType());
-        NameValuePair[] queryParams = (NameValuePair[]) submitCuri.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
-        String queryString = EncodingUtil.formUrlEncode(queryParams, "UTF-8");
+        String queryString = (String) submitCuri.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
         assertEquals("username-form-field=jdoe&password-form-field=********", queryString);
     }
 }
