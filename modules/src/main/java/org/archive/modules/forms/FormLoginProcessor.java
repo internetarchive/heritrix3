@@ -294,8 +294,8 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     @Override
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
-        json.put("eligibleFormsAttemptsCount", eligibleFormsAttemptsCount);
-        json.put("eligibleFormsSeenCount", eligibleFormsSeenCount);
+        json.put("eligibleFormsAttemptsCount", eligibleFormsAttemptsCount.asMap());
+        json.put("eligibleFormsSeenCount", eligibleFormsSeenCount.asMap());
         return json;
     }
     
