@@ -106,20 +106,30 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
     @Override
     synchronized public void start() {
-        while (!isRunning) {
-            try {
-                Consumer consumer = new UrlConsumer(channel());
-                channel.queueDeclare(getQueueName(), false, false, true, null);
-                channel().queueBind(getQueueName(), exchange, getQueueName());
-                channel().basicConsume(getQueueName(), false, consumer);
-                isRunning = true;
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException e1) {
+        // spawn off a thread for to start up the amqp consumer, otherwise the crawl launch thread can get stuck here 
+        if (!isRunning) {
+            new Thread(AMQPUrlReceiver.class.getSimpleName() + "-start") {
+                @Override
+                public void run() {
+                    synchronized (AMQPUrlReceiver.this) {
+                        while (!isRunning) {
+                            try {
+                                Consumer consumer = new UrlConsumer(channel());
+                                channel.queueDeclare(getQueueName(), false, false, true, null);
+                                channel().queueBind(getQueueName(), exchange, getQueueName());
+                                channel().basicConsume(getQueueName(), false, consumer);
+                                isRunning = true;
+                            } catch (IOException e) {
+                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                                try {
+                                    Thread.sleep(30000);
+                                } catch (InterruptedException e1) {
+                                }
+                            }
+                        }
+                    }
                 }
-            }
+            }.start();
         }
     }
 
@@ -285,18 +295,22 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
-            try {
-                channel().flow(false);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "failed to pause flow on amqp channel", e);
+            if (channel != null) {
+                try {
+                    channel.flow(false);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "failed to pause flow on amqp channel", e);
+                }
             }
             break;
-            
+
         case RUNNING: case EMPTY: case PREPARING:
-            try {
-                channel().flow(true);
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "failed to resume flow on amqp channel", e);
+            if (channel != null) {
+                try {
+                    channel.flow(true);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "failed to resume flow on amqp channel", e);
+                }
             }
             break;
 
