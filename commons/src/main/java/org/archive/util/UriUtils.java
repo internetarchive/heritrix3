@@ -380,7 +380,7 @@ public class UriUtils {
                         "tt", "u", "ul", "var", "video", "wbr"));
     }
 
-    protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})+"; // name=value for query strings 
+    protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})*"; // name=value for query strings
     protected static final String VERY_LIKELY_RELATIVE_URI_PATTERN = 
             "(?:\\.?/)?"                                    // may start with "/" or "./"
             + "(?:(?:[\\w-]+|\\.\\.)/)*"                    // may have path/segments/
