@@ -91,7 +91,7 @@ public class ExtractorJSTest extends StringExtractorTestBase {
         null,
 
         "var blah='/query/string/without/value.html?foo=';",
-        null,
+        "http://www.archive.org/query/string/without/value.html?foo=",
 
         "var blah='/query/string/without/double/equals.html?foo==bar';",
         null,
