@@ -40,7 +40,6 @@
 			<section class="top-bar-section">
 				<!-- Left Nav Section -->
 				<ul class="right">
-
 					<li class="divider"></li>
 					<li><a href="/engine">Engine</a></li>
 					<li class="divider"></li>
@@ -77,38 +76,16 @@
 						</fieldset>
 						</#if>
 						<form method="POST">
-							<div class="row">
-								<div class="small-4 columns">
-									<div class="row">
-										<div class="small-5 columns">
-											<label class="inline" for="engine">Script Engine: </label>
-										</div>
-										<div class="small-7 columns ">
-											<select name="engine" id="selectEngine">
-												<#list model.availableScriptEngines as scriptEngine>
-												<option<#if selectedEngine=scriptEngine.engine> selected='selected'</#if> value='${scriptEngine.engine}'>${scriptEngine.language}</option>
-												</#list>
-											</select>
-										</div>
-									</div>
-								</div>
+							<div style="margin-bottom:1em">
+								<label class="inline" for="engine">Script Engine: </label>
+								<select class="inline" style="width:auto" name="engine" id="selectEngine">
+									<#list model.availableScriptEngines as scriptEngine>
+									<option<#if selectedEngine=scriptEngine.engine> selected='selected'</#if> value='${scriptEngine.engine}'>${scriptEngine.language}</option>
+									</#list>
+								</select>
+								<input class="small inline button" type="submit" value="execute">
 							</div>
-							
-							<div class="row">
-								<div class="large-1 columns left">
-									<input type="submit" value="execute">
-								</div>
-							</div>
-							<div class="row">
-								<div class="small-12 columns">
-									<textarea rows='20' style='width:100%' name='script' id='editor'>${(model.script)!""}</textarea>
-								</div>
-							</div>
-							<div class="row">
-								<div class="large-1 columns left">
-									<input type="submit" value="execute">
-								</div>
-							</div>
+							<textarea rows='20' style='width:100%' name='script' id='editor'>${(model.script)!""}</textarea>
 						</form>
 					</div>
 				</div>
@@ -117,18 +94,13 @@
 	</div>
 
 	<div class="row">
-		<div class="small-9 columns">
-					The script will be executed in an engine preloaded
-					with (global) variables:
-			<div class="row">
-				<div class="small-11 small-offset-1 columns">
-					<ul>
-						<#list model.availableGlobalVariables as v>
-						<li><code>${v.variable}</code>: ${v.description?html}</li>
-						</#list>
-					</ul>
-				</div>
-			</div>
+		<div class="large-12 columns">
+			The script will be executed in an engine preloaded with (global) variables:
+			<ul class="no-bullet">
+				<#list model.availableGlobalVariables as v>
+				<li style="line-height:1"><code>${v.variable}</code>: ${v.description?html}</li>
+				</#list>
+			</ul>
 		</div>
 	</div>
 <script>

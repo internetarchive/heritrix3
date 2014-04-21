@@ -57,14 +57,20 @@
 					<li class="divider"></li>
 					<li ><a href="#" data-reveal-id="copyJobModal">Copy Job</a></li>
 					<li class="divider"></li>
-					<li><a href="script">Scripting Console</a></li>
-		   			<li class="divider"></li>
+					<li>
+					<#if job.hasApplicationContext>
+					<a href="script">Scripting Console</a>
+					<#else>
+					<a href="#" style="color:#444">Scripting Console</a>
+					</#if>
+					</li>
+					<li class="divider"></li>
 		   			<li>
-					   	<#if !job.hasApplicationContext>
-				  		<a href="#">Browse Beans (disabled)</a>
-				  		<#else>
-					   	<a href="beans">Browse Beans</a>
-					   	</#if>
+					<#if job.hasApplicationContext>
+					<a href="beans"}>Browse Beans</a>
+					<#else>
+					<a href="#" style="color:#444">Browse Beans</a>
+					</#if>
 		  			</li>
 					<li class="divider"></li>
 				</ul>
@@ -73,8 +79,10 @@
 	</div>
 	<div class="row">
 		<div class="large-12 columns">
-			<h2>Job <i>${job.shortName}</i></h2><p>(<#if job.isLaunchInfoPartial>at least </#if>${job.launchCount} 
-			launches<#if job.lastLaunch??>, last ${job.lastLaunchTime} ago</#if>)</p>
+			<h2 style="margin-bottom:0">Job <i>${job.shortName}</i></h2>
+			<div>${job.primaryConfig}</div>
+			<div><#if job.isLaunchInfoPartial>at least </#if>${job.launchCount} 
+				launches<#if job.lastLaunch??>, last ${job.lastLaunchTime} ago</#if></div>
 			<hr />
 			<div class="button-bar show-for-medium-up">
 			
@@ -96,9 +104,7 @@
 				<div class="large-6 columns">
 					<#assign checkpointName=job.checkpointName! />
 					<#assign checkpoints=job.checkpointFiles! />
-					<#if checkpointName?has_content >
-						<div>recover from <i>${checkpointName}</i></div>
-					<#elseif checkpoints?has_content >
+					<#if checkpoints?has_content >
 						<div>select an available checkpoint before launch to recover:
 							<select name='checkpoint'>
 								<option></option>
@@ -115,18 +121,17 @@
 </form>
 <div class="row">
 	<div class="large-12 columns">
-		<!--flashed message -->
 		<#list flashes as flash>
-			<div class='flash${flash.kind}'>
-				${flash.message}
-			</div>
+		<div data-alert class="alert-box ${(flash.kind=='ACK')?string('success', 'alert')}">
+			${flash.message} <a href="#" class="close">&times;</a>
+		</div>
 		</#list>
 		<#if job.isProfile>
 		<p>
-			As a <i>profile</i>, this job may be built for testing purposes but not launched. Use the 'copy job' 
-			functionality in the menu to copy this profile to a launchable job.
+		As a <i>profile</i>, this job may be built for testing purposes but not launched. Use the 'copy job' 
+		functionality in the menu to copy this profile to a launchable job.
 		</p>
-	</#if>
+		</#if>
 	</div>
 </div>
 
@@ -135,7 +140,7 @@
 		<h3>Job Log <a href="/engine/job/${job.shortName}/jobdir/job.log?format=paged&pos=-1&lines=-128&reverse=y">more</a></h3>
 		<div class="row">
 			<div class="large-12 columns">
-				<div class="panel">
+				<div class="log-viewer">
 					<ul class="no-bullet scroll_y monospace">
 						<#list job.jobLogTail as line>
 						<li>${line?html}</li>
@@ -147,100 +152,121 @@
 	</div>
 </div>
 <div class="row">
-	<div class="large-12 columns">
-		<h3>Job is ${job.statusDescription}</h3>
+	<div class="large-8 columns">
+		<h3 style="margin-bottom:0">Job is ${job.statusDescription}</h3>
+		<#if checkpointName?has_content>
+		<div>recover from <i>${checkpointName}</i></div>
+		</#if>
 		<#if job.hasApplicationContext>
 		<div class="row">
 			<div class="large-12 columns">
-				<div class="panel">
-					<ul class="no-bullet">
-						<li>Totals
-							<ul class="no-bullet">
+				<table style="margin-top:1em">
+					<tr>
+						<th>URLs</th>
+						<td>
 							<#if !job.uriTotalsReport??>
-								<li><i>n/a</i></li>
+							<i>n/a</i>
 							<#else>
-								<li>${job.uriTotalsReport.downloadedUriCount} downloaded + ${job.uriTotalsReport.queuedUriCount} queued = ${job.uriTotalsReport.totalUriCount} total
-								<#if (job.uriTotalsReport.futureUriCount > 0)> (${job.uriTotalsReport.futureUriCount} future)</#if>
-								</li>
+							${job.uriTotalsReport.downloadedUriCount} downloaded + ${job.uriTotalsReport.queuedUriCount} queued = ${job.uriTotalsReport.totalUriCount} total
+							<#if (job.uriTotalsReport.futureUriCount > 0)> (${job.uriTotalsReport.futureUriCount} future)</#if>
 							</#if>
-							<#if !job.sizeTotalsReport??>
-								<li><i>n/a</i></li>
-							<#else>
-								<li>${job.formatBytes(job.sizeTotalsReport.total)} crawled (${job.formatBytes(job.sizeTotalsReport.novel)} novel, ${job.formatBytes(job.sizeTotalsReport.dupByHash)} dupByHash, ${job.formatBytes(job.sizeTotalsReport.notModified)} notModified)</li>
-							</#if>
-							</ul>
-						</li>
-						<li>Alerts
-							<ul class="no-bullet">
-								<#if job.alertCount == 0 >
-								<li><i>none</i></li>
-								<#else>
-								<li>${job.alertCount}
-								<a href="/engine/anypath/${job.alertLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a></li>
-								</#if>
-							</ul>
-						</li>
-						<li>Rates
-							<ul class="no-bullet">
-								<#if !job.rateReport??>
-									<li><i>n/a</i></li>
-								<#else>
-								<li>${job.doubleToString(job.rateReport.currentDocsPerSecond,2)} URIs/sec (${job.doubleToString(job.rateReport.averageDocsPerSecond,2)} avg); ${job.rateReport.currentKiBPerSec} KB/sec (${job.rateReport.averageKiBPerSec} avg)</li>
-								</#if>
-							</ul>
-						</li>
-						<li>Load
-							<ul class="no-bullet">
-								<#if !job.loadReport??>
-									<li><i>n/a</i></li>
-								<#else>
-									<li>${job.loadReport.busyThreads} active of ${job.loadReport.totalThreads} threads; ${job.doubleToString(job.loadReport.congestionRatio,2)}  congestion ratio; ${job.loadReport.deepestQueueDepth}  deepest queue; ${job.loadReport.averageQueueDepth}  average depth</li>
-								</#if>
-							</ul>
-						</li>
-						<li>Elapsed
-							<ul class="no-bullet">
-								<#if !job.elapsedReport??>
-									<li><i>n/a</i></li>
-								<#else>
-									<li>${job.elapsedReport.elapsedPretty}</li>
-								</#if>
-							</ul>
-						</li>
-						<li><a href="report/ToeThreadsReport">Threads</a>
-							<ul class="no-bullet">
-								<#if !job.threadReport??>
-									<li><i>n/a</i></li>
-								<#else>
-									<li>
-									${job.threadReport.toeCount} threads: 
-									<#list job.threadReport.steps as step>${step}<#if step_has_next>, </#if></#list>;
-									<#list job.threadReport.processors as proc>${proc}<#if proc_has_next>, </#if></#list>
-									</li>
-								</#if>
-							</ul>
-						</li>
-						<li><a href="report/FrontierSummaryReport">Frontier</a>
-							<ul class="no-bullet">
-								<#if !job.frontierReport??>
-									<li><i>n/a</i></li>
-								<#else>
-									<li>${job.frontierReport.lastReachedState} - ${job.frontierReport.totalQueues} URI queues: ${job.frontierReport.activeQueues} active (${job.frontierReport.inProcessQueues} in-process; ${job.frontierReport.readyQueues} ready; ${job.frontierReport.snoozedQueues} snoozed); ${job.frontierReport.inactiveQueues} inactive; ${job.frontierReport.ineligibleQueues} ineligible; ${job.frontierReport.retiredQueues} retired; ${job.frontierReport.exhaustedQueues} exhausted</li>
-								</#if>
-							</ul>
-						</li>
-						<li>Memory
-							<ul class="no-bullet">
-								<li>${(heapReport.usedBytes/1024)?string("0")} KiB used; ${(heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(heapReport.maxBytes/1024)?string("0")} KiB max heap</li>
-							</ul>
-						</li>
-					</ul>
+						</td>
+					</tr>
+					<tr>
+						<th>Data</th>
+						<td>
 
-				</div>
+							<#if !job.sizeTotalsReport??>
+							<i>n/a</i>
+							<#else>
+							${job.formatBytes(job.sizeTotalsReport.total)} crawled (${job.formatBytes(job.sizeTotalsReport.novel)} novel, ${job.formatBytes(job.sizeTotalsReport.dupByHash)} dupByHash, ${job.formatBytes(job.sizeTotalsReport.notModified)} notModified)
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th>Alerts</th>
+						<td>
+							<#if job.alertCount == 0 >
+							<i>none</i>
+							<#else>
+							${job.alertCount}
+							<a href="/engine/anypath/${job.alertLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a></li>
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th>Rates</th>
+						<td>
+							<#if !job.rateReport??>
+							<i>n/a</i>
+							<#else>
+							${job.doubleToString(job.rateReport.currentDocsPerSecond,2)} URIs/sec (${job.doubleToString(job.rateReport.averageDocsPerSecond,2)} avg); ${job.rateReport.currentKiBPerSec} KB/sec (${job.rateReport.averageKiBPerSec} avg)
+							</#if>
+						</ul>
+					</tr>
+					<tr>
+						<th>Load</th>
+						<td>
+							<#if !job.loadReport??>
+							<i>n/a</i>
+							<#else>
+							${job.loadReport.busyThreads} active of ${job.loadReport.totalThreads} threads; ${job.doubleToString(job.loadReport.congestionRatio,2)}  congestion ratio; ${job.loadReport.deepestQueueDepth}  deepest queue; ${job.loadReport.averageQueueDepth}  average depth
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th>Elapsed</th>
+						<td>
+							<#if !job.elapsedReport??>
+							<i>n/a</i>
+							<#else>
+							${job.elapsedReport.elapsedPretty}
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th><a href="report/ToeThreadsReport">Threads</a></th>
+						<td>
+							<#if !job.threadReport??>
+							<i>n/a</i>
+							<#else>
+							${job.threadReport.toeCount} threads: 
+							<#list job.threadReport.steps as step>${step}<#if step_has_next>, </#if></#list>;
+							<#list job.threadReport.processors as proc>${proc}<#if proc_has_next>, </#if></#list>
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th><a href="report/FrontierSummaryReport">Frontier</a></th>
+						<td>
+							<#if !job.frontierReport??>
+							<i>n/a</i>
+							<#else>
+							${job.frontierReport.lastReachedState} - ${job.frontierReport.totalQueues} URI queues: ${job.frontierReport.activeQueues} active (${job.frontierReport.inProcessQueues} in-process; ${job.frontierReport.readyQueues} ready; ${job.frontierReport.snoozedQueues} snoozed); ${job.frontierReport.inactiveQueues} inactive; ${job.frontierReport.ineligibleQueues} ineligible; ${job.frontierReport.retiredQueues} retired; ${job.frontierReport.exhaustedQueues} exhausted
+							</#if>
+						</td>
+					</tr>
+					<tr>
+						<th>Memory</th>
+						<td>${(heapReport.usedBytes/1024)?string("0")} KiB used; ${(heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(heapReport.maxBytes/1024)?string("0")} KiB max heap</td>
+					</tr>
+				</table>
 			</div>
 		</div>
 		</#if>
 	</div>
+	<div class="large-1 columns">
+	</div>
+	<#if job.hasApplicationContext>
+	<div class="large-3 columns">
+		<h3>Reports</h3>
+		<ul class="no-bullet">
+			<#list job.reports as report>
+			<li><a href="report/${report.className}">${report.shortName}</a></li>
+			</#list>
+		</ul>
+	</div>
+	</#if>
 </div>
 
 <#if (job.isRunning || (job.hasApplicationContext && !job.isLaunchable))>
@@ -249,7 +275,7 @@
 		<h3>Crawl Log <a href="/engine/anypath/${job.crawlLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y">more</a></h3>
 		<div class="row">
 			<div class="large-12 columns">
-				<div class="panel" >
+				<div class="log-viewer" >
 					<ul class="no-bullet scroll_y monospace">
 					<#list job.crawlLogTail as line>
 						<li>${line?html}</li>
@@ -262,46 +288,33 @@
 </div>
 </#if>
 
-<#if job.hasApplicationContext>
-<div class="row">
-	<div class="large-12 columns">
-		<h3>Reports</h3>
-		<ul class="button-group">
-			<#list job.reports as report>
-				<li><a class="small button" href="report/${report.className}">${report.shortName}</a></li>
-			</#list>
-		</ul>
-	</div>
-</div>
-</#if>
-
 <div class="row">
 	<div class="large-12 columns">
 		<h3>Configuration-referenced Paths</h3>
 		<div class="row">
 			<div class="large-12 columns">
-				<div class="panel scroll_y">
-					<#assign configRefPaths=job.configFiles! />
-					<#if !configRefPaths?has_content >
-						<i>build the job to discover referenced paths</i>
-					<#else>
-					<ul class="no-bullet">
-						<#list configRefPaths as config>
-						<li>${config.key}: ${config.name}
-							<ul class="no-bullet">
-								<li>
-									<#if config.path??>
-										<a href='/engine/anypath/${config.path}<#if config.path?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path}</a><#if config.editable> [<a href="/engine/anypath/${config.path}?format=textedit">edit</a>]</#if>
-									<#else>
-										<i>unset</i>
-									</#if>
-								</li>
-							</ul>
-						</li>
-						</#list>
-					</ul>
-					</#if>
-				</div>
+				<#assign configRefPaths=job.configFiles! />
+				<#if !configRefPaths?has_content >
+				<i>build the job to discover referenced paths</i>
+				<#else>
+				<table>
+					<#list configRefPaths as config>
+					<tr>
+						<td>
+							<div>${config.name}</div>
+							<div>${config.key}</div>
+						</td>
+						<td>
+							<#if config.path??>
+							<a href='/engine/anypath/${config.path}<#if config.path?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path}</a><#if config.editable> [<a href="/engine/anypath/${config.path}?format=textedit">edit</a>]</#if>
+							<#else>
+							<i>unset</i>
+							</#if>
+						</td>
+					</tr>
+					</#list>
+				</table>
+				</#if>
 			</div>
 		</div>
 	</div>
@@ -320,32 +333,23 @@
 <div id="copyJobModal" class="reveal-modal">
 	<h2>Copy Job</h2>
 	<form method="POST">
-	<fieldset>
-		<div class="row">
-			<div class="large-12 columns">
-				<label for="copyTo">Copy job to </label>
-				<input name='copyTo' placeholder="<name> - New Crawl Job Configuration" type="text">
+		<fieldset>
+			<div>
+				<label for="copyTo" style="display:inline">Copy job to </label>
+				<input name="copyTo" style="margin-bottom:0;display:inline;width:70%" placeholder="<name> - New Crawl Job Configuration" type="text">
 			</div>
-		</div>
-		<div class="row">
-			<div class="large-12 columns">
-				<div class="row">
-					<div class="small-12 columns"><label class="left" for='asProfile'><input id='asProfile' type='checkbox' name='asProfile'> as profile</label></div>
-				</div>
+			<p>
+			<input id="asProfile" style="display:inline" type="checkbox" name="asProfile">
+			<label for="asProfile" style="display:inline">as profile</label>
+			</p>
+			<div>
+				<input class="small button" value="copy" type="submit">
 			</div>
-		</div>
-		<div class="row">
-			<div class="large-12 columns">
-				<input class="left" value='copy' type='submit'>
-			</div>
-		</div>
-	</fieldset>
+		</fieldset>
 	</form>
 	<a class="close-reveal-modal">&#215;</a>
 </div>
 </body>
 </html>
-
-
 
 

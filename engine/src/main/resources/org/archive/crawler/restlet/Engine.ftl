@@ -31,147 +31,117 @@
 
 <div class="row">
 	<div class="large-12 columns">
+		<h2>Engine</h2>
+	</div>
+</div>
+
+<div class="row">
+	<div class="large-12 columns">
 		<!--flashed message -->
 		<#list flashes as flash>
-			<div class='flash${flash.kind}'>
-				${flash.message}
-			</div>
+		<div data-alert class="alert-box ${(flash.kind=='ACK')?string('success', 'alert')}">
+			${flash.message} <a href="#" class="close">&times;</a>
+		</div>
 		</#list>
-		<h2>Engine</h2>
-		<div class="row">
+	</div>
+
+	<div class="large-6 columns">
+		<form method='POST'>
+			<h3>Memory</h3>
+			<div class="progress secondary" style="margin:0.125em 0">
+				<span style="width:${100*engine.heapReport.totalBytes/engine.heapReport.maxBytes}%;padding:0;border:0" class="meter progress">
+					<span style="width:${100*engine.heapReport.usedBytes/engine.heapReport.totalBytes}%;background-color:#ed9c28" class="meter"></span>
+				</span>
+			</div>
+			<div style="margin:0.125em 0">
+				${(engine.heapReport.usedBytes/1024/1024)?string("0")} MiB used; 
+				${(engine.heapReport.totalBytes/1024/1024)?string("0")} MiB current heap; 
+				${(engine.heapReport.maxBytes/1024/1024)?string("0")} MiB max heap 
+			</div>
+			<div>
+				<button class="small button" style="margin:1em 0;" type='submit' name='action' value='gc'>run garbage collector</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="large-1 columns">
+	</div>
+	<div class="large-5 columns">
+		<div class="panel">
+			<h3>Exit Java</h3>
 			<form method='POST'>
-				<div class="large-12 columns">
-					<div class="panel">
-						<ul class="no-bullet">
-							<li>Memory:
-								<ul class="no-bullet">
-									<li>${(engine.heapReport.usedBytes/1024)?string("0")} KiB used; ${(engine.heapReport.totalBytes/1024)?string("0")} KiB current heap; ${(engine.heapReport.maxBytes/1024)?string("0")} KiB max heap 
-										<button class="small" type='submit' name='action' value='gc'>run garbage collector</button>
-									</li>
-								</ul>
-							</li>
-							<li>Jobs Directory: 
-								<ul class="no-bullet">
-									<li><a href='jobsdir'>${engine.jobsDir}</a></li>
-								</ul>
-							</li>
-						</ul>
-					</div>
+				<#list engine.jobs as crawlJob>
+				<#if crawlJob.hasApplicationContext>
+				<label for='ignore__${crawlJob.key}' style="color:#d9534f">
+					<input type='checkbox' id="ignore__${crawlJob.key}" name='ignore__${crawlJob.key}'> ignore &laquo;${crawlJob.statusDescription}&raquo; job <a href="/engine/job/${crawlJob.shortName}">${crawlJob.key}</a> 
+				</label>
+				</#if>
+				</#list>
+				<label for='im_sure'>
+					<input class="inline" type='checkbox' name='im_sure' id='im_sure'> I'm sure
+				</label>
+				<input class="small button" style="margin:1em 0;" type='submit' name='action' value='exit java process'>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="large-12 columns">
+		<hr/>
+	</div>
+</div>
+
+<div class="row">
+	<div class="large-12 columns">
+		<div class="row">
+			<div class="large-12 columns">
+				<form method='POST'>
+					<h2 style="margin-bottom:0;display:inline;line-height:1">Job Directories</h2>
+					<input class="small inline button text-bottom" type='submit' name='action' value='rescan' />
+					<h5 style="margin:0">parent directory <a href='jobsdir'>${engine.jobsDir}</a></h5>
+					<div>${engine.jobs?size} known job directories</div>
 				</form>
 			</div>
 		</div>
-	</div>
-</div>
-
-<div class="row">
-	<form method='POST'>
-	<div class="large-12 columns">
-		<h2>Job Directories</h2>
+		
 		<div class="row">
-			<div class="large-12 columns">
-				<div class="panel">
-					(${engine.jobs?size}) detected <input class="small" type='submit' name='action' value='rescan' />
-					<hr />
-					<ul class="no-bullet">
-					<#list engine.jobs as crawlJob> 
-						<li>
-							<div>
-								<a href="/engine/job/${crawlJob.shortName}">${crawlJob.shortName}</a>
-								<#if crawlJob.hasApplicationContext>
-									&laquo;${crawlJob.statusDescription}&raquo;
-								</#if>
-								<#if crawlJob.isLaunchInfoPartial>
-									<span> at least </span>
-								</#if>
-								${crawlJob.launchCount} launches
-							</div>
-							<ul class="no-bullet">
-								<li>
-								<div style="color:#666">
-									${crawlJob.primaryConfig}
-								</div>
-								</li>
-								<#if crawlJob.lastLaunch??>
-									<li><div>(last at ${crawlJob.lastLaunch})</div></li>
-								</#if>
-							</ul>
-						</li>
-						</#list>
-					</ul>
-				</div>
+			<div class="large-6 columns" style="margin-bottom:1em">
+				<form method='POST' style="margin:0">
+					<h5 style="margin-bottom:0">create new job</h5>
+					<input style="display:inline;margin:0;width:50%" name='createpath' type="text" placeholder="myJob"/>
+					<input class="small inline button" type='submit' name='action' value='create'>
+				</form>
+			</div>
+			<div class="large-6 columns" style="margin-bottom:1em">
+				<form method='POST'>
+					<h5 style="margin-bottom:0">add existing job</h5>
+					<input style="display:inline;margin:0;width:50%" name='addpath' type="text" placeholder="/path/to/job"/>
+					<input class="small inline button" type='submit' name='action' value='add'>
+				</form>
 			</div>
 		</div>
-	</div>
-	</form>
-</div>
-
-<div class="row">
-	<div class="large-12 columns">
-		<h2>Add Job Directory</h2>
+		<#list engine.jobs?chunk(2) as twoJobs>
 		<div class="row">
-			<div class="large-12 columns">
-				<div class="panel">
-					<form method='POST'>
-					Create new job directory with recommended starting configuration<br/>
-					<b>Path:</b> ${engine.jobsDir}${fileSeparator}
-					<input name='createpath'/>
-					<input type='submit' name='action' value='create'>
-					</form>
-					<form method='POST'>
-					       Specify a path to a pre-existing job directory<br/>
-					       <b>Path:</b> <input size='53' name='addpath'/>
-					       <input type='submit' name='action' value='add'>
-					</form>
-					<p>
-					You may also compose or copy a valid job directory into the main jobs directory via outside means, then use the 'rescan' button above to make it appear in this interface. Or, use the 'copy' functionality at the botton of any existing job's detail page.
-					</p>
+			<#list twoJobs as crawlJob>
+			<div class="large-6 columns" style="margin-bottom:1em">
+				<h5 style="margin-bottom:0">
+					<a href="/engine/job/${crawlJob.shortName}">${crawlJob.shortName}</a>
+					<#if crawlJob.hasApplicationContext>
+					&laquo;${crawlJob.statusDescription}&raquo;
+					</#if>
+				</h5>
+				<div style="color:#666">
+					${crawlJob.primaryConfig}
+				</div>
+				<div style="color:#666">
+					<#if crawlJob.isLaunchInfoPartial>at least</#if> ${crawlJob.launchCount} 
+					launches<#if crawlJob.lastLaunch??>, last at ${crawlJob.lastLaunch}</#if>
 				</div>
 			</div>
+			</#list>
 		</div>
-	</div>
-</div>
-
-<div class="row">
-	<div class="large-12 columns">
-		<h2>Exit Java</h2>
-		<div class="row">
-			<div class="large-12 columns">
-				<div class="panel">
-					<p>This exits the Java process running Heritrix. To restart 
-					will then require access to the hosting machine. You should 
-					cleanly terminate and teardown any jobs in progress first.</p>
-					<hr />
-					<form method='POST'>
-						<ul class="no-bullet">
-							<#list engine.jobs as crawlJob>
-							<#if crawlJob.hasApplicationContext>
-							<li>
-								<h6>Job ${crawlJob.key} still &laquo; ${crawlJob.statusDescription} &raquo;</h6>
-								<ul class="no-bullet">
-									<li>
-										<label for='ignore__${crawlJob.key}'>
-											<input type='checkbox' id="ignore__${crawlJob.key}" name='ignore__${crawlJob.key}'> Ignore job '${crawlJob.key}' and exit anyway
-										</label>
-									</li>
-								</ul>
-							</li>
-							</#if>
-							</#list>
-							<li>
-								<input type='submit' name='action' value='Exit Java Process'>
-								<ul class="no-bullet">
-									<li>
-										<label for='im_sure'>
-											<input class="inline" type='checkbox' name='im_sure' id='im_sure'> I'm sure
-										</label>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</form>
-				</div>
-			</div>
-		</div>
+		</#list>
 	</div>
 </div>
 
