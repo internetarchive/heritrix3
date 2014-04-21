@@ -339,20 +339,17 @@
 				<input name="copyTo" style="margin-bottom:0;display:inline;width:70%" placeholder="<name> - New Crawl Job Configuration" type="text">
 			</div>
 			<p>
-				<input id="asProfile" style="display:inline" type="checkbox" name="asProfile">
-				<label for="asProfile" style="display:inline">as profile</label>
+			<input id="asProfile" style="display:inline" type="checkbox" name="asProfile">
+			<label for="asProfile" style="display:inline">as profile</label>
 			</p>
 			<div>
 				<input class="small button" value="copy" type="submit">
 			</div>
-		</div>
-	</fieldset>
-</form>
-<a class="close-reveal-modal">&#215;</a>
+		</fieldset>
+	</form>
+	<a class="close-reveal-modal">&#215;</a>
 </div>
 </body>
 </html>
-
-
 
 
