@@ -49,10 +49,10 @@ public class ExtractorPDFContent extends ContentExtractor {
     private static final long serialVersionUID = 3L;
 
     private static final Logger LOGGER =
-        Logger.getLogger(ExtractorPDF.class.getName());
+        Logger.getLogger(ExtractorPDFContent.class.getName());
     
     public static final Pattern URLPattern = Pattern.compile(
-            "(https?):\\/\\/"+                                                  // protocol
+            "(?i)(https?):\\/\\/"+                                                  // protocol
             "(([a-z0-9$_\\.\\+!\\*\\'\\(\\),;\\?&=-]|%[0-9a-f]{2})+"+           // username
             "(:([a-z0-9$_\\.\\+!\\*\\'\\(\\),;\\?&=-]|%[0-9a-f]{2})+)?"+        // password
             "@)?(?"+                                                            // auth requires @
@@ -87,19 +87,7 @@ public class ExtractorPDFContent extends ContentExtractor {
     }
     
     protected boolean innerExtract(CrawlURI curi){
-        File tempFile;
-        int sn;
-        Thread thread = Thread.currentThread();
-        if (thread instanceof SinkHandlerLogThread) {
-            sn = ((SinkHandlerLogThread)thread).getSerialNumber();
-        } else {
-            sn = System.identityHashCode(thread);
-        }
-        try {
-            tempFile = File.createTempFile("tt" + sn , "tmp.pdf");
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+
 
         PdfReader documentReader;
         ArrayList<String> uris = new ArrayList<String>();
@@ -108,9 +96,13 @@ public class ExtractorPDFContent extends ContentExtractor {
             String content = extractContent(documentReader);
             Matcher matcher = URLPattern.matcher(content);
             while(matcher.find()) {
-                uris.add(content.substring(matcher.start(),matcher.end()));
+                String prospectiveURL = content.substring(matcher.start(),matcher.end());
+                uris.add(prospectiveURL);
+                if(prospectiveURL.endsWith(".") && prospectiveURL.length()>2)
+                    uris.add(prospectiveURL.substring(0, prospectiveURL.length()-1));
                 
                 //also add match without newline in case we are wrong
+                if(matcher.group(19)!=null)
                 uris.add(matcher.group(1)+"://"+(matcher.group(2)!=null?matcher.group(2):"")+matcher.group(6)+matcher.group(13));
             }
             
@@ -124,9 +116,10 @@ public class ExtractorPDFContent extends ContentExtractor {
             // other problems
             curi.getNonFatalFailures().add(e);
             return false;
-        } finally {
-            FileUtils.deleteSoonerOrLater(tempFile);
-        }
+        } 
+//        finally {
+//            FileUtils.deleteSoonerOrLater(tempFile);
+//        }
         
         if (uris.size()<1) {
             return true;

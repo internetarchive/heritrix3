@@ -40,19 +40,91 @@ import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 
 import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
+import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
+import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 
 public class ExtractorPDFContentTest extends ContentExtractorTestBase {
 
-   protected static final String TEST_RESOURCE_FILE_NAME = "ExtractorPDFContentTest1.pdf";
+   protected static final String TEST_RESOURCE_FILE_NAMEA = "ExtractorPDFContentTest1.pdf";
+   protected static final String TEST_RESOURCE_FILE_NAMEB = "ExtractorPDFContentTest2.pdf";
+   protected static final String TEST_RESOURCE_FILE_NAMEC = "ExtractorPDFContentTest3.pdf";
 
     
     public void testA() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
-        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAME);
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEA);
         extractor.process(testUri);   
+        
+        PdfReader documentReader = new PdfReader(testUri.getRecorder().getContentReplayInputStream());
+        String content ="";
+        PdfReaderContentParser parser = new PdfReaderContentParser(documentReader);
+        TextExtractionStrategy strat;
+        for(int i=1; i< documentReader.getNumberOfPages(); i++) {
+            try {
+                strat = parser.processContent(i, new SimpleTextExtractionStrategy());
+                content += strat.getResultantText();
+                
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        Matcher matcher = ExtractorPDFContent.URLPattern.matcher(content);
+        while(matcher.find()) {
+            for(int i=0; i<matcher.groupCount(); i++) {
+                //System.out.println("group:"+i+" "+matcher.group(i));
+            }
+        }
         
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.businessdictionary.com/definition/supervisor.html","http://management.about.com/od/policiesandprocedures/g/supervisor1.html"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
+    public void testEndingInDot() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEB);
+        extractor.process(testUri);   
+        
+        PdfReader documentReader = new PdfReader(testUri.getRecorder().getContentReplayInputStream());
+        String content ="";
+        PdfReaderContentParser parser = new PdfReaderContentParser(documentReader);
+        TextExtractionStrategy strat;
+        for(int i=76; i< documentReader.getNumberOfPages() || i <78; i++) {
+            try {
+                strat = parser.processContent(i, new SimpleTextExtractionStrategy());
+                content += strat.getResultantText();
+                
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        Matcher matcher = ExtractorPDFContent.URLPattern.matcher(content);
+        while(matcher.find()) {
+            for(int i=0; i<matcher.groupCount(); i++) {
+                //System.out.println("group:"+i+" "+matcher.group(i));
+            }
+        }
+        //System.out.println(content);
+        for(Link l : testUri.getOutLinks()){
+            //System.out.println(l);
+        }
+        
+        
+        
+        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.fec.gov/data/CommitteeSummary.do",
+                "http://www.opensecrets.org/bigpicture/elec_stats.php",
+                "http://www.opensecrets.org/pacs"});
+        assertTrue(testUri.getOutLinks().containsAll(expected));        
+    }
+    public void testUnderscoreInURL() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEC);
+        extractor.process(testUri);   
+        for(Link l : testUri.getOutLinks()){
+            System.out.println(l);
+        }
+        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.dot.gov/sites/dot.dev/files/docs/2014_February_ATCR.pdf"});
+        assertTrue(testUri.getOutLinks().containsAll(expected));        
+    }
+
     
     @Override
     protected Extractor makeExtractor() {
