@@ -20,6 +20,7 @@ package org.archive.modules.extractor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,33 +87,33 @@ public class ExtractorPDFContent extends ContentExtractor {
     }
     
     protected boolean innerExtract(CrawlURI curi){
-
-
         PdfReader documentReader;
         ArrayList<String> uris = new ArrayList<String>();
+        
         try {
             documentReader = new PdfReader(curi.getRecorder().getContentReplayInputStream());
-            String content = extractContent(documentReader);
-            Matcher matcher = URLPattern.matcher(content);
-            while(matcher.find()) {
-                String prospectiveURL = content.substring(matcher.start(),matcher.end());
-                uris.add(prospectiveURL);
-                if(prospectiveURL.endsWith(".") && prospectiveURL.length()>2)
-                    uris.add(prospectiveURL.substring(0, prospectiveURL.length()-1));
-                
-                //also add match without newline in case we are wrong
-                if(matcher.group(19)!=null)
-                uris.add(matcher.group(1)+"://"+(matcher.group(2)!=null?matcher.group(2):"")+matcher.group(6)+matcher.group(13));
+
+            for(int i=1; i< documentReader.getNumberOfPages(); i++) {
+                String pageParseText = extractPageText(documentReader,i);
+                Matcher matcher = URLPattern.matcher(pageParseText);
+                while(matcher.find()) {
+                    String prospectiveURL = pageParseText.substring(matcher.start(),matcher.end());
+                    uris.add(prospectiveURL);
+                    
+                    //parsetext URLs tend to end in a '.' if they are in a sentence, queue without trailing '.'
+                    if(prospectiveURL.endsWith(".") && prospectiveURL.length()>2)
+                        uris.add(prospectiveURL.substring(0, prospectiveURL.length()-1));
+                    
+                    //Full regex allows newlines which seem to be common, also add match without newline in case we are wrong
+                    if(matcher.group(19)!=null)
+                    uris.add(matcher.group(1)+"://"+(matcher.group(2)!=null?matcher.group(2):"")+matcher.group(6)+matcher.group(13));
+                }
             }
-            
-            
-            
+
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
             return false;
         } catch (RuntimeException e) {
-            // Truncated/corrupt  PDFs may generate ClassCast exceptions, or
-            // other problems
             curi.getNonFatalFailures().add(e);
             return false;
         } 
@@ -141,19 +142,17 @@ public class ExtractorPDFContent extends ContentExtractor {
         return true;
     }
     
-    public String extractContent(PdfReader documentReader){
+    public String extractPageText(PdfReader documentReader, int pageNum){
         String content ="";
         PdfReaderContentParser parser = new PdfReaderContentParser(documentReader);
         TextExtractionStrategy strat;
-        for(int i=1; i< documentReader.getNumberOfPages(); i++) {
-            try {
-                strat = parser.processContent(i, new SimpleTextExtractionStrategy());
-                content += strat.getResultantText();
-                
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+        try {
+            strat = parser.processContent(pageNum, new SimpleTextExtractionStrategy());
+            content += strat.getResultantText();
+            
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to parse pdf text in "
+                    + Thread.currentThread().getName(), e);
         }
         return content;
     }
