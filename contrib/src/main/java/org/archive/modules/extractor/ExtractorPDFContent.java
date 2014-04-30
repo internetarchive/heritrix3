@@ -93,7 +93,7 @@ public class ExtractorPDFContent extends ContentExtractor {
         try {
             documentReader = new PdfReader(curi.getRecorder().getContentReplayInputStream());
 
-            for(int i=1; i< documentReader.getNumberOfPages(); i++) {
+            for(int i=1; i< documentReader.getNumberOfPages(); i++) { //Page numbers start at 1
                 String pageParseText = extractPageText(documentReader,i);
                 Matcher matcher = URLPattern.matcher(pageParseText);
                 while(matcher.find()) {
@@ -148,7 +148,7 @@ public class ExtractorPDFContent extends ContentExtractor {
         TextExtractionStrategy strat;
         try {
             strat = parser.processContent(pageNum, new SimpleTextExtractionStrategy());
-            content += strat.getResultantText();
+            content = strat.getResultantText();
             
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Failed to parse pdf text in "
