@@ -18,31 +18,18 @@
  */
 package org.archive.modules.extractor;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-
 import java.util.HashSet;
-
 import java.util.Set;
-import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
-
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
-import com.itextpdf.text.pdf.parser.SimpleTextExtractionStrategy;
-import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
 
 public class ExtractorPDFContentTest extends ContentExtractorTestBase {
 
