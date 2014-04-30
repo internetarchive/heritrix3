@@ -41,6 +41,8 @@ import com.itextpdf.text.pdf.parser.TextExtractionStrategy;
  * PDF Content Extractor. This will parse the text content of a PDF and apply a
  * regex to search for links within the body of the text.
  * 
+ * Requires itextpdf jar: http://repo1.maven.org/maven2/com/itextpdf/itextpdf/5.5.0/itextpdf-5.5.0.jar
+ * 
  * @contributor adam
  */
 public class ExtractorPDFContent extends ContentExtractor {
