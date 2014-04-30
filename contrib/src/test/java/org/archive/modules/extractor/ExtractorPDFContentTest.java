@@ -54,62 +54,14 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
     public void testA() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEA);
         extractor.process(testUri);   
-        
-        PdfReader documentReader = new PdfReader(testUri.getRecorder().getContentReplayInputStream());
-        String content ="";
-        PdfReaderContentParser parser = new PdfReaderContentParser(documentReader);
-        TextExtractionStrategy strat;
-        for(int i=1; i< documentReader.getNumberOfPages(); i++) {
-            try {
-                strat = parser.processContent(i, new SimpleTextExtractionStrategy());
-                content += strat.getResultantText();
-                
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-        Matcher matcher = ExtractorPDFContent.URLPattern.matcher(content);
-        while(matcher.find()) {
-            for(int i=0; i<matcher.groupCount(); i++) {
-                //System.out.println("group:"+i+" "+matcher.group(i));
-            }
-        }
-        
+
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.businessdictionary.com/definition/supervisor.html","http://management.about.com/od/policiesandprocedures/g/supervisor1.html"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
     public void testEndingInDot() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEB);
         extractor.process(testUri);   
-        
-        PdfReader documentReader = new PdfReader(testUri.getRecorder().getContentReplayInputStream());
-        String content ="";
-        PdfReaderContentParser parser = new PdfReaderContentParser(documentReader);
-        TextExtractionStrategy strat;
-        for(int i=76; i< documentReader.getNumberOfPages() || i <78; i++) {
-            try {
-                strat = parser.processContent(i, new SimpleTextExtractionStrategy());
-                content += strat.getResultantText();
-                
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-        Matcher matcher = ExtractorPDFContent.URLPattern.matcher(content);
-        while(matcher.find()) {
-            for(int i=0; i<matcher.groupCount(); i++) {
-                //System.out.println("group:"+i+" "+matcher.group(i));
-            }
-        }
-        //System.out.println(content);
-        for(Link l : testUri.getOutLinks()){
-            //System.out.println(l);
-        }
-        
-        
-        
+
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.fec.gov/data/CommitteeSummary.do",
                 "http://www.opensecrets.org/bigpicture/elec_stats.php",
                 "http://www.opensecrets.org/pacs"});
@@ -118,9 +70,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
     public void testUnderscoreInURL() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEC);
         extractor.process(testUri);   
-        for(Link l : testUri.getOutLinks()){
-            System.out.println(l);
-        }
+
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.dot.gov/sites/dot.dev/files/docs/2014_February_ATCR.pdf"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
@@ -148,10 +98,6 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         UURI testUuri = UURIFactory.getInstance(urlStr);
         CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);
         
-        
-        //InputStream is = ExtractorPDFContentTest.class.getClassLoader().getResourceAsStream(resourceFileName);
-
-        //BufferedInputStream reader = new BufferedInputStream(new InputStreamReader(is));
 
         File temp = File.createTempFile("test", ".tmp");
         Recorder recorder = new Recorder(temp, 1024, 1024);
@@ -160,24 +106,6 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         for(int x = is.read(); x>=0; x=is.read());
         is.close();
         
-//        
-//        byte[] b = content.getBytes(charset);
-//        ByteArrayInputStream bais = new ByteArrayInputStream(b);
-//        InputStream is = recorder.inputWrap(bais);
-//        recorder.markContentBegin();
-//        for (int x = is.read(); x >= 0; x = is.read());
-//        is.close();
-//        return recorder;
-        
-        
-        
-//        StringBuilder content = new StringBuilder();
-//        String line = "";
-//        while ((line = reader.readLine()) != null) {
-//            content.append(line);
-//        }
-//        Recorder recorder = createRecorder(content.toString(), "UTF-8");
-//        IOUtils.closeQuietly(is);
 
         testUri.setContentType("application/pdf");
         testUri.setFetchStatus(200);

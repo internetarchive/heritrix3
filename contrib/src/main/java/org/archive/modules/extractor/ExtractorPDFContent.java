@@ -119,9 +119,6 @@ public class ExtractorPDFContent extends ContentExtractor {
             curi.getNonFatalFailures().add(e);
             return false;
         } 
-//        finally {
-//            FileUtils.deleteSoonerOrLater(tempFile);
-//        }
         
         if (uris.size()<1) {
             return true;
