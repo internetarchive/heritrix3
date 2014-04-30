@@ -1,18 +1,3 @@
-.flashACK {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: palegreen;
-}
-.flashNACK {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: pink;
-}
-.flashADVISORY {
-  margin-bottom: 16px;
-  padding: 8px;
-  background-color: khaki;
-}
 fieldset table.beans {
     display: inline;
     table-layout: fixed;
@@ -32,16 +17,59 @@ fieldset table.beans tbody tr {
 fieldset table.beans tbody td {
     text-align:left;
 }
-div.panel ul {
-    margin-left: 1.25em;
-}
 .scroll_y {
     overflow:auto;
     white-space:nowrap;
 }
 .monospace{
-    /*font-family:courier;*/
    	font-family: monospace;
 	white-space: pre;
-	line-height:0.6;	
+	line-height:0.4;
+}
+a {
+	color:#428bca;
+}
+a:hover, a:focus {
+	color:#2a6496;
+}
+.button {
+	background-color:#428bca;
+	border:none !important;
+	margin-right:2px !important;
+	font-weight:normal !important;
+}
+.button:hover, .button:focus {
+	background-color:#2f70a7; 
+}
+.button[disabled], .button[disabled]:hover, .button[disabled]:focus {
+	background-color:#428bca;
+}
+.inline {
+	margin:0;
+	display:inline !important;
+}
+.text-bottom {
+	vertical-align:text-bottom;
+}
+.log-viewer {
+	background-color:#f9f9f9;
+	border:1px solid #ddd;
+	padding:0 0.5rem;
+	margin-bottom:1.25rem;
+}
+.log-viewer ul {
+	margin-bottom:0;
+	font-size:small;
+}
+th {
+	text-align:left;
+}
+* {
+	box-shadow:none !important;
+}
+.alert-box {
+	border:none;
+}
+.contain-to-grid ul {
+	background-color:#000 !important;
 }
