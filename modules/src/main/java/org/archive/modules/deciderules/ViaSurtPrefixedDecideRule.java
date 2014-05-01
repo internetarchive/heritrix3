@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class ViaSurtPrefixedDecideRule extends PredicatedDecideRule {
 
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 1L;
     
     protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
 
@@ -45,9 +45,12 @@ public class ViaSurtPrefixedDecideRule extends PredicatedDecideRule {
     @Required
     public void setSurtPrefixes(List<String> surtPrefixes) {
         this.surtPrefixes.clear();
-        if(surtPrefixes!=null)
-            for(String surt : surtPrefixes)
+
+        if(surtPrefixes!=null) {
+            for(String surt : surtPrefixes) {
                 this.surtPrefixes.considerAsAddDirective(surt);
+            }
+        }
     }
 
     /**
