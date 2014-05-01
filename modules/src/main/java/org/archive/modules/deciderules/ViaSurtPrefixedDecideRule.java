@@ -19,9 +19,11 @@
 
 package org.archive.modules.deciderules;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.archive.modules.CrawlURI;
+import org.archive.util.SurtPrefixSet;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -35,14 +37,17 @@ public class ViaSurtPrefixedDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = 3L;
     
-    protected List<String> surtPrefixes;
+    protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
 
     public List<String> getSurtPrefixes() {
-        return surtPrefixes;
+        return new ArrayList<String>(surtPrefixes);
     }
     @Required
     public void setSurtPrefixes(List<String> surtPrefixes) {
-        this.surtPrefixes = surtPrefixes;
+        this.surtPrefixes.clear();
+        if(surtPrefixes!=null)
+            for(String surt : surtPrefixes)
+                this.surtPrefixes.considerAsAddDirective(surt);
     }
 
     /**
@@ -55,11 +60,7 @@ public class ViaSurtPrefixedDecideRule extends PredicatedDecideRule {
     @Override
     protected boolean evaluate(CrawlURI uri) {
         if (uri.getVia() != null && getSurtPrefixes() !=null){
-            for(String surt : getSurtPrefixes()){
-                if(uri.getVia().getSurtForm().startsWith(surt))
-                    return true;
-            }
-            return false;
+            return surtPrefixes.containsPrefixOf(SurtPrefixSet.getCandidateSurt(uri.getVia()));
         }
         else
             return false;

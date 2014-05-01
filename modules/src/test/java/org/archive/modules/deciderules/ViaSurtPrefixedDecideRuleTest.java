@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
-
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -20,7 +19,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
         surtPrefixes.add("http://(org,archive,");
         dr.setSurtPrefixes(surtPrefixes);
         CrawlURI testUri = createTestUri("http://example.com");
-
+        
         assertFalse(dr.evaluate(testUri));
     }
     public void testNoSurts() throws Exception {
