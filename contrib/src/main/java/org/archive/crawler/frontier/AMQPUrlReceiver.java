@@ -112,9 +112,9 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
         @Override
         public void run() {
-            while (true) {
-                synchronized (AMQPUrlReceiver.this) {
-                    if (!isRunning) {
+            while (!Thread.interrupted()) {
+                if (!isRunning) {
+                    synchronized (AMQPUrlReceiver.this) {
                         try {
                             Consumer consumer = new UrlConsumer(channel());
                             channel.queueDeclare(getQueueName(), false, false, true, null);
@@ -130,18 +130,21 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
                 try {
                     Thread.sleep(30000);
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException e) {
+                    return;
                 }
             }
         }
     }
 
+    transient private StarterRestarter starterRestarter;
+    
     @Override
     synchronized public void start() {
         // spawn off a thread to start up the amqp consumer, and try to restart it if it dies 
         if (!isRunning) {
-            StarterRestarter t = new StarterRestarter(AMQPUrlReceiver.class.getSimpleName() + "-starter-restarter");
-            t.start();
+            starterRestarter = new StarterRestarter(AMQPUrlReceiver.class.getSimpleName() + "-starter-restarter");
+            starterRestarter.start();
         }
     }
 
@@ -155,6 +158,14 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 logger.log(Level.SEVERE, "problem closing AMQP connection", e);
             }
         }
+        if (starterRestarter != null && starterRestarter.isAlive()) {
+            starterRestarter.interrupt();
+            try {
+                starterRestarter.join();
+            } catch (InterruptedException e) {
+            }
+        }
+        starterRestarter = null;
         connection = null;
         channel = null;
         isRunning = false;
