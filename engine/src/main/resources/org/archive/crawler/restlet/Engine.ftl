@@ -50,7 +50,7 @@
 			<h3>Memory</h3>
 			<div class="progress secondary" style="margin:0.125em 0">
 				<span style="width:${100*engine.heapReport.totalBytes/engine.heapReport.maxBytes}%;padding:0;border:0" class="meter progress">
-					<span style="width:${100*engine.heapReport.usedBytes/engine.heapReport.totalBytes}%;background-color:#428bca;opacity:0.6" class="meter"></span>
+					<span style="width:${100*engine.heapReport.usedBytes/engine.heapReport.totalBytes}%;background-color:#ed9c28" class="meter"></span>
 				</span>
 			</div>
 			<div style="margin:0.125em 0">
@@ -80,7 +80,7 @@
 				<label for='im_sure'>
 					<input class="inline" type='checkbox' name='im_sure' id='im_sure'> I'm sure
 				</label>
-				<input class="small button" style="margin:1em 0;" type='submit' name='action' value='Exit Java Process'>
+				<input class="small button" style="margin:1em 0;" type='submit' name='action' value='exit java process'>
 			</form>
 		</div>
 	</div>
