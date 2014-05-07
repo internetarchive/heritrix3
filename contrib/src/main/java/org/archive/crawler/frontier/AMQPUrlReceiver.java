@@ -51,6 +51,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * @contributor nlevitt
@@ -104,32 +105,46 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         return isRunning;
     }
 
-    @Override
-    synchronized public void start() {
-        // spawn off a thread for to start up the amqp consumer, otherwise the crawl launch thread can get stuck here 
-        if (!isRunning) {
-            new Thread(AMQPUrlReceiver.class.getSimpleName() + "-start") {
-                @Override
-                public void run() {
+    private class StarterRestarter extends Thread {
+        public StarterRestarter(String name) {
+            super(name);
+        }
+
+        @Override
+        public void run() {
+            while (!Thread.interrupted()) {
+                if (!isRunning) {
                     synchronized (AMQPUrlReceiver.this) {
-                        while (!isRunning) {
-                            try {
-                                Consumer consumer = new UrlConsumer(channel());
-                                channel.queueDeclare(getQueueName(), false, false, true, null);
-                                channel().queueBind(getQueueName(), exchange, getQueueName());
-                                channel().basicConsume(getQueueName(), false, consumer);
-                                isRunning = true;
-                            } catch (IOException e) {
-                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
-                                try {
-                                    Thread.sleep(30000);
-                                } catch (InterruptedException e1) {
-                                }
-                            }
+                        try {
+                            Consumer consumer = new UrlConsumer(channel());
+                            channel.queueDeclare(getQueueName(), false, false, true, null);
+                            channel().queueBind(getQueueName(), getExchange(), getQueueName());
+                            channel().basicConsume(getQueueName(), false, consumer);
+                            isRunning = true;
+                            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
+                        } catch (IOException e) {
+                            logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
                         }
                     }
                 }
-            }.start();
+
+                try {
+                    Thread.sleep(30000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }
+    }
+
+    transient private StarterRestarter starterRestarter;
+    
+    @Override
+    synchronized public void start() {
+        // spawn off a thread to start up the amqp consumer, and try to restart it if it dies 
+        if (!isRunning) {
+            starterRestarter = new StarterRestarter(AMQPUrlReceiver.class.getSimpleName() + "-starter-restarter");
+            starterRestarter.start();
         }
     }
 
@@ -143,6 +158,17 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 logger.log(Level.SEVERE, "problem closing AMQP connection", e);
             }
         }
+        if (starterRestarter != null && starterRestarter.isAlive()) {
+            starterRestarter.interrupt();
+            try {
+                starterRestarter.join();
+            } catch (InterruptedException e) {
+            }
+        }
+        starterRestarter = null;
+        connection = null;
+        channel = null;
+        isRunning = false;
     }
 
     transient protected Connection connection = null;
@@ -226,6 +252,13 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
             this.getChannel().basicAck(envelope.getDeliveryTag(), false);
         }
+        
+        @Override
+        public void handleShutdownSignal(String consumerTag,
+                ShutdownSignalException sig) {
+            logger.log(Level.SEVERE, "amqp channel/connection shut down consumerTag=" + consumerTag, sig);
+            isRunning = false;
+        }
 
         // {
         //  "headers": {
@@ -295,7 +328,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
-            if (channel != null) {
+            if (channel != null && channel.isOpen()) {
                 try {
                     channel.flow(false);
                 } catch (IOException e) {
@@ -305,7 +338,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             break;
 
         case RUNNING: case EMPTY: case PREPARING:
-            if (channel != null) {
+            if (channel != null && channel.isOpen()) {
                 try {
                     channel.flow(true);
                 } catch (IOException e) {

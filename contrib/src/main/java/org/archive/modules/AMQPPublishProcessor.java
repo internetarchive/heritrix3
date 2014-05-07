@@ -24,6 +24,7 @@ import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -176,8 +177,12 @@ public class AMQPPublishProcessor extends Processor {
     }
 
     protected synchronized Channel channel() {
+        if (threadChannel.get() != null && !threadChannel.get().isOpen()) {
+            threadChannel.set(null);
+        }
+
         if (threadChannel.get() == null) {
-            if (connection == null) {
+            if (connection == null || !connection.isOpen()) {
                 connect();
             }
             try {
@@ -190,14 +195,24 @@ public class AMQPPublishProcessor extends Processor {
         }
         return threadChannel.get();
     }
+    
+    private AtomicBoolean serverLooksDown = new AtomicBoolean(false);
 
     private synchronized void connect() {
         ConnectionFactory factory = new ConnectionFactory();
         try {
             factory.setUri(getAmqpUri());
             connection =  factory.newConnection();
+            boolean wasDown = serverLooksDown.getAndSet(false);
+            if (wasDown) {
+                logger.info(getAmqpUri() + " is back up, connected successfully!");
+            }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
+            connection = null;
+            boolean wasAlreadyDown = serverLooksDown.getAndSet(true);
+            if (!wasAlreadyDown) {
+                logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
+            }
         }
     }
 
