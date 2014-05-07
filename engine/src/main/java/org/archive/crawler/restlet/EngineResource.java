@@ -154,7 +154,7 @@ public class EngineResource extends BaseResource {
         	        }
         	    }
         	}
-        } else if ("Exit Java Process".equals(action)) { 
+        } else if ("exit java process".equals(action)) { 
             boolean cancel = false; 
             if(!"on".equals(form.getFirstValue("im_sure"))) {
                 Flash.addFlash(
