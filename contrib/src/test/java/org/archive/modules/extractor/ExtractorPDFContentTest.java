@@ -33,20 +33,21 @@ import org.archive.util.Recorder;
 
 public class ExtractorPDFContentTest extends ContentExtractorTestBase {
 
-   protected static final String TEST_RESOURCE_FILE_NAMEA = "ExtractorPDFContentTest1.pdf";
-   protected static final String TEST_RESOURCE_FILE_NAMEB = "ExtractorPDFContentTest2.pdf";
-   protected static final String TEST_RESOURCE_FILE_NAMEC = "ExtractorPDFContentTest3.pdf";
+   protected static final String TEST_RESOURCE_FILE_1 = "ExtractorPDFContentTest1.pdf";
+   protected static final String TEST_RESOURCE_FILE_2 = "ExtractorPDFContentTest2.pdf";
+   protected static final String TEST_RESOURCE_FILE_3 = "ExtractorPDFContentTest3.pdf";
+   protected static final String TEST_RESOURCE_FILE_4 = "ExtractorPDFContentTest4.pdf";
 
     
     public void testA() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
-        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEA);
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_1);
         extractor.process(testUri);   
 
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.businessdictionary.com/definition/supervisor.html","http://management.about.com/od/policiesandprocedures/g/supervisor1.html"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
     public void testEndingInDot() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
-        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEB);
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_2);
         extractor.process(testUri);   
 
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.fec.gov/data/CommitteeSummary.do",
@@ -55,12 +56,27 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
     public void testUnderscoreInURL() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
-        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_NAMEC);
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_3);
         extractor.process(testUri);   
 
         Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.dot.gov/sites/dot.dev/files/docs/2014_February_ATCR.pdf"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
+    public void testParenthesis() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_4);
+        extractor.process(testUri);
+
+        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.unisys.com","http://www.myserver.mycorp.com/images/exttest.jpg","http://www.adobe.com/intro?100,200","http://www.w3.org/1999/xhtml","http://www.xfa.org/schema/xfa-data/1.0","http://www.adobe.com","http://www.adobe.com/getacro.gif"});
+        assertTrue(testUri.getOutLinks().containsAll(expected));
+    }
+    public void testNewlineSeparatedURIs() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
+        CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_4);
+        extractor.process(testUri);
+
+        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.unisys.com","http://www.myserver.mycorp.com/images/exttest.jpg","http://www.example.com/test","http://www.adobe.com/intro?100,200","http://www.w3.org/1999/xhtml","http://www.xfa.org/schema/xfa-data/1.0","http://www.adobe.com","http://www.adobe.com/getacro.gif"});
+        assertTrue(testUri.getOutLinks().containsAll(expected));
+    }
+
 
     
     @Override

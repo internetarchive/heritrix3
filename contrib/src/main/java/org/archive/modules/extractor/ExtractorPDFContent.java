@@ -52,7 +52,7 @@ public class ExtractorPDFContent extends ContentExtractor {
         Logger.getLogger(ExtractorPDFContent.class.getName());
     
     public static final Pattern URLPattern = Pattern.compile(
-            "(?i)(https?):\\/\\/"+                                                  // protocol
+            "(?i)\\(?(https?):\\/\\/"+                                                  // protocol
             "(([a-z0-9$_\\.\\+!\\*\\'\\(\\),;\\?&=-]|%[0-9a-f]{2})+"+           // username
             "(:([a-z0-9$_\\.\\+!\\*\\'\\(\\),;\\?&=-]|%[0-9a-f]{2})+)?"+        // password
             "@)?(?"+                                                            // auth requires @
@@ -63,7 +63,7 @@ public class ExtractorPDFContent extends ContentExtractor {
             ")(:\\d+)?)"+                                                       // port
             "(((\\/+([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)*"+    // path
             "(\\?([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)?)?)?"+   // query string
-            "(\\n"+                                                             // possible newline (seems to happen in pdfs)
+            "(\\n(?!http://)"+                                                             // possible newline (seems to happen in pdfs)
             "((\\/)?([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)*"+    // continue possible path
             "(\\?([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)?"+       // or possible query
             ")?");
@@ -93,11 +93,20 @@ public class ExtractorPDFContent extends ContentExtractor {
         try {
             documentReader = new PdfReader(curi.getRecorder().getContentReplayInputStream());
 
-            for(int i=1; i< documentReader.getNumberOfPages(); i++) { //Page numbers start at 1
+            for(int i=1; i<= documentReader.getNumberOfPages(); i++) { //Page numbers start at 1
                 String pageParseText = extractPageText(documentReader,i);
                 Matcher matcher = URLPattern.matcher(pageParseText);
+
                 while(matcher.find()) {
-                    String prospectiveURL = pageParseText.substring(matcher.start(),matcher.end());
+                    String prospectiveURL = pageParseText.substring(matcher.start(),matcher.end()).trim();
+
+                    //handle URLs wrapped in parentheses
+                    if(prospectiveURL.startsWith("(")) {
+                        prospectiveURL=prospectiveURL.substring(1,prospectiveURL.length()-1);
+                        if(prospectiveURL.endsWith(")"))
+                            prospectiveURL=prospectiveURL.substring(0,prospectiveURL.length()-1);
+                    }
+
                     uris.add(prospectiveURL);
                     
                     //parsetext URLs tend to end in a '.' if they are in a sentence, queue without trailing '.'
@@ -105,8 +114,15 @@ public class ExtractorPDFContent extends ContentExtractor {
                         uris.add(prospectiveURL.substring(0, prospectiveURL.length()-1));
                     
                     //Full regex allows newlines which seem to be common, also add match without newline in case we are wrong
-                    if(matcher.group(19)!=null)
-                    uris.add(matcher.group(1)+"://"+(matcher.group(2)!=null?matcher.group(2):"")+matcher.group(6)+matcher.group(13));
+                    if(matcher.group(19)!=null) {
+                        String alternateURL = matcher.group(1)+"://"+(matcher.group(2)!=null?matcher.group(2):"")+matcher.group(6)+matcher.group(13);
+
+                        //Again, handle URLs wrapped in parentheses
+                        if(prospectiveURL.startsWith("(") && alternateURL.endsWith(")"))
+                            alternateURL=alternateURL.substring(0,alternateURL.length()-1);
+
+                        uris.add(alternateURL);
+                    }
                 }
             }
 
