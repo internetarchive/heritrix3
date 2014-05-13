@@ -256,7 +256,11 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         @Override
         public void handleShutdownSignal(String consumerTag,
                 ShutdownSignalException sig) {
-            logger.log(Level.SEVERE, "amqp channel/connection shut down consumerTag=" + consumerTag, sig);
+            if (!sig.isInitiatedByApplication()) {
+                logger.log(Level.SEVERE, "amqp channel/connection unexpectedly shut down consumerTag=" + consumerTag, sig);
+            } else {
+                logger.info("amqp channel/connection shut down consumerTag=" + consumerTag);
+            }
             isRunning = false;
         }
 
