@@ -102,7 +102,7 @@ public class ExtractorPDFContent extends ContentExtractor {
 
                     //handle URLs wrapped in parentheses
                     if(prospectiveURL.startsWith("(")) {
-                        prospectiveURL=prospectiveURL.substring(1,prospectiveURL.length()-1);
+                        prospectiveURL=prospectiveURL.substring(1,prospectiveURL.length());
                         if(prospectiveURL.endsWith(")"))
                             prospectiveURL=prospectiveURL.substring(0,prospectiveURL.length()-1);
                     }

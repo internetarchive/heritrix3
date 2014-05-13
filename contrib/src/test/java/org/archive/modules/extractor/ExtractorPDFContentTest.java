@@ -66,7 +66,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_4);
         extractor.process(testUri);
 
-        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.unisys.com","http://www.myserver.mycorp.com/images/exttest.jpg","http://www.adobe.com/intro?100,200","http://www.w3.org/1999/xhtml","http://www.xfa.org/schema/xfa-data/1.0","http://www.adobe.com","http://www.adobe.com/getacro.gif"});
+        Set<Link> expected = makeLinkSet(testUri, new String[]{"http://www.unisys.com","http://www.myserver.mycorp.com/images/exttest.jpg","http://www.adobe.com/intro?100,200","http://www.w3.org/1999/xhtml","http://www.xfa.org/schema/xfa-data/1.0","http://www.adobe.com","http://www.adobe.com/getacro.gif","http://www.example.com/testOpeningParen"});
         assertTrue(testUri.getOutLinks().containsAll(expected));
     }
     public void testNewlineSeparatedURIs() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
