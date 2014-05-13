@@ -30,6 +30,7 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
@@ -326,8 +327,12 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
         }
         // apply deciderule-based overlays
         for(DecideRuledSheetAssociation assoc : ruleAssociations) {
-            if(assoc.getRules().accepts(curi)) {
-                curi.getOverlayNames().addAll(assoc.getTargetSheetNames());
+            try {
+                if(assoc.getRules().accepts(curi)) {
+                    curi.getOverlayNames().addAll(assoc.getTargetSheetNames());
+                }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "problem determining whether to apply overlays, so not applying " + assoc.getTargetSheetNames() + " to " + curi, e);
             }
         }
         // even if no overlays set, let creation of empty list signal
