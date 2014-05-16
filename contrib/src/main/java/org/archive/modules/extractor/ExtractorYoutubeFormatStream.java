@@ -1,3 +1,21 @@
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.archive.modules.extractor;
 
 import java.io.IOException;
@@ -226,7 +244,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
     private static final Set<String> KNOWN_ITAGS = new HashSet<String>(DEFAULT_ITAG_PRIORITY);
 
     // Add videos as outlinks by priority list
-    private void addPreferredOutlinks(CrawlURI uri,
+    protected void addPreferredOutlinks(CrawlURI uri,
             LinkedHashMap<String, String> parsedVideoMap) {
         List<String> itagPriority;
         if (getItagPriority() != null && !getItagPriority().isEmpty()) {
@@ -265,7 +283,7 @@ public class ExtractorYoutubeFormatStream extends Extractor {
         }
     }
 
-    private LinkedHashMap<String, String> parseStreamMap(String streamMap) {
+    protected LinkedHashMap<String, String> parseStreamMap(String streamMap) {
         String[] rawVideoList = streamMap.split(",");
         LinkedHashMap<String, String> parsedVideoMap = new LinkedHashMap<String, String>();
 
