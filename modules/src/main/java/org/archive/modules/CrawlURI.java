@@ -256,7 +256,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES, A_SUBMIT_DATA, A_WARC_RESPONSE_HEADERS});
+            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES, A_SUBMIT_DATA, A_WARC_RESPONSE_HEADERS, A_ANNOTATIONS});
 
     /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
     private static final int MAX_HOPS_DISPLAYED = 50;
