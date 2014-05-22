@@ -334,17 +334,38 @@ public class ExtractorSWF extends ContentExtractor {
                 }
             } else {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToVia(curi, max, url, LinkContext.EMBED_MISC,
-                        Hop.EMBED);
+                Link relToVia = Link.addRelativeToVia(curi, max, url,
+                        LinkContext.EMBED_MISC, Hop.EMBED);
+                Link relToBase = Link.addRelativeToBase(curi, max, url,
+                        LinkContext.EMBED_MISC, Hop.EMBED);
+                addAnnotations(relToVia, relToBase);
                 linkCount++;
+            }
+        }
+
+        protected void addAnnotations(Link relToVia, Link relToBase) {
+            if (relToVia != null && relToBase != null
+                    && relToVia.getDestination().equals(relToBase.getDestination())) {
+                relToVia.getAnnotations().add("extractorSWFRelToBoth");
+                relToBase.getAnnotations().add("extractorSWFRelToBoth");
+            } else {
+                if (relToVia != null) {
+                    relToVia.getAnnotations().add("extractorSWFRelToVia");
+                }
+                if (relToBase != null) {
+                    relToBase.getAnnotations().add("extractorSWFRelToBase");
+                }
             }
         }
 
         public void considerStringAsUri(String str) throws IOException {
             if (UriUtils.isVeryLikelyUri(str)) {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToVia(curi, max, str, 
+                Link relToVia = Link.addRelativeToVia(curi, max, str,
                         LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                Link relToBase = Link.addRelativeToBase(curi, max, str,
+                        LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                addAnnotations(relToVia, relToBase);
                 linkCount++;
             }
         }
