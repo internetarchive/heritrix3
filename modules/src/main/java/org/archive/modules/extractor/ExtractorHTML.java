@@ -454,7 +454,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     (String)value: value.toString();
                 CharSequence context = elementContext(element,
                     attr.group(6));
-                processEmbed(curi, codebase, context);
+                processLink(curi, codebase, context);
             } else if (attr.start(7) > -1) {
                 // CLASSID, DATA
                 if (resources == null) {
