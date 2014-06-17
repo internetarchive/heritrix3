@@ -117,7 +117,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     synchronized (AMQPUrlReceiver.this) {
                         try {
                             Consumer consumer = new UrlConsumer(channel());
-                            channel.queueDeclare(getQueueName(), false, false, true, null);
+                            channel().queueDeclare(getQueueName(), false, false, true, null);
                             channel().queueBind(getQueueName(), getExchange(), getQueueName());
                             channel().basicConsume(getQueueName(), false, consumer);
                             isRunning = true;

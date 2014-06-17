@@ -32,7 +32,6 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
@@ -158,11 +157,6 @@ public class SingleHBaseTable extends HBaseTableBean {
         } catch (IOException ex) {
             LOG.warn("error closing " + htable + " - some commits may have been lost");
         }
-        // necessary because HTable.close() does neither release HConnection 
-        // resources nor unregister failed HConnection. new HTable will get
-        // the same failed HConnection again without this. Apparently CDH3u5 has
-        // fixed this issue.
-        HConnectionManager.deleteConnection(htable.getConfiguration(), true);
         if (byError) {
             tableError = System.currentTimeMillis();
         }

@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.springframework.context.Lifecycle;
@@ -78,7 +76,7 @@ public class HBase implements Lifecycle {
 
     protected transient HBaseAdmin admin;
 
-    public synchronized HBaseAdmin admin() throws MasterNotRunningException, ZooKeeperConnectionException {
+    public synchronized HBaseAdmin admin() throws IOException {
         if (admin == null) {
             admin = new HBaseAdmin(configuration());
         }
@@ -99,7 +97,8 @@ public class HBase implements Lifecycle {
             admin = null;
         }
         if (conf != null) {
-            HConnectionManager.deleteConnection(conf, true);
+            // HConnectionManager.deleteConnection(conf); // XXX?
+            conf = null;
         }
     }
 

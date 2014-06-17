@@ -24,13 +24,14 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.regionserver.NoSuchColumnFamilyException;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.thirdparty.guava.common.collect.BiMap;
-import org.apache.hadoop.thirdparty.guava.common.collect.HashBiMap;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.recrawl.AbstractContentDigestHistory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.context.Lifecycle;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
 /**
  * HBase content digest history store. Must be a toplevel bean in
