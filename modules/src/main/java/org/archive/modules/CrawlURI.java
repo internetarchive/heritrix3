@@ -1633,10 +1633,10 @@ implements Reporter, Serializable, OverlayContext {
         CrawlURI newCaURI = new CrawlURI(u, 
                 extendHopsPath(getPathFromSeed(),link.getHopType().getHopChar()),
                 getUURI(), link.getContext());
-        newCaURI.inheritFrom(this);
         if (link.hasData()) {
             newCaURI.data = link.getData();
         }
+        newCaURI.inheritFrom(this);
         return newCaURI;
     }
 
