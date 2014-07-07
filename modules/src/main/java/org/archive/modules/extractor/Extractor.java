@@ -186,14 +186,14 @@ public abstract class Extractor extends Processor {
         return ret.toString();
     }
     
-    public static void addRelativeToBase(CrawlURI uri, int max,
+    public static CrawlURI addRelativeToBase(CrawlURI uri, int max,
             String newUri, LinkContext context, Hop hop) throws URIException {
         UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
-        add2(uri, max, dest, context, hop);
+        return add2(uri, max, dest, context, hop);
     }
 
     
-    public static void addRelativeToVia(CrawlURI uri, int max, String newUri,
+    public static CrawlURI addRelativeToVia(CrawlURI uri, int max, String newUri,
             LinkContext context, Hop hop) throws URIException {
         UURI relTo = uri.getVia();
         if (relTo == null) {
@@ -204,7 +204,7 @@ public abstract class Extractor extends Processor {
             relTo = uri.getBaseURI();
         }
         UURI dest = UURIFactory.getInstance(relTo, newUri);
-        add2(uri, max, dest, context, hop);
+        return add2(uri, max, dest, context, hop);
     }
 
     public static void add(CrawlURI uri, int max, String newUri,
@@ -214,13 +214,15 @@ public abstract class Extractor extends Processor {
     }
 
 
-    private static void add2(CrawlURI curi, int max, UURI dest,
+    private static CrawlURI add2(CrawlURI curi, int max, UURI dest,
             LinkContext context, Hop hop) throws URIException {
         if (curi.getOutLinks().size() < max) {
             CrawlURI link = curi.createCrawlURI(dest, context, hop);
             curi.getOutLinks().add(link);
+            return link;
         } else {
             curi.incrementDiscardedOutLinks();
+            return null;
         }
     }
 

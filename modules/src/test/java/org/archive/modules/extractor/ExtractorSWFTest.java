@@ -198,11 +198,11 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
         expected.put("http://nyumedecs.kk5.org/containermain.swf", "extractorSWFRelToVia");
         expected.put("https://wayback.archive-it.org/3771/20131119163257/http://nyumedecs.kk5.org/_app/28727/en/resources/containermain.swf", "extractorSWFRelToBase");
 
-        for (Link link: curi.getOutLinks()) {
+        for (CrawlURI link: curi.getOutLinks()) {
             System.out.println(link + " " + link.getData());
             assertEquals(1, link.getAnnotations().size());
 
-            String dest = link.getDestination().toString();
+            String dest = link.toString();
             assertTrue(expected.containsKey(dest));
 
             // remove the entry, so at the end the map should be empty, confirming that we found all the expected links
