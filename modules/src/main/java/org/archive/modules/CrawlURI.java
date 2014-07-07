@@ -118,7 +118,7 @@ import org.json.JSONObject;
  * @author Gordon Mohr
  */
 public class CrawlURI 
-implements Reporter, Serializable, OverlayContext {
+implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     private static final long serialVersionUID = 3L;
 
     private static final Logger logger =
@@ -275,6 +275,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     public CrawlURI(UURI uuri) {
         this.uuri = uuri;
+        this.pathFromSeed = "";
     }
 
     public static CrawlURI fromHopsViaString(String uriHopsViaContext) throws URIException {
@@ -1915,4 +1916,64 @@ implements Reporter, Serializable, OverlayContext {
     public boolean hasContentDigestHistory() {
         return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
     }
+
+    // brought over from old Link class
+    @Override
+    public int compareTo(CrawlURI o) {
+        int cmp = compare(via.toString(), o.via.toString());
+        if (cmp == 0) {
+            cmp = compare(uuri.toString(), o.uuri.toString());
+        }
+        if (cmp == 0) {
+            cmp = compare(viaContext.toString(), o.viaContext.toString());
+        }
+        if (cmp == 0) {
+            cmp = compare(pathFromSeed, o.pathFromSeed);
+        }
+        return cmp;
+    }
+
+    // brought over from old Link class
+    @Override
+    public int hashCode() {
+        int r = 37;
+        return r ^ hash(via.toString()) ^ hash(uuri.toString())
+                ^ hash(viaContext.toString()) ^ hash(pathFromSeed.toString());
+    }
+
+    // handles nulls
+    private static int hash(String a) {
+        return a == null ? 0 : a.hashCode();
+    }
+
+    // handles nulls
+    private static boolean equals(Object a, Object b) {
+        return a == null ? b == null : a.equals(b);
+    }
+
+    // handles nulls
+    private static int compare(String a, String b) {
+        if (a == null && b == null) {
+            return 0;
+        } else if (a == null && b != null) {
+            return -1;
+        } else if (a != null && b != null) {
+            return 1;
+        } else {
+            return a.compareTo(b);
+        }
+    }
+
+    // brought over from old Link class
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof CrawlURI)) {
+            return false;
+        }
+        CrawlURI u = (CrawlURI) o;
+        return equals(via, u.via) && equals(uuri, u.uuri)
+                && equals(viaContext, u.viaContext)
+                && equals(pathFromSeed, u.pathFromSeed);
+    }
+
 }
