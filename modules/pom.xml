@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.archive</groupId>
 		<artifactId>heritrix</artifactId>
-		<version>3.1.2-SNAPSHOT</version>
+		<version>3.3.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.archive.heritrix</groupId>
@@ -11,31 +11,10 @@
 	<packaging>jar</packaging>
 	<name>Heritrix 3: 'modules' subproject (reusable components)</name>
 	<description>
-
 		This project contains some of the configurable modules used within the
 		Heritrix application to crawl the web.  The modules in this project can
 		be used in applications other than Heritrix, however.
-
 	</description>
-
-	<repositories>
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>daily</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>internetarchive</id>
-			<name>Internet Archive Maven Repository</name>
-			<url>http://builds.archive.org:8080/maven2</url>
-			<layout>default</layout>
-		</repository>
-	</repositories>
 
 	<dependencies>
 		<dependency>
@@ -55,17 +34,21 @@
 			<artifactId>groovy-all</artifactId>
 			<version>1.6.3</version>
 		</dependency>
-
-		<!-- testing -->
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty-util</artifactId>
+			<version>6.1.26</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty-sslengine</artifactId>
+			<version>6.1.26</version>
+			<scope>test</scope>
+		</dependency>
                 <dependency>
                         <groupId>org.mortbay.jetty</groupId>
                         <artifactId>jetty</artifactId>
-                        <version>6.1.26</version>
-                        <scope>test</scope>
-                </dependency>
-                <dependency>
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>jetty-sslengine</artifactId>
                         <version>6.1.26</version>
                         <scope>test</scope>
                 </dependency>
@@ -87,7 +70,6 @@
 			<version>1.6.6</version>
 			<scope>test</scope>
 		</dependency>
-
 	</dependencies>
 	<build>
 		<plugins>

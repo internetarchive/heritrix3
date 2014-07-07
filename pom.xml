@@ -20,7 +20,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<groupId>org.archive</groupId>
 	<!--This project is parent to all under 'projects' subdirectory-->
 	<artifactId>heritrix</artifactId>
-	<version>3.1.2-SNAPSHOT</version>
+	<version>3.3.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Heritrix 3</name>
 	<description>
@@ -54,8 +54,8 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<url>http://webteam.archive.org/jira</url>
 	</issueManagement>
 	<ciManagement>
-		<system>continuum</system>
-		<url>http://builds.archive.org:8081/continuum/</url>
+		<system>jenkins</system>
+		<url>https://builds.archive.org/</url>
 	</ciManagement>
 	<mailingLists>
 		<mailingList>
@@ -85,22 +85,17 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 
 	<pluginRepositories>
 		<pluginRepository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>daily</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>archive</id>
-			<name>archive.org</name>
-			<url>http://builds.archive.org:8080/maven2</url>
-			<layout>default</layout>
+			<id>builds.archive.org,maven2</id>
+			<url>http://builds.archive.org/maven2</url>
 		</pluginRepository>
 	</pluginRepositories>
+
+	<repositories>
+		<repository>
+			<id>builds.archive.org,maven2</id>
+			<url>http://builds.archive.org/maven2</url>
+		</repository>
+	</repositories>
 
 	<prerequisites>
 		<maven>2.0.9</maven>

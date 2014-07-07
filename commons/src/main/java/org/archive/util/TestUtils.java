@@ -75,7 +75,7 @@ public class TestUtils {
     }
 
 
-    private static byte[] serialize(Object o) throws Exception {
+    public static byte[] serialize(Object o) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);    
         oout.writeObject(o);
@@ -127,7 +127,7 @@ public class TestUtils {
                     }
                     cname = cname.replace(File.separatorChar, '.');
                     cname = cname.substring(0, cname.length() - 5);
-                    suite.addTestSuite(Class.forName(cname));
+                    suite.addTestSuite((Class<? extends TestCase>) Class.forName(cname));
                 }
             }
         }

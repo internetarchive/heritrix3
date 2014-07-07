@@ -50,6 +50,7 @@ import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.net.UURI;
+import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
 
 /**
@@ -257,11 +258,11 @@ public class MirrorWriterProcessor extends Processor {
     /**
      * Top-level directory for mirror files.
      */
-    protected String path = "mirror";
-    public String getPath() {
+    protected ConfigPath path = new ConfigPath("mirror writer top level directory", "${launchId}/mirror");
+    public ConfigPath getPath() {
         return this.path;
     }
-    public void setPath(String s) {
+    public void setPath(ConfigPath s) {
         this.path = s; 
     }
     
@@ -353,29 +354,7 @@ public class MirrorWriterProcessor extends Processor {
             return;
         }
 
-        String baseDir = null; // Base directory.
-        String baseSeg = getPath();
-
-        baseDir = new File(".").getPath();
-            
-            // FIXME: Come up with way for processors to get 
-            // "directory root" without needing a crawlController.
-        
-        
-        // Trim any trailing File.separatorChar characters from baseSeg.
-        while ((baseSeg.length() > 1) && baseSeg.endsWith(File.separator)) {
-            baseSeg = baseSeg.substring(0, baseSeg.length() - 1);
-        }
-        if (0 == baseSeg.length()) {
-            baseDir = new File(".").getPath();
-//            baseDir = getController().getDisk().getPath();
-        } else if ((new File(baseSeg)).isAbsolute()) {
-            baseDir = baseSeg;
-        } else {
-            baseDir = new File(".").getPath() + File.separator + baseSeg;
-//            baseDir = getController().getDisk().getPath() + File.separator
-//                + baseSeg;
-        }
+        String baseDir = getPath().getFile().getAbsolutePath();
 
         // Already have a path for this URI.
         boolean reCrawl = curi.getData().containsKey(A_MIRROR_PATH);

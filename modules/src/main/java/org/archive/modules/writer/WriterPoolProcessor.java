@@ -22,7 +22,6 @@ package org.archive.modules.writer;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
 
 import java.io.File;
@@ -48,6 +47,7 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -235,7 +235,19 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     public void setDirectory(ConfigPath directory) {
         this.directory = directory;
     }
-    
+
+    protected boolean startNewFilesOnCheckpoint = true;
+    public boolean getStartNewFilesOnCheckpoint() {
+        return startNewFilesOnCheckpoint;
+    }
+    /**
+     * Whether to close output files and start new ones on checkpoint. True by
+     * default. If false, merely flushes writers.
+     */
+    public void setStartNewFilesOnCheckpoint(boolean startNewFilesOnCheckpoint) {
+        this.startNewFilesOnCheckpoint = startNewFilesOnCheckpoint;
+    }
+
     /**
      * Where to save files. Supply absolute or relative directory paths. 
      * If relative, paths will be interpreted relative to the local
@@ -339,7 +351,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         } else if (scheme.equals("whois")) {
             retVal = curi.getFetchStatus() == S_WHOIS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
-            retVal = curi.getFetchStatus() > 0 && curi.getHttpMethod() != null;
+            retVal = curi.getFetchStatus() > 0 && curi.isHttpTransaction();
         } else if (scheme.equals("ftp")) {
             retVal = curi.getFetchStatus() > 0;
         } else {
@@ -391,23 +403,23 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         return h.getIP().getHostAddress();
     }
 
-    // TODO: add non-urgent checkpoint request, that waits for a good
-    // moment (when (W)ARCs are already rolling over)? 
-    public void doCheckpoint(Checkpoint checkpointInProgress) 
-    throws IOException {
-        // close all ARCs on checkpoint
-        this.pool.close();
-        
-        super.doCheckpoint(checkpointInProgress);
-   
-        // reopen post checkpoint
-        setupPool(this.serial);
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        if (getStartNewFilesOnCheckpoint()) {
+            this.pool.close();
+            super.doCheckpoint(checkpointInProgress);
+            setupPool(this.serial);
+        } else {
+            pool.flush();
+            super.doCheckpoint(checkpointInProgress);
+        }
     }
-    
+
     @Override
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
         json.put("serialNumber", getSerialNo().get());
+        json.put("poolStatus", pool.jsonStatus());
         return json;
     }
     
@@ -488,8 +500,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      */
     protected void copyForwardWriteTagIfDupe(CrawlURI curi) {
         if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
-            @SuppressWarnings("unchecked")
-            Map<String,Object>[] history = (Map<String,Object>[])curi.getData().get(A_FETCH_HISTORY);
+            Map<String,Object>[] history = curi.getFetchHistory();
             if (history[1].containsKey(A_WRITE_TAG)) {
                 history[0].put(A_WRITE_TAG, history[1].get(A_WRITE_TAG));
             }

@@ -39,5 +39,9 @@ public class ContentDigestHistoryLoader extends Processor {
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         contentDigestHistory.load(curi);
+
+        if (!curi.getContentDigestHistory().isEmpty()) {
+            curi.getAnnotations().add("duplicate:digest");
+        }
     }
 }

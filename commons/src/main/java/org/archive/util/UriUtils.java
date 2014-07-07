@@ -97,6 +97,10 @@ public class UriUtils {
         return TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate);
     }
     
+    /**
+     * @deprecated produces too many false positives,
+     *             {@link #isVeryLikelyUri(CharSequence)} is preferred
+     */
     public static boolean isLikelyUri(CharSequence candidate) {
         return isPossibleUri(candidate) && !isLikelyFalsePositive(candidate);
     }
@@ -376,7 +380,7 @@ public class UriUtils {
                         "tt", "u", "ul", "var", "video", "wbr"));
     }
 
-    protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})+"; // name=value for query strings 
+    protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})*"; // name=value for query strings
     protected static final String VERY_LIKELY_RELATIVE_URI_PATTERN = 
             "(?:\\.?/)?"                                    // may start with "/" or "./"
             + "(?:(?:[\\w-]+|\\.\\.)/)*"                    // may have path/segments/
@@ -384,7 +388,7 @@ public class UriUtils {
             + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?" // may have a ?query=string
             + "(?:#[\\w-]+)?";                              // may have a #fragment
 
-    public static boolean isVeryLikelyUri(String candidate) {
+    public static boolean isVeryLikelyUri(CharSequence candidate) {
         // must have a . or /
         if (!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
             return false;

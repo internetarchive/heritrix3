@@ -76,7 +76,7 @@ public class ExtractorJS extends ContentExtractor {
 
     protected boolean shouldExtract(CrawlURI uri) {
         String contentType = uri.getContentType();
-        if ((contentType == null)) {
+        if (contentType == null) {
             return false;
         }
 
@@ -88,6 +88,10 @@ public class ExtractorJS extends ContentExtractor {
             return true;
         }
         if (contentType.indexOf("ecmascript") >= 0) {
+            return true;
+        }
+
+        if (contentType.startsWith("application/json")) {
             return true;
         }
         

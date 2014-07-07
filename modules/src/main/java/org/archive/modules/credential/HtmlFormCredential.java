@@ -20,18 +20,10 @@
 package org.archive.modules.credential;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -72,17 +64,20 @@ public class HtmlFormCredential extends Credential {
     }
     
     
-    enum Method {
+    public enum Method {
         GET,
         POST
     }
     /**
      * GET or POST.
      */
+    /** @deprecated ignored, always POST*/
     protected Method httpMethod = Method.POST;
+    /** @deprecated ignored, always POST*/
     public Method getHttpMethod() {
         return this.httpMethod;
     }
+    /** @deprecated ignored, always POST*/
     public void setHttpMethod(Method method) {
         this.httpMethod = method; 
     }
@@ -131,53 +126,6 @@ public class HtmlFormCredential extends Credential {
     public boolean isEveryTime() {
         // This authentication is one time only.
         return false;
-    }
-
-    @Override
-    public boolean populate(CrawlURI curi, HttpClient http, HttpMethod method,
-            Map<String, String> httpAuthChallenges) {
-        // http is not used
-        boolean result = false;
-        Map<String,String> formItems = getFormItems();
-        if (formItems == null || formItems.size() <= 0) {
-            try {
-                logger.severe("No form items for " + method.getURI());
-            }
-            catch (URIException e) {
-                logger.severe("No form items and exception getting uri: " +
-                    e.getMessage());
-            }
-            return result;
-        }
-
-        NameValuePair[] data = new NameValuePair[formItems.size()];
-        int index = 0;
-        String key = null;
-        for (Iterator<String> i = formItems.keySet().iterator(); i.hasNext();) {
-            key = i.next();
-            data[index++] = new NameValuePair(key, (String)formItems.get(key));
-        }
-        if (method instanceof PostMethod) {
-            ((PostMethod)method).setRequestBody(data);
-            result = true;
-        } else if (method instanceof GetMethod) {
-            // Append these values to the query string.
-            // Get current query string, then add data, then get it again
-            // only this time its our data only... then append.
-            HttpMethodBase hmb = (HttpMethodBase)method;
-            String currentQuery = hmb.getQueryString();
-            hmb.setQueryString(data);
-            String newQuery = hmb.getQueryString();
-            hmb.setQueryString(
-                ((StringUtils.isNotEmpty(currentQuery))
-                        ? currentQuery + "&"
-                        : "")
-                + newQuery);
-            result = true;
-        } else {
-            logger.severe("Unknown method type: " + method);
-        }
-        return result;
     }
 
     public boolean isPost() {

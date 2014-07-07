@@ -152,7 +152,7 @@ public class ExtractorXML extends ContentExtractor {
         Matcher matcher = XML_URI_EXTRACTOR.matcher(cs);
         while (matcher.find()) {
             String xmlUri = StringEscapeUtils.unescapeXml(matcher.group(1));
-            if (UriUtils.isLikelyUri(xmlUri)) {
+            if (UriUtils.isVeryLikelyUri(xmlUri)) {
                 foundLinks++;
                 try {
                     // treat as speculative, as whether context really 

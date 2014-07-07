@@ -18,10 +18,7 @@
  */
 package org.archive.modules.recrawl;
 
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
-
-import java.util.Map;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -68,10 +65,10 @@ public abstract class AbstractPersistProcessor extends Processor {
      * @param curi
      * @return true if {@code curi} has WRITE_TAG in the latest fetch history (i.e. this crawl).
      */
-    @SuppressWarnings("unchecked")
     protected boolean hasWriteTag(CrawlURI uri) {
-        Map<String,Object>[] history = (Map<String,Object>[])uri.getData().get(A_FETCH_HISTORY);
-        return history != null && history[0] != null && history[0].containsKey(A_WRITE_TAG);
+        return uri.getFetchHistory() != null
+                && uri.getFetchHistory()[0] != null
+                && uri.getFetchHistory()[0].containsKey(A_WRITE_TAG);
     }
     
     /**

@@ -192,7 +192,7 @@ implements Checkpointable, BeanNameAware {
         if (getDumpPendingAtClose()) {
             try {
                 dumpAllPendingToLog();
-            } catch (DatabaseException e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "dump pending problem", e);
             }
         }

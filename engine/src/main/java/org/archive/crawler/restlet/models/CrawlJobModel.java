@@ -127,7 +127,7 @@ public class CrawlJobModel extends LinkedHashMap<String, Object> implements Seri
         
         List<String> checkpointFiles = new ArrayList<String>();
         if (crawlJob.getCheckpointService() != null) {
-            if (crawlJob.getCheckpointService().hasAvailableCheckpoints() && crawlJob.isLaunchable()) {
+            if (crawlJob.isLaunchable() && crawlJob.getCheckpointService().hasAvailableCheckpoints()) {
                 for (File f : crawlJob.getCheckpointService().findAvailableCheckpointDirectories()) {
                     checkpointFiles.add(f.getName()); 
                 }

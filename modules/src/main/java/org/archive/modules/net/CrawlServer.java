@@ -350,7 +350,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     public void setIdentityCache(ObjectIdentityCache<?> cache) {
         this.cache = cache; 
     }
-    
+
     transient private Map<String,String> httpAuthChallenges;
     public Map<String,String> getHttpAuthChallenges() {
         return httpAuthChallenges;

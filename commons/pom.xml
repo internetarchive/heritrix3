@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.archive</groupId>
 		<artifactId>heritrix</artifactId>
-		<version>3.1.2-SNAPSHOT</version>
+		<version>3.3.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.archive.heritrix</groupId>
@@ -17,83 +17,17 @@
 
 	<repositories>
 		<repository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>oracleReleases</id>
-			<name>Oracle Released Java Packages</name>
+			<id>download.oracle.com,maven</id>
 			<url>http://download.oracle.com/maven</url>
-			<layout>default</layout>
-		</repository>
-
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>internetarchive</id>
-			<name>Internet Archive Maven Repository</name>
-			<url>http://builds.archive.org:8080/maven2</url>
-			<layout>default</layout>
 		</repository>
 	</repositories>
 
 	<dependencies>
-
-
-		<!--
-
-		This project requires "overlays".  There are custom patches we
-		apply to existing jar files from other projects (Apache).  Those
-		projects would not/could not accept our patches, so
-
-		Maven doesn't have any sort of notion for this.  It should be
-		a simple matter of ordering classpath elements, but alas.
-
-		We wanted to avoid checking in the complete source code for these
-		other projects into our source control, so it would be obvious
-		which classes we actually altered to suit our needs.
-
-		I tried a number of things to make overlay jars work in maven.
-		Here's what finally worked:
-
-		I manually explode the jar files, then manually delete the few class
-		files that we overlay (including any inner class files).  I then
-		rejar the class files minus the ones we want to generate at
-		compile-time.  I use a name archive-overlay-X-V.jar, where X
-		is the original artifact name, and V is the original version.
-
-		I then manually install these jars into our maven repository.
-		So the below dependencies are these strange, surgically altered
-		jars from other projects.
-
-		It's ugly but it works.  If you make any additional changes to
-		these projects, or heavens forfend you actually want to upgrade
-		them to some later version, you will have to repeat the
-		explode/delete/rejar/reinstall manual process.
-		-->
-
 		<dependency>
-			<groupId>org.archive.overlays</groupId>
-			<artifactId>archive-overlay-commons-httpclient</artifactId>
-			<version>3.1</version>
-			<scope>compile</scope>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.3</version>
 		</dependency>
-
-		<!-- These are normal dependencies. -->
 		<dependency>
 			<groupId>com.sleepycat</groupId>
 			<artifactId>je</artifactId>
@@ -186,12 +120,6 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>fastutil</groupId>
-			<artifactId>fastutil</artifactId>
-			<version>5.0.7</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>net.java.dev.jets3t</groupId>
 			<artifactId>jets3t</artifactId>
 			<version>0.5.0</version>
@@ -234,16 +162,6 @@
 			<artifactId>spring-expression</artifactId>
 			<version>3.0.5.RELEASE</version>
 		</dependency>
-		<dependency>
-			<groupId>joda-time</groupId>
-			<artifactId>joda-time</artifactId>
-			<version>1.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20090211</version>
-		</dependency>
 
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
@@ -265,26 +183,16 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>r08</version>
-		</dependency>
-
-		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
 			<version>3.2.3</version>
 		</dependency>
 
 		<dependency>
-			<groupId>org.archive</groupId>
-			<artifactId>ia-web-commons</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<groupId>org.netpreserve.commons</groupId>
+			<artifactId>webarchive-commons</artifactId>
+			<version>1.1.1-IA-SNAPSHOT</version>
 			<exclusions>
-				<exclusion>
-					<groupId>commons-httpclient</groupId>
-					<artifactId>commons-httpclient</artifactId>
-				</exclusion>
 				<exclusion>
 					<groupId>org.apache.hadoop</groupId>
 					<artifactId>hadoop-core</artifactId>

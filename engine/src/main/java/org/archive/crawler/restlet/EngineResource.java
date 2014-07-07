@@ -154,7 +154,7 @@ public class EngineResource extends BaseResource {
         	        }
         	    }
         	}
-        } else if ("Exit Java Process".equals(action)) { 
+        } else if ("exit java process".equals(action)) { 
             boolean cancel = false; 
             if(!"on".equals(form.getFirstValue("im_sure"))) {
                 Flash.addFlash(
@@ -225,7 +225,6 @@ public class EngineResource extends BaseResource {
         viewModel.put("baseRef",baseRef);
         viewModel.put("fileSeparator", File.separator);
         viewModel.put("engine", model);
-        viewModel.put("cssRef", getStylesheetRef());
 
         try {
             Template template = tmpltCfg.getTemplate("Engine.ftl");

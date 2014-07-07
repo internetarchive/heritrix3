@@ -93,7 +93,7 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
         int specCount = 0; 
         for (int i = hopsPath.length() - 1; i >= 0; i--) {
             char c = hopsPath.charAt(i);
-            if (c == Hop.NAVLINK.getHopChar()) {
+            if (c == Hop.NAVLINK.getHopChar() || c == Hop.SUBMIT.getHopChar()) {
                 // end of hops counted here
                 break;
             } 

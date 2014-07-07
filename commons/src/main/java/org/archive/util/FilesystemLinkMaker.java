@@ -20,6 +20,7 @@
 package org.archive.util;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
@@ -33,6 +34,8 @@ import com.sun.jna.win32.StdCallLibrary;
  * @see http://stackoverflow.com/questions/783075/creating-a-hard-link-in-java/3023349#3023349
  */
 public class FilesystemLinkMaker {
+    
+    private static final Logger logger = Logger.getLogger(FilesystemLinkMaker.class.getName()); 
     
     // see https://github.com/twall/jna/blob/master/www/GettingStarted.md
     public interface Kernel32Library extends StdCallLibrary {
@@ -75,26 +78,38 @@ public class FilesystemLinkMaker {
      */
     // XXX could handle errors better (examine errno, throw exception...)
     public static boolean makeHardLink(String existingPath, String newPath) {
-        if (Platform.isWindows()) {
-            return Kernel32Library.INSTANCE.CreateHardLinkA(newPath, existingPath, null);
-        } else {
-            int status = CLibrary.INSTANCE.link(existingPath, newPath);
-            return status == 0;
+        try {
+            if (Platform.isWindows()) {
+                return Kernel32Library.INSTANCE.CreateHardLinkA(newPath, existingPath, null);
+            } else {
+                int status = CLibrary.INSTANCE.link(existingPath, newPath);
+                return status == 0;
+            }
+        } catch (UnsatisfiedLinkError e) {
+            // see https://webarchive.jira.com/browse/HER-1979
+            logger.warning("hard links not supported on this platform - " + e);
+            return false;
         }
     }
     
     /**
-     * Wrapper over platform-dependent system calls to create a symboic link.
+     * Wrapper over platform-dependent system calls to create a symbolic link.
      * 
      * @return true on success
      */
     // XXX could handle errors better (examine errno, throw exception...)
     public static boolean makeSymbolicLink(String existingPath, String newPath) {
-        if (Platform.isWindows()) {
-            return Kernel32Library.INSTANCE.CreateSymbolicLinkA(newPath, existingPath, null);
-        } else {
-            int status = CLibrary.INSTANCE.symlink(existingPath, newPath);
-            return status == 0;
+        try {
+            if (Platform.isWindows()) {
+                return Kernel32Library.INSTANCE.CreateSymbolicLinkA(newPath, existingPath, null);
+            } else {
+                int status = CLibrary.INSTANCE.symlink(existingPath, newPath);
+                return status == 0;
+            }
+        } catch (UnsatisfiedLinkError e) {
+            // see https://webarchive.jira.com/browse/HER-1979
+            logger.warning("symbolic links not supported on this platform - " + e);
+            return false;
         }
     }
     

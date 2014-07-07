@@ -83,23 +83,10 @@ public class ResourceNoLongerThanDecideRule extends PredicatedDecideRule {
         // filter used as midfetch filter
         if (getUseHeaderLength()) {
 
-            if (curi.getHttpMethod() == null) {
-                // Missing header info, let pass
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info("Error: Missing HttpMethod object in "
-                            + "CrawlURI. " + curi.toString());
-                }
-                return false;
-            }
-
-            // Initially assume header info is missing
-            HttpMethod method = curi.getHttpMethod();
-
             // get content-length
             String newContentlength = null;
-            if (method.getResponseHeader("content-length") != null) {
-                newContentlength = method.getResponseHeader("content-length")
-                        .getValue();
+            if (curi.getHttpResponseHeader("content-length") != null) {
+                newContentlength = curi.getHttpResponseHeader("content-length");
             }
 
             if (newContentlength != null && newContentlength.length() > 0) {

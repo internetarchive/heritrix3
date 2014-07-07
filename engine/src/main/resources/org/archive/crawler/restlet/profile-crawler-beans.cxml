@@ -349,10 +349,12 @@ http://example.example/example
          <value>warcs</value>
         </list>
        </property> -->
+  <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
   <!-- <property name="writeRequests" value="true" /> -->
   <!-- <property name="writeMetadata" value="true" /> -->
   <!-- <property name="writeRevisitForIdenticalDigests" value="true" /> -->
   <!-- <property name="writeRevisitForNotModified" value="true" /> -->
+  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->
@@ -542,6 +544,7 @@ http://example.example/example
    class="org.archive.crawler.framework.CheckpointService">
   <!-- <property name="checkpointIntervalMinutes" value="-1"/> -->
   <!-- <property name="checkpointsDir" value="checkpoints"/> -->
+  <!-- <property name="forgetAllButLatest" value="true"/> -->
  </bean>
  
  <!-- 
@@ -674,12 +677,12 @@ http://example.example/example
   <!-- <property name="expectedConcurrency" value="25" /> -->
  </bean>
  
- <!-- BDBCOOKIESTORAGE: disk-based cookie storage for FetchHTTP -->
- <bean id="cookieStorage" 
-   class="org.archive.modules.fetcher.BdbCookieStorage">
+ <!-- BDBCOOKIESTORE: disk-based cookie storage for FetchHTTP -->
+ <bean id="cookieStore" 
+   class="org.archive.modules.fetcher.BdbCookieStore">
   <!-- <property name="cookiesLoadFile"><null/></property> -->
   <!-- <property name="cookiesSaveFile"><null/></property> -->
-  <!-- <property name="bdb">
+  <!-- <property name="bdbModule">
         <ref bean="bdb"/>
        </property> -->
  </bean>

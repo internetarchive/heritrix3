@@ -19,8 +19,6 @@
 
 package org.archive.modules.extractor;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -58,15 +56,16 @@ public class ExtractorHTTP extends Extractor {
         FetchType ft = uri.getFetchType();
         return (ft == FetchType.HTTP_GET) || (ft == FetchType.HTTP_POST);
     }
-    
-    
+
+
     @Override
     protected void extract(CrawlURI curi) {
-        HttpMethod method = curi.getHttpMethod();
         // discover headers if present
-        addHeaderLink(curi, method.getResponseHeader("Location"));
-        addHeaderLink(curi, method.getResponseHeader("Content-Location"));
-        
+        addHeaderLink(curi, "Location");
+        addHeaderLink(curi, "Content-Location");
+
+        addRefreshHeaderLink(curi, "Refresh");
+
         // try /favicon.ico for every HTTP(S) URI
         addOutlink(curi, "/favicon.ico", LinkContext.INFERRED_MISC, Hop.INFERRED);
         if(getInferRootPage()) {
@@ -74,20 +73,33 @@ public class ExtractorHTTP extends Extractor {
         }
     }
 
-    protected void addHeaderLink(CrawlURI curi, Header loc) {
-        if (loc == null) {
-            // If null, return without adding anything.
-            return;
+    protected void addRefreshHeaderLink(CrawlURI curi, String headerKey) {
+        String headerValue = curi.getHttpResponseHeader(headerKey);
+        if (headerValue != null) {
+            // parsing logic copied from ExtractorHTML meta-refresh handling
+            int urlIndex = headerValue.indexOf("=") + 1;
+            if (urlIndex > 0) {
+                String refreshUri = headerValue.substring(urlIndex);
+                addHeaderLink(curi, headerKey, refreshUri);
+            }
         }
-        // TODO: consider possibility of multiple headers
+    }
+
+    protected void addHeaderLink(CrawlURI curi, String headerKey) {
+        String headerValue = curi.getHttpResponseHeader(headerKey);
+        if (headerValue != null) {
+            addHeaderLink(curi, headerKey, headerValue);
+        }
+    }
+
+    protected void addHeaderLink(CrawlURI curi, String headerName, String url) {
         try {
-            UURI dest = UURIFactory.getInstance(curi.getUURI(), loc.getValue());
-            LinkContext lc = HTMLLinkContext.get(loc.getName()+":"); 
+            UURI dest = UURIFactory.getInstance(curi.getUURI(), url);
+            LinkContext lc = HTMLLinkContext.get(headerName+":");
             addOutlink(curi, dest.toString(), lc, Hop.REFER);
             numberOfLinksExtracted.incrementAndGet();
         } catch (URIException e) {
-            logUriError(e, curi.getUURI(), loc.getValue());
+            logUriError(e, curi.getUURI(), url);
         }
-
     }
 }

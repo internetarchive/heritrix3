@@ -263,6 +263,10 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             tryThis = makeWhoisUrl(referralServers.get(ultraSuffix), domainOrIp);
         } else if (urlProgress.get(makeWhoisUrl(ULTRA_SUFFIX_WHOIS_SERVER, ultraSuffix)) == null) {
             tryThis = makeWhoisUrl(ULTRA_SUFFIX_WHOIS_SERVER, ultraSuffix);
+        } else {
+            logger.warning("apparently no whois server for \"" + domainOrIp + "\"");
+            curi.setFetchStatus(S_OTHER_PREREQUISITE_FAILURE);
+            return ProcessResult.PROCEED;
         }
 
         assert(tryThis != null);

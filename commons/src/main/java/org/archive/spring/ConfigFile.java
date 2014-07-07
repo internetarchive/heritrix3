@@ -49,7 +49,9 @@ public class ConfigFile extends ConfigPath implements ReadSource, WriteTarget {
                 getFile().createNewFile();
             }
             
-            configurer.snapshotToLaunchDir(getFile());
+            if (configurer != null) {
+                configurer.snapshotToLaunchDir(getFile());
+            }
 
             return new InputStreamReader(
                     new FileInputStream(getFile()),

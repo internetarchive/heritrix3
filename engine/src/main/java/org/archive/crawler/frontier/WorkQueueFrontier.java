@@ -764,32 +764,33 @@ implements Closeable,
             Queue<String> queueOfWorkQueueKeys = entry.getValue();
 
             while (true) {
+                String workQueueKey;
                 synchronized (getInactiveQueuesByPrecedence()) {
-                    String workQueueKey = queueOfWorkQueueKeys.poll();
+                    workQueueKey = queueOfWorkQueueKeys.poll();
                     if (workQueueKey == null) {
                         break;
                     }
-
-                    WorkQueue candidateQ = (WorkQueue) this.allQueues.get(workQueueKey);
-                    if (candidateQ.getPrecedence() > expectedPrecedence) {
-                        // queue demoted since placed; re-deactivate
-                        deactivateQueue(candidateQ);
-                        candidateQ.makeDirty();
-                        continue; 
-                    }
-
                     updateHighestWaiting(expectedPrecedence);
-                    try {
-                        readyClassQueues.put(workQueueKey);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e); 
-                    } 
-                    
-                    return true; 
                 }
+
+                WorkQueue candidateQ = (WorkQueue) this.allQueues.get(workQueueKey);
+                if (candidateQ.getPrecedence() > expectedPrecedence) {
+                    // queue demoted since placed; re-deactivate
+                    deactivateQueue(candidateQ);
+                    candidateQ.makeDirty();
+                    continue;
+                }
+
+                try {
+                    readyClassQueues.put(workQueueKey);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return true;
             }
         }
-        
+
         return false;
     }
 
@@ -1075,7 +1076,10 @@ implements Closeable,
             if (queuePat.matcher(qname).matches()) {
                 WorkQueue wq = getQueueFor(qname);
                 wq.unpeek(null);
-                count += wq.deleteMatching(this, uriRegex);
+                long delCount = wq.deleteMatching(this, uriRegex);
+                if (!wq.isRetired()) {
+                	count += delCount;
+                }
                 wq.makeDirty();
             }
         }

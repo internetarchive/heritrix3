@@ -21,7 +21,7 @@ package org.archive.modules.forms;
 
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,27 +42,28 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 /**
  * A step, post-ExtractorHTMLForms, where a followup CrawlURI to 
- * attempt a form-=submission may be synthesized. 
+ * attempt a form submission may be synthesized. 
  * 
- * If an HTMLForm was previously discovered (by ExtractorHTMLForms),
+ * <p>If an HTMLForm was previously discovered (by ExtractorHTMLForms),
  * and that form appears to be a login form, and at the very least
  * the loginUsername setting is non-empty, and the current 
  * (NOT 'action') URI fits under a configured SURT prefix, then a
  * submission CrawlURI will be composed.
  * 
- * This submission CrawlURI will be added to the current URI's
+ * <p>This submission CrawlURI will be added to the current URI's
  * outCandidates, and prefilled with settings for a POST and 
  * input values that are a merging of: (a) original discovered 
  * in-page values; (b) the 'loginUsername' into the first plausible
  * text/email-type input field; (c) the 'loginPassword' into the 
  * first password-type input field. 
  * 
- * Typically the settings 'applicableSurtPrefix', 'loginUsername', 
+ * <p>Typically the settings 'applicableSurtPrefix', 'loginUsername', 
  * and 'loginPassword' would be set in an overlay sheet and only
  * applied to one or more sites (by SURT prefix), rather than 
  * set globally.  An example minimal set of beans to add to CXML
@@ -95,12 +96,12 @@ import com.google.common.collect.MapMaker;
  * }
  * </pre>
  * 
- * (Remember: https URIs are always collapsed to http form before
+ * <p>(Remember: https URIs are always collapsed to http form before
  * overlay-surt-prefix comparisons, so surtPrefixes in the above
  * association should always be in http form, even if the actual 
  * target URIs are https.)
  * 
- * Finally, while there is not yet support for testing if the 
+ * <p>Finally, while there is not yet support for testing if the 
  * submitted CrawlURI succeeded, this processor keeps track of 
  * a count of FORMS seen that are eligible for attempts, and 
  * attempts made (for now, just once), per 'formTrackingDomain'
@@ -119,22 +120,24 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
         Logger.getLogger(FormLoginProcessor.class.getName());
     
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsSeenCount = 
-            new MapMaker().makeComputingMap(new Function<String, AtomicLong>() {
-                @Override
-                public AtomicLong apply(String arg0) {
-                    return new AtomicLong(0L);
-                }
-            });
+    protected LoadingCache<String, AtomicLong> eligibleFormsSeenCount =
+            CacheBuilder.newBuilder()
+                .<String, AtomicLong>build(
+                    new CacheLoader<String, AtomicLong>() {
+                        public AtomicLong load(String arg0) {
+                            return new AtomicLong(0L);
+                        }
+                    });
 
     // formProvince (String) -> count
-    ConcurrentMap<String, AtomicLong> eligibleFormsAttemptsCount = 
-            new MapMaker().makeComputingMap(new Function<String, AtomicLong>() {
-                @Override
-                public AtomicLong apply(String arg0) {
-                    return new AtomicLong(0L);
-                }
-            });
+    protected LoadingCache<String, AtomicLong> eligibleFormsAttemptsCount =
+            CacheBuilder.newBuilder()
+                    .<String, AtomicLong>build(
+                            new CacheLoader<String, AtomicLong>() {
+                                public AtomicLong load(String arg0) {
+                                    return new AtomicLong(0L);
+                                }
+                            });
     
     /**
      * SURT prefix against which configured username/password is
@@ -217,13 +220,17 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
             for( Object formObject : curi.getDataList(ExtractorHTMLForms.A_HTML_FORM_OBJECTS)) {
                 HTMLForm form = (HTMLForm) formObject;
                 if(form.seemsLoginForm()) {
-                    eligibleFormsSeenCount.get(formProvince).incrementAndGet();
-                    if(eligibleFormsAttemptsCount.get(formProvince).get()<1) {
-                        eligibleFormsAttemptsCount.get(formProvince).incrementAndGet();
-                        createFormSubmissionAttempt(curi,form,formProvince); 
-                    } else {
-                        // note decline-to-submit: in volume, may be signal of failed first login
-                        curi.getAnnotations().add("nosubmit:"+submitStatusFor(formProvince));
+                    try {
+                        eligibleFormsSeenCount.get(formProvince).incrementAndGet();
+                        if(eligibleFormsAttemptsCount.get(formProvince).get()<1) {
+                            eligibleFormsAttemptsCount.get(formProvince).incrementAndGet();
+                            createFormSubmissionAttempt(curi,form,formProvince); 
+                        } else {
+                            // note decline-to-submit: in volume, may be signal of failed first login
+                            curi.getAnnotations().add("nosubmit:"+submitStatusFor(formProvince));
+                        }
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);  // can't happen?
                     }
                     return;
                 }
@@ -258,10 +265,9 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
             submitCuri.setFetchType(FetchType.HTTP_POST);
             submitCuri.getData().put(
                     CoreAttributeConstants.A_SUBMIT_DATA, 
-                    templateForm.asHttpClientDataWith(
+                    templateForm.asFormDataString(
                         getLoginUsername(), 
                         getLoginPassword()));
-            //submitCuri.setSchedulingDirective(Math.max(curi.getSchedulingDirective()-1, 0));
             submitCuri.setSchedulingDirective(SchedulingConstants.HIGH);
             submitCuri.setForceFetch(true);
             curi.getOutLinks().add(submitCuri);
@@ -276,16 +282,20 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     }
     
     protected String submitStatusFor(String formProvince) {
-        return eligibleFormsAttemptsCount.get(formProvince).get()
-                +","+eligibleFormsSeenCount.get(formProvince).get()
-                +","+formProvince;
+        try {
+            return eligibleFormsAttemptsCount.get(formProvince).get()
+                    +","+eligibleFormsSeenCount.get(formProvince).get()
+                    +","+formProvince;
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     @Override
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
-        json.put("eligibleFormsAttemptsCount", eligibleFormsAttemptsCount);
-        json.put("eligibleFormsSeenCount", eligibleFormsSeenCount);
+        json.put("eligibleFormsAttemptsCount", eligibleFormsAttemptsCount.asMap());
+        json.put("eligibleFormsSeenCount", eligibleFormsSeenCount.asMap());
         return json;
     }
     
@@ -293,10 +303,10 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     protected void fromCheckpointJson(JSONObject json) throws JSONException {
         super.fromCheckpointJson(json);
         JSONUtils.putAllAtomicLongs(
-                eligibleFormsAttemptsCount,
+                eligibleFormsAttemptsCount.asMap(),
                 json.getJSONObject("eligibleFormsAttemptsCount"));
         JSONUtils.putAllAtomicLongs(
-                eligibleFormsSeenCount,
+                eligibleFormsSeenCount.asMap(),
                 json.getJSONObject("eligibleFormsSeenCount"));
     }
 }

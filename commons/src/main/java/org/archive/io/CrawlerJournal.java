@@ -25,17 +25,21 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
+import org.archive.util.TextUtils;
 
 /**
  * Utility class for a crawler journal/log that is compressed and 
@@ -196,12 +200,40 @@ public class CrawlerJournal implements Closeable {
             return;
         }
         close();
-        // Rename gzipFile with the checkpoint name as suffix.
+
         File newName = new File(this.gzipFile.getParentFile(),
                 this.gzipFile.getName() + "." + checkpointInProgress.getName());
         try {
             FileUtils.moveAsideIfExists(newName); 
-            this.gzipFile.renameTo(newName);
+            if (checkpointInProgress.getForgetAllButLatest()) {
+                // merge any earlier checkpointed files into new checkpoint
+                // file, taking advantage of the legality of concatenating gzips
+                
+                File[] oldCheckpointeds = this.gzipFile.getParentFile().listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        String regex = "^" + Pattern.quote(gzipFile.getName()) + "\\.cp\\d{5}-\\d{14}$";
+                        return TextUtils.matches(regex, name);
+                    }
+                });
+                Arrays.sort(oldCheckpointeds);
+                
+                for (int i = 1; i < oldCheckpointeds.length; i++) {
+                    FileUtils.appendTo(oldCheckpointeds[0], oldCheckpointeds[i]);
+                    oldCheckpointeds[i].delete();
+                }
+                
+                if (oldCheckpointeds.length > 0) {
+                    FileUtils.appendTo(oldCheckpointeds[0], this.gzipFile);
+                    this.gzipFile.delete();
+                    oldCheckpointeds[0].renameTo(newName);
+                } else {
+                    this.gzipFile.renameTo(newName);
+                }
+            } else {
+                this.gzipFile.renameTo(newName);
+            }
+            
             // Open new gzip file.
             this.out = initialize(this.gzipFile);
         } catch (IOException ioe) {
