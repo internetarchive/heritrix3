@@ -301,7 +301,11 @@ implements Reporter, Serializable, OverlayContext {
     public CrawlURI(UURI u, String pathFromSeed, UURI via,
             LinkContext viaContext) {
         this.uuri = u;
-        this.pathFromSeed = pathFromSeed;
+        if (pathFromSeed != null) {
+            this.pathFromSeed = pathFromSeed;
+        } else {
+            this.pathFromSeed = "";
+        }
         this.via = via;
         this.viaContext = viaContext;
     }
