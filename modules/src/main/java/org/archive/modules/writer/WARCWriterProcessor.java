@@ -714,8 +714,10 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
          * with the preceding record which helped determine the present record
          * content."
          */
-        headers.addLabelValue(HEADER_KEY_REFERS_TO, 
-                "<" + curi.getContentDigestHistory().get(A_WARC_RECORD_ID) + ">");
+        if (curi.getContentDigestHistory().get(A_WARC_RECORD_ID) != null) {
+            headers.addLabelValue(HEADER_KEY_REFERS_TO,
+                    "<" + curi.getContentDigestHistory().get(A_WARC_RECORD_ID) + ">");
+        }
         headers.addLabelValue(HEADER_KEY_REFERS_TO_TARGET_URI, 
                 curi.getContentDigestHistory().get(A_ORIGINAL_URL).toString());
         headers.addLabelValue(HEADER_KEY_REFERS_TO_DATE, 
