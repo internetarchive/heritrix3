@@ -92,6 +92,35 @@ public class HBaseContentDigestHistory extends AbstractContentDigestHistory impl
         this.maxTries = maxTries;
     }
 
+    protected String keySuffix = null;
+    public String getKeySuffix() {
+        return keySuffix;
+    }
+
+    /**
+     * If not null, keySuffix is appended to the lookup key when loading and
+     * storing digest history. Thus the key looks like {digest}{keySuffix}, e.g.
+     * "sha1:22SFHXERHNFOEY6WK7YOUN4PFIPZSB4D-1193". The purpose is to support
+     * multiple namespaces in a single hbase table, to avoid proliferation of
+     * small tables. The reason we use a suffix instead of a prefix is to leave
+     * open the possibility of deduplication across these different namespaces
+     * at some point in the future.
+     *
+     * @param keySuffix
+     */
+    public void setKeySuffix(String keySuffix) {
+        this.keySuffix = keySuffix;
+    }
+
+    @Override
+    protected String persistKeyFor(CrawlURI curi) {
+        if (keySuffix != null) {
+            return super.persistKeyFor(curi) + keySuffix;
+        } else {
+            return super.persistKeyFor(curi);
+        }
+    }
+
     protected synchronized void addColumnFamily() {
         try {
             HTableDescriptor oldDesc = table.getHtableDescriptor();
