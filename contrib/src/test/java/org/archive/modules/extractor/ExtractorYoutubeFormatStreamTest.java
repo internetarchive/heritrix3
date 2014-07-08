@@ -95,7 +95,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
         extractor.process(testUri);
 
-        Set<Link> expected = makeLinkSet(testUri, getExpectedOutlinksAllInItagPriority());
+        Set<CrawlURI> expected = makeLinkSet(testUri, getExpectedOutlinksAllInItagPriority());
         assertEquals(expected, testUri.getOutLinks());
     }
 
@@ -105,7 +105,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         extractor().setExtractLimit(0);
         extractor.process(testUri);
 
-        Set<Link> expected = makeLinkSet(testUri, getExpectedOutlinksAll());
+        Set<CrawlURI> expected = makeLinkSet(testUri, getExpectedOutlinksAll());
         assertEquals(expected, testUri.getOutLinks());
     }
 
@@ -165,7 +165,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
         extractor.process(testUri);
 
-        Set<Link> expected = makeLinkSet(testUri, getExpectedOutlinksSubset());
+        Set<CrawlURI> expected = makeLinkSet(testUri, getExpectedOutlinksSubset());
         assertEquals(expected, testUri.getOutLinks());
     }
 
@@ -187,17 +187,15 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
         extractor.process(testUri);
 
-        Set<Link> expected = makeLinkSet(testUri, getExpectedSingleDefaultOutlink());
+        Set<CrawlURI> expected = makeLinkSet(testUri, getExpectedSingleDefaultOutlink());
         assertEquals(expected, testUri.getOutLinks());
     }
 
-    private Set<Link> makeLinkSet(CrawlURI sourceUri, String[] urlStrs) throws URIException {
-        HashSet<Link> linkSet = new HashSet<Link>();
+    private Set<CrawlURI> makeLinkSet(CrawlURI sourceUri, String[] urlStrs) throws URIException {
+        HashSet<CrawlURI> linkSet = new HashSet<CrawlURI>();
         for (String urlStr : urlStrs) {
-            linkSet.add(new Link(sourceUri.getUURI(), 
-                    UURIFactory.getInstance(urlStr),
-                    HTMLLinkContext.EMBED_MISC, Hop.EMBED)
-                    );
+            CrawlURI link = sourceUri.createCrawlURI(urlStr, HTMLLinkContext.EMBED_MISC, Hop.EMBED);
+            linkSet.add(link);
         }
         return linkSet;
     }
