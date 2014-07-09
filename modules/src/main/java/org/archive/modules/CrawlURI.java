@@ -119,7 +119,7 @@ import org.json.JSONObject;
  */
 public class CrawlURI 
 implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 4L;
 
     private static final Logger logger =
         Logger.getLogger(CrawlURI.class.getName());
@@ -1351,11 +1351,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     public String getLastHop() {
         return StringUtils.isEmpty(pathFromSeed) ? "" : pathFromSeed.substring(pathFromSeed.length()-1);
     }
-
-    public Hop getLastHopType() {
-		return Hop.getForChar(getLastHop().charAt(0));
-	}
-
 
     /**
      * @return URI via which this one was discovered

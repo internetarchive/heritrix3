@@ -87,18 +87,4 @@ public enum Hop {
     public String getHopString() {
         return hopString;
     }
-    
-    /**
-     * Turns a character into the appropriate Hop enum. 
-     * @param hopChar
-     * @return A Hop enum represented by the supplied char or null if char does not match any known hop type
-     */
-    public static final Hop getForChar(char hopChar) {
-    	for (Hop h : Hop.values()) {
-    		if (h.hopChar==hopChar) {
-    			return h;
-    		}
-    	}
-    	return null;
-    }
 }
