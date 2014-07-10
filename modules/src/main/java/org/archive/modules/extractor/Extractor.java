@@ -43,7 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author pjack
  */
 public abstract class Extractor extends Processor {
-
+    private static final Logger LOGGER = Logger.getLogger(Extractor.class.getName());
+    
     protected AtomicLong numberOfLinksExtracted = new AtomicLong(0);
 
     /** Logger. */
@@ -143,10 +144,20 @@ public abstract class Extractor extends Processor {
             Hop hop) {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), uri);
-            Link link = new Link(curi.getUURI(), dest, context, hop);
+            CrawlURI link = curi.createCrawlURI(dest, context, hop);
             curi.getOutLinks().add(link);
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
+        }
+    }
+    
+    protected void addOutlink(CrawlURI curi, UURI uuri, LinkContext context,
+            Hop hop) {
+        try {
+            CrawlURI link = curi.createCrawlURI(uuri, context, hop);
+            curi.getOutLinks().add(link);
+        } catch (URIException e) {
+            logUriError(e, curi.getUURI(), uuri.toString());
         }
     }
     
@@ -173,6 +184,46 @@ public abstract class Extractor extends Processor {
         ret.append(super.report());
         ret.append("  " + numberOfLinksExtracted + " links from " + getURICount() +" CrawlURIs\n");
         return ret.toString();
+    }
+    
+    public static CrawlURI addRelativeToBase(CrawlURI uri, int max,
+            String newUri, LinkContext context, Hop hop) throws URIException {
+        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
+        return add2(uri, max, dest, context, hop);
+    }
+
+    
+    public static CrawlURI addRelativeToVia(CrawlURI uri, int max, String newUri,
+            LinkContext context, Hop hop) throws URIException {
+        UURI relTo = uri.getVia();
+        if (relTo == null) {
+            if (!uri.getAnnotations().contains("usedBaseForVia")) {
+                LOGGER.info("no via where expected; using base instead: " + uri);
+                uri.getAnnotations().add("usedBaseForVia");
+            }
+            relTo = uri.getBaseURI();
+        }
+        UURI dest = UURIFactory.getInstance(relTo, newUri);
+        return add2(uri, max, dest, context, hop);
+    }
+
+    public static void add(CrawlURI uri, int max, String newUri,
+            LinkContext context, Hop hop) throws URIException {
+        UURI dest = UURIFactory.getInstance(newUri);
+        add2(uri, max, dest, context, hop);
+    }
+
+
+    private static CrawlURI add2(CrawlURI curi, int max, UURI dest,
+            LinkContext context, Hop hop) throws URIException {
+        if (curi.getOutLinks().size() < max) {
+            CrawlURI link = curi.createCrawlURI(dest, context, hop);
+            curi.getOutLinks().add(link);
+            return link;
+        } else {
+            curi.incrementDiscardedOutLinks();
+            return null;
+        }
     }
 
 }

@@ -77,11 +77,8 @@ public class ExtractorURI extends Extractor {
      */
     @Override
     public void extract(CrawlURI curi) {
-        List<Link> links = new ArrayList<Link>(curi.getOutLinks());
-        int max = links.size();
-        for (int i = 0; i < max; i++) {
-            Link wref = links.get(i);
-            extractLink(curi, wref);
+        for (CrawlURI link : curi.getOutLinks()) {
+            extractLink(curi, link);
         }
     }
 
@@ -91,10 +88,10 @@ public class ExtractorURI extends Extractor {
      * @param curi CrawlURI to add discoveries to 
      * @param wref Link to examine for internal URIs
      */
-    protected void extractLink(CrawlURI curi, Link wref) {
+    protected void extractLink(CrawlURI curi, CrawlURI wref) {
         UURI source = null;
         try {
-            source = UURIFactory.getInstance(wref.getDestination().toString());
+            source = UURIFactory.getInstance(wref.getURI());
         } catch (URIException e) {
             LOGGER.log(Level.FINE,"bad URI",e);
         }
@@ -105,13 +102,11 @@ public class ExtractorURI extends Extractor {
         List<String> found = extractQueryStringLinks(source);
         for (String uri : found) {
             try {
-                UURI src = curi.getUURI();
                 UURI dest = UURIFactory.getInstance(uri);
                 LinkContext lc = LinkContext.SPECULATIVE_MISC;
                 Hop hop = Hop.SPECULATIVE;
-                Link link = new Link(src, dest, lc, hop);
+                addOutlink(curi, dest, lc, hop);
                 numberOfLinksExtracted.incrementAndGet();
-                curi.getOutLinks().add(link);
             } catch (URIException e) {
                 LOGGER.log(Level.FINE, "bad URI", e);
             }

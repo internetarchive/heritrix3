@@ -334,18 +334,18 @@ public class ExtractorSWF extends ContentExtractor {
                 }
             } else {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link relToVia = Link.addRelativeToVia(curi, max, url,
+                CrawlURI relToVia = addRelativeToVia(curi, max, url,
                         LinkContext.EMBED_MISC, Hop.EMBED);
-                Link relToBase = Link.addRelativeToBase(curi, max, url,
+                CrawlURI relToBase = addRelativeToBase(curi, max, url,
                         LinkContext.EMBED_MISC, Hop.EMBED);
                 addAnnotations(relToVia, relToBase);
                 linkCount++;
             }
         }
 
-        protected void addAnnotations(Link relToVia, Link relToBase) {
+        protected void addAnnotations(CrawlURI relToVia, CrawlURI relToBase) {
             if (relToVia != null && relToBase != null
-                    && relToVia.getDestination().equals(relToBase.getDestination())) {
+                    && relToVia.getUURI().equals(relToBase.getUURI())) {
                 relToVia.getAnnotations().add("extractorSWFRelToBoth");
                 relToBase.getAnnotations().add("extractorSWFRelToBoth");
             } else {
@@ -361,9 +361,9 @@ public class ExtractorSWF extends ContentExtractor {
         public void considerStringAsUri(String str) throws IOException {
             if (UriUtils.isVeryLikelyUri(str)) {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                Link relToVia = Link.addRelativeToVia(curi, max, str,
+                CrawlURI relToVia = addRelativeToVia(curi, max, str,
                         LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
-                Link relToBase = Link.addRelativeToBase(curi, max, str,
+                CrawlURI relToBase = addRelativeToBase(curi, max, str,
                         LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
                 addAnnotations(relToVia, relToBase);
                 linkCount++;

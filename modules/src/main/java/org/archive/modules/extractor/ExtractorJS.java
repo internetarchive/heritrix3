@@ -175,11 +175,11 @@ public class ExtractorJS extends ContentExtractor {
             try {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 if (handlingJSFile) {
-                    Link.addRelativeToVia(curi, max, candidate, JS_MISC, 
+                    addRelativeToVia(curi, max, candidate, JS_MISC, 
                             SPECULATIVE);
                     return true;
                 } else {
-                    Link.addRelativeToBase(curi, max, candidate, JS_MISC, 
+                    addRelativeToBase(curi, max, candidate, JS_MISC, 
                             SPECULATIVE);
                     return true;
                 }

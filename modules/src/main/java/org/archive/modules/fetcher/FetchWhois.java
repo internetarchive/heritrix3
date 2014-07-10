@@ -37,8 +37,8 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
+import org.archive.modules.extractor.Extractor;
 import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -427,7 +427,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
     protected void addWhoisLink(CrawlURI curi, String query) {
         String whoisUrl = "whois:" + query;
         try {
-            Link.add(curi, Integer.MAX_VALUE, whoisUrl, LinkContext.INFERRED_MISC, Hop.INFERRED);
+            Extractor.add(curi, Integer.MAX_VALUE, whoisUrl, LinkContext.INFERRED_MISC, Hop.INFERRED);
         } catch (URIException e) {
             logger.log(Level.WARNING, "problem with url " + whoisUrl, e);
         }

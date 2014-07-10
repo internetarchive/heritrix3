@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
-import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
@@ -140,11 +138,9 @@ public class ExtractorPDFContent extends ContentExtractor {
 
         for (String uri: uris) {
             try {
-                UURI src = curi.getUURI();
-                UURI dest = UURIFactory.getInstance(uri);
                 LinkContext lc = LinkContext.NAVLINK_MISC;
                 Hop hop = Hop.NAVLINK;
-                Link out = new Link(src, dest, lc, hop);
+                CrawlURI out = curi.createCrawlURI(uri, lc, hop);
                 curi.getOutLinks().add(out);
             } catch (URIException e1) {
                 logUriError(e1, curi.getUURI(), uri);

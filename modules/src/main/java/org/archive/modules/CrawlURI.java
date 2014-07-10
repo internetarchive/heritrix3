@@ -86,7 +86,6 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
 import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -119,8 +118,8 @@ import org.json.JSONObject;
  * @author Gordon Mohr
  */
 public class CrawlURI 
-implements Reporter, Serializable, OverlayContext {
-    private static final long serialVersionUID = 3L;
+implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
+    private static final long serialVersionUID = 4L;
 
     private static final Logger logger =
         Logger.getLogger(CrawlURI.class.getName());
@@ -276,6 +275,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     public CrawlURI(UURI uuri) {
         this.uuri = uuri;
+        this.pathFromSeed = "";
     }
 
     public static CrawlURI fromHopsViaString(String uriHopsViaContext) throws URIException {
@@ -302,7 +302,11 @@ implements Reporter, Serializable, OverlayContext {
     public CrawlURI(UURI u, String pathFromSeed, UURI via,
             LinkContext viaContext) {
         this.uuri = u;
-        this.pathFromSeed = pathFromSeed;
+        if (pathFromSeed != null) {
+            this.pathFromSeed = pathFromSeed;
+        } else {
+            this.pathFromSeed = "";
+        }
         this.via = via;
         this.viaContext = viaContext;
     }
@@ -868,7 +872,6 @@ implements Reporter, Serializable, OverlayContext {
         this.data = getPersistentDataMap();
         
         extraInfo = null;
-        outCandidates = null;
         outLinks = null;
         
         // XXX er uh surprised this wasn't here before?
@@ -1080,38 +1083,25 @@ implements Reporter, Serializable, OverlayContext {
     }
 
     /** 
-     * All discovered outbound Links (navlinks, embeds, etc.) 
-     * Can either contain Link instances or CrawlURI instances, or both.
-     * The LinksScoper processor converts Link instances in this collection
-     * to CrawlURI instances. 
+     * All discovered outbound urls as CrawlURIs (navlinks, embeds, etc.) 
      */
-    protected transient Collection<Link> outLinks = new LinkedHashSet<Link>();
-    
-    protected transient Collection<CrawlURI> outCandidates = new LinkedHashSet<CrawlURI>();
+    protected transient Collection<CrawlURI> outLinks;
     
     /**
      * Returns discovered links.  The returned collection might be empty if
      * no links were discovered, or if something like LinksScoper promoted
      * the links to CrawlURIs.
      * 
-     * @return Collection of all discovered outbound Links
+     * @return Collection of all discovered outbound links
      */
-    public Collection<Link> getOutLinks() {
+    public Collection<CrawlURI> getOutLinks() {
+    	if (outLinks==null) {
+    		outLinks = new LinkedHashSet<CrawlURI>();
+    	}
         return outLinks;
-//        return Transform.subclasses(outLinks, Link.class);
     }
     
-    /**
-     * Returns discovered candidate URIs.  The returned collection will be
-     * emtpy until something like LinksScoper promotes discovered Links
-     * into CrawlURIs.
-     * 
-     * @return  Collection of candidate URIs
-     */
-    public Collection<CrawlURI> getOutCandidates() {
-        return outCandidates;
-    }
-    
+   
     /**
      * Set the (HTML) Base URI used for derelativizing internal URIs. 
      * 
@@ -1178,8 +1168,6 @@ implements Reporter, Serializable, OverlayContext {
         @SuppressWarnings("unchecked")
         Map<String,Object> temp = (Map<String,Object>)stream.readObject();
         this.data = temp;
-        outLinks = new HashSet<Link>();
-        outCandidates = new HashSet<CrawlURI>();
     }
 
     /**
@@ -1397,28 +1385,6 @@ implements Reporter, Serializable, OverlayContext {
     }
 
     
-//    public void setStateProvider(SheetManager manager) {
-//        if(this.provider!=null) {
-//            return;
-//        }
-//        this.manager = manager;
-////        this.provider = manager.findConfig(SURT.fromURI(toString()));
-//    }
-//    
-//    
-//    public StateProvider getStateProvider() {
-//        return provider;
-//    }
-
-    
-//    public <T> T get(Object module, Key<T> key) {
-//        if (provider == null) {
-//            throw new AssertionError("ToeThread never set up CrawlURI's sheet.");
-//        }
-//        return provider.get(module, key);
-//    }
-
-
     //
     // Reporter implementation
     //
@@ -1617,25 +1583,30 @@ implements Reporter, Serializable, OverlayContext {
     }
     
     /**
-     * Utility method for creation of CandidateURIs found extracting
-     * links from this CrawlURI.
-     * @param baseUURI BaseUURI for <code>link</code>.
-     * @param link Link to wrap CandidateURI in.
-     * @return New candidateURI wrapper around <code>link</code>.
+     * Utility method for creating CrawlURIs that were found as out links from the current CrawlURI
+     * links from this CrawlURI. 
+     * <p>
+     * Any relative URIs will be treated as relative to this CrawlURI's UURI.
+	 * @param destination The new URI, possibly a relative URI
+	 * @param context
+	 * @param hop 
+     * @return New CrawlURI with the current CrawlURI set as the one it inherits from
      * @throws URIException
      */
-    public CrawlURI createCrawlURI(UURI baseUURI, Link link)
-    throws URIException {
-        UURI u = (link.getDestination() instanceof UURI)?
-            (UURI)link.getDestination():
-            UURIFactory.getInstance(baseUURI,
-                link.getDestination().toString());
-        CrawlURI newCaURI = new CrawlURI(u, 
-                extendHopsPath(getPathFromSeed(),link.getHopType().getHopChar()),
-                getUURI(), link.getContext());
-        if (link.hasData()) {
-            newCaURI.data = link.getData();
-        }
+    public CrawlURI createCrawlURI(UURI destination, LinkContext context, Hop hop)
+    			throws URIException {
+        return createCrawlURI(destination.toString(), context, hop);
+    }
+
+    public CrawlURI createCrawlURI(String destination, LinkContext context, Hop hop) 
+    		throws URIException {
+        UURI u = UURIFactory.getInstance(this.getBaseURI(), destination);
+        CrawlURI newCaURI = new CrawlURI(
+        		u, 
+                extendHopsPath(getPathFromSeed(), 
+                		hop.getHopChar()),
+                this.getUURI(), 
+                context);
         newCaURI.inheritFrom(this);
         return newCaURI;
     }
@@ -1660,19 +1631,19 @@ implements Reporter, Serializable, OverlayContext {
     }
 
     /**
-     * Utility method for creation of CandidateURIs found extracting
+     * Utility method for creation of CrawlURIs found extracting
      * links from this CrawlURI.
      * @param baseUURI BaseUURI for <code>link</code>.
-     * @param link Link to wrap CandidateURI in.
+     * TODO: Fix JavaDoc
      * @param scheduling How new CandidateURI should be scheduled.
      * @param seed True if this CandidateURI is a seed.
      * @return New candidateURI wrapper around <code>link</code>.
      * @throws URIException
      */
-    public CrawlURI createCrawlURI(UURI baseUURI, Link link,
+    public CrawlURI createCrawlURI(UURI destination, LinkContext context, Hop hop,
         int scheduling, boolean seed)
     throws URIException {
-        final CrawlURI caURI = createCrawlURI(baseUURI, link);
+        final CrawlURI caURI = createCrawlURI(destination, context, hop);
         caURI.setSchedulingDirective(scheduling);
         caURI.setSeed(seed);
         return caURI;
@@ -1862,7 +1833,7 @@ implements Reporter, Serializable, OverlayContext {
      */
     public CrawlURI markPrerequisite(String preq) 
     throws URIException {
-        CrawlURI caUri = makeConsequentCandidate(preq, LinkContext.PREREQ_MISC, Hop.PREREQ);
+        CrawlURI caUri = createCrawlURI(preq, LinkContext.PREREQ_MISC, Hop.PREREQ);
         caUri.setPrerequisite(true);
         // TODO: consider moving some of this to configurable candidate-handling
         int prereqPriority = getSchedulingDirective() - 1;
@@ -1879,25 +1850,6 @@ implements Reporter, Serializable, OverlayContext {
         return caUri;
     }
     
-    /**
-     * Create a consequent CrawlURI from this one, given the 
-     * additional parameters
-     *
-     * @param destination URI string
-     * @param lc LinkContext
-     * @param hop Hop 
-     * @return the newly created prerequisite CrawlURI
-     * @throws URIException
-     */
-    public CrawlURI makeConsequentCandidate(String destination, LinkContext lc, Hop hop) 
-    throws URIException {
-        UURI src = getUURI();
-        UURI dest = UURIFactory.getInstance(getBaseURI(),destination);
-        Link link = new Link(src, dest, lc, hop);
-        CrawlURI caUri = createCrawlURI(getBaseURI(), link);
-        return caUri;
-    }
-
     public boolean containsContentTypeCharsetDeclaration() {
         // TODO can this regex be improved? should the test consider if its legal? 
         return getContentType().matches("(?i).*charset=.*");
@@ -1959,4 +1911,64 @@ implements Reporter, Serializable, OverlayContext {
     public boolean hasContentDigestHistory() {
         return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
     }
+
+    // brought over from old Link class
+    @Override
+    public int compareTo(CrawlURI o) {
+        int cmp = compare(via.toString(), o.via.toString());
+        if (cmp == 0) {
+            cmp = compare(uuri.toString(), o.uuri.toString());
+        }
+        if (cmp == 0) {
+            cmp = compare(viaContext.toString(), o.viaContext.toString());
+        }
+        if (cmp == 0) {
+            cmp = compare(pathFromSeed, o.pathFromSeed);
+        }
+        return cmp;
+    }
+
+    // brought over from old Link class
+    @Override
+    public int hashCode() {
+        int r = 37;
+        return r ^ hash(via.toString()) ^ hash(uuri.toString())
+                ^ hash(viaContext.toString()) ^ hash(pathFromSeed.toString());
+    }
+
+    // handles nulls
+    private static int hash(String a) {
+        return a == null ? 0 : a.hashCode();
+    }
+
+    // handles nulls
+    private static boolean equals(Object a, Object b) {
+        return a == null ? b == null : a.equals(b);
+    }
+
+    // handles nulls
+    private static int compare(String a, String b) {
+        if (a == null && b == null) {
+            return 0;
+        } else if (a == null && b != null) {
+            return -1;
+        } else if (a != null && b != null) {
+            return 1;
+        } else {
+            return a.compareTo(b);
+        }
+    }
+
+    // brought over from old Link class
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof CrawlURI)) {
+            return false;
+        }
+        CrawlURI u = (CrawlURI) o;
+        return equals(via, u.via) && equals(uuri, u.uuri)
+                && equals(viaContext, u.viaContext)
+                && equals(pathFromSeed, u.pathFromSeed);
+    }
+
 }

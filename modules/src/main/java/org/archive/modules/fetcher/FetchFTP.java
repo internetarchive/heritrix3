@@ -44,7 +44,6 @@ import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.ClientFTP;
 import org.archive.net.UURI;
@@ -573,7 +572,7 @@ public class FetchFTP extends Processor  {
         }
         try {
             UURI n = UURIFactory.getInstance(base + "/" + file);
-            Link link = new Link(curi.getUURI(), n, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+            CrawlURI link = curi.createCrawlURI(n, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
             curi.getOutLinks().add(link);
         } catch (URIException e) {
             logger.log(Level.WARNING, "URI error during extraction.", e);            
@@ -610,7 +609,7 @@ public class FetchFTP extends Processor  {
             String path = uuri.getEscapedCurrentHierPath();
             UURI parent = UURIFactory.getInstance(scheme + "://" + auth + path);
 
-            Link link = new Link(uuri, parent, LinkContext.NAVLINK_MISC, 
+            CrawlURI link = curi.createCrawlURI(parent, LinkContext.NAVLINK_MISC, 
                     Hop.NAVLINK);
             curi.getOutLinks().add(link);
         } catch (URIException e) {
