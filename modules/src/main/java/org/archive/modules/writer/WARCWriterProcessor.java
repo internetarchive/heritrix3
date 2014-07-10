@@ -83,7 +83,6 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.extractor.Link;
 import org.archive.modules.revisit.RevisitProfile;
 import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
@@ -797,10 +796,10 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
 
         // Add outlinks though they are effectively useless without anchor text.
-        Collection<Link> links = curi.getOutLinks();
+        Collection<CrawlURI> links = curi.getOutLinks();
         if (links != null && links.size() > 0) {
-            for (Link link: links) {
-                r.addLabelValue("outlink", link.toString());
+            for (CrawlURI link: links) {
+                r.addLabelValue("outlink", link.getURI());
             }
         }
         

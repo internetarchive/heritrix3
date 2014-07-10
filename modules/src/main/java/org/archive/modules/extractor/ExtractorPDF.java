@@ -117,8 +117,7 @@ public class ExtractorPDF extends ContentExtractor {
                 UURI dest = UURIFactory.getInstance(uri);
                 LinkContext lc = LinkContext.NAVLINK_MISC;
                 Hop hop = Hop.NAVLINK;
-                Link out = new Link(src, dest, lc, hop);
-                curi.getOutLinks().add(out);
+                addOutlink(curi, dest, lc, hop);
             } catch (URIException e1) {
                 // There may not be a controller (e.g. If we're being run
                 // by the extractor tool).

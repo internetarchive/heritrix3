@@ -47,8 +47,8 @@
 					<div class="panel">
 							Enter a bean path of the form <i>beanName</i>, <i>beanName.property</i>, <i>beanName.property[indexOrKey]</i>, etc.
 							<form method='POST'>
-								<input type='text' name='beanPath' style='width:400px' value='${model.beanPath}'>
-								<input type='submit' value='view'>
+								<input class="inline" type='text' name='beanPath' style='width:60%;margin:0' value='${model.beanPath}'>
+								<input class="small inline button" type='submit' value='view'>
 							</form>
 					</div>
 				</div>

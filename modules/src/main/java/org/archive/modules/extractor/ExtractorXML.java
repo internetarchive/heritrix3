@@ -159,7 +159,7 @@ public class ExtractorXML extends ContentExtractor {
                     // intends to create a followable/fetchable URI is
                     // unknown
                     int max = ext.getExtractorParameters().getMaxOutlinks();
-                    Link.addRelativeToBase(curi, max, xmlUri, 
+                    addRelativeToBase(curi, max, xmlUri, 
                             LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE); 
                 } catch (URIException e) {
                     // There may not be a controller (e.g. If we're being run

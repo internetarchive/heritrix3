@@ -319,7 +319,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             String refreshUri = content.substring(content.indexOf("=") + 1);
             try {
                 int max = getExtractorParameters().getMaxOutlinks();
-                Link.addRelativeToBase(curi, max, refreshUri, 
+                addRelativeToBase(curi, max, refreshUri, 
                         HTMLLinkContext.META, Hop.REFER);
             } catch (URIException e) {
                 logUriError(e, curi.getUURI(), refreshUri);

@@ -95,9 +95,8 @@ public class ExtractorHTTP extends Extractor {
     protected void addHeaderLink(CrawlURI curi, String headerName, String url) {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), url);
-            LinkContext lc = HTMLLinkContext.get(headerName+":"); 
-            Link link = new Link(curi.getUURI(), dest, lc, Hop.REFER);
-            curi.getOutLinks().add(link);
+            LinkContext lc = HTMLLinkContext.get(headerName+":");
+            addOutlink(curi, dest.toString(), lc, Hop.REFER);
             numberOfLinksExtracted.incrementAndGet();
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), url);

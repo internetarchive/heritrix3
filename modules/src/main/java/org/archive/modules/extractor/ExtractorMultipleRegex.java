@@ -280,7 +280,7 @@ public class ExtractorMultipleRegex extends Extractor {
         String outlinkUri = groovyTemplate().make(bindings).toString();
         
         try {
-            Link.addRelativeToBase(curi, 
+            addRelativeToBase(curi, 
                     getExtractorParameters().getMaxOutlinks(), outlinkUri, 
                     HTMLLinkContext.INFERRED_MISC, Hop.INFERRED);
         } catch (URIException e) {

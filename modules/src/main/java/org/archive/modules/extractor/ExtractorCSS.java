@@ -136,7 +136,7 @@ public class ExtractorCSS extends ContentExtractor {
                 foundLinks++;
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 try {
-                    Link.addRelativeToBase(curi, max, cssUri, 
+                	addRelativeToBase(curi, max, cssUri, 
                             LinkContext.EMBED_MISC, Hop.EMBED);
                 } catch (URIException e) {
                     ext.logUriError(e, curi.getUURI(), cssUri);

@@ -107,7 +107,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         UURI dest = UURIFactory.getInstance(destURI);
         LinkContext context = determineContext(content);
         Hop hop = determineHop(content);
-        Link link = new Link(src, dest, context, hop);
+        CrawlURI link = euri.createCrawlURI(dest, context, hop);
         result.add(new TestData(euri, link));
         
         euri = new CrawlURI(src, null, null, LinkContext.NAVLINK_MISC);
@@ -166,10 +166,10 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         CrawlURI puri = new CrawlURI(UURIFactory
                 .getInstance("http://www.example.com"));
         getExtractor().extract(puri, source);
-        Link[] links = puri.getOutLinks().toArray(new Link[0]);
+        CrawlURI[] links = puri.getOutLinks().toArray(new CrawlURI[0]);
         assertTrue("did not find single link",links.length==1);
         assertTrue("expected link not found", 
-                links[0].getDestination().toString().equals(expected));
+                links[0].getURI().equals(expected));
     }
     
     /**
@@ -188,9 +188,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<form method=\"post\" action=\"http://www.example.com/notok\"> "+
             "<form action=\"http://www.example.com/ok3\"> ";
         getExtractor().extract(puri, cs);
-        Link[] links = puri.getOutLinks().toArray(new Link[0]);
         // find exactly 3 (not the POST) action URIs
-        assertTrue("incorrect number of links found",links.length==3);
+        assertTrue("incorrect number of links found", puri.getOutLinks().size()==3);
     }
     
     /**
@@ -207,7 +206,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         getExtractor().extract(puri, cs);
         assertEquals("meta robots content not extracted","index,nofollow",
                 puri.getData().get(ExtractorHTML.A_META_ROBOTS));
-        Link[] links = puri.getOutLinks().toArray(new Link[0]);
+        CrawlURI[] links = puri.getOutLinks().toArray(new CrawlURI[0]);
         assertTrue("link extracted despite meta robots",links.length==0);
     }
     
@@ -228,9 +227,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object)
-                        .getDestination()
-                        .toString()
+                return ((CrawlURI) object)
+                        .getURI()
                         .indexOf(
                                 "/example.html;jsessionid=deadbeef:deadbeed?parameter=this:value") >= 0;
             }
@@ -238,7 +236,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().indexOf(
+                return ((CrawlURI) object).getURI().indexOf(
                         "/example.html?parameter=this:value") >= 0;
             }
         }));
@@ -262,15 +260,15 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
                 System.err.println("comparing: "
-                        + ((Link) object).getDestination().toString()
+                        + ((CrawlURI) object).getURI()
                         + " and https://www.anotherexample.com/");
-                return ((Link) object).getDestination().toString().equals(
+                return ((CrawlURI) object).getURI().equals(
                         "http://www.anotherexample.com/");
             }
         }));
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().equals(
+                return ((CrawlURI) object).getURI().equals(
                         "https://www.example.com/index.html");
             }
         }));
@@ -310,21 +308,21 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             "<a href=\"def/another1.html\">" + 
             "<a href=\"ghi/another2.html\">";
         getExtractor().extract(puri, cs);
-        Link[] links = puri.getOutLinks().toArray(new Link[0]);
+        CrawlURI[] links = puri.getOutLinks().toArray(new CrawlURI[0]);
         Arrays.sort(links); 
         String dest1 = "http://www.example.com/def/another1.html";
         String dest2 = "http://www.example.com/ghi/another2.html";
         // ensure outlink from base href
         assertEquals("outlink1 from base href",dest1,
-                links[1].getDestination().toString());
+                links[1].getURI());
         assertEquals("outlink2 from base href",dest2,
-                links[2].getDestination().toString());
+                links[2].getURI());
     }
     
     protected Predicate destinationContainsPredicate(final String fragment) {
         return new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().indexOf(fragment) >= 0;
+                return ((CrawlURI) object).getURI().indexOf(fragment) >= 0;
             }
         };
     }
@@ -332,7 +330,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     protected Predicate destinationsIsPredicate(final String value) {
         return new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().equals(value);
+                return ((CrawlURI) object).getURI().equals(value);
             }
         };
     }
@@ -397,16 +395,16 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         
         getExtractor().extract(curi, cs);
         
-        Link[] links = curi.getOutLinks().toArray(new Link[0]);
+        CrawlURI[] links = curi.getOutLinks().toArray(new CrawlURI[0]);
         Arrays.sort(links); 
         
         String dest1 = "http://www.example.com/foo.gif";
         String dest2 = "http://www.example.com/foo.js";
 
         assertEquals("outlink1 from conditional comment img src",dest1,
-                links[0].getDestination().toString());
+                links[0].getURI());
         assertEquals("outlink2 from conditional comment script src",dest2,
-                links[1].getDestination().toString());
+                links[1].getURI());
         
     }
         

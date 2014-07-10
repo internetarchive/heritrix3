@@ -22,10 +22,12 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieIdentityComparator;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,7 @@ public class BdbCookieStore extends AbstractCookieStore {
  
     private transient Database cookieDb;
     private transient StoredSortedMap<String,Cookie> cookies;
+    private transient List<Cookie> cachedCookieList;
 
     public void prepare() {
         try {
@@ -64,8 +67,19 @@ public class BdbCookieStore extends AbstractCookieStore {
             cookies = new StoredSortedMap<String, Cookie>(cookieDb,
                     new StringBinding(), new SerialBinding<Cookie>(
                             classCatalog, Cookie.class), true);
+            cachedCookieList = new ArrayList<Cookie>(cookies.values());
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
+        }
+    }
+    
+    private transient Comparator<Cookie> cookieIdentityComparator = new CookieIdentityComparator();
+    protected void removeFromCachedList(Cookie c) {
+        for (int i = 0; i < cachedCookieList.size(); i++) {
+            if (cookieIdentityComparator.compare(cachedCookieList.get(i), c) == 0) {
+                cachedCookieList.remove(i);
+                break;
+            }
         }
     }
     
@@ -80,10 +94,16 @@ public class BdbCookieStore extends AbstractCookieStore {
     public synchronized void addCookie(Cookie cookie) {
         if (cookie != null) {
             String key = makeKey(cookie);
+            
             // first remove any old cookie that is equivalent
-            cookies.remove(key);
+            Cookie removed = cookies.remove(key);
+            if (removed != null) {
+                removeFromCachedList(removed);
+            }
+            
             if (!cookie.isExpired(new Date())) {
                 cookies.put(key, cookie);
+                cachedCookieList.add(cookie);
             }
         }
     }
@@ -95,9 +115,12 @@ public class BdbCookieStore extends AbstractCookieStore {
      * @return an array of {@link Cookie cookies}.
      */
     @Override
-    public synchronized List<Cookie> getCookies() {
+    public List<Cookie> getCookies() {
+        return cachedCookieList;
+    }
+    
+    protected List<Cookie> getCookiesBypassCache() {
         if (cookies != null) {
-            // create defensive copy so it won't be concurrently modified
             return new ArrayList<Cookie>(cookies.values());
         } else {
             return null;
@@ -120,7 +143,8 @@ public class BdbCookieStore extends AbstractCookieStore {
         boolean removed = false;
         for (String key: cookies.keySet()) {
             if (cookies.get(key).isExpired(date)) {
-                cookies.remove(key);
+                Cookie c = cookies.remove(key);
+                cachedCookieList.remove(c);
                 removed = true;
             }
         }
@@ -133,6 +157,7 @@ public class BdbCookieStore extends AbstractCookieStore {
     @Override
     public synchronized void clear() {
         cookies.clear();
+        cachedCookieList.clear();
     }
 
     @Override

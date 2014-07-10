@@ -109,9 +109,9 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                     + elapsed + "ms to process " + url);
 
             boolean foundIt = false;
-            for (Link link : curi.getOutLinks()) {
+            for (CrawlURI link : curi.getOutLinks()) {
                 logger.info("found link: " + link);
-                foundIt = foundIt || link.getDestination().toString().endsWith(testUrls.get(url));
+                foundIt = foundIt || link.getURI().endsWith(testUrls.get(url));
             }
 
             assertTrue("failed to extract link \"" + testUrls.get(url)
@@ -165,9 +165,9 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                     + elapsed + "ms to process " + url);
 
             boolean foundIt = false;
-            for (Link link : curi.getOutLinks()) {
+            for (CrawlURI link : curi.getOutLinks()) {
                 logger.info("found link: " + link);
-                foundIt = foundIt || link.getDestination().toString().endsWith(testUrls.get(url));
+                foundIt = foundIt || link.getURI().endsWith(testUrls.get(url));
             }
 
             if (!foundIt)
@@ -175,6 +175,46 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                         + "\" from " + url);
             assertTrue("failed to extract link \"" + testUrls.get(url)
                     + "\" from " + url, foundIt);
+        }
+    }
+
+    public void xestAri3712() throws MalformedURLException, IOException {
+        String url = "https://wayback.archive-it.org/3771/20131119163257/http://nyumedecs.kk5.org/_app/28727/en/resources/container.swf";
+        CrawlURI curi = setupURI(url);
+        curi.setVia(UURIFactory.getInstance("http://nyumedecs.kk5.org/"));
+        long startTime = System.currentTimeMillis();
+        this.extractor.extract(curi);
+        long elapsed = System.currentTimeMillis() - startTime;
+        logger.info(this.extractor.getClass().getSimpleName() + " took "
+                + elapsed + "ms to process " + url);
+
+        HashMap<CharSequence, String> expected = new HashMap<CharSequence, String>();
+        expected.put("http://nyumedecs.kk5.org/sm4/portal", "extractorSWFRelToVia");
+        expected.put("https://wayback.archive-it.org/3771/20131119163257/http://nyumedecs.kk5.org/_app/28727/en/resources/sm4/portal", "extractorSWFRelToBase");
+        expected.put("http://nyumedecs.kk5.org/", "extractorSWFRelToVia");
+        expected.put("https://wayback.archive-it.org/", "extractorSWFRelToBase");
+        expected.put("http://nyumedecs.kk5.org/loadingBarEdit.swf", "extractorSWFRelToVia");
+        expected.put("https://wayback.archive-it.org/3771/20131119163257/http://nyumedecs.kk5.org/_app/28727/en/resources/loadingBarEdit.swf", "extractorSWFRelToBase");
+        expected.put("http://nyumedecs.kk5.org/containermain.swf", "extractorSWFRelToVia");
+        expected.put("https://wayback.archive-it.org/3771/20131119163257/http://nyumedecs.kk5.org/_app/28727/en/resources/containermain.swf", "extractorSWFRelToBase");
+
+        for (CrawlURI link: curi.getOutLinks()) {
+            System.out.println(link + " " + link.getData());
+            assertEquals(1, link.getAnnotations().size());
+
+            String dest = link.toString();
+            assertTrue(expected.containsKey(dest));
+
+            // remove the entry, so at the end the map should be empty, confirming that we found all the expected links
+            String expectedAnnotation = expected.remove(dest);
+            System.out.println("expectedAnnotation=" + expectedAnnotation);
+
+            System.out.println("link.getAnnotations()=" + link.getAnnotations());
+            String annotation = link.getAnnotations().toArray(new String[0])[0];
+            System.out.println("annotation=" + annotation);
+
+
+            assertEquals(expectedAnnotation, annotation);
         }
     }
 }

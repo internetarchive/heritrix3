@@ -91,7 +91,7 @@ public class ExtractorJSTest extends StringExtractorTestBase {
         null,
 
         "var blah='/query/string/without/value.html?foo=';",
-        null,
+        "http://www.archive.org/query/string/without/value.html?foo=",
 
         "var blah='/query/string/without/double/equals.html?foo==bar';",
         null,
@@ -141,7 +141,7 @@ public class ExtractorJSTest extends StringExtractorTestBase {
 
         if (destURI != null) {
             UURI dest = UURIFactory.getInstance(destURI);
-            Link link = new Link(src, dest, LinkContext.JS_MISC, Hop.SPECULATIVE);
+            CrawlURI link = euri.createCrawlURI(dest, LinkContext.JS_MISC, Hop.SPECULATIVE);
             result.add(new TestData(euri, link));
         } else {
             result.add(new TestData(euri, null));

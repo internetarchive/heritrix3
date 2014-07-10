@@ -124,6 +124,7 @@ crawlController.pauseAtStart=false
     <ref bean="extractorCss"/>
     <ref bean="extractorJs"/>
     <ref bean="extractorSwf"/>
+    <!--@@MORE_EXTRACTORS@@-->
     <ref bean="arcWriterProcessor"/>
    </list>
   </property>

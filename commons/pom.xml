@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.3.1</version>
+			<version>4.3.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.sleepycat</groupId>
@@ -162,11 +162,6 @@
 			<artifactId>spring-expression</artifactId>
 			<version>3.0.5.RELEASE</version>
 		</dependency>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20090211</version>
-		</dependency>
 
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
@@ -188,21 +183,15 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>r08</version>
-		</dependency>
-
-		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
 			<version>3.2.3</version>
 		</dependency>
 
 		<dependency>
-			<groupId>org.archive</groupId>
-			<artifactId>ia-web-commons</artifactId>
-			<version>1.1.1-SNAPSHOT</version>
+			<groupId>org.netpreserve.commons</groupId>
+			<artifactId>webarchive-commons</artifactId>
+			<version>1.1.1-IA-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.hadoop</groupId>

@@ -87,7 +87,7 @@ public class SupplementaryLinksScoper extends Scoper {
         }
         
 //        Collection<CrawlURI> inScopeLinks = new HashSet<CrawlURI>();
-        Iterator<CrawlURI> iter = curi.getOutCandidates().iterator();
+        Iterator<CrawlURI> iter = curi.getOutLinks().iterator();
         while (iter.hasNext()) {
             CrawlURI cauri = iter.next();
             if (!isInScope(cauri)) {
