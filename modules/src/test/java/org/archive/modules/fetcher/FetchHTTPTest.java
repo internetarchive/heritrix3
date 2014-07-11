@@ -173,35 +173,45 @@ public class FetchHTTPTest extends ProcessorTestBase {
             } else if (target.equals("/401-no-challenge")) {
                 response.setStatus(401);
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setDateHeader("Last-Modified", 0);
-                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
             } else if (target.equals("/cp1251")) {
                 response.setContentType("text/plain;charset=cp1251");
-                response.setDateHeader("Last-Modified", 0);
-                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(CP1251_PAYLOAD);
                 ((Request)request).setHandled(true);
             } else if (target.equals("/unsupported-charset")) {
                 response.setContentType("text/plain;charset=UNSUPPORTED-CHARSET");
-                response.setDateHeader("Last-Modified", 0);
-                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
             } else if (target.equals("/invalid-charset")) {
                 response.setContentType("text/plain;charset=%%INVALID-CHARSET%%");
-                response.setDateHeader("Last-Modified", 0);
-                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
+            } else if (target.equals("/if-modified-since")) {
+                if (request.getHeader("if-modified-since") != null) {
+                    response.setStatus(304);
+                    ((Request)request).setHandled(true);
+                } else {
+                    response.setContentType("text/plain;charset=US-ASCII");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                    ((Request)request).setHandled(true);
+                }
+            } else if (target.equals("/if-none-match")) {
+                if (request.getHeader("if-none-match") != null) {
+                    response.setStatus(304);
+                    ((Request)request).setHandled(true);
+                } else {
+                    response.setContentType("text/plain;charset=US-ASCII");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
+                    ((Request)request).setHandled(true);
+                }
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setDateHeader("Last-Modified", 0);
-                response.setHeader("ETag", ETAG_TEST_VALUE);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
