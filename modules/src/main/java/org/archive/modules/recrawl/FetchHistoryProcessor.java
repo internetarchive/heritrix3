@@ -33,6 +33,7 @@ import java.util.Map;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
+import org.archive.modules.revisit.ServerNotModifiedRevisit;
 
 /**
  * Maintain a history of fetch information inside the CrawlURI's attributes. 
@@ -105,7 +106,12 @@ public class FetchHistoryProcessor extends Processor {
 
         curi.getData().put(A_FETCH_HISTORY, history);
 
-        if (hasIdenticalDigest(curi)) {
+        if (curi.getFetchStatus() == 304) {
+            ServerNotModifiedRevisit revisit = new ServerNotModifiedRevisit();
+            revisit.setETag((String) latestFetch.get(A_ETAG_HEADER));
+            revisit.setLastModified((String) latestFetch.get(A_LAST_MODIFIED_HEADER));
+            curi.setRevisitProfile(revisit);
+        } else if (hasIdenticalDigest(curi)) {
             curi.getAnnotations().add("duplicate:digest");
             IdenticalPayloadDigestRevisit revisit = 
             		new IdenticalPayloadDigestRevisit((String)history[1].get(A_CONTENT_DIGEST));
