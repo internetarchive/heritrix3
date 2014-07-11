@@ -83,6 +83,7 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
+import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
 import org.archive.modules.revisit.RevisitProfile;
 import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
@@ -146,37 +147,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         kp.put("writeMetadata",writeMetadata);
     }
     
-    /**
-     * Whether to write 'revisit' type records when a URI's history indicates
-     * the previous fetch had an identical content digest. Default is true.
-     * 
-     * Decision applies to either URI-based fetch history or URI-agnostic
-     * content digest-based history.
-     */
-    {
-        setWriteRevisitForIdenticalDigests(true);
-    }
-    public boolean getWriteRevisitForIdenticalDigests() {
-        return (Boolean) kp.get("writeRevisitForIdenticalDigests");
-    }
-    public void setWriteRevisitForIdenticalDigests(boolean writeRevisits) {
-        kp.put("writeRevisitForIdenticalDigests",writeRevisits);
-    }
-
-    /**
-     * Whether to write 'revisit' type records when a 304-Not Modified response
-     * is received. Default is true.
-     */
-    {
-        setWriteRevisitForNotModified(true);
-    }
-    public boolean getWriteRevisitForNotModified() {
-        return (Boolean) kp.get("writeRevisitForNotModified");
-    }
-    public void setWriteRevisitForNotModified(boolean writeRevisits) {
-        kp.put("writeRevisitForNotModified",writeRevisits);
-    }
-
     /**
      * Generator for record IDs
      */
@@ -314,13 +284,13 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
                         && warcRecord.getContentStream() != null
                         && warcRecord.getContentLength() > 0) {
                     curi.getContentDigestHistory().put(A_ORIGINAL_URL, warcRecord.getUrl());
-                    curi.getContentDigestHistory().put(A_WARC_RECORD_ID, warcRecord.getRecordId());
+                    curi.getContentDigestHistory().put(A_WARC_RECORD_ID, warcRecord.getRecordId().toString());
                     curi.getContentDigestHistory().put(A_WARC_FILENAME, warcRecord.getWARCFilename());
                     curi.getContentDigestHistory().put(A_WARC_FILE_OFFSET, warcRecord.getWARCFileOffset());
                     curi.getContentDigestHistory().put(A_ORIGINAL_DATE, warcRecord.getCreate14DigitDate());
                     curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, 1);
                 } else if (warcRecord.getType() == WARCRecordType.revisit
-                        && curi.getAnnotations().contains("warcRevisit:digest")) {
+                        && curi.getRevisitProfile() instanceof IdenticalPayloadDigestRevisit) {
                      Integer oldCount = (Integer) curi.getContentDigestHistory().get(A_CONTENT_DIGEST_COUNT);
                      if (oldCount == null) {
                          // shouldn't happen, log a warning?
@@ -472,7 +442,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         }
             
         if (curi.getRecorder() != null) {
-            if (curi.isRevisit() && getWriteRevisitForIdenticalDigests()) {
+            if (curi.isRevisit()) {
                 rid = writeRevisit(w, timestamp, null,
                         baseid, curi, headers, 0);
             } else {
@@ -681,49 +651,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
 			IOUtils.closeQuietly(ris);
 		}
 		return recordInfo.getRecordId();
-    }
-    
-    
-    @Deprecated
-    protected URI writeRevisitNotModified(final WARCWriter w,
-            final String timestamp, 
-            final URI baseid, final CrawlURI puri,
-            final ANVLRecord namedFields) 
-    throws IOException {
-        CrawlURI curi = (CrawlURI) puri;
-        
-        WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.revisit);
-        recordInfo.setUrl(curi.toString());
-        recordInfo.setCreate14DigitDate(timestamp);
-        recordInfo.setMimetype(null);
-        recordInfo.setRecordId(baseid);
-        recordInfo.setContentLength((long) 0);
-        recordInfo.setEnforceLength(false);
-        
-        namedFields.addLabelValue(
-        		HEADER_KEY_PROFILE, PROFILE_REVISIT_NOT_MODIFIED);
-        // save just enough context to understand basis of not-modified
-        recordInfo.setExtraHeaders(namedFields);
-        
-        if(curi.isHttpTransaction()) {
-            saveHeader(curi, namedFields, A_ETAG_HEADER, HEADER_KEY_ETAG);
-            saveHeader(curi, namedFields, A_LAST_MODIFIED_HEADER, HEADER_KEY_LAST_MODIFIED);
-        }
-        // truncate to zero-length (all necessary info is above)
-        namedFields.addLabelValue(HEADER_KEY_TRUNCATED,
-            NAMED_FIELD_TRUNCATED_VALUE_LENGTH);
-        ReplayInputStream ris =
-            curi.getRecorder().getRecordedInput().getReplayInputStream();
-        recordInfo.setContentStream(ris);
-        
-        try {
-            w.writeRecord(recordInfo);
-        } finally {
-            IOUtils.closeQuietly(ris);
-        }
-        curi.getAnnotations().add("warcRevisit:notModified");
-        return recordInfo.getRecordId();
     }
     
     /**
