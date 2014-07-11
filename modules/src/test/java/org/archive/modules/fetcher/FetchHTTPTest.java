@@ -138,7 +138,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
             
             if (target.equals("/200k")) {
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 assertTrue(EIGHTY_BYTE_LINE.length == 80);
                 for (int i = 0; i < 200000 / EIGHTY_BYTE_LINE.length; i++) {
                     response.getOutputStream().write(EIGHTY_BYTE_LINE);
@@ -146,7 +146,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 ((Request)request).setHandled(true);
             } else if (target.equals("/slow.txt")) {
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 for (int i = 0; i < 60; i++) {
                     response.getOutputStream().write(EIGHTY_BYTE_LINE);
                     response.getOutputStream().flush();
@@ -158,7 +158,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 ((Request)request).setHandled(true);
             } else if (target.equals("/chunked.txt")) {
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 // response.setContentLength(HttpTokens.CHUNKED_CONTENT);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 response.getOutputStream().flush();
@@ -167,7 +167,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
                     && request.getHeader("Accept-Encoding").contains("gzip")) {
                 response.setHeader("Content-Encoding", "gzip");
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_GZIPPED_PAYLOAD);
                 ((Request)request).setHandled(true);
             } else if (target.equals("/401-no-challenge")) {
@@ -177,17 +177,17 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 ((Request)request).setHandled(true);
             } else if (target.equals("/cp1251")) {
                 response.setContentType("text/plain;charset=cp1251");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.getOutputStream().write(CP1251_PAYLOAD);
                 ((Request)request).setHandled(true);
             } else if (target.equals("/unsupported-charset")) {
                 response.setContentType("text/plain;charset=UNSUPPORTED-CHARSET");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
             } else if (target.equals("/invalid-charset")) {
                 response.setContentType("text/plain;charset=%%INVALID-CHARSET%%");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
             } else if (target.equals("/if-modified-since")) {
@@ -196,7 +196,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
                     ((Request)request).setHandled(true);
                 } else {
                     response.setContentType("text/plain;charset=US-ASCII");
-                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.setDateHeader("Last-Modified", 0);
+                    response.setStatus(200);
                     response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                     ((Request)request).setHandled(true);
                 }
@@ -206,13 +207,14 @@ public class FetchHTTPTest extends ProcessorTestBase {
                     ((Request)request).setHandled(true);
                 } else {
                     response.setContentType("text/plain;charset=US-ASCII");
-                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.setHeader("ETag", ETAG_TEST_VALUE);
+                    response.setStatus(200);
                     response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                     ((Request)request).setHandled(true);
                 }
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 ((Request)request).setHandled(true);
             }
