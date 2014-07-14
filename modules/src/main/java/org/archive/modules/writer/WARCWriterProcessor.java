@@ -21,9 +21,7 @@ package org.archive.modules.writer;
 
 import static org.archive.format.warc.WARCConstants.FTP_CONTROL_CONVERSATION_MIMETYPE;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_ETAG;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PROFILE;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
@@ -33,7 +31,6 @@ import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_
 import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
 import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
-import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_NOT_MODIFIED;
 import static org.archive.format.warc.WARCConstants.TYPE;
 import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
@@ -44,8 +41,6 @@ import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.TIMER_TRUNC;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_COUNT;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILENAME;
@@ -156,6 +151,16 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
     }
     public void setRecordIDGenerator(RecordIDGenerator generator) {
         this.generator = generator;
+    }
+
+    @Deprecated
+    public void setWriteRevisitForIdenticalDigests(boolean writeRevisits) {
+        logger.warning("setting writeRevisitForIdenticalDigests is deprecated, value ignored");
+    }
+
+    @Deprecated
+    public void setWriteRevisitForNotModified(boolean writeRevisits) {
+        logger.warning("setting writeRevisitForNotModified is deprecated, value ignored");
     }
 
     private transient List<String> cachedMetadata;
