@@ -129,7 +129,6 @@ public class AMQPPublishProcessor extends Processor {
                 }
 
                 curi.getAnnotations().add(A_SENT_TO_AMQP);
-                curi.setFetchStatus(S_SENT_TO_AMQP);
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Attempting to send URI to AMQP server failed! " + curi, e);
