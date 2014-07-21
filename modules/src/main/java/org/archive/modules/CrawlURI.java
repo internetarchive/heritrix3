@@ -58,8 +58,8 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -87,6 +87,7 @@ import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.revisit.RevisitProfile;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.OverlayContext;
@@ -267,6 +268,12 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     private byte[] contentDigest = null;
     private String contentDigestScheme = null;
 
+    
+    /**
+     * If this value is non-null, a determination has been made that this CrawlURI instance is a revisit or 
+     * recrawl. Details are provided by the RevisitProfile object. 
+     */
+    transient private RevisitProfile revisitProfile = null;
 
     /**
      * Create a new instance of CrawlURI from a {@link UURI}.
@@ -873,6 +880,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         
         extraInfo = null;
         outLinks = null;
+        
+        this.revisitProfile = null;
         
         // XXX er uh surprised this wasn't here before?
         fetchType = FetchType.UNKNOWN;
@@ -1911,6 +1920,23 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     public boolean hasContentDigestHistory() {
         return getData().get(A_CONTENT_DIGEST_HISTORY) != null;
     }
+    
+    /**
+     * Indicates if this CrawlURI object has been deemed a revisit.
+     * @return 
+     */
+    public boolean isRevisit() {
+    	return revisitProfile!=null;
+    }
+
+	public RevisitProfile getRevisitProfile() {
+		return revisitProfile;
+	}
+
+	public void setRevisitProfile(RevisitProfile revisitProfile) {
+		this.revisitProfile = revisitProfile;
+	}
+    
 
     // brought over from old Link class
     @Override
@@ -1970,5 +1996,4 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
                 && equals(viaContext, u.viaContext)
                 && equals(pathFromSeed, u.pathFromSeed);
     }
-
 }

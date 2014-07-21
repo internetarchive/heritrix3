@@ -32,7 +32,8 @@ import java.util.Map;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
+import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
+import org.archive.modules.revisit.ServerNotModifiedRevisit;
 
 /**
  * Maintain a history of fetch information inside the CrawlURI's attributes. 
@@ -72,8 +73,7 @@ public class FetchHistoryProcessor extends Processor {
         // save status
         latestFetch.put(A_STATUS, curi.getFetchStatus());
         // save fetch start time
-        latestFetch.put(A_FETCH_BEGAN_TIME,
-                curi.getData().get(A_FETCH_BEGAN_TIME));
+        latestFetch.put(A_FETCH_BEGAN_TIME, curi.getFetchBeginTime());
         // save digest
         String digest = curi.getContentDigestSchemeString();
         if (digest != null) {
@@ -106,11 +106,41 @@ public class FetchHistoryProcessor extends Processor {
 
         curi.getData().put(A_FETCH_HISTORY, history);
 
-        if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
+        if (curi.getFetchStatus() == 304) {
+            ServerNotModifiedRevisit revisit = new ServerNotModifiedRevisit();
+            revisit.setETag((String) latestFetch.get(A_ETAG_HEADER));
+            revisit.setLastModified((String) latestFetch.get(A_LAST_MODIFIED_HEADER));
+            curi.setRevisitProfile(revisit);
+        } else if (hasIdenticalDigest(curi)) {
             curi.getAnnotations().add("duplicate:digest");
+            IdenticalPayloadDigestRevisit revisit = 
+            		new IdenticalPayloadDigestRevisit((String)history[1].get(A_CONTENT_DIGEST));
+            revisit.setRefersToTargetURI(curi.getURI()); // Matches are always on the same URI
+            revisit.setRefersToDate((Long)history[1].get(A_FETCH_BEGAN_TIME));
+            curi.setRevisitProfile(revisit);
         }
     }
 
+    /**
+     * Utility method for testing if a CrawlURI's last two history 
+     * entries (one being the most recent fetch) have identical 
+     * content-digest information. 
+     * 
+     * @param curi CrawlURI to test
+     * @return true if last two history entries have identical digests, 
+     * otherwise false
+     */
+    public static boolean hasIdenticalDigest(CrawlURI curi) {
+        Map<String,Object>[] history = curi.getFetchHistory();
+
+        return history != null
+                && history[0] != null 
+                && history[0].containsKey(A_CONTENT_DIGEST)
+                && history[1] != null
+                && history[1].containsKey(A_CONTENT_DIGEST)
+                && history[0].get(A_CONTENT_DIGEST).equals(history[1].get(A_CONTENT_DIGEST));
+    }
+    
     /** Get or create proper-sized history array */
     @SuppressWarnings("unchecked")
     protected HashMap<String, Object>[] historyRealloc(CrawlURI curi) {
