@@ -29,9 +29,9 @@ public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
     public static class TestData {
         
         public CrawlURI uri;
-        public Link expectedResult;
+        public CrawlURI expectedResult;
         
-        public TestData(CrawlURI uri, Link expectedResult) {
+        public TestData(CrawlURI uri, CrawlURI expectedResult) {
             this.uri = uri;
             this.expectedResult = expectedResult;
         }
@@ -80,7 +80,7 @@ public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
         Collection<TestData> testDataCol = makeData(text, expectedURL);
         for (TestData testData: testDataCol) {
             extractor.process(testData.uri);
-            HashSet<Link> expected = new HashSet<Link>();
+            HashSet<CrawlURI> expected = new HashSet<CrawlURI>();
             if (testData.expectedResult != null) {
                 expected.add(testData.expectedResult);
             }

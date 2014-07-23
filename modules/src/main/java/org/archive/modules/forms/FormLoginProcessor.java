@@ -261,7 +261,7 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     protected void createFormSubmissionAttempt(CrawlURI curi, HTMLForm templateForm, String formProvince) {
         LinkContext lc = new LinkContext.SimpleLinkContext("form/@action");
         try {
-            CrawlURI submitCuri = curi.makeConsequentCandidate(templateForm.getAction(),lc, Hop.SUBMIT);
+            CrawlURI submitCuri = curi.createCrawlURI(templateForm.getAction(), lc, Hop.SUBMIT);
             submitCuri.setFetchType(FetchType.HTTP_POST);
             submitCuri.getData().put(
                     CoreAttributeConstants.A_SUBMIT_DATA, 
@@ -270,7 +270,7 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
                         getLoginPassword()));
             submitCuri.setSchedulingDirective(SchedulingConstants.HIGH);
             submitCuri.setForceFetch(true);
-            curi.getOutCandidates().add(submitCuri);
+            curi.getOutLinks().add(submitCuri);
             curi.getAnnotations().add("submit:"+templateForm.getAction());
         } catch (URIException ue) {
             loggerModule.logUriError(ue,curi.getUURI(),templateForm.getAction());

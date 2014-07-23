@@ -23,7 +23,6 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.spring.SheetOverlaysManager;
@@ -32,7 +31,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.Link;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.KeyedProperties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -219,15 +217,6 @@ public class CandidatesProcessor extends Processor {
             return;
         }
 
-        // (2) NEW: also (and before-outlinks) run outCandidates (usually empty;
-        // only current use is a form-submission CrawlURI; could 
-        // potentially take over prerequisite duties for consistency
-        for(CrawlURI candidate : curi.getOutCandidates()) {
-            
-            runCandidateChain(candidate, curi);
-            
-        }
-        
         // Only consider candidate links of error pages if configured to do so
         if (!getProcessErrorOutlinks() 
                 && (curi.getFetchStatus() < 200 || curi.getFetchStatus() >= 400)) {
@@ -236,20 +225,9 @@ public class CandidatesProcessor extends Processor {
         }
 
         // (3) Handle outlinks (usual bulk of discoveries) 
-        for (Link wref: curi.getOutLinks()) {
-            CrawlURI candidate;
-            try {
-                candidate = curi.createCrawlURI(curi.getBaseURI(),wref);
-            } catch (URIException e) {
-                loggerModule.logUriError(e, curi.getUURI(), 
-                        wref.getDestination().toString());
-                continue;
-            }
+        for (CrawlURI candidate: curi.getOutLinks()) {
             
             runCandidateChain(candidate, curi);
-
-            // TODO: evaluate if this necessary (anyone uses?); wise (bloat?) 
-            curi.getOutCandidates().add(candidate);
 
         }
         curi.getOutLinks().clear();

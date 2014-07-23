@@ -73,7 +73,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
         curi.getOutLinks();
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().indexOf(
+                return ((CrawlURI) object).getURI().indexOf(
                         "/redirect_me?form=true&checked[]=1&unchecked[]=&selectBox=selectedOption&test=Go")>=0;
             }
         }));
@@ -101,7 +101,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
         curi.getOutLinks();
         assertTrue(!CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().indexOf(
+                return ((CrawlURI) object).getURI().indexOf(
                         "/redirect_me?form=true&checked[]=1&unchecked[]=&selectBox=selectedOption&test=Go")>=0;
             }
         }));
@@ -130,7 +130,7 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
         curi.getOutLinks();
         assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
             public boolean evaluate(Object object) {
-                return ((Link) object).getDestination().toString().indexOf(
+                return ((CrawlURI) object).getURI().indexOf(
                         "/redirect_me?form=true&checked[]=1&unchecked[]=&selectBox=selectedOption&test=Go")>=0;
             }
         }));

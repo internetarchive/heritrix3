@@ -62,8 +62,8 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         assertEquals("WARC-Simple-Form-Province-Status: 0,0,http://(com,example,)", curi.getDataList(A_WARC_RESPONSE_HEADERS).get(0));
         assertTrue(curi.getAnnotations().contains("submit:/login"));
 
-        assertEquals(1, curi.getOutCandidates().size());
-        CrawlURI submitCuri = curi.getOutCandidates().toArray(new CrawlURI[0])[0];
+        assertEquals(1, curi.getOutLinks().size());
+        CrawlURI submitCuri = curi.getOutLinks().toArray(new CrawlURI[0])[0];
         assertEquals("http://example.com/login", submitCuri.toString());
         assertEquals(FetchType.HTTP_POST, submitCuri.getFetchType());
         String queryString = (String) submitCuri.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);

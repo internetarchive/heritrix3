@@ -66,7 +66,9 @@ import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
+import org.archive.modules.revisit.ServerNotModifiedRevisit;
 import org.archive.net.UURI;
+import org.archive.util.OneLineSimpleLogger;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
@@ -81,6 +83,17 @@ import org.littleshoot.proxy.ProxyAuthorizationHandler;
  * FetchHTTPTest suite.
  */
 public class FetchHTTPTests extends ProcessorTestBase {
+    
+    // private static Logger logger = Logger.getLogger(FetchHTTPTests.class.getName());
+
+    // static {
+    //     Logger.getLogger("").setLevel(Level.FINE);
+    //     for (java.util.logging.Handler h : Logger.getLogger("").getHandlers()) {
+    //         h.setLevel(Level.ALL);
+    //         h.setFormatter(new OneLineSimpleLogger());
+    //     }
+    // }
+
 
     protected FetchHTTP fetcher;
 
@@ -528,11 +541,11 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testSendIfModifiedSince() throws Exception {
         fetcher().setSendIfModifiedSince(true);
 
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/if-modified-since");
         fetcher().process(curi);
-        assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since"));
+        assertFalse(httpRequestString(curi).toLowerCase().contains("if-modified-since: "));
         assertTrue(curi.getHttpResponseHeader("last-modified").equals("Thu, 01 Jan 1970 00:00:00 GMT"));
-        runDefaultChecks(curi);
+        runDefaultChecks(curi, "requestLine");
 
         // logger.info("before FetchHistoryProcessor fetchHistory=" + Arrays.toString(curi.getFetchHistory()));
         FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
@@ -541,27 +554,44 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         fetcher().process(curi);
         // logger.info("\n" + httpRequestString(curi));
+        // logger.info("\n" + rawResponseString(curi));
         assertTrue(httpRequestString(curi).contains("If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT\r\n"));
-        runDefaultChecks(curi);
-        // XXX make server send 304 not-modified and check for it here?
+        assertTrue(curi.getFetchStatus() == 304);
+
+        assertNull(curi.getRevisitProfile());
+        fetchHistoryProcessor.process(curi);
+        assertNotNull(curi.getRevisitProfile());
+        assertTrue(curi.getRevisitProfile() instanceof ServerNotModifiedRevisit);
+        ServerNotModifiedRevisit revisit = (ServerNotModifiedRevisit) curi.getRevisitProfile();
+        assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", revisit.getLastModified());
+        assertNull(revisit.getETag());
     }
     
     public void testSendIfNoneMatch() throws Exception {
         fetcher().setSendIfNoneMatch(true);
         
-        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/if-none-match");
         fetcher().process(curi);
-        assertFalse(httpRequestString(curi).toLowerCase().contains("if-none-match"));
+        assertFalse(httpRequestString(curi).toLowerCase().contains("if-none-match: "));
         assertTrue(curi.getHttpResponseHeader("etag").equals(ETAG_TEST_VALUE));
-        runDefaultChecks(curi);
+        runDefaultChecks(curi, "requestLine");
 
         FetchHistoryProcessor fetchHistoryProcessor = new FetchHistoryProcessor();
         fetchHistoryProcessor.process(curi);
 
         fetcher().process(curi);
+        // logger.info("\n" + httpRequestString(curi));
+        // logger.info("\n" + rawResponseString(curi));
         assertTrue(httpRequestString(curi).contains("If-None-Match: " + ETAG_TEST_VALUE + "\r\n"));
-        runDefaultChecks(curi);
-        // XXX make server send 304 not-modified and check for it here?
+        
+        assertNull(curi.getRevisitProfile());
+        fetchHistoryProcessor.process(curi);
+        assertNotNull(curi.getRevisitProfile());
+        assertTrue(curi.getRevisitProfile() instanceof ServerNotModifiedRevisit);
+        ServerNotModifiedRevisit revisit = (ServerNotModifiedRevisit) curi.getRevisitProfile();
+        assertEquals(ETAG_TEST_VALUE, revisit.getETag());
+        assertNull(revisit.getLastModified());
+
     }
     
     public void testShouldFetchBodyRule() throws Exception {

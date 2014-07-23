@@ -215,7 +215,7 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
         
         if (getCheckOutlinks()) {
             // consider outlinks for mapping
-            Iterator<CrawlURI> iter = curi.getOutCandidates().iterator(); 
+            Iterator<CrawlURI> iter = curi.getOutLinks().iterator(); 
             while(iter.hasNext()) {
                 CrawlURI cauri = iter.next();
                 if (decideToMapOutlink(cauri)) {

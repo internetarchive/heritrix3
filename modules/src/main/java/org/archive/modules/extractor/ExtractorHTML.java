@@ -656,7 +656,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             // ReplayCharSequence.
             HTMLLinkContext hc = HTMLLinkContext.get(context.toString());
             int max = getExtractorParameters().getMaxOutlinks();
-            Link.addRelativeToBase(curi, max, uri.toString(), hc, hop);
+            addRelativeToBase(curi, max, uri.toString(), hc, hop);
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
         }
@@ -694,16 +694,24 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 // assume it's okay to extract
             }
         }
-        
+
         String mime = uri.getContentType().toLowerCase();
-        return mime.startsWith("text/html")
+        if (mime.startsWith("text/html")
                 || mime.startsWith("application/xhtml")
                 || mime.startsWith("text/vnd.wap.wml")
                 || mime.startsWith("application/vnd.wap.wml")
-                || mime.startsWith("application/vnd.wap.xhtml");
+                || mime.startsWith("application/vnd.wap.xhtml")) {
+            return true;
+        }
+
+        String contentPrefixLC = uri.getRecorder().getContentReplayPrefixString(1000).toLowerCase();
+        if (contentPrefixLC.contains("<html") || contentPrefixLC.contains("<!doctype html")) {
+            return true;
+        }
+
+        return false;
     }
-    
-    
+
     public boolean innerExtract(CrawlURI curi) {
         if (!curi.containsContentTypeCharsetDeclaration()) {
             String contentPrefix = curi.getRecorder().getContentReplayPrefixString(1000);
@@ -954,7 +962,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 String refreshUri = content.substring(urlIndex);
                 try {
                     int max = getExtractorParameters().getMaxOutlinks();
-                    Link.addRelativeToBase(curi, max, refreshUri, 
+                    addRelativeToBase(curi, max, refreshUri, 
                             HTMLLinkContext.META, Hop.REFER);
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), refreshUri);

@@ -19,9 +19,10 @@
 
 package org.archive.crawler.util;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
+import org.archive.modules.revisit.ServerNotModifiedRevisit;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Histotable;
 
@@ -31,9 +32,11 @@ implements CoreAttributeConstants {
     
     public static final String NOTMODIFIED = "notModified";
     public static final String DUPLICATE = "dupByHash";
+    public static final String OTHERDUPLICATE = "otherDup";
     public static final String NOVEL = "novel";
     public static final String NOTMODIFIEDCOUNT = "notModifiedCount";
     public static final String DUPLICATECOUNT = "dupByHashCount";
+    public static final String OTHERDUPLICATECOUNT = "otherDupCount";
     public static final String NOVELCOUNT = "novelCount";
     
     public CrawledBytesHistotable() {
@@ -41,12 +44,15 @@ implements CoreAttributeConstants {
     }
 
     public void accumulate(CrawlURI curi) {
-        if(curi.getFetchStatus()==HttpStatus.SC_NOT_MODIFIED) {
+        if (curi.getRevisitProfile() instanceof ServerNotModifiedRevisit) {
             tally(NOTMODIFIED, curi.getContentSize());
             tally(NOTMODIFIEDCOUNT,1);
-        } else if (curi.getAnnotations().contains("duplicate:digest")) {
+        } else if (curi.getRevisitProfile() instanceof IdenticalPayloadDigestRevisit) {
             tally(DUPLICATE,curi.getContentSize());
             tally(DUPLICATECOUNT,1);
+        } else if (curi.getRevisitProfile() != null) {
+            tally(OTHERDUPLICATE, curi.getContentSize());
+            tally(OTHERDUPLICATECOUNT, 1);
         } else {
             tally(NOVEL,curi.getContentSize());
             tally(NOVELCOUNT,1);
@@ -71,15 +77,21 @@ implements CoreAttributeConstants {
             sb.append(" ");
             sb.append(NOTMODIFIED);
         }
+        if(get(OTHERDUPLICATE)!=null) {
+            sb.append(", ");
+            sb.append(ArchiveUtils.formatBytesForDisplay(get(OTHERDUPLICATE)));
+            sb.append(" ");
+            sb.append(OTHERDUPLICATECOUNT);
+        }
         sb.append(")");
         return sb.toString();
     }
     
     public long getTotalBytes() {
-        return get(NOVEL) + get(DUPLICATE) + get(NOTMODIFIED);
+        return get(NOVEL) + get(DUPLICATE) + get(NOTMODIFIED) + get(OTHERDUPLICATE);
     }
     
     public long getTotalUrls() {
-        return get(NOVELCOUNT) + get(DUPLICATECOUNT) + get(NOTMODIFIEDCOUNT);
+        return get(NOVELCOUNT) + get(DUPLICATECOUNT) + get(NOTMODIFIEDCOUNT) + get(OTHERDUPLICATECOUNT);
     }
 }

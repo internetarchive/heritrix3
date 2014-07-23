@@ -121,36 +121,34 @@ public class ExtractorImpliedURI extends Extractor {
      */
     @Override
     public void extract(CrawlURI curi) {
-        List<Link> links = new ArrayList<Link>(curi.getOutLinks());
+        List<CrawlURI> links = new ArrayList<CrawlURI>(curi.getOutLinks());
         int max = links.size();
         for (int i = 0; i < max; i++) {
-            Link link = links.get(i);
+        	CrawlURI link = links.get(i);
             Pattern trigger = getRegex();
             String build = getFormat();
-            CharSequence dest = link.getDestination();
+            CharSequence dest = link.getUURI();
             String implied = extractImplied(dest, trigger, build);
             if (implied != null) {
                 try {
-                    UURI src = curi.getUURI();
                     UURI target = UURIFactory.getInstance(implied);
                     LinkContext lc = LinkContext.INFERRED_MISC;
                     Hop hop = Hop.INFERRED;
-                    Link out = new Link(src, target, lc, hop);
-                    curi.getOutLinks().add(out);
+                    addOutlink(curi, target, lc, hop);
                     numberOfLinksExtracted.incrementAndGet();
 
                     boolean removeTriggerURI = getRemoveTriggerUris();
                     // remove trigger URI from the outlinks if configured so.
                     if (removeTriggerURI) {
                        if (curi.getOutLinks().remove(link)) {
-                               LOGGER.log(Level.FINE, link.getDestination() + 
+                               LOGGER.log(Level.FINE, link.getURI() + 
                                      " has been removed from " + 
-                                     link.getSource() + " outlinks list.");
+                                     curi.getURI() + " outlinks list.");
                                numberOfLinksExtracted.decrementAndGet();
                        } else {
                                LOGGER.log(Level.FINE, "Failed to remove " + 
-                                      link.getDestination() + " from " + 
-                                      link.getSource()+ " outlinks list.");
+                                      link.getURI() + " from " + 
+                                      curi.getURI() + " outlinks list.");
                        }
                     }
                 } catch (URIException e) {

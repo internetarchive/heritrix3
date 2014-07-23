@@ -261,7 +261,7 @@ class FetchHTTPRequest {
         Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
         if (uriCustomHeaders != null) {
             for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
-                request.addHeader(h.getKey(), h.getValue());
+                request.setHeader(h.getKey(), h.getValue());
             }
         }
     }
