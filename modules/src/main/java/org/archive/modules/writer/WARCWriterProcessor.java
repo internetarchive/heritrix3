@@ -608,7 +608,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         
         if (curi.getRevisitProfile().getProfileName().equals(PROFILE_REVISIT_IDENTICAL_DIGEST) ) {
         	// Save response from identical digest matches
-        	curi.getRecorder().getRecordedInput().getContentBegin();
+        	revisedLength = curi.getRecorder().getRecordedInput().getContentBegin();
         	revisedLength = revisedLength > 0 
         			? revisedLength 
         			: curi.getRecorder().getRecordedInput().getSize();
@@ -623,7 +623,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
             final ANVLRecord headers,
             final long contentLength)  
             	    throws IOException {
-    
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setType(WARCRecordType.revisit);
         recordInfo.setUrl(curi.toString());
