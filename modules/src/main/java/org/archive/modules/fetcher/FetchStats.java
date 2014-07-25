@@ -93,6 +93,10 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
                 totalBytes += curi.getContentSize();
                 successBytes += curi.getContentSize();
                 lastSuccessTime = curi.getFetchCompletedTime();
+                if (curi.getRevisitProfile() == null) {
+                    novelBytes += curi.getContentSize();
+                    novelUrls++;
+                }
                 break;
             case DISREGARDED:
                 fetchDisregards++;
@@ -106,6 +110,10 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
                 } else {
                     fetchResponses++;
                     totalBytes += curi.getContentSize();
+                    if (curi.getRevisitProfile() == null) {
+                        novelBytes += curi.getContentSize();
+                        novelUrls++;
+                    }
                 }
                 fetchFailures++;
                 break;
