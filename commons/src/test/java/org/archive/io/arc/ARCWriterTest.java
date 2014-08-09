@@ -376,7 +376,7 @@ extends TmpDirTestCase implements ARCConstants {
             writeRecord(writer, SOME_URL + urlInsert + "/index.html", "text/html",
                 content.length(), getBais(content));
         } finally {
-            Closeables.closeQuietly(writer);
+            Closeables.close(writer, true);
         }
     }
     
@@ -417,7 +417,7 @@ extends TmpDirTestCase implements ARCConstants {
             writeRecord(writer, SOME_URL, "text/html",
                 content.length(), getBais(content));
         } finally {
-            Closeables.closeQuietly(writer); 
+            Closeables.close(writer, true);
         }
         
         // Catch System.err into a byte stream.
@@ -439,7 +439,7 @@ extends TmpDirTestCase implements ARCConstants {
                 (err.indexOf("Record STARTING at") > 0));
             r.close();
         } finally {
-            Closeables.closeQuietly(r); 
+            Closeables.close(r, true);
             System.setErr(origErr); 
         }
     }
@@ -501,7 +501,7 @@ extends TmpDirTestCase implements ARCConstants {
             assertTrue("No message " + err, 
                 err.startsWith("WARNING Premature EOF before end-of-record"));
         } finally {
-            Closeables.closeQuietly(r);
+            Closeables.close(r, true);
             System.setErr(origErr);
         }
     }
