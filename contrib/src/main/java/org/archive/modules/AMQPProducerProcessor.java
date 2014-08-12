@@ -20,6 +20,7 @@
 package org.archive.modules;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -156,8 +157,13 @@ public abstract class AMQPProducerProcessor extends Processor {
 
     protected void success(CrawlURI curi, byte[] message, BasicProperties props) {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine("sent to amqp exchange=" + getExchange()
-                    + " routingKey=" + routingKey + ": " + message);
+            try {
+                logger.fine("sent to amqp exchange=" + getExchange()
+                        + " routingKey=" + routingKey + ": " + new String(message, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                logger.fine("sent to amqp exchange=" + getExchange()
+                        + " routingKey=" + routingKey + ": " + message + " (" + message.length + " bytes)");
+            }
         }
     }
 

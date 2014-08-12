@@ -29,6 +29,8 @@ import org.archive.crawler.io.UriProcessingFormatter;
 import org.archive.modules.AMQPProducerProcessor;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.net.CrawlHost;
+import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,15 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor {
     @Autowired
     public void setFrontier(Frontier frontier) {
         this.frontier = frontier;
+    }
+
+    protected ServerCache serverCache;
+    public ServerCache getServerCache() {
+        return this.serverCache;
+    }
+    @Autowired
+    public void setServerCache(ServerCache serverCache) {
+        this.serverCache = serverCache;
     }
 
     protected List<String> prependValues;
@@ -133,6 +144,14 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor {
 
         buffer.append(DELIM).append(checkForNull(curi.getContentDigestSchemeString()));
         buffer.append(DELIM).append(checkForNull(curi.getSourceTag()));
+
+        buffer.append(DELIM);
+        CrawlHost host = getServerCache().getHostFor(curi.getUURI());
+        if (host != null) {
+            buffer.append(host.fixUpName());
+        } else {
+            buffer.append(NA);
+        }
 
         buffer.append(DELIM);
         Collection<String> anno = curi.getAnnotations();
