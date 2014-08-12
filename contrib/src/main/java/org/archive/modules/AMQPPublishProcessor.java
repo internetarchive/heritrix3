@@ -21,12 +21,10 @@ package org.archive.modules;
 
 import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 
-import java.io.IOException;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
@@ -35,53 +33,23 @@ import org.json.JSONObject;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * @author eldondev
  * @contributor nlevitt
  */
-public class AMQPPublishProcessor extends Processor {
+public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable {
 
-    @SuppressWarnings("unused")
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
-    private static final Logger logger =
-            Logger.getLogger(AMQPPublishProcessor.class.getName());
-
-    public static final int S_SENT_TO_AMQP = 10001; // artificial fetch status
     public static final String A_SENT_TO_AMQP = "sentToAMQP"; // annotation
 
-    protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
-    public String getAmqpUri() {
-        return this.amqpUri;
-    }
-    public void setAmqpUri(String uri) {
-        this.amqpUri = uri; 
+    public AMQPPublishProcessor() {
+        // set default values
+        exchange = "umbra";
+        routingKey = "urls";
     }
 
-    transient protected Connection connection = null;
-    transient protected ThreadLocal<Channel> threadChannel = 
-            new ThreadLocal<Channel>();
-
-    protected String exchange = "umbra";
-    public String getExchange() {
-        return exchange;
-    }
-    public void setExchange(String exchange) {
-        this.exchange = exchange;
-    }
-
-    protected String routingKey = "url";
-    public String getRoutingKey() {
-        return routingKey;
-    }
-    public void setRoutingKey(String routingKey) {
-        this.routingKey = routingKey;
-    }
-    
     protected String clientId = null;
     public String getClientId() {
         return clientId;
@@ -108,33 +76,6 @@ public class AMQPPublishProcessor extends Processor {
         } catch (URIException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    protected ProcessResult innerProcessResult(CrawlURI curi)
-            throws InterruptedException {
-        try {
-            Channel channel = channel();
-            if (channel != null) {
-                JSONObject message = buildJsonMessage(curi);
-
-                BasicProperties props = new AMQP.BasicProperties.Builder().
-                        contentType("application/json").build();
-                channel.exchangeDeclare(getExchange(), "direct", true);
-                channel.basicPublish(getExchange(), getRoutingKey(), props, 
-                        message.toString().getBytes("UTF-8"));
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("sent to amqp exchange=" + getExchange()
-                            + " routingKey=" + routingKey + ": " + message);
-                }
-
-                curi.getAnnotations().add(A_SENT_TO_AMQP);
-            }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Attempting to send URI to AMQP server failed! " + curi, e);
-        }
-
-        return ProcessResult.PROCEED;
     }
 
     /**
@@ -167,62 +108,30 @@ public class AMQPPublishProcessor extends Processor {
         metadata.put("heritableData", heritableData);
 
         message.put("metadata", metadata);
-        
+
         return message;
     }
 
     @Override
-    protected void innerProcess(CrawlURI uri) throws InterruptedException {
-        throw new RuntimeException("should never be called");
-    }
-
-    protected synchronized Channel channel() {
-        if (threadChannel.get() != null && !threadChannel.get().isOpen()) {
-            threadChannel.set(null);
-        }
-
-        if (threadChannel.get() == null) {
-            if (connection == null || !connection.isOpen()) {
-                connect();
-            }
-            try {
-                if (connection != null) {
-                    threadChannel.set(connection.createChannel());
-                }
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection failed!", e);
-            }
-        }
-        return threadChannel.get();
-    }
-    
-    private AtomicBoolean serverLooksDown = new AtomicBoolean(false);
-
-    private synchronized void connect() {
-        ConnectionFactory factory = new ConnectionFactory();
+    protected byte[] buildMessage(CrawlURI curi) {
         try {
-            factory.setUri(getAmqpUri());
-            connection =  factory.newConnection();
-            boolean wasDown = serverLooksDown.getAndSet(false);
-            if (wasDown) {
-                logger.info(getAmqpUri() + " is back up, connected successfully!");
-            }
-        } catch (Exception e) {
-            connection = null;
-            boolean wasAlreadyDown = serverLooksDown.getAndSet(true);
-            if (!wasAlreadyDown) {
-                logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
-            }
+            return buildJsonMessage(curi).toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    synchronized public void stop() {
-        try {
-            if(connection != null && connection.isOpen()) {
-                connection.close();
-            }
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Attempting to close AMQP connection failed!", e);
-        }
+    @Override
+    protected void success(CrawlURI curi, byte[] message, BasicProperties props) {
+        super.success(curi, message, props);
+        curi.getAnnotations().add(A_SENT_TO_AMQP);
+    }
+
+    protected BasicProperties props = new AMQP.BasicProperties.Builder().
+            contentType("application/json").build();
+
+    @Override
+    protected BasicProperties amqpMessageProperties() {
+        return props;
     }
 }
