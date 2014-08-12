@@ -167,13 +167,11 @@ public class DispositionProcessor extends Processor {
 
     @Override
     protected boolean shouldProcess(CrawlURI puri) {
-        return puri instanceof CrawlURI;
+        return true;
     }
     
     @Override
-    protected void innerProcess(CrawlURI puri) {
-        CrawlURI curi = (CrawlURI)puri;
-        
+    protected void innerProcess(CrawlURI curi) {
         // Tally per-server, per-host, per-frontier-class running totals
         CrawlServer server = serverCache.getServerFor(curi.getUURI());
 
