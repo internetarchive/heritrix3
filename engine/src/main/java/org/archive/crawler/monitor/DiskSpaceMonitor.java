@@ -29,7 +29,7 @@ import org.springframework.context.ApplicationListener;
  * <p>
  * Paths are checked available space whenever a {@link StatSnapshotEvent} occurs. 
  * 
- * @contributor Kristinn Sigur&eth;sson
+ * <p>Contributor Kristinn Sigur&eth;sson</p>
  */
 public class DiskSpaceMonitor implements ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(DiskSpaceMonitor.class.getName());

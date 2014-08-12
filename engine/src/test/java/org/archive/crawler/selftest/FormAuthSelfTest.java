@@ -36,8 +36,8 @@ import org.mortbay.jetty.servlet.ServletHolder;
 /**
  * Test form-based authentication
  *
- * @contributor stack
- * @contributor gojomo
+ * <p>Contributor stack</p>
+ * <p>Contributor gojomo</p>
  */
 public class FormAuthSelfTest
     extends SelfTestBase

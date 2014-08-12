@@ -35,8 +35,8 @@ import org.archive.util.IterableLineIterator;
  * Client for FTP operations. Saves the commands sent to the server and replies
  * received, which can be retrieved with {@link #getControlConversation()}.
  * 
- * @contributor pjack
- * @contributor nlevitt
+ * <p>Contributor pjack</p>
+ * <p>Contributor nlevitt</p>
  */
 public class ClientFTP extends FTPClient implements ProtocolCommandListener {
 

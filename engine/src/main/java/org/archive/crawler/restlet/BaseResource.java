@@ -32,7 +32,7 @@ import org.restlet.resource.Variant;
 /**
  * Abstract {@code Resource} with common shared functionality. 
  * 
- * @contributor nlevitt
+ * <p>Contributor nlevitt</p>
  */
 public abstract class BaseResource extends Resource {
 
@@ -41,10 +41,11 @@ public abstract class BaseResource extends Resource {
     }
 
     /**
-     * If client can accept text/html, always prefer it. WebKit-based browsers
-     * claim to want application/xml, but we don't want to give it to them. See
-     * {@link https://webarchive.jira.com/browse/HER-1603}
-     */
+	 * If client can accept text/html, always prefer it. WebKit-based browsers
+	 * claim to want application/xml, but we don't want to give it to them. See
+	 * <a href="https://webarchive.jira.com/browse/HER-1603">https://webarchive.
+	 * jira.com/browse/HER-1603</a>
+	 */
     public Variant getPreferredVariant() {
         boolean addExplicitTextHtmlPreference = false;
 

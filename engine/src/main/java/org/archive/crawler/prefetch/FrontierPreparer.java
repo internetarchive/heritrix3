@@ -45,7 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * they need to perform remedial preparation for URIs that do not
  * pass through this processor on the CandidateChain.
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class FrontierPreparer extends Scoper {
     @SuppressWarnings("unused")
@@ -258,9 +258,10 @@ public class FrontierPreparer extends Scoper {
     }
     
     /**
-     * @param cauri CrawlURI we're to get a key for.
-     * @return a String token representing a queue
-     */
+	 * @param curi
+	 *            CrawlURI we're to get a key for.
+	 * @return a String token representing a queue
+	 */
     public String getClassKey(CrawlURI curi) {
         assert KeyedProperties.overridesActiveFrom(curi);      
         String queueKey = getQueueAssignmentPolicy().getClassKey(curi);

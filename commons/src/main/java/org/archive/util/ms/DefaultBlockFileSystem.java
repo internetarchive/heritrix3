@@ -31,67 +31,82 @@ import org.archive.util.LRU;
 /**
  * Default implementation of the Block File System.
  * 
- * <p>The overall structure of a BlockFileSystem file (such as a .doc file) is
- * as follows.  The file is divided into blocks, which are of uniform length
- * (512 bytes).  The first block (at file pointer 0) is called the header
- * block.  It's used to look up other blocks in the file.
+ * <p>
+ * The overall structure of a BlockFileSystem file (such as a .doc file) is as
+ * follows. The file is divided into blocks, which are of uniform length (512
+ * bytes). The first block (at file pointer 0) is called the header block. It's
+ * used to look up other blocks in the file.
  * 
- * <p>Subfiles contained within the .doc file are organized using a Block
- * Allocation Table, or BAT.  The BAT is basically a linked list; given a 
- * block number, the BAT will tell you the next block number.  Note that
- * the header block has no number; block #0 is the first block after the
- * header.  Thus, to convert a block number to a file pointer:
+ * <p>
+ * Subfiles contained within the .doc file are organized using a Block
+ * Allocation Table, or BAT. The BAT is basically a linked list; given a block
+ * number, the BAT will tell you the next block number. Note that the header
+ * block has no number; block #0 is the first block after the header. Thus, to
+ * convert a block number to a file pointer:
  * <code>int filePointer = (blockNumber + 1) * BLOCK_SIZE</code>.
  * 
- * <p>The BAT itself is discontinuous, however.  To find the blocks that 
- * comprise the BAT, you have to look in the header block.  The header block
- * contains an array of 109 pointers to the blocks that comprise the BAT.
- * If more than 109 BAT blocks are required (in other words, if the .doc
- * file is larger than ~6 megabytes), then something called the 
- * XBAT comes into play.
+ * <p>
+ * The BAT itself is discontinuous, however. To find the blocks that comprise
+ * the BAT, you have to look in the header block. The header block contains an
+ * array of 109 pointers to the blocks that comprise the BAT. If more than 109
+ * BAT blocks are required (in other words, if the .doc file is larger than ~6
+ * megabytes), then something called the XBAT comes into play.
  * 
- * <p>XBAT blocks contain pointers to the 110th BAT block and beyond.
- * The first XBAT block is stored at a file pointer listed in the header.
- * The other XBAT blocks are always stored in order after the first; the 
- * XBAT table is continuous.  One is inclined to wonder why the BAT itself
- * is not so stored, but oh well.
+ * <p>
+ * XBAT blocks contain pointers to the 110th BAT block and beyond. The first
+ * XBAT block is stored at a file pointer listed in the header. The other XBAT
+ * blocks are always stored in order after the first; the XBAT table is
+ * continuous. One is inclined to wonder why the BAT itself is not so stored,
+ * but oh well.
  * 
- * <p>The BAT only tells you the next block for a given block.  To find the 
- * first block for a subfile, you have to look up that subfile's directory
- * entry.  Each directory entry is a 128 byte structure in the file, so four
- * of them fit in a block.  The number of the first block of the entry list
- * is stored in the header.  To find subsequent entry blocks, the BAT must
- * be used.
+ * <p>
+ * The BAT only tells you the next block for a given block. To find the first
+ * block for a subfile, you have to look up that subfile's directory entry. Each
+ * directory entry is a 128 byte structure in the file, so four of them fit in a
+ * block. The number of the first block of the entry list is stored in the
+ * header. To find subsequent entry blocks, the BAT must be used.
  * 
- * <p>I'm telling you all this so that you understand the caching that this
- * class provides.
+ * <p>
+ * I'm telling you all this so that you understand the caching that this class
+ * provides.
  * 
- * <p>First, directory entries are not cached.  It's assumed that they will
- * be looked up at the beginning of a lengthy operation, and then forgotten
- * about.  This is certainly the case for {@link Doc#getText(BlockFileSystem)}. 
- * If you need to remember directory entries, you can manually store the Entry 
- * objects in a map or something, as they don't grow stale.
+ * <p>
+ * First, directory entries are not cached. It's assumed that they will be
+ * looked up at the beginning of a lengthy operation, and then forgotten about.
+ * This is certainly the case for FIXME:{link
+ * org.archive.util.ms.Doc#getText(BlockFileSystem)}. If you need to remember
+ * directory entries, you can manually store the Entry objects in a map or
+ * something, as they don't grow stale.
  * 
- * <p>This class keeps all 512 bytes of the header block in memory at all 
- * times.  This prevents a potentially expensive file pointer repositioning
- * every time you're trying to figure out what comes next.
+ * <p>
+ * This class keeps all 512 bytes of the header block in memory at all times.
+ * This prevents a potentially expensive file pointer repositioning every time
+ * you're trying to figure out what comes next.
  * 
- * <p>BAT and XBAT blocks are stored in a least-recently used cache.  The 
- * <i>n</i> most recent BAT and XBAT blocks are remembered, where <i>n</i>
- * is set at construction time.  The minimum value of <i>n</i> is 1.  For small
- * files, this can prevent file pointer repositioning for BAT look ups.
+ * <p>
+ * BAT and XBAT blocks are stored in a least-recently used cache. The <i>n</i>
+ * most recent BAT and XBAT blocks are remembered, where <i>n</i> is set at
+ * construction time. The minimum value of <i>n</i> is 1. For small files, this
+ * can prevent file pointer repositioning for BAT look ups.
  * 
- * <p>The BAT/XBAT cache only takes up memory as needed.  If the specified
- * cache size is 100 blocks, but the file only has 4 BAT blocks, then only 
- * 2048 bytes will be used by the cache.
+ * <p>
+ * The BAT/XBAT cache only takes up memory as needed. If the specified cache
+ * size is 100 blocks, but the file only has 4 BAT blocks, then only 2048 bytes
+ * will be used by the cache.
  * 
- * <p>Note this class only caches BAT and XBAT blocks.  It does not cache the
- * blocks that actually make up a subfile's contents.  It is assumed that those
- * blocks will only be accessed once per operation (again, this is what
+ * <p>
+ * Note this class only caches BAT and XBAT blocks. It does not cache the blocks
+ * that actually make up a subfile's contents. It is assumed that those blocks
+ * will only be accessed once per operation (again, this is what
  * {Doc.getText(BlockFileSystem)} typically requires.)
  * 
+ * <p>
+ * See <a
+ * href="http://jakarta.apache.org/poi/poifs/fileformat.html">http://jakarta
+ * .apache.org/poi/poifs/fileformat.html</a>
+ * </p>
+ * 
  * @author pjack
- * @see http://jakarta.apache.org/poi/poifs/fileformat.html
  */
 public class DefaultBlockFileSystem implements BlockFileSystem {
 

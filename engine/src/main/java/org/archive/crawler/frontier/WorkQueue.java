@@ -121,8 +121,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /**
      * Delete URIs matching the given pattern from this queue. 
-     * @param frontier
-     * @param match
      * @return count of deleted URIs
      */
     public synchronized long deleteMatching(final WorkQueueFrontier frontier, String match) {
@@ -289,7 +287,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * negative value to effect 'refund'/undo.)
      * 
      * @param amount tp decrement
-     * @return updated budget value
      */
     public void expend(int amount) {
         this.totalExpenditure = this.totalExpenditure + amount;
@@ -547,7 +544,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     
     /**
      * @param writer
-     * @throws IOException
      */
     @Override
     public synchronized void reportTo(PrintWriter writer) {

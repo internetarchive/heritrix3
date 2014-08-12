@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationContext;
  * line like {@code def scope = appCtx.getBean("scope");}. Instead, the script
  * may simply reference {@code scope}. Caveat: access to beans is read only.
  * 
- * @contributor travis
+ * <p>Contributor travis</p>
  */
 public class BeanLookupBindings extends SimpleBindings {
 

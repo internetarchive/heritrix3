@@ -125,9 +125,9 @@ import com.sleepycat.je.DatabaseException;
  *   <li> Successfully downloaded documents per host per source
  * </ul>
  *
- * @contributor Parker Thompson
- * @contributor Kristinn Sigurdsson
- * @contributor gojomo
+ * <p>Contributor Parker Thompson</p>
+ * <p>Contributor Kristinn Sigurdsson</p>
+ * <p>Contributor gojomo</p>
  */
 public class StatisticsTracker 
     implements 
@@ -577,13 +577,15 @@ public class StatisticsTracker
              - crawlStartTime;
     }
 
-    /** Returns a HashMap that contains information about distributions of
-     *  encountered mime types.  Key/value pairs represent
-     *  mime type -> count.
-     * <p>
-     * <b>Note:</b> All the values are wrapped with a {@link AtomicLong AtomicLong}
-     * @return mimeTypeDistribution
-     */
+    /**
+	 * Returns a HashMap that contains information about distributions of
+	 * encountered mime types. Key/value pairs represent mime type -&gt; count.
+	 * <p>
+	 * <b>Note:</b> All the values are wrapped with a {@link AtomicLong
+	 * AtomicLong}
+	 * 
+	 * @return mimeTypeDistribution
+	 */
     public Map<String, AtomicLong> getFileDistribution() {
         return mimeTypeDistribution;
     }

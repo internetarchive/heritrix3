@@ -103,10 +103,11 @@ public class CrawlerJournal implements Closeable {
     }
 
     /**
-     * Write a line
-     * 
-     * @param string String
-     */
+	 * Write one or more lines.
+	 * 
+	 * @param strs
+	 *            one or more strings to write on separate lines.
+	 */
     public synchronized void writeLine(String... strs) {
         try {
             for(String s : strs) {
@@ -189,12 +190,12 @@ public class CrawlerJournal implements Closeable {
     }
 
     /**
-     * Handle a checkpoint by rotating the current log to a checkpoint-named
-     * file and starting a new log. 
-     * 
-     * @param checkpointDir
-     * @throws IOException
-     */
+	 * Handle a checkpoint by rotating the current log to a checkpoint-named
+	 * file and starting a new log. If needed, delete oldest log.
+	 * 
+	 * @param checkpointInProgress
+	 *            current checkpoint
+	 */
     public synchronized void rotateForCheckpoint(Checkpoint checkpointInProgress) {
         if (this.out == null || !this.gzipFile.exists()) {
             return;

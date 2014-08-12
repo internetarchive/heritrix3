@@ -28,7 +28,7 @@ import org.archive.crawler.frontier.WorkQueueFrontier;
  * Report of all nonempty Frontier queues (as usually dumped at end of
  * crawl for reference).
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class FrontierNonemptyReport extends Report {
 

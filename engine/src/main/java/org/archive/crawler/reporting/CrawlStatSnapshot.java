@@ -27,7 +27,7 @@ import org.archive.util.PaddingStringBuffer;
  * obtaining a consistent set of stats and a short log of stats
  * for calculating rates.
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class CrawlStatSnapshot {
     public long timestamp; 
@@ -111,7 +111,6 @@ public class CrawlStatSnapshot {
     /**
      * Return one line of current progress-statistics
      * 
-     * @param now
      * @return String of stats
      */
     public String getProgressStatisticsLine() {

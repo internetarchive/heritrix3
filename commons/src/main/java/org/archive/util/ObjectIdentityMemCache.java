@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Trivial all-in-memory object cache, using a single internal
  * ConcurrentHashMap.
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  * @param <V>
  */
 public class ObjectIdentityMemCache<V extends IdentityCacheable> 
@@ -86,9 +86,9 @@ implements ObjectIdentityCache<V> {
     }
 
     /**
-     * Offer raw map access for convenience of checkpoint/recovery.
-     * @return Map<String, V>
-     */
+	 * 
+	 * @return backing map.
+	 */
     public Map<String, V> getMap() {
         return map;
     }

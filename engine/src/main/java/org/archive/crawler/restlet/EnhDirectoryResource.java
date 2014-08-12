@@ -44,7 +44,7 @@ import com.noelios.restlet.local.DirectoryResource;
  * Enhanced version of Restlet DirectoryResource, adding ability to 
  * edit some files. 
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class EnhDirectoryResource extends DirectoryResource {
     

@@ -77,7 +77,7 @@ import org.springframework.context.Lifecycle;
  *  -  .overlay: add new overlay settings
  *  - .js .rb .bsh .rb etc - execute arbitrary script (a la ScriptedProcessor)
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runnable {
     final private static Logger LOGGER = 

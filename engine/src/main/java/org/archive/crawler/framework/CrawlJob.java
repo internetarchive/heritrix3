@@ -79,7 +79,7 @@ import org.xml.sax.SAXException;
  * CrawlJob provides convenience methods for an administrative 
  * interface to assemble, launch, monitor, and manage crawls. 
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<ApplicationEvent> {
     private final static Logger LOGGER =
@@ -612,12 +612,13 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     }
 
     /**
-     * Return all config files included via 'import' statements in the
-     * primary config (or other included configs). 
-     * 
-     * @param xml File to examine
-     * @return List<File> of all transitively-imported Files
-     */
+	 * Return all config files included via 'import' statements in the primary
+	 * config (or other included configs).
+	 * 
+	 * @param xml
+	 *            File to examine
+	 * @return list of all transitively-imported Files
+	 */
     @SuppressWarnings("unchecked")
     public List<File> getImportedConfigs(File xml) {
         List<File> imports = new LinkedList<File>(); 

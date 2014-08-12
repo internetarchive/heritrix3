@@ -62,7 +62,7 @@ import org.xbill.DNS.Lookup;
  * As the "global context" for a crawl, subcomponents will
  * often reach each other through the CrawlController.
  *
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class CrawlController 
 implements Serializable, 

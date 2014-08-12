@@ -6,17 +6,20 @@ import org.archive.crawler.frontier.precedence.PrecedenceLoader;
 
 
 /**
- * Tests that precedence values for URIs can be imported from an offline 
- * analysis.  This test crawls the same directory structure as 
- * {@link PrecedenceSelfTest1} and expects the URIs to be crawled in the same
- * order.  However, the result is achieved using a 
- * {@link org.archive.crawler.frontier.precedence.PreloadedUriPrecedencePolicy}
- * to load per-URI precedence information from an external file.
+ * Tests that precedence values for URIs can be imported from an offline
+ * analysis. This test crawls the same directory structure as FIXME{link
+ * PrecedenceSelfTest1} and expects the URIs to be crawled in the same order.
+ * However, the result is achieved using a FIXME{link
+ * org.archive.crawler.frontier.precedence.PreloadedUriPrecedencePolicy} to load
+ * per-URI precedence information from an external file.
  * 
- * <p>Such a file could be generated from PageRank analysis of a previously
- * completed crawl; see {@link http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+Analysis+Notes}.
- * (For this minimal functional test, the PreloadedUriPrecedencePolicy input
- * file was simply hand-generated.)
+ * <p>
+ * Such a file could be generated from PageRank analysis of a previously
+ * completed crawl; see <a href=
+ * "http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+Analysis+Notes"
+ * >http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+
+ * Analysis+Notes</a> (For this minimal functional test, the
+ * PreloadedUriPrecedencePolicy input file was simply hand-generated.)
  * 
  * @author pjack
  */

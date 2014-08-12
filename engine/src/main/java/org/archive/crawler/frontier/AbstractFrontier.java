@@ -244,9 +244,10 @@ public abstract class AbstractFrontier
     }
     
     /**
-     * @param cauri CrawlURI we're to get a key for.
-     * @return a String token representing a queue
-     */
+	 * @param curi
+	 *            CrawlURI we're to get a key for.
+	 * @return a String token representing a queue
+	 */
     public String getClassKey(CrawlURI curi) {
         assert KeyedProperties.overridesActiveFrom(curi); 
         return preparer.getClassKey(curi);
@@ -278,10 +279,7 @@ public abstract class AbstractFrontier
      */
     protected FrontierJournal recover = null;
     
-    /**
-     * @param name Name of this frontier.
-     * @param description Description for this frontier.
-     */
+
     public AbstractFrontier() {
 
     }
@@ -544,7 +542,6 @@ public abstract class AbstractFrontier
      * Choose a per-classKey queue and enqueue it. If this
      * item has made an unready queue ready, place that 
      * queue on the readyClassQueues queue. 
-     * @param caUri CrawlURI.
      */
     public void receive(CrawlURI curi) {
         sheetOverlaysManager.applyOverlaysTo(curi);
@@ -879,25 +876,31 @@ public abstract class AbstractFrontier
     private final static int PROGRESS_INTERVAL = 1000000; 
 
     /**
-     * Import URIs from the given file (in recover-log-like format, with
-     * a 3-character 'type' tag preceding a URI with optional hops/via).
-     * 
-     * If 'includeOnly' is true, the URIs will only be imported into 
-     * the frontier's alreadyIncluded structure, without being queued.
-     * 
-     * Only imports URIs if their first tag field matches the acceptTags 
-     * pattern.
-     * 
-     * @param source File recovery log file to use (may be .gz compressed)
-     * @param applyScope whether to apply crawl scope to URIs
-     * @param includeOnly whether to only add to included filter, not schedule
-     * @param forceFetch whether to force fetching, even if already seen 
-     * (ignored if includeOnly is set)
-     * @param acceptTags String regex; only lines whose first field 
-     * match will be included
-     * @return number of lines in recovery log (for reference)
-     * @throws IOException
-     */
+	 * Import URIs from the given file (in recover-log-like format, with a
+	 * 3-character 'type' tag preceding a URI with optional hops/via).
+	 * 
+	 * If 'includeOnly' is true, the URIs will only be imported into the
+	 * frontier's alreadyIncluded structure, without being queued.
+	 * 
+	 * Only imports URIs if their first tag field matches the acceptTags
+	 * pattern.
+	 * 
+	 * @param source
+	 *            File recovery log file to use (may be .gz compressed)
+	 * @param applyScope
+	 *            whether to apply crawl scope to URIs
+	 * @param includeOnly
+	 *            whether to only add to included filter, not schedule
+	 * @param forceFetch
+	 *            whether to force fetching, even if already seen (ignored if
+	 *            includeOnly is set)
+	 * @param acceptTags
+	 *            String regex; only lines whose first field match will be
+	 *            included
+	 * @return number of lines in recovery log (for reference)
+	 * @throws IOException
+	 *             from reading the source file.
+	 */
     public long importRecoverFormat(File source, boolean applyScope, 
             boolean includeOnly, boolean forceFetch, String acceptTags) 
     throws IOException {

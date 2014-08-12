@@ -27,7 +27,7 @@ import org.springframework.context.support.DefaultLifecycleProcessor;
  * ApplicationContext (PathSharingContext) is built ('refreshed'). 
  * (That is, it restores the Spring 2.5 behavior.)
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public class HeritrixLifecycleProcessor extends DefaultLifecycleProcessor implements BeanNameAware {
     protected String name;

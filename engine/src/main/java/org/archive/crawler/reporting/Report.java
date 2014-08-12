@@ -25,7 +25,7 @@ import java.io.PrintWriter;
  * StatisticsTracker and can dump a plain-text representation to a
  * PrintWriter. 
  * 
- * @contributor gojomo
+ * <p>Contributor gojomo</p>
  */
 public abstract class Report {
     public Report() {

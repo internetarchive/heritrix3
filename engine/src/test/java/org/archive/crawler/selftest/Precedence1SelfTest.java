@@ -27,43 +27,48 @@ import org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy;
 import org.archive.util.ArchiveUtils;
 
 /**
- * Tests that operators can create precedence groups for URIs, and that URIs
- * in one group are crawled before URIs in another group per operator preference.
+ * Tests that operators can create precedence groups for URIs, and that URIs in
+ * one group are crawled before URIs in another group per operator preference.
  * 
- * <p>The embedded Jetty HTTP server for this test provides the following
- * document tree:
+ * <p>
+ * The embedded Jetty HTTP server for this test provides the following document
+ * tree:
  * 
  * <ul>
  * <li>seed.html</li>
- * <li>one/</li>
- *     <ul>
- *     <li>a.html</li>
- *     <li>b.html</li>
- *     <li>c.html</li>
- *     </ul>
- * <li>five/</li>
- *     <ul>
- *     <li>a.html</li>
- *     <li>b.html</li>
- *     <li>c.html</li>
- *     </ul>
- * <li>ten/</li>
- *     <ul>
- *     <li>a.html</li>
- *     <li>b.html</li>
- *     <li>c.html</li>
- *     </ul>
+ * <li>one/
+ * <ul>
+ * <li>a.html</li>
+ * <li>b.html</li>
+ * <li>c.html</li>
+ * </ul>
+ * <li>five/
+ * 
+ * <ul>
+ * <li>a.html</li>
+ * <li>b.html</li>
+ * <li>c.html</li>
+ * </ul>
+ * </li>
+ * <li>ten/
+ * <ul>
+ * <li>a.html</li>
+ * <li>b.html</li>
+ * <li>c.html</li>
+ * </ul>
+ * </li>
  * </ul>
  * 
- * (See the <code>engine/testdata/selftest/Precedence1SelfTest</code>
- * directory to view these files.) The <code>seed.html</code> file contains
- * links to <code>five/a.html</code>, <code>ten/a.html</code>, and
- * <code>one/a.html</code>, in that order.  The <code>a.html</code> files link 
- * to to the <code>b.html</code> files, and the <code>b.html</code> link to 
- * the <code>c.html</code> files, which have no out links.
+ * (See the <code>engine/testdata/selftest/Precedence1SelfTest</code> directory
+ * to view these files.) The <code>seed.html</code> file contains links to
+ * <code>five/a.html</code>, <code>ten/a.html</code>, and
+ * <code>one/a.html</code>, in that order. The <code>a.html</code> files link to
+ * to the <code>b.html</code> files, and the <code>b.html</code> link to the
+ * <code>c.html</code> files, which have no out links.
  *
- * <p>Ordinarily Heritrix would crawl these in (roughly) the order the links
- * are discovered:
+ * <p>
+ * Ordinarily Heritrix would crawl these in (roughly) the order the links are
+ * discovered:
  * 
  * <ol>
  * <li>seed.html</li>
@@ -78,27 +83,31 @@ import org.archive.util.ArchiveUtils;
  * <li>one/c.html</li>
  * </ol>
  * 
- * <p>However, the crawl configuration for this test uses a 
- * {@link BaseUriPrecedencePolicy} instead of the default 
- * {@link org.archive.crawler.frontier.policy.CostUriPrecedencePolicy}.  The
- * <code>BasePrecedencePolicy</code> is configured so that all URIs have a 
+ * <p>
+ * However, the crawl configuration for this test uses a
+ * {@link BaseUriPrecedencePolicy} instead of the default
+ * {@link org.archive.crawler.frontier.policy.CostUriPrecedencePolicy}. The
+ * <code>BasePrecedencePolicy</code> is configured so that all URIs have a
  * precedence value of 5 unless otherwise specified.
  * 
- * <p>There is a sheet named <code>HiPri</code> that overrides the 
- * <code>base-precedence</code> to be 1 instead of 5; thus URIs associated
- * with the HiPri sheet should be crawled before other URIs.
- * Similarly, there is a sheet named <code>LoPri</code> that overrides
- * <code>base-precedence</code> to be 10 instead of 5.  URLs associated with
- * LoPri should be crawled after other URLs.
+ * <p>
+ * There is a sheet named <code>HiPri</code> that overrides the
+ * <code>base-precedence</code> to be 1 instead of 5; thus URIs associated with
+ * the HiPri sheet should be crawled before other URIs. Similarly, there is a
+ * sheet named <code>LoPri</code> that overrides <code>base-precedence</code> to
+ * be 10 instead of 5. URLs associated with LoPri should be crawled after other
+ * URLs.
  * 
- * <p>The <code>one/</code> directory is associated with the HiPri sheet, and
- * the <code>ten/</code> directory is associated with the LoPri sheet.  This
- * creates three "groups" of URIs: one, five and ten.  All of the URIs in 
- * group "one" should be crawled before any of the URIs in group "five" are
- * crawled.  Similarly, all of the URIs in group "five" should be crawled before
- * any of the URIs in group "ten".
+ * <p>
+ * The <code>one/</code> directory is associated with the HiPri sheet, and the
+ * <code>ten/</code> directory is associated with the LoPri sheet. This creates
+ * three "groups" of URIs: one, five and ten. All of the URIs in group "one"
+ * should be crawled before any of the URIs in group "five" are crawled.
+ * Similarly, all of the URIs in group "five" should be crawled before any of
+ * the URIs in group "ten".
  *
- * <p>So the final order in which URLs should be crawled in this test is:
+ * <p>
+ * So the final order in which URLs should be crawled in this test is:
  * 
  * <ol>
  * <li>seed.html</li>
@@ -115,12 +124,13 @@ import org.archive.util.ArchiveUtils;
  * 
  * This tests ensures that the documents were crawled in the correct order.
  * 
- * <p>Although this test uses the directory structure of the URIs to group the URIs
- * into precedence groups, because the test executes on just one machine.
- * But the same basic configuration could be used to group URIs by any SURT
- * prefix -- by host or by domain, even by top-level domain.  So an operator
- * could associate HiPri with all .gov sites to ensure that all .gov URIs
- * are crawled before any non-.gov URIs.
+ * <p>
+ * Although this test uses the directory structure of the URIs to group the URIs
+ * into precedence groups, because the test executes on just one machine. But
+ * the same basic configuration could be used to group URIs by any SURT prefix
+ * -- by host or by domain, even by top-level domain. So an operator could
+ * associate HiPri with all .gov sites to ensure that all .gov URIs are crawled
+ * before any non-.gov URIs.
  * 
  * @author pjack
  */

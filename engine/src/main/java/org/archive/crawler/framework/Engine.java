@@ -39,8 +39,8 @@ import org.archive.util.ArchiveUtils;
  * directory called the jobsDir.  The jobs are contained as subdirectories of
  * jobDir.  
  * 
- * @contributor pjack
- * @contributor gojomo
+ * <p>Contributor pjack</p>
+ * <p>Contributor gojomo</p>
  */
 public class Engine {
     @SuppressWarnings("unused")
@@ -347,7 +347,6 @@ public class Engine {
     /**
      * create a new job dir and copy profile CXML into as non-profile CXML
      * @param newJobDir new job directory
-     * @throws IOException 
      */
 	public boolean createNewJobWithDefaults(File newJobDir) {
         try {

@@ -20,11 +20,10 @@
 package org.archive.util;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,24 +45,23 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 
 /**
- * A BDB JE backed object cache. 
- * 
+ * A BDB JE backed object cache.
+ * <p>
  * Soft references to previously-instantiated objects are held so that
- * unless/until an object is garbage collected, subsequent get()s will
- * return the exact same object (avoiding redundant creation or disagreement
- * about canonical object state). 
- * <p/>
- * The backing disk is only guaranteed to be up-to-date after a flush 
- * of all dirty values to disk, as can be forced by sync().
- * <p/>
- * 
- * <p/>
+ * unless/until an object is garbage collected, subsequent get()s will return
+ * the exact same object (avoiding redundant creation or disagreement about
+ * canonical object state).
+ * </p>
+ * <p>
+ * The backing disk is only guaranteed to be up-to-date after a flush of all
+ * dirty values to disk, as can be forced by sync().
+ * </p>
  * 
  * @author John Erik Halse
  * @author stack
  * @author gojomo
  * @author paul baclace (conversion to ConcurrentMap)
- *  
+ * 
  */
 @SuppressWarnings("ALL")
 public class ObjectIdentityBdbManualCache<V extends IdentityCacheable>
@@ -102,14 +100,12 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     private AtomicLong evictions = new AtomicLong(0);
 
     /**
-     * Constructor. You must call
-     * {@link #initialize(Environment, Class, Class, StoredClassCatalog)}
-     * to finish construction. Construction is two-stepped to support
-     * reconnecting a deserialized CachedBdbMap with its backing bdbje
-     * database.
-     * 
-     * @param dbName Name of the backing db this instance should use.
-     */
+	 * Constructor. You must call FIXME {link #initialize(Environment, Class,
+	 * Class, StoredClassCatalog)} to finish construction. Construction is
+	 * two-stepped to support reconnecting a deserialized CachedBdbMap with its
+	 * backing bdbje database.
+	 * 
+	 */
     public ObjectIdentityBdbManualCache() {
         super();
         dirtyItems = CacheBuilder.newBuilder()
@@ -127,17 +123,17 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     }
     
     /**
-     * Call this method when you have an instance when you used the
-     * default constructor or when you have a deserialized instance that you
-     * want to reconnect with an extant bdbje environment.  Do not
-     * call this method if you used the
-     * {@link #CachedBdbMap(File, String, Class, Class)} constructor.
-     * @param env
-     * @param keyClass
-     * @param valueClass
-     * @param classCatalog
-     * @throws DatabaseException
-     */
+	 * Call this method when you have an instance when you used the default
+	 * constructor or when you have a deserialized instance that you want to
+	 * reconnect with an extant bdbje environment. Do not call this method if
+	 * you used the FIXME {link #CachedBdbMap(File, String, Class, Class)}
+	 * constructor.
+	 * 
+	 * @param env
+	 * @param valueClass
+	 * @param classCatalog
+	 * @throws DatabaseException
+	 */
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {
