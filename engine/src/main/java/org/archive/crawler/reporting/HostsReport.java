@@ -20,8 +20,6 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,18 +37,6 @@ public class HostsReport extends Report {
     private final static Logger logger =
             Logger.getLogger(HostsReport.class.getName());
 
-    protected String fixup(String hostName) {
-        if ("dns:".equals(hostName) || "whois:".equals(hostName)) {
-            return hostName;
-        } else {
-            try {
-                return URLEncoder.encode(hostName, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     @Override
     public void write(final PrintWriter writer, StatisticsTracker stats) {
         // TODO: only perform sorting on manageable number of hosts
@@ -63,7 +49,7 @@ public class HostsReport extends Report {
                 writeReportLine(writer,
                         host.getSubstats().getFetchSuccesses(),
                         host.getSubstats().getTotalBytes(),
-                        fixup(host.getHostName()),
+                        host.fixUpName(),
                         host.getSubstats().getRobotsDenials(),
                         host.getSubstats().getRemaining(), 
                         host.getSubstats().getNovelUrls(),
