@@ -382,9 +382,13 @@ implements Checkpointable, BeanNameAware {
                 log((CrawlURI) curi);
             }
         };
-        pendingUris.forAllPendingDo(tolog);
+        forAllPendingDo(tolog);
     }
-    
+
+    public void forAllPendingDo(Closure closure) {
+        pendingUris.forAllPendingDo(closure);
+    }
+
     /**
      * Run a self-consistency check over queue collections, queues-of-queues, 
      * etc. for testing purposes. Requires one of the same locks as for PAUSE, 
