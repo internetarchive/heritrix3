@@ -21,6 +21,8 @@ package org.archive.io;
 
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.util.logging.Logger;
+
 import org.archive.io.arc.ARCReader;
 import org.archive.io.arc.ARCReaderFactory;
 import org.archive.io.arc.ARCRecord;
@@ -28,8 +30,6 @@ import org.archive.io.arc.ARCRecordMetaData;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.io.warc.WARCRecord;
-
-import java.util.logging.Logger;
 
 /**
  * useful for determining why ArchiveReader fails for problematic W/ARC files
@@ -449,15 +449,18 @@ public class ArchiveTest
 
 	
 	/**
-	 * test (scan|cdx|index|replay|dump) an archive.  
-	 * some of these modes are use-cases for wayback indexing mentioned in:
+	 * test (scan|cdx|index|replay|dump) an archive. some of these modes are
+	 * use-cases for wayback indexing mentioned in:
 	 * http://webarchive.jira.com/browse/HER-1568
-	 * @param arcfile a ARC or WARC archive (possibly .gz) 
-	 * @param offset byte offset into archive 
-	 * @param mode (default=scan)|cdx|index|replay|dump
-	 * @param record_range_start record index start (default=0)
-	 * @param record_range_end record index end (default=100)
-	 * @param filter mimetype, e.g. "text/html"
+	 * <ol>
+	 * <li>arcfile a ARC or WARC archive (possibly .gz)
+	 * <li>offset byte offset into archive
+	 * <li>mode (default=scan)|cdx|index|replay|dump
+	 * <li>record_range_start record index start (default=0)
+	 * <li>record_range_end record index end (default=100)
+	 * <li>filter mimetype, e.g. "text/html
+	 * </ol>
+	 * 
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {

@@ -25,8 +25,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 
-import com.google.common.cache.CacheBuilder;
 import org.archive.util.Histotable;
+
+import com.google.common.cache.CacheBuilder;
 
 /**
  * Counting Set which only remembers the 'top N' of all String values 
@@ -122,9 +123,10 @@ public class TopNSet implements Serializable {
     }
     
     /**
-     * Make internal map available (for checkpoint/restore purposes). 
-     * @return HashMap<String,Long>
-     */
+	 * Make internal map available (for checkpoint/restore purposes).
+	 * 
+	 * @return internal map
+	 */
     public ConcurrentMap<String, Long> getTopSet() {
         return set;
     }
@@ -134,10 +136,10 @@ public class TopNSet implements Serializable {
     }
     
     /**
-     * Get descending ordered list of key,count Entries.
-     * 
-     * @return SortedSet of Entry<key, count> descending-frequency 
-     */
+	 * Get descending ordered list of key,count Entries.
+	 * 
+	 * @return SortedSet of Entry&lt;key, count&gt; descending-frequency
+	 */
     public SortedSet<Map.Entry<?, Long>> getEntriesDescending() {
         TreeSet<Map.Entry<?, Long>> sorted = Histotable.getEntryByFrequencySortedSet();
         sorted.addAll(getTopSet().entrySet());

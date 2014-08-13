@@ -4,44 +4,43 @@ package st.ata.util;
 import java.util.Hashtable;
 
 /**
-
-<p> This class provides methods that construct fingerprints of strings
-of bytes via operations in <i>GF[2^d]</i> for <i>0 < d <= 64</i>.
-<i>GF[2^d]</i> is represented as the set of polynomials of degree
-<i>d</i> with coefficients in <i>Z(2)</i>, modulo an irreducible
-polynomial <i>P</i> of degree <i>d</i>.  The representation of
-polynomials is as an unsigned binary number in which the least
-significant exponent is kept in the most significant bit.
-
-<p> Let S be a string of bytes and <i>g(S)</i> the string obtained by
-taking the byte <code>0x01</code> followed by eight <code>0x00</code>
-bytes followed by <code>S</code>.  Let <i>f(S)</i> be the polynomial
-associated to the string <i>S</i> viewed as a polynomial with
-coefficients in the field <i>Z(2)</i>.  The fingerprint of S is simply
-the value <i>f(g(S))</i> modulo <i>P</i>.  Because polynomials are
-represented with the least significant coefficient in the most
-significant bit, fingerprints of degree <i>d</i> are stored in the
-<code>d</code> <strong>most</strong> significant bits of a long word.
-
-<p> Fingerprints can be used as a probably unique id for the input
-string.  More precisely, if <i>P</i> is chosen at random among
-irreducible polynomials of degree <i>d</i>, then the probability that
-any two strings <i>A</i> and <i>B</i> have the same fingerprint is
-less than <i>max(|A|,|B|)/2^(d+1)</i> where <i>|A|</i> is the length
-of A in bits.
-
-<p> The routines named <code>extend[8]</code> and <code>fp[8]</code>
-return reduced results, while <code>extend_[byte/char/int/long]</code>
-do not.  An <em>un</em>reduced result is a number that is equal (mod
-</code>polynomial</code> to the desired fingerprint but may have
-degree <code>degree</code> or higher.  The method <code>reduce</code>
-reduces such a result to a polynomial of degree less than
-<code>degree</code>.  Obtaining reduced results takes longer than
-obtaining unreduced results; thus, when fingerprinting long strings,
-it's better to obtain irreduced results inside the fingerprinting loop
-and use <code>reduce</code> to reduce to a fingerprint after the loop.
-
-*/
+ * <p>
+ * This class provides methods that construct fingerprints of strings of bytes
+ * via operations in <i>GF[2^d]</i> for <i>0 &lt; d &lt;= 64</i>. <i>GF[2^d]</i>
+ * is represented as the set of polynomials of degree <i>d</i> with coefficients
+ * in <i>Z(2)</i>, modulo an irreducible polynomial <i>P</i> of degree <i>d</i>.
+ * The representation of polynomials is as an unsigned binary number in which
+ * the least significant exponent is kept in the most significant bit.
+ * 
+ * <p>
+ * Let S be a string of bytes and <i>g(S)</i> the string obtained by taking the
+ * byte <code>0x01</code> followed by eight <code>0x00</code> bytes followed by
+ * <code>S</code>. Let <i>f(S)</i> be the polynomial associated to the string
+ * <i>S</i> viewed as a polynomial with coefficients in the field <i>Z(2)</i>.
+ * The fingerprint of S is simply the value <i>f(g(S))</i> modulo <i>P</i>.
+ * Because polynomials are represented with the least significant coefficient in
+ * the most significant bit, fingerprints of degree <i>d</i> are stored in the
+ * <code>d</code> <strong>most</strong> significant bits of a long word.
+ * 
+ * <p>
+ * Fingerprints can be used as a probably unique id for the input string. More
+ * precisely, if <i>P</i> is chosen at random among irreducible polynomials of
+ * degree <i>d</i>, then the probability that any two strings <i>A</i> and
+ * <i>B</i> have the same fingerprint is less than <i>max(|A|,|B|)/2^(d+1)</i>
+ * where <i>|A|</i> is the length of A in bits.
+ * 
+ * <p>
+ * The routines named <code>extend[8]</code> and <code>fp[8]</code> return
+ * reduced results, while <code>extend_[byte/char/int/long]</code> do not. An
+ * <em>un</em>reduced result is a number that is equal (mod
+ * <code>polynomial</code> to the desired fingerprint but may have degree
+ * <code>degree</code> or higher. The method <code>reduce</code> reduces such a
+ * result to a polynomial of degree less than <code>degree</code>. Obtaining
+ * reduced results takes longer than obtaining unreduced results; thus, when
+ * fingerprinting long strings, it's better to obtain irreduced results inside
+ * the fingerprinting loop and use <code>reduce</code> to reduce to a
+ * fingerprint after the loop.
+ */
 // Tested by: TestFPGenerator
 public final class FPGenerator {
 

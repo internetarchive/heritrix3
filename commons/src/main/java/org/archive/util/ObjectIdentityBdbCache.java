@@ -20,7 +20,6 @@
 package org.archive.util;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -45,33 +44,36 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 
 /**
- * A BDB JE backed object cache. 
+ * A BDB JE backed object cache.
  * 
+ * <p>
  * Soft references to previously-instantiated objects are held so that
- * unless/until an object is garbage collected, subsequent get()s will
- * return the exact same object. (If all outside references are lost,
- * when the soft reference is broken, the object state -- still 
- * accessible to this class via reflective access to a phantom 
- * referent --is flushed to disk. The next get() will reconsitute a new
- * object, from the disk state.)
- * <p/>
- * The backing disk is only guaranteed to be up-to-date after a flush 
- * of all in-memory values to disk, as can be forced by sync().
- * <p/>
+ * unless/until an object is garbage collected, subsequent get()s will return
+ * the exact same object. (If all outside references are lost, when the soft
+ * reference is broken, the object state -- still accessible to this class via
+ * reflective access to a phantom referent --is flushed to disk. The next get()
+ * will reconsitute a new object, from the disk state.)
+ * </p>
+ * <p>
+ * The backing disk is only guaranteed to be up-to-date after a flush of all
+ * in-memory values to disk, as can be forced by sync().
+ * </p>
+ * <p>
  * To ensure that changes/mutations to values in this map are coherent and
- * consistent at the application level, it is assumed that the application
- * level only mutates values that are in this map and does not retain references
- * to values longer than necessary.  This allows mappings to be persisted
- * during GC without explicit transactions or write operations.
- * <p/>
- * Based on the earlier CachedBdbMap. 
- * <p/>
+ * consistent at the application level, it is assumed that the application level
+ * only mutates values that are in this map and does not retain references to
+ * values longer than necessary. This allows mappings to be persisted during GC
+ * without explicit transactions or write operations.
+ * </p>
+ * <p>
+ * Based on the earlier CachedBdbMap.
+ * </p>
  * 
  * @author John Erik Halse
  * @author stack
  * @author gojomo
  * @author paul baclace (conversion to ConcurrentMap)
- *  
+ * 
  */
 public class ObjectIdentityBdbCache<V extends IdentityCacheable> 
 implements ObjectIdentityCache<V>, Closeable, Serializable {
@@ -127,30 +129,27 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     }
 
     /**
-     * Constructor. You must call
-     * {@link #initialize(Environment, Class, Class, StoredClassCatalog)}
-     * to finish construction. Construction is two-stepped to support
-     * reconnecting a deserialized CachedBdbMap with its backing bdbje
-     * database.
-     * 
-     * @param dbName Name of the backing db this instance should use.
-     */
+	 * Constructor. You must call FIXME {link #initialize(Environment, Class,
+	 * Class, StoredClassCatalog)} to finish construction. Construction is
+	 * two-stepped to support reconnecting a deserialized CachedBdbMap with its
+	 * backing bdbje database.
+	 */
     public ObjectIdentityBdbCache() {
         super();
     }
     
     /**
-     * Call this method when you have an instance when you used the
-     * default constructor or when you have a deserialized instance that you
-     * want to reconnect with an extant bdbje environment.  Do not
-     * call this method if you used the
-     * {@link #CachedBdbMap(File, String, Class, Class)} constructor.
-     * @param env
-     * @param keyClass
-     * @param valueClass
-     * @param classCatalog
-     * @throws DatabaseException
-     */
+	 * Call this method when you have an instance when you used the default
+	 * constructor or when you have a deserialized instance that you want to
+	 * reconnect with an extant bdbje environment. Do not call this method if
+	 * you used the FIXME{link #CachedBdbMap(File, String, Class, Class)}
+	 * constructor.
+	 * 
+	 * @param env
+	 * @param valueClass
+	 * @param classCatalog
+	 * @throws DatabaseException
+	 */
     public void initialize(final Environment env, String dbName,
             final Class valueClass, final StoredClassCatalog classCatalog)
     throws DatabaseException {

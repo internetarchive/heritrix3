@@ -108,13 +108,6 @@ public class LongToIntConsistentHash {
         return match.getValue();
     }
 
-    /**
-     * Convenience alternative which creates longHash from CharSequence
-     * 
-     * @param string
-     * @param upTo
-     * @return
-     */
     public int bucketFor(CharSequence cs, int upTo) {
         return bucketFor(hash(cs), upTo);
     }

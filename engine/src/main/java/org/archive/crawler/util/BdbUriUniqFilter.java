@@ -216,11 +216,13 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     }
     
     /**
-     * Call after deserializing an instance of this class.  Will open the
-     * already seen in passed environment.
-     * @param env DB Environment to use.
-     * @throws DatabaseException
-     */
+	 * Call after deserializing an instance of this class. Will open the already
+	 * seen in passed environment.
+	 * 
+	 * @param db
+	 *            database to use.
+	 * @throws DatabaseException
+	 */
     public void reopen(Database db)
     throws DatabaseException {
         open(db);

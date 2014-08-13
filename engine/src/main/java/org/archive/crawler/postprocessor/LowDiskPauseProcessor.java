@@ -28,9 +28,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.framework.CrawlController;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.CrawlURI;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -107,9 +107,6 @@ public class LowDiskPauseProcessor extends Processor {
     public static final Pattern AVAILABLE_EXTRACTOR = 
         Pattern.compile("(?m)\\s(\\d+)\\s+\\d+%\\s+(\\S+)$");
     
-    /**
-     * @param name Name of this writer.
-     */
     public LowDiskPauseProcessor() {
     } 
     

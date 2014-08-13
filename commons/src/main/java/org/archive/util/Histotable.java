@@ -67,15 +67,15 @@ public class Histotable<K> extends TreeMap<K,Long> {
     }
     
     /**
-     * Get a SortedSet that, when filled with (String key)->(long count) 
-     * Entry instances, sorts them by (count, key) descending, as is useful 
-     * for most-frequent displays. 
-     * 
-     * Static to allow reuse elsewhere (TopNSet) until a better home for
-     * this utility method is found. 
-     * 
-     * @return TreeSet with suitable Comparator
-     */
+	 * Get a SortedSet that, when filled with (String key)-&gt;(long count)
+	 * Entry instances, sorts them by (count, key) descending, as is useful for
+	 * most-frequent displays.
+	 * 
+	 * Static to allow reuse elsewhere (TopNSet) until a better home for this
+	 * utility method is found.
+	 * 
+	 * @return TreeSet with suitable Comparator
+	 */
     public static TreeSet<Map.Entry<?, Long>> getEntryByFrequencySortedSet() {
         // sorted by count
         TreeSet<Map.Entry<?,Long>> sorted = 

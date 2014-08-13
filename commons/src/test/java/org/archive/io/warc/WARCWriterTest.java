@@ -444,12 +444,16 @@ extends TmpDirTestCase implements WARCConstants {
     }
     
     /**
-     * Write an arc file for other tests to use.
-     * @param arcdir Directory to write to.
-     * @param compress True if file should be compressed.
-     * @return ARC written.
-     * @throws IOException 
-     */
+	 * Write an arc file for other tests to use.
+	 * 
+	 * @param arcdir
+	 *            Directory to write to.
+	 * @param compress
+	 *            True if file should be compressed.
+	 * @return ARC written.
+	 * @throws IOException
+	 *             from either writeRecord or writer.close()
+	 */
     public static File createWARCFile(File arcdir, boolean compress)
     throws IOException {
         File [] files = {arcdir};

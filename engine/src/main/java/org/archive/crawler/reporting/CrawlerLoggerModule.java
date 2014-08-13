@@ -383,7 +383,6 @@ public class CrawlerLoggerModule
      * Run checkpointing.
      * 
      * <p>Default access only to be called by Checkpointer.
-     * @throws Exception
      */
     public void doCheckpoint(Checkpoint checkpointInProgress) throws IOException {
         // Rotate off crawler logs.

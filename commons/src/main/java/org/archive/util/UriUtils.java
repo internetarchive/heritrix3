@@ -309,12 +309,13 @@ public class UriUtils {
     }
     
     /**
-     * Perform additional fixup of likely-URI Strings
-     * 
-     * @param string detected candidate String
-     * @return String changed/decoded to increase likelihood it is a 
-     * meaningful non-404 URI
-     */
+	 * Perform additional fixup of likely-URI Strings
+	 * 
+	 * @param candidate
+	 *            detected candidate String
+	 * @return String changed/decoded to increase likelihood it is a meaningful
+	 *         non-404 URI
+	 */
     public static String speculativeFixup(String candidate, UURI base) {
         String retVal = candidate;
         

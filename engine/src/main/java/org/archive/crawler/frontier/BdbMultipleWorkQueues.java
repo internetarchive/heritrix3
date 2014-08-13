@@ -72,13 +72,14 @@ public class BdbMultipleWorkQueues {
     private EntryBinding<CrawlURI> crawlUriBinding;
 
     /**
-     * Create the multi queue in the given environment. 
-     * 
-     * @param env bdb environment to use
-     * @param classCatalog Class catalog to use.
-     * @param recycle True if we are to reuse db content if any.
-     * @throws DatabaseException
-     */
+	 * Create the multi queue in the given environment.
+	 * 
+	 * @param db
+	 *            database to use
+	 * @param classCatalog
+	 *            Class catalog to use.
+	 * @throws DatabaseException
+	 */
     public BdbMultipleWorkQueues(Database db,
         StoredClassCatalog classCatalog)
     throws DatabaseException {
@@ -527,13 +528,15 @@ public class BdbMultipleWorkQueues {
     
 
     /**
-     * Add a dummy 'cap' entry at the given insertion key. Prevents
-     * 'seeks' to queue heads from holding lock on last item of 
-     * 'preceding' queue. See:
-     * http://sourceforge.net/tracker/index.php?func=detail&aid=1262665&group_id=73833&atid=539102
-     * 
-     * @param origin key at which to insert the cap
-     */
+	 * Add a dummy 'cap' entry at the given insertion key. Prevents 'seeks' to
+	 * queue heads from holding lock on last item of 'preceding' queue. See: <a
+	 * href=
+	 * "http://sourceforge.net/tracker/index.php?func=detail&aid=1262665&group_id=73833&atid=539102"
+	 * >http://sourceforge.net/tracker/...</a>
+	 * 
+	 * @param origin
+	 *            key at which to insert the cap
+	 */
     public void addCap(byte[] origin) {
         try {
             pendingUrisDB.put(null, new DatabaseEntry(origin),

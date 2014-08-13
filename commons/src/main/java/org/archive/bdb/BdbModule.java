@@ -320,17 +320,19 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
     
     /**
-     * Open a Database inside this BdbModule's environment, and 
-     * remember it for automatic close-at-module-stop. 
-     * 
-     * @param name
-     * @param config
-     * @param usePriorData
-     * @return
-     * @throws DatabaseException
-     */
+	 * Open a Database inside this BdbModule's environment, and remember it for
+	 * automatic close-at-module-stop.
+	 * 
+	 * @param name
+	 *            database name
+	 * @param config
+	 *            database configuration
+	 * @param usePriorData
+	 *            if false, the database is truncated before being opened
+	 * @return opened and registered database
+	 */
     public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
-    throws DatabaseException {
+ {
         if (bdbEnvironment == null) {
             // proper initialization hasn't occurred
             throw new IllegalStateException("BdbModule not started");
@@ -377,21 +379,21 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
 
 
     /**
-     * Get an ObjectIdentityBdbCache, backed by a BDB Database of the 
-     * given name, with the given value class type. If 'recycle' is true,
-     * reuse values already in the database; otherwise start with an 
-     * empty cache. 
-     *  
-     * @param <V>
-     * @param dbName
-     * @param recycle
-     * @param valueClass
-     * @return
-     * @throws DatabaseException
-     */
+	 * Get an ObjectIdentityBdbCache, backed by a BDB Database of the given
+	 * name, with the given value class type. If 'recycle' is true, reuse values
+	 * already in the database; otherwise start with an empty cache.
+	 * 
+	 * @param dbName
+	 *            database name
+	 * @param recycle
+	 *            if false, truncate the database first.
+	 * @param valueClass
+	 *            for BDB
+	 * @return
+	 */
     public <V extends IdentityCacheable> ObjectIdentityBdbManualCache<V> getOIBCCache(String dbName, boolean recycle,
             Class<? extends V> valueClass) 
-    throws DatabaseException {
+ {
         if (!recycle) {
             try {
                 bdbEnvironment.truncateDatabase(null, dbName, false);
@@ -412,22 +414,22 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
     
     /**
-     * Get an ObjectIdentityCache, backed by a BDB Database of the given 
-     * name, with objects of the given valueClass type. If 'recycle' is
-     * true, reuse values already in the database; otherwise start with 
-     * an empty cache. 
-     * 
-     * @param <V>
-     * @param dbName
-     * @param recycle
-     * @param valueClass
-     * @return
-     * @throws DatabaseException
-     */
+	 * Get an ObjectIdentityCache, backed by a BDB Database of the given name,
+	 * with objects of the given valueClass type. If 'recycle' is true, reuse
+	 * values already in the database; otherwise start with an empty cache.
+	 * 
+	 * @param dbName
+	 *            database name
+	 * @param recycle
+	 *            if false, truncate the database first
+	 * @param valueClass
+	 *            for BDB.
+	 * @return
+	 */
     public <V extends IdentityCacheable> ObjectIdentityCache<V> getObjectCache(String dbName, boolean recycle,
             Class<V> declaredClass, Class<? extends V> valueClass) 
-    throws DatabaseException {
-        @SuppressWarnings("unchecked")
+ {
+		@SuppressWarnings("unchecked")
         ObjectIdentityCache<V> oic = oiCaches.get(dbName);
         if(oic!=null) {
             return oic; 
@@ -652,8 +654,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * reporting requirements. Calling the returned map's destroy()
      * method when done discards the associated Database. 
      * 
-     * @param <K>
-     * @param <V>
      * @param dbName Database name to use; if null a name will be synthesized
      * @param keyClass Class of keys; should be a Java primitive type
      * @param valueClass Class of values; may be any serializable type

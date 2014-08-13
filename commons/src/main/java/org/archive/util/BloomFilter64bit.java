@@ -129,17 +129,22 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
         this(n,d, new SecureRandom(), roundUp);
     }
     
-    /** Creates a new Bloom filter with given number of hash functions and 
-     * expected number of elements.
-     *
-     * @param n the expected number of elements.
-     * @param d the number of hash functions; if the filter add not more 
-     * than <code>n</code> elements, false positives will happen with 
-     * probability 2<sup>-<var>d</var></sup>.
-     * @param Random weightsGenerator may provide a seeded Random for reproducible
-     * internal universal hash function weighting
-     * @param roundUp if true, round bit size up to next-nearest-power-of-2
-     */
+    /**
+	 * Creates a new Bloom filter with given number of hash functions and
+	 * expected number of elements.
+	 *
+	 * @param n
+	 *            the expected number of elements.
+	 * @param d
+	 *            the number of hash functions; if the filter add not more than
+	 *            <code>n</code> elements, false positives will happen with
+	 *            probability 2<sup>-<var>d</var></sup>.
+	 * @param weightsGenerator
+	 *            may provide a seeded Random for reproducible internal
+	 *            universal hash function weighting
+	 * @param roundUp
+	 *            if true, round bit size up to next-nearest-power-of-2
+	 */
     public BloomFilter64bit( final long n, final int d, Random weightsGenerator, boolean roundUp ) {
         this.expectedInserts = n; 
         this.d = d;

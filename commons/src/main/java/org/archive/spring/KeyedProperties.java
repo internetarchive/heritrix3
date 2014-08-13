@@ -110,10 +110,10 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
             return new ArrayList<OverlayContext>();
         }
     };
-    /**
-     * Add an override map to the stack 
-     * @param m Map to add
-     */
+    
+	/**
+	 * Add an override map from threadOverrides.get() to the stack
+	 */
     static public void pushOverrideContext(OverlayContext ocontext) {
         threadOverrides.get().add(ocontext);
     }

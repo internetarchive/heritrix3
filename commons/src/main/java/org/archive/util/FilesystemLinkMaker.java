@@ -31,7 +31,9 @@ import com.sun.jna.win32.StdCallLibrary;
 /**
  * Wrapper for platform-dependent hard link creation.
  * 
- * @see http://stackoverflow.com/questions/783075/creating-a-hard-link-in-java/3023349#3023349
+ * See <a
+ * href="http://stackoverflow.com/a/3023349/53897">http://stackoverflow.com/
+ * questions/783075/creating-a-hard-link-in-java/3023349#3023349</a>
  */
 public class FilesystemLinkMaker {
     

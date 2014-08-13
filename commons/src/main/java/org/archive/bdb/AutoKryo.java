@@ -13,16 +13,16 @@ import com.esotericsoftware.kryo.SerializationException;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest
- * other classes to register together, and use the same (Sun-JVM-only) trick
- * for deserializing classes without no-arg constructors.
+ * other classes to register together, and use the same (Sun-JVM-only) trick for
+ * deserializing classes without no-arg constructors.
  * 
- * newInstance technique and constructor caching inspired by the 
- * KryoReflectionFactorySupport class of Martin Grotzke's kryo-serializers 
- * project. <https://github.com/magro/kryo-serializers>
+ * newInstance technique and constructor caching inspired by the
+ * KryoReflectionFactorySupport class of <a
+ * href="https://github.com/magro/kryo-serializers">Martin Grotzke's
+ * kryo-serializers project. </a>
  * 
  * TODO: more comments!
  * 
- * @contributor gojomo
  */
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {

@@ -46,8 +46,6 @@ public class KryoBinding<K> implements EntryBinding<K> {
      * Constructor. Save parameters locally, as superclass 
      * fields are private. 
      * 
-     * @param classCatalog is the catalog to hold shared class information
-     *
      * @param baseClass is the base class for serialized objects stored using
      * this binding
      */

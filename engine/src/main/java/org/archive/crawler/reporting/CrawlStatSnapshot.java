@@ -111,7 +111,6 @@ public class CrawlStatSnapshot {
     /**
      * Return one line of current progress-statistics
      * 
-     * @param now
      * @return String of stats
      */
     public String getProgressStatisticsLine() {

@@ -37,26 +37,25 @@ import org.springframework.beans.factory.annotation.Autowired;
  * A processor to enforce runtime limits on crawls.
  * <p>
  * This processor extends and improves on the 'max-time' capability of Heritrix.
- * Essentially, the 'Terminate job' option functions the same way as 'max-time'. 
- * The processor however also enables pausing when the runtime is exceeded and  
- * the blocking of all URIs. 
- * <p>
+ * Essentially, the 'Terminate job' option functions the same way as 'max-time'.
+ * The processor however also enables pausing when the runtime is exceeded and
+ * the blocking of all URIs.
+ * 
  * <ol>
- * <li>Pause job - Pauses the crawl. A change (increase) to the 
- *     runtime duration will make it pausible to resume the crawl. 
- *     Attempts to resume the crawl without modifying the run time 
- *     will cause it to be immediately paused again.</li>
- * <li>Terminate job - Terminates the job. Equivalent
- *     to using the max-time setting on the CrawlController.</li>
- * <li>Block URIs - Blocks each URI with an -5002
- *     (blocked by custom processor) fetch status code. This will
- *     cause all the URIs queued to wind up in the crawl.log.</li>
- * <ol>
- * <p>
- * The processor allows variable runtime based on host (or other  
- * override/refinement criteria) however using such overrides only makes sense  
+ * <li>Pause job - Pauses the crawl. A change (increase) to the runtime duration
+ * will make it pausible to resume the crawl. Attempts to resume the crawl
+ * without modifying the run time will cause it to be immediately paused again.</li>
+ * <li>Terminate job - Terminates the job. Equivalent to using the max-time
+ * setting on the CrawlController.</li>
+ * <li>Block URIs - Blocks each URI with an -5002 (blocked by custom processor)
+ * fetch status code. This will cause all the URIs queued to wind up in the
+ * crawl.log.</li>
+ * </ol>
+ * 
+ * The processor allows variable runtime based on host (or other
+ * override/refinement criteria) however using such overrides only makes sense
  * when using 'Block URIs' as pause and terminate will have global impact once
- * encountered anywhere. 
+ * encountered anywhere.
  * 
  * @author Kristinn Sigur&eth;sson
  */

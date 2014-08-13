@@ -29,77 +29,87 @@ import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.Reporter;
-import org.json.JSONException;
 import org.springframework.context.Lifecycle;
 
 
 /**
  * An interface for URI Frontiers.
  *
- * <p>A URI Frontier is a pluggable module in Heritrix that maintains the
- * internal state of the crawl. This includes (but is not limited to):
+ * <p>
+ * A URI Frontier is a pluggable module in Heritrix that maintains the internal
+ * state of the crawl. This includes (but is not limited to):
  * <ul>
- *     <li>What URIs have been discovered
- *     <li>What URIs are being processed (fetched)
- *     <li>What URIs have been processed
- *     <li>In what order unprocessed URIs will be processed
+ * <li>What URIs have been discovered
+ * <li>What URIs are being processed (fetched)
+ * <li>What URIs have been processed
+ * <li>In what order unprocessed URIs will be processed
  * </ul>
  *
- * <p>The Frontier is also responsible for enforcing any politeness restrictions
+ * <p>
+ * The Frontier is also responsible for enforcing any politeness restrictions
  * that may have been applied to the crawl. Such as limiting simultaneous
  * connection to the same host, server or IP number to 1 (or any other fixed
  * amount), delays between connections etc.
  *
- * <p>A URIFrontier is created by the
+ * <p>
+ * A URIFrontier is created by the
  * {@link org.archive.crawler.framework.CrawlController CrawlController} which
  * is in turn responsible for providing access to it. Most significant among
  * those modules interested in the Frontier are the
  * {@link org.archive.crawler.framework.ToeThread ToeThreads} who perform the
  * actual work of processing a URI.
  *
- * <p>The methods defined in this interface are those required to get URIs for
+ * <p>
+ * The methods defined in this interface are those required to get URIs for
  * processing, report the results of processing back (ToeThreads) and to get
- * access to various statistical data along the way. The statistical data is
- * of interest to {@link org.archive.crawler.framework.StatisticsTracker
- * Statistics Tracking} modules. A couple of additional methods are provided
- * to be able to inspect and manipulate the Frontier at runtime.
+ * access to various statistical data along the way. The statistical data is of
+ * interest to FIXME{link org.archive.crawler.framework.StatisticsTracker
+ * Statistics Tracking} modules. A couple of additional methods are provided to
+ * be able to inspect and manipulate the Frontier at runtime.
  *
- * <p>The statistical data exposed by this interface is:
+ * <p>
+ * The statistical data exposed by this interface is:
  * <ul>
- *     <li> {@link #discoveredUriCount() Discovered URIs}
- *     <li> {@link #queuedUriCount() Queued URIs}
- *     <li> {@link #finishedUriCount() Finished URIs}
- *     <li> {@link #succeededFetchCount() Successfully processed URIs}
- *     <li> {@link #failedFetchCount() Failed to process URIs}
- *     <li> {@link #disregardedUriCount() Disregarded URIs}
- *     <li> {@link #totalBytesWritten() Total bytes written}
+ * <li> {@link #discoveredUriCount() Discovered URIs}
+ * <li> {@link #queuedUriCount() Queued URIs}
+ * <li> {@link #finishedUriCount() Finished URIs}
+ * <li> {@link #succeededFetchCount() Successfully processed URIs}
+ * <li> {@link #failedFetchCount() Failed to process URIs}
+ * <li> {@link #disregardedUriCount() Disregarded URIs}
+ * <li>FIXME{link #totalBytesWritten() Total bytes written}
  * </ul>
  *
- * <p>In addition the frontier may optionally implement an interface that
- * exposes information about hosts.
+ * <p>
+ * In addition the frontier may optionally implement an interface that exposes
+ * information about hosts.
  *
- * <p>Furthermore any implementation of the URI Frontier should trigger
+ * <p>
+ * Furthermore any implementation of the URI Frontier should trigger
  * {@link org.archive.crawler.event.CrawlURIDispositionEvent
- * CrawlURIDispostionEvents} on the ApplicationContext to allow
- * statistics modules or other interested observers to collect info
- * about each completed URI's processing.
+ * CrawlURIDispostionEvents} on the ApplicationContext to allow statistics
+ * modules or other interested observers to collect info about each completed
+ * URI's processing.
  *
- * <p>All URI Frontiers inherit from
- * {@link org.archive.crawler.settings.ModuleType ModuleType}
- * and therefore creating settings follows the usual pattern of pluggable modules
- * in Heritrix.
+ * <p>
+ * All URI Frontiers inherit from FIXME{link
+ * org.archive.crawler.settings.ModuleType ModuleType} and therefore creating
+ * settings follows the usual pattern of pluggable modules in Heritrix.
  *
  * @author Gordon Mohr
  * @author Kristinn Sigurdsson
  *
- * @see org.archive.crawler.framework.CrawlController
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURIDisregardEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURIFailureEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURINeedRetryEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURISuccessfulEvent(CrawlURI)
- * @see org.archive.crawler.framework.StatisticsTracker
- * @see org.archive.crawler.framework.ToeThread
- * @see org.archive.crawler.settings.ModuleType
+ *         FIXME-see org.archive.crawler.framework.CrawlController FIXME-see
+ *         org.archive.crawler.framework.CrawlController#
+ *         fireCrawledURIDisregardEvent(CrawlURI) FIXME-see
+ *         org.archive.crawler.framework
+ *         .CrawlController#fireCrawledURIFailureEvent(CrawlURI) FIXME-see
+ *         org.archive
+ *         .crawler.framework.CrawlController#fireCrawledURINeedRetryEvent
+ *         (CrawlURI) FIXME-see
+ *         org.archive.crawler.framework.CrawlController#fireCrawledURISuccessfulEvent
+ *         (CrawlURI) FIXME-see org.archive.crawler.framework.StatisticsTracker
+ *         FIXME-see org.archive.crawler.framework.ToeThread FIXME-see
+ *         org.archive.crawler.settings.ModuleType
  */
 public interface Frontier extends Lifecycle, Reporter {
 
@@ -108,7 +118,6 @@ public interface Frontier extends Lifecycle, Reporter {
      * during the time specified null will be returned.
      *
      * @return the next URI that should be processed.
-     * @throws InterruptedException
      */
     CrawlURI next() throws InterruptedException;
 
@@ -307,7 +316,6 @@ public interface Frontier extends Lifecycle, Reporter {
      * 
      * @param params Map describing source file and options as above
      * @throws IOException If problems occur reading file.
-     * @throws JSONException 
      */
     public void importURIs(
             String params)
@@ -332,7 +340,6 @@ public interface Frontier extends Lifecycle, Reporter {
      * @param acceptTags String regex; only lines whose first field 
      * match will be included
      * @return number of lines in recovery log (for reference)
-     * @throws IOException
      */
     public long importRecoverFormat(File source, boolean applyScope, 
             boolean includeOnly, boolean forceFetch, String acceptTags) 
@@ -356,47 +363,47 @@ public interface Frontier extends Lifecycle, Reporter {
 //                                              boolean inCacheOnly);
 
     /**
-     * Returns a list of all uncrawled URIs starting from a specified marker
-     * until <code>numberOfMatches</code> is reached.
-     *
-     * <p>Any encountered URI that has not been successfully crawled, terminally
-     * failed, disregarded or is currently being processed is included. As
-     * there may be duplicates in the frontier, there may also be duplicates
-     * in the report. Thus this includes both discovered and pending URIs.
-     *
-     * <p>The list is a set of strings containing the URI strings. If verbose is
-     * true the string will include some additional information (path to URI
-     * and parent).
-     *
-     * <p>The <code>URIFrontierMarker</code> will be advanced to the position at
-     * which it's maximum number of matches found is reached. Reusing it for
-     * subsequent calls will thus effectively get the 'next' batch. Making
-     * any changes to the frontier can invalidate the marker.
-     *
-     * <p>While the order returned is consistent, it does <i>not</i> have any
-     * explicit relation to the likely order in which they may be processed.
-     *
-     * <p><b>Warning:</b> It is unsafe to make changes to the frontier while
-     * this method is executing. The crawler should be in a paused state before
-     * invoking it.
-     *
-     * @param marker
-     *            A marker specifing from what position in the Frontier the
-     *            list should begin.
-     * @param numberOfMatches
-     *            how many URIs to add at most to the list before returning it
-     * @param verbose
-     *            if set to true the strings returned will contain additional
-     *            information about each URI beyond their names.
-     * @return a list of all pending URIs falling within the specification
-     *            of the marker
-     * @throws InvalidFrontierMarkerException when the
-     *            <code>URIFronterMarker</code> does not match the internal
-     *            state of the frontier. Tolerance for this can vary
-     *            considerably from one URIFrontier implementation to the next.
-     * @see FrontierMarker
-     * @see #getInitialMarker(String, boolean)
-     */
+	 * Returns a list of all uncrawled URIs starting from a specified marker
+	 * until <code>numberOfMatches</code> is reached.
+	 *
+	 * <p>
+	 * Any encountered URI that has not been successfully crawled, terminally
+	 * failed, disregarded or is currently being processed is included. As there
+	 * may be duplicates in the frontier, there may also be duplicates in the
+	 * report. Thus this includes both discovered and pending URIs.
+	 *
+	 * <p>
+	 * The list is a set of strings containing the URI strings. If verbose is
+	 * true the string will include some additional information (path to URI and
+	 * parent).
+	 *
+	 * <p>
+	 * The <code>URIFrontierMarker</code> will be advanced to the position at
+	 * which it's maximum number of matches found is reached. Reusing it for
+	 * subsequent calls will thus effectively get the 'next' batch. Making any
+	 * changes to the frontier can invalidate the marker.
+	 *
+	 * <p>
+	 * While the order returned is consistent, it does <i>not</i> have any
+	 * explicit relation to the likely order in which they may be processed.
+	 *
+	 * <p>
+	 * <b>Warning:</b> It is unsafe to make changes to the frontier while this
+	 * method is executing. The crawler should be in a paused state before
+	 * invoking it.
+	 *
+	 * @param marker
+	 *            A marker specifing from what position in the Frontier the list
+	 *            should begin.
+	 * @param numberOfMatches
+	 *            how many URIs to add at most to the list before returning it
+	 * @param verbose
+	 *            if set to true the strings returned will contain additional
+	 *            information about each URI beyond their names.
+	 * 
+	 * @return a list of all pending URIs falling within the specification of
+	 *         the marker
+	 */
     public CompositeData getURIsList(
             String marker,
             int numberOfMatches,
@@ -433,11 +440,12 @@ public interface Frontier extends Lifecycle, Reporter {
     public void deleted(CrawlURI curi);
 
     /**
-     * Notify Frontier that it should consider the given UURI as if
-     * already scheduled.
-     * 
-     * @param u UURI instance to add to the Already Included set.
-     */
+	 * Notify Frontier that it should consider the given UURI as if already
+	 * scheduled.
+	 * 
+	 * @param curi
+	 *            UURI instance to add to the Already Included set.
+	 */
     public void considerIncluded(CrawlURI curi);
 
     /**

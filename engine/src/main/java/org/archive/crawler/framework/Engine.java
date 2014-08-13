@@ -347,7 +347,6 @@ public class Engine {
     /**
      * create a new job dir and copy profile CXML into as non-profile CXML
      * @param newJobDir new job directory
-     * @throws IOException 
      */
 	public boolean createNewJobWithDefaults(File newJobDir) {
         try {

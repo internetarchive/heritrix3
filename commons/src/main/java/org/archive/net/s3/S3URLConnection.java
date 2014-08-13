@@ -1,15 +1,15 @@
 package org.archive.net.s3;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import org.jets3t.service.S3ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
-import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
-import org.jets3t.service.S3ServiceException;
+import org.jets3t.service.security.AWSCredentials;
 
 /**
  * URLConnection for Amazon S3 objects.
@@ -22,11 +22,12 @@ public class S3URLConnection extends URLConnection {
 
  protected S3Object object = null;
   
- /**
-  * Contruct a new S3URLConnection.
-  *
-  * @param a URL of the form s3://id:secret@bucket/key
-  */
+ 	/**
+	 * Contruct a new S3URLConnection.
+	 *
+	 * @param url
+	 *            s3://id:secret@bucket/key
+	 */
   public S3URLConnection(URL url) {
     super(url);
     

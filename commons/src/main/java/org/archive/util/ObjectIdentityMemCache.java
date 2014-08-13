@@ -86,9 +86,9 @@ implements ObjectIdentityCache<V> {
     }
 
     /**
-     * Offer raw map access for convenience of checkpoint/recovery.
-     * @return Map<String, V>
-     */
+	 * 
+	 * @return backing map.
+	 */
     public Map<String, V> getMap() {
         return map;
     }

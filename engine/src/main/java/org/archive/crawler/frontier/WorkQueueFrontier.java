@@ -1066,7 +1066,6 @@ implements Closeable,
     }
 
     /**
-     * @param match String to  match.
      * @return Number of items deleted.
      */
     public long deleteURIs(String queueRegex, String uriRegex) {
@@ -1216,7 +1215,6 @@ implements Closeable,
     /**
      * This method compiles a human readable report on the status of the frontier
      * at the time of the call.
-     * @param name Name of report.
      * @param writer Where to write to.
      */
     @Override

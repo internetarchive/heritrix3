@@ -19,8 +19,6 @@
  
 package org.archive.crawler.util;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
@@ -72,9 +70,6 @@ implements UriUniqFilter.CrawlUriReceiver {
 
     /**
      * Test inserting.
-     * @throws URIException
-     * @throws IOException
-     * @throws FileNotFoundException
      */
     public void testWriting() throws URIException {
         long start = System.currentTimeMillis();
