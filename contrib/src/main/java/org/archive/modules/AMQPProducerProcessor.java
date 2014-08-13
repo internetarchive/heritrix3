@@ -107,6 +107,12 @@ public abstract class AMQPProducerProcessor extends Processor {
     }
 
     synchronized public void stop() {
+        if (!isRunning) {
+            return;
+        }
+
+        super.stop();
+
         try {
             if (connection != null && connection.isOpen()) {
                 connection.close();
@@ -115,7 +121,6 @@ public abstract class AMQPProducerProcessor extends Processor {
             logger.log(Level.SEVERE, "Attempting to close AMQP connection failed!", e);
         }
     }
-
 
     @Override
     protected ProcessResult innerProcessResult(CrawlURI curi)

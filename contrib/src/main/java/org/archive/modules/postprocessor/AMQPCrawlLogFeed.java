@@ -23,8 +23,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.collections.Closure;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
+import org.archive.crawler.frontier.BdbFrontier;
 import org.archive.crawler.io.UriProcessingFormatter;
 import org.archive.modules.AMQPProducerProcessor;
 import org.archive.modules.CoreAttributeConstants;
@@ -34,12 +36,13 @@ import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.Lifecycle;
 
 /**
  * @see UriProcessingFormatter
  * @contributor nlevitt
  */
-public class AMQPCrawlLogFeed extends AMQPProducerProcessor {
+public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle {
 
     private final static int GUESS_AT_LOG_LENGTH = 1200;
 
@@ -68,6 +71,21 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor {
     }
     public void setPrependValues(List<String> prependValues) {
         this.prependValues = prependValues;
+    }
+
+    protected boolean dumpPendingAtClose = false;
+    public boolean getDumpPendingAtClose() {
+        return dumpPendingAtClose;
+    }
+    /**
+     * If true, publish all pending urls (i.e. queued urls still in the
+     * frontier) when crawl job is stopping. They are recognizable by the status
+     * field which has the value 0.
+     *
+     * @see BdbFrontier#setDumpPendingAtClose(boolean)
+     */
+    public void setDumpPendingAtClose(boolean dumpPendingAtClose) {
+        this.dumpPendingAtClose = dumpPendingAtClose;
     }
 
     public AMQPCrawlLogFeed() {
@@ -185,4 +203,35 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor {
         }
     }
 
+    private transient long pendingDumpedCount = 0l;
+    @Override
+    public synchronized void stop() {
+        if (!isRunning) {
+            return;
+        }
+
+        if (dumpPendingAtClose) {
+            if (frontier instanceof BdbFrontier) {
+
+                Closure closure = new Closure() {
+                    public void execute(Object curi) {
+                        try {
+                            innerProcessResult((CrawlURI) curi);
+                            pendingDumpedCount++;
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                };
+
+                logger.info("dumping " + frontier.queuedUriCount() + " queued urls to amqp feed");
+                ((BdbFrontier) frontier).forAllPendingDo(closure);
+                logger.info("dumped " + pendingDumpedCount + " queued urls to amqp feed");
+            } else {
+                logger.warning("frontier is not a BdbFrontier, cannot dumpPendingAtClose");
+            }
+        }
+
+        // closes amqp connection
+        super.stop();
+    }
 }
