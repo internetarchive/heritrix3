@@ -75,7 +75,7 @@ import java.util.Random;
  * many non-optional methods would be unimplementable (e.g., iterators).
  *
  * @author Sebastiano Vigna
- * <p>Contributor Gordon Mohr</p>
+ * @contributor Gordon Mohr
  */
 public class BloomFilter64bit implements Serializable, BloomFilter {
     private static final long serialVersionUID = 2L;

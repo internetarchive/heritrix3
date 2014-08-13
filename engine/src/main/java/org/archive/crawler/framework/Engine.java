@@ -39,8 +39,8 @@ import org.archive.util.ArchiveUtils;
  * directory called the jobsDir.  The jobs are contained as subdirectories of
  * jobDir.  
  * 
- * <p>Contributor pjack</p>
- * <p>Contributor gojomo</p>
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class Engine {
     @SuppressWarnings("unused")

@@ -37,7 +37,7 @@ import org.restlet.data.Response;
  * request details. Also, via use of an EnhDirectoryResource, adds
  * other capabilities (editting, etc.).
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public abstract class EnhDirectory extends org.restlet.Directory {
     protected IOFileFilter editFilter = FileFilterUtils.falseFileFilter(); 

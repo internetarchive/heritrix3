@@ -41,7 +41,7 @@ import com.google.common.cache.CacheBuilder;
  * tracks 'all' keys, and handles increments, while TopNSet only remembers
  * a small subset of keys, and requires a fresh full value on each update.)
  *
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class TopNSet implements Serializable {
     

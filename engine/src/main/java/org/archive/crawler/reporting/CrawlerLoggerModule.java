@@ -55,8 +55,8 @@ import org.springframework.context.Lifecycle;
 /**
  * Module providing all expected whole-crawl logging facilities
  * 
- * <p>Contributor pjack</p>
- * <p>Contributor gojomo</p>
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class CrawlerLoggerModule 
     implements 

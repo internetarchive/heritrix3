@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Interface for a source of overlay maps by name. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public interface OverlayMapsSource {
     public Map<String,Object> getOverlayMap(String name); 

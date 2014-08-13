@@ -32,7 +32,7 @@ import org.restlet.resource.Variant;
 /**
  * Abstract {@code Resource} with common shared functionality. 
  * 
- * <p>Contributor nlevitt</p>
+ * @contributor nlevitt
  */
 public abstract class BaseResource extends Resource {
 

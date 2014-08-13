@@ -29,7 +29,7 @@ import org.springframework.context.ApplicationEvent;
  * sample of various statistics. Other modules can observe this event
  * to perform periodic checks related to overall statistics. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class StatSnapshotEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;

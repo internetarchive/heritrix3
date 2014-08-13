@@ -29,7 +29,7 @@ import junit.framework.TestCase;
 /**
  * PropertyUtils tests. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  * @version $Date: 2009-11-19 14:39:53 -0800 (Thu, 19 Nov 2009) $, $Revision: 6674 $
  */
 public class PropertyUtilsTest extends TestCase {

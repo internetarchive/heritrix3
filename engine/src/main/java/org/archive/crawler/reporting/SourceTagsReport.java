@@ -28,7 +28,7 @@ import org.archive.bdb.DisposableStoredSortedMap;
 /**
  * The "Source Report", tallies of source tags (usually seeds) by host.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class SourceTagsReport extends Report {
 

@@ -51,7 +51,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * Manager which marks-up CrawlURIs with the names of all applicable 
  * Sheets, and returns overlay maps by name. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class SheetOverlaysManager implements 
 BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {

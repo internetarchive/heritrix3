@@ -26,8 +26,8 @@ import java.util.Set;
 
 
 /**
- * <p>Contributor pjack</p>
- * <p>Contributor gojomo</p>
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class SimpleSelfTest extends SelfTestBase {
 

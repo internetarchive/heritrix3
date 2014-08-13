@@ -35,7 +35,7 @@ import junit.framework.TestSuite;
  * failures; however, until more experience with the new heuristics is 
  * collected, H1 still uses them for consistency. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  * @version $Id: ArchiveUtilsTest.java 5052 2007-04-10 02:26:52Z gojomo $
  */
 public class UriUtilsTest extends TestCase {

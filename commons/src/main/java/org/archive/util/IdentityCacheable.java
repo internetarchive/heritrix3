@@ -24,7 +24,7 @@ import java.io.Serializable;
 /**
  * Common interface for objects held in ObjectIdentityCaches. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public interface IdentityCacheable extends Serializable {
     public void setIdentityCache(ObjectIdentityCache<?> cache);

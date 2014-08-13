@@ -36,7 +36,7 @@ import com.sleepycat.je.DatabaseException;
  * You *must* call dispose() when done with the map; otherwise temporary data
  * will remain in a temporary Database in the BDB environment indefinitely. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  * @param <K>
  * @param <V>
  */

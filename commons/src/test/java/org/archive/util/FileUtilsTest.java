@@ -32,8 +32,8 @@ import org.apache.commons.lang.math.LongRange;
 /**
  * FileUtils tests. 
  * 
- * <p>Contributor stack</p>
- * <p>Contributor gojomo</p>
+ * @contributor stack
+ * @contributor gojomo
  * @version $Date$, $Revision$
  */
 public class FileUtilsTest extends TmpDirTestCase {

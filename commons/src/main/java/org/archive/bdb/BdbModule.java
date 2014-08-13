@@ -68,8 +68,8 @@ import com.sleepycat.je.util.DbBackup;
 /**
  * Utility module for managing a shared BerkeleyDB-JE environment
  * 
- * <p>Contributor pjack</p>
- * <p>Contributor gojomo</p>
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class BdbModule implements Lifecycle, Checkpointable, Closeable, DisposableBean {
     final private static Logger LOGGER = 

@@ -29,7 +29,7 @@ import com.sleepycat.je.DatabaseEntry;
  * Binding for use with BerkeleyDB-JE that uses Kryo serialization rather
  * than BDB's (custom version of) Java serialization.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class KryoBinding<K> implements EntryBinding<K> {
 

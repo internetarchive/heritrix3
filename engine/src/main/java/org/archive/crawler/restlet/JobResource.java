@@ -53,9 +53,9 @@ import freemarker.template.TemplateException;
 /**
  * Restlet Resource representing a single local CrawlJob inside an Engine.
  * 
- * <p>Contributor gojomo</p>
- * <p>Contributor nlevitt</p>
- * <p>Contributor adam-miller</p>
+ * @contributor gojomo
+ * @contributor nlevitt
+ * @contributor adam-miller
  */
 public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = FileUtils

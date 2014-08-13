@@ -54,8 +54,8 @@ import org.xml.sax.SAXException;
  * customizations, such as per-host overrides or choices of 
  * alternate implementing classes for Scope, Processors, etc.)
  * 
- * <p>Contributor siznax</p>
- * <p>Contributor gojomo</p>
+ * @contributor siznax
+ * @contributor gojomo
  */
 public class MigrateH1to3Tool {
 

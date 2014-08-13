@@ -26,7 +26,7 @@ import java.io.PrintWriter;
  * Frontier summary report showing a limited number of queues of each 
  * type -- as typically consulted during a crawl in progress. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class FrontierSummaryReport extends Report {
 

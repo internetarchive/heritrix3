@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationListener;
  * so only checks at the interval (configured in StatisticsTracker)
  * of those events. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent> {
 

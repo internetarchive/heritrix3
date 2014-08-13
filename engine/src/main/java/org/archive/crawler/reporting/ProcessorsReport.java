@@ -25,7 +25,7 @@ import java.io.PrintWriter;
  * to each Processor to dump whatever information it collects for 
  * this purpose.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class ProcessorsReport extends Report {
 

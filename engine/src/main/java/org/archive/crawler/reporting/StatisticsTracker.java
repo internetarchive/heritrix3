@@ -125,9 +125,9 @@ import com.sleepycat.je.DatabaseException;
  *   <li> Successfully downloaded documents per host per source
  * </ul>
  *
- * <p>Contributor Parker Thompson</p>
- * <p>Contributor Kristinn Sigurdsson</p>
- * <p>Contributor gojomo</p>
+ * @contributor Parker Thompson
+ * @contributor Kristinn Sigurdsson
+ * @contributor gojomo
  */
 public class StatisticsTracker 
     implements 

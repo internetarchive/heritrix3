@@ -45,7 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * they need to perform remedial preparation for URIs that do not
  * pass through this processor on the CandidateChain.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class FrontierPreparer extends Scoper {
     @SuppressWarnings("unused")

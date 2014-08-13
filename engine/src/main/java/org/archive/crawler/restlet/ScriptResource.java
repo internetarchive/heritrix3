@@ -61,8 +61,8 @@ import freemarker.template.TemplateException;
  * Any JSR-223 script engine that's properly discoverable on the 
  * classpath will be available from a drop-down selector. 
  * 
- * <p>Contributor gojomo</p>
- * <p>Contributor adam-miller</p>
+ * @contributor gojomo
+ * @contributor adam-miller
  */
 public class ScriptResource extends JobRelatedResource {
     protected static ScriptEngineManager MANAGER = new ScriptEngineManager();

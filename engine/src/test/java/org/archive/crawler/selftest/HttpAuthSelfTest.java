@@ -39,8 +39,8 @@ import org.mortbay.jetty.servlet.ServletHandler;
 /**
  * Test HTTP basic authentication
  *
- * <p>Contributor stack</p>
- * <p>Contributor gojomo</p>
+ * @contributor stack
+ * @contributor gojomo
  */
 public class HttpAuthSelfTest
     extends SelfTestBase

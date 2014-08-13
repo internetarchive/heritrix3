@@ -49,8 +49,8 @@ import org.springframework.beans.BeanWrapperImpl;
  * Shared superclass for resources that represent functional aspects
  * of a CrawlJob.
  * 
- * <p>Contributor Gojomo</p>
- * <p>Contributor nlevitt</p>
+ * @contributor Gojomo
+ * @contributor nlevitt
  */
 public abstract class JobRelatedResource extends BaseResource {
     protected CrawlJob cj; 

@@ -37,7 +37,7 @@ import java.util.TreeSet;
  * tracks 'all' keys, and handles increments, while TopNSet only remembers
  * a small subset of keys, and requires a fresh full value on each update.)
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class Histotable<K> extends TreeMap<K,Long> {    
     private static final long serialVersionUID = 310306238032568623L;

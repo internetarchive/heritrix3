@@ -35,8 +35,8 @@ import org.archive.util.TmpDirTestCase;
 /**
  * Tests related to CrawlURI
  * 
- * <p>Contributor stack</p>
- * <p>Contributor gojomo</p>
+ * @contributor stack
+ * @contributor gojomo
  * @version $Revision$, $Date$
  */
 public class CrawlURITest extends TmpDirTestCase {

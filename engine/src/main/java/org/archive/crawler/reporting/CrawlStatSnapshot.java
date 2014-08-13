@@ -27,7 +27,7 @@ import org.archive.util.PaddingStringBuffer;
  * obtaining a consistent set of stats and a short log of stats
  * for calculating rates.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class CrawlStatSnapshot {
     public long timestamp; 

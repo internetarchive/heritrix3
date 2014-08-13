@@ -59,7 +59,7 @@ import org.springframework.validation.Validator;
  * {@link ConfigPathConfigurer}) so that launch-specific paths can be used for
  * logs, reports, warcs, etc.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class PathSharingContext extends FileSystemXmlApplicationContext {
     private static Logger LOGGER =

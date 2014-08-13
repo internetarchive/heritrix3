@@ -27,7 +27,7 @@ import org.archive.util.ArchiveUtils;
 /**
  * The "Crawl Report", with summaries of overall crawl size.
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class CrawlSummaryReport extends Report {
 

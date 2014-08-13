@@ -49,9 +49,9 @@ import freemarker.template.TemplateException;
  * Restlet Resource representing an Engine that may be used
  * to assemble, launch, monitor, and manage crawls. 
  * 
- * <p>Contributor gojomo</p>
- * <p>Contributor nlevitt</p>
- * <p>Contributor adam-miller</p>
+ * @contributor gojomo
+ * @contributor nlevitt
+ * @contributor adam-miller
  */
 public class EngineResource extends BaseResource {
 

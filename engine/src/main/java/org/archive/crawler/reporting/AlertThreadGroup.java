@@ -31,8 +31,8 @@ import org.archive.io.SinkHandlerLogThread;
  * of a certain severity (WARNING, SEVERE) from a group of related
  * threads. 
  * 
- * <p>Contributor pjack</p>
- * <p>Contributor gojomo</p>
+ * @contributor pjack
+ * @contributor gojomo
  */
 public class AlertThreadGroup extends ThreadGroup {
     protected int count;

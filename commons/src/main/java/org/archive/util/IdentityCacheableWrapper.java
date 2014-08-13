@@ -23,7 +23,7 @@ import org.archive.bdb.AutoKryo;
 /**
  * Wrapper allowing other objects to be held in an ObjectIdentityCache. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  * @param <K>
  */
 public class IdentityCacheableWrapper<K> implements IdentityCacheable {

@@ -83,7 +83,7 @@ import org.archive.url.LaxURLCodec;
  *  with the 'new' isLikelyUri() test is collected (in H3). Enable the 'xest'
  *  methods of the UriUtilsTest class for details. 
  *  
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class UriUtils {
     private static final Logger LOGGER = Logger.getLogger(UriUtils.class.getName());

@@ -45,7 +45,7 @@ import org.restlet.util.Template;
  * local job configurations/directories and can assemble/launch/monitor/
  * manage crawls. 
  * 
- * <p>Contributor gojomo</p>
+ * @contributor gojomo
  */
 public class EngineApplication extends Application {
     protected Engine engine; 

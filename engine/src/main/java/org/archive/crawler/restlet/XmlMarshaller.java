@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
  * XmlMarshaller can be used to write data structures as simple xml. See
  * {@link #marshalDocument(Writer, String, Object)} for more information.
  * 
- * <p>Contributor nlevitt</p>
+ * @contributor nlevitt
  */
 public class XmlMarshaller {
     
