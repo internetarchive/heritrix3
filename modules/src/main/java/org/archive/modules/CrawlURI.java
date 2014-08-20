@@ -1978,7 +1978,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
             return 0;
         } else if (a == null && b != null) {
             return -1;
-        } else if (a != null && b != null) {
+        } else if (a != null && b == null) {
             return 1;
         } else {
             return a.compareTo(b);
