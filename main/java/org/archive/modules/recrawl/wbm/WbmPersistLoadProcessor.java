@@ -30,32 +30,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
-import org.archive.modules.hq.GzipInflatingHttpEntityWrapper;
 import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.util.ArchiveUtils;
@@ -76,6 +68,7 @@ public class WbmPersistLoadProcessor extends Processor {
     private static final Log log = LogFactory.getLog(WbmPersistLoadProcessor.class);
 
     private HttpClient client;
+    private PoolingHttpClientConnectionManager conman;
 
     private int historyLength = 2;
 
@@ -90,7 +83,7 @@ public class WbmPersistLoadProcessor extends Processor {
     //private String queryURL = "http://web-beta.archive.org/cdx/search";
     //private String queryURL = "http://web.archive.org/cdx/search/cdx";
     // ~Sep 26, 2013
-    private String queryURL = "http://wwwb-front2.us.archive.org:8083/web/timemap/cdx?url=$u&limit=-1";
+    private String queryURL = "http://wwwb-dedup.us.archive.org:8083/web/timemap/cdx?url=$u&limit=-1";
     public void setQueryURL(String queryURL) {
         this.queryURL = queryURL;
         prepareQueryURL();
@@ -196,11 +189,9 @@ public class WbmPersistLoadProcessor extends Processor {
     public int getMaxConnections() {
         return maxConnections;
     }
-    public void setMaxConnections(int maxConnections) {
+    public synchronized void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
-        if (client != null) {
-            ThreadSafeClientConnManager conman = 
-                    (ThreadSafeClientConnManager)client.getConnectionManager();
+        if (conman != null) {
             if (conman.getMaxTotal() < this.maxConnections)
                 conman.setMaxTotal(this.maxConnections);
             conman.setDefaultMaxPerRoute(this.maxConnections);
@@ -300,41 +291,57 @@ public class WbmPersistLoadProcessor extends Processor {
     }
     public synchronized HttpClient getHttpClient() {
         if (client == null) {
-            ThreadSafeClientConnManager conman = new ThreadSafeClientConnManager();
-            conman.setDefaultMaxPerRoute(maxConnections);
-            conman.setMaxTotal(Math.max(conman.getMaxTotal(), maxConnections));
-            final DefaultHttpClient client = new DefaultHttpClient(conman);
-            HttpParams params = client.getParams();
-            params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, socketTimeout);
-            params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, connectionTimeout);
+            if (conman == null) {
+                conman = new PoolingHttpClientConnectionManager();
+                conman.setDefaultMaxPerRoute(maxConnections);
+                conman.setMaxTotal(Math.max(conman.getMaxTotal(), maxConnections));
+            }
+            HttpClientBuilder builder = HttpClientBuilder.create()
+                    .disableCookieManagement()
+                    .setConnectionManager(conman);
+            builder.useSystemProperties();
+            // config code for older version of httpclient.
+//            builder.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(socketTimeout).build());
+//            HttpParams params = client.getParams();
+//            params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, socketTimeout);
+//            params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, connectionTimeout);
             // setup request/response intercepter for handling gzip-compressed response.
-            client.addRequestInterceptor(new HttpRequestInterceptor() {
-                @Override
-                public void process(final HttpRequest request, final HttpContext context)
-                        throws HttpException, IOException {
-                    if (gzipAccepted && !request.containsHeader("Accept-Encoding")) {
-                        request.addHeader("Accept-Encoding", "gzip");
-                    }
-                    // add extra headers configured.
-                    if (requestHeaders != null) {
-                        for (Entry<String, String> ent : requestHeaders.entrySet()) {
-                            request.addHeader(ent.getKey(), ent.getValue());
-                        }
-                    }
-                }
-            });
-            client.addResponseInterceptor(new HttpResponseInterceptor() {
-                @Override
-                public void process(final HttpResponse response, final HttpContext context)
-                        throws HttpException, IOException {
-                    HttpEntity entity = response.getEntity();
-                    Header ceheader = entity.getContentEncoding();
-                    if (ceheader != null && contains(ceheader.getElements(), "gzip")) {
-                        response.setEntity(new GzipInflatingHttpEntityWrapper(response.getEntity()));
-                    }
-                }
-            });
-            this.client = client;
+            // Disabled because httpclient 4.3.3 sends "Accept-Encoding: gzip,deflate" by
+            // default. Response parsing will fail If gzip-decompression ResponseInterceptor
+            // is installed.
+//            builder.addInterceptorLast(new HttpRequestInterceptor() {
+//                @Override
+//                public void process(final HttpRequest request, final HttpContext context)
+//                        throws HttpException, IOException {
+//                    System.err.println("RequestInterceptor");
+//                    if (request.containsHeader("Accept-Encoding")) {
+//                        System.err.println("already has Accept-Encoding: " + request.getHeaders("Accept-Encoding")[0]);
+//                    }
+//                    if (gzipAccepted) {
+//                        if (!request.containsHeader("Accept-Encoding")) {
+//                            request.addHeader("Accept-Encoding", "gzip");
+//                        }
+//                    }
+//                    // add extra headers configured.
+//                    if (requestHeaders != null) {
+//                        for (Entry<String, String> ent : requestHeaders.entrySet()) {
+//                            request.addHeader(ent.getKey(), ent.getValue());
+//                        }
+//                    }
+//                }
+//            });
+//            builder.addInterceptorFirst(new HttpResponseInterceptor() {
+//                @Override
+//                public void process(final HttpResponse response, final HttpContext context)
+//                        throws HttpException, IOException {
+//                    HttpEntity entity = response.getEntity();
+//                    Header ceheader = entity.getContentEncoding();
+//                    if (ceheader != null && contains(ceheader.getElements(), "gzip")) {
+//                        response.setEntity(new GzipInflatingHttpEntityWrapper(response.getEntity()));
+//                    }
+//                }
+//            });
+            this.client = builder.build();
         }
         return client;
     }
@@ -387,6 +394,8 @@ public class WbmPersistLoadProcessor extends Processor {
     protected InputStream getCDX(String qurl) throws InterruptedException, IOException {
         final String url = buildURL(qurl);
         HttpGet m = new HttpGet(url);
+        m.setConfig(RequestConfig.custom().setConnectTimeout(connectionTimeout)
+                .setSocketTimeout(socketTimeout).build());
         HttpEntity entity = null;
         int attempts = 0;
         do {
@@ -501,7 +510,12 @@ public class WbmPersistLoadProcessor extends Processor {
         }
         if (tsbuffer.remaining() == 0) {
             try {
-                info.put(FetchHistoryHelper.A_TIMESTAMP, DateUtils.parse14DigitDate(new String(tsbuffer.array())).getTime());
+                long ts = DateUtils.parse14DigitDate(new String(tsbuffer.array())).getTime();
+                // A_TIMESTAMP has been used for sorting history long before A_FETCH_BEGAN_TIME
+                // field was introduced. Now FetchHistoryProcessor fails if A_FETCH_BEGAN_TIME is
+                // not set. We could stop storing A_TIMESTAMP and sort by A_FETCH_BEGAN_TIME.
+                info.put(FetchHistoryHelper.A_TIMESTAMP, ts);
+                info.put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, ts);
             } catch (ParseException ex) {
             }
         }

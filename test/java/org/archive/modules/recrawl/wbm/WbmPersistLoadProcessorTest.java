@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -22,11 +24,14 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.recrawl.FetchHistoryHelper;
+import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.net.UURIFactory;
+import org.archive.util.Base32;
 import org.archive.util.DateUtils;
 import org.easymock.EasyMock;
 import org.junit.Test;
@@ -87,6 +92,11 @@ public class WbmPersistLoadProcessorTest {
     return history;
   }
   
+  private byte[] sha1Digest(String text) throws NoSuchAlgorithmException {
+      MessageDigest md = MessageDigest.getInstance("sha1");
+      return md.digest(text.getBytes());
+  }
+
   @Test
   public void testInnerProcessResultSingleShotWithMock() throws Exception {
     // because AbstractHttpClient marks most execute(...) methods final, it is very tiresome to implement
@@ -102,17 +112,25 @@ public class WbmPersistLoadProcessorTest {
     t.setContentDigestScheme(CONTENT_DIGEST_SCHEME);
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
     
-    // put history entry newer than being loaded
+    // put history entry newer than being loaded (i.e. loaded history entry will not be used for FetchHistoryProcessor
+    // check below.
     long expected_ts = DateUtils.parse14DigitDate(TestNormalHttpResponse.EXPECTED_TS).getTime();
     Map<String, Object>[] fetchHistory = (Map[])curi.getData().get(RecrawlAttributeConstants.A_FETCH_HISTORY);
     if (fetchHistory == null) {
       fetchHistory = new HashMap[2];
       curi.getData().put(RecrawlAttributeConstants.A_FETCH_HISTORY, fetchHistory);
     }
+    final byte[] digestValue0 = sha1Digest("0");
+    final byte[] digestValue1 = sha1Digest("1");
     fetchHistory[0] = new HashMap<String, Object>();
     fetchHistory[0].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts + 2000);
+    fetchHistory[0].put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, expected_ts + 2000);
+    fetchHistory[0].put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
+        CONTENT_DIGEST_SCHEME + Base32.encode(digestValue0));
     fetchHistory[1] = new HashMap<String, Object>();
     fetchHistory[1].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts - 2000);
+    fetchHistory[1].put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
+        CONTENT_DIGEST_SCHEME + Base32.encode(digestValue1));
     
     ProcessResult result = t.innerProcessResult(curi);
     assertEquals("result is PROCEED", ProcessResult.PROCEED, result);
@@ -126,6 +144,18 @@ public class WbmPersistLoadProcessorTest {
     Long ts = (Long)history.get(FetchHistoryHelper.A_TIMESTAMP);
     assertNotNull("ts is non-null", ts);
     assertEquals("'ts' has expected timestamp", expected_ts, ts.longValue());
+
+    // Check compatibility with FetchHistoryProcessor.
+    // TODO: This is not testing WbmPersistLoadProcessor - only testing stub fetchHistory
+    // setup above (OK as long as it matches WbmPersistLoadProcessor). We need a separate
+    // test method.
+    curi.setFetchStatus(200);
+    curi.setFetchBeginTime(System.currentTimeMillis());
+    // FetchHistoryProcessor once failed for a revisit case. We'd need to test other cases
+    // too (TODO).
+    curi.setContentDigest("sha1", digestValue0);
+    FetchHistoryProcessor fhp = new FetchHistoryProcessor();
+    fhp.process(curi);
   }
   
   @Test
@@ -154,11 +184,11 @@ public class WbmPersistLoadProcessorTest {
     @Override
     public void run() {
       try {
-	CrawlURI curi = new CrawlURI(UURIFactory.getInstance(this.uri));
-	p.innerProcessResult(curi);
-	//System.err.println(curi.toString());
+	    CrawlURI curi = new CrawlURI(UURIFactory.getInstance(this.uri));
+	    p.innerProcessResult(curi);
+	    //System.err.println(curi.toString());
       } catch (Exception ex) {
-	ex.printStackTrace();
+	    ex.printStackTrace();
       }
     }
   }
@@ -182,7 +212,7 @@ public class WbmPersistLoadProcessorTest {
       nurls++;
     }
     long t0 = System.currentTimeMillis();
-    tasks.run();
+    tasks.execute();
     executor.awaitTermination(30, TimeUnit.SECONDS);
     long el = System.currentTimeMillis() - t0;
     System.err.println(nurls + " urls, time=" + el + "ms (" + (nurls / (el / 1000.0)) + " URI/s");
