@@ -44,6 +44,7 @@ import org.restlet.data.Response;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.BeansException;
 
 /**
  * Shared superclass for resources that represent functional aspects
@@ -118,8 +119,13 @@ public abstract class JobRelatedResource extends BaseResource {
             for (PropertyDescriptor pd : getPropertyDescriptors(bwrap)) {
                 if (pd.getReadMethod() != null) {
                     String propName = pd.getName();
-                    Object propValue = bwrap.getPropertyValue(propName);
-                    addPresentableNestedNames(namedBeans, propValue, alreadyWritten);
+                    try {
+                    	Object propValue = bwrap.getPropertyValue(propName);
+                    	addPresentableNestedNames(namedBeans, propValue, alreadyWritten);
+                    } catch (BeansException ex) {
+                    	// getter may throw UnsupportedOperationException, for ex.
+                    	// ignore such properties.
+                    }
                 }
             }
             if (obj.getClass().isArray()) {
