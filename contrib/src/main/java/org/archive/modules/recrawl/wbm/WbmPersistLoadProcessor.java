@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,6 +38,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
@@ -44,6 +47,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
@@ -300,6 +304,9 @@ public class WbmPersistLoadProcessor extends Processor {
                     .disableCookieManagement()
                     .setConnectionManager(conman);
             builder.useSystemProperties();
+            // TODO: use setDefaultHeaders for adding requestHeaders? It's a bit painful
+            // because we need to convert it to a Collection of Header objects.
+
             // config code for older version of httpclient.
 //            builder.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(socketTimeout).build());
 //            HttpParams params = client.getParams();
@@ -309,10 +316,9 @@ public class WbmPersistLoadProcessor extends Processor {
             // Disabled because httpclient 4.3.3 sends "Accept-Encoding: gzip,deflate" by
             // default. Response parsing will fail If gzip-decompression ResponseInterceptor
             // is installed.
-//            builder.addInterceptorLast(new HttpRequestInterceptor() {
-//                @Override
-//                public void process(final HttpRequest request, final HttpContext context)
-//                        throws HttpException, IOException {
+            builder.addInterceptorLast(new HttpRequestInterceptor() {
+                @Override
+                public void process(final HttpRequest request, final HttpContext context) {
 //                    System.err.println("RequestInterceptor");
 //                    if (request.containsHeader("Accept-Encoding")) {
 //                        System.err.println("already has Accept-Encoding: " + request.getHeaders("Accept-Encoding")[0]);
@@ -322,14 +328,14 @@ public class WbmPersistLoadProcessor extends Processor {
 //                            request.addHeader("Accept-Encoding", "gzip");
 //                        }
 //                    }
-//                    // add extra headers configured.
-//                    if (requestHeaders != null) {
-//                        for (Entry<String, String> ent : requestHeaders.entrySet()) {
-//                            request.addHeader(ent.getKey(), ent.getValue());
-//                        }
-//                    }
-//                }
-//            });
+                    // add extra headers configured.
+                    if (requestHeaders != null) {
+                        for (Entry<String, String> ent : requestHeaders.entrySet()) {
+                            request.addHeader(ent.getKey(), ent.getValue());
+                        }
+                    }
+                }
+            });
 //            builder.addInterceptorFirst(new HttpResponseInterceptor() {
 //                @Override
 //                public void process(final HttpResponse response, final HttpContext context)
