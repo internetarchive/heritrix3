@@ -23,6 +23,10 @@
 					<artifactId>jets3t</artifactId>
 					<groupId>net.java.dev.jets3t</groupId>
 				</exclusion>
+				<exclusion>
+					<artifactId>junit</artifactId>
+					<groupId>junit</groupId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>

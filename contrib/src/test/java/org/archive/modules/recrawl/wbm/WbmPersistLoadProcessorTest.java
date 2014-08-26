@@ -1,9 +1,5 @@
 package org.archive.modules.recrawl.wbm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import junit.framework.TestCase;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
@@ -34,13 +32,11 @@ import org.archive.net.UURIFactory;
 import org.archive.util.Base32;
 import org.archive.util.DateUtils;
 import org.easymock.EasyMock;
-import org.junit.Test;
 
 import com.google.common.util.concurrent.ExecutionList;
 
 /**
  * unit test for {@link WbmPersistLoadProcessor}.
- * depends on WBM index query API. 
  * 
  * TODO:
  * <ul>
@@ -50,8 +46,8 @@ import com.google.common.util.concurrent.ExecutionList;
  * @author kenji
  *
  */
-public class WbmPersistLoadProcessorTest {
-  @Test
+public class WbmPersistLoadProcessorTest extends TestCase {
+
   public void testBuildURL() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     t.setQueryURL("http://web.archive.org/cdx/search/cdx?url=$u&startDate=$s&limit=1");
@@ -97,8 +93,11 @@ public class WbmPersistLoadProcessorTest {
       return md.digest(text.getBytes());
   }
 
-  @Test
-  public void testInnerProcessResultSingleShotWithMock() throws Exception {
+  /**
+   * this test is disabled because it talks to production CDX server.
+   * @throws Exception
+   */
+  public void _testInnerProcessResultSingleShotWithMock() throws Exception {
     // because AbstractHttpClient marks most execute(...) methods final, it is very tiresome to implement
     // a stub by implementing HttpClient interface. So I use EasyMock.
     HttpClient client = EasyMock.createMock(HttpClient.class);
@@ -158,7 +157,6 @@ public class WbmPersistLoadProcessorTest {
     fhp.process(curi);
   }
   
-  @Test
   public void testInnerProcessResultSingleShotWithRealServer() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     //CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
@@ -195,11 +193,10 @@ public class WbmPersistLoadProcessorTest {
   
   /**
    * test for performance.
-   * not annotated as test case. run this through main().
+   * not named as test case. run this through main().
    * @throws Exception
    */
-  //@Test
-  public void testInnerProcessResultMany() throws Exception {
+  public void measureInnerProcessResultMany() throws Exception {
     final WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     InputStream is = getClass().getResourceAsStream("/test-url-list.txt");
     BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -219,6 +216,6 @@ public class WbmPersistLoadProcessorTest {
   }
   
   public static void main() throws Exception {
-    (new WbmPersistLoadProcessorTest()).testInnerProcessResultMany();
+    (new WbmPersistLoadProcessorTest()).measureInnerProcessResultMany();
   }
 }
