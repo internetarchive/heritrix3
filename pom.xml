@@ -118,6 +118,12 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<artifactId>engine</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<!-- lock httpclient version -->
+			<dependency>
+				<groupId>org.apache.httpcomponents</groupId>
+				<artifactId>httpclient</artifactId>
+				<version>4.3.3</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
