@@ -96,6 +96,10 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
         routingKey = "crawlLog";
     }
 
+    protected Object checkForNull(Object o) {
+        return o != null ? o : JSONObject.NULL;
+    }
+
     @Override
     protected byte[] buildMessage(CrawlURI curi) {
         JSONObject jo = new JSONObject();
@@ -106,15 +110,15 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
             jo.put(entry.getKey(), entry.getValue());
         }
 
-        jo.put("contentLength", curi.getContentLength() >= 0 ? curi.getContentLength() : null);
-        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize() : null);
+        jo.put("contentLength", curi.isHttpTransaction() && curi.getContentLength() >= 0 ? curi.getContentLength() : JSONObject.NULL);
+        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize() : JSONObject.NULL);
 
-        jo.put("fetchStatus", curi.getFetchStatus());
-        jo.put("url", curi.getUURI().toString());
-        jo.put("pathFromSeed", curi.getPathFromSeed());
-        jo.put("via", curi.flattenVia());
-        jo.put("contentType", MimetypeUtils.truncate(curi.getContentType()));
-        jo.put("threadNo", curi.getThreadNumber());
+        jo.put("fetchStatus", checkForNull(curi.getFetchStatus()));
+        jo.put("url", checkForNull(curi.getUURI().toString()));
+        jo.put("pathFromSeed", checkForNull(curi.getPathFromSeed()));
+        jo.put("via", checkForNull(curi.flattenVia()));
+        jo.put("contentType", checkForNull(MimetypeUtils.truncate(curi.getContentType())));
+        jo.put("threadNo", checkForNull(curi.getThreadNumber()));
 
         if (curi.containsDataKey(CoreAttributeConstants.A_FETCH_COMPLETED_TIME)) {
             long beganTime = curi.getFetchBeginTime();
@@ -122,22 +126,22 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
                     + "+" + (curi.getFetchCompletedTime() - beganTime);
             jo.put("fetchBeginDuration", fetchBeginDuration);
         } else {
-            jo.put("fetchBeginDuration", (String) null);
+            jo.put("fetchBeginDuration", JSONObject.NULL);
         }
 
-        jo.put("contentDigest", curi.getContentDigestSchemeString());
-        jo.put("sourceSeed", curi.getSourceTag());
+        jo.put("contentDigest", checkForNull(curi.getContentDigestSchemeString()));
+        jo.put("sourceSeed", checkForNull(curi.getSourceTag()));
 
         CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host != null) {
             jo.put("host", host.fixUpName());
         } else {
-            jo.put("host", (String) null);
+            jo.put("host", JSONObject.NULL);
         }
 
-        jo.put("annotations", StringUtils.join(curi.getAnnotations(), ","));
+        jo.put("annotations", checkForNull(StringUtils.join(curi.getAnnotations(), ",")));
 
-        jo.put("extraInfo", curi.getExtraInfo());
+        jo.put("extraInfo", checkForNull(curi.getExtraInfo()));
 
         String str = jo.toString();
         try {
