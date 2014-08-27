@@ -19,11 +19,11 @@
 package org.archive.modules.postprocessor;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.collections.Closure;
+import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.frontier.BdbFrontier;
@@ -35,16 +35,18 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
  * @see UriProcessingFormatter
  * @contributor nlevitt
  */
 public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle {
-
-    private final static int GUESS_AT_LOG_LENGTH = 1200;
 
     protected Frontier frontier;
     public Frontier getFrontier() {
@@ -65,12 +67,12 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
         this.serverCache = serverCache;
     }
 
-    protected List<String> prependValues;
-    public List<String> getPrependValues() {
-        return prependValues;
+    protected Map<String,String> extraFields;
+    public Map<String, String> getExtraFields() {
+        return extraFields;
     }
-    public void setPrependValues(List<String> prependValues) {
-        this.prependValues = prependValues;
+    public void setExtraFields(Map<String, String> extraFields) {
+        this.extraFields = extraFields;
     }
 
     protected boolean dumpPendingAtClose = false;
@@ -94,99 +96,50 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
         routingKey = "crawlLog";
     }
 
-    /**
-     * Reusable assembly buffer.
-     */
-    protected final ThreadLocal<StringBuilder> bufLocal = new ThreadLocal<StringBuilder>() {
-        @Override
-        protected StringBuilder initialValue() {
-            return new StringBuilder(GUESS_AT_LOG_LENGTH);
-        }
-    };
-
-    private final static String NA = "-";
-    private final static String DELIM = "\t";
-
-    /**
-     * @param str
-     *            String to check.
-     * @return Return passed string or <code>NA</code> if null.
-     */
-    protected String checkForNull(String str) {
-        return (str == null || str.length() <= 0) ? NA : str;
-    }
-
     @Override
     protected byte[] buildMessage(CrawlURI curi) {
-        String length = NA;
+        JSONObject jo = new JSONObject();
 
-        if (curi.isHttpTransaction()) {
-            if (curi.getContentLength() >= 0) {
-                length = Long.toString(curi.getContentLength());
-            } else if (curi.getContentSize() > 0) {
-                length = Long.toString(curi.getContentSize());
-            }
-        } else {
-            if (curi.getContentSize() > 0) {
-                length = Long.toString(curi.getContentSize());
-            }
+        jo.put("timestamp", ArchiveUtils.getLog17Date(System.currentTimeMillis()));
+
+        for (Entry<String, String> entry: getExtraFields().entrySet()) {
+            jo.put(entry.getKey(), entry.getValue());
         }
 
-        StringBuilder buffer = bufLocal.get();
-        buffer.setLength(0);
+        jo.put("contentLength", curi.getContentLength() >= 0 ? curi.getContentLength() : null);
+        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize() : null);
 
-        if (getPrependValues() != null) {
-            for (String v: getPrependValues()) {
-                buffer.append(v).append(DELIM);
-            }
-        }
+        jo.put("fetchStatus", curi.getFetchStatus());
+        jo.put("url", curi.getUURI().toString());
+        jo.put("pathFromSeed", curi.getPathFromSeed());
+        jo.put("via", curi.flattenVia());
+        jo.put("contentType", MimetypeUtils.truncate(curi.getContentType()));
+        jo.put("threadNo", curi.getThreadNumber());
 
-        buffer.append(ArchiveUtils.getLog17Date(System.currentTimeMillis()));
-        buffer.append(DELIM).append(curi.getFetchStatus());
-        buffer.append(DELIM).append(length);
-        buffer.append(DELIM).append(curi.getUURI().toString());
-        buffer.append(DELIM).append(checkForNull(curi.getPathFromSeed()));
-        buffer.append(DELIM).append(checkForNull(curi.flattenVia()));
-        buffer.append(DELIM).append(MimetypeUtils.truncate(curi.getContentType()));
-        buffer.append(DELIM).append("#").append(curi.getThreadNumber());
-
-        // arcTimeAndDuration
-        buffer.append(DELIM);
         if (curi.containsDataKey(CoreAttributeConstants.A_FETCH_COMPLETED_TIME)) {
-            long completedTime = curi.getFetchCompletedTime();
             long beganTime = curi.getFetchBeginTime();
-            buffer.append(ArchiveUtils.get17DigitDate(beganTime)).append("+").append(Long.toString(completedTime - beganTime));
+            String fetchBeginDuration = ArchiveUtils.get17DigitDate(beganTime)
+                    + "+" + (curi.getFetchCompletedTime() - beganTime);
+            jo.put("fetchBeginDuration", fetchBeginDuration);
         } else {
-            buffer.append(NA);
+            jo.put("fetchBeginDuration", (String) null);
         }
 
-        buffer.append(DELIM).append(checkForNull(curi.getContentDigestSchemeString()));
-        buffer.append(DELIM).append(checkForNull(curi.getSourceTag()));
+        jo.put("contentDigest", curi.getContentDigestSchemeString());
+        jo.put("sourceSeed", curi.getSourceTag());
 
-        buffer.append(DELIM);
         CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host != null) {
-            buffer.append(host.fixUpName());
+            jo.put("host", host.fixUpName());
         } else {
-            buffer.append(NA);
+            jo.put("host", (String) null);
         }
 
-        buffer.append(DELIM);
-        Collection<String> anno = curi.getAnnotations();
-        if (anno != null && anno.size() > 0) {
-            Iterator<String> iter = anno.iterator();
-            buffer.append(iter.next());
-            while (iter.hasNext()) {
-                buffer.append(',');
-                buffer.append(iter.next());
-            }
-        } else {
-            buffer.append(NA);
-        }
+        jo.put("annotations", StringUtils.join(curi.getAnnotations(), ","));
 
-        buffer.append(DELIM).append(curi.getExtraInfo());
+        jo.put("extraInfo", curi.getExtraInfo());
 
-        String str = buffer.toString();
+        String str = jo.toString();
         try {
             return str.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -233,5 +186,13 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
 
         // closes amqp connection
         super.stop();
+    }
+
+    protected BasicProperties props = new AMQP.BasicProperties.Builder().
+            contentType("application/json").build();
+
+    @Override
+    protected BasicProperties amqpMessageProperties() {
+        return props;
     }
 }
