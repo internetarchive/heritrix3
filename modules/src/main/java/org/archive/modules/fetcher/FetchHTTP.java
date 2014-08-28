@@ -669,7 +669,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         
         long contentLength = -1l;
         Header h = response.getLastHeader("content-length");
-        if (h != null) {
+        if (h != null && h.getValue().trim().length()>0) {
             contentLength = Long.parseLong(h.getValue());
         }
         try {
