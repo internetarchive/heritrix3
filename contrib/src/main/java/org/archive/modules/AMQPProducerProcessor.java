@@ -21,14 +21,10 @@ package org.archive.modules;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * @contributor nlevitt
@@ -44,10 +40,6 @@ public abstract class AMQPProducerProcessor extends Processor {
     public void setAmqpUri(String uri) {
         this.amqpUri = uri; 
     }
-
-    transient protected Connection connection = null;
-    transient protected ThreadLocal<Channel> threadChannel = 
-            new ThreadLocal<Channel>();
 
     protected String exchange;
     public String getExchange() {
@@ -65,47 +57,16 @@ public abstract class AMQPProducerProcessor extends Processor {
         this.routingKey = routingKey;
     }
 
-    protected synchronized Channel channel() {
-        if (threadChannel.get() != null && !threadChannel.get().isOpen()) {
-            threadChannel.set(null);
-        }
+    transient protected AMQPProducer amqpProducer;
 
-        if (threadChannel.get() == null) {
-            if (connection == null || !connection.isOpen()) {
-                connect();
-            }
-            try {
-                if (connection != null) {
-                    threadChannel.set(connection.createChannel());
-                }
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Attempting to create channel for AMQP connection failed!", e);
-            }
+    protected AMQPProducer amqpProducer() {
+        if (amqpProducer == null) {
+            amqpProducer = new AMQPProducer(getAmqpUri(), getExchange(), getRoutingKey());
         }
-
-        return threadChannel.get();
+        return amqpProducer;
     }
 
-    private AtomicBoolean serverLooksDown = new AtomicBoolean(false);
-
-    private synchronized void connect() {
-        ConnectionFactory factory = new ConnectionFactory();
-        try {
-            factory.setUri(getAmqpUri());
-            connection =  factory.newConnection();
-            boolean wasDown = serverLooksDown.getAndSet(false);
-            if (wasDown) {
-                logger.info(getAmqpUri() + " is back up, connected successfully!");
-            }
-        } catch (Exception e) {
-            connection = null;
-            boolean wasAlreadyDown = serverLooksDown.getAndSet(true);
-            if (!wasAlreadyDown) {
-                logger.log(Level.SEVERE, "Attempting to connect to AMQP server failed!", e);
-            }
-        }
-    }
-
+    @Override
     synchronized public void stop() {
         if (!isRunning) {
             return;
@@ -113,12 +74,8 @@ public abstract class AMQPProducerProcessor extends Processor {
 
         super.stop();
 
-        try {
-            if (connection != null && connection.isOpen()) {
-                connection.close();
-            }
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Attempting to close AMQP connection failed!", e);
+        if (amqpProducer != null) {
+            amqpProducer.stop();
         }
     }
 
@@ -128,21 +85,12 @@ public abstract class AMQPProducerProcessor extends Processor {
         byte[] message = null;
         BasicProperties props = null;
 
+        message = buildMessage(curi);
+        props = amqpMessageProperties();
         try {
-            Channel channel = channel();
-
-            if (channel != null) {
-                message = buildMessage(curi);
-                props = amqpMessageProperties();
-
-                channel.exchangeDeclare(getExchange(), "direct", true);
-
-                channel.basicPublish(getExchange(), getRoutingKey(), props, 
-                        message);
-
-                success(curi, message, props);
-            }
-        } catch (Exception e) {
+            amqpProducer().publishMessage(message, props);
+            success(curi, message, props);
+        } catch (IOException e) {
             fail(curi, message, props, e);
         }
 
