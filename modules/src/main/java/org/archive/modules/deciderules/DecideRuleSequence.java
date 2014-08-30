@@ -98,11 +98,15 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
             }
         }
 
+        decisionMade(uri, decisiveRule, decisiveRuleNumber, result);
+
+        return result;
+    }
+    protected void decisionMade(CrawlURI uri, DecideRule decisiveRule,
+            int decisiveRuleNumber, DecideResult result) {
         if (fileLogger != null) {
             fileLogger.info(decisiveRuleNumber + " " + decisiveRule.getClass().getSimpleName() + " " + result + " " + uri);
         }
-
-        return result;
     }
     
     protected String beanName;
