@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -28,21 +28,22 @@ import java.io.ObjectOutputStream;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
+import org.archive.modules.extractor.LinkContext.SimpleLinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.TmpDirTestCase;
 
 /**
  * Tests related to CrawlURI
- * 
+ *
  * @contributor stack
  * @contributor gojomo
  * @version $Revision$, $Date$
  */
 public class CrawlURITest extends TmpDirTestCase {
-    
+
     CrawlURI seed = null;
-    
+
     protected void setUp() throws Exception {
         super.setUp();
         final String url = "http://www.dh.gov.uk/Home/fs/en";
@@ -57,14 +58,14 @@ public class CrawlURITest extends TmpDirTestCase {
 
     /**
      * Test serialization/deserialization works.
-     * 
+     *
      * @throws IOException
      * @throws ClassNotFoundException
      */
     final public void testSerialization()
-    		throws IOException, ClassNotFoundException {
-        File serialize = new File(getTmpDir(), 
-            this.getClass().getName() + ".serialize");
+            throws IOException, ClassNotFoundException {
+        File serialize = new File(getTmpDir(),
+                this.getClass().getName() + ".serialize");
         try {
             FileOutputStream fos = new FileOutputStream(serialize);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -81,43 +82,137 @@ public class CrawlURITest extends TmpDirTestCase {
             deserializedCuri = (CrawlURI)ois.readObject();
             deserializedCuri = (CrawlURI)ois.readObject();
             assertEquals("Deserialized not equal to original",
-                this.seed.toString(), deserializedCuri.toString());
+                    this.seed.toString(), deserializedCuri.toString());
             String host = this.seed.getUURI().getHost();
             assertTrue("Deserialized host not null",
-                host != null && host.length() >= 0);
+                    host != null && host.length() >= 0);
         } finally {
             serialize.delete();
         }
     }
-    
+
     public void testCandidateURIWithLoadedAList()
-    throws URIException {
+            throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.archive.org");
         CrawlURI curi = new CrawlURI(uuri);
         curi.setSeed(true);
         curi.getData().put("key", "value");
         assertTrue("Didn't find AList item",
-            curi.getData().get("key").equals("value"));
+                curi.getData().get("key").equals("value"));
     }
-    
+
     public void testExtendHopsPath() {
         assertEquals("from empty","L",CrawlURI.extendHopsPath("",'L'));
-        
+
         assertEquals("from one","LX",CrawlURI.extendHopsPath("L",'X'));
-        
+
         assertEquals(
-            "from fortynine",
-            "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
-            CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
-        
+                "from fortynine",
+                "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
+                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+
         assertEquals(
                 "from fifty",
                 "1+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
                 CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
-        
+
         assertEquals(
                 "from 149",
                 "100+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
                 CrawlURI.extendHopsPath("99+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+    }
+
+
+    public void testNullPathFromSeed() throws URIException {
+        // check comparing with null
+        CrawlURI a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                null, // a < b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        assertEquals("", a.getPathFromSeed());
+
+        CrawlURI b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "", // a < b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        assertEquals("", b.getPathFromSeed());
+
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+
+    }
+
+    public void testOrdering() throws URIException {
+        // check that via is highest precedence
+        CrawlURI a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/2"), // a > b
+                "2", // a > b
+                UURIFactory.getInstance("http://example.com/via/1"), // a < b
+                new SimpleLinkContext("2")); // a > b
+        CrawlURI b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a > b
+                "1", // a > b
+                UURIFactory.getInstance("http://example.com/via/2"), // a < b
+                new SimpleLinkContext("1")); // a > b
+        assertEquals(-1, a.compareTo(b));
+        assertEquals(1, b.compareTo(a));
+
+        // check that uri is next highest
+        a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a < b
+                "2", // a > b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("2")); // a > b
+        b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/2"), // a < b
+                "1", // a > b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a > b
+        assertEquals(-1, a.compareTo(b));
+        assertEquals(1, b.compareTo(a));
+
+        // check that via context is next
+        a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "2", // a > b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a < b
+        b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "1", // a > b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("2")); // a < b
+        assertEquals(-1, a.compareTo(b));
+        assertEquals(1, b.compareTo(a));
+
+        // check that pathFromSeed is next
+        a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "1", // a < b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "2", // a < b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        assertEquals(-1, a.compareTo(b));
+        assertEquals(1, b.compareTo(a));
+
+        // check equality
+        a = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "1", // a == b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        b = new CrawlURI(
+                UURIFactory.getInstance("http://example.com/1"), // a == b
+                "1", // a == b
+                UURIFactory.getInstance("http://example.com/via/1"), // a == b
+                new SimpleLinkContext("1")); // a == b
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
     }
 }
