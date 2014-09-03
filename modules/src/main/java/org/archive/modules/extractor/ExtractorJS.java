@@ -67,7 +67,7 @@ public class ExtractorJS extends ContentExtractor {
     // (areas between paired ' or " characters, possibly backslash-quoted
     // on the ends, but not in the middle)
     protected static final String JAVASCRIPT_STRING_EXTRACTOR =
-            "(\\\\{0,8}+['\"\\\\u{0027}\\\\u{0022}])([^\\s'\"]{1,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
+    		"(\\\\{0,8}+['\"])([^\\s'\"]{1,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
     
     // GROUPS:
     // (G1) ' or " with optional leading backslashes
@@ -142,13 +142,16 @@ public class ExtractorJS extends ContentExtractor {
     public long considerStrings(Extractor ext, 
             CrawlURI curi, CharSequence cs, boolean handlingJSFile) {
         long foundLinks = 0;
+        
+        String unescapedJavaScript = StringEscapeUtils.unescapeJavaScript(cs.toString());
+        
         Matcher strings =
-            TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, cs);
+            TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, unescapedJavaScript);
         
         int startIndex = 0;
         while (strings.find(startIndex)) {
             CharSequence subsequence =
-                cs.subSequence(strings.start(2), strings.end(2));
+            		unescapedJavaScript.subSequence(strings.start(2), strings.end(2));
             
             if (UriUtils.isPossibleUri(subsequence)) {
                 if (considerString(ext, curi, handlingJSFile, subsequence.toString())) {
