@@ -256,7 +256,12 @@ class FetchHTTPRequest {
                 logger.warning("Invalid accept header: " + headerString);
             }
         }
-        
+
+        if (curi.getViaContext() != null
+                && "a[data-remote='true']/@href".equals(curi.getViaContext().toString())) {
+            request.addHeader("X-Requested-With", "XMLHttpRequest");
+        }
+
         @SuppressWarnings("unchecked")
         Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
         if (uriCustomHeaders != null) {

@@ -406,9 +406,15 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             CharSequence attrName = cs.subSequence(attr.start(1),attr.end(1));
             value = TextUtils.unescapeHtml(value);
             if (attr.start(2) > -1) {
+                CharSequence context;
                 // HREF
-                CharSequence context = elementContext(element, attr.group(2));
-                if(elementStr.equalsIgnoreCase(LINK)) {
+                if ("a".equals(element) && TextUtils.matches("(?i).*data-remote\\s*=\\s*([\"'])true.*\\1", cs)) {
+                    context = "a[data-remote='true']/@href";
+                } else {
+                    context = elementContext(element, attr.group(2));
+                }
+
+                if ("a[data-remote='true']/@href".equals(context) || elementStr.equalsIgnoreCase(LINK)) {
                     // <LINK> elements treated as embeds (css, ico, etc)
                     processEmbed(curi, value, context);
                 } else {
@@ -1004,6 +1010,5 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     public static CharSequence elementContext(CharSequence element, CharSequence attribute) {
         return attribute == null? "": element + "/@" + attribute;
     }
-
 }
 
