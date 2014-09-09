@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -113,6 +114,12 @@ public class ExtractorJSTest extends StringExtractorTestBase {
         
         "var blah='/good/query/value/with/url-escaping.html?foo=bar%20bar';",
         "http://www.archive.org/good/query/value/with/url-escaping.html?foo=bar%20bar",
+        
+        "\\u0027project_detail.aspx?guid=unicodesinglequote\\u0027",
+        "http://www.archive.org/foo/project_detail.aspx?guid=unicodesinglequote",
+        
+        "\\u0022project_detail.aspx?guid=unicodedoublequote\\u0022",
+        "http://www.archive.org/foo/project_detail.aspx?guid=unicodedoublequote",        
     };
        
     @Override
@@ -122,6 +129,7 @@ public class ExtractorJSTest extends StringExtractorTestBase {
     
     @Override
     protected Extractor makeExtractor() {
+    	
         ExtractorJS result = new ExtractorJS();
         UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
         result.setLoggerModule(ulm);
