@@ -18,15 +18,67 @@
  */
 package org.archive.modules.extractor;
 
-import org.archive.modules.ProcessorTestBase;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.archive.modules.CrawlMetadata;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.extractor.StringExtractorTestBase.TestData;
+import org.archive.net.UURI;
+import org.archive.net.UURIFactory;
+import org.archive.util.Recorder;
 
 /**
  * Unit test for {@link ExtractorXML}.
  *
  * @author pjack
  */
-public class ExtractorXMLTest extends ProcessorTestBase {
+public class ExtractorXMLTest extends StringExtractorTestBase {
 
-    // TODO TESTME!
+    final public static String[] VALID_TEST_DATA = new String[] {
+        "<link>http://conservation.org</link>",
+        "http://conservation.org",
+
+        "<CI:imagePath><![CDATA[http://sp10.conservation.org/CIFMGPhotos/790x444_skerry_gallery_02.jpg]]></CI:imagePath>",
+        "http://sp10.conservation.org/CIFMGPhotos/790x444_skerry_gallery_02.jpg",
+        
+    };
     
+    @Override
+    protected String[] getValidTestData() {
+        return VALID_TEST_DATA;
+    }
+
+    @Override
+    protected Extractor makeExtractor() {
+        ExtractorXML result = new ExtractorXML();
+        UriErrorLoggerModule ulm = new UnitTestUriLoggerModule();  
+        result.setLoggerModule(ulm);
+        return result;
+    }
+
+    protected ExtractorXML getExtractor() {
+        return (ExtractorXML) extractor;
+    }
+    
+    @Override
+    protected Collection<TestData> makeData(String content, String destURI)
+    throws Exception {
+        List<TestData> result = new ArrayList<TestData>();
+        UURI src = UURIFactory.getInstance("http://www.archive.org/start/");
+        CrawlURI euri = new CrawlURI(src, null, null, 
+        		LinkContext.SPECULATIVE_MISC);
+        Recorder recorder = createRecorder(content, "UTF-8");
+        euri.setContentType("text/xml");
+        euri.setRecorder(recorder);
+        euri.setContentSize(content.length());
+                
+        UURI dest = UURIFactory.getInstance(destURI);
+        CrawlURI link = euri.createCrawlURI(dest, LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+        result.add(new TestData(euri, link));
+        
+        return result;
+    }
+
 }

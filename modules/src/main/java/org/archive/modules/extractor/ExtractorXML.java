@@ -56,7 +56,8 @@ public class ExtractorXML extends ContentExtractor {
         Logger.getLogger(ExtractorXML.class.getName());
 
     static final Pattern XML_URI_EXTRACTOR = Pattern
-            .compile("(?s)[\"\'>]\\s*([^<>\\s'\"@]+)\\s*[\"\'<]");
+            .compile("(?s)[\"\'>]\\s*(?:<!\\[CDATA\\[)?([^<>\\s\'\"@]+)\\s*(?:\\]\\]>)?[\"\'<]");    
+    
     // GROUPS:
     // (G1) possible uri
 
