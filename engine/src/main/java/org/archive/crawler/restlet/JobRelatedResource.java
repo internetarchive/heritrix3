@@ -111,8 +111,19 @@ public abstract class JobRelatedResource extends BaseResource {
             namedBeans = new LinkedList<Object>();
             bean.put("children", namedBeans);
         }
-        
-        if (!alreadyWritten.contains(obj)) {
+        // alreadyWritten.contains() can fail on exception from hashCode()
+        // method. For example, ArrayList.hashCode() iterates over elements
+        // to compute hash. It can fail with ConcurrentModificationException.
+        // We need to use a set based on object identity, instead of regular
+        // java.util.Set which is equals-based.  For now, error from contains()
+        // is simply ignored (assuming not written).
+        boolean writtenBefore = false;
+        try {
+        	writtenBefore = alreadyWritten.contains(obj);
+        } catch (Exception ex) {
+        	// pass
+        }
+        if (!writtenBefore) {
             alreadyWritten.add(obj);
 
             BeanWrapperImpl bwrap = new BeanWrapperImpl(obj);
