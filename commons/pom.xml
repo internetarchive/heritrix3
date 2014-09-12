@@ -184,7 +184,7 @@
 		<dependency>
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
-			<version>1.1.1-IA-SNAPSHOT</version>
+			<version>1.1.4</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.hadoop</groupId>

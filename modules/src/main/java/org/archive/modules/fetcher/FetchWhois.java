@@ -448,10 +448,10 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             addWhoisLink(curi, ch.getIP().getHostAddress());
         }
 
-        if (InternetDomainName.isValidLenient(ch.getHostName())) {
+        if (InternetDomainName.isValid(ch.getHostName())) {
             // do a whois lookup on the domain
             try {
-                String topmostAssigned = InternetDomainName.fromLenient(ch.getHostName()).topPrivateDomain().name();
+                String topmostAssigned = InternetDomainName.from(ch.getHostName()).topPrivateDomain().toString();
                 addWhoisLink(curi, topmostAssigned);
             } catch (IllegalStateException e) {
                 // java.lang.IllegalStateException: Not under a public suffix: mod.uk
