@@ -78,7 +78,7 @@ public class FormAuthTest extends TestCase {
     protected FetchHTTP getFetcher() throws IOException {
         if (fetchHttp == null) { 
             fetchHttp = new FetchHTTP();
-            fetchHttp.setCookieStore(new SimpleCookieStore());
+            fetchHttp.setCookieStore(new SimpleHostCookieSetStore());
             fetchHttp.setServerCache(new DefaultServerCache());
             CrawlMetadata uap = new CrawlMetadata();
             uap.setUserAgentTemplate(getClass().getName());

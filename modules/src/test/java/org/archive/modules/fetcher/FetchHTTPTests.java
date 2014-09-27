@@ -883,7 +883,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     
     public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
-        fetchHttp.setCookieStore(new SimpleCookieStore());
+        fetchHttp.setCookieStore(new SimpleHostCookieSetStore());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(userAgentString);

@@ -58,6 +58,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -452,7 +453,8 @@ class FetchHTTPRequest {
         }
         httpClientBuilder.setUserAgent(userAgent);
         
-        httpClientBuilder.setDefaultCookieStore(fetcher.getCookieStore());
+        CookieStore hostCookieStore = fetcher.getCookieStore().cookieStoreFor(targetHost.getHostName());
+        httpClientBuilder.setDefaultCookieStore(hostCookieStore);
         
         connMan = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connMan);
