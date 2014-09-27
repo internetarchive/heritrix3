@@ -35,6 +35,7 @@ import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
@@ -109,6 +110,8 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
+
+import com.google.common.net.InternetDomainName;
 
 /**
  * @contributor nlevitt
@@ -452,12 +455,27 @@ class FetchHTTPRequest {
             userAgent = fetcher.getUserAgentProvider().getUserAgent();
         }
         httpClientBuilder.setUserAgent(userAgent);
-        
-        CookieStore hostCookieStore = fetcher.getCookieStore().cookieStoreFor(targetHost.getHostName());
+
+        CookieStore hostCookieStore = fetcher.getCookieStore().cookieStoreFor(topmostAssigned());
         httpClientBuilder.setDefaultCookieStore(hostCookieStore);
         
         connMan = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connMan);
+    }
+
+    protected String topmostAssigned() {
+        String domain = targetHost.getHostName();
+        if (domain == null) {
+            domain = "";
+        }
+        if (domain.startsWith(".")) {
+            domain = domain.substring(1);
+        }
+        domain = domain.toLowerCase(Locale.ENGLISH);
+        if (InternetDomainName.isValid(domain)) {
+            domain = InternetDomainName.from(domain).topPrivateDomain().toString();
+        }
+        return domain;
     }
 
     protected HttpClientConnectionManager buildConnectionManager() {

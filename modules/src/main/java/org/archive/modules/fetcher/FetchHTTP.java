@@ -266,12 +266,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
         kp.put("acceptHeaders",headers);
     }
 
-    protected SimpleHostCookieSetStore cookieStore;
+    protected AbstractDomainCookieSetStore cookieStore;
     @Autowired(required=false)
-    public void setCookieStore(SimpleHostCookieSetStore cookieStore) {
+    public void setCookieStore(AbstractDomainCookieSetStore cookieStore) {
         this.cookieStore = cookieStore;
     }
-    public SimpleHostCookieSetStore getCookieStore() {
+    public AbstractDomainCookieSetStore getCookieStore() {
         return cookieStore;
     }
     

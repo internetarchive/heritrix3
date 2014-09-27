@@ -68,7 +68,6 @@ import org.archive.modules.deciderules.RejectDecideRule;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.modules.revisit.ServerNotModifiedRevisit;
 import org.archive.net.UURI;
-import org.archive.util.OneLineSimpleLogger;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
@@ -883,7 +882,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     
     public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
-        fetchHttp.setCookieStore(new SimpleHostCookieSetStore());
+        fetchHttp.setCookieStore(new SimpleDomainCookieSetStore());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(userAgentString);
