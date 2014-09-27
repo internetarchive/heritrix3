@@ -18,9 +18,13 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
+
+import org.archive.checkpointing.Checkpoint;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SimpleDomainCookieSetStore extends AbstractDomainCookieSetStore {
 
@@ -34,7 +38,26 @@ public class SimpleDomainCookieSetStore extends AbstractDomainCookieSetStore {
 
     @SuppressWarnings("rawtypes")
     @Override
-    protected Map<String, TreeSet> getCookiesByHost() {
+    protected Map<String, TreeSet> getCookiesByDomain() {
         return cookiesByHost;
+    }
+    
+    @Override
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+        throw new RuntimeException("not implemented");
+    }
+    @Override
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        throw new RuntimeException("not implemented");
+    }
+    @Override
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        throw new RuntimeException("not implemented");
     }
 }

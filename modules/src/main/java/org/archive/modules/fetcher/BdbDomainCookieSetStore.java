@@ -18,10 +18,12 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.TreeSet;
 
 import org.archive.bdb.BdbModule;
+import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.sleepycat.bind.serial.SerialBinding;
@@ -69,8 +71,27 @@ public class BdbDomainCookieSetStore extends AbstractDomainCookieSetStore {
 
     @SuppressWarnings("rawtypes")
     @Override
-    protected Map<String, TreeSet> getCookiesByHost() {
+    protected Map<String, TreeSet> getCookiesByDomain() {
         return (Map<String, TreeSet>) cookiesByHost;
     }
 
+    @Override
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+    @Override
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        // do nothing; handled by map checkpoint via BdbModule
+    }
+    @Override
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        // just remember that we are doing checkpoint-recovery;
+        // actual state recovery happens via BdbModule
+        isCheckpointRecovery = true;
+    }
 }

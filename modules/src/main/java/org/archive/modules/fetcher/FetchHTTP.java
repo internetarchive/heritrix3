@@ -1053,7 +1053,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
         super.stop();
         // At the end save cookies to the file specified in the order file.
         if (getCookieStore() != null) {
-            getCookieStore().saveCookies();
+            AbstractDomainCookieSetStore r = getCookieStore();
+            if (r.getCookiesSaveFile() != null) {
+                r.saveCookies(r.getCookiesSaveFile().getFile().getAbsolutePath());
+            }
             getCookieStore().stop();
             setCookieStore(null);
         }
