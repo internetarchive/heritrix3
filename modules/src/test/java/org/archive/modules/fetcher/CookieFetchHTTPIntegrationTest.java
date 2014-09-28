@@ -21,7 +21,6 @@ package org.archive.modules.fetcher;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -60,7 +59,7 @@ import com.google.common.io.Files;
 @SuppressWarnings("restriction")
 public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
-//    private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
+    //    private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
     //    static {
     //        Logger.getLogger("").setLevel(Level.FINE);
     //        for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
@@ -69,19 +68,17 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
     //        }
     //    }
 
-    protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
-
     protected static class TestHandler extends SessionHandler {
         public TestHandler() {
             super();
         }
-        
+
         @Override
         public void handle(String target, HttpServletRequest request,
                 HttpServletResponse response, int dispatch) throws IOException,
                 ServletException {
             if (request.getParameter("name") != null) {
-                Cookie cookie = new javax.servlet.http.Cookie(request.getParameter("value"), 
+                Cookie cookie = new javax.servlet.http.Cookie(request.getParameter("name"), 
                         request.getParameter("value"));
                 if (request.getParameter("domain") != null) {
                     cookie.setDomain(request.getParameter("domain"));
@@ -103,10 +100,10 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
                 }
                 response.addCookie(cookie);
             }
-            
+
             response.setContentType("text/plain;charset=US-ASCII");
             response.setStatus(200);
-            
+
             if (request.getCookies() != null) {
                 response.getOutputStream().println(request.getCookies().length + " cookies received");
                 for (int i = 0; i < request.getCookies().length; i++) {
@@ -115,20 +112,22 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             } else {
                 response.getOutputStream().println("0 cookies received");
             }
-            
+
             ((Request)request).setHandled(true);
         }
     }
 
     public static Server startHttpServer() throws Exception {
         Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
-        
+
         Server server = new Server();
-        
+
+        server.setHandler(new TestHandler());
+
         SocketConnector sc = new SocketConnector();
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
-        
+
         File keystoreFile = new File(TmpDirTestCase.tmpDir(), "keystore");
         if (keystoreFile.exists()) {
             keystoreFile.delete();
@@ -143,7 +142,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
                 "-keyalg", "RSA",
                 "-dname", "CN=127.0.0.1",
                 "-validity","3650"}); // 10 yr validity
-        
+
         SslSocketConnector ssc = new SslSocketConnector();
         ssc.setHost("127.0.0.1");
         ssc.setPort(7443);
@@ -153,10 +152,10 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
         server.addConnector(sc);
         server.addConnector(ssc);
         server.start();
-        
+
         return server;
     }
-    
+
     public static Test suite() {
         return new TestSetup(new TestSuite(CookieFetchHTTPIntegrationTests.class)) {
             private Server server;
@@ -175,14 +174,8 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
     }
 
     public static class AlwaysLocalhostServerCache extends ServerCache {
-        protected static final InetAddress LOCALHOST;
-        static {
-            try {
-                LOCALHOST = InetAddress.getLocalHost();
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        protected static final InetAddress LOCALHOST = InetAddress.getLoopbackAddress();
+
         @Override
         public CrawlHost getHostFor(String host) {
             CrawlHost h = new CrawlHost(host);
@@ -199,12 +192,18 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
     }
 
     public static class CookieFetchHTTPIntegrationTests extends ProcessorTestBase {
-        protected FetchHTTP f0, f1;
+
+        @Override
+        protected Class<?> getModuleClass() {
+            return BdbCookieStore.class;
+        }
+
+        protected FetchHTTP fetcher;
         protected BdbModule bdb;
         protected BdbCookieStore bdbCookieStore;
-        
+
         protected File tmpdir = Files.createTempDir();
-        
+
         protected BdbModule bdb() throws IOException {
             if (bdb == null) {
                 ConfigPath basePath = new ConfigPath("testBase",
@@ -219,7 +218,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             }
             return bdb;
         }
-        
+
         protected BdbCookieStore bdbCookieStore() throws IOException {
             if (bdbCookieStore == null) {
                 bdbCookieStore = new BdbCookieStore();
@@ -233,52 +232,263 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             }
             return bdbCookieStore;
         }
-        
-        protected FetchHTTP fetcher0() throws IOException {
-            if (f0 == null) { 
-                f0 = makeFetcher(new SimpleCookieStore());
+
+        protected SimpleCookieStore simpleCookieStore;
+        protected SimpleCookieStore simpleCookieStore() {
+            if (simpleCookieStore == null) {
+                simpleCookieStore = new SimpleCookieStore();
+                simpleCookieStore.start();
             }
-            return f0;
-        }
-        
-        protected FetchHTTP fetcher1() throws IOException {
-            if (f1 == null) { 
-                f1 = makeFetcher(bdbCookieStore());
-            }
-            return f1;
+            return simpleCookieStore;
         }
 
-        protected FetchHTTP makeFetcher(AbstractCookieStore cookieStore) {
-            FetchHTTP f = new FetchHTTP();
-            f.setCookieStore(cookieStore);
-            f.setServerCache(new AlwaysLocalhostServerCache());
-            CrawlMetadata uap = new CrawlMetadata();
-            uap.setUserAgentTemplate(getClass().getName());
-            f.setUserAgentProvider(uap);
-
-            f.start();
-            return f;
+        protected FetchHTTP fetcher() {
+            if (fetcher == null) {
+                fetcher = new FetchHTTP();
+                // f.setCookieStore(cookieStore);
+                fetcher.setServerCache(new AlwaysLocalhostServerCache());
+                CrawlMetadata uap = new CrawlMetadata();
+                uap.setUserAgentTemplate(getClass().getName());
+                fetcher.setUserAgentProvider(uap);
+                fetcher.start();
+            }
+            return fetcher;
         }
 
         public void testNoCookie() throws IOException, InterruptedException {
-            testNoCookie(fetcher0());
-            testNoCookie(fetcher1());
+            testNoCookie(simpleCookieStore());
+            testNoCookie(bdbCookieStore());
         }
 
-        protected void testNoCookie(FetchHTTP f) throws URIException, IOException, InterruptedException {
-            CrawlURI curi = makeCrawlURI("http://localhost:7777/");
-            f.process(curi);
-            
-            String rawResponse = FetchHTTPTests.rawResponseString(curi);
-            assertFalse(rawResponse.toLowerCase().contains("set-cookie:"));
-            
-            String requestString = FetchHTTPTests.httpRequestString(curi);
-            assertFalse(requestString.toLowerCase().contains("cookie:"));
+        protected void testNoCookie(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check second fetch has no cookies
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(0, cookieStore.getCookies().size());
         }
-        
-        @Override
-        protected Class<?> getModuleClass() {
-            return BdbCookieStore.class;
+
+        // name value domain path maxAge secure comment version
+
+        protected void testBasics(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+
+            // check second fetch has expected cookie
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(1, cookieStore.getCookies().size());
+        }
+
+        public void testBasics() throws URIException, IOException, InterruptedException {
+            testBasics(simpleCookieStore());
+            testBasics(bdbCookieStore());
+        }
+
+        protected void testImplicitDomain(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+
+            // check second fetch has expected cookie
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check fetch to different domain has no cookie
+            curi = makeCrawlURI("http://example.ORG:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            /*
+             * XXX I think browsers differ on this behavior. This is what
+             * org.apache.http.impl.cookie.BrowserCompatSpec does.
+             */
+            curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(1, cookieStore.getCookies().size());
+        }
+
+        public void testImplicitDomain() throws URIException, IOException, InterruptedException {
+            testImplicitDomain(simpleCookieStore());
+            testImplicitDomain(bdbCookieStore());
+        }
+
+        protected void testExplicitDomain(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=example.com");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=example.com\r\n"));
+
+            // check second fetch has expected cookie
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check fetch to different domain has no cookie
+            curi = makeCrawlURI("http://example.ORG:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(1, cookieStore.getCookies().size());
+        }
+
+        public void testExplicitDomain() throws URIException, IOException, InterruptedException {
+            testExplicitDomain(simpleCookieStore());
+            testExplicitDomain(bdbCookieStore());
+        }
+
+        protected void testExplicitDomainWithLeadingDot(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=.example.com");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=.example.com\r\n"));
+
+            // check second fetch has expected cookie
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check fetch to different domain has no cookie
+            curi = makeCrawlURI("http://example.ORG:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(1, cookieStore.getCookies().size());
+        }
+
+        public void testExplicitDomainWithLeadingDot() throws URIException, IOException, InterruptedException {
+            testExplicitDomainWithLeadingDot(simpleCookieStore());
+            testExplicitDomainWithLeadingDot(bdbCookieStore());
+        }
+
+        protected void testRejectDomain(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=somethingelse.com");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=somethingelse.com\r\n"));
+
+            // check fetch of original domain has no cookie
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check fetch of cookie domain has no cookie
+            curi = makeCrawlURI("http://somethingelse.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(0, cookieStore.getCookies().size());
+
+            // reject wrong subdomain
+
+            curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=BAR.example.com");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=bar.example.com\r\n"));
+
+            // check fetch of original domain has no cookie
+            curi = makeCrawlURI("http://foo.example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            // check fetch of cookie domain has no cookie
+            curi = makeCrawlURI("http://bar.example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(0, cookieStore.getCookies().size());
+        }
+
+        public void testRejectDomain() throws URIException, IOException, InterruptedException {
+            testRejectDomain(simpleCookieStore());
+            testRejectDomain(bdbCookieStore());
+        }
+
+        protected void testSubdomainParentDomain(AbstractCookieStore cookieStore) throws URIException, IOException, InterruptedException {
+            cookieStore.clear();
+            fetcher().setCookieStore(cookieStore);
+
+            CrawlURI curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=example.com");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=example.com\r\n"));
+
+            curi = makeCrawlURI("http://FOO.example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            curi = makeCrawlURI("http://BAR.example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(1, cookieStore.getCookies().size());
+        }
+
+        public void testSubdomainParentDomain() throws URIException, IOException, InterruptedException {
+            testSubdomainParentDomain(simpleCookieStore());
+            testSubdomainParentDomain(bdbCookieStore());
         }
     }
 }
