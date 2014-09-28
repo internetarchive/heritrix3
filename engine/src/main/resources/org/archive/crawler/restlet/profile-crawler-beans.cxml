@@ -679,7 +679,7 @@ http://example.example/example
  
  <!-- BDBCOOKIESTORE: disk-based cookie storage for FetchHTTP -->
  <bean id="cookieStore" 
-  class="org.archive.modules.fetcher.BdbDomainCookieSetStore">
+  class="org.archive.modules.fetcher.BdbCookieStore">
   <!-- <property name="cookiesLoadFile"><null/></property> -->
   <!-- <property name="cookiesSaveFile"><null/></property> -->
   <!-- <property name="bdbModule">
