@@ -19,29 +19,24 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.Date;
+import java.util.List;
 
+import org.apache.http.client.CookieStore;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class SimpleDomainCookieSetStore extends AbstractDomainCookieSetStore {
-
-    @SuppressWarnings("rawtypes")
-    protected Map<String, TreeSet> cookiesByHost;
-
-    @SuppressWarnings("rawtypes")
-    protected void prepare() {
-        cookiesByHost = new LinkedHashMap<String, TreeSet>();
-    }
-
-    @SuppressWarnings("rawtypes")
-    @Override
-    protected Map<String, TreeSet> getCookiesByDomain() {
-        return cookiesByHost;
-    }
+public class SimpleCookieStore extends AbstractCookieStore implements CookieStore {
     
+    protected BasicCookieStore cookies;
+    
+    @Override
+    protected void prepare() {
+        cookies = new BasicCookieStore();
+    }
+
     @Override
     public void startCheckpoint(Checkpoint checkpointInProgress) {
         throw new RuntimeException("not implemented");
@@ -59,5 +54,35 @@ public class SimpleDomainCookieSetStore extends AbstractDomainCookieSetStore {
     @Autowired(required=false)
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public List<Cookie> getCookies() {
+        return cookies.getCookies();
+    }
+
+    @Override
+    public boolean clearExpired(Date date) {
+        return cookies.clearExpired(date);
+    }
+
+    @Override
+    public void saveCookies(String saveCookiesFile) {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public CookieStore cookieStoreFor(String topPrivateDomain) {
+        return this;
+    }
+
+    @Override
+    public void addCookie(Cookie cookie) {
+        cookies.addCookie(cookie);
+    }
+
+    @Override
+    public void clear() {
+        cookies.clear();
     }
 }

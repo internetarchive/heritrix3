@@ -266,12 +266,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
         kp.put("acceptHeaders",headers);
     }
 
-    protected AbstractDomainCookieSetStore cookieStore;
+    protected AbstractCookieStore cookieStore;
     @Autowired(required=false)
-    public void setCookieStore(AbstractDomainCookieSetStore cookieStore) {
+    public void setCookieStore(AbstractCookieStore cookieStore) {
         this.cookieStore = cookieStore;
     }
-    public AbstractDomainCookieSetStore getCookieStore() {
+    public AbstractCookieStore getCookieStore() {
         return cookieStore;
     }
     
@@ -1053,7 +1053,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
         super.stop();
         // At the end save cookies to the file specified in the order file.
         if (getCookieStore() != null) {
-            AbstractDomainCookieSetStore r = getCookieStore();
+            AbstractCookieStore r = getCookieStore();
             if (r.getCookiesSaveFile() != null) {
                 r.saveCookies(r.getCookiesSaveFile().getFile().getAbsolutePath());
             }

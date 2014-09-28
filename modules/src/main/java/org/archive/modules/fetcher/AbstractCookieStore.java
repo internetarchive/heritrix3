@@ -18,23 +18,15 @@
  */
 package org.archive.modules.fetcher;
 
-import it.unimi.dsi.mg4j.util.MutableString;
-
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,10 +42,10 @@ import org.springframework.context.Lifecycle;
 
 import com.google.common.net.InternetDomainName;
 
-abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpointable {
+abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, CookieStore {
 
-    private static final Logger logger =
-            Logger.getLogger(AbstractDomainCookieSetStore.class.getName());
+    protected final Logger logger =
+            Logger.getLogger(AbstractCookieStore.class.getName());
 
     protected static final Comparator<Cookie> cookieComparator = new CookieIdentityComparator();
 
@@ -103,48 +95,7 @@ abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpo
         }
     }
 
-    public void saveCookies(String saveCookiesFile) {
-        // Do nothing if cookiesFile is not specified.
-        if (saveCookiesFile == null || saveCookiesFile.length() <= 0) {
-            return;
-        }
-
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(new File(saveCookiesFile));
-            String tab ="\t";
-            out.write("# Heritrix Cookie File\n".getBytes());
-            out.write("# This file is the Netscape cookies.txt format\n\n".getBytes());
-            // for (int x: getC)
-            for (TreeSet<Cookie> cookies: getCookiesByDomain().values()) {
-                for (Cookie cookie: cookies) {
-                    // Guess an initial size
-                    MutableString line = new MutableString(1024 * 2);
-                    line.append(cookie.getDomain());
-                    line.append(tab);
-                    // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
-                    line.append("TRUE");
-                    line.append(tab);
-                    line.append(cookie.getPath() != null ? cookie.getPath() : "/");
-                    line.append(tab);
-                    line.append(cookie.isSecure() ? "TRUE" : "FALSE");
-                    line.append(tab);
-                    line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
-                    line.append(tab);
-                    line.append(cookie.getName());
-                    line.append(tab);
-                    line.append(cookie.getValue() != null ? cookie.getValue() : "");
-                    line.append("\n");
-                    out.write(line.toString().getBytes());
-                }
-            }
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
-        } finally {
-            IOUtils.closeQuietly(out);
-        }
-    }
-
+    abstract public void saveCookies(String saveCookiesFile);
     protected void loadCookies(ConfigFile file) {
         Reader reader = null;
         try {
@@ -187,7 +138,7 @@ abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpo
      * @param reader
      *            input in the Netscape's 'cookies.txt' format.
      */
-    public static Collection<Cookie> readCookies(Reader reader) {
+    protected Collection<Cookie> readCookies(Reader reader) {
         LinkedList<Cookie> cookies = new LinkedList<Cookie>();
         BufferedReader br = new BufferedReader(reader);
         try {
@@ -221,16 +172,16 @@ abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpo
         return cookies;
     }
 
-    protected class HostCookieStore implements CookieStore {
-        private final List<Cookie> hostCookies;
+    protected class DomainCookieStore implements CookieStore {
+        private final List<Cookie> cookies;
 
-        protected HostCookieStore(List<Cookie> hostCookies) {
-            this.hostCookies = hostCookies;
+        protected DomainCookieStore(List<Cookie> hostCookies) {
+            this.cookies = hostCookies;
         }
 
         @Override
         public List<Cookie> getCookies() {
-            return hostCookies;
+            return cookies;
         }
 
         @Override
@@ -245,28 +196,40 @@ abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpo
 
         @Override
         public void addCookie(Cookie cookie) {
-            AbstractDomainCookieSetStore.this.addCookie(cookie);
+            AbstractCookieStore.this.addCookie(cookie);
         }
     }
+    
+    /**
+     * Adapted from {@link CookieIdentityComparator#compare(Cookie, Cookie)}
+     * XXX explain about sorting
+     * @param cookie
+     * @return
+     */
+    protected String makeSortKey(Cookie cookie) {
+        String domain = normalizeDomain(cookie.getDomain());
+        String topPrivateDomain = topPrivateDomain(domain);
 
-    @SuppressWarnings("unchecked")
-    public CookieStore cookieStoreFor(String host) {
-        TreeSet<Cookie> hostCookieSet;
-        synchronized (this) {
-            hostCookieSet = getCookiesByDomain().get(host);
-        }
-        final List<Cookie> hostCookies;
-        if (hostCookieSet != null) {
-            hostCookies = new ArrayList<Cookie>(hostCookieSet);
-        } else {
-            hostCookies = Collections.emptyList();
-        }
-
-        return new HostCookieStore(hostCookies);
+        StringBuilder buf = new StringBuilder(topPrivateDomain);
+        buf.append("-").append(domain);
+        buf.append("-").append(cookie.getName());
+        buf.append("-").append(cookie.getPath() != null ? cookie.getPath() : "/");
+        
+        return buf.toString();
     }
-
-    protected void addCookie(Cookie cookie) {
-        String domain = cookie.getDomain();
+    
+    public static String topPrivateDomain(String domain) {
+        String topPrivateDomain = "";
+        if (InternetDomainName.isValid(domain)) {
+            InternetDomainName d = InternetDomainName.from(domain);
+            if (d.hasPublicSuffix()) {
+                topPrivateDomain = d.topPrivateDomain().toString();
+            }
+        }
+        return topPrivateDomain;
+    }
+    
+    public static String normalizeDomain(String domain) {
         if (domain == null) {
             domain = "";
         }
@@ -274,31 +237,11 @@ abstract public class AbstractDomainCookieSetStore implements Lifecycle, Checkpo
             domain = domain.substring(1);
         }
         domain = domain.toLowerCase(Locale.ENGLISH);
-
-        if (InternetDomainName.isValid(domain)) {
-            domain = InternetDomainName.from(domain).topPrivateDomain().toString();
-        }
-
-        synchronized (this) {
-            @SuppressWarnings("unchecked")
-            TreeSet<Cookie> domainCookies = getCookiesByDomain().get(domain);
-            if (domainCookies == null) {
-                domainCookies = new TreeSet<Cookie>(cookieComparator);
-            }
-            domainCookies.remove(cookie);
-            if (!cookie.isExpired(new Date())) {
-                domainCookies.add(cookie);
-            }
-            getCookiesByDomain().put(domain, domainCookies);
-        }
-    }
-    
-
-    public void clear() {
-        getCookiesByDomain().clear();
+        return domain;
     }
 
+    abstract public CookieStore cookieStoreFor(String topPrivateDomain);
+    abstract public void addCookie(Cookie cookie);
+    abstract public void clear();
     abstract protected void prepare();
-    @SuppressWarnings("rawtypes")
-    abstract protected Map<String, TreeSet> getCookiesByDomain();
 }

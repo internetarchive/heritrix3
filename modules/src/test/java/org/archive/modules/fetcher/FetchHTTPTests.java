@@ -93,7 +93,6 @@ public class FetchHTTPTests extends ProcessorTestBase {
     //     }
     // }
 
-
     protected FetchHTTP fetcher;
 
     protected FetchHTTP fetcher() throws IOException {
@@ -170,32 +169,32 @@ public class FetchHTTPTests extends ProcessorTestBase {
     /**
      * Raw response including headers.
      */
-    protected String rawResponseString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+    static protected String rawResponseString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     /**
      * Raw message body, before any unchunking or content-decoding.
      */
-    protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+    static protected String messageBodyString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getMessageBodyReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     /**
      * Message body after unchunking but before content-decoding.
      */
-    protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+    static protected String entityString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getEntityReplayInputStream());
         return new String(buf, "US-ASCII");
     }
     /**
      * Unchunked, content-decoded message body.
      */
-    protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+    static protected String contentString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getContentReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    protected String httpRequestString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
+    static protected String httpRequestString(CrawlURI curi) throws IOException, UnsupportedEncodingException {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getRecordedOutput().getReplayInputStream());
         return new String(buf, "US-ASCII");
     }
@@ -882,7 +881,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
     
     public static FetchHTTP newTestFetchHttp(String userAgentString) {
         FetchHTTP fetchHttp = new FetchHTTP();
-        fetchHttp.setCookieStore(new SimpleDomainCookieSetStore());
+        fetchHttp.setCookieStore(new SimpleCookieStore());
         fetchHttp.setServerCache(new DefaultServerCache());
         CrawlMetadata uap = new CrawlMetadata();
         uap.setUserAgentTemplate(userAgentString);
