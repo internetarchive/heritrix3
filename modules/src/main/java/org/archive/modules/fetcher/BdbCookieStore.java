@@ -139,7 +139,7 @@ public class BdbCookieStore extends AbstractCookieStore implements CookieStore {
         Collection<Cookie> domainCookiesCollection = domainCookiesSubMap.values();
         List<Cookie> domainCookiesList = new CollectionListFacade<Cookie>(domainCookiesCollection);
         
-        return new DomainCookieStore(domainCookiesList);
+        return new LimitedCookieStoreFacade(domainCookiesList);
     }
 
     @Override

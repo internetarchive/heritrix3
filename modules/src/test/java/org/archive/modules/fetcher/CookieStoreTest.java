@@ -48,11 +48,11 @@ import org.archive.util.TmpDirTestCase;
 public class CookieStoreTest extends TmpDirTestCase {
 
     private static Logger logger = Logger.getLogger(CookieStoreTest.class.getName());
-    
+
     protected BdbModule bdb;
     protected BdbCookieStore bdbCookieStore;
     protected BasicCookieStore basicCookieStore;
-    
+
     protected BdbModule bdb() throws IOException {
         if (bdb == null) {
             ConfigPath basePath = new ConfigPath("testBase", 
@@ -68,7 +68,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
         return bdb;
     }
-    
+
     protected BdbCookieStore bdbCookieStore() throws IOException {
         if (bdbCookieStore == null) {
             bdbCookieStore = new BdbCookieStore();
@@ -95,12 +95,12 @@ public class CookieStoreTest extends TmpDirTestCase {
         super.tearDown();
         bdb.close();
     }
-    
+
     public void testBasics() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         BasicClientCookie cookie = new BasicClientCookie("name1", "value1");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
@@ -111,19 +111,19 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().clear();
         basicCookieStore().clear();
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         BasicClientCookie cookie = new BasicClientCookie("name1", "value1");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // should replace existing cookie
         cookie = new BasicClientCookie("name1", "value2");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
-    
+
     public void testDomains() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -134,28 +134,28 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // add a 2nd cookie, same name, different domain
         cookie = new BasicClientCookie("name1", "value2");
         cookie.setDomain("example.com");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // add a 3rd cookie, same name, different domain
         cookie = new BasicClientCookie("name1", "value3");
         cookie.setDomain("foo.example.com");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // replace 1st cookie
         cookie = new BasicClientCookie("name1", "value4");
         cookie.setDomain("example.org");
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // replace 2nd cookie, case-insensitive domain
         cookie = new BasicClientCookie("name1", "value5");
         cookie.setDomain("eXaMpLe.CoM");
@@ -173,7 +173,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().addCookie(cookie);
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // replace 1st cookie, with explicit path "/", which is the implied path if not specified
         cookie = new BasicClientCookie("name1", "value2");
         cookie.setPath("/");
@@ -182,7 +182,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertEquals(1, basicCookieStore().getCookies().size());
         assertEquals(cookie, new ArrayList<Cookie>(basicCookieStore().getCookies()).get(0));
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // add a 2nd cookie at a subpath
         cookie = new BasicClientCookie("name1", "value3");
         cookie.setPath("/path1");
@@ -190,7 +190,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         basicCookieStore().addCookie(cookie);
         assertEquals(2, basicCookieStore().getCookies().size());
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // add a 3rd cookie at a subpath
         cookie = new BasicClientCookie("name1", "value4");
         cookie.setPath("/path2");
@@ -198,7 +198,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         basicCookieStore().addCookie(cookie);
         assertEquals(3, basicCookieStore().getCookies().size());
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // replace 2nd cookie
         cookie = new BasicClientCookie("name1", "value5");
         cookie.setPath("/path1");
@@ -214,7 +214,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         basicCookieStore().addCookie(cookie);
         assertEquals(4, basicCookieStore().getCookies().size());
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
-        
+
         // add 5th cookie at different path (case sensitive)
         cookie = new BasicClientCookie("name1", "value7");
         cookie.setPath("/pAtH1");
@@ -238,16 +238,16 @@ public class CookieStoreTest extends TmpDirTestCase {
         cookie = new BasicClientCookie("name2", "value2");
         cookie.setDomain("example.com");
         bdbCookieStore().addCookie(cookie);
-        
+
         cookie = new BasicClientCookie("name3", "value3");
         cookie.setDomain("example.com");
         cookie.setSecure(true);
         bdbCookieStore().addCookie(cookie);
-        
+
         cookie = new BasicClientCookie("name4", "value4");
         cookie.setDomain("example.org");
         bdbCookieStore().addCookie(cookie);
-        
+
         cookie = new BasicClientCookie("name5", "value5");
         cookie.setDomain("example.com");
         // make sure date is in the future so cookie doesn't expire, and has no
@@ -255,19 +255,19 @@ public class CookieStoreTest extends TmpDirTestCase {
         long someFutureDateMs = ((System.currentTimeMillis() + 9999999999l)/1000l)*1000l;
         cookie.setExpiryDate(new Date(someFutureDateMs));
         bdbCookieStore().addCookie(cookie);
-        
+
         cookie = new BasicClientCookie("name6", "value6");
         cookie.setDomain("example.com");
         cookie.setPath("/path1");
         bdbCookieStore().addCookie(cookie);
-        
+
         List<Cookie> cookiesBefore = new ArrayList<Cookie>(bdbCookieStore().getCookies()); 
         assertEquals(6, cookiesBefore.size());
         bdbCookieStore().saveCookies();
-        
+
         bdbCookieStore().clear();
         assertEquals(0, bdbCookieStore().getCookies().size());
-        
+
         bdbCookieStore().loadCookies((ConfigFile) bdbCookieStore().getCookiesSaveFile());
         List<Cookie> cookiesAfter = new ArrayList<Cookie>(bdbCookieStore().getCookies());
         assertEquals(6, cookiesAfter.size());
@@ -275,7 +275,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         logger.info(" after: " + cookiesAfter);
         assertCookieListsEquivalent(cookiesBefore, cookiesAfter);
     }
-    
+
     public void testConcurrentLoad() throws IOException, InterruptedException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -305,14 +305,14 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
 
         Thread.sleep(5000);
-        
+
         for (int i = 0; i < threads.length; i++) {
             threads[i].interrupt();
         }
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();
         }
-        
+
         List<Cookie> bdbCookieList = bdbCookieStore().getCookies();
         assertTrue(bdbCookieList.size() > 3000);
         assertCookieListsEquivalent(bdbCookieList, basicCookieStore().getCookies());
@@ -326,15 +326,15 @@ public class CookieStoreTest extends TmpDirTestCase {
                 return o1.toString().compareTo(o2.toString());
             }
         };
-        
+
         ArrayList<Cookie> sorted1 = new ArrayList<Cookie>(list1);
         Collections.sort(sorted1, comparator);
         ArrayList<Cookie> sorted2 = new ArrayList<Cookie>(list2);
         Collections.sort(sorted2, comparator);
-        
+
         assertEquals(list1.size(), list2.size());
         assertEquals(sorted1.size(), sorted2.size());
-        
+
         Iterator<Cookie> iter1 = sorted1.iterator();
         Iterator<Cookie> iter2 = sorted2.iterator();
         for (int i = 0; i < list1.size(); i++) {
@@ -343,7 +343,7 @@ public class CookieStoreTest extends TmpDirTestCase {
             assertCookiesIdentical(c1, c2);
         }
     }
-    
+
     protected void assertCookieStoresEquivalent(BasicCookieStore simple, BdbCookieStore bdb) {
         assertCookieListsEquivalent(simple.getCookies(), bdb.getCookies());
     }

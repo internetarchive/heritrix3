@@ -90,7 +90,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
     public boolean isRunning() {
         return isRunning;
     }
-    
+
     public void saveCookies() {
         if (getCookiesSaveFile() != null) {
             saveCookies(getCookiesSaveFile().getFile().getAbsolutePath());
@@ -174,11 +174,11 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         return cookies;
     }
 
-    protected class DomainCookieStore implements CookieStore {
+    protected class LimitedCookieStoreFacade implements CookieStore {
         private final List<Cookie> cookies;
 
-        protected DomainCookieStore(List<Cookie> hostCookies) {
-            this.cookies = hostCookies;
+        protected LimitedCookieStoreFacade(List<Cookie> cookies) {
+            this.cookies = cookies;
         }
 
         @Override
@@ -201,7 +201,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
             AbstractCookieStore.this.addCookie(cookie);
         }
     }
-    
+
     /**
      * Adapted from {@link CookieIdentityComparator#compare(Cookie, Cookie)}
      * XXX explain about sorting
@@ -216,10 +216,10 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         buf.append("-").append(normalizedDomain);
         buf.append("-").append(cookie.getName());
         buf.append("-").append(cookie.getPath() != null ? cookie.getPath() : "/");
-        
+
         return buf.toString();
     }
-    
+
     protected String topPrivateDomain(String domain) {
         String topPrivateDomain = "";
         if (InternetDomainName.isValid(domain)) {
@@ -230,7 +230,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         }
         return topPrivateDomain;
     }
-    
+
     protected String normalizeDomain(String domain) {
         if (domain == null) {
             domain = "";
@@ -241,7 +241,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         domain = domain.toLowerCase(Locale.ENGLISH);
         return domain;
     }
-    
+
     public CookieStore cookieStoreFor(CrawlURI curi) throws URIException {
         String normalizedDomain = normalizeDomain(curi.getUURI().getHost());
         String topPrivateDomain = topPrivateDomain(normalizedDomain);
