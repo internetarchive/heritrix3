@@ -30,12 +30,14 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieIdentityComparator;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.archive.checkpointing.Checkpointable;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
@@ -207,18 +209,18 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
      * @return
      */
     protected String makeSortKey(Cookie cookie) {
-        String domain = normalizeDomain(cookie.getDomain());
-        String topPrivateDomain = topPrivateDomain(domain);
+        String normalizedDomain = normalizeDomain(cookie.getDomain());
+        String topPrivateDomain = topPrivateDomain(normalizedDomain);
 
         StringBuilder buf = new StringBuilder(topPrivateDomain);
-        buf.append("-").append(domain);
+        buf.append("-").append(normalizedDomain);
         buf.append("-").append(cookie.getName());
         buf.append("-").append(cookie.getPath() != null ? cookie.getPath() : "/");
         
         return buf.toString();
     }
     
-    public static String topPrivateDomain(String domain) {
+    protected String topPrivateDomain(String domain) {
         String topPrivateDomain = "";
         if (InternetDomainName.isValid(domain)) {
             InternetDomainName d = InternetDomainName.from(domain);
@@ -229,7 +231,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         return topPrivateDomain;
     }
     
-    public static String normalizeDomain(String domain) {
+    protected String normalizeDomain(String domain) {
         if (domain == null) {
             domain = "";
         }
@@ -238,6 +240,12 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         }
         domain = domain.toLowerCase(Locale.ENGLISH);
         return domain;
+    }
+    
+    public CookieStore cookieStoreFor(CrawlURI curi) throws URIException {
+        String normalizedDomain = normalizeDomain(curi.getUURI().getHost());
+        String topPrivateDomain = topPrivateDomain(normalizedDomain);
+        return cookieStoreFor(topPrivateDomain);
     }
 
     abstract public CookieStore cookieStoreFor(String topPrivateDomain);

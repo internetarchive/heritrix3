@@ -446,23 +446,18 @@ class FetchHTTPRequest {
         httpClientContext.getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
     }
     
-    protected void configureHttpClientBuilder() {
+    protected void configureHttpClientBuilder() throws URIException {
         String userAgent = curi.getUserAgent();
         if (userAgent == null) {
             userAgent = fetcher.getUserAgentProvider().getUserAgent();
         }
         httpClientBuilder.setUserAgent(userAgent);
 
-        CookieStore domainCookieStore = fetcher.getCookieStore().cookieStoreFor(topPrivateDomain());
+        CookieStore domainCookieStore = fetcher.getCookieStore().cookieStoreFor(curi);
         httpClientBuilder.setDefaultCookieStore(domainCookieStore);
         
         connMan = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connMan);
-    }
-
-    protected String topPrivateDomain() {
-        String domain = AbstractCookieStore.normalizeDomain(targetHost.getHostName());
-        return AbstractCookieStore.topPrivateDomain(domain);
     }
 
     protected HttpClientConnectionManager buildConnectionManager() {
