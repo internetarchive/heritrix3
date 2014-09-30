@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -45,8 +46,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
-
-import com.google.common.net.InternetDomainName;
 
 abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
@@ -131,7 +130,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
             String tab ="\t";
             out.write("# Heritrix Cookie File\n".getBytes());
             out.write("# This file is the Netscape cookies.txt format\n\n".getBytes());
-            for (Cookie cookie: getCookies()) {
+            for (Cookie cookie: new ArrayList<Cookie>(getCookies())) {
                 // Guess an initial size
                 MutableString line = new MutableString(1024 * 2);
                 line.append(cookie.getDomain());
@@ -246,62 +245,38 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
     }
 
     /**
-     * Returns a string that uniquely identifies the cookie, and is prepended
-     * with the top private domain (one level below the TLD) associated with the
-     * cookie. This way such cookies can be grouped together in a sorted list,
-     * for example. The format The format of the key is
-     * {@code "topPrivateDomain;normalizedDomain;name;path"}. Adapted from
+     * Returns a string that uniquely identifies the cookie, The format The
+     * format of the key is {@code "normalizedDomain;name;path"}. Adapted from
      * {@link CookieIdentityComparator#compare(Cookie, Cookie)}.
      */
     protected String sortableKey(Cookie cookie) {
-        String normalizedDomain = normalizeDomain(cookie.getDomain());
-        String topPrivateDomain = topPrivateDomain(normalizedDomain);
+        String normalizedDomain = normalizeHost(cookie.getDomain());
 
         // use ";" as delimiter since it is the delimiter in the cookie header,
         // so presumably can't appear in any of these values
-        StringBuilder buf = new StringBuilder(topPrivateDomain);
-        buf.append(";").append(normalizedDomain);
+        StringBuilder buf = new StringBuilder(normalizedDomain);
         buf.append(";").append(cookie.getName());
         buf.append(";").append(cookie.getPath() != null ? cookie.getPath() : "/");
 
         return buf.toString();
     }
 
-    /**
-     * Returns the top private domain, i.e. the topmost assigned domain, one
-     * level below the TLD, for the supplied {@code host}. Returns
-     * {@code host} unaltered if a top private domain can't be identified (for
-     * example, if {@code host} is an IP address).
-     */
-    protected String topPrivateDomain(String host) {
-        if (InternetDomainName.isValid(host)) {
-            InternetDomainName d = InternetDomainName.from(host);
-            if (d.hasPublicSuffix()) {
-                return d.topPrivateDomain().toString();
-            }
+    protected String normalizeHost(String host) {
+        if (host == null) {
+            host = "";
         }
-
+        if (host.startsWith(".")) {
+            host = host.substring(1);
+        }
+        host = host.toLowerCase(Locale.ENGLISH);
         return host;
     }
 
-    protected String normalizeDomain(String domain) {
-        if (domain == null) {
-            domain = "";
-        }
-        if (domain.startsWith(".")) {
-            domain = domain.substring(1);
-        }
-        domain = domain.toLowerCase(Locale.ENGLISH);
-        return domain;
-    }
-
     public CookieStore cookieStoreFor(CrawlURI curi) throws URIException {
-        String normalizedDomain = normalizeDomain(curi.getUURI().getHost());
-        String topPrivateDomain = topPrivateDomain(normalizedDomain);
-        return cookieStoreFor(topPrivateDomain);
+        String normalizedHost = normalizeHost(curi.getUURI().getHost());
+        return cookieStoreFor(normalizedHost);
     }
 
-    abstract public CookieStore cookieStoreFor(String topPrivateDomain);
     abstract public void addCookie(Cookie cookie);
     abstract public void clear();
     abstract protected void prepare();

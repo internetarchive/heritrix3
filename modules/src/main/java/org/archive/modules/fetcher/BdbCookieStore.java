@@ -27,12 +27,14 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedMap;
 
+import org.apache.commons.collections.collection.CompositeCollection;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.net.InternetDomainName;
 import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
@@ -43,10 +45,10 @@ import com.sleepycat.je.DatabaseException;
 
 /**
  * Cookie store using bdb for storage. Cookies are stored in a SortedMap keyed
- * by {@link #sortableKey(Cookie)}, so they are grouped together by top private
- * domain. {@link #cookieStoreFor(String)} returns a facade whose
+ * by {@link #sortableKey(Cookie)}, so they are grouped together by domain.
+ * {@link #cookieStoreFor(String)} returns a facade whose
  * {@link CookieStore#getCookies()} returns a list of cookies limited to
- * subdomains of the supplied top private domain. 
+ * the supplied host and parent domains, if applicable.
  * 
  * @see https://webarchive.jira.com/browse/HER-2070
  * @see https://github.com/internetarchive/heritrix3/pull/96
@@ -55,7 +57,7 @@ import com.sleepycat.je.DatabaseException;
  * @contributor nlevitt
  */
 public class BdbCookieStore extends AbstractCookieStore implements
-FetchHTTPCookieStore, CookieStore {
+        FetchHTTPCookieStore, CookieStore {
 
     /**
      * A {@link List} implementation that wraps a {@link Collection}. Needed
@@ -142,26 +144,51 @@ FetchHTTPCookieStore, CookieStore {
         }
     }
 
-    /**
-     * Returns a {@link LimitedCookieStoreFacade} whose
-     * {@link LimitedCookieStoreFacade#getCookies()} method returns only the
-     * cookies from the domain {@code topPrivateDomainOrIP} and subdomains.
-     */
-    public CookieStore cookieStoreFor(String topPrivateDomainOrIP) {
-        SortedMap<byte[], Cookie> domainCookiesSubMap;
+    protected Collection<Cookie> hostSubset(String host) { 
         try {
-            byte[] startKey = topPrivateDomainOrIP.getBytes("UTF-8");
+            byte[] startKey = (host + ";").getBytes("UTF-8");
+
             char chAfterDelim = (char)(((int)';')+1); 
-            byte[] endKey = (topPrivateDomainOrIP + chAfterDelim).getBytes("UTF-8");
-            domainCookiesSubMap = cookies.subMap(startKey, endKey);
+            byte[] endKey = (host + chAfterDelim).getBytes("UTF-8");
+
+            SortedMap<byte[], Cookie> submap = cookies.subMap(startKey, endKey);
+            return submap.values();
+
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // impossible
         }
+    }
 
-        Collection<Cookie> domainCookiesCollection = domainCookiesSubMap.values();
-        List<Cookie> domainCookiesList = new RestrictedCollectionWrappedList<Cookie>(domainCookiesCollection);
+    /**
+     * Returns a {@link LimitedCookieStoreFacade} whose
+     * {@link LimitedCookieStoreFacade#getCookies()} method returns only cookies
+     * from {@code host} and its parent domains, if applicable.
+     */
+    public CookieStore cookieStoreFor(String host) {
+        CompositeCollection cookieCollection = new CompositeCollection();
 
-        return new LimitedCookieStoreFacade(domainCookiesList);
+        if (InternetDomainName.isValid(host)) {
+            InternetDomainName domain = InternetDomainName.from(host);
+
+            while (domain != null) {
+                Collection<Cookie> subset = hostSubset(domain.toString());
+                cookieCollection.addComposited(subset);
+
+                if (domain.hasParent()) {
+                    domain = domain.parent();
+                } else {
+                    domain = null;
+                }
+            }
+        } else {
+            Collection<Cookie> subset = hostSubset(host.toString());
+            cookieCollection.addComposited(subset);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Cookie> cookieList = new RestrictedCollectionWrappedList<Cookie>(cookieCollection);
+        LimitedCookieStoreFacade store = new LimitedCookieStoreFacade(cookieList);
+        return store;
     }
 
     @Override

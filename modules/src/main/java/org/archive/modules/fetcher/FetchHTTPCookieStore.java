@@ -25,9 +25,10 @@ import org.archive.modules.CrawlURI;
 public interface FetchHTTPCookieStore extends CookieStore {
     /**
      * Returns a {@link CookieStore} whose {@link CookieStore#getCookies()}
-     * returns all the cookies from {@code topPrivateDomain} and its subdomains.
+     * returns all the cookies from {@code host} and each of its
+     * parent domains, if applicable.
      */
-    public CookieStore cookieStoreFor(String topPrivateDomain);
+    public CookieStore cookieStoreFor(String host);
 
     /**
      * Returns a {@link CookieStore} whose {@link CookieStore#getCookies()}

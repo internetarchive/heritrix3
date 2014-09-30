@@ -68,7 +68,7 @@ public class SimpleCookieStore extends AbstractCookieStore implements CookieStor
     }
 
     @Override
-    public CookieStore cookieStoreFor(String topPrivateDomain) {
+    public CookieStore cookieStoreFor(String host) {
         return this;
     }
 
