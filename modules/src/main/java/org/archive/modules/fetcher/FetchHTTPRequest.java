@@ -453,8 +453,8 @@ class FetchHTTPRequest {
         }
         httpClientBuilder.setUserAgent(userAgent);
 
-        CookieStore domainCookieStore = fetcher.getCookieStore().cookieStoreFor(curi);
-        httpClientBuilder.setDefaultCookieStore(domainCookieStore);
+        CookieStore cookieStore = fetcher.getCookieStore().cookieStoreFor(curi);
+        httpClientBuilder.setDefaultCookieStore(cookieStore);
         
         connMan = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connMan);
