@@ -59,15 +59,6 @@ import com.google.common.io.Files;
 @SuppressWarnings("restriction")
 public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
-    //    private static Logger logger = Logger.getLogger(FetchHTTPTest.class.getName());
-    //    static {
-    //        Logger.getLogger("").setLevel(Level.FINE);
-    //        for (java.util.logging.Handler h: Logger.getLogger("").getHandlers()) {
-    //            h.setLevel(Level.ALL);
-    //            h.setFormatter(new OneLineSimpleLogger());
-    //        }
-    //    }
-
     protected static class TestHandler extends SessionHandler {
         public TestHandler() {
             super();
@@ -219,7 +210,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             return bdb;
         }
 
-        protected BdbCookieStore bdbCookieStore() throws IOException {
+        protected AbstractCookieStore bdbCookieStore() throws IOException {
             if (bdbCookieStore == null) {
                 bdbCookieStore = new BdbCookieStore();
                 ConfigPath basePath = new ConfigPath("testBase", 

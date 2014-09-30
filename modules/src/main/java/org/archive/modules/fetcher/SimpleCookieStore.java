@@ -28,6 +28,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
+/** In-memory cookie store, mostly for testing. */
 public class SimpleCookieStore extends AbstractCookieStore implements CookieStore {
     
     protected BasicCookieStore cookies;
@@ -64,11 +65,6 @@ public class SimpleCookieStore extends AbstractCookieStore implements CookieStor
     @Override
     public boolean clearExpired(Date date) {
         return cookies.clearExpired(date);
-    }
-
-    @Override
-    public void saveCookies(String saveCookiesFile) {
-        throw new RuntimeException("not implemented");
     }
 
     @Override

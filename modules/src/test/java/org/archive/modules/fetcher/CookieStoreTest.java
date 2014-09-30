@@ -69,7 +69,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         return bdb;
     }
 
-    protected BdbCookieStore bdbCookieStore() throws IOException {
+    protected AbstractCookieStore bdbCookieStore() throws IOException {
         if (bdbCookieStore == null) {
             bdbCookieStore = new BdbCookieStore();
             ConfigPath basePath = new ConfigPath("testBase", 
@@ -337,14 +337,14 @@ public class CookieStoreTest extends TmpDirTestCase {
 
         Iterator<Cookie> iter1 = sorted1.iterator();
         Iterator<Cookie> iter2 = sorted2.iterator();
-        for (int i = 0; i < list1.size(); i++) {
+        for (int i = 0; i < sorted1.size(); i++) {
             Cookie c1 = iter1.next();
             Cookie c2 = iter2.next();
             assertCookiesIdentical(c1, c2);
         }
     }
 
-    protected void assertCookieStoresEquivalent(BasicCookieStore simple, BdbCookieStore bdb) {
+    protected void assertCookieStoresEquivalent(BasicCookieStore simple, AbstractCookieStore bdb) {
         assertCookieListsEquivalent(simple.getCookies(), bdb.getCookies());
     }
 

@@ -18,7 +18,11 @@
  */
 package org.archive.modules.fetcher;
 
+import it.unimi.dsi.mg4j.util.MutableString;
+
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
@@ -44,7 +48,8 @@ import org.springframework.context.Lifecycle;
 
 import com.google.common.net.InternetDomainName;
 
-abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, CookieStore {
+abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
+        CookieStore, FetchHTTPCookieStore {
 
     protected final Logger logger =
             Logger.getLogger(AbstractCookieStore.class.getName());
@@ -97,7 +102,6 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         }
     }
 
-    abstract public void saveCookies(String saveCookiesFile);
     protected void loadCookies(ConfigFile file) {
         Reader reader = null;
         try {
@@ -112,6 +116,45 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
         Collection<Cookie> loadedCookies = readCookies(reader);
         for (Cookie cookie: loadedCookies) {
             addCookie(cookie);
+        }
+    }
+
+    public void saveCookies(String saveCookiesFile) {
+        // Do nothing if cookiesFile is not specified.
+        if (saveCookiesFile == null || saveCookiesFile.length() <= 0) {
+            return;
+        }
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(new File(saveCookiesFile));
+            String tab ="\t";
+            out.write("# Heritrix Cookie File\n".getBytes());
+            out.write("# This file is the Netscape cookies.txt format\n\n".getBytes());
+            for (Cookie cookie: getCookies()) {
+                // Guess an initial size
+                MutableString line = new MutableString(1024 * 2);
+                line.append(cookie.getDomain());
+                line.append(tab);
+                // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
+                line.append("TRUE");
+                line.append(tab);
+                line.append(cookie.getPath() != null ? cookie.getPath() : "/");
+                line.append(tab);
+                line.append(cookie.isSecure() ? "TRUE" : "FALSE");
+                line.append(tab);
+                line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
+                line.append(tab);
+                line.append(cookie.getName());
+                line.append(tab);
+                line.append(cookie.getValue() != null ? cookie.getValue() : "");
+                line.append("\n");
+                out.write(line.toString().getBytes());
+            }
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
+        } finally {
+            IOUtils.closeQuietly(out);
         }
     }
 
@@ -203,32 +246,42 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable, 
     }
 
     /**
-     * Adapted from {@link CookieIdentityComparator#compare(Cookie, Cookie)}
-     * XXX explain about sorting
-     * @param cookie
-     * @return
+     * Returns a string that uniquely identifies the cookie, and is prepended
+     * with the top private domain (one level below the TLD) associated with the
+     * cookie. This way such cookies can be grouped together in a sorted list,
+     * for example. The format The format of the key is
+     * {@code "topPrivateDomain;normalizedDomain;name;path"}. Adapted from
+     * {@link CookieIdentityComparator#compare(Cookie, Cookie)}.
      */
-    protected String makeSortKey(Cookie cookie) {
+    protected String sortableKey(Cookie cookie) {
         String normalizedDomain = normalizeDomain(cookie.getDomain());
         String topPrivateDomain = topPrivateDomain(normalizedDomain);
 
+        // use ";" as delimiter since it is the delimiter in the cookie header,
+        // so presumably can't appear in any of these values
         StringBuilder buf = new StringBuilder(topPrivateDomain);
-        buf.append("-").append(normalizedDomain);
-        buf.append("-").append(cookie.getName());
-        buf.append("-").append(cookie.getPath() != null ? cookie.getPath() : "/");
+        buf.append(";").append(normalizedDomain);
+        buf.append(";").append(cookie.getName());
+        buf.append(";").append(cookie.getPath() != null ? cookie.getPath() : "/");
 
         return buf.toString();
     }
 
-    protected String topPrivateDomain(String domain) {
-        String topPrivateDomain = "";
-        if (InternetDomainName.isValid(domain)) {
-            InternetDomainName d = InternetDomainName.from(domain);
+    /**
+     * Returns the top private domain, i.e. the topmost assigned domain, one
+     * level below the TLD, for the supplied {@code host}. Returns
+     * {@code host} unaltered if a top private domain can't be identified (for
+     * example, if {@code host} is an IP address).
+     */
+    protected String topPrivateDomain(String host) {
+        if (InternetDomainName.isValid(host)) {
+            InternetDomainName d = InternetDomainName.from(host);
             if (d.hasPublicSuffix()) {
-                topPrivateDomain = d.topPrivateDomain().toString();
+                return d.topPrivateDomain().toString();
             }
         }
-        return topPrivateDomain;
+
+        return host;
     }
 
     protected String normalizeDomain(String domain) {
