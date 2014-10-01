@@ -21,6 +21,7 @@ package org.archive.modules.fetcher;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -165,7 +166,14 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
     }
 
     public static class AlwaysLocalhostServerCache extends ServerCache {
-        protected static final InetAddress LOCALHOST = InetAddress.getLoopbackAddress();
+        protected static final InetAddress LOCALHOST;
+        static {
+            try {
+                LOCALHOST = InetAddress.getByName("127.0.0.1");
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         @Override
         public CrawlHost getHostFor(String host) {
