@@ -171,7 +171,7 @@ public class UriUtilsTest extends TestCase {
         "location='http://example.com/blah/'",
         "http://example.com/intent/user?screen_name='+p.user+'",
         ").append(",
-        "[\\x3cb\\x3e−\\x3c/b\\x3e]",
+        "[\\x3cb\\x3e-\\x3c/b\\x3e]",
         "http://demo.example.net/panama.php?cgroup=ron728x90&pid=\"+pid+\"&uid=\"+uid+\"&rid=\"+rid+\"&kw=10&cx=10&bh=10",
     };
     public void testUnusualCharacterFalsePositives() {
