@@ -326,7 +326,10 @@ public class Heritrix {
             LogManager.getLogManager().readConfiguration(finp);
             finp.close();
             // Load log4j (to capture output from libraries)
-            PropertyConfigurator.configure(properties.getAbsolutePath());
+            if (System.getProperty("log4j.configuration")==null) {
+            	// Explicit log4j config file not provided. Load default.
+            	PropertyConfigurator.configure(properties.getAbsolutePath());
+            }
         }
         
         // Set timezone here.  Would be problematic doing it if we're running
