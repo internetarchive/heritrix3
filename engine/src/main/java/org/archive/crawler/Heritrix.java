@@ -51,6 +51,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.PropertyConfigurator;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
 import org.archive.crawler.restlet.RateLimitGuard;
@@ -320,9 +321,12 @@ public class Heritrix {
         }
 
         if (properties.exists()) {
+            // Load Java logging
             FileInputStream finp = new FileInputStream(properties);
             LogManager.getLogManager().readConfiguration(finp);
             finp.close();
+            // Load log4j (to capture output from libraries)
+            PropertyConfigurator.configure(properties.getAbsolutePath());
         }
         
         // Set timezone here.  Would be problematic doing it if we're running
