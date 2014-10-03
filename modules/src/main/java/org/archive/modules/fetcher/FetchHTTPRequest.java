@@ -58,6 +58,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -445,14 +446,15 @@ class FetchHTTPRequest {
         httpClientContext.getCredentialsProvider().setCredentials(new AuthScope(host), credentials);
     }
     
-    protected void configureHttpClientBuilder() {
+    protected void configureHttpClientBuilder() throws URIException {
         String userAgent = curi.getUserAgent();
         if (userAgent == null) {
             userAgent = fetcher.getUserAgentProvider().getUserAgent();
         }
         httpClientBuilder.setUserAgent(userAgent);
-        
-        httpClientBuilder.setDefaultCookieStore(fetcher.getCookieStore());
+
+        CookieStore cookieStore = fetcher.getCookieStore().cookieStoreFor(curi);
+        httpClientBuilder.setDefaultCookieStore(cookieStore);
         
         connMan = buildConnectionManager();
         httpClientBuilder.setConnectionManager(connMan);

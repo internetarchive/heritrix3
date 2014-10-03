@@ -19,7 +19,6 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Date;
 import java.util.List;
 
@@ -27,63 +26,59 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.archive.checkpointing.Checkpoint;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /** In-memory cookie store, mostly for testing. */
-public class SimpleCookieStore extends AbstractCookieStore {
-    protected CookieStore basicCookieStore = new BasicCookieStore();
+public class SimpleCookieStore extends AbstractCookieStore implements CookieStore {
+    
+    protected BasicCookieStore cookies;
+    
+    @Override
+    protected void prepare() {
+        cookies = new BasicCookieStore();
+    }
 
     @Override
     public void startCheckpoint(Checkpoint checkpointInProgress) {
         throw new RuntimeException("not implemented");
     }
-
-    @Override
-    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    public void finishCheckpoint(Checkpoint checkpointInProgress) {
-        throw new RuntimeException("not implemented");
-    }
-
     @Override
     public void doCheckpoint(Checkpoint checkpointInProgress)
             throws IOException {
         throw new RuntimeException("not implemented");
     }
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        throw new RuntimeException("not implemented");
+    }
+    @Override
+    @Autowired(required=false)
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        throw new RuntimeException("not implemented");
+    }
 
     @Override
     public List<Cookie> getCookies() {
-        return basicCookieStore.getCookies();
+        return cookies.getCookies();
     }
 
     @Override
     public boolean clearExpired(Date date) {
-        return basicCookieStore.clearExpired(date);
+        return cookies.clearExpired(date);
     }
 
     @Override
-    public void clear() {
-        basicCookieStore.clear();
+    public CookieStore cookieStoreFor(String host) {
+        return this;
     }
 
     @Override
     public void addCookie(Cookie cookie) {
-        basicCookieStore.addCookie(cookie);
+        cookies.addCookie(cookie);
     }
 
     @Override
-    protected void saveCookies(String absolutePath) {
-        throw new RuntimeException("not implemented");
-    }
-
-    @Override
-    protected void prepare() {
-    }
-
-    @Override
-    protected void loadCookies(Reader reader) {
-        throw new RuntimeException("not implemented");
+    public void clear() {
+        cookies.clear();
     }
 }

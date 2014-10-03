@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -21,35 +21,40 @@ package org.archive.modules.fetcher;
 import it.unimi.dsi.mg4j.util.MutableString;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieIdentityComparator;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.archive.checkpointing.Checkpointable;
+import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
-import org.json.JSONArray;
 import org.springframework.context.Lifecycle;
 
-public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Closeable,
-        Checkpointable {
+abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
+        CookieStore, FetchHTTPCookieStore {
 
-    private static final Logger logger = 
-        Logger.getLogger(AbstractCookieStore.class.getName());
-    
+    protected final Logger logger =
+            Logger.getLogger(AbstractCookieStore.class.getName());
+
+    protected static final Comparator<Cookie> cookieComparator = new CookieIdentityComparator();
+
     protected ConfigFile cookiesLoadFile = null;
     public ConfigFile getCookiesLoadFile() {
         return cookiesLoadFile;
@@ -57,7 +62,7 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
     public void setCookiesLoadFile(ConfigFile cookiesLoadFile) {
         this.cookiesLoadFile = cookiesLoadFile;
     }
-    
+
     protected ConfigPath cookiesSaveFile = null;
     public ConfigPath getCookiesSaveFile() {
         return cookiesSaveFile;
@@ -66,12 +71,7 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         this.cookiesSaveFile = cookiesSaveFile;
     }
 
-    @Override
-    public void close() throws IOException {
-        // XXX only here because old BdbCookie also implements Closeable and does nothing... why?
-    }
-
-    protected boolean isRunning = false; 
+    protected boolean isRunning = false;
 
     @Override
     public void start() {
@@ -85,10 +85,9 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         isRunning = true;
     }
 
-
     @Override
     public void stop() {
-        isRunning = false; 
+        isRunning = false;
     }
 
     @Override
@@ -97,11 +96,11 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
     }
 
     public void saveCookies() {
-        if (getCookiesSaveFile()!=null) {
+        if (getCookiesSaveFile() != null) {
             saveCookies(getCookiesSaveFile().getFile().getAbsolutePath());
         }
     }
-    
+
     protected void loadCookies(ConfigFile file) {
         Reader reader = null;
         try {
@@ -110,7 +109,52 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         } finally {
             IOUtils.closeQuietly(reader);
         }
+    }
 
+    protected void loadCookies(Reader reader) {
+        Collection<Cookie> loadedCookies = readCookies(reader);
+        for (Cookie cookie: loadedCookies) {
+            addCookie(cookie);
+        }
+    }
+
+    public void saveCookies(String saveCookiesFile) {
+        // Do nothing if cookiesFile is not specified.
+        if (saveCookiesFile == null || saveCookiesFile.length() <= 0) {
+            return;
+        }
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(new File(saveCookiesFile));
+            String tab ="\t";
+            out.write("# Heritrix Cookie File\n".getBytes());
+            out.write("# This file is the Netscape cookies.txt format\n\n".getBytes());
+            for (Cookie cookie: new ArrayList<Cookie>(getCookies())) {
+                // Guess an initial size
+                MutableString line = new MutableString(1024 * 2);
+                line.append(cookie.getDomain());
+                line.append(tab);
+                // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
+                line.append("TRUE");
+                line.append(tab);
+                line.append(cookie.getPath() != null ? cookie.getPath() : "/");
+                line.append(tab);
+                line.append(cookie.isSecure() ? "TRUE" : "FALSE");
+                line.append(tab);
+                line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
+                line.append(tab);
+                line.append(cookie.getName());
+                line.append(tab);
+                line.append(cookie.getValue() != null ? cookie.getValue() : "");
+                line.append("\n");
+                out.write(line.toString().getBytes());
+            }
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
+        } finally {
+            IOUtils.closeQuietly(out);
+        }
     }
 
     /**
@@ -134,12 +178,12 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
      * <li>NAME: The name of the cookie value</li>
      * <li>VALUE: The cookie value</li>
      * </ol>
-     * 
+     *
      * @param reader
      *            input in the Netscape's 'cookies.txt' format.
      */
-    public static Collection<Cookie> readCookies(Reader reader) {
-        LinkedList<Cookie> cookies = new LinkedList<Cookie>(); 
+    protected Collection<Cookie> readCookies(Reader reader) {
+        LinkedList<Cookie> cookies = new LinkedList<Cookie>();
         BufferedReader br = new BufferedReader(reader);
         try {
             String line;
@@ -155,15 +199,15 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
                         cookie.setExpiryDate(expirationDate);
                         cookie.setSecure(Boolean.valueOf(tokens[3]).booleanValue());
                         cookie.setPath(tokens[2]);
-// XXX httpclient cookie doesn't have this thing?
-//                        cookie.setDomainAttributeSpecified(Boolean.valueOf(tokens[1]).booleanValue());
+                        // XXX httpclient cookie doesn't have this thing?
+                        // cookie.setDomainAttributeSpecified(Boolean.valueOf(tokens[1]).booleanValue());
                         logger.fine("Adding cookie: domain " + cookie.getDomain() + " cookie " + cookie);
                         cookies.add(cookie);
                     } else {
                         logger.warning("cookies input line " + lineNo + " invalid, expected 7 tab-delimited tokens");
                     }
                 }
-                
+
                 lineNo++;
             }
         } catch (IOException e) {
@@ -171,72 +215,69 @@ public abstract class AbstractCookieStore implements CookieStore, Lifecycle, Clo
         }
         return cookies;
     }
-    
-    public static void saveCookies(String saveCookiesFile, Collection<Cookie> collection) { 
-        // Do nothing if cookiesFile is not specified. 
-        if (saveCookiesFile == null || saveCookiesFile.length() <= 0) { 
-            return; 
+
+    protected class LimitedCookieStoreFacade implements CookieStore {
+        private final List<Cookie> cookies;
+
+        protected LimitedCookieStoreFacade(List<Cookie> cookies) {
+            this.cookies = cookies;
         }
-      
-        FileOutputStream out = null; 
-        try { 
-            out = new FileOutputStream(new File(saveCookiesFile)); 
-            String tab ="\t"; 
-            out.write("# Heritrix Cookie File\n".getBytes()); 
-            out.write("# This file is the Netscape cookies.txt format\n\n".getBytes()); 
-            for (Cookie cookie: collection) { 
-                // Guess an initial size 
-                MutableString line = new MutableString(1024 * 2); 
-                line.append(cookie.getDomain()); 
-                line.append(tab);
-                // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE"); 
-                line.append("TRUE");
-                line.append(tab); 
-                line.append(cookie.getPath() != null ? cookie.getPath() : "/");
-                line.append(tab); 
-                line.append(cookie.isSecure() ? "TRUE" : "FALSE"); 
-                line.append(tab);
-                line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
-                line.append(tab);
-                line.append(cookie.getName());
-                line.append(tab);                
-                line.append(cookie.getValue() != null ? cookie.getValue() : ""); 
-                line.append("\n");
-                out.write(line.toString().getBytes()); 
-            } 
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
-        } finally {
-            IOUtils.closeQuietly(out);
-        } 
-    }
-    
-    /**
-     * @see {@link CookieIdentityComparator#compare(Cookie, Cookie)}
-     */
-    protected String makeKey(Cookie cookie) {
-        JSONArray a = new JSONArray();
-        a.put(cookie.getName());
-        
-        String d = cookie.getDomain();
-        if (d == null) {
-            d = "";
-        } else if (d.indexOf('.') == -1) {
-            d = d + ".local";
+
+        @Override
+        public List<Cookie> getCookies() {
+            return cookies;
         }
-        d = d.toLowerCase(Locale.ENGLISH);
-        a.put(d);
-        
-        String p = cookie.getPath();
-        if (p == null) {
-            p = "/";
+
+        @Override
+        public boolean clearExpired(Date date) {
+            throw new RuntimeException("not implemented");
         }
-        a.put(p);
-        
-        return a.toString();
+
+        @Override
+        public void clear() {
+            throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public void addCookie(Cookie cookie) {
+            AbstractCookieStore.this.addCookie(cookie);
+        }
     }
 
+    /**
+     * Returns a string that uniquely identifies the cookie, The format The
+     * format of the key is {@code "normalizedDomain;name;path"}. Adapted from
+     * {@link CookieIdentityComparator#compare(Cookie, Cookie)}.
+     */
+    protected String sortableKey(Cookie cookie) {
+        String normalizedDomain = normalizeHost(cookie.getDomain());
+
+        // use ";" as delimiter since it is the delimiter in the cookie header,
+        // so presumably can't appear in any of these values
+        StringBuilder buf = new StringBuilder(normalizedDomain);
+        buf.append(";").append(cookie.getName());
+        buf.append(";").append(cookie.getPath() != null ? cookie.getPath() : "/");
+
+        return buf.toString();
+    }
+
+    protected String normalizeHost(String host) {
+        if (host == null) {
+            host = "";
+        }
+        if (host.startsWith(".")) {
+            host = host.substring(1);
+        }
+        host = host.toLowerCase(Locale.ENGLISH);
+        return host;
+    }
+
+    public CookieStore cookieStoreFor(CrawlURI curi) throws URIException {
+        String normalizedHost = normalizeHost(curi.getUURI().getHost());
+        return cookieStoreFor(normalizedHost);
+    }
+
+    abstract public void addCookie(Cookie cookie);
+    abstract public void clear();
     abstract protected void prepare();
-    abstract protected void loadCookies(Reader reader);
-    abstract protected void saveCookies(String absolutePath);
 }

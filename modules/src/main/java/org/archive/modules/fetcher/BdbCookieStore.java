@@ -19,27 +19,86 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.SortedMap;
 
+import org.apache.commons.collections.collection.CompositeCollection;
+import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.cookie.CookieIdentityComparator;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.net.InternetDomainName;
+import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
-import com.sleepycat.bind.tuple.StringBinding;
+import com.sleepycat.collections.StoredCollection;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
-public class BdbCookieStore extends AbstractCookieStore {
+/**
+ * Cookie store using bdb for storage. Cookies are stored in a SortedMap keyed
+ * by {@link #sortableKey(Cookie)}, so they are grouped together by domain.
+ * {@link #cookieStoreFor(String)} returns a facade whose
+ * {@link CookieStore#getCookies()} returns a list of cookies limited to
+ * the supplied host and parent domains, if applicable.
+ * 
+ * @see https://webarchive.jira.com/browse/HER-2070
+ * @see https://github.com/internetarchive/heritrix3/pull/96
+ * @see https://groups.yahoo.com/neo/groups/archive-crawler/conversations/messages/8620
+ * 
+ * @contributor nlevitt
+ */
+public class BdbCookieStore extends AbstractCookieStore implements
+        FetchHTTPCookieStore, CookieStore {
+
+    /**
+     * A {@link List} implementation that wraps a {@link Collection}. Needed
+     * because httpclient requires {@code List<Cookie>}.
+     * 
+     * <p>
+     * This class is "restricted" in the sense that it is immutable, and also
+     * because some methods throw {@link RuntimeException} for other reasons.
+     * For example, {@link #iterator()} is not implemented, because we use this
+     * class to wrap a bdb {@link StoredCollection}, and iterators from that
+     * class need to be explicitly closed. Since this class hides the fact that
+     * a StoredCollection underlies it, we simply prevent {@link #iterator()}
+     * from being used.
+     */
+    public static class RestrictedCollectionWrappedList<T> implements List<T> {
+        private Collection<T> wrapped;
+        public RestrictedCollectionWrappedList(Collection<T> wrapped) { this.wrapped = wrapped; }
+        @Override public int size() { return wrapped.size(); }
+        @Override public boolean isEmpty() { throw new RuntimeException("not implemented"); }
+        @Override public boolean contains(Object o) { throw new RuntimeException("not implemented"); }
+        @Override public Iterator<T> iterator() { throw new RuntimeException("not implemented"); }
+        @Override public Object[] toArray() { return wrapped.toArray(); }
+        @SuppressWarnings("hiding") @Override public <T> T[] toArray(T[] a) { return wrapped.toArray(a); }
+        @Override public boolean add(T e) { throw new RuntimeException("immutable list"); }
+        @Override public boolean remove(Object o) { throw new RuntimeException("immutable list"); }
+        @Override public boolean containsAll(Collection<?> c) { return wrapped.containsAll(c); }
+        @Override public boolean addAll(Collection<? extends T> c) { throw new RuntimeException("immutable list"); }
+        @Override public boolean addAll(int index, Collection<? extends T> c) { throw new RuntimeException("immutable list"); }
+        @Override public boolean removeAll(Collection<?> c) { throw new RuntimeException("immutable list"); }
+        @Override public boolean retainAll(Collection<?> c) { throw new RuntimeException("immutable list"); }
+        @Override public void clear() { throw new RuntimeException("immutable list"); }
+        @Override public T get(int index) { throw new RuntimeException("not implemented"); }
+        @Override public T set(int index, T element) { throw new RuntimeException("immutable list"); }
+        @Override public void add(int index, T element) { throw new RuntimeException("immutable list"); }
+        @Override public T remove(int index) { throw new RuntimeException("immutable list"); }
+        @Override public int indexOf(Object o) { throw new RuntimeException("not implemented"); }
+        @Override public int lastIndexOf(Object o) { throw new RuntimeException("not implemented"); }
+        @Override public ListIterator<T> listIterator() { throw new RuntimeException("not implemented"); }
+        @Override public ListIterator<T> listIterator(int index) { throw new RuntimeException("not implemented"); }
+        @Override public List<T> subList(int fromIndex, int toIndex) { throw new RuntimeException("not implemented"); }
+    }
 
     protected BdbModule bdb;
     @Autowired
@@ -47,14 +106,10 @@ public class BdbCookieStore extends AbstractCookieStore {
         this.bdb = bdb;
     }
 
-    /** are we a checkpoint recovery? (in which case, reuse stored cookie data?) */
-    protected boolean isCheckpointRecovery = false; 
-    
     public static String COOKIEDB_NAME = "hc_httpclient_cookies";
- 
+
     private transient Database cookieDb;
-    private transient StoredSortedMap<String,Cookie> cookies;
-    private transient List<Cookie> cachedCookieList;
+    private transient StoredSortedMap<byte[],Cookie> cookies;
 
     public void prepare() {
         try {
@@ -62,138 +117,122 @@ public class BdbCookieStore extends AbstractCookieStore {
             BdbModule.BdbConfig dbConfig = new BdbModule.BdbConfig();
             dbConfig.setTransactional(false);
             dbConfig.setAllowCreate(true);
+            dbConfig.setSortedDuplicates(false);
             cookieDb = bdb.openDatabase(COOKIEDB_NAME, dbConfig,
                     isCheckpointRecovery);
-            cookies = new StoredSortedMap<String, Cookie>(cookieDb,
-                    new StringBinding(), new SerialBinding<Cookie>(
-                            classCatalog, Cookie.class), true);
-            cachedCookieList = new ArrayList<Cookie>(cookies.values());
+            cookies = new StoredSortedMap<byte[],Cookie>(cookieDb,
+                    new ByteArrayBinding(), 
+                    new SerialBinding<Cookie>(classCatalog, Cookie.class), 
+                    true);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
     }
-    
-    private transient Comparator<Cookie> cookieIdentityComparator = new CookieIdentityComparator();
-    protected void removeFromCachedList(Cookie c) {
-        for (int i = 0; i < cachedCookieList.size(); i++) {
-            if (cookieIdentityComparator.compare(cachedCookieList.get(i), c) == 0) {
-                cachedCookieList.remove(i);
-                break;
-            }
-        }
-    }
-    
-    /**
-     * Adds an {@link Cookie HTTP cookie}, replacing any existing equivalent cookies.
-     * If the given cookie has already expired it will not be added, but existing
-     * values will still be removed.
-     *
-     * @param cookie the {@link Cookie cookie} to be added
-     */
-    @Override
-    public synchronized void addCookie(Cookie cookie) {
-        if (cookie != null) {
-            String key = makeKey(cookie);
-            
-            // first remove any old cookie that is equivalent
-            Cookie removed = cookies.remove(key);
-            if (removed != null) {
-                removeFromCachedList(removed);
-            }
-            
-            if (!cookie.isExpired(new Date())) {
-                cookies.put(key, cookie);
-                cachedCookieList.add(cookie);
-            }
-        }
-    }
 
-    /**
-     * Returns an immutable array of {@link Cookie cookies} that this HTTP
-     * state currently contains.
-     *
-     * @return an array of {@link Cookie cookies}.
-     */
-    @Override
-    public List<Cookie> getCookies() {
-        return cachedCookieList;
-    }
-    
-    protected List<Cookie> getCookiesBypassCache() {
-        if (cookies != null) {
-            return new ArrayList<Cookie>(cookies.values());
+    public void addCookie(Cookie cookie) {
+        byte[] key;
+        try {
+            key = sortableKey(cookie).getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // impossible
+        }
+
+        if (!cookie.isExpired(new Date())) {
+            cookies.put(key, cookie);
         } else {
-            return null;
+            cookies.remove(key);
+        }
+    }
+
+    protected Collection<Cookie> hostSubset(String host) { 
+        try {
+            byte[] startKey = (host + ";").getBytes("UTF-8");
+
+            char chAfterDelim = (char)(((int)';')+1); 
+            byte[] endKey = (host + chAfterDelim).getBytes("UTF-8");
+
+            SortedMap<byte[], Cookie> submap = cookies.subMap(startKey, endKey);
+            return submap.values();
+
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // impossible
         }
     }
 
     /**
-     * Removes all of {@link Cookie cookies} in this HTTP state
-     * that have expired by the specified {@link java.util.Date date}.
-     *
-     * @return true if any cookies were purged.
-     *
-     * @see Cookie#isExpired(Date)
+     * Returns a {@link LimitedCookieStoreFacade} whose
+     * {@link LimitedCookieStoreFacade#getCookies()} method returns only cookies
+     * from {@code host} and its parent domains, if applicable.
      */
-    @Override
-    public synchronized boolean clearExpired(final Date date) {
-        if (date == null) {
-            return false;
-        }
-        boolean removed = false;
-        for (String key: cookies.keySet()) {
-            if (cookies.get(key).isExpired(date)) {
-                Cookie c = cookies.remove(key);
-                cachedCookieList.remove(c);
-                removed = true;
+    public CookieStore cookieStoreFor(String host) {
+        CompositeCollection cookieCollection = new CompositeCollection();
+
+        if (InternetDomainName.isValid(host)) {
+            InternetDomainName domain = InternetDomainName.from(host);
+
+            while (domain != null) {
+                Collection<Cookie> subset = hostSubset(domain.toString());
+                cookieCollection.addComposited(subset);
+
+                if (domain.hasParent()) {
+                    domain = domain.parent();
+                } else {
+                    domain = null;
+                }
             }
+        } else {
+            Collection<Cookie> subset = hostSubset(host.toString());
+            cookieCollection.addComposited(subset);
         }
-        return removed;
-    }
 
-    /**
-     * Clears all cookies.
-     */
-    @Override
-    public synchronized void clear() {
-        cookies.clear();
-        cachedCookieList.clear();
+        @SuppressWarnings("unchecked")
+        List<Cookie> cookieList = new RestrictedCollectionWrappedList<Cookie>(cookieCollection);
+        LimitedCookieStoreFacade store = new LimitedCookieStoreFacade(cookieList);
+        return store;
     }
 
     @Override
     public void startCheckpoint(Checkpoint checkpointInProgress) {
         // do nothing; handled by map checkpoint via BdbModule
     }
-
     @Override
     public void doCheckpoint(Checkpoint checkpointInProgress)
             throws IOException {
         // do nothing; handled by map checkpoint via BdbModule
     }
-
     @Override
     public void finishCheckpoint(Checkpoint checkpointInProgress) {
         // do nothing; handled by map checkpoint via BdbModule
     }
 
+    /** are we a checkpoint recovery? (in which case, reuse stored cookie data?) */
+    protected boolean isCheckpointRecovery = false; 
     @Override
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         // just remember that we are doing checkpoint-recovery;
         // actual state recovery happens via BdbModule
-        isCheckpointRecovery = true; 
+        isCheckpointRecovery = true;
     }
 
-    
     @Override
-    protected void loadCookies(Reader reader) {
-        Collection<Cookie> loadedCookies = readCookies(reader);
-        for (Cookie cookie: loadedCookies) {
-            addCookie(cookie);
+    public void clear() {
+        cookies.clear();
+    }
+
+    /**
+     * @return an immutable list view of the cookies
+     */
+    @Override
+    public List<Cookie> getCookies() {
+        if (cookies != null) {
+            return new RestrictedCollectionWrappedList<Cookie>(cookies.values());
+        } else {
+            return null;
         }
     }
 
     @Override
-    protected void saveCookies(String absolutePath) {
-        saveCookies(absolutePath, cookies.values());
+    public boolean clearExpired(Date date) {
+        throw new RuntimeException("not implemented");
     }
 }
