@@ -5,6 +5,8 @@ import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
@@ -34,7 +36,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class IpAddressSetDecideRule extends PredicatedDecideRule {
 
-//    private static final Logger LOGGER = Logger.getLogger(IpAddressSetDecideRule.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(IpAddressSetDecideRule.class.getName());
+
     private static final long serialVersionUID = -3670434739183271441L;
     private Set<String> ipAddresses;
     
@@ -72,7 +75,7 @@ public class IpAddressSetDecideRule extends PredicatedDecideRule {
      * from WriterPoolProcessor
      * 
      * @param curi CrawlURI
-     * @return String of IP address
+     * @return String of IP address or null if unable to determine IP address
      */
     protected String getHostAddress(CrawlURI curi) {
         // special handling for DNS URIs: want address of DNS server
@@ -82,14 +85,21 @@ public class IpAddressSetDecideRule extends PredicatedDecideRule {
         // otherwise, host referenced in URI
         // TODO:FIXME: have fetcher insert exact IP contacted into curi,
         // use that rather than inferred by CrawlHost lookup 
-        CrawlHost crlh = getServerCache().getHostFor(curi.getUURI());
-        if (crlh == null) {
-            return null;
+        String addr = null;
+        try {
+	        CrawlHost crlh = getServerCache().getHostFor(curi.getUURI());
+	        if (crlh == null) {
+	            return null;
+	        }
+	        InetAddress inetadd = crlh.getIP();
+	        if (inetadd == null) {
+	            return null;
+	        }
+	        addr = inetadd.getHostAddress();
+        } catch (Exception e) {
+        	// Log error and continue (return null)
+        	logger.log(Level.WARNING, "Error looking up IP for URI "+curi.getURI(), e);
         }
-        InetAddress inetadd = crlh.getIP();
-        if (inetadd == null) {
-            return null;
-        }
-        return inetadd.getHostAddress();
+        return addr;
     }
 }
