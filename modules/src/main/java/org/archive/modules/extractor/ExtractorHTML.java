@@ -944,8 +944,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 httpEquiv = value.toString();
             } else if (attr.group(1).equalsIgnoreCase("content")) {
                 content = value.toString();
-            } else if (attr.group(1).equalsIgnoreCase("property")) {
-                property = value.toString();
             }            
             // TODO: handle other stuff
         }
@@ -978,11 +976,14 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
             }
         }
-        else if ("og:video".equalsIgnoreCase(property) && content != null) {
+        else if (content != null) {
+            //look for likely urls in 'content' attribute
             try {
-                int max = getExtractorParameters().getMaxOutlinks();
-                addRelativeToBase(curi, max, content, 
-                        HTMLLinkContext.META, Hop.REFER);
+                if (UriUtils.isVeryLikelyUri(content)) {
+                    int max = getExtractorParameters().getMaxOutlinks();
+                    addRelativeToBase(curi, max, content, 
+                            HTMLLinkContext.META, Hop.SPECULATIVE);                    
+                }
             } catch (URIException e) {
                 logUriError(e, curi.getUURI(), content);
             }

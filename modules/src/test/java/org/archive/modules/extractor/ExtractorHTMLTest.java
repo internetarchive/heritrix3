@@ -191,6 +191,33 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         // find exactly 3 (not the POST) action URIs
         assertTrue("incorrect number of links found", puri.getOutLinks().size()==3);
     }
+
+    /*
+     * positive and negative tests for uris in meta tag's content attribute
+     */
+    public void testMetaContentURI() throws Exception {
+        CrawlURI puri = new CrawlURI(UURIFactory
+                .getInstance("http://www.example.com"));
+        CharSequence cs = 
+                "<meta property=\"og:video\" content=\"http://www.example.com/absolute.mp4\" /> "+
+                "<meta property=\"og:video\" content=\"/relative.mp4\" /> "+
+                "<meta property=\"og:video:height\" content=\"333\" />"+
+                "<meta property=\"og:video:type\" content=\"video/mp4\" />"+
+                "<meta property=\"strangeproperty\" content=\"notaurl\" meaninglessurl=\"http://www.example.com/shouldnotbeextracted.html\" />";
+        
+        getExtractor().extract(puri, cs);
+        
+        CrawlURI[] links = puri.getOutLinks().toArray(new CrawlURI[0]);
+        Arrays.sort(links);         
+        String dest1 = "http://www.example.com/absolute.mp4";
+        String dest2 = "http://www.example.com/relative.mp4";
+        
+        assertTrue("incorrect number of links found", puri.getOutLinks().size()==2);
+        assertEquals("expected uri in 'content' attribute of meta tag not found",dest1,
+                links[0].getURI());        
+        assertEquals("expected uri in 'content' attribute of meta tag not found",dest2,
+                links[1].getURI());
+    }
     
     /**
      * Test detection, respect of meta robots nofollow directive
