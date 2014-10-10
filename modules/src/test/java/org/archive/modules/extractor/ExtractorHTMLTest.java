@@ -195,7 +195,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     /*
      * positive and negative tests for uris in meta tag's content attribute
      */
-    public void testMetaContentURI() throws Exception {
+    public void testMetaContentURI() throws URIException {
         CrawlURI puri = new CrawlURI(UURIFactory
                 .getInstance("http://www.example.com"));
         CharSequence cs = 
