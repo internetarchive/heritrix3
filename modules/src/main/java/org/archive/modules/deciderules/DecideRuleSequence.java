@@ -142,7 +142,7 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
                 extraInfo = new JSONObject();
                 extraInfo.put("hopPath", uri.getPathFromSeed());
                 extraInfo.put("via", uri.getVia());
-                extraInfo.put("source", uri.getSourceTag());
+                extraInfo.put("seed", uri.getSourceTag());
                 extraInfo.put("host", host);
             }
 
