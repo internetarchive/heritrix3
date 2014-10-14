@@ -110,27 +110,27 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
             jo.put(entry.getKey(), entry.getValue());
         }
 
-        jo.put("contentLength", curi.isHttpTransaction() && curi.getContentLength() >= 0 ? curi.getContentLength() : JSONObject.NULL);
-        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize() : JSONObject.NULL);
+        jo.put("bytes_received", curi.isHttpTransaction() && curi.getContentLength() >= 0 ? curi.getContentLength() : JSONObject.NULL);
+        jo.put("stored_size", curi.getContentSize() > 0 ? curi.getContentSize() : JSONObject.NULL);
 
-        jo.put("fetchStatus", checkForNull(curi.getFetchStatus()));
-        jo.put("url", checkForNull(curi.getUURI().toString()));
-        jo.put("pathFromSeed", checkForNull(curi.getPathFromSeed()));
+        jo.put("response_code", checkForNull(curi.getFetchStatus()));
+        jo.put("document_url", checkForNull(curi.getUURI().toString()));
+        jo.put("hop_path", checkForNull(curi.getPathFromSeed()));
         jo.put("via", checkForNull(curi.flattenVia()));
-        jo.put("contentType", checkForNull(MimetypeUtils.truncate(curi.getContentType())));
-        jo.put("threadNo", checkForNull(curi.getThreadNumber()));
+        jo.put("mimetype", checkForNull(MimetypeUtils.truncate(curi.getContentType())));
+        jo.put("thread", checkForNull(curi.getThreadNumber()));
 
         if (curi.containsDataKey(CoreAttributeConstants.A_FETCH_COMPLETED_TIME)) {
             long beganTime = curi.getFetchBeginTime();
             String fetchBeginDuration = ArchiveUtils.get17DigitDate(beganTime)
                     + "+" + (curi.getFetchCompletedTime() - beganTime);
-            jo.put("fetchBeginDuration", fetchBeginDuration);
+            jo.put("start_time_plus_duration", fetchBeginDuration);
         } else {
-            jo.put("fetchBeginDuration", JSONObject.NULL);
+            jo.put("start_time_plus_duration", JSONObject.NULL);
         }
 
-        jo.put("contentDigest", checkForNull(curi.getContentDigestSchemeString()));
-        jo.put("sourceSeed", checkForNull(curi.getSourceTag()));
+        jo.put("payload_hash", checkForNull(curi.getContentDigestSchemeString()));
+        jo.put("seed", checkForNull(curi.getSourceTag()));
 
         CrawlHost host = getServerCache().getHostFor(curi.getUURI());
         if (host != null) {
@@ -141,7 +141,7 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
 
         jo.put("annotations", checkForNull(StringUtils.join(curi.getAnnotations(), ",")));
 
-        jo.put("extraInfo", checkForNull(curi.getExtraInfo()));
+        jo.put("extra_info", checkForNull(curi.getExtraInfo()));
 
         String str = jo.toString();
         try {
