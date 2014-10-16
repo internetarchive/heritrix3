@@ -37,15 +37,20 @@ import org.archive.util.MimetypeUtils;
 public class UriProcessingFormatter
 extends Formatter implements Preformatter, CoreAttributeConstants {
     private final static String NA = "-";
+    
     /**
-     * Guess at line length (URIs are assumed avg. of 128 bytes).
-     * Used to preallocated the buffer we accumulate the log line
-     * in.  Hopefully we get it right most of the time and no need
-     * to enlarge except in the rare case.
+     * Guess at line length. Used to preallocated the buffer we accumulate the
+     * log line in. Hopefully we get it right most of the time and no need to
+     * enlarge except in the rare case.
+     * 
+     * <p>
+     * In a sampling of actual Aug 2014 Archive-It crawl logs I found that a
+     * line length 1000 characters was around the 99th percentile (only 1 in 100
+     * is longer than that). We put more information in the crawl log now than
+     * was originally estimated. Exactly what goes in can depend on the
+     * configuration as well.
      */
-    private final static int GUESS_AT_LOG_LENGTH =
-        17 + 1 + 3 + 1 + 10 + 128 + + 1 + 10 + 1 + 128 + 1 + 10 + 1 + 3 +
-        14 + 1 + 32 + 4 + 128 + 1;
+    private final static int GUESS_AT_LINE_LENGTH = 1000;
     
     /**
      * Reusable assembly buffer.
@@ -54,7 +59,7 @@ extends Formatter implements Preformatter, CoreAttributeConstants {
         new ThreadLocal<StringBuilder>() {
             @Override
             protected StringBuilder initialValue() {
-                return new StringBuilder(GUESS_AT_LOG_LENGTH);
+                return new StringBuilder(GUESS_AT_LINE_LENGTH);
             }
     };
     

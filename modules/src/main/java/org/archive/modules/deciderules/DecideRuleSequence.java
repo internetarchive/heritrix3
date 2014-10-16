@@ -25,21 +25,24 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SimpleFileLoggerProvider;
+import org.archive.modules.net.CrawlHost;
+import org.archive.modules.net.ServerCache;
+import org.json.JSONObject;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
 public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lifecycle {
     final private static Logger LOGGER = 
-        Logger.getLogger(DecideRuleSequence.class.getName());
+            Logger.getLogger(DecideRuleSequence.class.getName());
     private static final long serialVersionUID = 3L;
-    
+
     protected transient Logger fileLogger = null;
 
     /**
      * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
      * is: [timestamp] [decisive-rule-num] [decisive-rule-class] [decision]
-     * [uri]
+     * [uri] [extraInfo]
      * 
      * Relies on Spring Lifecycle to initialize the log. Only top-level
      * beans get the Lifecycle treatment from Spring, so bean must be top-level
@@ -56,6 +59,19 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
         kp.put("logToFile",enabled);
     }
 
+    /**
+     * Whether to include the "extra info" field for each entry in crawl.log.
+     * "Extra info" is a json object with entries "host", "via", "source" and
+     * "hopPath".
+     */
+    protected boolean logExtraInfo = false;
+    public boolean getLogExtraInfo() {
+        return logExtraInfo;
+    }
+    public void setLogExtraInfo(boolean logExtraInfo) {
+        this.logExtraInfo = logExtraInfo;
+    }
+
     // provided by CrawlerLoggerModule which is in heritrix-engine, inaccessible
     // from here, thus the need for the SimpleFileLoggerProvider interface
     protected SimpleFileLoggerProvider loggerModule;
@@ -66,7 +82,7 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
     public void setLoggerModule(SimpleFileLoggerProvider loggerModule) {
         this.loggerModule = loggerModule;
     }
-    
+
     @SuppressWarnings("unchecked")
     public List<DecideRule> getRules() {
         return (List<DecideRule>) kp.get("rules");
@@ -75,13 +91,22 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
         kp.put("rules", rules);
     }
 
+    protected ServerCache serverCache;
+    public ServerCache getServerCache() {
+        return this.serverCache;
+    }
+    @Autowired
+    public void setServerCache(ServerCache serverCache) {
+        this.serverCache = serverCache;
+    }
+
     public DecideResult innerDecide(CrawlURI uri) {
         DecideRule decisiveRule = null;
         int decisiveRuleNumber = -1;
         DecideResult result = DecideResult.NONE;
         List<DecideRule> rules = getRules();
         int max = rules.size();
-        
+
         for (int i = 0; i < max; i++) {
             DecideRule rule = rules.get(i);
             if (rule.onlyDecision(uri) != result) {
@@ -98,13 +123,37 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
             }
         }
 
-        if (fileLogger != null) {
-            fileLogger.info(decisiveRuleNumber + " " + decisiveRule.getClass().getSimpleName() + " " + result + " " + uri);
-        }
+        decisionMade(uri, decisiveRule, decisiveRuleNumber, result);
 
         return result;
     }
-    
+
+    protected void decisionMade(CrawlURI uri, DecideRule decisiveRule,
+            int decisiveRuleNumber, DecideResult result) {
+        if (fileLogger != null) {
+            JSONObject extraInfo = null;
+            if (logExtraInfo) {
+                CrawlHost crawlHost = getServerCache().getHostFor(uri.getUURI());
+                String host = "-";
+                if (crawlHost != null) {
+                    host  = crawlHost.fixUpName();
+                }
+
+                extraInfo = new JSONObject();
+                extraInfo.put("hopPath", uri.getPathFromSeed());
+                extraInfo.put("via", uri.getVia());
+                extraInfo.put("seed", uri.getSourceTag());
+                extraInfo.put("host", host);
+            }
+
+            fileLogger.info(decisiveRuleNumber 
+                    + " " + decisiveRule.getClass().getSimpleName() 
+                    + " " + result 
+                    + " " + uri
+                    + (extraInfo != null ? " " + extraInfo : ""));
+        }
+    }
+
     protected String beanName;
     public String getBeanName() {
         return this.beanName;
@@ -113,7 +162,7 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
     public void setBeanName(String name) {
         this.beanName = name;
     }
-    
+
     protected boolean isRunning = false;
     @Override
     public boolean isRunning() {

@@ -20,8 +20,10 @@
 package org.archive.modules.net;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
@@ -282,5 +284,17 @@ public class CrawlHost implements Serializable, FetchStats.HasFetchStats, Identi
     @Override
     public void setIdentityCache(ObjectIdentityCache<?> cache) {
         this.cache = cache; 
-    } 
+    }
+
+    public String fixUpName() {
+        if ("dns:".equals(getHostName()) || "whois:".equals(getHostName())) {
+            return getHostName();
+        } else {
+            try {
+                return URLEncoder.encode(getHostName(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

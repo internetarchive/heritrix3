@@ -1082,7 +1082,7 @@ public abstract class AbstractFrontier
      *            The CrawlURI to check
      * @return True if we need to retry.
      */
-    protected boolean needsReenqueuing(CrawlURI curi) {
+    public boolean needsReenqueuing(CrawlURI curi) {
         if (overMaxRetries(curi)) {
             return false;
         }
