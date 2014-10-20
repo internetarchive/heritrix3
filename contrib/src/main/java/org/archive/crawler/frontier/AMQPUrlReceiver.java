@@ -320,7 +320,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
             
-            curi.setForceFetch(true);
+            //curi.setForceFetch(true);
 
             curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
 
