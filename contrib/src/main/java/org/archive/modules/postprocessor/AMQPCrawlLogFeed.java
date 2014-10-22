@@ -110,11 +110,11 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
             jo.put(entry.getKey(), entry.getValue());
         }
 
-        jo.put("bytes_received", curi.isHttpTransaction() && curi.getContentLength() >= 0 ? curi.getContentLength() : JSONObject.NULL);
-        jo.put("stored_size", curi.getContentSize() > 0 ? curi.getContentSize() : JSONObject.NULL);
+        jo.put("content_length", curi.isHttpTransaction() && curi.getContentLength() >= 0 ? curi.getContentLength() : JSONObject.NULL);
+        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize() : JSONObject.NULL);
 
-        jo.put("response_code", checkForNull(curi.getFetchStatus()));
-        jo.put("document_url", checkForNull(curi.getUURI().toString()));
+        jo.put("status_code", checkForNull(curi.getFetchStatus()));
+        jo.put("url", checkForNull(curi.getUURI().toString()));
         jo.put("hop_path", checkForNull(curi.getPathFromSeed()));
         jo.put("via", checkForNull(curi.flattenVia()));
         jo.put("mimetype", checkForNull(MimetypeUtils.truncate(curi.getContentType())));
@@ -129,7 +129,7 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
             jo.put("start_time_plus_duration", JSONObject.NULL);
         }
 
-        jo.put("payload_hash", checkForNull(curi.getContentDigestSchemeString()));
+        jo.put("content_digest", checkForNull(curi.getContentDigestSchemeString()));
         jo.put("seed", checkForNull(curi.getSourceTag()));
 
         CrawlHost host = getServerCache().getHostFor(curi.getUURI());
@@ -141,7 +141,13 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
 
         jo.put("annotations", checkForNull(StringUtils.join(curi.getAnnotations(), ",")));
 
-        jo.put("extra_info", checkForNull(curi.getExtraInfo()));
+        JSONObject ei = curi.getExtraInfo();
+        if (ei == null) {
+            ei = new JSONObject();
+        }
+        jo.put("warc_filename", checkForNull(ei.get("warcFilename")));
+        jo.put("warc_offset", checkForNull(ei.get("warcOffset")));
+        jo.put("extra_info", ei);
 
         String str = jo.toString();
         try {
