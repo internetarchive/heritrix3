@@ -145,8 +145,10 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
         if (ei == null) {
             ei = new JSONObject();
         }
-        jo.put("warc_filename", checkForNull(ei.opt("warcFilename")));
-        jo.put("warc_offset", checkForNull(ei.opt("warcFileOffset")));
+        // copy so we can remove unrolled fields
+        ei = new JSONObject(curi.getExtraInfo().toString());
+        jo.put("warc_filename", checkForNull(ei.remove("warcFilename")));
+        jo.put("warc_offset", checkForNull(ei.remove("warcFileOffset")));
         jo.put("extra_info", ei);
 
         String str = jo.toString();
