@@ -107,7 +107,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         return isRunning;
     }
     
-    private transient Lock lock = new ReentrantLock();
+    private transient Lock lock = new ReentrantLock(true);
 
     private class StarterRestarter extends Thread {
         public StarterRestarter(String name) {
@@ -121,17 +121,15 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     lock.lockInterruptibly();
                     if (!isRunning) {
                         // start up again
-                        synchronized (AMQPUrlReceiver.this) {
-                            try {
-                                Consumer consumer = new UrlConsumer(channel());
-                                channel().queueDeclare(getQueueName(), false, false, true, null);
-                                channel().queueBind(getQueueName(), getExchange(), getQueueName());
-                                channel().basicConsume(getQueueName(), false, consumer);
-                                isRunning = true;
-                                logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
-                            } catch (IOException e) {
-                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
-                            }
+                        try {
+                            Consumer consumer = new UrlConsumer(channel());
+                            channel().queueDeclare(getQueueName(), false, false, true, null);
+                            channel().queueBind(getQueueName(), getExchange(), getQueueName());
+                            channel().basicConsume(getQueueName(), false, consumer);
+                            isRunning = true;
+                            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
+                        } catch (IOException e) {
+                            logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
                         }
                     }
 
