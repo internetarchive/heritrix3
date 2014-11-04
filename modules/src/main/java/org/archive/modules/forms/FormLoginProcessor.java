@@ -261,7 +261,9 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
     protected void createFormSubmissionAttempt(CrawlURI curi, HTMLForm templateForm, String formProvince) {
         LinkContext lc = new LinkContext.SimpleLinkContext("form/@action");
         try {
-            CrawlURI submitCuri = curi.createCrawlURI(templateForm.getAction(), lc, Hop.SUBMIT);
+            String submitUrl = templateForm.getAction() == null ? curi.getURI() : templateForm.getAction();
+            
+            CrawlURI submitCuri = curi.createCrawlURI(submitUrl, lc, Hop.SUBMIT);
             submitCuri.setFetchType(FetchType.HTTP_POST);
             submitCuri.getData().put(
                     CoreAttributeConstants.A_SUBMIT_DATA, 
