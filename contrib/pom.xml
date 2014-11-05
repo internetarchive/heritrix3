@@ -57,6 +57,11 @@
 			<version>3.1</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.10</artifactId>
+			<version>0.8.2-beta</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>

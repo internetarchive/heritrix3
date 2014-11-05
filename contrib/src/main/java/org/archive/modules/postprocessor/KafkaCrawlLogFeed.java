@@ -20,27 +20,36 @@ package org.archive.modules.postprocessor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Logger;
+
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
 
 import org.apache.commons.collections.Closure;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.frontier.BdbFrontier;
 import org.archive.crawler.io.UriProcessingFormatter;
-import org.archive.modules.AMQPProducerProcessor;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
 import org.archive.modules.net.ServerCache;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AMQP.BasicProperties;
-
 /**
+ * For Kafka 0.8.x. Sends messages in asynchronous mode (producer.type=async)
+ * and does not wait for acknowledgment from kafka (request.required.acks=0).
+ * Sends messages with no key. These things could be configurable if needed.
+ * 
  * @see UriProcessingFormatter
  * @contributor nlevitt
  */
-public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle {
+public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
+
+    protected static final Logger logger = Logger.getLogger(KafkaCrawlLogFeed.class.getName());
 
     protected Frontier frontier;
     public Frontier getFrontier() {
@@ -84,13 +93,23 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
         this.dumpPendingAtClose = dumpPendingAtClose;
     }
 
-    public AMQPCrawlLogFeed() {
-        // set default values
-        exchange = "heritrix.realTimeFeed";
-        routingKey = "crawlLog";
+    protected String brokerList = "localhost:9092";
+    /** Kafka broker list (kafka property "metadata.broker.list"). */
+    public void setBrokerList(String brokerList) {
+        this.brokerList = brokerList;
+    }
+    public String getBrokerList() {
+        return brokerList;
     }
 
-    @Override
+    protected String topic = "heritrix-crawl-log";
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+    public String getTopic() {
+        return topic;
+    }
+
     protected byte[] buildMessage(CrawlURI curi) {
         JSONObject jo = CrawlLogJsonBuilder.buildJson(curi, getExtraFields(), getServerCache());
         try {
@@ -122,7 +141,7 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
                 Closure closure = new Closure() {
                     public void execute(Object curi) {
                         try {
-                            innerProcessResult((CrawlURI) curi);
+                            innerProcess((CrawlURI) curi);
                             pendingDumpedCount++;
                         } catch (InterruptedException e) {
                         }
@@ -137,15 +156,38 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
             }
         }
 
-        // closes amqp connection
+        if (kafkaProducer != null) {
+            kafkaProducer.close();
+            kafkaProducer = null;
+        }
+
         super.stop();
     }
 
-    protected BasicProperties props = new AMQP.BasicProperties.Builder().
-            contentType("application/json").build();
+    transient protected Producer<byte[], byte[]> kafkaProducer;
+    protected Producer<byte[], byte[]> kafkaProducer() {
+        if (kafkaProducer == null) {
+            synchronized (this) {
+                if (kafkaProducer == null) {
+                    Properties props = new Properties();
+                    props.put("metadata.broker.list", getBrokerList());
+                    // XXX in asynchronous mode, we have no way to handle delivery
+                    // problems, so it doesn't matter if they are acked or not
+                    props.put("request.required.acks", "0");
+                    props.put("producer.type", "async");
+                    ProducerConfig config = new ProducerConfig(props);
+                    kafkaProducer = new Producer<byte[], byte[]>(config);
+                }
+            }
+        }
+        return kafkaProducer;
+    }
 
     @Override
-    protected BasicProperties amqpMessageProperties() {
-        return props;
+    protected void innerProcess(CrawlURI curi) throws InterruptedException {
+        byte[] message = buildMessage(curi);
+        KeyedMessage<byte[], byte[]> keyedMessage = new KeyedMessage<byte[], byte[]>(getTopic(), message);
+        // XXX no error handling
+        kafkaProducer().send(keyedMessage);
     }
 }
