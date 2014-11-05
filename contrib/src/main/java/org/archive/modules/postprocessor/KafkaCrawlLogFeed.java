@@ -148,9 +148,9 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
                     }
                 };
 
-                logger.info("dumping " + frontier.queuedUriCount() + " queued urls to amqp feed");
+                logger.info("dumping " + frontier.queuedUriCount() + " queued urls to kafka feed");
                 ((BdbFrontier) frontier).forAllPendingDo(closure);
-                logger.info("dumped " + pendingDumpedCount + " queued urls to amqp feed");
+                logger.info("dumped " + pendingDumpedCount + " queued urls to kafka feed");
             } else {
                 logger.warning("frontier is not a BdbFrontier, cannot dumpPendingAtClose");
             }
