@@ -962,6 +962,10 @@ public class FetchHTTP extends Processor implements Lifecycle {
     protected void setSizes(CrawlURI curi, Recorder rec) {
         // set reporting size
         curi.setContentSize(rec.getRecordedInput().getSize());
+
+        // add contentSize to extraInfo so it's available to log in the crawl log
+        curi.addExtraInfo("contentSize", rec.getRecordedInput().getSize());
+
         // special handling for 304-not modified
         if (curi.getFetchStatus() == HttpStatus.SC_NOT_MODIFIED
                 && curi.getFetchHistory() != null) {
