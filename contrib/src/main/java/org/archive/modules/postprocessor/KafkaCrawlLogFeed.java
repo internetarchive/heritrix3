@@ -170,8 +170,8 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
             synchronized (this) {
                 if (kafkaProducer == null) {
                     Properties props = new Properties();
-                    props.put("metadata.broker.list", getBrokerList());
-                    props.put("request.required.acks", "1");
+                    props.put("bootstrap.servers", getBrokerList());
+                    props.put("acks", "1");
                     props.put("producer.type", "async");
                     kafkaProducer = new KafkaProducer(props);
                 }
