@@ -119,25 +119,27 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             while (!Thread.interrupted()) {
                 try {
                     lock.lockInterruptibly();
-                    if (!isRunning) {
-                        // start up again
-                        try {
-                            Consumer consumer = new UrlConsumer(channel());
-                            channel().queueDeclare(getQueueName(), false, false, true, null);
-                            channel().queueBind(getQueueName(), getExchange(), getQueueName());
-                            channel().basicConsume(getQueueName(), false, consumer);
-                            isRunning = true;
-                            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
-                        } catch (IOException e) {
-                            logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                    try {
+                        if (!isRunning) {
+                            // start up again
+                            try {
+                                Consumer consumer = new UrlConsumer(channel());
+                                channel().queueDeclare(getQueueName(), false, false, true, null);
+                                channel().queueBind(getQueueName(), getExchange(), getQueueName());
+                                channel().basicConsume(getQueueName(), false, consumer);
+                                isRunning = true;
+                                logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
+                            } catch (IOException e) {
+                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                            }
                         }
-                    }
 
-                    Thread.sleep(30000);
+                        Thread.sleep(30000);
+                    } finally {
+                        lock.unlock();
+                    }
                 } catch (InterruptedException e) {
                     return;
-                } finally {
-                    lock.unlock();
                 }
             }
         }
