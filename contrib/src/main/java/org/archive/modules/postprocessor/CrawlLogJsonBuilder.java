@@ -64,6 +64,7 @@ public class CrawlLogJsonBuilder {
         }
         // copy so we can remove unrolled fields
         ei = new JSONObject(curi.getExtraInfo().toString());
+        ei.remove("contentSize"); // we get this value above
         jo.put("warc_filename", checkForNull(ei.remove("warcFilename")));
         jo.put("warc_offset", checkForNull(ei.remove("warcFileOffset")));
         jo.put("extra_info", ei);
