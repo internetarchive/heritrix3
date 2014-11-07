@@ -83,14 +83,12 @@ extends Formatter implements Preformatter, CoreAttributeConstants {
             } else if (curi.getContentSize() > 0) {
                 length = Long.toString(curi.getContentSize());
             }
-            mime = curi.getContentType();
         } else {
             if (curi.getContentSize() > 0) {
                 length = Long.toString(curi.getContentSize());
             } 
-            mime = curi.getContentType();
         }
-        mime = MimetypeUtils.truncate(mime);
+        mime = MimetypeUtils.truncate(curi.getContentType());
 
         long time = System.currentTimeMillis();
 
