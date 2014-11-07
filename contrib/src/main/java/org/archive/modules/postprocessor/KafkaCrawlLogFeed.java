@@ -23,11 +23,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-
 import org.apache.commons.collections.Closure;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.frontier.BdbFrontier;
@@ -164,30 +164,41 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
         super.stop();
     }
 
-    transient protected Producer<byte[], byte[]> kafkaProducer;
-    protected Producer<byte[], byte[]> kafkaProducer() {
+    transient protected KafkaProducer kafkaProducer;
+    protected KafkaProducer kafkaProducer() {
         if (kafkaProducer == null) {
             synchronized (this) {
                 if (kafkaProducer == null) {
                     Properties props = new Properties();
                     props.put("metadata.broker.list", getBrokerList());
-                    // XXX in asynchronous mode, we have no way to handle delivery
-                    // problems, so it doesn't matter if they are acked or not
-                    props.put("request.required.acks", "0");
+                    props.put("request.required.acks", "1");
                     props.put("producer.type", "async");
-                    ProducerConfig config = new ProducerConfig(props);
-                    kafkaProducer = new Producer<byte[], byte[]>(config);
+                    kafkaProducer = new KafkaProducer(props);
                 }
             }
         }
         return kafkaProducer;
     }
 
+    protected static class KafkaResultCallback implements Callback {
+        private CrawlURI curi;
+
+        public KafkaResultCallback(CrawlURI curi) {
+            this.curi = curi;
+        }
+
+        @Override
+        public void onCompletion(RecordMetadata metadata, Exception exception) {
+            if (exception != null) {
+                logger.warning("kafka delivery failed for " + curi + " - " + exception);
+            }
+        }
+    }
+
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         byte[] message = buildMessage(curi);
-        KeyedMessage<byte[], byte[]> keyedMessage = new KeyedMessage<byte[], byte[]>(getTopic(), message);
-        // XXX no error handling
-        kafkaProducer().send(keyedMessage);
+        ProducerRecord producerRecord = new ProducerRecord(getTopic(), message);
+        kafkaProducer().send(producerRecord, new KafkaResultCallback(curi));
     }
 }
