@@ -21,6 +21,12 @@ package org.archive.modules.postprocessor;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
@@ -160,20 +166,54 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
             kafkaProducer.close();
             kafkaProducer = null;
         }
+        if (kafkaProducerThreads != null) {
+            kafkaProducerThreads.destroy();
+            kafkaProducerThreads = null;
+        }
 
         super.stop();
     }
+
+    private transient ThreadGroup kafkaProducerThreads;
 
     transient protected KafkaProducer kafkaProducer;
     protected KafkaProducer kafkaProducer() {
         if (kafkaProducer == null) {
             synchronized (this) {
                 if (kafkaProducer == null) {
-                    Properties props = new Properties();
+                    final Properties props = new Properties();
                     props.put("bootstrap.servers", getBrokerList());
                     props.put("acks", "1");
                     props.put("producer.type", "async");
-                    kafkaProducer = new KafkaProducer(props);
+
+                    /*
+                     * XXX This mess here exists so that the kafka producer
+                     * thread is in a thread group that is not the ToePool,
+                     * so that it doesn't get interrupted at the end of the
+                     * crawl in ToePool.cleanup(). 
+                     */
+                    kafkaProducerThreads = new ThreadGroup(Thread.currentThread().getThreadGroup().getParent(), "KafkaProducerThreads");
+                    ThreadFactory threadFactory = new ThreadFactory() {
+                        public Thread newThread(Runnable r) {
+                            return new Thread(kafkaProducerThreads, r);
+                        }
+                    };
+                    Callable<KafkaProducer> task = new Callable<KafkaProducer>() {
+                        public KafkaProducer call() throws InterruptedException {
+                            return new KafkaProducer(props);
+                        }
+                    };
+                    ExecutorService executorService = Executors.newFixedThreadPool(1, threadFactory);
+                    Future<KafkaProducer> future = executorService.submit(task);
+                    try {
+                        kafkaProducer = future.get();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        executorService.shutdown();
+                    }
                 }
             }
         }
