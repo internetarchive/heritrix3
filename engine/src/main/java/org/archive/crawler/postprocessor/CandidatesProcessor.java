@@ -230,7 +230,7 @@ public class CandidatesProcessor extends Processor {
             runCandidateChain(candidate, curi);
 
         }
-        curi.getOutLinks().clear();
+
     }
     
     /**
