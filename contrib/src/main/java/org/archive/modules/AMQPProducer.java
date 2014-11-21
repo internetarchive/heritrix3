@@ -79,7 +79,7 @@ public class AMQPProducer {
         } catch (Exception e) {
             connection = null;
             serverLooksDown.getAndSet(true);
-            throw new IOException("Attempting to connect to AMQP server failed!", e);
+            throw new IOException("Attempting to connect to AMQP server failed! " + amqpUri, e);
         }
     }
 
