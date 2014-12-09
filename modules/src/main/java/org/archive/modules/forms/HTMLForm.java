@@ -20,6 +20,7 @@
 package org.archive.modules.forms;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -77,6 +78,10 @@ public class HTMLForm {
     public void setMethod(String method) {
         this.method = method; 
     }
+    
+    public String getMethod() {
+        return method;
+    }
 
     public String getAction() {
         return action;
@@ -123,6 +128,10 @@ public class HTMLForm {
         return data.toArray(new NameValuePair[data.size()]);
     }
     
+    public List<FormInput> getAllInputs() {
+        return Collections.unmodifiableList(allInputs);
+    }
+    
     public String asFormDataString(String username, String password) {
         List<String> nameVals = new LinkedList<String>();
 
@@ -132,6 +141,18 @@ public class HTMLForm {
             } else if(input == candidatePasswordInputs.get(0)) {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
             } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
+                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(input.value));
+            }
+        }
+
+        return StringUtils.join(nameVals, '&');
+    }
+    
+    public String asFormDataString() {
+        List<String> nameVals = new LinkedList<String>();
+
+        for (FormInput input : allInputs) {
+            if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(input.value));
             }
         }

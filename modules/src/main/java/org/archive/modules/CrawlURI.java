@@ -87,6 +87,7 @@ import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.HTMLLinkContext;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.forms.ExtractorHTMLForms;
 import org.archive.modules.revisit.RevisitProfile;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -558,6 +559,13 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      */
     public boolean hasPrerequisiteUri() {
         return containsDataKey(A_PREREQUISITE_URI);
+    }
+    
+    /**
+     * @return True if this CrawlURI has forms
+     */
+    public boolean hasForms() {
+        return containsDataKey(ExtractorHTMLForms.A_HTML_FORM_OBJECTS);
     }
 
     /**

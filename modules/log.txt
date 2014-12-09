@@ -1,0 +1,17 @@
+0      2014-10-10 16:28:37,106 WARN  [main] jetty.Server.warn (Slf4jLog.java:76) - setDebugEnabled not implemented
+3603   2014-10-10 16:28:40,709 WARN  [main] protocol.ResponseProcessCookies.processCookies (ResponseProcessCookies.java:121) - Cookie rejected [foo="bar", version:0, domain:somethingelse.com, path:/, expiry:null] Illegal domain attribute "somethingelse.com". Domain of origin: "example.com"
+3623   2014-10-10 16:28:40,729 WARN  [main] protocol.ResponseProcessCookies.processCookies (ResponseProcessCookies.java:121) - Cookie rejected [foo="bar", version:0, domain:bar.example.com, path:/, expiry:null] Illegal domain attribute "bar.example.com". Domain of origin: "foo.example.com"
+3741   2014-10-10 16:28:40,847 WARN  [main] protocol.ResponseProcessCookies.processCookies (ResponseProcessCookies.java:121) - Cookie rejected [foo="bar", version:0, domain:somethingelse.com, path:/, expiry:null] Illegal domain attribute "somethingelse.com". Domain of origin: "example.com"
+3777   2014-10-10 16:28:40,883 WARN  [main] protocol.ResponseProcessCookies.processCookies (ResponseProcessCookies.java:121) - Cookie rejected [foo="bar", version:0, domain:bar.example.com, path:/, expiry:null] Illegal domain attribute "bar.example.com". Domain of origin: "foo.example.com"
+4221   2014-10-10 16:28:41,327 WARN  [main] jetty.Server.warn (Slf4jLog.java:76) - setDebugEnabled not implemented
+10605  2014-10-10 16:28:47,711 WARN  [1414626692@qtp-1341296555-3] mortbay.log.warn (Slf4jLog.java:89) - EXCEPTION 
+javax.net.ssl.SSLHandshakeException: Received fatal alert: certificate_unknown
+	at sun.security.ssl.Alerts.getSSLException(Alerts.java:192)
+	at sun.security.ssl.Alerts.getSSLException(Alerts.java:154)
+	at sun.security.ssl.SSLSocketImpl.recvAlert(SSLSocketImpl.java:1959)
+	at sun.security.ssl.SSLSocketImpl.readRecord(SSLSocketImpl.java:1077)
+	at sun.security.ssl.SSLSocketImpl.performInitialHandshake(SSLSocketImpl.java:1312)
+	at sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:1339)
+	at sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:1323)
+	at org.mortbay.jetty.security.SslSocketConnector$SslConnection.run(SslSocketConnector.java:708)
+	at org.mortbay.thread.QueuedThreadPool$PoolThread.run(QueuedThreadPool.java:582)
