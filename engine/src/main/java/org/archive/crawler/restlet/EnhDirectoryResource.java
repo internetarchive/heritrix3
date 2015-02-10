@@ -107,6 +107,12 @@ public class EnhDirectoryResource extends DirectoryResource {
                     };
                 }
             }
+        } else {
+            ListIterator<Variant> iter = variants.listIterator(); 
+            while(iter.hasNext()) {
+                Variant v = iter.next();
+                v.setCharacterSet(CharacterSet.UTF_8);
+            }
         }
         
         return variants; 
