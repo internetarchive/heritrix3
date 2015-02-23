@@ -47,7 +47,6 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -501,7 +500,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     protected void copyForwardWriteTagIfDupe(CrawlURI curi) {
         if (IdenticalDigestDecideRule.hasIdenticalDigest(curi)) {
             Map<String,Object>[] history = curi.getFetchHistory();
-            if (history[1].containsKey(A_WRITE_TAG)) {
+            if (history != null && history[1].containsKey(A_WRITE_TAG)) {
                 history[0].put(A_WRITE_TAG, history[1].get(A_WRITE_TAG));
             }
         }
