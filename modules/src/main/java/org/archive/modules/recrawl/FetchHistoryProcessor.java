@@ -110,6 +110,7 @@ public class FetchHistoryProcessor extends Processor {
             // Copy forward the content digest as the current digest is simply of an empty response
             latestFetch.put(A_CONTENT_DIGEST, history[1].get(A_CONTENT_DIGEST));
             // Create revisit profile
+            curi.getAnnotations().add("duplicate:server-not-modified");
             ServerNotModifiedRevisit revisit = new ServerNotModifiedRevisit();
             revisit.setETag((String) latestFetch.get(A_ETAG_HEADER));
             revisit.setLastModified((String) latestFetch.get(A_LAST_MODIFIED_HEADER));
