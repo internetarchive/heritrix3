@@ -392,10 +392,6 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         // TODO: Use other than ANVL (or rename ANVL as NameValue or
         // use RFC822 (commons-httpclient?).
         ANVLRecord headers = new ANVLRecord();
-        if (curi.getContentDigest() != null) {
-            headers.addLabelValue(HEADER_KEY_PAYLOAD_DIGEST,
-                    curi.getContentDigestSchemeString());
-        }
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
 
         URI rid;
@@ -403,6 +399,10 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         if (curi.isRevisit()) {
             rid = writeRevisit(w, timestamp, HTTP_RESPONSE_MIMETYPE, baseid, curi, headers);
         } else {
+            if (curi.getContentDigest() != null) {
+                headers.addLabelValue(HEADER_KEY_PAYLOAD_DIGEST,
+                        curi.getContentDigestSchemeString());
+            }
             // Check for truncated annotation
             String value = null;
             Collection<String> anno = curi.getAnnotations();

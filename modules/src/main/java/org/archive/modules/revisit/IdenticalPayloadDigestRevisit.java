@@ -1,5 +1,6 @@
 package org.archive.modules.revisit;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_REFERS_TO_TARGET_URI;
 
 import java.util.Map;
@@ -32,8 +33,7 @@ public class IdenticalPayloadDigestRevisit extends AbstractProfile {
 	public Map<String, String> getWarcHeaders() {
 		Map<String, String> headers = super.getWarcHeaders();
 		
-		// Written automatically by WarcWriterProcessor for all HTTP responses
-		// headers.put(HEADER_KEY_PAYLOAD_DIGEST, payloadDigest); 
+		headers.put(HEADER_KEY_PAYLOAD_DIGEST, payloadDigest); 
 		
 		if (refersToTargetURI!=null) {
 			headers.put(HEADER_KEY_REFERS_TO_TARGET_URI, refersToTargetURI);

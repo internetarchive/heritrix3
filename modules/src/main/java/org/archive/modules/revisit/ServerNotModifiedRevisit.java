@@ -2,6 +2,7 @@ package org.archive.modules.revisit;
 
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_ETAG;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_LAST_MODIFIED;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 
 import java.util.Map;
 
@@ -12,6 +13,9 @@ public class ServerNotModifiedRevisit extends AbstractProfile {
 	// From HTTP response
 	protected String eTag;
 	protected String lastModified;
+	
+	// Optional. Digest of original capture
+	protected String payloadDigest;
 	
 	/**
 	 * Minimal constructor.
@@ -28,6 +32,10 @@ public class ServerNotModifiedRevisit extends AbstractProfile {
 	@Override
 	public Map<String, String> getWarcHeaders() {
 		Map<String, String> headers = super.getWarcHeaders();
+		
+		if (payloadDigest!=null) {
+			headers.put(HEADER_KEY_PAYLOAD_DIGEST, payloadDigest);
+		}
 		
 		if (eTag!=null) {
 			headers.put(HEADER_KEY_ETAG, eTag);
@@ -57,6 +65,16 @@ public class ServerNotModifiedRevisit extends AbstractProfile {
 
 	public void setLastModified(String lastModified) {
 		this.lastModified = lastModified;
+	}
+
+
+	public String getPayloadDigest() {
+		return payloadDigest;
+	}
+
+
+	public void setPayloadDigest(String payloadDigest) {
+		this.payloadDigest = payloadDigest;
 	}
 
 	
