@@ -730,7 +730,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
         Collection<CrawlURI> links = curi.getOutLinks();
         if (links != null && links.size() > 0) {
             for (CrawlURI link: links) {
-                r.addLabelValue("outlink", link.getURI());
+                r.addLabelValue("outlink", link.getURI()+" "+link.getLastHop()+" "+link.getViaContext());
             }
         }
         
