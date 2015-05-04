@@ -42,8 +42,9 @@ public class KnowledgableExtractorJS extends ExtractorJS {
             Logger.getLogger(KnowledgableExtractorJS.class.getName());
 
     /**
-     * XXX explain
-     * Only wraps the methods we need to work, or it would be very long.
+     * Wraps a {@link CrawlURI}, allowing baseURI to be overridden, without
+     * changing the underlying CrawlURI. The only methods implemented are the
+     * ones necessary for {@link ExtractorJS} to work properly.
      */
     protected static class CustomizedCrawlURIFacade extends CrawlURI {
         private static final long serialVersionUID = 1l;
