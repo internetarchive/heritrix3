@@ -379,14 +379,28 @@ public class UriUtils {
                         "tfoot", "th", "thead", "time", "title", "tr", "track",
                         "tt", "u", "ul", "var", "video", "wbr"));
     }
+    
+    protected static final Set<String> KNOWN_GOOD_FILE_EXTENSIONS = new HashSet<String>();
+    static {
+        /*
+         * Real known use cases for this are .min.js, .min.css, and we've seen
+         * .jpg files with an extra dot in them. Other extensions are included
+         * in the list somewhat arbitrarily.
+         */
+        KNOWN_GOOD_FILE_EXTENSIONS.addAll(Arrays.asList(".jpg", ".js", ".css",
+                ".png", ".gif", ".swf", ".flv", ".mp4", ".mp3", ".jpeg",
+                ".html"));
+    }
 
     protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})*"; // name=value for query strings
-    protected static final String VERY_LIKELY_RELATIVE_URI_PATTERN = 
-            "(?:\\.?/)?"                                    // may start with "/" or "./"
-            + "(?:(?:[\\w-]+|\\.\\.)/)*"                    // may have path/segments/
-            + "(?:[\\w-]+(?:\\.[a-zA-Z0-9]{2,5})?)?"        // may have a filename with or without an extension
-            + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?" // may have a ?query=string
-            + "(?:#[\\w-]+)?";                              // may have a #fragment
+    // group(1) filename
+    // group(2) filename extension with leading '.'
+    protected static final String LIKELY_RELATIVE_URI_PATTERN = 
+            "(?:\\.?/)?"                                         // may start with "/" or "./"
+            + "(?:(?:[\\w-]+|\\.\\.)/)*"                         // may have path/segments/
+            + "([\\w-]+(?:\\.[\\w-]+)?(\\.[a-zA-Z0-9]{2,5})?)?"  // may have a filename with or without an extension
+            + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?"      // may have a ?query=string
+            + "(?:#[\\w-]+)?";                                   // may have a #fragment
 
     public static boolean isVeryLikelyUri(CharSequence candidate) {
         // must have a . or /
@@ -405,15 +419,25 @@ public class UriUtils {
         }
         
         // relative or server-relative uri
-        if (!TextUtils.matches(VERY_LIKELY_RELATIVE_URI_PATTERN, candidate)) {
+        Matcher matcher = TextUtils.getMatcher(LIKELY_RELATIVE_URI_PATTERN, candidate);
+        if (!matcher.matches()) {
             return false;
         }
         
         /*
          * Remaining tests discard stuff that the
-         * VERY_LIKELY_RELATIVE_URI_PATTERN can't catch
+         * LIKELY_RELATIVE_URI_PATTERN can't catch
          */
-        
+
+        // if filename contains two dots, it must end with a known good extension
+        String filename = matcher.group(1);
+        String extension = matcher.group(2);
+        if (filename != null && extension != null
+                && filename.indexOf('.') != filename.lastIndexOf('.')
+                && !KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
+            return false;
+        }
+
         // text or application mimetype
         if (TextUtils.matches("(?:text|application)/[^/]+", candidate)) {
             return false;
