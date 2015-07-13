@@ -630,6 +630,7 @@ http://example.example/example
          <bean id="seedsReport" class="org.archive.crawler.reporting.SeedsReport" />
          <bean id="hostsReport" class="org.archive.crawler.reporting.HostsReport">
      		<property name="maxSortSize" value="-1" />
+     		<property name="suppressEmptyHosts" value="false" />
          </bean>
          <bean id="sourceTagsReport" class="org.archive.crawler.reporting.SourceTagsReport" />
          <bean id="mimetypesReport" class="org.archive.crawler.reporting.MimetypesReport" />
