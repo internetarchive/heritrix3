@@ -628,7 +628,9 @@ http://example.example/example
         <list>
          <bean id="crawlSummaryReport" class="org.archive.crawler.reporting.CrawlSummaryReport" />
          <bean id="seedsReport" class="org.archive.crawler.reporting.SeedsReport" />
-         <bean id="hostsReport" class="org.archive.crawler.reporting.HostsReport" />
+         <bean id="hostsReport" class="org.archive.crawler.reporting.HostsReport">
+     		<property name="maxSortSize" value="10" />
+         </bean>
          <bean id="sourceTagsReport" class="org.archive.crawler.reporting.SourceTagsReport" />
          <bean id="mimetypesReport" class="org.archive.crawler.reporting.MimetypesReport" />
          <bean id="responseCodeReport" class="org.archive.crawler.reporting.ResponseCodeReport" />

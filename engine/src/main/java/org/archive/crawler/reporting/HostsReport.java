@@ -20,7 +20,7 @@
 package org.archive.crawler.reporting;
 
 import java.io.PrintWriter;
-import java.util.Map;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,16 +36,40 @@ public class HostsReport extends Report {
     
     private final static Logger logger =
             Logger.getLogger(HostsReport.class.getName());
+    
+    int maxSortSize = -1;
+    public int getMaxSortSize() {
+    	return maxSortSize;
+    }
+    /**
+     * The maximum number of hosts allowed in a report while still sorting it. If the number of hosts exceeds
+     * this value, the generated report will not be sorted. A negative signifies no limit (always sort). 
+     * A value of zero means never sort. Default -1, always sort. This matches the behavior before this 
+     * parameter was introduced.
+     * 
+     * This value can not be overridden by a sheet.
+     * 
+     * @param maxSortSize
+     */
+    public void setMaxSortSize(int maxSortSize) {
+    	this.maxSortSize = maxSortSize;
+    }
 
     @Override
     public void write(final PrintWriter writer, StatisticsTracker stats) {
-        // TODO: only perform sorting on manageable number of hosts
-        DisposableStoredSortedMap<Long,String> hd = stats.calcReverseSortedHostsDistribution();
+    	Collection<String> keys = null;
+    	DisposableStoredSortedMap<Long, String> hd = null;
+    	if (maxSortSize<0 || maxSortSize>stats.serverCache.hostKeys().size()) {
+    		hd = stats.calcReverseSortedHostsDistribution();
+        	keys = hd.values();
+        } else {
+        	keys = stats.serverCache.hostKeys();
+        }
         writer.print("[#urls] [#bytes] [host] [#robots] [#remaining] [#novel-urls] [#novel-bytes] [#dup-by-hash-urls] [#dup-by-hash-bytes] [#not-modified-urls] [#not-modified-bytes]\n"); 
-        for (Map.Entry<Long,String> entry : hd.entrySet()) {
+        for (String key : keys) {
             // key is -count, value is hostname
             try {
-                CrawlHost host = stats.serverCache.getHostFor(entry.getValue());
+                CrawlHost host = stats.serverCache.getHostFor(key);
                 writeReportLine(writer,
                         host.getSubstats().getFetchSuccesses(),
                         host.getSubstats().getTotalBytes(),
@@ -59,10 +83,12 @@ public class HostsReport extends Report {
                         host.getSubstats().getNotModifiedUrls(),
                         host.getSubstats().getNotModifiedBytes());
             } catch (Exception e) {
-                logger.log(Level.WARNING, "unable to tally host stats for " + entry.getValue(), e);
+                logger.log(Level.WARNING, "unable to tally host stats for " + key, e);
             }
         }
-        hd.dispose();
+        if (hd!=null) {
+        	hd.dispose();
+        }
     }
 
     protected void writeReportLine(PrintWriter writer, Object  ... fields) {
