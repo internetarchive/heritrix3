@@ -50,7 +50,6 @@ import org.archive.crawler.event.StatSnapshotEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.util.CrawledBytesHistotable;
-import org.archive.crawler.util.TopNSet;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -139,7 +138,7 @@ public class StatisticsTracker
         Checkpointable,
         BeanNameAware {
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = 5L;
+    private static final long serialVersionUID = 6L;
 
     protected SeedModule seeds;
     public SeedModule getSeeds() {
@@ -289,11 +288,6 @@ public class StatisticsTracker
     protected ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> sourceHostDistribution = 
         new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); 
 
-    /* Keep track of 'top' hosts for live reports */
-    protected TopNSet hostsDistributionTop;
-    protected TopNSet hostsBytesTop;
-    protected TopNSet hostsLastFinishedTop;
-    
     /**
      * Record of seeds and latest results
      */
@@ -350,10 +344,6 @@ public class StatisticsTracker
             this.processedSeedsRecords = bdb.getObjectCache("processedSeedsRecords",
                     isRecover, SeedRecord.class);
             
-            this.hostsDistributionTop = new TopNSet(getLiveHostReportSize());
-            this.hostsBytesTop = new TopNSet(getLiveHostReportSize());
-            this.hostsLastFinishedTop = new TopNSet(getLiveHostReportSize());
-            
             if(isRecover) {
                 JSONObject json = recoveryCheckpoint.loadJson(beanName);
                 
@@ -362,19 +352,6 @@ public class StatisticsTracker
                 crawlTotalPausedTime = json.getLong("crawlTotalPausedTime");
                 crawlPauseStarted = json.getLong("crawlPauseStarted");
                 tallyCurrentPause();
-                
-                JSONUtils.putAllLongs(
-                        hostsDistributionTop.getTopSet(),
-                        json.getJSONObject("hostsDistributionTop"));
-                hostsDistributionTop.updateBounds();
-                JSONUtils.putAllLongs(
-                        hostsBytesTop.getTopSet(),
-                        json.getJSONObject("hostsBytesTop"));
-                hostsBytesTop.updateBounds();
-                JSONUtils.putAllLongs(
-                        hostsLastFinishedTop.getTopSet(),
-                        json.getJSONObject("hostsLastFinishedTop"));
-                hostsLastFinishedTop.updateBounds();
                 
                 JSONUtils.putAllAtomicLongs(
                     mimeTypeDistribution,
@@ -758,11 +735,7 @@ public class StatisticsTracker
         incrementMapCount(mimeTypeDistribution, mime);
         incrementMapCount(mimeTypeBytes, mime, curi.getContentSize());
 
-        // Save hosts stats.
         ServerCache sc = serverCache;
-        saveHostStats(sc.getHostFor(curi.getUURI()).getHostName(),
-                curi.getContentSize());
-        
         if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
         	saveSourceStats((String)curi.getData().get(A_SOURCE_TAG),
                         sc.getHostFor(curi.getUURI()).
@@ -783,22 +756,6 @@ public class StatisticsTracker
 
     }
     
-    /**
-     * Update some running-stats based on a URI success
-     * 
-     * @param hostname
-     * @param size
-     */
-    protected void saveHostStats(String hostname, long size) {
-        // TODO: consider moving 'top' accounting elsewhere, such 
-        // as the frontier or ServerCache itself
-        
-        CrawlHost host = serverCache.getHostFor(hostname); 
-        hostsDistributionTop.update(hostname, host.getSubstats().getFetchSuccesses()); 
-        hostsBytesTop.update(hostname, host.getSubstats().getSuccessBytes());
-        hostsLastFinishedTop.update(hostname, host.getSubstats().getLastSuccessTime());
-    }
-
     public void crawledURINeedRetry(CrawlURI curi) {
         handleSeed(curi,"Failed to crawl seed, will retry");
     }
@@ -1074,10 +1031,6 @@ public class StatisticsTracker
             json.put("crawlPauseStarted",virtualCrawlPauseStarted);
             json.put("crawlTotalPausedTime",crawlTotalPausedTime);
             
-            json.put("hostsDistributionTop", hostsDistributionTop.getTopSet());
-            json.put("hostsBytesTop", hostsBytesTop.getTopSet());
-            json.put("hostsLastFinishedTop", hostsLastFinishedTop.getTopSet());
-
             json.put("mimeTypeDistribution", mimeTypeDistribution);
             json.put("mimeTypeBytes", mimeTypeBytes);
             json.put("statusCodeDistribution", statusCodeDistribution);
