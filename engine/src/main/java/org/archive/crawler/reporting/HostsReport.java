@@ -66,7 +66,7 @@ public class HostsReport extends Report {
      * among others.
      * Default behavior is to include these non-crawled hosts.
      * 
-     * This value can no t be overridden by a sheet. It may be safely edited at runtime.
+     * This value can not be overridden by a sheet. It may be safely edited at runtime.
      *  
      * @param suppressEmptyHosts 
      */
