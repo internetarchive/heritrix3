@@ -124,6 +124,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                             // start up again
                             try {
                                 Consumer consumer = new UrlConsumer(channel());
+                                channel().exchangeDeclare(getExchange(), "direct", true);
                                 channel().queueDeclare(getQueueName(), false, false, true, null);
                                 channel().queueBind(getQueueName(), getExchange(), getQueueName());
                                 channel().basicConsume(getQueueName(), false, consumer);
