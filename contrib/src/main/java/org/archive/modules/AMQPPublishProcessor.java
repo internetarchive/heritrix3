@@ -50,7 +50,7 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
         routingKey = "urls";
     }
 
-    protected String clientId = null;
+    protected String clientId = "requests";
     public String getClientId() {
         return clientId;
     }
