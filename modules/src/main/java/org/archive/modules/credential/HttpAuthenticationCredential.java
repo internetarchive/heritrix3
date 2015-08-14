@@ -127,9 +127,8 @@ public class HttpAuthenticationCredential extends Credential {
             for (Iterator<Credential> i = rfc2617Credentials.iterator(); i.hasNext();) {
                 HttpAuthenticationCredential c = (HttpAuthenticationCredential)i.next();
 
-                //if no realm specified, use the one returned by the server
+                // empty realm field means the credential can be used for any realm specified by server
                 if (c.getRealm() == null || c.getRealm().isEmpty()) {
-                    c.setRealm(realm);
                     result = c;
                     break;
                 }
