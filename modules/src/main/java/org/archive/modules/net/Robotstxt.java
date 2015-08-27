@@ -115,7 +115,7 @@ public class Robotstxt implements Serializable {
                     read = read.substring(0, commentIndex);
                 }
                 read = read.trim();
-                if (read.matches("(?i)^User-agent:.*")) {
+                if (read.matches("(?i).*User-agent:.*")) {
                     String ua = read.substring(11).trim().toLowerCase();
                     if (current == null || hasDirectivesYet ) {
                         // only create new rules-list if necessary
