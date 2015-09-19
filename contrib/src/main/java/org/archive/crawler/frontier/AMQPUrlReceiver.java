@@ -108,7 +108,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     }
     
     /** Should be queues be marked as durable? */
-    private boolean durable = true;
+    private boolean durable = false;
     public boolean isDurable() {
         return durable;
     }
@@ -117,7 +117,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     }
 
     /** Should be queues be marked as auto-delete? */
-    private boolean autoDelete = false;
+    private boolean autoDelete = true;
     public boolean isAutoDelete() {
         return autoDelete;
     }
@@ -129,8 +129,10 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
     private boolean pauseConsumer = true;
 
+    private boolean isConsuming = false;
+
     private class StarterRestarter extends Thread {
-        private String consumerTag;
+        private String consumerTag = null;
 
         public StarterRestarter(String name) {
             super(name);
@@ -141,8 +143,9 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             while (!Thread.interrupted()) {
                 try {
                     lock.lockInterruptibly();
+                    logger.finest("Checking isConsuming=" + isConsuming + " and pauseConsumer=" + pauseConsumer);
                     try {
-                        if (!isRunning && !pauseConsumer) {
+                        if (!isConsuming && !pauseConsumer) {
                             // start up again
                             try {
                                 Consumer consumer = new UrlConsumer(channel());
@@ -151,22 +154,28 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                                         false, autoDelete, null);
                                 channel().queueBind(getQueueName(), getExchange(), getQueueName());
                                 consumerTag = channel().basicConsume(getQueueName(), false, consumer);
-                                isRunning = true;
-                                logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
+                                isConsuming = true;
+                                logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + consumerTag);
                             } catch (IOException e) {
-                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 10 seconds)", e);
                             }
                         }
 
-                        if (isRunning && pauseConsumer) {
+                        if (isConsuming && pauseConsumer) {
                             try {
-                                channel().basicCancel(consumerTag);
+                                if (consumerTag != null) {
+                                    logger.info("Attempting to cancel URLConsumer with consumerTag=" + consumerTag);
+                                    channel().basicCancel(consumerTag);
+                                    consumerTag = null;
+                                    isConsuming = false;
+                                    logger.info("Cancelled URLConsumer.");
+                                }
                             } catch (IOException e) {
-                                logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 30 seconds)", e);
+                                logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 10 seconds)", e);
                             }
                         }
 
-                        Thread.sleep(30000);
+                        Thread.sleep(10 * 1000);
                     } finally {
                         lock.unlock();
                     }
@@ -327,7 +336,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             } else {
                 logger.info("amqp channel/connection shut down consumerTag=" + consumerTag);
             }
-            isRunning = false;
+            isConsuming = false;
         }
 
         // {
@@ -386,7 +395,19 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
             
-            //curi.setForceFetch(true);
+            // optional forceFetch instruction:
+            if (jo.has("forceFetch")) {
+                boolean forceFetch = jo.getBoolean("forceFetch");
+                logger.info("Setting forceFetch=" + forceFetch);
+                curi.setForceFetch(forceFetch);
+            }
+
+            // optional isSeed instruction:
+            if (jo.has("isSeed")) {
+                boolean isSeed = jo.getBoolean("isSeed");
+                logger.info("Setting isSeed=" + isSeed);
+                curi.setSeed(isSeed);
+            }
 
             curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
 
@@ -398,10 +419,12 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
+            logger.info("Requesting a pause of the URLConsumer...");
             this.pauseConsumer = true;
             break;
 
-        case RUNNING: case EMPTY: case PREPARING:
+        case RUNNING:
+            logger.info("Requesting restart of the URLConsumer...");
             this.pauseConsumer = false;
             if (starterRestarter == null || !starterRestarter.isAlive()) {
                 start();
