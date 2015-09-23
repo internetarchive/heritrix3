@@ -315,7 +315,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     logger.log(Level.SEVERE,
                             "problem creating CrawlURI from json received via AMQP "
                                     + decodedBody, e);
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     logger.log(Level.SEVERE,
                             "Unanticipated problem creating CrawlURI from json received via AMQP "
                                     + decodedBody, e);
