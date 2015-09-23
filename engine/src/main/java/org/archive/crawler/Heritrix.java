@@ -55,13 +55,12 @@ import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
 import org.archive.crawler.restlet.RateLimitGuard;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.KeyTool;
 import org.restlet.Component;
 import org.restlet.Guard;
 import org.restlet.Server;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Protocol;
-
-import sun.security.tools.KeyTool;
 
 
 /**

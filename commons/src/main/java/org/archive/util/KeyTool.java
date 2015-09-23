@@ -1,0 +1,32 @@
+package org.archive.util;
+
+import java.lang.reflect.Method;
+
+/**
+ * Wrapper for "keytool" utility main class. Loads class dynamically, trying
+ * both the old java and new class names.
+ * @see http://kris-sigur.blogspot.com/2014/10/heritrix-java-8-and-sunsecuritytoolskey.html
+ */
+public class KeyTool {
+	public static void main(String[] args) {
+		try {
+			Class<?> cl;
+			try {
+				// java 6 and 7
+				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.Keytool");
+			} catch (ClassNotFoundException e) {
+				// java 8
+				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.keytool.Main");
+			}
+			Method main = cl.getMethod("main", new String[0].getClass());
+			main.invoke(null, (Object) args);
+		} catch (Exception e) {
+			if (e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			} else {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+}
