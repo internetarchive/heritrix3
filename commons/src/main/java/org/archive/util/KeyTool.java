@@ -31,7 +31,7 @@ public class KeyTool {
 			Class<?> cl;
 			try {
 				// java 6 and 7
-				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.Keytool");
+				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.KeyTool");
 			} catch (ClassNotFoundException e) {
 				// java 8
 				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.keytool.Main");
