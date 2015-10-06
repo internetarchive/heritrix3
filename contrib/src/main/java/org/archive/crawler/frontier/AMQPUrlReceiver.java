@@ -198,6 +198,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 starterRestarter = new StarterRestarter(AMQPUrlReceiver.class.getSimpleName() + "-starter-restarter");
                 starterRestarter.start();
             }
+            isRunning = true;
         } finally {
             lock.unlock();
         }
