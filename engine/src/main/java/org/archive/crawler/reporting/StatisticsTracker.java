@@ -416,7 +416,11 @@ public class StatisticsTracker
      *
      */
     public void run() {
-        progressStatisticsEvent();
+        try {
+            progressStatisticsEvent();
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, "unexpected exception from progressStatisticsEvent()", e);
+        }
     }
 
     /**
