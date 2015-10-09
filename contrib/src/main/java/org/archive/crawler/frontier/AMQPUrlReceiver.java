@@ -171,7 +171,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
                     Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
-
                     return;
                 }
             }
@@ -429,13 +428,17 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
-            logger.info("Requesting a pause of the URLConsumer...");
-            this.pauseConsumer = true;
+            if (!this.pauseConsumer) {
+                logger.info("Requesting a pause of the URLConsumer...");
+                this.pauseConsumer = true;
+            }
             break;
 
         case RUNNING:
-            logger.info("Requesting unpause of the URLConsumer...");
-            this.pauseConsumer = false;
+            if (this.pauseConsumer) {
+                logger.info("Requesting unpause of the URLConsumer...");
+                this.pauseConsumer = false;
+            }
             break;
 
         default:
