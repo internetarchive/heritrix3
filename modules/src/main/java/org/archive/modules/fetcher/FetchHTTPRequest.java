@@ -25,7 +25,6 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -46,7 +45,6 @@ import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
@@ -270,38 +268,6 @@ class FetchHTTPRequest {
         if (uriCustomHeaders != null) {
             for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
                 request.setHeader(h.getKey(), h.getValue());
-            }
-        }
-        
-        truncateCookieHeaderSizeIfExists();
-    }
-    
-    protected void truncateCookieHeaderSizeIfExists() {
-        Header headers [] = null;
-        
-        if ((headers = request.getHeaders("Cookie")) != null) {
-            for (Header header : headers) {
-                try {
-                    if (header.getValue() != null && header.getValue().getBytes("UTF-8").length > 204650) {
-                            
-                        byte [] valueBytes = header.getValue().getBytes("UTF-8");
-                        byte [] truncatedValueBytes = new byte[204650];
-                        
-                        System.arraycopy(valueBytes, 0, truncatedValueBytes, 0, 204650 - 1);
-                        
-                        String newValue = truncatedValueBytes.toString();
-                        String reversedNewValue = new StringBuilder(newValue).reverse().toString();
-                        
-                        int indexOfSemiColon = 0;
-                        if ((indexOfSemiColon = reversedNewValue.indexOf(";")) > 0) {
-                            reversedNewValue = reversedNewValue.substring(indexOfSemiColon);
-                        }
-                        
-                        request.setHeader("Cookie", new StringBuilder(reversedNewValue).reverse().toString());
-                    }
-                }
-                catch (UnsupportedEncodingException uee) {
-                }
             }
         }
     }
