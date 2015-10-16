@@ -163,6 +163,25 @@ public class CookieStoreTest extends TmpDirTestCase {
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
+    
+    public void testMaxCookieDomain() throws IOException {
+        bdbCookieStore().clear();
+
+        for (int i = 1; i <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN; ++i) {
+            BasicClientCookie cookie = new BasicClientCookie("name" + i, "value" + i);
+            bdbCookieStore().addCookie(cookie);
+            
+            assertCookieStoreCountEquals(bdbCookieStore, i);
+        }
+        
+        BasicClientCookie cookie = new BasicClientCookie("nametoomany1", "valuetoomany1");
+        bdbCookieStore().addCookie(cookie);
+        assertCookieStoreCountEquals(bdbCookieStore, BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
+        
+        cookie = new BasicClientCookie("nametoomany2", "valuetoomany2");
+        bdbCookieStore().addCookie(cookie);
+        assertCookieStoreCountEquals(bdbCookieStore, BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
+    }
 
     public void testPaths() throws IOException {
         bdbCookieStore().clear();
@@ -318,6 +337,10 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieListsEquivalent(bdbCookieList, basicCookieStore().getCookies());
     }
 
+    protected void assertCookieStoreCountEquals(BdbCookieStore bdb, int count) {
+        assertEquals(bdb.getCookies().size(), count);
+    }
+    
     protected void assertCookieListsEquivalent(List<Cookie> list1,
             List<Cookie> list2) {
         Comparator<Cookie> comparator = new Comparator<Cookie>() {

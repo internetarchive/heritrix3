@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.collections.collection.CompositeCollection;
 import org.apache.http.client.CookieStore;
@@ -59,6 +61,10 @@ import com.sleepycat.je.DatabaseException;
 public class BdbCookieStore extends AbstractCookieStore implements
         FetchHTTPCookieStore, CookieStore {
 
+    public static final int MAX_COOKIES_FOR_DOMAIN = 50;
+    
+    private static Logger logger = Logger.getLogger(BdbCookieStore.class.getName());
+    
     /**
      * A {@link List} implementation that wraps a {@link Collection}. Needed
      * because httpclient requires {@code List<Cookie>}.
@@ -130,6 +136,17 @@ public class BdbCookieStore extends AbstractCookieStore implements
     }
 
     public void addCookie(Cookie cookie) {
+        
+        if (isCookieCountMaxedForDomain(cookie.getDomain())) {
+            logger.log(
+                    Level.FINEST,
+                    "Maximum number of cookies reached for domain "
+                            + cookie.getDomain() + ". Will not add new cookie "
+                            + cookie.getName() + " with value "
+                            + cookie.getValue());
+            return;
+        }
+        
         byte[] key;
         try {
             key = sortableKey(cookie).getBytes("UTF-8");
@@ -142,6 +159,12 @@ public class BdbCookieStore extends AbstractCookieStore implements
         } else {
             cookies.remove(key);
         }
+    }
+    
+    protected boolean isCookieCountMaxedForDomain(String domain) {
+        Collection<Cookie> subset = hostSubset(normalizeHost(domain));
+        
+        return (subset != null && subset.size() >= MAX_COOKIES_FOR_DOMAIN);
     }
 
     protected Collection<Cookie> hostSubset(String host) { 
