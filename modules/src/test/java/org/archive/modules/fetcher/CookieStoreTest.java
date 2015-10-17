@@ -24,8 +24,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -332,9 +334,21 @@ public class CookieStoreTest extends TmpDirTestCase {
             threads[i].join();
         }
 
-        List<Cookie> bdbCookieList = bdbCookieStore().getCookies();
-        assertTrue(bdbCookieList.size() > 3000);
-        assertCookieListsEquivalent(bdbCookieList, basicCookieStore().getCookies());
+        ArrayList<Cookie> bdbCookieArrayList = new ArrayList<Cookie>(bdbCookieStore().getCookies());
+        
+        Map<String, Integer> domainCounts = new HashMap<String, Integer>();
+        for (Cookie cookie : bdbCookieArrayList) {
+            if (domainCounts.get(cookie.getDomain()) == null) {
+                domainCounts.put(cookie.getDomain(), 1);
+            }
+            else {
+                domainCounts.put(cookie.getDomain(), domainCounts.get(cookie.getDomain()) + 1);
+            }
+        }
+        
+        for (String domain: domainCounts.keySet()) {
+            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
+        }
     }
 
     protected void assertCookieStoreCountEquals(BdbCookieStore bdb, int count) {
