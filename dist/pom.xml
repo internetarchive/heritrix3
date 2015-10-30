@@ -7,7 +7,7 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.archive.heritrix</groupId>
-	<artifactId>heritrix</artifactId>
+	<artifactId>heritrix-dist</artifactId>
 	<packaging>pom</packaging>
 	<name>Heritrix 3 (distribution bundles)</name>
 
