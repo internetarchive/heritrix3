@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import org.apache.commons.collections.collection.CompositeCollection;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieRestrictionViolationException;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,9 +62,8 @@ import com.sleepycat.je.DatabaseException;
 public class BdbCookieStore extends AbstractCookieStore implements
         FetchHTTPCookieStore, CookieStore {
 
-    public static final int MAX_COOKIES_FOR_DOMAIN = 50;
-    
-    private static Logger logger = Logger.getLogger(BdbCookieStore.class.getName());
+    protected final Logger logger =
+            Logger.getLogger(BdbCookieStore.class.getName());
     
     /**
      * A {@link List} implementation that wraps a {@link Collection}. Needed
@@ -136,37 +136,28 @@ public class BdbCookieStore extends AbstractCookieStore implements
     }
 
     public void addCookie(Cookie cookie) {
-        synchronized (cookies) {
-            if (isCookieCountMaxedForDomain(cookie.getDomain())) {
-                logger.log(
-                        Level.FINEST,
-                        "Maximum number of cookies reached for domain "
-                                + cookie.getDomain()
-                                + ". Will not add new cookie "
-                                + cookie.getName() + " with value "
-                                + cookie.getValue());
-                return;
-            }
-
-            byte[] key;
-            try {
-                key = sortableKey(cookie).getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // impossible
-            }
-
-            if (!cookie.isExpired(new Date())) {
-                cookies.put(key, cookie);
-            } else {
-                cookies.remove(key);
-            }
+        if (isCookieCountMaxedForDomain(cookie.getDomain())) {
+            logger.log(
+                    Level.FINEST,
+                    "Maximum number of cookies reached for domain "
+                            + cookie.getDomain() + ". Will not add new cookie "
+                            + cookie.getName() + " with value "
+                            + cookie.getValue());
+            return;
         }
-    }
-    
-    protected boolean isCookieCountMaxedForDomain(String domain) {
-        Collection<Cookie> subset = hostSubset(normalizeHost(domain));
-        
-        return (subset != null && subset.size() >= MAX_COOKIES_FOR_DOMAIN);
+
+        byte[] key;
+        try {
+            key = sortableKey(cookie).getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // impossible
+        }
+
+        if (!cookie.isExpired(new Date())) {
+            cookies.put(key, cookie);
+        } else {
+            cookies.remove(key);
+        }
     }
 
     protected Collection<Cookie> hostSubset(String host) { 
@@ -183,7 +174,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
             throw new RuntimeException(e); // impossible
         }
     }
-
+    
     /**
      * Returns a {@link LimitedCookieStoreFacade} whose
      * {@link LimitedCookieStoreFacade#getCookies()} method returns only cookies

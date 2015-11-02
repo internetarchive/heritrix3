@@ -50,6 +50,8 @@ import org.springframework.context.Lifecycle;
 abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
 
+    public static final int MAX_COOKIES_FOR_DOMAIN = 50;
+    
     protected final Logger logger =
             Logger.getLogger(AbstractCookieStore.class.getName());
 
@@ -276,7 +278,13 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         String normalizedHost = normalizeHost(curi.getUURI().getHost());
         return cookieStoreFor(normalizedHost);
     }
-
+    
+    public boolean isCookieCountMaxedForDomain(String domain) {
+        CookieStore cookieStore = cookieStoreFor(normalizeHost(domain));
+        
+        return (cookieStore != null && cookieStore.getCookies().size() >= MAX_COOKIES_FOR_DOMAIN);
+    }
+    
     abstract public void addCookie(Cookie cookie);
     abstract public void clear();
     abstract protected void prepare();

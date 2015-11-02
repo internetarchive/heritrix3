@@ -165,7 +165,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         basicCookieStore().addCookie(cookie);
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
-    
+
     public void testMaxCookieDomain() throws IOException {
         bdbCookieStore().clear();
 
@@ -184,7 +184,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().addCookie(cookie);
         assertCookieStoreCountEquals(bdbCookieStore, BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
     }
-
+    
     public void testPaths() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -297,7 +297,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieListsEquivalent(cookiesBefore, cookiesAfter);
     }
 
-    public void testConcurrentLoad() throws IOException, InterruptedException {
+    public void testConcurrentLoadNoDomainCookieLimitBreach() throws IOException, InterruptedException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
         final Random rand = new Random();
@@ -308,7 +308,7 @@ public class CookieStoreTest extends TmpDirTestCase {
                 try {
                     while (!Thread.interrupted()) {
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-                        cookie.setDomain("d" + rand.nextInt(10) + ".example.com");
+                        cookie.setDomain("d" + rand.nextInt() + ".example.com");
                         bdbCookieStore().addCookie(cookie);
                         basicCookieStore().addCookie(cookie);
                     }
@@ -334,8 +334,49 @@ public class CookieStoreTest extends TmpDirTestCase {
             threads[i].join();
         }
 
+        List<Cookie> bdbCookieList = bdbCookieStore().getCookies();
+        assertTrue(bdbCookieList.size() > 3000);
+        assertCookieListsEquivalent(bdbCookieList, basicCookieStore().getCookies());        
+    }
+    
+    public void testConcurrentLoad() throws IOException, InterruptedException {
+        bdbCookieStore().clear();
+        basicCookieStore().clear();
+        final Random rand = new Random();
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (!Thread.interrupted()) {
+                        BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                        cookie.setDomain("d" + rand.nextInt(20) + ".example.com");
+                        bdbCookieStore().addCookie(cookie);
+                        basicCookieStore().addCookie(cookie);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        Thread[] threads = new Thread[200];
+        for (int i = 0; i < threads.length; i++) {
+            threads[i] = new Thread(runnable);
+            threads[i].setName("cookie-load-test-" + i);
+            threads[i].start();
+        }
+
+        Thread.sleep(1000);
+
+        for (int i = 0; i < threads.length; i++) {
+            threads[i].interrupt();
+        }
+        for (int i = 0; i < threads.length; i++) {
+            threads[i].join();
+        }
+
         ArrayList<Cookie> bdbCookieArrayList = new ArrayList<Cookie>(bdbCookieStore().getCookies());
-        
         Map<String, Integer> domainCounts = new HashMap<String, Integer>();
         for (Cookie cookie : bdbCookieArrayList) {
             if (domainCounts.get(cookie.getDomain()) == null) {
@@ -347,14 +388,14 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
         
         for (String domain: domainCounts.keySet()) {
-            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
-        }
-    }
-
-    protected void assertCookieStoreCountEquals(BdbCookieStore bdb, int count) {
-        assertEquals(bdb.getCookies().size(), count);
+            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN + 25);
+        }        
     }
     
+    protected void assertCookieStoreCountEquals(BdbCookieStore bdb, int count) {
+        assertEquals(bdb.getCookies().size(), count);
+    }    
+
     protected void assertCookieListsEquivalent(List<Cookie> list1,
             List<Cookie> list2) {
         Comparator<Cookie> comparator = new Comparator<Cookie>() {
