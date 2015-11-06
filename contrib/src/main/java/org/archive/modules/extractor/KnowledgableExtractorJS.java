@@ -108,7 +108,25 @@ public class KnowledgableExtractorJS extends ExtractorJS {
             }
         }
         TextUtils.recycleMatcher(m);
+        
+        //extract youtube videoid from youtube javascript embed and create link for watch page
+        m = TextUtils.getMatcher("new[\\s]+YT\\.Player\\('ytplayer',[\\s]+\\{[\\n\\s]+videoId:[\\s]+'([\\w]+)',", cs);
+        
+        if (m.find()) {
+            String videoId = m.group(1);
 
+            try {
+                UURI uuri = UURIFactory.getInstance("https://www.youtube.com/watch?v=" + videoId);
+                
+                CrawlURI link = curi.createCrawlURI(uuri, LinkContext.INFERRED_MISC, Hop.INFERRED);
+                curi.getOutLinks().add(link);
+            } catch (URIException e) {
+                LOGGER.log(Level.FINE, "bad URI", e);
+            }
+        }
+        
+        TextUtils.recycleMatcher(m);
+        
         return super.considerStrings(ext, baseUri, cs, handlingJSFile);
     }
 
