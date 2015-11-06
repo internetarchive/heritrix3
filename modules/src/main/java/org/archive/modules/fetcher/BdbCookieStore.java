@@ -26,13 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.collections.collection.CompositeCollection;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.cookie.CookieRestrictionViolationException;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,9 +59,6 @@ import com.sleepycat.je.DatabaseException;
 public class BdbCookieStore extends AbstractCookieStore implements
         FetchHTTPCookieStore, CookieStore {
 
-    protected final Logger logger =
-            Logger.getLogger(BdbCookieStore.class.getName());
-    
     /**
      * A {@link List} implementation that wraps a {@link Collection}. Needed
      * because httpclient requires {@code List<Cookie>}.
