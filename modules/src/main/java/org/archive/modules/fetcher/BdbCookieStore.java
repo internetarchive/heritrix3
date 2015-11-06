@@ -135,17 +135,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
         }
     }
 
-    public void addCookie(Cookie cookie) {
-        if (isCookieCountMaxedForDomain(cookie.getDomain())) {
-            logger.log(
-                    Level.FINEST,
-                    "Maximum number of cookies reached for domain "
-                            + cookie.getDomain() + ". Will not add new cookie "
-                            + cookie.getName() + " with value "
-                            + cookie.getValue());
-            return;
-        }
-
+    public void addCookieImpl(Cookie cookie) {
         byte[] key;
         try {
             key = sortableKey(cookie).getBytes("UTF-8");

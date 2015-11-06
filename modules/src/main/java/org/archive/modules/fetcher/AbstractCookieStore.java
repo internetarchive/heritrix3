@@ -284,8 +284,22 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         
         return (cookieStore != null && cookieStore.getCookies().size() >= MAX_COOKIES_FOR_DOMAIN);
     }
-    
-    abstract public void addCookie(Cookie cookie);
+
+    public void addCookie(Cookie cookie) {
+        if (isCookieCountMaxedForDomain(cookie.getDomain())) {
+            logger.log(
+                    Level.FINEST,
+                    "Maximum number of cookies reached for domain "
+                            + cookie.getDomain() + ". Will not add new cookie "
+                            + cookie.getName() + " with value "
+                            + cookie.getValue());
+            return;
+        }
+
+        addCookieImpl(cookie);
+    }
+
+    abstract protected void addCookieImpl(Cookie cookie);
     abstract public void clear();
     abstract protected void prepare();
 }
