@@ -73,7 +73,7 @@ public class SimpleCookieStore extends AbstractCookieStore implements CookieStor
     }
 
     @Override
-    public void addCookie(Cookie cookie) {
+    public void addCookieImpl(Cookie cookie) {
         cookies.addCookie(cookie);
     }
 
