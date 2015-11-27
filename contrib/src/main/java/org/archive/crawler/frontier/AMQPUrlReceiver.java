@@ -37,6 +37,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.json.JSONArray;
@@ -75,6 +76,17 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     @Autowired
     public void setFrontier(Frontier frontier) {
         this.frontier = frontier;
+    }
+
+    protected SeedModule seeds;
+
+    public SeedModule getSeeds() {
+        return this.seeds;
+    }
+
+    @Autowired
+    public void setSeeds(SeedModule seeds) {
+        this.seeds = seeds;
     }
 
     protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
@@ -303,8 +315,13 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 CrawlURI curi;
                 try {
                     curi = makeCrawlUri(jo);
-                    // bypasses scoping (unless rechecking is configured)
-                    getFrontier().schedule(curi);
+                    // Declare as a new seed if it is the case:
+                    if (curi.isSeed()) {
+                        getSeeds().addSeed(curi); // Also triggers scheduling.
+                    } else {
+                        // bypasses scoping (unless rechecking is configured)
+                        getFrontier().schedule(curi);
+                    }
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine("scheduled " + curi);
                     }
@@ -399,15 +416,24 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             // optional forceFetch instruction:
             if (jo.has("forceFetch")) {
                 boolean forceFetch = jo.getBoolean("forceFetch");
-                logger.info("Setting forceFetch=" + forceFetch);
+                if (forceFetch)
+                    logger.info("Setting forceFetch=" + forceFetch);
                 curi.setForceFetch(forceFetch);
             }
 
             // optional isSeed instruction:
             if (jo.has("isSeed")) {
                 boolean isSeed = jo.getBoolean("isSeed");
-                logger.info("Setting isSeed=" + isSeed);
+                if (isSeed)
+                    logger.info("Setting isSeed=" + isSeed);
                 curi.setSeed(isSeed);
+                // We want to force the seed version of a URL to be fetched even
+                // if the URL has been seen before. See
+                //
+                // org.archive.crawler.postprocessor.CandidatesProcessor.runCandidateChain(CrawlURI
+                // candidate, CrawlURI source)
+                //
+                curi.setForceFetch(true);
             }
 
             curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
