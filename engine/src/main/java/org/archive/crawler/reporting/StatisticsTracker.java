@@ -288,6 +288,12 @@ public class StatisticsTracker
     // TODO: restore spill-to-disk, like with processedSeedsRecords
     protected ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> sourceHostDistribution = 
         new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); 
+    
+    /** Keep track of crawled bytes stats per seed */
+    // TODO: spill-to-disk (requires bdb replacement for Histotable, or some
+    // other refactoring)
+    protected ConcurrentHashMap<String, CrawledBytesHistotable> statsBySource =
+            new ConcurrentHashMap<String, CrawledBytesHistotable>();
 
     /* Keep track of 'top' hosts for live reports */
     protected TopNSet hostsDistributionTop;
@@ -394,6 +400,15 @@ public class StatisticsTracker
                     ConcurrentHashMap<String, AtomicLong> hostUriCount = new ConcurrentHashMap<String, AtomicLong>();
                     JSONUtils.putAllAtomicLongs(hostUriCount,shd.getJSONObject(source));
                     sourceHostDistribution.put(source, hostUriCount);
+                }
+                
+                JSONObject ss = json.getJSONObject("sourceStats");
+                keyIter = ss.keys();
+                for(; keyIter.hasNext();) {
+                    String source = keyIter.next();
+                    CrawledBytesHistotable cb = new CrawledBytesHistotable();
+                    JSONUtils.putAllLongs(cb, ss.getJSONObject(source));
+                    statsBySource.put(source, cb);
                 }
                 
                 JSONUtils.putAllLongs(
@@ -768,9 +783,9 @@ public class StatisticsTracker
                 curi.getContentSize());
         
         if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
-        	saveSourceStats((String)curi.getData().get(A_SOURCE_TAG),
-                        sc.getHostFor(curi.getUURI()).
-                    getHostName()); 
+        	saveSourceStats(curi.getSourceTag(), 
+        	        sc.getHostFor(curi.getUURI()).getHostName());
+        	tallySourceStats(curi);
         }
     }
          
@@ -784,7 +799,16 @@ public class StatisticsTracker
             }
         }
         incrementMapCount(hostUriCount, hostname);
+    }
 
+    protected void tallySourceStats(CrawlURI curi) {
+        String source = curi.getSourceTag();
+        CrawledBytesHistotable sourceStats = statsBySource.get(source);
+        if (sourceStats == null) {
+            sourceStats = new CrawledBytesHistotable();
+            statsBySource.put(source, sourceStats);
+        }
+        sourceStats.accumulate(curi);
     }
     
     /**
@@ -1087,6 +1111,7 @@ public class StatisticsTracker
             json.put("statusCodeDistribution", statusCodeDistribution);
 
             json.put("sourceHostDistribution", sourceHostDistribution);
+            json.put("sourceStats", statsBySource);
             
             json.put("crawledBytes", crawledBytes);
 
@@ -1102,5 +1127,11 @@ public class StatisticsTracker
     public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
         this.recoveryCheckpoint = recoveryCheckpoint;
     }
+    
+    public CrawledBytesHistotable getSourceStats(String source) {
+        return statsBySource.get(source);
+    }
+    
+    
     
 }
