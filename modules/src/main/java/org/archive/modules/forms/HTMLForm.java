@@ -112,9 +112,22 @@ public class HTMLForm {
      * @return boolean likely login form
      */
     public boolean seemsLoginForm() {
-        return "post".equalsIgnoreCase(method) 
-                && candidateUsernameInputs.size() == 1
-                && candidatePasswordInputs.size() == 1;
+        if ("post".equalsIgnoreCase(method)) {
+            if (candidatePasswordInputs.size() == 1) {
+                if (candidateUsernameInputs.size() == 1) {
+                    return true;
+                }               
+                else if (candidateUsernameInputs.size() > 1) {
+                    for (FormInput formInput : candidateUsernameInputs) {
+                        if (formInput.name != null && formInput.name.toLowerCase().indexOf("login") > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }            
+        }
+        
+        return false;
     }
 
     /**
