@@ -19,6 +19,7 @@
 package org.archive.crawler.reporting;
 
 import org.archive.crawler.framework.CrawlController;
+import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.PaddingStringBuffer;
 
@@ -57,6 +58,9 @@ public class CrawlStatSnapshot {
     public long deepestUri;
     public long averageDepth;
     
+    public long novelBytes;
+    public long novelUriCount;
+    
     /**
      * Collect all relevant snapshot samples, from the given CrawlController
      * and StatisticsTracker (which also provides the previous snapshot 
@@ -70,6 +74,9 @@ public class CrawlStatSnapshot {
         downloadedUriCount = controller.getFrontier().succeededFetchCount();
         bytesProcessed = stats.crawledBytes.getTotalBytes();
         timestamp = System.currentTimeMillis();
+        
+        novelBytes = stats.crawledBytes.get(CrawledBytesHistotable.NOVEL);
+        novelUriCount = stats.crawledBytes.get(CrawledBytesHistotable.NOVELCOUNT);
         
         elapsedMilliseconds = stats.getCrawlElapsedTime();
         discoveredUriCount = controller.getFrontier().discoveredUriCount();

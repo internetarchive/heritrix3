@@ -47,6 +47,33 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
         this.maxBytesDownload = maxBytesDownload;
     }
 
+    protected long maxNovelBytes = 0L;
+    public long getMaxNovelBytes() {
+        return maxNovelBytes;
+    }
+    /**
+     * Maximum number of novel (not deduplicated) bytes to download. Once this
+     * number is exceeded the crawler will stop. A value of zero means no upper
+     * limit.
+     */
+    public void setMaxNovelBytes(long maxNovelBytes) {
+        this.maxNovelBytes = maxNovelBytes;
+    }
+
+
+    protected long maxNovelUrls = 0L;
+    public long getMaxNovelUrls() {
+        return maxNovelUrls;
+    }
+    /**
+     * Maximum number of novel (not deduplicated) urls to download. Once this
+     * number is exceeded the crawler will stop. A value of zero means no upper
+     * limit.
+     */
+    public void setMaxNovelUrls(long maxNovelUrls) {
+        this.maxNovelUrls = maxNovelUrls;
+    }
+    
     /**
      * Maximum number of documents to download. Once this number is exceeded the 
      * crawler will stop. A value of zero means no upper limit.
@@ -91,8 +118,13 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
     protected void checkForLimitsExceeded(CrawlStatSnapshot snapshot) {
         if (maxBytesDownload > 0 && snapshot.bytesProcessed >= maxBytesDownload) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_DATA_LIMIT);
+        } else if (maxNovelBytes > 0 && snapshot.novelBytes >= maxNovelBytes) {
+            controller.requestCrawlStop(CrawlStatus.FINISHED_DATA_LIMIT);
         } else if (maxDocumentsDownload > 0
                 && snapshot.downloadedUriCount >= maxDocumentsDownload) {
+            controller.requestCrawlStop(CrawlStatus.FINISHED_DOCUMENT_LIMIT);
+        } else if (maxNovelUrls > 0
+                && snapshot.novelUriCount >= maxNovelUrls) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_DOCUMENT_LIMIT);
         } else if (maxTimeSeconds > 0 
                 && snapshot.elapsedMilliseconds >= maxTimeSeconds * 1000) {
