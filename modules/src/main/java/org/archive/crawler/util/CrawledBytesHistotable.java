@@ -19,6 +19,9 @@
 
 package org.archive.crawler.util;
 
+import java.util.Map;
+
+import org.archive.io.warc.WARCWriter;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
@@ -38,11 +41,17 @@ implements CoreAttributeConstants {
     public static final String DUPLICATECOUNT = "dupByHashCount";
     public static final String OTHERDUPLICATECOUNT = "otherDupCount";
     public static final String NOVELCOUNT = "novelCount";
-    
+
+    // total size of warc response and resource record payloads (includes http
+    // headers, does not include warc record headers)
+    public static final String WARC_NOVEL_CONTENT_BYTES = "warcNovelContentBytes";
+    public static final String WARC_NOVEL_URLS = "warcNovelUrls";
+
     public CrawledBytesHistotable() {
         super();
     }
 
+    @SuppressWarnings("unchecked")
     public void accumulate(CrawlURI curi) {
         if (curi.getRevisitProfile() instanceof ServerNotModifiedRevisit) {
             tally(NOTMODIFIED, curi.getContentSize());
@@ -56,6 +65,15 @@ implements CoreAttributeConstants {
         } else {
             tally(NOVEL,curi.getContentSize());
             tally(NOVELCOUNT,1);
+        }
+        Map<String,Map<String,Long>> warcStats = (Map<String,Map<String,Long>>) curi.getData().get(A_WARC_STATS);
+        if (warcStats != null) {
+            tally(WARC_NOVEL_CONTENT_BYTES,
+                    WARCWriter.getStat(warcStats, "response", "contentBytes")
+                    + WARCWriter.getStat(warcStats, "resource", "contentBytes"));
+            tally(WARC_NOVEL_URLS,
+                    WARCWriter.getStat(warcStats, "response", "numRecords")
+                    + WARCWriter.getStat(warcStats, "resource", "numRecords"));
         }
     }
     
