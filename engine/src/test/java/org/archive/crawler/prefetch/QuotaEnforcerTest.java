@@ -59,11 +59,12 @@ public class QuotaEnforcerTest extends CrawlerProcessorTestBase {
     
     static class MockFetchStats extends FetchStats {
         private static final long serialVersionUID = 1l;
+
         public void setNovelBytes(long n) {
-            novelBytes = n;
+            put(NOVEL, n);
         }
         public void setNovelUrls(long n) {
-            novelUrls = n;
+            put(NOVELCOUNT, n);
         }
     }
     
