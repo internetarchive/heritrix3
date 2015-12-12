@@ -60,6 +60,8 @@ public class CrawlStatSnapshot {
     
     public long novelBytes;
     public long novelUriCount;
+    public long warcNovelBytes;
+    public long warcNovelUriCount;
     
     /**
      * Collect all relevant snapshot samples, from the given CrawlController
@@ -77,6 +79,8 @@ public class CrawlStatSnapshot {
         
         novelBytes = stats.crawledBytes.get(CrawledBytesHistotable.NOVEL);
         novelUriCount = stats.crawledBytes.get(CrawledBytesHistotable.NOVELCOUNT);
+        warcNovelBytes = stats.crawledBytes.get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES);
+        warcNovelUriCount = stats.crawledBytes.get(CrawledBytesHistotable.WARC_NOVEL_URLS);
         
         elapsedMilliseconds = stats.getCrawlElapsedTime();
         discoveredUriCount = controller.getFrontier().discoveredUriCount();

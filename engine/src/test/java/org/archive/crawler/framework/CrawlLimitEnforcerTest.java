@@ -59,6 +59,14 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
         assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1000000;}}));
@@ -85,6 +93,14 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelUriCount = 1;}}));
         assertNull(cc.stopRequestedMessage);
@@ -118,6 +134,14 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1000000;}}));
         assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
@@ -148,6 +172,14 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1;}}));
         assertNull(cc.stopRequestedMessage);
@@ -180,6 +212,14 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
         assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 1;}}));
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 100;}}));
@@ -188,5 +228,85 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertNull(cc.stopRequestedMessage);
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 600000;}}));
         assertEquals(CrawlStatus.FINISHED_TIME_LIMIT, cc.stopRequestedMessage);
+    }
+    
+
+    public void testMaxWarcNovelBytes() {
+        StatisticsTracker stats = new StatisticsTracker();
+        MockCrawlController cc = new MockCrawlController();
+
+        CrawlLimitEnforcer enforcer = new CrawlLimitEnforcer();
+        enforcer.setCrawlController(cc);
+
+        enforcer.setMaxWarcNovelBytes(1000000);
+
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 1000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 600000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
+        assertEquals(CrawlStatus.FINISHED_DATA_LIMIT, cc.stopRequestedMessage);
+    }
+
+
+    public void testMaxWarcNovelUrls() {
+        StatisticsTracker stats = new StatisticsTracker();
+        MockCrawlController cc = new MockCrawlController();
+
+        CrawlLimitEnforcer enforcer = new CrawlLimitEnforcer();
+        enforcer.setCrawlController(cc);
+
+        enforcer.setMaxWarcNovelUrls(100);
+
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{downloadedUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 1000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 600000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{bytesProcessed = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelBytes = 1000000;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{novelUriCount = 100;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 1;}}));
+        assertNull(cc.stopRequestedMessage);
+        enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{warcNovelUriCount = 100;}}));
+        assertEquals(CrawlStatus.FINISHED_DOCUMENT_LIMIT, cc.stopRequestedMessage);
     }
 }

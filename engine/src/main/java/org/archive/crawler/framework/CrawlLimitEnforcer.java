@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 package org.archive.crawler.framework;
 
 import org.archive.crawler.event.StatSnapshotEvent;
@@ -52,14 +52,13 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
         return maxNovelBytes;
     }
     /**
-     * Maximum number of novel (not deduplicated) bytes to download. Once this
-     * number is exceeded the crawler will stop. A value of zero means no upper
-     * limit.
+     * Maximum number of uncompressed payload bytes to write to WARC response or
+     * resource records. Once this number is exceeded the crawler will stop. A
+     * value of zero means no upper limit.
      */
     public void setMaxNovelBytes(long maxNovelBytes) {
         this.maxNovelBytes = maxNovelBytes;
     }
-
 
     protected long maxNovelUrls = 0L;
     public long getMaxNovelUrls() {
@@ -73,7 +72,33 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
     public void setMaxNovelUrls(long maxNovelUrls) {
         this.maxNovelUrls = maxNovelUrls;
     }
-    
+
+    protected long maxWarcNovelUrls = 0L;
+    public long getMaxWarcNovelUrls() {
+        return maxWarcNovelUrls;
+    }
+    /**
+     * Maximum number of urls to write to WARC response or resource records.
+     * Once this number is exceeded the crawler will stop. A value of zero means
+     * no upper limit.
+     */
+    public void setMaxWarcNovelUrls(long maxWarcNovelUrls) {
+        this.maxWarcNovelUrls = maxWarcNovelUrls;
+    }
+
+    protected long maxWarcNovelBytes = 0L;
+    public long getMaxWarcNovelBytes() {
+        return maxWarcNovelBytes;
+    }
+    /**
+     * Maximum number of novel (not deduplicated) bytes to download. Once this
+     * number is exceeded the crawler will stop. A value of zero means no upper
+     * limit.
+     */
+    public void setMaxWarcNovelBytes(long maxWarcNovelBytes) {
+        this.maxWarcNovelBytes = maxWarcNovelBytes;
+    }
+
     /**
      * Maximum number of documents to download. Once this number is exceeded the 
      * crawler will stop. A value of zero means no upper limit.
@@ -106,7 +131,7 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
     public void setCrawlController(CrawlController controller) {
         this.controller = controller;
     }
-    
+
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof StatSnapshotEvent) {
@@ -114,11 +139,13 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
             checkForLimitsExceeded(snapshot);
         }
     }
-    
+
     protected void checkForLimitsExceeded(CrawlStatSnapshot snapshot) {
         if (maxBytesDownload > 0 && snapshot.bytesProcessed >= maxBytesDownload) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_DATA_LIMIT);
         } else if (maxNovelBytes > 0 && snapshot.novelBytes >= maxNovelBytes) {
+            controller.requestCrawlStop(CrawlStatus.FINISHED_DATA_LIMIT);
+        } else if (maxWarcNovelBytes > 0 && snapshot.warcNovelBytes >= maxWarcNovelBytes) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_DATA_LIMIT);
         } else if (maxDocumentsDownload > 0
                 && snapshot.downloadedUriCount >= maxDocumentsDownload) {
@@ -126,10 +153,12 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
         } else if (maxNovelUrls > 0
                 && snapshot.novelUriCount >= maxNovelUrls) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_DOCUMENT_LIMIT);
+        } else if (maxWarcNovelUrls > 0
+                && snapshot.warcNovelUriCount >= maxWarcNovelUrls) {
+            controller.requestCrawlStop(CrawlStatus.FINISHED_DOCUMENT_LIMIT);
         } else if (maxTimeSeconds > 0 
                 && snapshot.elapsedMilliseconds >= maxTimeSeconds * 1000) {
             controller.requestCrawlStop(CrawlStatus.FINISHED_TIME_LIMIT);
         }
     }
-
 }
