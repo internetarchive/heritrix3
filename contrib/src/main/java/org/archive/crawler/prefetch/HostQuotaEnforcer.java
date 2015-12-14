@@ -90,7 +90,7 @@ public class HostQuotaEnforcer extends Processor {
 
         for (String k: quotas.keySet()) {
             if (host.getSubstats().get(k) >= quotas.get(k)) {
-                curi.getAnnotations().add("sourceQuota:" + k);
+                curi.getAnnotations().add("hostQuota:" + k);
                 curi.setFetchStatus(FetchStatusCodes.S_BLOCKED_BY_QUOTA);
                 return ProcessResult.FINISH;
             }
