@@ -90,10 +90,11 @@ public class CrawlLimitEnforcer implements ApplicationListener<ApplicationEvent>
     public long getMaxWarcNovelBytes() {
         return maxWarcNovelBytes;
     }
+    
     /**
-     * Maximum number of novel (not deduplicated) bytes to download. Once this
-     * number is exceeded the crawler will stop. A value of zero means no upper
-     * limit.
+     * Maximum number of novel (not deduplicated) bytes to write to WARC
+     * response or resource records. Once this number is exceeded the crawler
+     * will stop. A value of zero means no upper limit.
      */
     public void setMaxWarcNovelBytes(long maxWarcNovelBytes) {
         this.maxWarcNovelBytes = maxWarcNovelBytes;
