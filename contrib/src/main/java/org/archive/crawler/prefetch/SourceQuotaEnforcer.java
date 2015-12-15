@@ -83,6 +83,7 @@ public class SourceQuotaEnforcer extends Processor {
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
         return curi.containsDataKey(CoreAttributeConstants.A_SOURCE_TAG)
+                && sourceTag.equals(curi.getSourceTag())
                 && statisticsTracker.getSourceStats(curi.getSourceTag()) != null;
     }
 
