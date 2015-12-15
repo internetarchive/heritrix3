@@ -31,6 +31,8 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.net.InternetDomainName;
+
 /**
  * Enforces quotas on a host. Should be configured early in {@link FetchChain} in
  * crawler-beans.cxml. Supports quotas on any of the fields tracked in
@@ -59,6 +61,18 @@ public class HostQuotaEnforcer extends Processor {
         this.host = host;
     }
 
+    protected boolean applyToSubdomains = false;
+    public boolean getApplyToSubdomains() {
+        return applyToSubdomains;
+    }
+    /**
+     * Whether to apply the quotas to each subdomain of {@link #host}
+     * (separately, not cumulatively).
+     */
+    public void setApplyToSubdomains(boolean applyToSubdomains) {
+        this.applyToSubdomains = applyToSubdomains;
+    }
+
     protected Map<String,Long> quotas = new HashMap<String, Long>();
     public Map<String, Long> getQuotas() {
         return quotas;
@@ -72,7 +86,25 @@ public class HostQuotaEnforcer extends Processor {
 
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
-        return serverCache.getHostFor(curi.getUURI()) == serverCache.getHostFor(host);
+        if (getApplyToSubdomains()) {
+            InternetDomainName h = InternetDomainName.from(host);
+            InternetDomainName uriHostOrAncestor = InternetDomainName.from(serverCache.getHostFor(curi.getUURI()).getHostName());
+            while (true) {
+                if (uriHostOrAncestor.equals(h)) {
+                    return true;
+                }
+                if (uriHostOrAncestor.hasParent()) {
+                    uriHostOrAncestor = uriHostOrAncestor.parent();
+                } else {
+                    break;
+                }
+            }
+
+            return false;
+        } else {
+            return serverCache.getHostFor(curi.getUURI()) == serverCache.getHostFor(host);
+        }
+
     }
 
     @Override
