@@ -87,7 +87,7 @@ public class HostQuotaEnforcer extends Processor {
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
         String uriHostname = serverCache.getHostFor(curi.getUURI()).getHostName();
-        if (getApplyToSubdomains() && InternetDomainName.isValid(uriHostname)) {
+        if (getApplyToSubdomains() && InternetDomainName.isValid(host) && InternetDomainName.isValid(uriHostname)) {
             InternetDomainName h = InternetDomainName.from(host);
             InternetDomainName uriHostOrAncestor = InternetDomainName.from(uriHostname);
             while (true) {
