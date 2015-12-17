@@ -270,6 +270,11 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
                     templateForm.asFormDataString(
                         getLoginUsername(), 
                         getLoginPassword()));
+            submitCuri.getData().put(
+                    CoreAttributeConstants.A_SUBMIT_DATA_ENCTYPE,
+                    ((HTMLForm) curi.getDataList(
+                            ExtractorHTMLForms.A_HTML_FORM_OBJECTS).get(0))
+                            .getEnctype());
             submitCuri.setSchedulingDirective(SchedulingConstants.HIGH);
             submitCuri.setForceFetch(true);
             curi.getOutLinks().add(submitCuri);

@@ -189,11 +189,8 @@ class FetchHTTPRequest {
             this.request = postRequest;
             String submitData = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
             if (submitData != null) {
-                if (curi.getDataList(ExtractorHTMLForms.A_HTML_FORM_OBJECTS) != null
-                        && "multipart/form-data"
-                                .equals(((HTMLForm) curi.getDataList(
-                                        ExtractorHTMLForms.A_HTML_FORM_OBJECTS).get(0)) 
-                                        .getEnctype())) {
+                if ("multipart/form-data".equals(curi.getData().get(
+                        CoreAttributeConstants.A_SUBMIT_DATA_ENCTYPE))) {
                     HttpEntity multipartFormEntity = MultipartEntityBuilder
                             .create()
                             .addTextBody("submitData", submitData,
