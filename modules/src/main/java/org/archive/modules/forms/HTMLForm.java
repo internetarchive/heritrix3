@@ -50,6 +50,7 @@ public class HTMLForm {
     
     String method;
     String action;
+    String enctype;
     
     List<FormInput> allInputs = new ArrayList<FormInput>();
     List<FormInput> candidateUsernameInputs = new ArrayList<FormInput>();
@@ -102,6 +103,14 @@ public class HTMLForm {
     
     public void setAction(String action) {
         this.action = action;
+    }
+    
+    public String getEnctype() {
+        return enctype;
+    }
+
+    public void setEnctype(String enctype) {
+        this.enctype = enctype;
     }
 
     /**

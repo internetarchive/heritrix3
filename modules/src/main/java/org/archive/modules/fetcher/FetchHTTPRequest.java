@@ -45,6 +45,7 @@ import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
@@ -83,6 +84,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -105,6 +107,8 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.forms.ExtractorHTMLForms;
+import org.archive.modules.forms.HTMLForm;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -185,10 +189,23 @@ class FetchHTTPRequest {
             this.request = postRequest;
             String submitData = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
             if (submitData != null) {
-                // XXX brittle, doesn't support multipart form data etc
-                ContentType contentType = ContentType.create(URLEncodedUtils.CONTENT_TYPE, "UTF-8");
-                StringEntity formEntity = new StringEntity(submitData, contentType);
-                postRequest.setEntity(formEntity);
+                if (curi.getDataList(ExtractorHTMLForms.A_HTML_FORM_OBJECTS) != null
+                        && "multipart/form-data"
+                                .equals(((HTMLForm) curi.getDataList(
+                                        ExtractorHTMLForms.A_HTML_FORM_OBJECTS).get(0)) 
+                                        .getEnctype())) {
+                    HttpEntity multipartFormEntity = MultipartEntityBuilder
+                            .create()
+                            .addTextBody("submitData", submitData,
+                                    ContentType.MULTIPART_FORM_DATA).build();
+
+                    postRequest.setEntity(multipartFormEntity);
+                }
+                else {
+                    ContentType contentType = ContentType.create(URLEncodedUtils.CONTENT_TYPE, "UTF-8");
+                    StringEntity formEntity = new StringEntity(submitData, contentType);
+                    postRequest.setEntity(formEntity);
+                }
             }
         } else {
             this.request = new BasicExecutionAwareRequest("GET", 
