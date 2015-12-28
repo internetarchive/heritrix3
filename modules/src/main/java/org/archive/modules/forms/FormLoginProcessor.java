@@ -267,7 +267,7 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
             submitCuri.setFetchType(FetchType.HTTP_POST);
             submitCuri.getData().put(
                     CoreAttributeConstants.A_SUBMIT_DATA, 
-                    templateForm.asFormDataString(
+                    templateForm.asFormDataMultiPartEntity(
                         getLoginUsername(), 
                         getLoginPassword()));
             submitCuri.getData().put(
