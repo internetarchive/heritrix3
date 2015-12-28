@@ -25,6 +25,10 @@ import java.util.List;
 
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.StringBody;
 import org.archive.util.TextUtils;
 
 /**
@@ -161,6 +165,35 @@ public class HTMLForm {
             }
         }
         return data.toArray(new NameValuePair[data.size()]);
+    }
+    
+    public HttpEntity asFormDataMultiPartEntity(String username, String password) {
+        //List<String> nameVals = new LinkedList<String>();
+        MultipartEntityBuilder multiPartEntityBuilder = MultipartEntityBuilder.create();
+        
+        for (FormInput input : allInputs) {
+            if ("dnn$ctr577$AACC_Login$txtFirstName".equals(input.name)
+                    || "dnn$ctr577$AACC_Login$txtLastName".equals(input.name)
+                    || "dnn$ctr577$AACC_Login$cmdContinue".equals(input.name)
+                    || "dnn$ctr577$AACC_Login$txtEmailId".equals(input.name)
+                    || "dnn$ctr577$AACC_Login$ctlCaptcha".equals(input.name)) {
+
+                continue;
+            }            
+            
+            if(input == candidateUsernameInputs.get(0)) {
+                multiPartEntityBuilder.addPart(TextUtils.urlEscape(input.name), new StringBody(TextUtils.urlEscape(username), ContentType.MULTIPART_FORM_DATA));
+                //nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(username));
+            } else if(input == candidatePasswordInputs.get(0)) {
+                multiPartEntityBuilder.addPart(TextUtils.urlEscape(input.name), new StringBody(TextUtils.urlEscape(password), ContentType.MULTIPART_FORM_DATA));
+                //nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
+            } else if (StringUtils.isNotEmpty(input.name)) {
+                multiPartEntityBuilder.addPart(TextUtils.urlEscape(input.name), new StringBody(TextUtils.urlEscape(StringUtils.isNotEmpty(input.value) ? input.value : ""), ContentType.MULTIPART_FORM_DATA));                
+                //nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(input.value));
+            }
+        }
+       
+        return multiPartEntityBuilder.build();
     }
     
     public String asFormDataString(String username, String password) {

@@ -187,20 +187,16 @@ class FetchHTTPRequest {
             BasicExecutionAwareEntityEnclosingRequest postRequest = new BasicExecutionAwareEntityEnclosingRequest(
                     "POST", requestLineUri, httpVersion);
             this.request = postRequest;
-            String submitData = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
-            if (submitData != null) {
-                if ("multipart/form-data".equals(curi.getData().get(
-                        CoreAttributeConstants.A_SUBMIT_DATA_ENCTYPE))) {
-                    HttpEntity multipartFormEntity = MultipartEntityBuilder
-                            .create()
-                            .addTextBody("submitData", submitData,
-                                    ContentType.MULTIPART_FORM_DATA).build();
+            
+            Object submitData = curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
 
-                    postRequest.setEntity(multipartFormEntity);
+            if (submitData != null) {
+                if (submitData instanceof HttpEntity) {
+                    postRequest.setEntity((HttpEntity)submitData);
                 }
-                else {
+                else if (submitData instanceof String) {
                     ContentType contentType = ContentType.create(URLEncodedUtils.CONTENT_TYPE, "UTF-8");
-                    StringEntity formEntity = new StringEntity(submitData, contentType);
+                    StringEntity formEntity = new StringEntity((String)submitData, contentType);
                     postRequest.setEntity(formEntity);
                 }
             }
