@@ -122,9 +122,6 @@ public interface CoreAttributeConstants {
     // FORMS support - a persistent member (survives frontier enqueue/dequeue/retries)
     public static final String A_SUBMIT_DATA = "submit-data";
     
-    //the encoding type of the form
-    public static final String A_SUBMIT_DATA_ENCTYPE = "submit-data-enctype";
-    
     // arbitrary additions to WARC response record headers
     public static final String A_WARC_RESPONSE_HEADERS = "warc-response-headers";
     
