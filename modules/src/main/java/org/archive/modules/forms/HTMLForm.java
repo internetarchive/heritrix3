@@ -192,13 +192,12 @@ public class HTMLForm {
         if (candidateUsernameInputs.size() == 1) return candidateUsernameInputs.get(0);
         
         for (FormInput input : candidateUsernameInputs) {
-
             if (input.name != null && input.name.toLowerCase().indexOf("login") != -1) {
                 return input;
             }
         }
         
-        return null;
+        return candidateUsernameInputs.get(0);
     }
     
     public HttpEntity asFormDataMultiPartEntity(String username, String password) {
