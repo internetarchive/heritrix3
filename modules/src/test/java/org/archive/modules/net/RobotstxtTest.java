@@ -205,4 +205,26 @@ public class RobotstxtTest extends TestCase {
             assertTrue("user-agent a and b shares the same RobotsDirectives after deserialization", da == db);
         }
     }
+
+    public void testSeparatedSections() throws IOException {
+        final String TEST_ROBOTS_TXT = "User-agent: *\n"
+                + "Crawl-delay: 5\n"
+                + "User-agent: a\n"
+                + "Disallow: /\n"
+                + "User-agent: *\n"
+                + "Disallow: /disallowed\n"
+                + "User-agent: a\n"
+                + "Crawl-delay: 99\n";
+        StringReader sr = new StringReader(TEST_ROBOTS_TXT);
+        Robotstxt rt = new Robotstxt(new BufferedReader(sr));
+
+        assertFalse(rt.getDirectivesFor("a").allows("/foo"));
+
+        assertTrue(rt.getDirectivesFor("c").allows("/foo"));
+        assertFalse(rt.getDirectivesFor("c").allows("/disallowed"));
+
+        assertEquals(5f, rt.getDirectivesFor("c").getCrawlDelay());
+
+        assertEquals(99f, rt.getDirectivesFor("a").getCrawlDelay());
+    }
 }

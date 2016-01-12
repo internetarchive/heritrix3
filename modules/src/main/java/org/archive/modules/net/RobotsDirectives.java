@@ -35,6 +35,7 @@ public class RobotsDirectives implements Serializable {
     protected ConcurrentSkipListSet<String> disallows = new ConcurrentSkipListSet<String>();
     protected ConcurrentSkipListSet<String> allows = new ConcurrentSkipListSet<String>();
     protected float crawlDelay = -1; 
+    public transient boolean hasDirectives = false;
 
     public boolean allows(String path) {
         return !(longestPrefixLength(disallows, path) > longestPrefixLength(allows, path));
@@ -57,6 +58,7 @@ public class RobotsDirectives implements Serializable {
     }
 
     public void addDisallow(String path) {
+        hasDirectives = true;
         if(path.length()==0) {
             // ignore empty-string disallows 
             // (they really mean allow, when alone)
@@ -66,10 +68,12 @@ public class RobotsDirectives implements Serializable {
     }
 
     public void addAllow(String path) {
+        hasDirectives = true;
         allows.add(path);
     }
 
     public void setCrawlDelay(float i) {
+        hasDirectives = true;
         crawlDelay=i;
     }
 
