@@ -65,17 +65,7 @@ public class SourceQuotaEnforcer extends Processor {
         return quotas;
     }
     /**
-     * Keys can be any of the {@link CrawledBytesHistotable} keys:
-     * <ul>
-     * <li>{@value CrawledBytesHistotable#NOVEL}
-     * <li>{@value CrawledBytesHistotable#NOVELCOUNT}
-     * <li>{@value CrawledBytesHistotable#DUPLICATE}
-     * <li>{@value CrawledBytesHistotable#DUPLICATECOUNT}
-     * <li>{@value CrawledBytesHistotable#NOTMODIFIED}
-     * <li>{@value CrawledBytesHistotable#NOTMODIFIEDCOUNT}
-     * <li>{@value CrawledBytesHistotable#OTHERDUPLICATE}
-     * <li>{@value CrawledBytesHistotable#OTHERDUPLICATECOUNT}
-     * </ul>
+     * Keys can be any of the {@link CrawledBytesHistotable} keys.
      */
     public void setQuotas(Map<String, Long> quotas) {
         this.quotas = quotas;
@@ -93,6 +83,7 @@ public class SourceQuotaEnforcer extends Processor {
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
         return curi.containsDataKey(CoreAttributeConstants.A_SOURCE_TAG)
+                && sourceTag.equals(curi.getSourceTag())
                 && statisticsTracker.getSourceStats(curi.getSourceTag()) != null;
     }
 
