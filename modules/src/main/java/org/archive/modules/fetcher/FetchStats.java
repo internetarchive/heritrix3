@@ -74,7 +74,6 @@ public class FetchStats extends CrawledBytesHistotable implements Serializable, 
                 }
                 break;
             case SUCCEEDED:
-                this.accumulate(curi);
                 tally(FETCH_SUCCESSES, 1);
                 tally(FETCH_RESPONSES, 1);
                 tally(TOTAL_BYTES, curi.getContentSize());
@@ -99,6 +98,10 @@ public class FetchStats extends CrawledBytesHistotable implements Serializable, 
                 break;
             default:
                 break;
+        }
+
+        if (curi.getFetchStatus() > 0) {
+            this.accumulate(curi);
         }
     }
 
