@@ -115,6 +115,16 @@ import org.archive.util.Recorder;
  */
 class FetchHTTPRequest {
     
+    private boolean disableSNI = false;
+    
+    public boolean isDisableSNI() {
+        return disableSNI;
+    }
+
+    public void setDisableSNI(boolean disableSNI) {
+        this.disableSNI = disableSNI;
+    }
+
     /**
      * Implementation of {@link DnsResolver} that uses the server cache which is
      * normally expected to have been populated by FetchDNS.
@@ -463,7 +473,22 @@ class FetchHTTPRequest {
     protected HttpClientConnectionManager buildConnectionManager() {
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainConnectionSocketFactory.INSTANCE)
-                .register("https", new SSLConnectionSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
+                .register(
+                        "https",
+                        new SSLConnectionSocketFactory(fetcher.sslContext(),
+                                new AllowAllHostnameVerifier()) {
+
+                            @Override
+                            public Socket createLayeredSocket(
+                                    final Socket socket, final String target,
+                                    final int port, final HttpContext context)
+                                    throws IOException {
+
+                                return super.createLayeredSocket(socket,
+                                        isDisableSNI() ? "" : target, port,
+                                        context);
+                            }
+                        })
                 .build();
 
         DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
