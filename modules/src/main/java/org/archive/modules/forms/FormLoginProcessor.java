@@ -265,11 +265,15 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
             
             CrawlURI submitCuri = curi.createCrawlURI(submitUrl, lc, Hop.SUBMIT);
             submitCuri.setFetchType(FetchType.HTTP_POST);
-            submitCuri.getData().put(
-                    CoreAttributeConstants.A_SUBMIT_DATA, 
-                    templateForm.asFormDataString(
-                        getLoginUsername(), 
-                        getLoginPassword()));
+            submitCuri.getData()
+                    .put(CoreAttributeConstants.A_SUBMIT_DATA,
+                            "multipart/form-data".equals(templateForm
+                                    .getEnctype()) ? templateForm
+                                    .asFormDataMultiPartEntity(
+                                            getLoginUsername(),
+                                            getLoginPassword()) : templateForm
+                                    .asFormDataString(getLoginUsername(),
+                                            getLoginPassword()));
             submitCuri.setSchedulingDirective(SchedulingConstants.HIGH);
             submitCuri.setForceFetch(true);
             curi.getOutLinks().add(submitCuri);
