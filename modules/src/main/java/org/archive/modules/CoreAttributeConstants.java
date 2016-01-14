@@ -124,5 +124,6 @@ public interface CoreAttributeConstants {
     
     // arbitrary additions to WARC response record headers
     public static final String A_WARC_RESPONSE_HEADERS = "warc-response-headers";
-
+    
+    public static final String A_WARC_STATS = "warc-stats";
 }

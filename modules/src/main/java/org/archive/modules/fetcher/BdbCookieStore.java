@@ -129,7 +129,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
         }
     }
 
-    public void addCookie(Cookie cookie) {
+    public void addCookieImpl(Cookie cookie) {
         byte[] key;
         try {
             key = sortableKey(cookie).getBytes("UTF-8");
@@ -158,7 +158,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
             throw new RuntimeException(e); // impossible
         }
     }
-
+    
     /**
      * Returns a {@link LimitedCookieStoreFacade} whose
      * {@link LimitedCookieStoreFacade#getCookies()} method returns only cookies

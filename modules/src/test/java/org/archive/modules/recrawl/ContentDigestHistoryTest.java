@@ -146,7 +146,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         curi1.setContentDigest("sha1", Base32.decode("orfjublpcrnymm4seg5uk6vfoeu7kw6c"));
 
         assertTrue(loader().shouldProcess(curi1));
-        assertTrue(storer().shouldProcess(curi1));
+        assertFalse(storer().shouldProcess(curi1));
         
         assertEquals("sha1:ORFJUBLPCRNYMM4SEG5UK6VFOEU7KW6C", historyStore().persistKeyFor(curi1));
 
