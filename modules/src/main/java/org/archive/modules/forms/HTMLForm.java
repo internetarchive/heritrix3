@@ -37,9 +37,14 @@ public class HTMLForm {
         public String type;
         public String name;
         public String value;
+        public boolean checked = false;
         @Override
         public String toString() {
-            return type+" "+name+" "+value;
+            String str = "input[@type='" + type+"'][@name='" + name + "'][@value='" + value + "']";
+            if (checked) {
+                str = str + "[@checked]";
+            }
+            return str;
         } 
     }
     
@@ -56,8 +61,9 @@ public class HTMLForm {
      * @param type
      * @param name
      * @param value
+     * @param checked true if "checked" attribute is present (for radio buttons and checkboxes)
      */
-    public void addField(String type, String name, String value) {
+    public void addField(String type, String name, String value, boolean checked) {
         FormInput input = new FormInput();
         input.type = type;
         // default input type is text per html standard
@@ -72,6 +78,18 @@ public class HTMLForm {
         } else if ("password".equalsIgnoreCase(type)) {
             candidatePasswordInputs.add(input);
         }
+        input.checked = checked;
+    }
+
+    /**
+     * Add a discovered INPUT, tracking it as potential 
+     * username/password receiver. 
+     * @param type
+     * @param name
+     * @param value
+     */
+    public void addField(String type, String name, String value) {
+        addField(type, name, value, false);
     }
 
     public void setMethod(String method) {
@@ -131,8 +149,12 @@ public class HTMLForm {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(username));
             } else if(input == candidatePasswordInputs.get(0)) {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
-            } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(input.value));
+            } else if (StringUtils.isNotEmpty(input.name)
+                    && StringUtils.isNotEmpty(input.value)
+                    && (!"radio".equalsIgnoreCase(input.type)
+                            && !"checkbox".equals(input.type) || input.checked)) {
+                nameVals.add(TextUtils.urlEscape(input.name) + "="
+                        + TextUtils.urlEscape(input.value));
             }
         }
 

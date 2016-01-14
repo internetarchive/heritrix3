@@ -152,7 +152,14 @@ public class ExtractorHTMLForms extends Extractor {
                 String type = findAttributeValueGroup("(?i)^[^>]*\\stype\\s*=\\s*([^>\\s]+)[^>]*>",1,input);
                 String name = findAttributeValueGroup("(?i)^[^>]*\\sname\\s*=\\s*([^>\\s]+)[^>]*>",1,input);
                 String value = findAttributeValueGroup("(?i)^[^>]*\\svalue\\s*=\\s*([^>\\s]+)[^>]*>",1,input);
-                form.addField(type,name,value);
+                Matcher m = TextUtils.getMatcher("(?i)^[^>]*\\schecked\\s*[^>]*>", input);
+                boolean checked = false;
+                try {
+                    checked = m.find();
+                } finally {
+                    TextUtils.recycleMatcher(m);
+                }
+                form.addField(type, name, value, checked);
             }
             if (form.seemsLoginForm() || getExtractAllForms()) {
                 curi.getDataList(A_HTML_FORM_OBJECTS).add(form);
