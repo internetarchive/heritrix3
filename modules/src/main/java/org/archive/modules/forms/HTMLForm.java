@@ -23,14 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.StringBody;
-import org.archive.util.TextUtils;
 
 /**
  * Simple representation of a discovered HTML Form. 
@@ -52,14 +45,14 @@ public class HTMLForm {
             return str;
         } 
     }
-    
-    String method;
-    String action;
-    String enctype;
-    
-    List<FormInput> allInputs = new ArrayList<FormInput>();
-    List<FormInput> candidateUsernameInputs = new ArrayList<FormInput>();
-    List<FormInput> candidatePasswordInputs = new ArrayList<FormInput>();
+
+    protected String method;
+    protected String action;
+    protected String enctype;
+
+    protected List<FormInput> allInputs = new ArrayList<FormInput>();
+    protected List<FormInput> candidateUsernameInputs = new ArrayList<FormInput>();
+    protected List<FormInput> candidatePasswordInputs = new ArrayList<FormInput>();
 
     /**
      * Add a discovered INPUT, tracking it as potential 
@@ -72,16 +65,10 @@ public class HTMLForm {
     public void addField(String type, String name, String value, boolean checked) {
         FormInput input = new FormInput();
         input.type = type;
-        
-        if (isMultipleFormSubmitInputs(type)) {
-            return;
-        }
-        
         // default input type is text per html standard
         if (input.type == null) {
             input.type = "text";
         }
-        
         input.name = name;
         input.value = value; 
         allInputs.add(input);
@@ -103,18 +90,6 @@ public class HTMLForm {
     public void addField(String type, String name, String value) {
         addField(type, name, value, false);
     }
-    
-    public boolean isMultipleFormSubmitInputs(String type) {
-        if (!type.toLowerCase().equals("submit")) return false;
-        
-        for (FormInput input : allInputs) {
-            if (input.type.toLowerCase().equals("submit")) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
 
     public void setMethod(String method) {
         this.method = method; 
@@ -123,11 +98,11 @@ public class HTMLForm {
     public String getAction() {
         return action;
     }
-    
+
     public void setAction(String action) {
         this.action = action;
     }
-    
+
     public String getEnctype() {
         return enctype;
     }
@@ -144,97 +119,34 @@ public class HTMLForm {
      * @return boolean likely login form
      */
     public boolean seemsLoginForm() {
-        if ("post".equalsIgnoreCase(method)) {
-            if (candidatePasswordInputs.size() == 1) {
-                if (candidateUsernameInputs.size() == 1) {
-                    return true;
-                }               
-                else if (candidateUsernameInputs.size() > 1) {
-                    for (FormInput formInput : candidateUsernameInputs) {
-                        if (formInput.name != null && formInput.name.toLowerCase().indexOf("login") > 0) {
-                            return true;
-                        }
-                    }
-                }
-            }            
-        }
-        
-        return false;
+        return "post".equalsIgnoreCase(method) 
+                && candidateUsernameInputs.size() == 1
+                && candidatePasswordInputs.size() == 1;
     }
 
-    /**
-     * Create the NameValuePair array expected by HttpClient, merging
-     * username and password into the appropriate value slots.
-     * 
-     * @param username
-     * @param password
-     * @return
-     * @deprecated specific to a particular FetchHTTP implementation based on commons-httpclient, use {@link #asFormDataString(String, String)}
-     */
-    public NameValuePair[] asHttpClientDataWith(String username, String password) {
-        ArrayList<NameValuePair> data = new ArrayList<NameValuePair>(allInputs.size());
-       
-        for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
-                data.add(new NameValuePair(input.name,username));
-            } else if(input == candidatePasswordInputs.get(0)) {
-                data.add(new NameValuePair(input.name,password));
-            } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
-                data.add(new NameValuePair(input.name,input.value));
-            }
+    public static class NameValue {
+        public String name, value;
+        public NameValue(String name, String value) {
+            this.name = name;
+            this.value = value;
         }
-        return data.toArray(new NameValuePair[data.size()]);
     }
 
-    public FormInput getLoginInputFromCandidates() {
-        if (candidateUsernameInputs == null) return null;
-        
-        if (candidateUsernameInputs.size() == 1) return candidateUsernameInputs.get(0);
-        
-        for (FormInput input : candidateUsernameInputs) {
-            if (input.name != null && input.name.toLowerCase().indexOf("login") != -1) {
-                return input;
-            }
-        }
-        
-        return candidateUsernameInputs.get(0);
-    }
-    
-    public HttpEntity asFormDataMultiPartEntity(String username, String password) {
-        MultipartEntityBuilder multiPartEntityBuilder = MultipartEntityBuilder.create();
-        multiPartEntityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-        
+    public LinkedList<NameValue> formData(String username, String password) {
+        LinkedList<NameValue> nameVals = new LinkedList<NameValue>();
         for (FormInput input : allInputs) {
-            if(input == getLoginInputFromCandidates()) {
-                multiPartEntityBuilder.addPart(input.name, new StringBody(username, ContentType.MULTIPART_FORM_DATA));
+            if (input == candidateUsernameInputs.get(0)) {
+                nameVals.add(new NameValue(input.name, username));
             } else if(input == candidatePasswordInputs.get(0)) {
-                multiPartEntityBuilder.addPart(input.name, new StringBody(password, ContentType.MULTIPART_FORM_DATA));
-            } else if (StringUtils.isNotEmpty(input.name)) {
-                multiPartEntityBuilder.addPart(input.name, new StringBody(StringUtils.isNotEmpty(input.value) ? input.value : "", ContentType.MULTIPART_FORM_DATA));                
-            }
-        }
-       
-        return multiPartEntityBuilder.build();
-    }
-    
-    public String asFormDataString(String username, String password) {
-        List<String> nameVals = new LinkedList<String>();
-
-        for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(username));
-            } else if(input == candidatePasswordInputs.get(0)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
+                nameVals.add(new NameValue(input.name, password));
             } else if (StringUtils.isNotEmpty(input.name)
                     && StringUtils.isNotEmpty(input.value)
                     && (!"radio".equalsIgnoreCase(input.type)
                             && !"checkbox".equals(input.type) || input.checked)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "="
-                        + TextUtils.urlEscape(input.value));
+                nameVals.add(new NameValue(input.name, input.value));
             }
         }
-
-        return StringUtils.join(nameVals, '&');
+        return nameVals;
     }
 
     public String toString() {

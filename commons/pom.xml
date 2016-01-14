@@ -28,9 +28,8 @@
 			<artifactId>httpclient</artifactId>
 		</dependency>
 		<dependency>
-		    	<groupId>org.apache.httpcomponents</groupId>
-		    	<artifactId>httpmime</artifactId>
-		    	<version>4.3.6</version>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.sleepycat</groupId>
