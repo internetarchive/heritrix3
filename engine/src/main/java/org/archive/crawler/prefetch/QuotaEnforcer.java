@@ -39,7 +39,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * blocks the current URI's processing with S_BLOCKED_BY_QUOTA.
  * 
  * @author gojomo
- * @version $Date$, $Revision$
  */
 public class QuotaEnforcer extends Processor {
     @SuppressWarnings("unused")
@@ -57,21 +56,29 @@ public class QuotaEnforcer extends Processor {
     protected static final int SUCCESS_KB = 1;
     protected static final int RESPONSES = 2;
     protected static final int RESPONSE_KB = 3;
+    protected static final int NOVEL_KB = 4;
+    protected static final int NOVEL_URLS = 5;
     
     private static final String SERVER_MAX_FETCH_SUCCESSES = "serverMaxFetchSuccesses";
     private static final String SERVER_MAX_SUCCESS_KB = "serverMaxSuccessKb";
     private static final String SERVER_MAX_FETCH_RESPONSES = "serverMaxFetchResponses";
     private static final String SERVER_MAX_ALL_KB = "serverMaxAllKb";
+    private static final String SERVER_MAX_NOVEL_KB = "serverMaxNovelKb";
+    private static final String SERVER_MAX_NOVEL_URLS = "serverMaxNovelUrls";
 
     private static final String HOST_MAX_FETCH_SUCCESSES = "hostMaxFetchSuccesses";
     private static final String HOST_MAX_SUCCESS_KB = "hostMaxSuccessKb";
     private static final String HOST_MAX_FETCH_RESPONSES = "hostMaxFetchResponses";
     private static final String HOST_MAX_ALL_KB = "hostMaxAllKb";
+    private static final String HOST_MAX_NOVEL_KB = "hostMaxNovelKb";
+    private static final String HOST_MAX_NOVEL_URLS = "hostMaxNovelUrls";
 
     private static final String GROUP_MAX_FETCH_SUCCESSES = "groupMaxFetchSuccesses";
     private static final String GROUP_MAX_SUCCESS_KB = "groupMaxSuccessKb";
     private static final String GROUP_MAX_FETCH_RESPONSES = "groupMaxFetchResponses";
     private static final String GROUP_MAX_ALL_KB = "groupMaxAllKb";
+    private static final String GROUP_MAX_NOVEL_KB = "serverMaxNovelKb";
+    private static final String GROUP_MAX_NOVEL_URLS = "serverMaxNovelUrls";
     
     protected static final String[][] keys = new String[][] {
         {
@@ -79,22 +86,27 @@ public class QuotaEnforcer extends Processor {
             SERVER_MAX_FETCH_SUCCESSES,
             SERVER_MAX_SUCCESS_KB,
             SERVER_MAX_FETCH_RESPONSES,
-            SERVER_MAX_ALL_KB
+            SERVER_MAX_ALL_KB,
+            SERVER_MAX_NOVEL_KB,
+            SERVER_MAX_NOVEL_URLS,
         },
         {
             //"host"
             HOST_MAX_FETCH_SUCCESSES,
             HOST_MAX_SUCCESS_KB,
             HOST_MAX_FETCH_RESPONSES,
-            HOST_MAX_ALL_KB
-            ,
+            HOST_MAX_ALL_KB,
+            HOST_MAX_NOVEL_KB,
+            HOST_MAX_NOVEL_URLS,
         },
         {
             //"group"
             GROUP_MAX_FETCH_SUCCESSES,
             GROUP_MAX_SUCCESS_KB,
             GROUP_MAX_FETCH_RESPONSES,
-            GROUP_MAX_ALL_KB
+            GROUP_MAX_ALL_KB,
+            GROUP_MAX_NOVEL_KB,
+            GROUP_MAX_NOVEL_URLS,
         }
     };
 
@@ -158,6 +170,26 @@ public class QuotaEnforcer extends Processor {
         kp.put(SERVER_MAX_ALL_KB,max);
     }
 
+    {
+        setServerMaxNovelKb(-1L); // no limit
+    }
+    public long getServerMaxNovelKb() {
+        return (Long) kp.get(SERVER_MAX_NOVEL_KB);
+    }
+    public void setServerMaxNovelKb(long max) {
+        kp.put(SERVER_MAX_NOVEL_KB, max);
+    }
+    
+    {
+        setServerMaxNovelUrls(-1L); // no limit
+    }
+    public long getServerMaxNovelUrls() {
+        return (Long) kp.get(SERVER_MAX_NOVEL_URLS);
+    }
+    public void setServerMaxNovelUrls(long max) {
+        kp.put(SERVER_MAX_NOVEL_URLS, max);
+    }
+    
     /**
      * Maximum number of fetch successes (e.g. 200 responses) to collect from
      * one host. Default is -1, meaning no limit.
@@ -198,6 +230,26 @@ public class QuotaEnforcer extends Processor {
     }
     public void setHostMaxFetchResponses(long max) {
         kp.put(HOST_MAX_FETCH_RESPONSES,max);
+    }
+
+    {
+        setHostMaxNovelKb(-1L); // no limit
+    }
+    public long getHostMaxNovelKb() {
+        return (Long) kp.get(HOST_MAX_NOVEL_KB);
+    }
+    public void setHostMaxNovelKb(long max) {
+        kp.put(HOST_MAX_NOVEL_KB, max);
+    }
+
+    {
+        setHostMaxNovelUrls(-1L); // no limit
+    }
+    public long getHostMaxNovelUrls() {
+        return (Long) kp.get(HOST_MAX_NOVEL_URLS);
+    }
+    public void setHostMaxNovelUrls(long max) {
+        kp.put(HOST_MAX_NOVEL_URLS, max);
     }
 
     /**
@@ -269,6 +321,27 @@ public class QuotaEnforcer extends Processor {
     public void setGroupMaxAllKb(long max) {
         kp.put(GROUP_MAX_ALL_KB,max);
     }
+    
+    {
+        setGroupMaxNovelKb(-1L); // no limit
+    }
+    public long getGroupMaxNovelKb() {
+        return (Long) kp.get(GROUP_MAX_NOVEL_KB);
+    }
+    public void setGroupMaxNovelKb(long max) {
+        kp.put(GROUP_MAX_NOVEL_KB, max);
+    }
+    
+    {
+        setGroupMaxNovelUrls(-1L); // no limit
+    }
+    public long getGroupMaxNovelUrls() {
+        return (Long) kp.get(GROUP_MAX_NOVEL_URLS);
+    }
+    public void setGroupMaxNovelUrls(long max) {
+        kp.put(GROUP_MAX_NOVEL_URLS, max);
+    }
+
 
     /**
      * Whether an over-quota situation should result in the containing queue
@@ -357,8 +430,10 @@ public class QuotaEnforcer extends Processor {
                 substats.getSuccessBytes()/1024,
                 substats.getFetchResponses(),
                 substats.getTotalBytes()/1024,
+                substats.getNovelBytes()/1024,
+                substats.getNovelUrls(),
         };
-        for(int q=SUCCESSES; q<=RESPONSE_KB; q++) {
+        for(int q=SUCCESSES; q<=NOVEL_URLS; q++) {
             String key = keys[CAT][q];
             if (applyQuota(curi, key, actuals[q])) {
                 return true; 

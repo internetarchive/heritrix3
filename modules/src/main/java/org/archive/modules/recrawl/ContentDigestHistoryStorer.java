@@ -33,7 +33,9 @@ public class ContentDigestHistoryStorer extends Processor {
 
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
-        return uri.getContentDigest() != null && uri.getContentLength() > 0;
+        return uri.getContentDigest() != null && uri.getContentLength() > 0
+                && uri.hasContentDigestHistory()
+                && !uri.getContentDigestHistory().isEmpty();
     }
 
     @Override
