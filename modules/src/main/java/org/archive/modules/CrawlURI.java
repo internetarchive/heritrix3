@@ -32,6 +32,7 @@ import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
 import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
 import static org.archive.modules.CoreAttributeConstants.A_SUBMIT_DATA;
+import static org.archive.modules.CoreAttributeConstants.A_SUBMIT_ENCTYPE;
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 import static org.archive.modules.SchedulingConstants.NORMAL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
@@ -256,7 +257,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      */
     private static final Collection<String> persistentKeys
      = new CopyOnWriteArrayList<String>(
-            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES, A_SUBMIT_DATA, A_WARC_RESPONSE_HEADERS, A_ANNOTATIONS});
+            new String [] {A_CREDENTIALS_KEY, A_HTTP_AUTH_CHALLENGES, A_SUBMIT_DATA, A_WARC_RESPONSE_HEADERS, A_ANNOTATIONS, A_SUBMIT_ENCTYPE});
 
     /** maximum length for pathFromSeed/hopsPath; longer truncated with leading counter **/ 
     private static final int MAX_HOPS_DISPLAYED = 50;
