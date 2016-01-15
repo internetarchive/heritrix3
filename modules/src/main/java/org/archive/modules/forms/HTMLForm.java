@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 import org.archive.util.TextUtils;
 
@@ -72,13 +71,14 @@ public class HTMLForm {
         }
         input.name = name;
         input.value = value; 
+        input.checked = checked;
         allInputs.add(input);
+
         if("text".equalsIgnoreCase(input.type) || "email".equalsIgnoreCase(input.type)) {
             candidateUsernameInputs.add(input);
         } else if ("password".equalsIgnoreCase(type)) {
             candidatePasswordInputs.add(input);
         }
-        input.checked = checked;
     }
 
     /**
@@ -113,41 +113,39 @@ public class HTMLForm {
      */
     public boolean seemsLoginForm() {
         return "post".equalsIgnoreCase(method) 
-                && candidateUsernameInputs.size() == 1
-                && candidatePasswordInputs.size() == 1;
+                && candidatePasswordInputs.size() == 1
+                && presumedUsernameInput() != null;
     }
 
-    /**
-     * Create the NameValuePair array expected by HttpClient, merging
-     * username and password into the appropriate value slots.
-     * 
-     * @param username
-     * @param password
-     * @return
-     * @deprecated specific to a particular FetchHTTP implementation based on commons-httpclient, use {@link #asFormDataString(String, String)}
-     */
-    public NameValuePair[] asHttpClientDataWith(String username, String password) {
-        ArrayList<NameValuePair> data = new ArrayList<NameValuePair>(allInputs.size());
-       
-        for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
-                data.add(new NameValuePair(input.name,username));
-            } else if(input == candidatePasswordInputs.get(0)) {
-                data.add(new NameValuePair(input.name,password));
-            } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
-                data.add(new NameValuePair(input.name,input.value));
+    protected FormInput presumedUsernameInput() {
+        if (candidateUsernameInputs.size() < 1) {
+            return null;
+        } else if (candidateUsernameInputs.size() == 1) {
+            return candidateUsernameInputs.get(0);
+        } else {
+            // more than one candidate; if there is exactly one whose name
+            // contains the string "username", choose that one
+            FormInput choice = null;
+            for (FormInput input: candidateUsernameInputs) {
+                if (input.name != null && input.name.toLowerCase().indexOf("username") != -1) {
+                    if (choice == null) {
+                        choice = input;
+                    } else {
+                        return null;
+                    }
+                }
             }
+            return choice;
         }
-        return data.toArray(new NameValuePair[data.size()]);
     }
-    
+
     public String asFormDataString(String username, String password) {
         List<String> nameVals = new LinkedList<String>();
 
         for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
+            if (input == presumedUsernameInput()) {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(username));
-            } else if(input == candidatePasswordInputs.get(0)) {
+            } else if (input == candidatePasswordInputs.get(0)) {
                 nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
             } else if (StringUtils.isNotEmpty(input.name)
                     && StringUtils.isNotEmpty(input.value)

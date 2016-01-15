@@ -69,4 +69,38 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         String queryString = (String) submitCuri.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
         assertEquals("username-form-field=jdoe&password-form-field=********", queryString);
     }
+
+    public void testFormLoginExtraInputs() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://example.com/");
+
+        HTMLForm form = new HTMLForm();
+        form.addField("text", "username-form-field", "");
+        form.addField("password", "password-form-field", "");
+        form.addField("text", "some-other-form-field", "default value!");
+        form.addField("hidden", "hidden-field", "hidden value!");
+        form.addField("checkbox", "checkbox-field", "unchecked-value", false);
+        form.addField("checkbox", "checkbox-field", "checked-value", true);
+        form.addField("radio", "radio-field", "unchecked-value", false);
+        form.addField("checkbox", "radio-field", "checked-value", true);
+        form.setMethod("post");
+        form.setAction("/login");
+        curi.getDataList(ExtractorHTMLForms.A_HTML_FORM_OBJECTS).add(form);
+
+        FormLoginProcessor p = (FormLoginProcessor) makeModule();
+        p.setLoginUsername("jdoe");
+        p.setLoginPassword("********");
+        p.setApplicableSurtPrefix("http://(com,example,)");
+
+        p.process(curi);
+        assertEquals(1, curi.getDataList(A_WARC_RESPONSE_HEADERS).size());
+        assertEquals("WARC-Simple-Form-Province-Status: 0,0,http://(com,example,)", curi.getDataList(A_WARC_RESPONSE_HEADERS).get(0));
+        assertTrue(curi.getAnnotations().contains("submit:/login"));
+
+        assertEquals(1, curi.getOutLinks().size());
+        CrawlURI submitCuri = curi.getOutLinks().toArray(new CrawlURI[0])[0];
+        assertEquals("http://example.com/login", submitCuri.toString());
+        assertEquals(FetchType.HTTP_POST, submitCuri.getFetchType());
+        String queryString = (String) submitCuri.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
+        assertEquals("username-form-field=jdoe&password-form-field=********&some-other-form-field=default+value%21&hidden-field=hidden+value%21&checkbox-field=checked-value&radio-field=checked-value", queryString);
+    }
 }
