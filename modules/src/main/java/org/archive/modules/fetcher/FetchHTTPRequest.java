@@ -187,8 +187,10 @@ public class FetchHTTPRequest {
             BasicExecutionAwareEntityEnclosingRequest postRequest = new BasicExecutionAwareEntityEnclosingRequest(
                     "POST", requestLineUri, httpVersion);
             this.request = postRequest;
-            HttpEntity entity = buildPostRequestEntity(curi);
-            postRequest.setEntity(entity);
+            if (curi.containsDataKey(CoreAttributeConstants.A_SUBMIT_DATA)) {
+                HttpEntity entity = buildPostRequestEntity(curi);
+                postRequest.setEntity(entity);
+            }
         } else {
             this.request = new BasicExecutionAwareRequest("GET", 
                     requestLineUri, httpVersion);
