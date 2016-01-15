@@ -661,8 +661,24 @@ public class FetchHTTP extends Processor implements Lifecycle {
             failedExecuteCleanup(curi, e);
             return;
         } catch (IOException e) {
-            failedExecuteCleanup(curi, e);
-            return;
+            if ("handshake alert:  unrecognized_name".equals(e.getMessage())) {
+                req.setDisableSNI(true);
+
+                try {
+                    response = req.execute();
+                    addResponseContent(response, curi);
+                } catch (ClientProtocolException ee) {
+                    failedExecuteCleanup(curi, e);
+                    return;
+                } catch (IOException ee) {
+                    failedExecuteCleanup(curi, e);
+                    return;
+                }
+            }
+            else {
+                failedExecuteCleanup(curi, e);
+                return;
+            }
         }
         
         maybeMidfetchAbort(curi, req.request);
