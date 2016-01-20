@@ -67,7 +67,7 @@ public class ExtractorJS extends ContentExtractor {
     // (areas between paired ' or " characters, possibly backslash-quoted
     // on the ends, but not in the middle)
     protected static final String JAVASCRIPT_STRING_EXTRACTOR =
-    		"(\\\\{0,8}+(?:['\"]|u002[27]))([^\\s'\"]{1,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
+    		"(\\\\{0,8}+(?:['\"]|u002[27]))([^'\"]{0,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
     
     // GROUPS:
     // (G1) ' or " with optional leading backslashes

@@ -381,6 +381,7 @@ public class UriUtils {
     }
     
     protected static final Set<String> KNOWN_GOOD_FILE_EXTENSIONS = new HashSet<String>();
+
     static {
         /*
          * Real known use cases for this are .min.js, .min.css, and we've seen
@@ -389,19 +390,20 @@ public class UriUtils {
          */
         KNOWN_GOOD_FILE_EXTENSIONS.addAll(Arrays.asList(".jpg", ".js", ".css",
                 ".png", ".gif", ".swf", ".flv", ".mp4", ".mp3", ".jpeg",
-                ".html"));
+                ".html", ".pdf"));
     }
 
     protected static final String QNV = "[a-zA-Z_]+=(?:[\\w-/.]|%[0-9a-fA-F]{2})*"; // name=value for query strings
     // group(1) filename
     // group(2) filename extension with leading '.'
     protected static final String LIKELY_RELATIVE_URI_PATTERN = 
-            "(?:\\.?/)?"                                         // may start with "/" or "./"
-            + "(?:(?:[\\w-]+|\\.\\.)/)*"                         // may have path/segments/
-            + "([\\w-]+(?:\\.[\\w-]+)?(\\.[a-zA-Z0-9]{2,5})?)?"  // may have a filename with or without an extension
-            + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?"      // may have a ?query=string
-            + "(?:#[\\w-]+)?";                                   // may have a #fragment
-
+            "(?:\\.?/|\\\\u002f)?"                                          // may start with "/" or "./" or utf16 / which is (\u002f)
+            + "(?:(?:[\\s\\w-]+|\\.\\.)(?:/|\\\\u002f))*"                   // may have path/segments/segment2\u002fa\u002f
+            + "([\\s\\w-]+(?:\\.[\\w-]+)?(\\.[a-zA-Z0-9]{2,5})?)?"          // may have a filename with or without an extension
+            + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?"                 // may have a ?query=string
+            + "(?:#[\\w-]+)?";                                              // may have a #fragment
+    
+    
     public static boolean isVeryLikelyUri(CharSequence candidate) {
         // must have a . or /
         if (!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
@@ -421,6 +423,21 @@ public class UriUtils {
         // relative or server-relative uri
         Matcher matcher = TextUtils.getMatcher(LIKELY_RELATIVE_URI_PATTERN, candidate);
         if (!matcher.matches()) {
+            return false;
+        }
+
+        // if spaces in url, only allow file extensions that match known good extensions
+        if (TextUtils.matches(".*[\\s)]+.*", candidate)) {
+            String filename = matcher.group(1);
+            String extension = matcher.group(2);
+            if (filename != null && extension != null
+                    && KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
+                return true;
+            }
+        }
+        
+        // if spaces in url but doesn't match a known good file extension, discard
+        if (TextUtils.matches(".*[\\s)]+.*", candidate)) {
             return false;
         }
         
