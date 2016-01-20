@@ -63,7 +63,7 @@ public class ExtractorJS extends ContentExtractor {
     private static Logger LOGGER = 
             Logger.getLogger(ExtractorJS.class.getName());
 
-    // finds whitespace- and quote-free strings in Javascript
+    // finds strings in Javascript
     // (areas between paired ' or " characters, possibly backslash-quoted
     // on the ends, but not in the middle)
     protected static final String JAVASCRIPT_STRING_EXTRACTOR =

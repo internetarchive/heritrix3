@@ -89,9 +89,9 @@ public class UriUtils {
     private static final Logger LOGGER = Logger.getLogger(UriUtils.class.getName());
 
     // naive likely-uri test: 
-    //    no whitespace or '<' or '>' 
+    //    no '<' or '>' 
     //    at least one '.' or '/';
-    protected static final String NAIVE_LIKELY_URI_PATTERN = "[^<>\\s]*[\\./][^<>\\s]*";
+    protected static final String NAIVE_LIKELY_URI_PATTERN = "[^<>]*[\\./][^<>]*";
     
     public static boolean isPossibleUri(CharSequence candidate) {
         return TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate);
@@ -429,16 +429,16 @@ public class UriUtils {
         // if spaces in url, only allow file extensions that match known good extensions
         if (TextUtils.matches(".*[\\s)]+.*", candidate)) {
             String filename = matcher.group(1);
-            String extension = matcher.group(2);
-            if (filename != null && extension != null
-                    && KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
-                return true;
+            if (filename != null) {
+                int lastIndexOfDot = filename.lastIndexOf(".");
+                if (lastIndexOfDot != -1) {
+                    String extension = filename.substring(lastIndexOfDot);
+                    if (KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
+                                return true;
+                    }
+                }
+                return false;
             }
-        }
-        
-        // if spaces in url but doesn't match a known good file extension, discard
-        if (TextUtils.matches(".*[\\s)]+.*", candidate)) {
-            return false;
         }
         
         /*
