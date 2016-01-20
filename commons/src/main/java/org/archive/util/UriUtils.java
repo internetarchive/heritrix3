@@ -437,8 +437,9 @@ public class UriUtils {
                                 return true;
                     }
                 }
-                return false;
             }
+            
+            return false;
         }
         
         /*
