@@ -397,8 +397,8 @@ public class UriUtils {
     // group(1) filename
     // group(2) filename extension with leading '.'
     protected static final String LIKELY_RELATIVE_URI_PATTERN = 
-            "(?:\\.?/|\\\\u002f)?"                                          // may start with "/" or "./" or utf16 / which is (\u002f)
-            + "(?:(?:[\\s\\w-]+|\\.\\.)(?:/|\\\\u002f))*"                   // may have path/segments/segment2\u002fa\u002f
+            "(?:\\.?/)?"                                                    // may start with "/" or "./"
+            + "(?:(?:[\\s\\w-]+|\\.\\.)(?:/))*"                             // may have path/segments/segment2
             + "([\\s\\w-]+(?:\\.[\\w-]+)?(\\.[a-zA-Z0-9]{2,5})?)?"          // may have a filename with or without an extension
             + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?"                 // may have a ?query=string
             + "(?:#[\\w-]+)?";                                              // may have a #fragment
@@ -427,7 +427,7 @@ public class UriUtils {
         }
 
         // if spaces in url, only allow file extensions that match known good extensions
-        if (TextUtils.matches(".*[\\s)]+.*", candidate)) {
+        if (TextUtils.matches(".*\\s+.*", candidate)) {
             String filename = matcher.group(1);
             if (filename != null) {
                 int lastIndexOfDot = filename.lastIndexOf(".");
