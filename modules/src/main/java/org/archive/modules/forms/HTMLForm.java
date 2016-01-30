@@ -178,11 +178,13 @@ public class HTMLForm {
         for (FormInput input : allInputs) {
             if (input == presumedUsernameInput()) {
                 nameVals.add(new NameValue(input.name, username));
-            } else if(input == candidatePasswordInputs.get(0)) {
+            } else if (input == candidatePasswordInputs.get(0)) {
                 nameVals.add(new NameValue(input.name, password));
-            } else if(!"radio".equalsIgnoreCase(input.type)
-                            && !"checkbox".equals(input.type) || input.checked) {
-                nameVals.add(new NameValue(StringUtils.isEmpty(input.name) ? "" : input.name, StringUtils.isEmpty(input.value) ? "" : input.value));
+            } else if (!"radio".equalsIgnoreCase(input.type)
+                    && !"checkbox".equals(input.type) || input.checked) {
+                nameVals.add(new NameValue(StringUtils.isEmpty(input.name) ? ""
+                        : input.name, StringUtils.isEmpty(input.value) ? ""
+                        : input.value));
             }
         }
         return nameVals;
