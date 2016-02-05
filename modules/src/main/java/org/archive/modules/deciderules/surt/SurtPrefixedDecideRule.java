@@ -19,6 +19,8 @@
 
 package org.archive.modules.deciderules.surt;
 
+import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -158,7 +160,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
     }
     
     protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
-
+    
     public SurtPrefixedDecideRule() {
     }
     
@@ -173,16 +175,40 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
      * @return true if item, as SURT form URI, is prefixed by an item in the set
      */
     @Override
-    protected boolean evaluate(CrawlURI uri) {
+    protected boolean evaluate(CrawlURI uri) {        
+        String sourceTag = uri.containsDataKey(A_SOURCE_TAG) ? uri
+                .getSourceTag() : null;
+        
         if (getAlsoCheckVia()) {
-            if (innerDecide(uri.getVia())) {
+            if (innerDecide(uri.getVia(), sourceTag)) {
                 return true;
             }
         }
-        return innerDecide(uri.getUURI());
+        return innerDecide(uri.getUURI(), sourceTag);
     }
     
-    private boolean innerDecide(UURI uuri) {
+    private boolean innerDecide(UURI uuri, String sourceTag) {
+        if (sourceTag != null) {
+            if (surtPrefixes.size() > 0 && !surtPrefixes.contains(SurtPrefixSet.prefixFromPlainForceHttp(sourceTag))) {
+                //this isn't a normal seed, it is a one-page-only seed, so don't scope against normal seeds, scope against this seed
+                String candidateSurt;
+                candidateSurt = SurtPrefixSet.getCandidateSurt(uuri);
+                if (candidateSurt == null) {
+                    return false;
+                }
+                
+                SurtPrefixSet onePageOnlySurtPrefixes = new SurtPrefixSet();
+                
+                onePageOnlySurtPrefixes.add(prefixFrom(sourceTag));
+                
+                if (onePageOnlySurtPrefixes.containsPrefixOf(candidateSurt)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+        
         String candidateSurt;
         candidateSurt = SurtPrefixSet.getCandidateSurt(uuri);
         if (candidateSurt == null) {
