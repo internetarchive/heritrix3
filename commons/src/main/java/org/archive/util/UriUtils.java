@@ -399,7 +399,7 @@ public class UriUtils {
     protected static final String LIKELY_RELATIVE_URI_PATTERN = 
             "(?:\\.?/)?"                                                    // may start with "/" or "./"
             + "(?:(?:[\\s\\w-]+|\\.\\.)(?:/))*"                             // may have path/segments/segment2
-            + "([\\s\\w-]+(?:\\.[\\w-]+)?(\\.[a-zA-Z0-9]{2,5})?)?"          // may have a filename with or without an extension
+            + "([\\s\\w-]+(?:\\.[\\w-]+)??(\\.[a-zA-Z0-9]{2,5})?)?"         // may have a filename with or without an extension
             + "(?:\\?(?:"+ QNV + ")(?:&(?:" + QNV + "))*)?"                 // may have a ?query=string
             + "(?:#[\\w-]+)?";                                              // may have a #fragment
     
@@ -426,22 +426,6 @@ public class UriUtils {
             return false;
         }
 
-        // if spaces in url, only allow file extensions that match known good extensions
-        if (TextUtils.matches(".*\\s+.*", candidate)) {
-            String filename = matcher.group(1);
-            if (filename != null) {
-                int lastIndexOfDot = filename.lastIndexOf(".");
-                if (lastIndexOfDot != -1) {
-                    String extension = filename.substring(lastIndexOfDot);
-                    if (KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
-                                return true;
-                    }
-                }
-            }
-            
-            return false;
-        }
-        
         /*
          * Remaining tests discard stuff that the
          * LIKELY_RELATIVE_URI_PATTERN can't catch
@@ -453,6 +437,12 @@ public class UriUtils {
         if (filename != null && extension != null
                 && filename.indexOf('.') != filename.lastIndexOf('.')
                 && !KNOWN_GOOD_FILE_EXTENSIONS.contains(extension)) {
+            return false;
+        }
+
+        if (TextUtils.matches(".*\\s+.*", candidate)
+                && (extension == null
+                    || !KNOWN_GOOD_FILE_EXTENSIONS.contains(extension))) {
             return false;
         }
 
