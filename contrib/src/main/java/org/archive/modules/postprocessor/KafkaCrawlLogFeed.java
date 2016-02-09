@@ -34,6 +34,8 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.frontier.BdbFrontier;
@@ -176,8 +178,8 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
 
     private transient ThreadGroup kafkaProducerThreads;
 
-    transient protected KafkaProducer kafkaProducer;
-    protected KafkaProducer kafkaProducer() {
+    transient protected KafkaProducer<String, byte[]> kafkaProducer;
+    protected KafkaProducer<String, byte[]> kafkaProducer() {
         if (kafkaProducer == null) {
             synchronized (this) {
                 if (kafkaProducer == null) {
@@ -185,6 +187,8 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
                     props.put("bootstrap.servers", getBrokerList());
                     props.put("acks", "1");
                     props.put("producer.type", "async");
+                    props.put("key.serializer", StringSerializer.class.getName());
+                    props.put("value.serializer", ByteArraySerializer.class.getName());
 
                     /*
                      * XXX This mess here exists so that the kafka producer
@@ -198,13 +202,13 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
                             return new Thread(kafkaProducerThreads, r);
                         }
                     };
-                    Callable<KafkaProducer> task = new Callable<KafkaProducer>() {
-                        public KafkaProducer call() throws InterruptedException {
-                            return new KafkaProducer(props);
+                    Callable<KafkaProducer<String,byte[]>> task = new Callable<KafkaProducer<String,byte[]>>() {
+                        public KafkaProducer<String, byte[]> call() throws InterruptedException {
+                            return new KafkaProducer<String,byte[]>(props);
                         }
                     };
                     ExecutorService executorService = Executors.newFixedThreadPool(1, threadFactory);
-                    Future<KafkaProducer> future = executorService.submit(task);
+                    Future<KafkaProducer<String, byte[]>> future = executorService.submit(task);
                     try {
                         kafkaProducer = future.get();
                     } catch (InterruptedException e) {
@@ -238,7 +242,7 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         byte[] message = buildMessage(curi);
-        ProducerRecord producerRecord = new ProducerRecord(getTopic(), message);
+        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String,byte[]>(getTopic(), message);
         kafkaProducer().send(producerRecord, new KafkaResultCallback(curi));
     }
 }
