@@ -87,7 +87,7 @@ public class HTMLForm {
     }
     
     public boolean isMultipleFormSubmitInputs(String type) {
-        if (!type.toLowerCase().equals("submit"))
+        if (type != null && !type.toLowerCase().equals("submit"))
             return false;
 
         for (FormInput input : allInputs) {
