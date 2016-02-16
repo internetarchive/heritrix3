@@ -178,7 +178,7 @@ implements ReadSource {
             curi.setSeed(true);
             curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
             if (getSourceTagSeeds()) {
-                curi.setSourceTag(curi.toString());
+                curi.setSourceTag(uri);
             }
             publishAddedSeed(curi);
         } catch (URIException e) {
