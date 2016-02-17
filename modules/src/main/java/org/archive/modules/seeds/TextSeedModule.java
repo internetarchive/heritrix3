@@ -167,6 +167,7 @@ implements ReadSource {
      * @param uri String seed-containing line
      */
     protected void seedLine(String uri) {
+        String originalUri = uri;
         if (!uri.matches("[a-zA-Z][\\w+\\-]+:.*")) { // Rfc2396 s3.1 scheme,
                                                      // minus '.'
             // Does not begin with scheme, so try http://
@@ -178,7 +179,7 @@ implements ReadSource {
             curi.setSeed(true);
             curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
             if (getSourceTagSeeds()) {
-                curi.setSourceTag(uri);
+                curi.setSourceTag(originalUri);
             }
             publishAddedSeed(curi);
         } catch (URIException e) {
