@@ -39,6 +39,7 @@ import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.KeyedProperties;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -316,6 +317,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             if ("GET".equals(jo.getString("method"))) {
                 try {
                     CrawlURI curi = makeCrawlUri(jo);
+                    KeyedProperties.clearAllOverrideContexts();
                     candidates.runCandidateChain(curi, null);
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
