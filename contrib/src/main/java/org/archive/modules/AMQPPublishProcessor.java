@@ -24,6 +24,7 @@ import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.httpclient.URIException;
@@ -46,13 +47,15 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
 
     public AMQPPublishProcessor() {
         // set default values
-        exchange = "umbra";
-        routingKey = "urls";
+        setExchange("umbra");
+        setRoutingKey("urls");
     }
 
-    protected String clientId = "requests";
+    {
+        setClientId("requests");
+    }
     public String getClientId() {
-        return clientId;
+        return (String) kp.get("clientId");
     }
     /**
      * Client id to include in the json payload. AMQPUrlReceiver queueName
@@ -60,7 +63,18 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
      * this key.
      */
     public void setClientId(String clientId) {
-        this.clientId = clientId;
+        kp.put("clientId", clientId);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getExtraInfo() {
+        return (Map<String, Object>) kp.get("extraInfo");
+    }
+    /**
+     * Arbitrary additional information to include in the json payload.
+     */
+    public void setExtraInfo(Map<String, Object> extraInfo) {
+        kp.put("extraInfo", extraInfo);
     }
 
     /**
@@ -92,6 +106,12 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
 
         if (getClientId() != null) {
             message.put("clientId", getClientId());
+        }
+
+        if (getExtraInfo() != null) {
+            for (String k: getExtraInfo().keySet()) {
+                message.put(k, getExtraInfo().get(k));
+            }
         }
 
         HashMap<String, Object> metadata = new HashMap<String,Object>();
