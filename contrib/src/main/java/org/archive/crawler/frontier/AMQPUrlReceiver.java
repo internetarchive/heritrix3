@@ -330,7 +330,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 try {
                     CrawlURI curi = makeCrawlUri(jo);
                     KeyedProperties.clearAllOverrideContexts();
-                    // logger.info("");
                     candidates.runCandidateChain(curi, null);
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
