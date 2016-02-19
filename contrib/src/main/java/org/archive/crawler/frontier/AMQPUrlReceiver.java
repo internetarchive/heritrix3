@@ -21,6 +21,7 @@ package org.archive.crawler.frontier;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -130,6 +131,14 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     /** Should be queues be marked as auto-delete? */
     public void setAutoDelete(boolean autoDelete) {
         this.autoDelete = autoDelete;
+    }
+    
+    private boolean forceFetch = false;
+    public boolean isForceFetch() {
+        return forceFetch;
+    }
+    public void setForceFetch(boolean forceFetch) {
+        this.forceFetch = forceFetch;
     }
 
     private transient Lock lock = new ReentrantLock(true);
@@ -291,6 +300,9 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             lock.unlock();
         }
     }
+    
+    protected static final Set<String> REQUEST_HEADER_BLACKLIST = new HashSet<String>(Arrays.asList(
+            "accept-encoding", "upgrade-insecure-requests", "host", "connection"));
 
     // XXX should we be using QueueingConsumer because of possible blocking in
     // frontier.schedule()?
@@ -318,6 +330,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 try {
                     CrawlURI curi = makeCrawlUri(jo);
                     KeyedProperties.clearAllOverrideContexts();
+                    // logger.info("");
                     candidates.runCandidateChain(curi, null);
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
@@ -377,9 +390,11 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
             // set the http headers from the amqp message
             Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
-            for (Object key : joHeaders.keySet()) {
-                customHttpRequestHeaders.put(key.toString(),
-                        joHeaders.getString(key.toString()));
+            for (Object key: joHeaders.keySet()) {
+                String k = key.toString();
+                if (!k.startsWith(":") && !REQUEST_HEADER_BLACKLIST.contains(k)) {
+                    customHttpRequestHeaders.put(k, joHeaders.getString(key.toString()));
+                }
             }
             curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
 
@@ -392,7 +407,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
 
-            curi.setForceFetch(jo.optBoolean("forceFetch"));
+            curi.setForceFetch(forceFetch || jo.optBoolean("forceFetch"));
             curi.setSeed(jo.optBoolean("isSeed"));
 
             curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
