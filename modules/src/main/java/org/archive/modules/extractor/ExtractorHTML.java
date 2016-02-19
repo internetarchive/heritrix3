@@ -138,7 +138,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
       "(?is)<(?:((script[^>]*+)>.*?</script)" + // 1, 2
       "|((style[^>]*+)>.*?</style)" + // 3, 4
       "|(((meta)|(?:\\w{1,"+MAX_ELEMENT_REPLACE+"}))\\s+[^>]*+)" + // 5, 6, 7
-      "|(!--(?!\\[if).*?--))>"; // 8 
+      "|(!--(?!\\[if|>).*?--))>"; // 8 
 
 //    version w/ problems with unclosed script tags 
 //    static final String RELEVANT_TAG_EXTRACTOR =
