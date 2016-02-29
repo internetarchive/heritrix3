@@ -32,14 +32,14 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.event.CrawlStateEvent;
-import org.archive.crawler.framework.Frontier;
+import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
-import org.archive.modules.seeds.SeedModule;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.KeyedProperties;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,31 +62,26 @@ import com.rabbitmq.client.ShutdownSignalException;
 public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStateEvent> {
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private static final Logger logger = 
             Logger.getLogger(AMQPUrlReceiver.class.getName());
 
     public static final String A_RECEIVED_FROM_AMQP = "receivedFromAMQP";
 
-    protected Frontier frontier;
-    public Frontier getFrontier() {
-        return this.frontier;
+    protected CandidatesProcessor candidates;
+    public CandidatesProcessor getCandidates() {
+        return candidates;
     }
+    /**
+     * Received urls are run through the supplied CandidatesProcessor, which
+     * checks scope and schedules the urls. By default the crawl job's normal
+     * candidates processor is autowired in, but a different one can be
+     * configured if special scoping rules are desired.
+     */
     @Autowired
-    public void setFrontier(Frontier frontier) {
-        this.frontier = frontier;
-    }
-
-    protected SeedModule seeds;
-
-    public SeedModule getSeeds() {
-        return this.seeds;
-    }
-
-    @Autowired
-    public void setSeeds(SeedModule seeds) {
-        this.seeds = seeds;
+    public void setCandidates(CandidatesProcessor candidates) {
+        this.candidates = candidates;
     }
 
     protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
@@ -119,20 +114,20 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         return isRunning;
     }
 
-    /** Should be queues be marked as durable? */
     private boolean durable = false;
     public boolean isDurable() {
         return durable;
     }
+    /** Should be queues be marked as durable? */
     public void setDurable(boolean durable) {
         this.durable = durable;
     }
 
-    /** Should be queues be marked as auto-delete? */
     private boolean autoDelete = true;
     public boolean isAutoDelete() {
         return autoDelete;
     }
+    /** Should be queues be marked as auto-delete? */
     public void setAutoDelete(boolean autoDelete) {
         this.autoDelete = autoDelete;
     }
@@ -320,19 +315,10 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             JSONObject jo = new JSONObject(decodedBody);
 
             if ("GET".equals(jo.getString("method"))) {
-                CrawlURI curi;
                 try {
-                    curi = makeCrawlUri(jo);
-                    // Declare as a new seed if it is the case:
-                    if (curi.isSeed()) {
-                        getSeeds().addSeed(curi); // Also triggers scheduling.
-                    } else {
-                        // bypasses scoping (unless rechecking is configured)
-                        getFrontier().schedule(curi);
-                    }
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("scheduled " + curi);
-                    }
+                    CrawlURI curi = makeCrawlUri(jo);
+                    KeyedProperties.clearAllOverrideContexts();
+                    candidates.runCandidateChain(curi, null);
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
                             "problem creating CrawlURI from json received via AMQP "
@@ -374,7 +360,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         //  "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
         //  "method": "GET"
         // }
-        @SuppressWarnings("unchecked")
         protected CrawlURI makeCrawlUri(JSONObject jo) throws URIException,
                 JSONException {
             JSONObject joHeaders = jo.getJSONObject("headers");
@@ -388,9 +373,38 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
             CrawlURI curi = new CrawlURI(uuri, hopPath, via, LinkContext.INFERRED_MISC);
 
-            // set the heritable data from the parent url, passed back to us via amqp
-            // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
-            // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+            populateHeritableMetadata(curi, parentUrlMetadata);
+
+            // set the http headers from the amqp message
+            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
+            for (Object key : joHeaders.keySet()) {
+                customHttpRequestHeaders.put(key.toString(),
+                        joHeaders.getString(key.toString()));
+            }
+            curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
+
+            /* Crawl job must be configured to use
+             * HighestUriQueuePrecedencePolicy to ensure these high priority
+             * urls really get crawled ahead of others. See
+             * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
+             * Feature+Notes
+             */
+            curi.setSchedulingDirective(SchedulingConstants.HIGH);
+            curi.setPrecedence(1);
+
+            curi.setForceFetch(jo.optBoolean("forceFetch"));
+            curi.setSeed(jo.optBoolean("isSeed"));
+
+            curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
+
+            return curi;
+        }
+
+        // set the heritable data from the parent url, passed back to us via amqp
+        // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
+        // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+        @SuppressWarnings("unchecked")
+        protected void populateHeritableMetadata(CrawlURI curi, JSONObject parentUrlMetadata) {
             JSONObject heritableData = parentUrlMetadata.getJSONObject("heritableData");
             for (String key: (Set<String>) heritableData.keySet()) {
                 Object value = heritableData.get(key);
@@ -405,48 +419,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     curi.getData().put(key, heritableData.get(key));
                 }
             }
-
-            // set the http headers from the amqp message
-            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
-            for (Object key : joHeaders.keySet()) {
-                customHttpRequestHeaders.put(key.toString(),
-                        joHeaders.getString(key.toString()));
-            }
-            curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
-
-            /* Use HighestUriQueuePrecedencePolicy to ensure these high priority
-             * urls really get crawled ahead of others. 
-             * See https://webarchive.jira.com/wiki/display/Heritrix/Precedence+Feature+Notes
-             */
-            curi.setSchedulingDirective(SchedulingConstants.HIGH);
-            curi.setPrecedence(1);
-
-            // optional forceFetch instruction:
-            if (jo.has("forceFetch")) {
-                boolean forceFetch = jo.getBoolean("forceFetch");
-                if (forceFetch)
-                    logger.info("Setting forceFetch=" + forceFetch);
-                curi.setForceFetch(forceFetch);
-            }
-
-            // optional isSeed instruction:
-            if (jo.has("isSeed")) {
-                boolean isSeed = jo.getBoolean("isSeed");
-                if (isSeed)
-                    logger.info("Setting isSeed=" + isSeed);
-                curi.setSeed(isSeed);
-                // We want to force the seed version of a URL to be fetched even
-                // if the URL has been seen before. See
-                //
-                // org.archive.crawler.postprocessor.CandidatesProcessor.runCandidateChain(CrawlURI
-                // candidate, CrawlURI source)
-                //
-                curi.setForceFetch(true);
-            }
-
-            curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
-
-            return curi;
         }
     }
 
