@@ -141,6 +141,28 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         this.forceFetch = forceFetch;
     }
 
+    /**
+     * The maximum prefetch count to use, meaning the maximum number of messages
+     * to be consumed without being acknowledged. Use 'null' to specify there
+     * should be no upper limit (the default).
+     */
+    private Integer prefetchCount = null;
+
+    /**
+     * @return the prefetchCount
+     */
+    public Integer getPrefetchCount() {
+        return prefetchCount;
+    }
+
+    /**
+     * @param prefetchCount
+     *            the prefetchCount to set
+     */
+    public void setPrefetchCount(Integer prefetchCount) {
+        this.prefetchCount = prefetchCount;
+    }
+
     private transient Lock lock = new ReentrantLock(true);
 
     private transient boolean pauseConsumer = false;
@@ -198,6 +220,8 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             channel().queueDeclare(getQueueName(), durable,
                     false, autoDelete, null);
             channel().queueBind(getQueueName(), getExchange(), getQueueName());
+            if (prefetchCount != null)
+                channel().basicQos(prefetchCount);
             consumerTag = channel().basicConsume(getQueueName(), false, consumer);
             logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + consumerTag);
         }
@@ -349,6 +373,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                         + decodedBody);
             }
 
+            logger.finest("Now ACKing: " + decodedBody);
             this.getChannel().basicAck(envelope.getDeliveryTag(), false);
         }
 
@@ -381,7 +406,8 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
             JSONObject parentUrlMetadata = jo.getJSONObject("parentUrlMetadata");
             String parentHopPath = parentUrlMetadata.getString("pathFromSeed");
-            String hopPath = parentHopPath + Hop.INFERRED.getHopString();
+            String hop = jo.optString("hop", Hop.INFERRED.getHopString());
+            String hopPath = parentHopPath + hop;
 
             CrawlURI curi = new CrawlURI(uuri, hopPath, via, LinkContext.INFERRED_MISC);
 
@@ -403,8 +429,11 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
              * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
              * Feature+Notes
              */
-            curi.setSchedulingDirective(SchedulingConstants.HIGH);
-            curi.setPrecedence(1);
+            if (Hop.INFERRED.getHopString().equals(curi.getLastHop())
+                    || Hop.EMBED.getHopString().equals(curi.getLastHop())) {
+                curi.setSchedulingDirective(SchedulingConstants.HIGH);
+                curi.setPrecedence(1);
+            }
 
             curi.setForceFetch(forceFetch || jo.optBoolean("forceFetch"));
             curi.setSeed(jo.optBoolean("isSeed"));
