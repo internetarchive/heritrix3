@@ -53,6 +53,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolVersion;
@@ -347,13 +348,25 @@ public class FetchHTTPRequest {
             request.addHeader("X-Requested-With", "XMLHttpRequest");
         }
 
-        @SuppressWarnings("unchecked")
-        Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
-        if (uriCustomHeaders != null) {
-            for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
-                request.setHeader(h.getKey(), h.getValue());
+
+        /*
+         * set custom request headers in last interceptor, so they override
+         * anything else (this could just as well belong in
+         * configureHttpClientBuilder())
+         */
+        httpClientBuilder.addInterceptorLast(new HttpRequestInterceptor() {
+            @Override
+            public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+                @SuppressWarnings("unchecked")
+                Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
+                if (uriCustomHeaders != null) {
+                    for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
+                        request.setHeader(h.getKey(), h.getValue());
+                    }
+                }
             }
-        }
+        });
+
     }
 
     /**

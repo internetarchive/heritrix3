@@ -86,8 +86,8 @@ public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle
 
     public AMQPCrawlLogFeed() {
         // set default values
-        exchange = "heritrix.realTimeFeed";
-        routingKey = "crawlLog";
+        setExchange("heritrix.realTimeFeed");
+        setRoutingKey("crawlLog");
     }
 
     @Override

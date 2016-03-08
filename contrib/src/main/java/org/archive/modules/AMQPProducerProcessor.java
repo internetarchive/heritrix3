@@ -33,28 +33,28 @@ public abstract class AMQPProducerProcessor extends Processor {
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
-    protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
+    {
+        setAmqpUri("amqp://guest:guest@localhost:5672/%2f");
+    }
     public String getAmqpUri() {
-        return this.amqpUri;
+        return (String) kp.get("amqpUri");
     }
     public void setAmqpUri(String uri) {
-        this.amqpUri = uri; 
+        kp.put("amqpUri", uri);
     }
 
-    protected String exchange;
     public String getExchange() {
-        return exchange;
+        return (String) kp.get("exchange");
     }
     public void setExchange(String exchange) {
-        this.exchange = exchange;
+        kp.put("exchange", exchange);
     }
 
-    protected String routingKey;
     public String getRoutingKey() {
-        return routingKey;
+        return (String) kp.get("routingKey");
     }
     public void setRoutingKey(String routingKey) {
-        this.routingKey = routingKey;
+        kp.put("routingKey", routingKey);
     }
 
     transient protected AMQPProducer amqpProducer;
@@ -112,10 +112,10 @@ public abstract class AMQPProducerProcessor extends Processor {
         if (logger.isLoggable(Level.FINE)) {
             try {
                 logger.fine("sent to amqp exchange=" + getExchange()
-                        + " routingKey=" + routingKey + ": " + new String(message, "UTF-8"));
+                        + " routingKey=" + getRoutingKey() + ": " + new String(message, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 logger.fine("sent to amqp exchange=" + getExchange()
-                        + " routingKey=" + routingKey + ": " + message + " (" + message.length + " bytes)");
+                        + " routingKey=" + getRoutingKey() + ": " + message + " (" + message.length + " bytes)");
             }
         }
     }
