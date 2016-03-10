@@ -434,7 +434,8 @@ public class AMQPUrlReceiver
             }
             curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
 
-            /* Crawl job must be configured to use
+            /*
+             * Crawl job must be configured to use
              * HighestUriQueuePrecedencePolicy to ensure these high priority
              * urls really get crawled ahead of others. See
              * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
@@ -443,6 +444,9 @@ public class AMQPUrlReceiver
             if (Hop.INFERRED.getHopString().equals(curi.getLastHop())
                     || Hop.EMBED.getHopString().equals(curi.getLastHop())) {
                 curi.setSchedulingDirective(SchedulingConstants.HIGH);
+                curi.setPrecedence(1);
+            } else {
+                curi.setSchedulingDirective(SchedulingConstants.NORMAL);
                 curi.setPrecedence(1);
             }
 
