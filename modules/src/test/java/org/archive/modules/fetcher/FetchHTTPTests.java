@@ -750,6 +750,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
     public void testNoResponse() throws Exception {
         NoResponseServer noResponseServer = new NoResponseServer("localhost", 7780);
         noResponseServer.start();
+
+        // Give the server time to start up:
+        Thread.sleep(1000);
         
         // CrawlURI curi = makeCrawlURI("http://stats.bbc.co.uk/robots.txt");
         CrawlURI curi = makeCrawlURI("http://localhost:7780");
