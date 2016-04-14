@@ -1,0 +1,24 @@
+sudo: false
+
+language: java
+
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+  - openjdk7
+
+matrix:
+    allow_failures:
+        - jdk: oraclejdk8
+
+before_install:  
+ - "export JAVA_OPTS=-Xmx1500m"
+ - "echo JAVA_OPTS=$JAVA_OPTS"
+ - "export MAVEN_OPTS=-Xmx1500m"
+ - "echo MAVEN_OPTS=$MAVEN_OPTS"
+ - "export _JAVA_OPTIONS=-Xmx1500m"
+ - "echo _JAVA_OPTIONS=$_JAVA_OPTIONS"
+
+script:
+ - mvn clean install
+ - cd contrib && mvn clean install
