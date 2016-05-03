@@ -79,7 +79,8 @@ public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
     private void testOne(String text, String expectedURL) throws Exception {
         Collection<TestData> testDataCol = makeData(text, expectedURL);
         for (TestData testData: testDataCol) {
-            extractor.process(testData.uri);
+        	testData.uri.setFetchStatus(200);
+        	extractor.process(testData.uri);
             HashSet<CrawlURI> expected = new HashSet<CrawlURI>();
             if (testData.expectedResult != null) {
                 expected.add(testData.expectedResult);
