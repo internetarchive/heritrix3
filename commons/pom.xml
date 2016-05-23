@@ -161,7 +161,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.esotericsoftware</groupId>
+			<groupId>com.googlecode</groupId>
 			<artifactId>kryo</artifactId>
 			<version>1.04</version>
 			<scope>compile</scope>
