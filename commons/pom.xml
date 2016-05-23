@@ -163,7 +163,7 @@
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>1.01</version>
+			<version>1.04</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
