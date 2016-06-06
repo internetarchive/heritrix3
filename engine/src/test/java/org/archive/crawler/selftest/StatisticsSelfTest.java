@@ -48,17 +48,13 @@ public class StatisticsSelfTest extends SelfTestBase {
         StatisticsTracker stats = heritrix.getEngine().getJob("selftest-job").getCrawlController().getStatisticsTracker();
         assertNotNull(stats);
         assertEquals(14, (long) stats.getCrawledBytes().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-        assertEquals(12717, (long) stats.getCrawledBytes()
-                .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
+        assertEquals(12669, (long) stats.getCrawledBytes().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES) - stats.getBytesPerHost("dns:"));
 
         assertEquals(3, (long) stats.getServerCache().getHostFor("127.0.0.1").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
         assertEquals(2942, (long) stats.getServerCache().getHostFor("127.0.0.1").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
         assertEquals(10, (long) stats.getServerCache().getHostFor("localhost").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
         assertEquals(9727, (long) stats.getServerCache().getHostFor("localhost").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
         assertEquals(1, (long) stats.getServerCache().getHostFor("dns:").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-        assertEquals(48,
-                (long) stats.getServerCache().getHostFor("dns:").getSubstats()
-                        .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
     }
 
     protected void verifySourceStats() throws Exception {
@@ -78,9 +74,9 @@ public class StatisticsSelfTest extends SelfTestBase {
         sourceStats = stats.getSourceStats("http://localhost:7777/b.html");
         assertNotNull(sourceStats);
         assertEquals(4, sourceStats.keySet().size());
-        assertEquals(9775l, (long) sourceStats.get("novel"));
+        assertEquals(9727l, (long) sourceStats.get("novel") - stats.getBytesPerHost("dns:"));
         assertEquals(11l, (long) sourceStats.get("novelCount"));
-        assertEquals(9775l, (long) sourceStats.get("warcNovelContentBytes"));
+        assertEquals(9727l, (long) sourceStats.get("warcNovelContentBytes") - stats.getBytesPerHost("dns:"));
         assertEquals(11l, (long) sourceStats.get("warcNovelUrls"));
     }
 
