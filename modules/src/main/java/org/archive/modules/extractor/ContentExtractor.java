@@ -42,7 +42,11 @@ public abstract class ContentExtractor extends Extractor {
 
     /**
      * Determines if links should be extracted from the given URI. This method
-     * performs three checks. The first check runs only if
+     * performs four checks. It first checks if the URI was processed successfully,
+     * i.e. {@link CrawlURI#isSuccess()} returns true. 
+     * 
+     * <p>
+     * The second check runs only if
      * {@link ExtractorParameters#getExtractIndependently()} is false. It checks
      * {@link ExtractorURI#hasBeenLinkExtracted()} result. If that result is
      * true, then this method returns false, as some other extractor has claimed
@@ -63,6 +67,9 @@ public abstract class ContentExtractor extends Extractor {
      * @return true if links should be extracted from the URI, false otherwise
      */
     final protected boolean shouldProcess(CrawlURI uri) {
+    	if (!uri.isSuccess()) {
+    		return false;
+    	}
         if (!getExtractorParameters().getExtractIndependently()
                 && uri.hasBeenLinkExtracted()) {
             return false;
