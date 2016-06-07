@@ -20,9 +20,9 @@
  package org.archive.spring;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -42,7 +42,7 @@ public class KeyedProperties extends ConcurrentHashMap<String,Object> {
 
     /** the alternate global property-paths leading to this map 
      * TODO: consider if deterministic ordered list is important */
-    protected HashSet<String> externalPaths = new HashSet<String>(); 
+    protected TreeSet<String> externalPaths = new TreeSet<String>(); 
     
     /**
      * Add a path by which the outside world can reach this map
