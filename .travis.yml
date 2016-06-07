@@ -11,7 +11,7 @@ matrix:
     allow_failures:
         - jdk: oraclejdk8
 
-before_install:  
+before_install:
  - "export JAVA_OPTS=-Xmx1500m"
  - "echo JAVA_OPTS=$JAVA_OPTS"
  - "export MAVEN_OPTS=-Xmx1500m"
@@ -22,3 +22,6 @@ before_install:
 script:
  - mvn clean install
  - cd contrib && mvn clean install
+
+after_failure:
+  - cat */target/surefire-reports/*.txt
