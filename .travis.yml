@@ -22,6 +22,7 @@ before_install:
 script:
  - mvn clean install
  - cd contrib && mvn clean install
+ - cd ..
 
 after_failure:
   - cat */target/surefire-reports/*.txt
