@@ -19,8 +19,8 @@
 
 package org.archive.modules.credential;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
@@ -54,12 +54,15 @@ public class HtmlFormCredential extends Credential {
     
     /**
      * Form items.
+     * 
      */
-    protected Map<String,String> formItems = new HashMap<String,String>();
-    public Map<String,String> getFormItems() {
+    protected Map<String, String> formItems = new TreeMap<String, String>();
+
+    public Map<String, String> getFormItems() {
         return this.formItems;
     }
-    public void setFormItems(Map<String,String> formItems) {
+
+    public void setFormItems(Map<String, String> formItems) {
         this.formItems = formItems;
     }
     

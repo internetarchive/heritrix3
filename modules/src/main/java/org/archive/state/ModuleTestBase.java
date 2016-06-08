@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.SerializationUtils;
 import org.archive.modules.CrawlURI;
@@ -33,6 +31,8 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
+
+import junit.framework.TestCase;
 
 
 /**
@@ -184,8 +184,17 @@ public abstract class ModuleTestBase extends TestCase {
         byte[] thirdBytes = SerializationUtils.serialize((Serializable)third);
         
         // HashMap serialization reverses order of items in linked buckets 
-        // each roundtrip -- so don't check one roundtrip, check two
-//        verifySerialization(first, firstBytes, second, secondBytes);
+        // each roundtrip -- so don't check one roundtrip, check two.
+        //
+        // NOTE This is JVM-dependent behaviour, and since <= 1.7.0_u51 this
+        // ordering of serialisation cannot be relied upon. However, a TreeMap
+        // can be used instead of a HashMap, and this appears to have
+        // predictable serialisation behaviour.
+        //
+        // @see
+        // http://stackoverflow.com/questions/22392258/serialization-round-trip-of-hash-map-does-not-preserve-order
+        //
+        // verifySerialization(first, firstBytes, second, secondBytes);
         verifySerialization(first, firstBytes, third, thirdBytes);
     }
 

@@ -20,10 +20,10 @@
  package org.archive.spring;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Logger;
 
 /**
@@ -35,14 +35,14 @@ import java.util.logging.Logger;
  * to the 'prop' entry in this map.)
  * 
  */
-public class KeyedProperties extends ConcurrentHashMap<String,Object> {
-    private static final long serialVersionUID = 3403222335436162778L;
+public class KeyedProperties extends ConcurrentSkipListMap<String,Object> {
+    private static final long serialVersionUID = 2L;
     
     private static final Logger logger = Logger.getLogger(KeyedProperties.class.getName());
 
     /** the alternate global property-paths leading to this map 
      * TODO: consider if deterministic ordered list is important */
-    protected HashSet<String> externalPaths = new HashSet<String>(); 
+    protected TreeSet<String> externalPaths = new TreeSet<String>(); 
     
     /**
      * Add a path by which the outside world can reach this map
