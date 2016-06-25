@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import org.archive.crawler.event.AMQPUrlReceivedEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
 import org.archive.crawler.framework.CrawlController;
+import org.archive.crawler.framework.CrawlStatus;
 import org.archive.crawler.framework.Frontier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
@@ -39,6 +40,11 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
     static protected final Logger logger = Logger.getLogger(AMQPUrlWaiter.class.getName());
 
     protected int urlsReceived = 0;
+
+    protected Frontier frontier;
+    public Frontier getFrontier() {
+        return this.frontier;
+    }
 
     protected CrawlController controller;
     public CrawlController getCrawlController() {
