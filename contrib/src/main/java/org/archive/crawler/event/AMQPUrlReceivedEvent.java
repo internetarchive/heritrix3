@@ -35,6 +35,11 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 public class AMQPUrlReceivedEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;
 
+    protected CrawlURI curi;
+    public CrawlURI getCuri() {
+        return curi;
+    }
+
     public AMQPUrlReceivedEvent(AMQPUrlReceiver source, CrawlURI curi) {
         super(source);
         this.curi = curi;
