@@ -38,7 +38,7 @@ import org.springframework.context.ApplicationListener;
  */
 public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
 
-    public AMQPUrlWaiter();
+    public AMQPUrlWaiter() {}
 
     static protected final Logger logger = Logger.getLogger(AMQPUrlWaiter.class.getName());
 
