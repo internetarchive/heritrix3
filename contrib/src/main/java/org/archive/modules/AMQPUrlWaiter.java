@@ -37,6 +37,9 @@ import org.springframework.context.ApplicationListener;
  * @contributor galgeek
  */
 public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
+
+    public AMQPUrlWaiter();
+
     static protected final Logger logger = Logger.getLogger(AMQPUrlWaiter.class.getName());
 
     protected int urlsReceived = 0;
