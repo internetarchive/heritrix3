@@ -26,6 +26,7 @@ import org.archive.crawler.event.AMQPUrlReceivedEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.CrawlStatus;
+import org.archive.crawler.framework.Frontier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -52,6 +53,16 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
         this.controller = controller;
     }
 
+    protected Frontier frontier;
+    public Frontier getFrontier() {
+        return this.frontier;
+    }
+    /** Autowired frontier, needed to determine when a url is finished. */
+    @Autowired
+    public void setFrontier(Frontier frontier) {
+        this.frontier = frontier;
+    }
+
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof AMQPUrlReceivedEvent) {
@@ -62,7 +73,6 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
     }
 
     protected void checkAMQPUrlWait() {
-        Frontier frontier = controller.getFrontier();
         if (frontier.isEmpty() && urlsReceived > 0) {
             logger.info("frontier is empty and we have received " + urlsReceived + 
                         " urls from AMQP, stopping crawl with status " + CrawlStatus.FINISHED);
