@@ -62,7 +62,7 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
     }
 
     protected void checkAMQPUrlWait() {
-        frontier = controller.getFrontier();
+        Frontier frontier = controller.getFrontier();
         if (frontier.isEmpty() && urlsReceived > 0) {
             logger.info("frontier is empty and we have received " + urlsReceived + 
                         " urls from AMQP, stopping crawl with status " + CrawlStatus.FINISHED);
