@@ -28,9 +28,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.event.AMQPUrlPublishedEvent;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.json.JSONObject;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.beans.BeansException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -39,11 +44,16 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * @author eldondev
  * @contributor nlevitt
  */
-public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable {
+public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable, ApplicationContextAware {
 
     private static final long serialVersionUID = 2L;
 
     public static final String A_SENT_TO_AMQP = "sentToAMQP"; // annotation
+
+    protected ApplicationContext appCtx;
+    public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
+        this.appCtx = appCtx;
+    }
 
     public AMQPPublishProcessor() {
         // set default values
@@ -145,6 +155,7 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
     protected void success(CrawlURI curi, byte[] message, BasicProperties props) {
         super.success(curi, message, props);
         curi.getAnnotations().add(A_SENT_TO_AMQP);
+        appCtx.publishEvent(new AMQPUrlPublishedEvent(AMQPPublishProcessor.this, curi));
     }
 
     protected BasicProperties props = new AMQP.BasicProperties.Builder().
