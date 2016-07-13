@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationListener;
 
 /**
  * Bean to enforce a wait for Umbra's amqp queue
- * 
+ *
  * @contributor galgeek
  */
 public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
@@ -74,7 +74,7 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
 
     protected void checkAMQPUrlWait() {
         if (frontier.isEmpty() && urlsReceived > 0) {
-            logger.info("frontier is empty and we have received " + urlsReceived + 
+            logger.info("frontier is empty and we have received " + urlsReceived +
                         " urls from AMQP, stopping crawl with status " + CrawlStatus.FINISHED);
             controller.requestCrawlStop(CrawlStatus.FINISHED);
         }
