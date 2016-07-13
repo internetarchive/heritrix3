@@ -22,6 +22,7 @@ package org.archive.modules;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.crawler.event.AMQPUrlPublishedEvent;
 import org.archive.crawler.event.AMQPUrlReceivedEvent;
 import org.archive.crawler.event.StatSnapshotEvent;
 import org.archive.crawler.framework.CrawlController;
@@ -42,6 +43,7 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
 
     static protected final Logger logger = Logger.getLogger(AMQPUrlWaiter.class.getName());
 
+    protected int urlsPublished = 0;
     protected int urlsReceived = 0;
 
     protected CrawlController controller;
@@ -65,7 +67,9 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof AMQPUrlReceivedEvent) {
+        if (event instanceof AMQPUrlPublishedEvent) {
+            urlsPublished += 1;
+        } else if (event instanceof AMQPUrlReceivedEvent) {
             urlsReceived += 1;
         } else if (event instanceof StatSnapshotEvent) {
             checkAMQPUrlWait();
@@ -73,9 +77,10 @@ public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
     }
 
     protected void checkAMQPUrlWait() {
-        if (frontier.isEmpty() && urlsReceived > 0) {
+        if (frontier.isEmpty() && (urlsPublished == 0 || urlsReceived > 0)) {
             logger.info("frontier is empty and we have received " + urlsReceived +
-                        " urls from AMQP, stopping crawl with status " + CrawlStatus.FINISHED);
+                        " urls from AMQP, and published " + urlsPublished +
+                        ", stopping crawl with status " + CrawlStatus.FINISHED);
             controller.requestCrawlStop(CrawlStatus.FINISHED);
         }
     }
