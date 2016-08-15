@@ -454,7 +454,9 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             File f = path.getFile();
             if (!f.exists()) {
                 try {
-                    FileUtils.ensureWriteableDirectory(f);
+                    synchronized (this) {
+                        FileUtils.ensureWriteableDirectory(f);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     continue;
