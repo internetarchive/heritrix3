@@ -36,7 +36,7 @@ import org.archive.modules.CrawlURI;
  *
  * @contributor nlevitt
  */
-public class ExpressionDecideRule extends PredicatedDecideRule {
+public class ExpressionDecideRule extends DecideRule {
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger =
@@ -68,10 +68,19 @@ public class ExpressionDecideRule extends PredicatedDecideRule {
         return groovyTemplate;
     }
 
-    @Override
     protected boolean evaluate(CrawlURI curi) {
         HashMap<String, Object> binding = new HashMap<String, Object>();
         binding.put("curi", curi);
-        return String.valueOf(true).equals(groovyTemplate().make(binding).toString());
+        String expressionResult = groovyTemplate().make(binding).toString();
+        return String.valueOf(true).equals(expressionResult);
+    }
+
+    @Override
+    protected DecideResult innerDecide(CrawlURI curi) {
+        if (evaluate(curi)) {
+            return DecideResult.ACCEPT;
+        } else {
+            return DecideResult.REJECT;
+        }
     }
 }
