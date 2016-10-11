@@ -426,12 +426,8 @@ public class AMQPUrlReceiver
              * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
              * Feature+Notes
              */
-            if (Hop.INFERRED.getHopString().equals(curi.getLastHop())
-                    || Hop.EMBED.getHopString().equals(curi.getLastHop())) {
+            if (Hop.INFERRED.getHopString().equals(curi.getLastHop())) {
                 curi.setSchedulingDirective(SchedulingConstants.HIGH);
-                curi.setPrecedence(1);
-            } else {
-                curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
                 curi.setPrecedence(1);
             }
 
