@@ -431,12 +431,6 @@ public class AMQPUrlReceiver
                 curi.setSchedulingDirective(SchedulingConstants.HIGH);
                 curi.setPrecedence(1);
             } else {
-                /*
-                 * By default, redirects get set to MEDIUM, so to ensure the
-                 * incoming links are caught promptly, even if the crawler hits
-                 * a lot of redirects (which we have observed for e.g. The
-                 * Guardian), we bump them to MEDIUM so these links can compete.
-                 */
                 curi.setSchedulingDirective(SchedulingConstants.MEDIUM);
                 curi.setPrecedence(1);
             }
