@@ -153,25 +153,10 @@ public class AMQPUrlReceiver
 
     /**
      * The maximum prefetch count to use, meaning the maximum number of messages
-     * to be consumed without being acknowledged. Use 'null' to specify there
-     * should be no upper limit (the default).
+     * to be consumed without being acknowledged. Using 'null' would specify
+     * there should be no upper limit (the default).
      */
-    private Integer prefetchCount = null;
-
-    /**
-     * @return the prefetchCount
-     */
-    public Integer getPrefetchCount() {
-        return prefetchCount;
-    }
-
-    /**
-     * @param prefetchCount
-     *            the prefetchCount to set
-     */
-    public void setPrefetchCount(Integer prefetchCount) {
-        this.prefetchCount = prefetchCount;
-    }
+    private Integer prefetchCount = 1000;
 
     private transient Lock lock = new ReentrantLock(true);
 
