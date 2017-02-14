@@ -164,6 +164,9 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
             }
         }
 
+        String rateStr = String.format("%0.01f", 0.01 * stats.errors / stats.total);
+        logger.info("final error count: " + stats.errors + "/" + stats.total + " (" + rateStr + "%)");
+
         if (kafkaProducer != null) {
             kafkaProducer.close();
             kafkaProducer = null;
@@ -224,25 +227,29 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
         return kafkaProducer;
     }
 
-    protected static class KafkaResultCallback implements Callback {
-        private CrawlURI curi;
-
-        public KafkaResultCallback(CrawlURI curi) {
-            this.curi = curi;
-        }
+    protected final class StatsCallback implements Callback {
+        public long errors = 0l;
+        public long total = 0l;
 
         @Override
         public void onCompletion(RecordMetadata metadata, Exception exception) {
+            total++;
             if (exception != null) {
-                logger.warning("kafka delivery failed for " + curi + " - " + exception);
+                errors++;
+            }
+
+            if (total % 10000 == 0) {
+                String rateStr = String.format("%0.01f", 0.01 * errors / total);
+                logger.info("error count so far: " + errors + "/" + total + " (" + rateStr + "%)");
             }
         }
     }
+    protected StatsCallback stats = new StatsCallback();
 
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         byte[] message = buildMessage(curi);
         ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String,byte[]>(getTopic(), message);
-        kafkaProducer().send(producerRecord, new KafkaResultCallback(curi));
+        kafkaProducer().send(producerRecord, stats);
     }
 }
