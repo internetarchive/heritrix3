@@ -164,7 +164,7 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
             }
         }
 
-        String rateStr = String.format("%0.01f", 0.01 * stats.errors / stats.total);
+        String rateStr = String.format("%1.1f", 0.01 * stats.errors / stats.total);
         logger.info("final error count: " + stats.errors + "/" + stats.total + " (" + rateStr + "%)");
 
         if (kafkaProducer != null) {
@@ -239,7 +239,7 @@ public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
             }
 
             if (total % 10000 == 0) {
-                String rateStr = String.format("%0.01f", 0.01 * errors / total);
+                String rateStr = String.format("%1.1f", 0.01 * errors / total);
                 logger.info("error count so far: " + errors + "/" + total + " (" + rateStr + "%)");
             }
         }
