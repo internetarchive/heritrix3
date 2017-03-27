@@ -129,6 +129,9 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
     }
 
     public void testBasics() throws InterruptedException, IOException {
+        historyStore().store.clear();
+        assertTrue(historyStore().store.isEmpty());
+
         CrawlURI curi1 = new CrawlURI(UURIFactory.getInstance("http://example.org/1"));
         // without Recorder, CrawlURI#getContentLength() returns zero, which makes
         // loader().shoudProcess() return false.
@@ -146,7 +149,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         curi1.setContentDigest("sha1", Base32.decode("orfjublpcrnymm4seg5uk6vfoeu7kw6c"));
 
         assertTrue(loader().shouldProcess(curi1));
-        assertTrue(storer().shouldProcess(curi1));
+        assertFalse(storer().shouldProcess(curi1));
         
         assertEquals("sha1:ORFJUBLPCRNYMM4SEG5UK6VFOEU7KW6C", historyStore().persistKeyFor(curi1));
 
@@ -158,7 +161,8 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         assertTrue(curi1.getContentDigestHistory().isEmpty());
 
         storer().process(curi1);
-        assertTrue(historyStore().store.isEmpty());
+        assertTrue("historyStore().store should be empty, but it is: " + historyStore().store,
+                historyStore().store.isEmpty());
         
         curi1.getContentDigestHistory().put(A_ORIGINAL_URL, "http://example.org/original");
         // curi1.getContentDigestHistory().put(A_WARC_RECORD_ID, "<urn:uuid:f00dface-d00d-d00d-d00d-0beefface0ff>");

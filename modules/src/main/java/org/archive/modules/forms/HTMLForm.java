@@ -23,9 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.lang.StringUtils;
-import org.archive.util.TextUtils;
 
 /**
  * Simple representation of a discovered HTML Form. 
@@ -37,18 +35,69 @@ public class HTMLForm {
         public String type;
         public String name;
         public String value;
+        public boolean checked = false;
         @Override
         public String toString() {
-            return type+" "+name+" "+value;
+            String str = "input[@type='" + type+"'][@name='" + name + "'][@value='" + value + "']";
+            if (checked) {
+                str = str + "[@checked]";
+            }
+            return str;
         } 
     }
+
+    protected String method;
+    protected String action;
+    protected String enctype;
+
+    protected List<FormInput> allInputs = new ArrayList<FormInput>();
+    protected List<FormInput> candidateUsernameInputs = new ArrayList<FormInput>();
+    protected List<FormInput> candidatePasswordInputs = new ArrayList<FormInput>();
+
+    /**
+     * Add a discovered INPUT, tracking it as potential 
+     * username/password receiver. 
+     * @param type
+     * @param name
+     * @param value
+     * @param checked true if "checked" attribute is present (for radio buttons and checkboxes)
+     */
+    public void addField(String type, String name, String value, boolean checked) {
+        FormInput input = new FormInput();
+        input.type = type;
+        
+        if (isMultipleFormSubmitInputs(type)) {
+            return;
+        }
+             
+        // default input type is text per html standard
+        if (input.type == null) {
+            input.type = "text";
+        }
+        input.name = name;
+        input.value = value; 
+        input.checked = checked;
+        allInputs.add(input);
+
+        if("text".equalsIgnoreCase(input.type) || "email".equalsIgnoreCase(input.type)) {
+            candidateUsernameInputs.add(input);
+        } else if ("password".equalsIgnoreCase(type)) {
+            candidatePasswordInputs.add(input);
+        }
+    }
     
-    String method;
-    String action;
-    
-    List<FormInput> allInputs = new ArrayList<FormInput>();
-    List<FormInput> candidateUsernameInputs = new ArrayList<FormInput>();
-    List<FormInput> candidatePasswordInputs = new ArrayList<FormInput>();
+    public boolean isMultipleFormSubmitInputs(String type) {
+        if (type != null && !type.toLowerCase().equals("submit"))
+            return false;
+
+        for (FormInput input : allInputs) {
+            if (input.type.toLowerCase().equals("submit")) {
+                return true;
+            }
+        }
+
+        return false;
+    }    
 
     /**
      * Add a discovered INPUT, tracking it as potential 
@@ -58,20 +107,7 @@ public class HTMLForm {
      * @param value
      */
     public void addField(String type, String name, String value) {
-        FormInput input = new FormInput();
-        input.type = type;
-        // default input type is text per html standard
-        if (input.type == null) {
-            input.type = "text";
-        }
-        input.name = name;
-        input.value = value; 
-        allInputs.add(input);
-        if("text".equalsIgnoreCase(input.type) || "email".equalsIgnoreCase(input.type)) {
-            candidateUsernameInputs.add(input);
-        } else if ("password".equalsIgnoreCase(type)) {
-            candidatePasswordInputs.add(input);
-        }
+        addField(type, name, value, false);
     }
 
     public void setMethod(String method) {
@@ -81,9 +117,17 @@ public class HTMLForm {
     public String getAction() {
         return action;
     }
-    
+
     public void setAction(String action) {
         this.action = action;
+    }
+
+    public String getEnctype() {
+        return enctype;
+    }
+
+    public void setEnctype(String enctype) {
+        this.enctype = enctype;
     }
 
     /**
@@ -95,48 +139,55 @@ public class HTMLForm {
      */
     public boolean seemsLoginForm() {
         return "post".equalsIgnoreCase(method) 
-                && candidateUsernameInputs.size() == 1
-                && candidatePasswordInputs.size() == 1;
+                && candidatePasswordInputs.size() == 1
+                && presumedUsernameInput() != null;
     }
 
-    /**
-     * Create the NameValuePair array expected by HttpClient, merging
-     * username and password into the appropriate value slots.
-     * 
-     * @param username
-     * @param password
-     * @return
-     * @deprecated specific to a particular FetchHTTP implementation based on commons-httpclient, use {@link #asFormDataString(String, String)}
-     */
-    public NameValuePair[] asHttpClientDataWith(String username, String password) {
-        ArrayList<NameValuePair> data = new ArrayList<NameValuePair>(allInputs.size());
-       
-        for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
-                data.add(new NameValuePair(input.name,username));
-            } else if(input == candidatePasswordInputs.get(0)) {
-                data.add(new NameValuePair(input.name,password));
-            } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
-                data.add(new NameValuePair(input.name,input.value));
+    protected FormInput presumedUsernameInput() {
+        if (candidateUsernameInputs.size() < 1) {
+            return null;
+        } else if (candidateUsernameInputs.size() == 1) {
+            return candidateUsernameInputs.get(0);
+        } else {
+            // more than one candidate; if there is exactly one whose name
+            // contains the string "username", choose that one
+            FormInput choice = null;
+            for (FormInput input: candidateUsernameInputs) {
+                if (input.name != null && input.name.toLowerCase().indexOf("username") != -1) {
+                    if (choice == null) {
+                        choice = input;
+                    } else {
+                        return null;
+                    }
+                }
             }
+            return choice;
         }
-        return data.toArray(new NameValuePair[data.size()]);
     }
-    
-    public String asFormDataString(String username, String password) {
-        List<String> nameVals = new LinkedList<String>();
 
+    public static class NameValue {
+        public String name, value;
+        public NameValue(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    public LinkedList<NameValue> formData(String username, String password) {
+        LinkedList<NameValue> nameVals = new LinkedList<NameValue>();
         for (FormInput input : allInputs) {
-            if(input == candidateUsernameInputs.get(0)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(username));
-            } else if(input == candidatePasswordInputs.get(0)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(password));
-            } else if (StringUtils.isNotEmpty(input.name) && StringUtils.isNotEmpty(input.value)) {
-                nameVals.add(TextUtils.urlEscape(input.name) + "=" + TextUtils.urlEscape(input.value));
+            if (input == presumedUsernameInput()) {
+                nameVals.add(new NameValue(input.name, username));
+            } else if (input == candidatePasswordInputs.get(0)) {
+                nameVals.add(new NameValue(input.name, password));
+            } else if (!"radio".equalsIgnoreCase(input.type)
+                    && !"checkbox".equals(input.type) || input.checked) {
+                nameVals.add(new NameValue(StringUtils.isEmpty(input.name) ? ""
+                        : input.name, StringUtils.isEmpty(input.value) ? ""
+                        : input.value));
             }
         }
-
-        return StringUtils.join(nameVals, '&');
+        return nameVals;
     }
 
     public String toString() {

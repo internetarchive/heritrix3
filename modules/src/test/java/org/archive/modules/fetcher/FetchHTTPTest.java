@@ -27,11 +27,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.archive.modules.ProcessorTestBase;
+import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
 import org.mortbay.jetty.NCSARequestLog;
 import org.mortbay.jetty.Request;
@@ -51,7 +48,9 @@ import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.SessionHandler;
 import org.mortbay.log.Log;
 
-import sun.security.tools.KeyTool;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 public class FetchHTTPTest extends ProcessorTestBase {
 

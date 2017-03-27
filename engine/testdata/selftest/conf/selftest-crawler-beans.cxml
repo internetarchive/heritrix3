@@ -43,6 +43,7 @@ crawlController.pauseAtStart=false
     <property name="value" value="# OVERRIDE_THIS_WITH_SEEDS"/>
    </bean>
   </property>
+  <property name="sourceTagSeeds" value="true"/>
  </bean>
  
  <!-- Scope: what discovered URIs to crawl -->

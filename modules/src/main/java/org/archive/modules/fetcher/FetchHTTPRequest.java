@@ -25,6 +25,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -34,6 +35,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,11 +47,13 @@ import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ProtocolVersion;
@@ -65,7 +69,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.AbstractExecutionAwareRequest;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
@@ -82,7 +85,8 @@ import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -105,6 +109,7 @@ import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.forms.HTMLForm.NameValue;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -113,8 +118,18 @@ import org.archive.util.Recorder;
 /**
  * @contributor nlevitt
  */
-class FetchHTTPRequest {
+public class FetchHTTPRequest {
     
+    private boolean disableSNI = false;
+    
+    public boolean isDisableSNI() {
+        return disableSNI;
+    }
+
+    public void setDisableSNI(boolean disableSNI) {
+        this.disableSNI = disableSNI;
+    }
+
     /**
      * Implementation of {@link DnsResolver} that uses the server cache which is
      * normally expected to have been populated by FetchDNS.
@@ -183,12 +198,9 @@ class FetchHTTPRequest {
             BasicExecutionAwareEntityEnclosingRequest postRequest = new BasicExecutionAwareEntityEnclosingRequest(
                     "POST", requestLineUri, httpVersion);
             this.request = postRequest;
-            String submitData = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
-            if (submitData != null) {
-                // XXX brittle, doesn't support multipart form data etc
-                ContentType contentType = ContentType.create(URLEncodedUtils.CONTENT_TYPE, "UTF-8");
-                StringEntity formEntity = new StringEntity(submitData, contentType);
-                postRequest.setEntity(formEntity);
+            if (curi.containsDataKey(CoreAttributeConstants.A_SUBMIT_DATA)) {
+                HttpEntity entity = buildPostRequestEntity(curi);
+                postRequest.setEntity(entity);
             }
         } else {
             this.request = new BasicExecutionAwareRequest("GET", 
@@ -208,6 +220,79 @@ class FetchHTTPRequest {
         
         this.addedCredentials = populateTargetCredential();
         populateHttpProxyCredential();
+    }
+
+    /**
+     * Returns a copy of the string with non-ascii characters replaced by their
+     * html numeric character reference in decimal (e.g. &amp;#12345;).
+     * 
+     * <p>
+     * The purpose of this is to produce a multipart/formdata submission that
+     * any server should be able to handle, based on experiments using a modern
+     * browser (chromium 47.0.2526.106 for mac). What chromium posts depends on
+     * what it considers the character encoding of the page containing the form,
+     * and maybe other factors. It would be too complicated to try to simulate
+     * that behavior in heritrix.
+     * 
+     * <p>
+     * Instead what we do is approximately what the browser does when the form
+     * page is plain ascii. It html-escapes characters outside of the
+     * latin1/cp1252 range. Characters in the U+0080-U+00FF range are encoded in
+     * latin1/cp1252. That is the one way that we differ from chromium. We
+     * html-escape those characters (U+0080-U+00FF) as well. That way the http
+     * post is plain ascii, and should work regardless of which encoding the
+     * server expects.
+     * 
+     * <p>
+     * N.b. chromium doesn't indicate the encoding of the request in any way (no
+     * charset in the content-type or anything like that). Also of note is that
+     * when it considers the form page to be utf-8, it submits in utf-8. That's
+     * part of the complicated behavior we don't want to try to simulate.
+     */
+    public static String escapeForMultipart(String str) {
+        StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < str.length(); ) {
+            int codepoint = str.codePointAt(i);
+            if (codepoint <= 0x7f) {
+                buf.appendCodePoint(codepoint);
+            } else {
+                buf.append("&#" + codepoint + ";");
+            }
+            i += Character.charCount(codepoint);
+        }
+        return buf.toString();
+    }
+
+    protected HttpEntity buildPostRequestEntity(CrawlURI curi) {
+        String enctype = (String) curi.getData().get(CoreAttributeConstants.A_SUBMIT_ENCTYPE);
+        if (enctype == null) {
+            enctype = ContentType.APPLICATION_FORM_URLENCODED.getMimeType();
+        }
+
+        @SuppressWarnings("unchecked")
+        List<NameValue> submitData = (List<NameValue>) curi.getData().get(CoreAttributeConstants.A_SUBMIT_DATA);
+
+        if (enctype.equals(ContentType.APPLICATION_FORM_URLENCODED.getMimeType())) {
+            LinkedList<NameValuePair> nvps = new LinkedList<NameValuePair>();
+            for (NameValue nv: submitData) {
+                nvps.add(new BasicNameValuePair(nv.name, nv.value));
+            }
+            try {
+                return new UrlEncodedFormEntity(nvps, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalStateException(e);
+            }
+        } else if (enctype.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
+            MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+            entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            for (NameValue nv: submitData) {
+                entityBuilder.addTextBody(escapeForMultipart(nv.name),
+                        escapeForMultipart(nv.value));
+            }
+            return entityBuilder.build();
+        } else {
+            throw new IllegalStateException("unsupported form submission enctype='" + enctype + "'");
+        }
     }
 
     protected void configureRequestHeaders() {
@@ -263,13 +348,25 @@ class FetchHTTPRequest {
             request.addHeader("X-Requested-With", "XMLHttpRequest");
         }
 
-        @SuppressWarnings("unchecked")
-        Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
-        if (uriCustomHeaders != null) {
-            for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
-                request.setHeader(h.getKey(), h.getValue());
+
+        /*
+         * set custom request headers in last interceptor, so they override
+         * anything else (this could just as well belong in
+         * configureHttpClientBuilder())
+         */
+        httpClientBuilder.addInterceptorLast(new HttpRequestInterceptor() {
+            @Override
+            public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+                @SuppressWarnings("unchecked")
+                Map<String, String> uriCustomHeaders = (Map<String, String>) curi.getData().get("customHttpRequestHeaders");
+                if (uriCustomHeaders != null) {
+                    for (Entry<String, String> h: uriCustomHeaders.entrySet()) {
+                        request.setHeader(h.getKey(), h.getValue());
+                    }
+                }
             }
-        }
+        });
+
     }
 
     /**
@@ -463,7 +560,22 @@ class FetchHTTPRequest {
     protected HttpClientConnectionManager buildConnectionManager() {
         Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainConnectionSocketFactory.INSTANCE)
-                .register("https", new SSLConnectionSocketFactory(fetcher.sslContext(), new AllowAllHostnameVerifier()))
+                .register(
+                        "https",
+                        new SSLConnectionSocketFactory(fetcher.sslContext(),
+                                new AllowAllHostnameVerifier()) {
+
+                            @Override
+                            public Socket createLayeredSocket(
+                                    final Socket socket, final String target,
+                                    final int port, final HttpContext context)
+                                    throws IOException {
+
+                                return super.createLayeredSocket(socket,
+                                        isDisableSNI() ? "" : target, port,
+                                        context);
+                            }
+                        })
                 .build();
 
         DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());

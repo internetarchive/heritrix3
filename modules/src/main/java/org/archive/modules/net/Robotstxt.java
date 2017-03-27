@@ -84,8 +84,6 @@ public class Robotstxt implements Serializable {
         long charCount = 0;
         // current is the disallowed paths for the preceding User-Agent(s)
         RobotsDirectives current = null;
-        // whether a non-'User-Agent' directive has been encountered
-        boolean hasDirectivesYet = false; 
         while (reader != null) {
             // we count characters instead of bytes because the byte count isn't easily available 
             if (charCount >= MAX_SIZE) {
@@ -117,11 +115,18 @@ public class Robotstxt implements Serializable {
                 read = read.trim();
                 if (read.matches("(?i)^User-agent:.*")) {
                     String ua = read.substring(11).trim().toLowerCase();
-                    if (current == null || hasDirectivesYet ) {
+                    RobotsDirectives preexisting;
+                    if (ua.equals("*")) {
+                        preexisting = wildcardDirectives;
+                    } else {
+                        preexisting = agentsToDirectives.get(ua);
+                    }
+                    if (preexisting != null && preexisting.hasDirectives) {
+                        current = preexisting;
+                    } else if (current == null || current.hasDirectives) {
                         // only create new rules-list if necessary
                         // otherwise share with previous user-agent
                         current = new RobotsDirectives();
-                        hasDirectivesYet = false; 
                     }
                     if (ua.equals("*")) {
                         wildcardDirectives = current;
@@ -146,7 +151,6 @@ public class Robotstxt implements Serializable {
                         path = path.substring(0,path.length()-1); 
                     }
                     current.addDisallow(path);
-                    hasDirectivesYet = true; 
                     continue;
                 }
                 if (read.matches("(?i)Crawl-delay:.*")) {
@@ -157,7 +161,6 @@ public class Robotstxt implements Serializable {
                     }
                     // consider a crawl-delay as sufficient to end a grouping of
                     // User-Agent lines
-                    hasDirectivesYet = true;
                     String val = read.substring(12).trim();
                     try {
                         val = val.split("[^\\d\\.]+")[0];
@@ -184,7 +187,6 @@ public class Robotstxt implements Serializable {
                         path = path.substring(0,path.length()-1); 
                     }
                     current.addAllow(path);
-                    hasDirectivesYet = true;
                     continue;
                 }
                 // unknown line; do nothing for now

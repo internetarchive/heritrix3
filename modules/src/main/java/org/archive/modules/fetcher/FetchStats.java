@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -23,178 +23,150 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
-import org.archive.modules.revisit.ServerNotModifiedRevisit;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 
 /**
  * Collector of statistics for a 'subset' of a crawl,
- * such as a server (host:port), host, or frontier group 
- * (eg queue). 
- * 
+ * such as a server (host:port), host, or frontier group
+ * (eg queue).
+ *
  * @author gojomo
  */
-public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
-    private static final long serialVersionUID = 8624425657056569036L;
+public class FetchStats extends CrawledBytesHistotable implements Serializable, FetchStatusCodes, Reporter {
+    private static final long serialVersionUID = 2l;
 
-    public enum Stage {SCHEDULED, RELOCATED, RETRIED, 
-        SUCCEEDED, DISREGARDED, FAILED};
-    
+    public enum Stage {SCHEDULED, RELOCATED, RETRIED, SUCCEEDED, DISREGARDED, FAILED};
+
+    public static final String TOTAL_SCHEDULED = "totalScheduled";  // anything initially scheduled
+                                                                    // (totalScheduled - (fetchSuccesses + fetchFailures)
+    public static final String FETCH_SUCCESSES = "fetchSuccesses";  // anything disposed-success
+                                                                    // (HTTP 2XX response codes, other non-errors)
+    public static final String FETCH_FAILURES = "fetchFailures";    // anything disposed-failure
+    public static final String FETCH_DISREGARDS = "fetchDisregards";// anything disposed-disregard
+    public static final String FETCH_RESPONSES = "fetchResponses";  // all positive responses (incl. 3XX, 4XX, 5XX)
+    public static final String ROBOTS_DENIALS = "robotsDenials";    // all robots-precluded failures
+    public static final String SUCCESS_BYTES = "successBytes";      // total size of all success responses
+    public static final String TOTAL_BYTES = "totalBytes";          // total size of all responses
+    public static final String FETCH_NONRESPONSES = "fetchNonResponses"; // processing attempts resulting in no response
+                                                                    // (both failures and temp deferrals)
+
     public interface HasFetchStats {
         public FetchStats getSubstats();
     }
     public interface CollectsFetchStats {
-        public void tally(CrawlURI curi, Stage stage); 
+        public void tally(CrawlURI curi, Stage stage);
     }
-    
-    protected long totalScheduled;   // anything initially scheduled
-                           // (totalScheduled - (fetchSuccesses + fetchFailures)
-    protected long fetchSuccesses;   // anything disposed-success 
-                           // (HTTP 2XX response codes, other non-errors)
-    protected long fetchFailures;    // anything disposed-failure
-    protected long fetchDisregards;  // anything disposed-disregard
-    protected long fetchResponses;   // all positive responses (incl. 3XX, 4XX, 5XX)
-    protected long robotsDenials;    // all robots-precluded failures
-    protected long successBytes;     // total size of all success responses
-    protected long totalBytes;       // total size of all responses
-    protected long fetchNonResponses; // processing attempts resulting in no response
-                           // (both failures and temp deferrals)
-    
-    protected long novelBytes; 
-    protected long novelUrls;
-    protected long notModifiedBytes;
-    protected long notModifiedUrls;
-    protected long dupByHashBytes;
-    protected long dupByHashUrls;
-    protected long otherDupBytes;
-    protected long otherDupUrls;
-    
-    protected long lastSuccessTime; 
-    
-    /*
-     * XXX redundancy with StatisticsTracker.onApplicationEvent() ... CrawledBytesHistotable.accumulate() code path
-     */
+
+    protected long lastSuccessTime;
+
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {
             case SCHEDULED:
-                totalScheduled++;
+                tally(TOTAL_SCHEDULED, 1);
                 break;
             case RETRIED:
                 if(curi.getFetchStatus()<=0) {
-                    fetchNonResponses++;
+                    tally(FETCH_NONRESPONSES, 1);
                 }
                 break;
             case SUCCEEDED:
-                fetchSuccesses++;
-                fetchResponses++;
-                totalBytes += curi.getContentSize();
-                successBytes += curi.getContentSize();
+                tally(FETCH_SUCCESSES, 1);
+                tally(FETCH_RESPONSES, 1);
+                tally(TOTAL_BYTES, curi.getContentSize());
+                tally(SUCCESS_BYTES, curi.getContentSize());
+
                 lastSuccessTime = curi.getFetchCompletedTime();
-                if (curi.getRevisitProfile() == null) {
-                    novelBytes += curi.getContentSize();
-                    novelUrls++;
-                }
                 break;
             case DISREGARDED:
-                fetchDisregards++;
+                tally(FETCH_DISREGARDS, 1);
                 if(curi.getFetchStatus()==S_ROBOTS_PRECLUDED) {
-                    robotsDenials++;
+                    tally(ROBOTS_DENIALS, 1);
                 }
                 break;
             case FAILED:
                 if(curi.getFetchStatus()<=0) {
-                    fetchNonResponses++;
+                    tally(FETCH_NONRESPONSES, 1);
                 } else {
-                    fetchResponses++;
-                    totalBytes += curi.getContentSize();
-                    if (curi.getRevisitProfile() == null) {
-                        novelBytes += curi.getContentSize();
-                        novelUrls++;
-                    }
+                    tally(FETCH_RESPONSES, 1);
+                    tally(TOTAL_BYTES, curi.getContentSize());
                 }
-                fetchFailures++;
+                tally(FETCH_FAILURES, 1);
                 break;
             default:
                 break;
         }
 
-        if (curi.getRevisitProfile() instanceof ServerNotModifiedRevisit) {
-            notModifiedBytes += curi.getContentSize();
-            notModifiedUrls++;
-        } else if (curi.getRevisitProfile() instanceof IdenticalPayloadDigestRevisit) {
-            dupByHashBytes += curi.getContentSize();
-            dupByHashUrls++;
-        } else if (curi.getRevisitProfile() != null) {
-            otherDupBytes += curi.getContentSize();
-            otherDupUrls++;
+        if (curi.getFetchStatus() > 0) {
+            this.accumulate(curi);
         }
     }
-    
+
     public long getFetchSuccesses() {
-        return fetchSuccesses;
+        return get(FETCH_SUCCESSES);
     }
     public long getFetchResponses() {
-        return fetchResponses;
+        return get(FETCH_RESPONSES);
     }
     public long getSuccessBytes() {
-        return successBytes;
+        return get(SUCCESS_BYTES);
     }
     public long getTotalBytes() {
-        return totalBytes;
+        return get(TOTAL_BYTES);
     }
     public long getFetchNonResponses() {
-        return fetchNonResponses;
+        return get(FETCH_NONRESPONSES);
     }
     public long getTotalScheduled() {
-        return totalScheduled;
+        return get(TOTAL_SCHEDULED);
     }
     public long getFetchDisregards() {
-        return fetchDisregards;
+        return get(FETCH_DISREGARDS);
     }
     public long getRobotsDenials() {
-        return robotsDenials;
-    }
-    
-    public long getRemaining() {
-        return totalScheduled - (fetchSuccesses + fetchFailures + fetchDisregards);
-    }
-    public long getRecordedFinishes() {
-        return fetchSuccesses + fetchFailures;
+        return get(ROBOTS_DENIALS);
     }
 
-    public long getNovelBytes() { 
-        return novelBytes;
+    public long getRemaining() {
+        return get(TOTAL_SCHEDULED) - (get(FETCH_SUCCESSES) + get(FETCH_FAILURES)+ get(FETCH_DISREGARDS));
+    }
+    public long getRecordedFinishes() {
+        return get(FETCH_SUCCESSES) + get(FETCH_FAILURES);
+    }
+
+    public long getNovelBytes() {
+        return get(NOVEL);
     }
 
     public long getNovelUrls() {
-        return novelUrls;
+        return get(NOVELCOUNT);
     }
 
     public long getNotModifiedBytes() {
-        return notModifiedBytes;
+        return get(NOTMODIFIED);
     }
 
     public long getNotModifiedUrls() {
-        return notModifiedUrls;
+        return get(NOTMODIFIEDCOUNT);
     }
 
     public long getDupByHashBytes() {
-        return dupByHashBytes;
+        return get(DUPLICATE);
     }
 
     public long getDupByHashUrls() {
-        return dupByHashUrls;
+        return get(DUPLICATECOUNT);
     }
 
     public long getOtherDupBytes() {
-        return otherDupBytes;
+        return get(OTHERDUPLICATE);
     }
 
     public long getOtherDupUrls() {
-        return otherDupUrls;
+        return get(OTHERDUPLICATECOUNT);
     }
 
     /* (non-Javadoc)
@@ -219,39 +191,30 @@ public class FetchStats implements Serializable, FetchStatusCodes, Reporter {
 
     @Override
     public void shortReportLineTo(PrintWriter writer) {
-        writer.print(totalScheduled);
+        writer.print(get(TOTAL_SCHEDULED));
         writer.print(" ");
-        writer.print(fetchSuccesses);
+        writer.print(get(FETCH_SUCCESSES));
         writer.print(" ");
-        writer.print(fetchFailures);
-        writer.print(" "); 
-        writer.print(fetchDisregards);
-        writer.print(" "); 
-        writer.print(fetchResponses);
-        writer.print(" "); 
-        writer.print(robotsDenials);
-        writer.print(" "); 
-        writer.print(successBytes);
-        writer.print(" "); 
-        writer.print(totalBytes);
-        writer.print(" "); 
-        writer.print(fetchNonResponses);
-        writer.print(" "); 
+        writer.print(get(FETCH_FAILURES));
+        writer.print(" ");
+        writer.print(get(FETCH_DISREGARDS));
+        writer.print(" ");
+        writer.print(get(FETCH_RESPONSES));
+        writer.print(" ");
+        writer.print(get(ROBOTS_DENIALS));
+        writer.print(" ");
+        writer.print(get(SUCCESS_BYTES));
+        writer.print(" ");
+        writer.print(get(TOTAL_BYTES));
+        writer.print(" ");
+        writer.print(get(FETCH_NONRESPONSES));
+        writer.print(" ");
         writer.print(ArchiveUtils.getLog17Date(lastSuccessTime));
     }
 
     @Override
     public Map<String, Object> shortReportMap() {
-        Map<String,Object> map = new LinkedHashMap<String, Object>();
-        map.put("totalScheduled", totalScheduled);
-        map.put("fetchSuccesses", fetchSuccesses);
-        map.put("fetchFailures", fetchFailures);
-        map.put("fetchDisregards", fetchDisregards);
-        map.put("fetchResponses", fetchResponses);
-        map.put("robotsDenials", robotsDenials);
-        map.put("successBytes", successBytes);
-        map.put("totalBytes", totalBytes);
-        map.put("fetchNonResponses", fetchNonResponses);
+        Map<String,Object> map = new LinkedHashMap<String, Object>(this);
         map.put("lastSuccessTime",lastSuccessTime);
         return map;
     }

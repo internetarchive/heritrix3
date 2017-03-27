@@ -21,6 +21,7 @@ package org.archive.crawler.frontier;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,18 +32,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.event.AMQPUrlReceivedEvent;
 import org.archive.crawler.event.CrawlStateEvent;
-import org.archive.crawler.framework.Frontier;
+import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.KeyedProperties;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
@@ -58,23 +64,35 @@ import com.rabbitmq.client.ShutdownSignalException;
 /**
  * @contributor nlevitt
  */
-public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStateEvent> {
+public class AMQPUrlReceiver
+	implements Lifecycle, ApplicationContextAware, ApplicationListener<CrawlStateEvent> {
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private static final Logger logger = 
             Logger.getLogger(AMQPUrlReceiver.class.getName());
 
     public static final String A_RECEIVED_FROM_AMQP = "receivedFromAMQP";
 
-    protected Frontier frontier;
-    public Frontier getFrontier() {
-        return this.frontier;
+    protected ApplicationContext appCtx;
+    public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
+        this.appCtx = appCtx;
     }
+
+    protected CandidatesProcessor candidates;
+    public CandidatesProcessor getCandidates() {
+        return candidates;
+    }
+    /**
+     * Received urls are run through the supplied CandidatesProcessor, which
+     * checks scope and schedules the urls. By default the crawl job's normal
+     * candidates processor is autowired in, but a different one can be
+     * configured if special scoping rules are desired.
+     */
     @Autowired
-    public void setFrontier(Frontier frontier) {
-        this.frontier = frontier;
+    public void setCandidates(CandidatesProcessor candidates) {
+        this.candidates = candidates;
     }
 
     protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
@@ -106,10 +124,47 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public boolean isRunning() {
         return isRunning;
     }
+
+    private boolean durable = false;
+    public boolean isDurable() {
+        return durable;
+    }
+    /** Should be queues be marked as durable? */
+    public void setDurable(boolean durable) {
+        this.durable = durable;
+    }
+
+    private boolean autoDelete = true;
+    public boolean isAutoDelete() {
+        return autoDelete;
+    }
+    /** Should be queues be marked as auto-delete? */
+    public void setAutoDelete(boolean autoDelete) {
+        this.autoDelete = autoDelete;
+    }
     
+    private boolean forceFetch = false;
+    public boolean isForceFetch() {
+        return forceFetch;
+    }
+    public void setForceFetch(boolean forceFetch) {
+        this.forceFetch = forceFetch;
+    }
+
+    /**
+     * The maximum prefetch count to use, meaning the maximum number of messages
+     * to be consumed without being acknowledged. Using 'null' would specify
+     * there should be no upper limit (the default).
+     */
+    private Integer prefetchCount = 1000;
+
     private transient Lock lock = new ReentrantLock(true);
 
+    private transient boolean pauseConsumer = false;
+    private transient String consumerTag = null;
+
     private class StarterRestarter extends Thread {
+
         public StarterRestarter(String name) {
             super(name);
         }
@@ -119,35 +174,56 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             while (!Thread.interrupted()) {
                 try {
                     lock.lockInterruptibly();
+                    logger.finest("Checking consumerTag=" + consumerTag + " and pauseConsumer=" + pauseConsumer);
                     try {
-                        if (!isRunning) {
+                        if (consumerTag == null && !pauseConsumer) {
                             // start up again
                             try {
-                                Consumer consumer = new UrlConsumer(channel());
-                                channel().exchangeDeclare(getExchange(), "direct", true);
-                                channel().queueDeclare(getQueueName(), false, false, true, null);
-                                channel().queueBind(getQueueName(), getExchange(), getQueueName());
-                                channel().basicConsume(getQueueName(), false, consumer);
-                                isRunning = true;
-                                logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName());
+                                startConsumer();
                             } catch (IOException e) {
-                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 30 seconds)", e);
+                                logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 10 seconds)", e);
                             }
                         }
 
-                        Thread.sleep(30000);
+                        if (consumerTag != null && pauseConsumer) {
+                            try {
+                                if (consumerTag != null) {
+                                    logger.info("Attempting to cancel URLConsumer with consumerTag=" + consumerTag);
+                                    channel().basicCancel(consumerTag);
+                                    consumerTag = null;
+                                    logger.info("Cancelled URLConsumer.");
+                                }
+                            } catch (IOException e) {
+                                logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 10 seconds)", e);
+                            }
+                        }
+
                     } finally {
                         lock.unlock();
                     }
+
+                    Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
                     return;
                 }
             }
         }
+
+        public void startConsumer() throws IOException {
+            Consumer consumer = new UrlConsumer(channel());
+            channel().exchangeDeclare(getExchange(), "direct", true);
+            channel().queueDeclare(getQueueName(), durable,
+                    false, autoDelete, null);
+            channel().queueBind(getQueueName(), getExchange(), getQueueName());
+            if (prefetchCount != null)
+                channel().basicQos(prefetchCount);
+            consumerTag = channel().basicConsume(getQueueName(), false, consumer);
+            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + consumerTag);
+        }
     }
 
     transient private StarterRestarter starterRestarter;
-    
+
     @Override
     public void start() {
         lock.lock();
@@ -155,8 +231,16 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             // spawn off a thread to start up the amqp consumer, and try to restart it if it dies 
             if (!isRunning) {
                 starterRestarter = new StarterRestarter(AMQPUrlReceiver.class.getSimpleName() + "-starter-restarter");
+                try {
+                    // try to synchronously start the consumer right now, so
+                    // that the queue is bound before crawling starts
+                    starterRestarter.startConsumer();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again soon)", e);
+                }
                 starterRestarter.start();
             }
+            isRunning = true;
         } finally {
             lock.unlock();
         }
@@ -167,13 +251,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         lock.lock();
         try {
             logger.info("shutting down");
-            if (connection != null && connection.isOpen()) {
-                try {
-                    connection.close();
-                } catch (IOException e) {
-                    logger.log(Level.SEVERE, "problem closing AMQP connection", e);
-                }
-            }
             if (starterRestarter != null && starterRestarter.isAlive()) {
                 starterRestarter.interrupt();
                 try {
@@ -182,6 +259,14 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 }
             }
             starterRestarter = null;
+
+            if (connection != null && connection.isOpen()) {
+                try {
+                    connection.close();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "problem closing AMQP connection", e);
+                }
+            }
             connection = null;
             channel = null;
             isRunning = false;
@@ -234,6 +319,9 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             lock.unlock();
         }
     }
+    
+    protected static final Set<String> REQUEST_HEADER_BLACKLIST = new HashSet<String>(Arrays.asList(
+            "accept-encoding", "upgrade-insecure-requests", "host", "connection"));
 
     // XXX should we be using QueueingConsumer because of possible blocking in
     // frontier.schedule()?
@@ -256,16 +344,13 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                 throw new RuntimeException(e); // can't happen
             }
             JSONObject jo = new JSONObject(decodedBody);
-            
+
             if ("GET".equals(jo.getString("method"))) {
-                CrawlURI curi;
                 try {
-                    curi = makeCrawlUri(jo);
-                    // bypasses scoping (unless rechecking is configured)
-                    getFrontier().schedule(curi);
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("scheduled " + curi);
-                    }
+                    CrawlURI curi = makeCrawlUri(jo);
+                    KeyedProperties.clearAllOverrideContexts();
+                    candidates.runCandidateChain(curi, null);
+                    appCtx.publishEvent(new AMQPUrlReceivedEvent(AMQPUrlReceiver.this, curi));
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
                             "problem creating CrawlURI from json received via AMQP "
@@ -274,14 +359,20 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     logger.log(Level.SEVERE,
                             "problem creating CrawlURI from json received via AMQP "
                                     + decodedBody, e);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE,
+                            "Unanticipated problem creating CrawlURI from json received via AMQP "
+                                    + decodedBody, e);
                 }
             } else {
-                logger.warning("ignoring url with method other than GET - " + decodedBody);
+                logger.info("ignoring url with method other than GET - "
+                        + decodedBody);
             }
 
+            logger.finest("Now ACKing: " + decodedBody);
             this.getChannel().basicAck(envelope.getDeliveryTag(), false);
         }
-        
+
         @Override
         public void handleShutdownSignal(String consumerTag,
                 ShutdownSignalException sig) {
@@ -290,7 +381,7 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
             } else {
                 logger.info("amqp channel/connection shut down consumerTag=" + consumerTag);
             }
-            isRunning = false;
+            AMQPUrlReceiver.this.consumerTag = null;
         }
 
         // {
@@ -302,7 +393,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
         //  "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
         //  "method": "GET"
         // }
-        @SuppressWarnings("unchecked")
         protected CrawlURI makeCrawlUri(JSONObject jo) throws URIException,
                 JSONException {
             JSONObject joHeaders = jo.getJSONObject("headers");
@@ -312,13 +402,48 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
 
             JSONObject parentUrlMetadata = jo.getJSONObject("parentUrlMetadata");
             String parentHopPath = parentUrlMetadata.getString("pathFromSeed");
-            String hopPath = parentHopPath + Hop.INFERRED.getHopString();
+            String hop = jo.optString("hop", Hop.INFERRED.getHopString());
+            String hopPath = parentHopPath + hop;
 
             CrawlURI curi = new CrawlURI(uuri, hopPath, via, LinkContext.INFERRED_MISC);
-            
-            // set the heritable data from the parent url, passed back to us via amqp
-            // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
-            // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+
+            populateHeritableMetadata(curi, parentUrlMetadata);
+
+            // set the http headers from the amqp message
+            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
+            for (Object key: joHeaders.keySet()) {
+                String k = key.toString();
+                if (!k.startsWith(":") && !REQUEST_HEADER_BLACKLIST.contains(k)) {
+                    customHttpRequestHeaders.put(k, joHeaders.getString(key.toString()));
+                }
+            }
+            curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
+
+            /*
+             * Crawl job must be configured to use
+             * HighestUriQueuePrecedencePolicy to ensure these high priority
+             * urls really get crawled ahead of others. See
+             * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
+             * Feature+Notes
+             */
+            if (Hop.INFERRED.getHopString().equals(curi.getLastHop())) {
+                curi.setSchedulingDirective(SchedulingConstants.HIGH);
+                curi.setPrecedence(1);
+            }
+
+            curi.setForceFetch(forceFetch || jo.optBoolean("forceFetch"));
+            curi.setSeed(jo.optBoolean("isSeed"));
+
+            curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
+
+            return curi;
+        }
+
+        // set the heritable data from the parent url, passed back to us via amqp
+        // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
+        // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+        @SuppressWarnings("unchecked")
+        protected void populateHeritableMetadata(CrawlURI curi, JSONObject parentUrlMetadata) {
             JSONObject heritableData = parentUrlMetadata.getJSONObject("heritableData");
             for (String key: (Set<String>) heritableData.keySet()) {
                 Object value = heritableData.get(key);
@@ -333,27 +458,6 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
                     curi.getData().put(key, heritableData.get(key));
                 }
             }
-
-            // set the http headers from the amqp message
-            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
-            for (Object key : joHeaders.keySet()) {
-                customHttpRequestHeaders.put(key.toString(),
-                        joHeaders.getString(key.toString()));
-            }
-            curi.getData().put("customHttpRequestHeaders", customHttpRequestHeaders);
-
-            /* Use HighestUriQueuePrecedencePolicy to ensure these high priority
-             * urls really get crawled ahead of others. 
-             * See https://webarchive.jira.com/wiki/display/Heritrix/Precedence+Feature+Notes
-             */
-            curi.setSchedulingDirective(SchedulingConstants.HIGH);
-            curi.setPrecedence(1);
-            
-            //curi.setForceFetch(true);
-
-            curi.getAnnotations().add(A_RECEIVED_FROM_AMQP);
-
-            return curi;
         }
     }
 
@@ -361,22 +465,16 @@ public class AMQPUrlReceiver implements Lifecycle, ApplicationListener<CrawlStat
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
-            if (channel != null && channel.isOpen()) {
-                try {
-                    channel.flow(false);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "failed to pause flow on amqp channel", e);
-                }
+            if (!this.pauseConsumer) {
+                logger.info("Requesting a pause of the URLConsumer...");
+                this.pauseConsumer = true;
             }
             break;
 
-        case RUNNING: case EMPTY: case PREPARING:
-            if (channel != null && channel.isOpen()) {
-                try {
-                    channel.flow(true);
-                } catch (IOException e) {
-                    logger.log(Level.SEVERE, "failed to resume flow on amqp channel", e);
-                }
+        case RUNNING:
+            if (this.pauseConsumer) {
+                logger.info("Requesting unpause of the URLConsumer...");
+                this.pauseConsumer = false;
             }
             break;
 

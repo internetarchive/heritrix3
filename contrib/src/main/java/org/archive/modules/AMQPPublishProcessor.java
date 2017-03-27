@@ -24,12 +24,18 @@ import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.event.AMQPUrlPublishedEvent;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.json.JSONObject;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.beans.BeansException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -38,21 +44,28 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * @author eldondev
  * @contributor nlevitt
  */
-public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable {
+public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable, ApplicationContextAware {
 
     private static final long serialVersionUID = 2L;
 
     public static final String A_SENT_TO_AMQP = "sentToAMQP"; // annotation
 
-    public AMQPPublishProcessor() {
-        // set default values
-        exchange = "umbra";
-        routingKey = "urls";
+    protected ApplicationContext appCtx;
+    public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
+        this.appCtx = appCtx;
     }
 
-    protected String clientId = "requests";
+    public AMQPPublishProcessor() {
+        // set default values
+        setExchange("umbra");
+        setRoutingKey("urls");
+    }
+
+    {
+        setClientId("requests");
+    }
     public String getClientId() {
-        return clientId;
+        return (String) kp.get("clientId");
     }
     /**
      * Client id to include in the json payload. AMQPUrlReceiver queueName
@@ -60,7 +73,18 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
      * this key.
      */
     public void setClientId(String clientId) {
-        this.clientId = clientId;
+        kp.put("clientId", clientId);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getExtraInfo() {
+        return (Map<String, Object>) kp.get("extraInfo");
+    }
+    /**
+     * Arbitrary additional information to include in the json payload.
+     */
+    public void setExtraInfo(Map<String, Object> extraInfo) {
+        kp.put("extraInfo", extraInfo);
     }
 
     /**
@@ -94,6 +118,12 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
             message.put("clientId", getClientId());
         }
 
+        if (getExtraInfo() != null) {
+            for (String k: getExtraInfo().keySet()) {
+                message.put(k, getExtraInfo().get(k));
+            }
+        }
+
         HashMap<String, Object> metadata = new HashMap<String,Object>();
         metadata.put("pathFromSeed", curi.getPathFromSeed());
 
@@ -125,6 +155,7 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
     protected void success(CrawlURI curi, byte[] message, BasicProperties props) {
         super.success(curi, message, props);
         curi.getAnnotations().add(A_SENT_TO_AMQP);
+        appCtx.publishEvent(new AMQPUrlPublishedEvent(AMQPPublishProcessor.this, curi));
     }
 
     protected BasicProperties props = new AMQP.BasicProperties.Builder().

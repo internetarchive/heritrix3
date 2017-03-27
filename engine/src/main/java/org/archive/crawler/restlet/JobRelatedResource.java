@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
@@ -54,6 +55,9 @@ import org.springframework.beans.BeansException;
  * @contributor nlevitt
  */
 public abstract class JobRelatedResource extends BaseResource {
+    private final static Logger LOGGER =
+            Logger.getLogger(JobRelatedResource.class.getName());
+
     protected CrawlJob cj; 
 
     protected IdentityHashMap<Object, String> beanToNameMap;
@@ -147,8 +151,12 @@ public abstract class JobRelatedResource extends BaseResource {
                 }
             }
             if (obj instanceof Iterable<?>) {
-                for (Object next : (Iterable<?>) obj) {
-                    addPresentableNestedNames(namedBeans, next, alreadyWritten);
+                try {
+                    for (Object next : (Iterable<?>) obj) {
+                        addPresentableNestedNames(namedBeans, next, alreadyWritten);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warning("problem iterating over " + obj + " - " + e);
                 }
             }
         }
@@ -286,8 +294,12 @@ public abstract class JobRelatedResource extends BaseResource {
                     beanPathPrefix = beanPath + "[";
                 }
                 // TODO: protect against overlong content?
-                propValues.add(makePresentableMapFor(i + "", list.get(i),
-                        alreadyWritten, beanPathPrefix));
+                try {
+                    propValues.add(makePresentableMapFor(i + "", list.get(i),
+                            alreadyWritten, beanPathPrefix));
+                } catch (Exception e) {
+                    LOGGER.warning(list + ".get(" + i + ") -" + e);
+                }
             }
         } else if (object instanceof Iterable<?>) {
             for (Object next : (Iterable<?>) object) {
