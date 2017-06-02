@@ -32,6 +32,8 @@ public class HTMLLinkContext extends LinkContext {
     final public static HTMLLinkContext META = new HTMLLinkContext("meta");
     final public static HTMLLinkContext A_HREF = new HTMLLinkContext("a", "href");
     final public static HTMLLinkContext IMG_SRC = new HTMLLinkContext("img", "src");
+    final public static HTMLLinkContext IMG_SRCSET = new HTMLLinkContext("img", "srcset");
+    final public static HTMLLinkContext SOURCE_SRCSET = new HTMLLinkContext("source", "srcset");
     final public static HTMLLinkContext SCRIPT_SRC = new HTMLLinkContext("script", "src");
     final public static HTMLLinkContext META_HREF = new HTMLLinkContext("meta", "href");
     
@@ -56,6 +58,9 @@ public class HTMLLinkContext extends LinkContext {
         } else if (attr.equals("src") || attr.equals("SRC")) {
             if (el.equals("img") || attr.equals("IMG")) return IMG_SRC;
             if (el.equals("script") || attr.equals("SCRIPT")) return SCRIPT_SRC;
+        } else if (attr.equals("srcset") || attr.equals("SRCSET")) {
+            if (el.equals("img") || attr.equals("IMG")) return IMG_SRCSET;
+            if (el.equals("source") || attr.equals("SOURCE")) return SOURCE_SRCSET;
         }
         return new HTMLLinkContext(el, attr);
     }
@@ -72,6 +77,8 @@ public class HTMLLinkContext extends LinkContext {
         if (path.equalsIgnoreCase("a/@href")) return A_HREF;
         if (path.equalsIgnoreCase("meta/@href")) return META_HREF;
         if (path.equalsIgnoreCase("img/@src")) return IMG_SRC;
+        if (path.equalsIgnoreCase("img/@srcset")) return IMG_SRCSET;
+        if (path.equalsIgnoreCase("source/@srcset")) return SOURCE_SRCSET;
         if (path.equalsIgnoreCase("script/@src")) return SCRIPT_SRC;
         return new HTMLLinkContext(path);
     }
