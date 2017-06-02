@@ -434,5 +434,57 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 links[1].getURI());
         
     }
+
+    public void testImgSrcSetAttribute() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
+
+        CharSequence cs = "<img width=\"800\" height=\"1200\" src=\"/images/foo.jpg\" "
+                + "class=\"attachment-full size-full\" alt=\"\" "
+                + "srcset=\"/images/foo1.jpg 800w, /images/foo2.jpg 480w, /images/foo3.jpg 96w\" "
+                + "sizes=\"(max-width: 800px) 100vw, 800px\">";
+
+        getExtractor().extract(curi, cs);
+
+        CrawlURI[] links = curi.getOutLinks().toArray(new CrawlURI[0]);
+        Arrays.sort(links);
+
+        String[] dest = {
+                "http://www.example.com/images/foo.jpg",
+                "http://www.example.com/images/foo1.jpg",
+                "http://www.example.com/images/foo2.jpg",
+                "http://www.example.com/images/foo3.jpg" };
+
+        for (int i = 0; i < links.length; i++) {
+            assertEquals("outlink from img", dest[i], links[i].getURI());
+        }
+
+    }
+
+    public void testSourceSrcSetAttribute() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
+
+        CharSequence cs = "<picture>"
+                + "<source media=\"(min-width: 992px)\" srcset=\"images/foo1.jpg\"> "
+                + "<source media=\"(min-width: 500px)\" srcset=\"images/foo2.jpg\"> "
+                + "<source media=\"(min-width: 0px)\" srcset=\"images/foo3.jpg\"> "
+                + "<img src=\"images/foo.jpg\" alt=\"\"> "
+                + "</picture>";
+
+        getExtractor().extract(curi, cs);
+
+        CrawlURI[] links = curi.getOutLinks().toArray(new CrawlURI[0]);
+        Arrays.sort(links);
+
+        String[] dest = {
+                "http://www.example.com/images/foo.jpg",
+                "http://www.example.com/images/foo1.jpg",
+                "http://www.example.com/images/foo2.jpg",
+                "http://www.example.com/images/foo3.jpg" };
+
+        for (int i = 0; i < links.length; i++) {
+            assertEquals("outlink from picture", dest[i], links[i].getURI());
+        }
+
+    }
         
 }
