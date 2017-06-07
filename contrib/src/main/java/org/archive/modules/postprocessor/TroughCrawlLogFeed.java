@@ -19,7 +19,9 @@
 package org.archive.modules.postprocessor;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
@@ -88,6 +90,12 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected static final Logger logger = Logger.getLogger(TroughCrawlLogFeed.class.getName());
 
+    protected static final int BATCH_MAX_TIME_MS = 20 * 1000;
+    protected static final int BATCH_MAX_SIZE = 500;
+
+    protected List<String> batch = new ArrayList<String>();
+    protected long batchLastTime = System.currentTimeMillis();
+
     protected Frontier frontier;
     public Frontier getFrontier() {
         return this.frontier;
@@ -129,32 +137,46 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         if (!isRunning) {
             return;
         }
+        if (!batch.isEmpty()) {
+            postBatch();
+        }
 
         if (frontier instanceof BdbFrontier) {
             Closure closure = new Closure() {
                 public void execute(Object o) {
                     CrawlURI curi = (CrawlURI) o;
-                    String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values ("
+                    batch.add("("
                             + sqlValue(new Date()) + ", "
                             + sqlValue(curi) + ", "
                             + sqlValue(curi.getPathFromSeed()) + ", "
                             + sqlValue(curi.getVia()) + ", "
                             + sqlValue(curi.getSourceTag()) + ", "
-                            + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ");";
-                    post(sql);
+                            + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+
+                    if (batch.size() >= BATCH_MAX_SIZE) {
+                        String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values "
+                                + String.join(", ", batch) + ";";
+                        post(sql);
+                        batch.clear();
+                    }
                 }
             };
 
             logger.info("dumping " + frontier.queuedUriCount() + " queued urls to trough feed");
             ((BdbFrontier) frontier).forAllPendingDo(closure);
+            if (!batch.isEmpty()) {
+                String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values "
+                        + String.join(", ", batch) + ";";
+                post(sql);
+                batch.clear();
+            }
             logger.info("dumped " + frontier.queuedUriCount() + " queued urls to trough feed");
         } else {
             logger.warning("frontier is not a BdbFrontier, cannot dump queued urls to trough feed");
         }
 
-//        String rateStr = String.format("%1.1f", 0.01 * stats.errors / stats.total);
-//        logger.info("final error count: " + stats.errors + "/" + stats.total + " (" + rateStr + "%)");
-
+        // String rateStr = String.format("%1.1f", 0.01 * stats.errors / stats.total);
+        // logger.info("final error count: " + stats.errors + "/" + stats.total + " (" + rateStr + "%)");
         super.stop();
     }
 
@@ -198,46 +220,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-//        CREATE TABLE crawled_url(
-//                id INTEGER PRIMARY KEY AUTOINCREMENT,
-//                timestamp DATETIME,
-//                status_code INTEGER,
-//                size BIGINT,
-//                url VARCHAR(4000),
-//                hop_path VARCHAR(255),
-//                is_seed_redirect INTEGER(1),
-//                via VARCHAR(255),
-//                mimetype VARCHAR(255),
-//                content_digest VARCHAR(255),
-//                seed VARCHAR(4000),
-//                is_duplicate INTEGER(1),
-//                warc_filename VARCHAR(255),
-//                warc_offset VARCHAR(255),
-//                host VARCHAR(255));
-
-//        String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values ("
-//                + "datetime('" + ArchiveUtils.getLog17Date(System.currentTimeMillis()) + "'), "
-//                + curi + ", "
-//                + curi.getPathFromSeed() + ", "
-//                + curi.getVia() + ", "
-//                + curi.getSourceTag() + ", "
-//                + serverCache.getHostFor(curi.getUURI()) + ")";
-        String sql = "insert into crawled_url ("
-                + "timestamp, "
-                + "status_code, "
-                + "size, "
-                + "url, "
-                + "hop_path, "
-                + "is_seed_redirect, "
-                + "via, "
-                + "mimetype, "
-                + "content_digest, "
-                + "seed, "
-                + "is_duplicate, "
-                + "warc_filename, "
-                + "warc_offset, "
-                + "host) values ("
-                + sqlValue(new Date(curi.getFetchBeginTime())) + ", "
+        batch.add("(" + sqlValue(new Date(curi.getFetchBeginTime())) + ", "
                 + sqlValue(curi.getFetchStatus()) + ", "
                 + sqlValue(curi.getContentSize()) + ", "
                 + sqlValue(curi) + ", "
@@ -250,8 +233,23 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                 + sqlValue(curi.isRevisit() ? 1 : 0) + ", "
                 + sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
                 + sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
-                + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ");";
+                + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+
+        if (batch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - batchLastTime > BATCH_MAX_TIME_MS) {
+            postBatch();
+        }
+    }
+
+    protected void postBatch() {
+        String sql = "insert into crawled_url ("
+                + "timestamp, status_code, size, url, hop_path, is_seed_redirect, "
+                + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
+                + "warc_offset, host)  values "
+                + String.join(", ", batch)
+                + ";";
         post(sql);
+        batchLastTime = System.currentTimeMillis();
+        batch.clear();
     }
 
 }
