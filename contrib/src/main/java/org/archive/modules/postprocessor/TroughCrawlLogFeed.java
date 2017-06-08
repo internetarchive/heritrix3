@@ -201,7 +201,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     }
 
     protected void post(String statement) {
-        logger.info("posting to " + writeUrl + " - " + statement);
+        logger.info("posting to " + writeUrl + " - " + statement.substring(0, 200) + "...");
         HttpPost httpPost = new HttpPost(writeUrl);
         try {
             httpPost.setEntity(new StringEntity(statement));

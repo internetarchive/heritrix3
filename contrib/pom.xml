@@ -12,7 +12,7 @@
 	<name>Heritrix 3: 'contrib' subproject</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties> 
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
@@ -97,6 +97,26 @@
 						<phase>verify</phase>
 						<goals>
 							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptors>
+						<descriptor>
+							src/main/assembly/dist.xml
+						</descriptor>
+					</descriptors>
+				</configuration>
+				<executions>
+					<execution>
+						<id>job.assembly.package</id>
+						<phase>package</phase>
+						<goals>
+							<goal>attached</goal>
 						</goals>
 					</execution>
 				</executions>
