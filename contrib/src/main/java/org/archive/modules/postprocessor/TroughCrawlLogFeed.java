@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -155,7 +156,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
                     if (batch.size() >= BATCH_MAX_SIZE) {
                         String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values "
-                                + String.join(", ", batch) + ";";
+                                + StringUtils.join(batch, ", ") + ";";
                         post(sql);
                         batch.clear();
                     }
@@ -166,7 +167,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             ((BdbFrontier) frontier).forAllPendingDo(closure);
             if (!batch.isEmpty()) {
                 String sql = "insert into queued_url (timestamp, url, hop_path, via, seed, host) values "
-                        + String.join(", ", batch) + ";";
+                        + StringUtils.join(batch, ", ") + ";";
                 post(sql);
                 batch.clear();
             }
@@ -245,7 +246,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                 + "timestamp, status_code, size, url, hop_path, is_seed_redirect, "
                 + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
                 + "warc_offset, host)  values "
-                + String.join(", ", batch)
+                + StringUtils.join(batch, ", ")
                 + ";";
         post(sql);
         batchLastTime = System.currentTimeMillis();
