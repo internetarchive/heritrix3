@@ -23,7 +23,7 @@ package org.archive.modules;
  * Returned by a Processor's process method to indicate the status of the
  * process.  
  * 
- * @contributor pjack
+ * @author pjack
  */
 public class ProcessResult {
     public enum ProcessStatus {

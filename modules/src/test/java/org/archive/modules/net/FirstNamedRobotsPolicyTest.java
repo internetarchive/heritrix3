@@ -31,7 +31,7 @@ import junit.framework.TestCase;
 /**
  * Test for FirstNamedRobotsPolicy
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class FirstNamedRobotsPolicyTest extends TestCase {
     

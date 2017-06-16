@@ -26,7 +26,7 @@ package org.archive.modules.extractor;
  * traditionally provided by the Frontier in crawls. As the number of settings
  * here grow, that may need to change. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public interface ExtractorParameters {
     /**

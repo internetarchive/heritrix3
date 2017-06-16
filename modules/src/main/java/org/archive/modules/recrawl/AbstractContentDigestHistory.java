@@ -24,7 +24,7 @@ import org.archive.modules.CrawlURI;
  * Represents a store of information, presumably persistent, keyed by content
  * digest.
  * 
- * @contributor nlevitt
+ * @author nlevitt
  */
 public abstract class AbstractContentDigestHistory {
     /**

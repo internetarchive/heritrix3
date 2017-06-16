@@ -68,7 +68,7 @@ import org.archive.util.LRU;
  * 
  * <p>First, directory entries are not cached.  It's assumed that they will
  * be looked up at the beginning of a lengthy operation, and then forgotten
- * about.  This is certainly the case for {@link Doc#getText(BlockFileSystem)}. 
+ * about.  This is certainly the case for {@link Doc#getText(BlockFileSystem, int)}. 
  * If you need to remember directory entries, you can manually store the Entry 
  * objects in a map or something, as they don't grow stale.
  * 
@@ -91,7 +91,7 @@ import org.archive.util.LRU;
  * {Doc.getText(BlockFileSystem)} typically requires.)
  * 
  * @author pjack
- * @see http://jakarta.apache.org/poi/poifs/fileformat.html
+ * @see <a href="http://jakarta.apache.org/poi/poifs/fileformat.html">http://jakarta.apache.org/poi/poifs/fileformat.html</a>
  */
 public class DefaultBlockFileSystem implements BlockFileSystem {
 

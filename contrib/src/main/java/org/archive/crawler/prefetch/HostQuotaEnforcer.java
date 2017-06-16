@@ -40,7 +40,7 @@ import com.google.common.net.InternetDomainName;
  * 
  * @see QuotaEnforcer
  * @see SourceQuotaEnforcer
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class HostQuotaEnforcer extends Processor {
 

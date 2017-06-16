@@ -130,7 +130,7 @@ public class MirrorWriterProcessor extends Processor {
      * length of one. If it occurs in a URI path, it is replaced by the second
      * string in the pair. For UNIX, no character mapping is normally needed.
      * For Macintosh, the recommended value is [: %%3A]. For Windows, the
-     * recommended value is [' ' %%20 &quot; %%22 * %%2A : %%3A < %%3C \\> %%3E ?
+     * recommended value is [' ' %%20 &quot; %%22 * %%2A : %%3A &lt; %%3C \\&gt; %%3E ?
      * %%3F \\\\ %%5C ^ %%5E | %%7C].
      */
     protected List<String> characterMap = new ArrayList<String>(); 
@@ -322,16 +322,8 @@ public class MirrorWriterProcessor extends Processor {
     private static final Map<String,String> EMPTY_MAP
      = Collections.unmodifiableMap(new TreeMap<String,String>());
 
-
-
-
-
-    /**
-     * @param name Name of this processor.
-     */
     public MirrorWriterProcessor() {
     }
-
     
     @Override
     protected boolean shouldProcess(CrawlURI curi) {

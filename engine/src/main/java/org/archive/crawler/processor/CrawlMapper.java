@@ -170,7 +170,6 @@ public abstract class CrawlMapper extends Processor implements Lifecycle {
    
     /**
      * Constructor.
-     * @param name Name of this processor.
      */
     public CrawlMapper() {
         super();

@@ -108,8 +108,7 @@ import org.json.JSONObject;
  * <p>Core state is in instance variables but a flexible
  * attribute list is also available. Use this 'bucket' to carry
  * custom processing extracted data and state across CrawlURI
- * processing.  See the {@link #putString(String, String)},
- * {@link #getString(String)}, etc.
+ * processing.  See {@link #getData()}, etc.
  *
  * <p>
  * Note: getHttpMethod() has been removed starting with Heritrix 3.3.0. HTTP
@@ -228,7 +227,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
 
     /**
      * True if this CrawlURI has been deemed a prerequisite by the
-     * {@link org.archive.crawler.prefetch.PreconditionEnforcer}.
+     * org.archive.crawler.prefetch.PreconditionEnforcer.
      *
      * This flag is used at least inside in the precondition enforcer so that
      * subsequent prerequisite tests know to let this CrawlURI through because
@@ -529,7 +528,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * A prerequisite is a URI that must be crawled before this URI can be
      * crawled.
      *
-     * @param link Link to set as prereq.
+     * @param pre Link to set as prereq.
      */
     public void setPrerequisiteUri(CrawlURI pre) {
         getData().put(A_PREREQUISITE_URI, pre);
@@ -655,7 +654,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * 
      * This value is consulted in reporting/logging/writing-decisions.
      * 
-     * @see #setContentSize()
+     * @see #setContentSize(long)
      * @return contentSize
      */
     public long getContentSize(){
@@ -981,7 +980,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * Set the retained content-digest value (usu. SHA1). 
      * 
      * @param digestValue
-     * @deprecated Use {@link #setContentDigest(String scheme, byte[])}
+     * @deprecated Use {@link #setContentDigest(String, byte[])}
      */
     public void setContentDigest(byte[] digestValue) {
         setContentDigest("SHA1", digestValue);
@@ -1134,15 +1133,15 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         return (UURI)getData().get(A_HTML_BASE);
     }
     
-    /**
-     * Add the key of  items you want to persist across
-     * processings.
-     * @param key Key to add.
-     */
     public static Collection<String> getPersistentDataKeys() {
         return persistentKeys;
     }
 
+    /**
+     * Add the key of  items you want to persist across
+     * processings.
+     * @param s Key to add.
+     */
     public void addPersistentDataMapKey(String s) {
         if (!persistentKeys.contains(s)) {
             addDataPersistentMember(s);
@@ -1629,7 +1628,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * 
      * @param pathFromSeed
      * @param hopChar
-     * @return
      */
     public static String extendHopsPath(String pathFromSeed, char hopChar) {
         if(pathFromSeed.length()<MAX_HOPS_DISPLAYED) {
@@ -1643,12 +1641,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     /**
      * Utility method for creation of CrawlURIs found extracting
      * links from this CrawlURI.
-     * @param baseUURI BaseUURI for <code>link</code>.
-     * TODO: Fix JavaDoc
-     * @param scheduling How new CandidateURI should be scheduled.
-     * @param seed True if this CandidateURI is a seed.
-     * @return New candidateURI wrapper around <code>link</code>.
-     * @throws URIException
      */
     public CrawlURI createCrawlURI(UURI destination, LinkContext context, Hop hop,
         int scheduling, boolean seed)
@@ -1834,10 +1826,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     /**
      * Do all actions associated with setting a <code>CrawlURI</code> as
      * requiring a prerequisite.
-     *
-     * @param lastProcessorChain Last processor chain reference.  This chain is
-     * where this <code>CrawlURI</code> goes next.
-     * @param preq Object to set a prerequisite.
      * @return the newly created prerequisite CrawlURI
      * @throws URIException
      */
@@ -1924,7 +1912,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     
     /**
      * Indicates if this CrawlURI object has been deemed a revisit.
-     * @return 
      */
     public boolean isRevisit() {
     	return revisitProfile!=null;

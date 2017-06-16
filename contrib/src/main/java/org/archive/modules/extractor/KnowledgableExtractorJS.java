@@ -59,7 +59,7 @@ public class KnowledgableExtractorJS extends ExtractorJS {
         }
 
         /**
-         * @return value set in {@link #KnowledgableExtractorJS(CrawlURI, UURI)}
+         * @return value set in {@link #CustomizedCrawlURIFacade(CrawlURI, UURI)}
          */
         @Override
         public UURI getBaseURI() {

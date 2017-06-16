@@ -27,8 +27,8 @@ import org.apache.commons.lang.math.RandomUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 
 /**
- * @contributor stack
- * @contributor gojomo
+ * @author stack
+ * @author gojomo
  * @version $Date: 2009-08-03 23:50:43 -0700 (Mon, 03 Aug 2009) $, $Revision: 6434 $
  */
 public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {

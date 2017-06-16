@@ -35,7 +35,7 @@ import org.archive.modules.recrawl.FetchHistoryProcessor;
  * As with other fetch history processors, this needs to be combined with {@link FetchHistoryProcessor}
  * (set up after FetchHTTP, before WarcWriter) to work.
  * @see HBasePersistStoreProcessor
- * @contributor kenji
+ * @author kenji
  */
 public class HBasePersistLoadProcessor extends HBasePersistProcessor {
     private static final Logger logger =

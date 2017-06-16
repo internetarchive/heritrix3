@@ -169,7 +169,6 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
     /**
      * Evaluate whether given object's URI is covered by the SURT prefix set
      * 
-     * @param object Item to evaluate.
      * @return true if item, as SURT form URI, is prefixed by an item in the set
      */
     @Override

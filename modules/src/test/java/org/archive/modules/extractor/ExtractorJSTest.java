@@ -30,8 +30,8 @@ import org.archive.util.Recorder;
 /**
  * Unit test for {@link ExtractorJS}.
  *
- * @contributor gojomo
- * @contributor nlevitt
+ * @author gojomo
+ * @author nlevitt
  */
 public class ExtractorJSTest extends StringExtractorTestBase {
 

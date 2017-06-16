@@ -28,9 +28,6 @@ public interface CanonicalizationRule {
      * Apply this canonicalization rule.
      * 
      * @param url Url string we apply this rule to.
-     * @param context An object that will provide context for the settings
-     * system.  The UURI of the URL we're canonicalizing is an example of
-     * an object that provides context.
      * @return Result of applying this rule to passed <code>url</code>.
      */
     public String canonicalize(String url);
@@ -41,9 +38,6 @@ public interface CanonicalizationRule {
 //    public String getName();
     
     /**
-     * @param context An object that will provide context for the settings
-     * system.  The UURI of the URL we're canonicalizing is an example of
-     * an object that provides context.
      * @return True if this rule is enabled and to be run.
      */
     public boolean getEnabled();

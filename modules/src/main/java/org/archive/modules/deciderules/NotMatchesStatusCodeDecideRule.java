@@ -15,8 +15,6 @@ public class NotMatchesStatusCodeDecideRule extends MatchesStatusCodeDecideRule 
 
     /**
      * Sets the upper bound on the range of acceptable status codes.
-     *
-     * @param Integer Status code
      */
     public void setUpperBound(Integer statusCode) {
 
@@ -26,7 +24,7 @@ public class NotMatchesStatusCodeDecideRule extends MatchesStatusCodeDecideRule 
     /**
      * Returns the upper bound on the range of acceptable status codes.
      *
-     * @returns Integer Status code
+     * @return Integer Status code
      */
     public Integer getUpperBound() {
 
@@ -44,8 +42,6 @@ public class NotMatchesStatusCodeDecideRule extends MatchesStatusCodeDecideRule 
      * Returns "true" if the provided CrawlURI has a fetch status that does not
      * fall within this instance's specified range.
      * 
-     * @param CrawlURI
-     *            The URI to be evaluated
      * @return true If the CrawlURI has a fetch status outside the specified
      *         range
      */

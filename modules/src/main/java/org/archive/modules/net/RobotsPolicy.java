@@ -28,7 +28,7 @@ import org.archive.modules.CrawlURI;
  * RobotsPolicy represents the strategy used by the crawler 
  * for determining how robots.txt files will be honored. 
  *
- * @contributor gojomo
+ * @author gojomo
  */
 abstract public class RobotsPolicy {
     public static Map<String, RobotsPolicy> STANDARD_POLICIES = new HashMap<String,RobotsPolicy>();

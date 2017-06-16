@@ -32,7 +32,7 @@ import org.archive.modules.seeds.SeedModule;
  * {@link SeedModule#getSourceTagSeeds()} must be enabled or the rule will never
  * apply.
  *
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class SourceSeedDecideRule extends PredicatedDecideRule {
 

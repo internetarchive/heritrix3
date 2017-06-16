@@ -111,7 +111,6 @@ public class FetchFTP extends Processor  {
      * Returns the <code>extract.from.dirs</code> attribute for this
      * <code>FetchFTP</code> and the given curi.
      * 
-     * @param curi  the curi whose attribute to return
      * @return  that curi's <code>extract.from.dirs</code>
      */
     public boolean getExtractFromDirs() {
@@ -131,7 +130,6 @@ public class FetchFTP extends Processor  {
      * Returns the <code>extract.parent</code> attribute for this
      * <code>FetchFTP</code> and the given curi.
      * 
-     * @param curi  the curi whose attribute to return
      * @return  that curi's <code>extract-parent</code>
      */
     public boolean getExtractParent() {
@@ -297,7 +295,7 @@ public class FetchFTP extends Processor  {
     }
 
     /**
-     * A {@link SocketFactory} much like {@link javax.net.DefaultSocketFactory},
+     * A {@link SocketFactory} much like javax.net.DefaultSocketFactory,
      * except that the createSocket() methods that open connections support a
      * connect timeout.
      */

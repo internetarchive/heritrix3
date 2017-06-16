@@ -33,7 +33,7 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     /**
      * Sets the lower bound on the range of acceptable status codes.
      *
-     * @param Integer Status code
+     * @param statusCode Status code
      */
     public void setLowerBound(Integer statusCode) {
 
@@ -43,7 +43,7 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     /**
      * Returns the lower bound on the range of acceptable status codes.
      *
-     * @returns Integer Status code
+     * @return Integer Status code
      */
     public Integer getLowerBound() {
 
@@ -60,7 +60,7 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     /**
      * Sets the upper bound on the range of acceptable status codes.
      *
-     * @param Integer Status code
+     * @param statusCode Status code
      */
     public void setUpperBound(Integer statusCode) {
 
@@ -70,7 +70,7 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
     /**
      * Returns the upper bound on the range of acceptable status codes.
      *
-     * @returns Integer Status code
+     * @return Integer Status code
      */
     public Integer getUpperBound() {
 
@@ -88,7 +88,7 @@ public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
      * Returns "true" if the provided CrawlURI has a fetch status that falls
      * within this instance's specified range.
      * 
-     * @param CrawlURI
+     * @param uri
      *            The URI to be evaluated
      * @return true If the CrawlURI has a fetch status code within the specified
      *         range.

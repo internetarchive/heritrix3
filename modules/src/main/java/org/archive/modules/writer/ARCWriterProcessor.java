@@ -93,9 +93,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
      *
      * @param curi CrawlURI to process.
      */
-    protected ProcessResult innerProcessResult(CrawlURI puri) {
-        CrawlURI curi = (CrawlURI)puri;
-        
+    protected ProcessResult innerProcessResult(CrawlURI curi) {
         long recordLength = getRecordedSize(curi);
         
         ReplayInputStream ris = null;

@@ -41,7 +41,7 @@ import org.archive.modules.recrawl.RecrawlAttributeConstants;
  * <li>{@code z}: do-not-crawl flag - loader discards URL if this column has non-empty value.</li> 
  * </ul>
  * 
- * @contributor kenji
+ * @author kenji
  */
 public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implements RecrawlDataSchema, RecrawlAttributeConstants {
     static final Logger logger = Logger.getLogger(MultiColumnRecrawlDataSchema.class.getName());

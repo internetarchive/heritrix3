@@ -33,7 +33,7 @@ import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 
 /**
- * @contributor kenji
+ * @author kenji
  */
 public class HBasePersistStoreProcessor extends HBasePersistProcessor implements FetchStatusCodes, RecrawlAttributeConstants {
     private static final Logger logger = Logger.getLogger(HBasePersistStoreProcessor.class.getName());
@@ -44,7 +44,7 @@ public class HBasePersistStoreProcessor extends HBasePersistProcessor implements
     }
     /**
      * Add the expected column family
-     * {@link HBasePersistProcessor#COLUMN_FAMILY} to the HBase table if the
+     * {@link HBaseContentDigestHistory#COLUMN_FAMILY} to the HBase table if the
      * table doesn't already have it.
      */
     public void setAddColumnFamily(boolean addColumnFamily) {

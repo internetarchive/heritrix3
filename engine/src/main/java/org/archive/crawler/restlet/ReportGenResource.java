@@ -34,7 +34,7 @@ import org.restlet.resource.Variant;
  * Restlet Resource which generates fresh reports and then redirects
  * requests to the report in the filesystem. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ReportGenResource extends JobRelatedResource {
     protected String reportClass;

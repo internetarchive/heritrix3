@@ -62,7 +62,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *  <li> A dir named after the website. </li>
  *  <li> 'current' - a dir indicating that this is the directory being written
  *                   to by the ongoing crawl. </li>
- *  <li> A file on the format <md5 of url>.<fetchtime in seconds> </li>
+ *  <li> A file on the format &lt;md5 of url&gt;.&lt;fetchtime in seconds&gt; </li>
  * </ul>
  * Example: '/53/www.kb.se/current/6879ad79c0ccf886ee8ca55d80e5d6a1.1169211837'
  * 
@@ -76,7 +76,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author oskar
  */
 public class Kw3WriterProcessor extends Processor {
-
 
   @SuppressWarnings("unused")
   private static final long serialVersionUID = 3L;
@@ -260,7 +259,7 @@ public class Kw3WriterProcessor extends Processor {
    * 2. A dir named after the website.
    * 3. 'current' - a dir indicating that this is the directory being written
    *                to by the ongoing crawl. 
-   * 4. A file on the format <md5 of url>.<fetchtime in seconds>
+   * 4. A file on the format &lt;md5 of url&gt;.&lt;fetchtime in seconds&gt;
    * 
    * Example: '/53/www.kb.se/current/6879ad79c0ccf886ee8ca55d80e5d6a1.1169211837'            
    */

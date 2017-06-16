@@ -27,7 +27,7 @@ import org.archive.bdb.DisposableStoredSortedMap;
 /**
  * The "Mimetypes Report", tallies by MIME type.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class MimetypesReport extends Report {
 

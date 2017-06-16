@@ -77,7 +77,7 @@ implements Iterable<Processor>,
     /**
      * Compiles and returns a human readable report on the active processors.
      * @param writer Where to write to.
-     * @see org.archive.crawler.framework.Processor#report()
+     * @see Processor#report()
      */
     public void reportTo(PrintWriter writer) {
         writer.print(

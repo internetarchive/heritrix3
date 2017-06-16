@@ -75,7 +75,7 @@ import java.util.Random;
  * many non-optional methods would be unimplementable (e.g., iterators).
  *
  * @author Sebastiano Vigna
- * @contributor Gordon Mohr
+ * @author Gordon Mohr
  */
 public class BloomFilter64bit implements Serializable, BloomFilter {
     private static final long serialVersionUID = 2L;
@@ -136,11 +136,11 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      * @param d the number of hash functions; if the filter add not more 
      * than <code>n</code> elements, false positives will happen with 
      * probability 2<sup>-<var>d</var></sup>.
-     * @param Random weightsGenerator may provide a seeded Random for reproducible
+     * @param weightsGenerator may provide a seeded Random for reproducible
      * internal universal hash function weighting
      * @param roundUp if true, round bit size up to next-nearest-power-of-2
      */
-    public BloomFilter64bit( final long n, final int d, Random weightsGenerator, boolean roundUp ) {
+    public BloomFilter64bit(final long n, final int d, Random weightsGenerator, boolean roundUp ) {
         this.expectedInserts = n; 
         this.d = d;
         long lenInLongs = (long)Math.ceil( ( (long)n * (long)d / NATURAL_LOG_OF_2 ) / 64L );

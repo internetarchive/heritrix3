@@ -68,8 +68,8 @@ import com.sleepycat.je.util.DbBackup;
 /**
  * Utility module for managing a shared BerkeleyDB-JE environment
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public class BdbModule implements Lifecycle, Checkpointable, Closeable, DisposableBean {
     final private static Logger LOGGER = 
@@ -326,7 +326,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * @param name
      * @param config
      * @param usePriorData
-     * @return
      * @throws DatabaseException
      */
     public Database openDatabase(String name, BdbConfig config, boolean usePriorData) 
@@ -386,7 +385,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * @param dbName
      * @param recycle
      * @param valueClass
-     * @return
      * @throws DatabaseException
      */
     public <V extends IdentityCacheable> ObjectIdentityBdbManualCache<V> getOIBCCache(String dbName, boolean recycle,
@@ -421,7 +419,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * @param dbName
      * @param recycle
      * @param valueClass
-     * @return
      * @throws DatabaseException
      */
     public <V extends IdentityCacheable> ObjectIdentityCache<V> getObjectCache(String dbName, boolean recycle,
@@ -658,7 +655,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
      * @param keyClass Class of keys; should be a Java primitive type
      * @param valueClass Class of values; may be any serializable type
      * @param allowDuplicates whether duplicate keys allowed
-     * @return
      */
     public <K,V> DisposableStoredSortedMap<K, V> getStoredMap(String dbName, Class<K> keyClass, Class<V> valueClass, boolean allowDuplicates, boolean usePriorData) {
         BdbConfig config = new BdbConfig(); 

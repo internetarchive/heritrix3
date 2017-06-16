@@ -206,7 +206,7 @@ public abstract class ModuleTestBase extends TestCase {
      * -- for instance, if you're serializing a timestamp.  If that's the case
      * you should override this method to compare the given objects, or to 
      * simply do nothing.  (If this method does nothing, then the 
-     * {@link #testSerialization} test is still useful for catching
+     * {@link #testSerializationIfAppropriate()} test is still useful for catching
      * NotSerializable problems).
      * 
      * @param first   the first object that was serialized

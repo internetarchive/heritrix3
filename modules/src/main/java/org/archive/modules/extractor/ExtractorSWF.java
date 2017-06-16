@@ -70,9 +70,6 @@ public class ExtractorSWF extends ContentExtractor {
         this.extractorJS = extractorJS;
     }
     
-    /**
-     * @param name
-     */
     public ExtractorSWF() {
     }
 

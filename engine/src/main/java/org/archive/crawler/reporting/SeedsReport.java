@@ -30,7 +30,7 @@ import com.sleepycat.collections.StoredIterator;
 /**
  * The "Seeds Report", results per provided seed.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class SeedsReport extends Report {
 

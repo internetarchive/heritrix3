@@ -48,7 +48,6 @@ public class IdenticalDigestDecideRule extends PredicatedDecideRule {
     /**
      * Evaluate whether given CrawlURI's revisit profile has been set to identical digest
      *
-     * @param object should be CrawlURI
      * @return true if CrawlURI has been flagged as an identical digest revist
      */
     protected boolean evaluate(CrawlURI curi) {

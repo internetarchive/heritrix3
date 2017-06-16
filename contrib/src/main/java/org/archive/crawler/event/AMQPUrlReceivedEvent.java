@@ -30,7 +30,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * ApplicationEvent published when AMQPUrlReceiver receives a URL.
  * Other modules can observe this event to learn when AMQPUrlReceiver receives a URL.
  *
- * @contributor galgeek
+ * @author galgeek
  */
 public class AMQPUrlReceivedEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;

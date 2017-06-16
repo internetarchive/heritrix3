@@ -124,9 +124,9 @@ import com.sleepycat.je.DatabaseException;
  *   <li> Successfully downloaded documents per host per source
  * </ul>
  *
- * @contributor Parker Thompson
- * @contributor Kristinn Sigurdsson
- * @contributor gojomo
+ * @author Parker Thompson
+ * @author Kristinn Sigurdsson
+ * @author gojomo
  */
 public class StatisticsTracker 
     implements 
@@ -273,7 +273,7 @@ public class StatisticsTracker
     }
 
     // TODO: fortify these against key explosion with bigmaps like other tallies
-    /** Keep track of the file types we see (mime type -> count) */
+    /** Keep track of the file types we see (mime type -&gt; count) */
     protected ConcurrentMap<String,AtomicLong> mimeTypeDistribution
      = new ConcurrentHashMap<String, AtomicLong>();
     protected ConcurrentMap<String,AtomicLong> mimeTypeBytes
@@ -460,7 +460,6 @@ public class StatisticsTracker
      * It is recommended that for implementations of this method it be
      * carefully considered if it should be synchronized in whole or in
      * part
-     * @param e Progress statistics event.
      */
     protected synchronized void progressStatisticsEvent() {
         CrawlStatSnapshot snapshot = getSnapshot();
@@ -578,7 +577,7 @@ public class StatisticsTracker
 
     /** Returns a HashMap that contains information about distributions of
      *  encountered mime types.  Key/value pairs represent
-     *  mime type -> count.
+     *  mime type -&lt; count.
      * <p>
      * <b>Note:</b> All the values are wrapped with a {@link AtomicLong AtomicLong}
      * @return mimeTypeDistribution
@@ -671,7 +670,6 @@ public class StatisticsTracker
      * 
      * <b>Note: </b> All the values are wrapped with a
      * {@link AtomicLong AtomicLong}
-     * @return 
      * 
      * @return statusCodeDistribution
      */

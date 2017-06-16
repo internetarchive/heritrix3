@@ -53,7 +53,7 @@ import org.springframework.context.Lifecycle;
  * Sends messages with no key. These things could be configurable if needed.
  * 
  * @see UriProcessingFormatter
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class KafkaCrawlLogFeed extends Processor implements Lifecycle {
 

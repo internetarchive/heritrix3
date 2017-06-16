@@ -30,8 +30,8 @@ import org.archive.spring.KeyedProperties;
 /**
  * URI Canonicalizatioon Policy
  * 
- * @contributor stack
- * @contributor gojomo
+ * @author stack
+ * @author gojomo
  */
 public class RulesCanonicalizationPolicy 
     extends UriCanonicalizationPolicy
@@ -57,10 +57,7 @@ public class RulesCanonicalizationPolicy
     
     /**
      * Run the passed uuri through the list of rules.
-     * @param context Url to canonicalize.
-     * @param rules Iterator of canonicalization rules to apply (Get one
-     * of these on the url-canonicalizer-rules element in order files or
-     * create a list externally).  Rules must implement the Rule interface.
+     * @param before Url to canonicalize.
      * @return Canonicalized URL.
      */
     public String canonicalize(String before) {

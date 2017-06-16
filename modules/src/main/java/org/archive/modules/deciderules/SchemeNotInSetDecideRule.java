@@ -28,7 +28,7 @@ import org.archive.modules.CrawlURI;
  * Rule applies the configured decision (default REJECT) for any URI which 
  * has a URI-scheme NOT contained in the configured Set. 
  *
- * @contributor gojomo
+ * @author gojomo
  */
 public class SchemeNotInSetDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 3L;
@@ -38,8 +38,7 @@ public class SchemeNotInSetDecideRule extends PredicatedDecideRule {
     }
     
     /**
-     * Usual constructor. 
-     * @param name Name of this DecideRule.
+     * Usual constructor.
      */
     public SchemeNotInSetDecideRule() {
     }

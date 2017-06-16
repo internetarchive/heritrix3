@@ -30,7 +30,7 @@ import org.archive.util.TextUtils;
  * via the Heritrix settings system.
  * 
  * This base class is abstact.  Subclasses must implement the
- * {@link CanonicalizationRule#canonicalize(String, Object)} method.
+ * {@link #canonicalize(String)} method.
  * 
  * @author stack
  * @version $Date$, $Revision$
@@ -66,8 +66,7 @@ implements CanonicalizationRule, Serializable, HasKeyedProperties {
      * string.  Assumes that if a match, appending group 1
      * and group 2 yields desired result.
      * @param url Url to search in.
-     * @param matcher Matcher whose form yields a group 1 and group 2 if a
-     * match (non-null.
+     * @param pat
      * @return Original <code>url</code> else concatenization of group 1
      * and group 2.
      */

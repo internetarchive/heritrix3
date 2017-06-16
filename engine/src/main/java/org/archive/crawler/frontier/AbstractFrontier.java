@@ -244,7 +244,7 @@ public abstract class AbstractFrontier
     }
     
     /**
-     * @param cauri CrawlURI we're to get a key for.
+     * @param curi CrawlURI we're to get a key for.
      * @return a String token representing a queue
      */
     public String getClassKey(CrawlURI curi) {
@@ -278,12 +278,7 @@ public abstract class AbstractFrontier
      */
     protected FrontierJournal recover = null;
     
-    /**
-     * @param name Name of this frontier.
-     * @param description Description for this frontier.
-     */
     public AbstractFrontier() {
-
     }
 
     /** 
@@ -544,7 +539,7 @@ public abstract class AbstractFrontier
      * Choose a per-classKey queue and enqueue it. If this
      * item has made an unready queue ready, place that 
      * queue on the readyClassQueues queue. 
-     * @param caUri CrawlURI.
+     * @param curi CrawlURI.
      */
     public void receive(CrawlURI curi) {
         sheetOverlaysManager.applyOverlaysTo(curi);
@@ -984,7 +979,7 @@ public abstract class AbstractFrontier
      * format.
      * 
      * @param params JSONObject of options to control import
-     * @see org.archive.crawler.framework.Frontier#importURIs(java.util.Map)
+     * @see org.archive.crawler.framework.Frontier#importURIs(String)
      */
     protected void importURIsSimple(JSONObject params) {
         // Figure the regex to use parsing each line of input stream.

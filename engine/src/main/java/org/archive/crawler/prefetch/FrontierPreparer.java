@@ -33,7 +33,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.canonicalize.RulesCanonicalizationPolicy;
 import org.archive.modules.canonicalize.UriCanonicalizationPolicy;
-import org.archive.net.UURI;
 import org.archive.spring.KeyedProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -45,7 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * they need to perform remedial preparation for URIs that do not
  * pass through this processor on the CandidateChain.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class FrontierPreparer extends Scoper {
     @SuppressWarnings("unused")
@@ -184,7 +183,6 @@ public class FrontierPreparer extends Scoper {
      * for the given CrawlURI
      * 
      * @param curi
-     * @return
      */
     protected int getSchedulingDirective(CrawlURI curi) {
         if(StringUtils.isNotEmpty(curi.getPathFromSeed())) {
@@ -222,7 +220,7 @@ public class FrontierPreparer extends Scoper {
     }
     /**
      * Canonicalize passed CrawlURI. This method differs from
-     * {@link #canonicalize(UURI)} in that it takes a look at
+     * {@link #canonicalize(CrawlURI)} in that it takes a look at
      * the CrawlURI context possibly overriding any canonicalization effect if
      * it could make us miss content. If canonicalization produces an URL that
      * was 'alreadyseen', but the entry in the 'alreadyseen' database did
@@ -258,7 +256,7 @@ public class FrontierPreparer extends Scoper {
     }
     
     /**
-     * @param cauri CrawlURI we're to get a key for.
+     * @param curi CrawlURI we're to get a key for.
      * @return a String token representing a queue
      */
     public String getClassKey(CrawlURI curi) {

@@ -35,8 +35,7 @@ public class NotOnDomainsDecideRule extends OnDomainsDecideRule {
     //private static final Logger logger =
     //    Logger.getLogger(NotOnDomainsDecideRule.class.getName());
     /**
-     * Usual constructor. 
-     * @param name
+     * Usual constructor.
      */
     public NotOnDomainsDecideRule() {
     }

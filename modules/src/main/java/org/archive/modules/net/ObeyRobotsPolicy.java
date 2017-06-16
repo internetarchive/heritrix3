@@ -23,7 +23,7 @@ import org.archive.modules.CrawlURI;
 /**
  * Classic obey-robots-as-declared policy. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ObeyRobotsPolicy extends RobotsPolicy {
     public static RobotsPolicy INSTANCE = new ObeyRobotsPolicy(); 

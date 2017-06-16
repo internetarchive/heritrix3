@@ -51,7 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <li>Block URIs - Blocks each URI with an -5002
  *     (blocked by custom processor) fetch status code. This will
  *     cause all the URIs queued to wind up in the crawl.log.</li>
- * <ol>
+ * </ol>
  * <p>
  * The processor allows variable runtime based on host (or other  
  * override/refinement criteria) however using such overrides only makes sense  

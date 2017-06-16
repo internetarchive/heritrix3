@@ -39,7 +39,7 @@ import org.restlet.util.Series;
  * Utility for including a brief last-action or background-action 
  * message on web responses. 
  * 
- * @contributor gojomo
+ * @author gojomo
  *
  */
 public class Flash {

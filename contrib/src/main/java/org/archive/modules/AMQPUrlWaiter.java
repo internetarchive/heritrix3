@@ -34,7 +34,7 @@ import org.springframework.context.ApplicationListener;
 /**
  * Bean to enforce a wait for Umbra's amqp queue
  *
- * @contributor galgeek
+ * @author galgeek
  */
 public class AMQPUrlWaiter implements ApplicationListener<ApplicationEvent> {
 

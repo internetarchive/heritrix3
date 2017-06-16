@@ -52,8 +52,8 @@ import org.archive.util.UriUtils;
  * browser-workalike DOM, such as via HtmlUnit or remote-controlled 
  * browser engines. 
  * 
- * @contributor gojomo
- * @contributor nlevitt
+ * @author gojomo
+ * @author nlevitt
  */
 public class ExtractorJS extends ContentExtractor {
 

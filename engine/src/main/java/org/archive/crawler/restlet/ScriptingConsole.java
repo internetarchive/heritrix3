@@ -23,7 +23,7 @@ import org.archive.crawler.framework.CrawlJob;
  * Currently it is short-lived; it is created by ScriptResource for each request and
  * destroyed after rendering the view.
  * 
- * @contributor kenji
+ * @author kenji
  *
  */
 public class ScriptingConsole {

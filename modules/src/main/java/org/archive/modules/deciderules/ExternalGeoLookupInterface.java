@@ -22,10 +22,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 
 /**
- * Interface used by {@link ExternalImplDecideRule}.
  * @author stack
- * @version $Date$, $Revision$
- * @see ExternalImplDecideRule
  */
 public interface ExternalGeoLookupInterface extends Serializable {
     /**

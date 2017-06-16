@@ -22,8 +22,6 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import javax.management.AttributeNotFoundException;
-
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -53,9 +51,7 @@ public abstract class Credential implements Serializable {
      */
     protected String domain = "";
     /**
-     * @param context Context to use when searching for credential domain.
      * @return The domain/root URI this credential is to go against.
-     * @throws AttributeNotFoundException If attribute not found.
      */
     public String getDomain() {
         return this.domain;
@@ -87,9 +83,8 @@ public abstract class Credential implements Serializable {
      * Attach this credentials avatar to the passed <code>curi</code> .
      *
      * Override if credential knows internally what it wants to attach as
-     * payload.  Otherwise, if payload is external, use the below
-     * {@link #attach(CrawlURI, String)}.
-     *
+     * payload
+     * 
      * @param curi CrawlURI to load with credentials.
      */
     public void attach(CrawlURI curi) {
@@ -148,9 +143,7 @@ public abstract class Credential implements Serializable {
     public abstract String getPrerequisite(CrawlURI curi);
 
     /**
-     * @param context Context to use when searching for credential domain.
      * @return Key that is unique to this credential type.
-     * @throws AttributeNotFoundException
      */
     public abstract String getKey();
 
@@ -162,7 +155,6 @@ public abstract class Credential implements Serializable {
     public abstract boolean isEveryTime();
 
     /**
-     * @param curi CrawlURI to look at.
      * @return True if this credential is to be posted.  Return false if the
      * credential is to be GET'd or if POST'd or GET'd are not pretinent to this
      * credential type.
@@ -171,7 +163,7 @@ public abstract class Credential implements Serializable {
 
     /**
      * Test passed curi matches this credentials rootUri.
-     * @param controller
+     * @param cache
      * @param curi CrawlURI to test.
      * @return True if domain for credential matches that of the passed curi.
      */

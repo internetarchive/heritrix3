@@ -197,7 +197,6 @@ public class Robotstxt implements Serializable {
     /**
      * Does this policy effectively allow everything? (No 
      * disallows or timing (crawl-delay) directives?)
-     * @return
      */
     public boolean allowsAll() {
         // TODO: refine so directives that are all empty are also 

@@ -30,7 +30,7 @@ import org.archive.modules.net.CrawlHost;
 /**
  * The "Hosts Report", tallies by host.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class HostsReport extends Report {
     

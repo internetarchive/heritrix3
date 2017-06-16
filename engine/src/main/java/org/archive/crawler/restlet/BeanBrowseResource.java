@@ -60,9 +60,9 @@ import freemarker.template.TemplateException;
  * Restlet Resource which allows browsing the constructed beans in
  * a hierarchical fashion. 
  * 
- * @contributor gojomo
- * @contributor nlevitt
- * @contributor adam-miller
+ * @author gojomo
+ * @author nlevitt
+ * @author adam-miller
  * 
  */
 public class BeanBrowseResource extends JobRelatedResource {

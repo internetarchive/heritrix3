@@ -40,7 +40,7 @@ import org.archive.util.Histotable;
  * tracks 'all' keys, and handles increments, while TopNSet only remembers
  * a small subset of keys, and requires a fresh full value on each update.)
  *
- * @contributor gojomo
+ * @author gojomo
  */
 public class TopNSet implements Serializable {
     
@@ -123,7 +123,7 @@ public class TopNSet implements Serializable {
     
     /**
      * Make internal map available (for checkpoint/restore purposes). 
-     * @return HashMap<String,Long>
+     * @return HashMap&lt;String,Long&gt;
      */
     public ConcurrentMap<String, Long> getTopSet() {
         return set;
@@ -136,7 +136,7 @@ public class TopNSet implements Serializable {
     /**
      * Get descending ordered list of key,count Entries.
      * 
-     * @return SortedSet of Entry<key, count> descending-frequency 
+     * @return SortedSet of Entry&lt;key, count&gt; descending-frequency 
      */
     public SortedSet<Map.Entry<?, Long>> getEntriesDescending() {
         TreeSet<Map.Entry<?, Long>> sorted = Histotable.getEntryByFrequencySortedSet();

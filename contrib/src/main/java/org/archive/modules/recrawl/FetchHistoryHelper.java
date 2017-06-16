@@ -32,7 +32,7 @@ import org.archive.modules.CrawlURI;
 /**
  * collection of utility methods useful for loading and storing crawl history.
  * <p>note that these methods can also be useful for non-HBase crawl history storage.</p>
- * @contributor kenji
+ * @author kenji
  *
  */
 public class FetchHistoryHelper {
@@ -50,7 +50,6 @@ public class FetchHistoryHelper {
    * @param timestamp timestamp (in ms) of crawl history to be added.
    * @return Map object to store recrawl data, or null if {@code timestamp} is older
    * than existing crawl history entry and there's no room for it.
-   * @see #setHistoryLength(int)
    */
   @SuppressWarnings("unchecked")
   public static Map<String, Object> getFetchHistory(CrawlURI uri, long timestamp, int historyLength) {

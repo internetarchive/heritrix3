@@ -72,21 +72,6 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<tags>
-						<tag>
-							<name>contributor</name>
-							<head>Contributor:</head>
-							<!-- same as @author, see http://java.sun.com/javase/6/docs/technotes/tools/solaris/javadoc.html#wheretags -->
-							<placement>opt</placement>
-						</tag>
-					</tags>
-				</configuration>
-			</plugin>
-			<plugin>
 				<!-- install source jars to maven repo http://maven.apache.org/plugins/maven-source-plugin/usage.html -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>

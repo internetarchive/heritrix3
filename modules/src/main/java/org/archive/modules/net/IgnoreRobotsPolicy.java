@@ -22,7 +22,7 @@ import org.archive.modules.CrawlURI;
 /**
  * Policy to ignore robots.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class IgnoreRobotsPolicy extends RobotsPolicy {
     public static RobotsPolicy INSTANCE = new IgnoreRobotsPolicy(); 

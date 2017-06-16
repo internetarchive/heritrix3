@@ -39,8 +39,8 @@ import org.archive.util.ArchiveUtils;
  * directory called the jobsDir.  The jobs are contained as subdirectories of
  * jobDir.  
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public class Engine {
     @SuppressWarnings("unused")
@@ -54,7 +54,7 @@ public class Engine {
         
     /** directory where job directories are expected */
     protected File jobsDir;
-    /** map of job short names -> CrawlJob instances */ 
+    /** map of job short names -&gt; CrawlJob instances */ 
     protected HashMap<String,CrawlJob> jobConfigs = new HashMap<String,CrawlJob>();
 
     protected String profileCxmlPath = 
@@ -347,7 +347,6 @@ public class Engine {
     /**
      * create a new job dir and copy profile CXML into as non-profile CXML
      * @param newJobDir new job directory
-     * @throws IOException 
      */
 	public boolean createNewJobWithDefaults(File newJobDir) {
         try {
