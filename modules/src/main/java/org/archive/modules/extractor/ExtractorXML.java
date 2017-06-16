@@ -45,7 +45,7 @@ import org.archive.util.UriUtils;
  * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
  * occurs. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ExtractorXML extends ContentExtractor {
 
@@ -61,9 +61,6 @@ public class ExtractorXML extends ContentExtractor {
     // GROUPS:
     // (G1) possible uri
 
-    /**
-     * @param name
-     */
     public ExtractorXML() {
     }
 

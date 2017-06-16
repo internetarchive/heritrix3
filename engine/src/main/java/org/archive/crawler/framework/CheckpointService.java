@@ -58,9 +58,9 @@ import org.springframework.validation.Validator;
  * Offers optional automatic checkpointing at a configurable interval 
  * in minutes. 
  * 
- * @contributor stack
- * @contributor gojomo
- * @contributor pjack
+ * @author stack
+ * @author gojomo
+ * @author pjack
  */
 public class CheckpointService implements Lifecycle, ApplicationContextAware, HasValidator {
     private final static Logger LOGGER =

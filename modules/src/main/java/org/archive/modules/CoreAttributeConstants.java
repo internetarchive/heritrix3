@@ -23,8 +23,8 @@ package org.archive.modules;
  * Attribute keys and constant strings used by the core crawler
  * classes.
  *
- * @contributor gojomo
- * @contributor pjack
+ * @author gojomo
+ * @author pjack
  */
 public interface CoreAttributeConstants {
 

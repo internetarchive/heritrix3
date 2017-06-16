@@ -48,7 +48,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * before trying to reestablish HBase connection. During this hold-ff period, all
  * {@link #get(Get)} and {@link #put(Put)} calls will fail.
  * 
- * @contributor kenji
+ * @author kenji
  */
 public class SingleHBaseTable extends HBaseTableBean {
     private static final Log LOG = LogFactory.getLog(SingleHBaseTable.class);

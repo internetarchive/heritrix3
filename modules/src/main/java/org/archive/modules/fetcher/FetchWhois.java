@@ -105,7 +105,7 @@ import com.sleepycat.je.DatabaseException;
  * 
  * <pre>
  * if query is an IPv4 address
- *     resolve whois://{@link #DEFAULT_IP_WHOIS_SERVER}/whoisquery</div>
+ *     resolve whois://{@link #DEFAULT_IP_WHOIS_SERVER}/whoisquery
  * else
  *     let domainSuffix = part of query after the last '.' (or the whole query if no '.'), url-encoded
  *     resolve whois://{@link #ULTRA_SUFFIX_WHOIS_SERVER}/domainSuffix
@@ -117,7 +117,7 @@ import com.sleepycat.je.DatabaseException;
  * 
  * <p>See {@link #deferOrFinishGeneric(CrawlURI, String)}</p>
  * 
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class FetchWhois extends Processor implements CoreAttributeConstants,
         FetchStatusCodes, Lifecycle {

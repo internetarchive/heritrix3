@@ -24,7 +24,7 @@ import java.io.PrintWriter;
  * Traditional report of all ToeThread call-stacks, as often consulted
  * to diagnose live crawl issues. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ToeThreadsReport extends Report {
 

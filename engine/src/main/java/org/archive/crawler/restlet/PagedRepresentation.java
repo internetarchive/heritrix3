@@ -45,7 +45,7 @@ import org.restlet.resource.FileRepresentation;
  * Representation wrapping a FileRepresentation, displaying its contents
  * in batches of lines at a time, with forward and backward navigation. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class PagedRepresentation extends CharacterRepresentation {
     // passed-in at construction

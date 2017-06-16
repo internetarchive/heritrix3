@@ -62,7 +62,7 @@ public abstract class AbstractPersistProcessor extends Processor {
     }
 
     /**
-     * @param curi
+     * @param uri
      * @return true if {@code curi} has WRITE_TAG in the latest fetch history (i.e. this crawl).
      */
     protected boolean hasWriteTag(CrawlURI uri) {

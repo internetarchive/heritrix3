@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import sun.reflect.ReflectionFactory;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.SerializationException;
+
+import sun.reflect.ReflectionFactory;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest
@@ -18,11 +18,11 @@ import com.esotericsoftware.kryo.SerializationException;
  * 
  * newInstance technique and constructor caching inspired by the 
  * KryoReflectionFactorySupport class of Martin Grotzke's kryo-serializers 
- * project. <https://github.com/magro/kryo-serializers>
+ * project. <a href="https://github.com/magro/kryo-serializers">https://github.com/magro/kryo-serializers</a>
  * 
  * TODO: more comments!
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {

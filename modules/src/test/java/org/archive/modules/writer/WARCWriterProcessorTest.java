@@ -50,8 +50,8 @@ import org.archive.util.TmpDirTestCase;
 /**
  * Unit test for {@link WARCWriterProcessor}.
  *
- * @contributor pjack
- * @contributor kenji
+ * @author pjack
+ * @author kenji
  */
 public class WARCWriterProcessorTest extends ProcessorTestBase {
 
@@ -207,7 +207,7 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
     }
     /**
      * replacement WriterPool that injects FailWARCWriter
-     * @contributor kenji
+     * @author kenji
      */
     public class TestWriterPool extends WriterPool {
         public TestWriterPool(WriterPoolSettings settings, int maxActive) {

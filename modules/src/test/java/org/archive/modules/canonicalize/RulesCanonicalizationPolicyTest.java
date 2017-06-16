@@ -25,7 +25,7 @@ import org.archive.util.TmpDirTestCase;
 /**
  * Test canonicalization
  * 
- * @contributor stack
+ * @author stack
  */
 public class RulesCanonicalizationPolicyTest extends TmpDirTestCase {
 

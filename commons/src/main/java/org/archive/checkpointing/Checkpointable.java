@@ -29,8 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * but not necessarily into the provided Checkpoint instance, on 
  * request.
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public interface Checkpointable {
 

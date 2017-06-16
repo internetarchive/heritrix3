@@ -6,8 +6,8 @@
  * 
  * <p>Implementors still have to define their attributes and register them
  * with a central store, but this is much easier, and the central store is
- * much more lightweight.  It is actually a single static class, 
- * {@link org.archive.state.KeyManager}.  That package defines the way to
+ * much more lightweight.  It once was actually a single static class, 
+ * org.archive.state.KeyManager.  That package defines the way to
  * create and register the context-sensitive attributes for a class.
  * 
  * <p>CrawlURI is dead, at least as far as Processor implementors are 
@@ -34,7 +34,7 @@
  * in a list that can be queried later.
  * 
  * <p>Which makes DefaultExtractorURI something that can be passed to an
- * extractor in a unit test.  See {@link ExtractorCSSTest} for a quick and
+ * extractor in a unit test.  See ExtractorCSSTest for a quick and
  * dirty example.  DefaultExtractorURI instances are created with inline
  * test data as the "fetched" content, and run through the process method
  * of ExtractorCSS.  The tests then examine the outLinks of the URI to make

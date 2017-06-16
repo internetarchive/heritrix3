@@ -87,7 +87,7 @@ public abstract class Extractor extends Processor {
     
     /**
      * Processes the given URI.  This method just delegates to 
-     * {@link #extract(ExtractorURI)}, catching runtime exceptions and
+     * {@link #extract(CrawlURI)}, catching runtime exceptions and
      * errors that are usually non-fatal, to highlight them in the 
      * relevant log(s). 
      * 
@@ -123,10 +123,9 @@ public abstract class Extractor extends Processor {
 
     /**
      * Extracts links from the given URI.  Subclasses should use 
-     * {@link ExtractorURI#getInputStream()} or 
-     * {@link ExtractorURI#getCharSequence()} to process the content of the
+     * {@link CrawlURI#getRecorder()} to process the content of the
      * URI.  Any links that are discovered should be added to the
-     * {@link ExtractorURI#getOutLinks()} set.
+     * {@link CrawlURI#getOutLinks()} set.
      * 
      * @param uri  the uri to extract links from
      */

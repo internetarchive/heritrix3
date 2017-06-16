@@ -34,7 +34,7 @@ import org.archive.util.TextUtils;
  * default (if any) computed by the HTTP fetcher processors.
  * <p>
  * This processor allows the user to specify a regular expression called 
- * <i>strip-reg-expr<i>. Any segment of a document (text only, binary files will
+ * <i>strip-reg-expr</i>. Any segment of a document (text only, binary files will
  * be skipped) that matches this regular expression will by rewritten with 
  * the blank character (character 32 in the ANSI character set) <b> for the 
  * purpose of the digest</b> this has no effect on the document for subsequent 

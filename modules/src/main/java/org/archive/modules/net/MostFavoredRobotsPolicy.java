@@ -39,7 +39,7 @@ import org.archive.modules.CrawlURI;
  * robots to collect. (That is, assume that if any of a number of robots is
  * allowed, it will not be disruptive to collect.) 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class MostFavoredRobotsPolicy extends RobotsPolicy {
     

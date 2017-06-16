@@ -24,7 +24,6 @@ public class Piece {
     private int charPosStart;
     private int charPosLimit;
     private int filePos;
-
     
     public Piece(int filePos, int start, int end, boolean unicode) {
         this.filePos = filePos;
@@ -33,37 +32,21 @@ public class Piece {
         this.unicode = unicode;
     }
 
-
-    /**
-     * 
-     * @return
-     */
     public int getFilePos() {
         return filePos;
     }
 
-
-    /**
-     * 
-     * @return
-     */
     public int getCharPosLimit() {
         return charPosLimit;
     }
 
-    
     public int getCharPosStart() {
         return charPosStart;
     }
 
-    /**
-     * 
-     * @return
-     */
     public boolean isUnicode() {
         return unicode;
     }
-
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -74,7 +57,6 @@ public class Piece {
         sb.append("}");
         return sb.toString();
     }
-    
     
     public boolean contains(int charPos) {
         return (charPos >= charPosStart) && (charPos < charPosLimit);

@@ -82,7 +82,6 @@ public class MatchesFilePatternDecideRule extends MatchesRegexDecideRule {
 
     /**
      * Use a preset if configured to do so.
-     * @param o Context
      * @return regex to use.
      */
     @Override

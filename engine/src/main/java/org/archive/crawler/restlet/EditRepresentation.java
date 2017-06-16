@@ -37,7 +37,7 @@ import org.restlet.resource.FileRepresentation;
  * Representation wrapping a FileRepresentation, displaying its contents
  * in a TextArea for editting. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class EditRepresentation extends CharacterRepresentation {
     protected FileRepresentation fileRepresentation; 

@@ -29,7 +29,7 @@ import java.util.List;
  * Subclasses specify the kind of association (as by SURT prefix 
  * matching, or arbitrary decide-rules).
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public abstract class SheetAssociation {
     protected List<String> targetSheetNames = new LinkedList<String>();

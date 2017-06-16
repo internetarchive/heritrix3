@@ -30,8 +30,7 @@ public class HopsPathMatchesRegexDecideRule extends MatchesRegexDecideRule {
     private static final long serialVersionUID = 3L;
 
     /**
-     * Usual constructor. 
-     * @param name
+     * Usual constructor.
      */
     public HopsPathMatchesRegexDecideRule() {
     }

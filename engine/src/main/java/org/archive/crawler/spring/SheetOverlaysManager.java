@@ -51,7 +51,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * Manager which marks-up CrawlURIs with the names of all applicable 
  * Sheets, and returns overlay maps by name. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class SheetOverlaysManager implements 
 BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
@@ -108,7 +108,6 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
     /**
      * Collect all rule-based SheetAssociations. Typically autowired 
      * from the set of all DecideRuledSheetAssociation instances. 
-     * @param ruleSheets
      */
     @Autowired(required=false)
     public void addRuleAssociations(Set<DecideRuledSheetAssociation> associations) {
@@ -125,7 +124,6 @@ BeanFactoryAware, OverlayMapsSource, ApplicationListener<ApplicationEvent> {
      * Collect all SURT-based SheetAssociations. Typically autowired 
      * from the set of all SurtPrefixesSheetAssociation instances
      * declared in the initial configuration. 
-     * @param surtSheets
      */
     @Autowired(required=false)
     public void addSurtAssociations(List<SurtPrefixesSheetAssociation> associations) {

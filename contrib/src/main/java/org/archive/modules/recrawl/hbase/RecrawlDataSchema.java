@@ -24,7 +24,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.archive.modules.CrawlURI;
 
 /**
- * @contributor kenji
+ * @author kenji
  */
 public interface RecrawlDataSchema {
     public String getColumnFamily();

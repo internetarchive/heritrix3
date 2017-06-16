@@ -32,7 +32,7 @@ import org.springframework.context.Lifecycle;
 /**
  * Represents a deployment of HBase. (An instance, a database, an HBase...)
  * 
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class HBase implements Lifecycle {
 

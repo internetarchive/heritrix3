@@ -340,14 +340,6 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 					<links>
 						<link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
 					</links>
-					<tags>
-						<tag>
-							<name>contributor</name>
-							<head>Contributor:</head>
-							<!-- same as @author, see http://java.sun.com/javase/6/docs/technotes/tools/solaris/javadoc.html#wheretags -->
-							<placement>opt</placement>
-						</tag>
-					</tags>
 				</configuration>
 			</plugin>
 		</plugins>

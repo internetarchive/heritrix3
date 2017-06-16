@@ -26,7 +26,7 @@ import org.springframework.context.ApplicationEvent;
  * Report success of a Checkpoint (so that it may be reported by the
  * CrawlJOb to the job log). 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class CheckpointSuccessEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;

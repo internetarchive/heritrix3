@@ -30,7 +30,7 @@ import com.anotherbigidea.flash.writers.SWFTagTypesImpl;
 
 /**
  * Overwrite action tags, that may hold URI, to use <code>CrawlUriSWFAction
- * <code> action.
+ * </code> action.
  *
  * @author Igor Ranitovic
  */

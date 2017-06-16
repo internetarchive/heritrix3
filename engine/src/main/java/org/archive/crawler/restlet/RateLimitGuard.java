@@ -30,7 +30,7 @@ import org.restlet.data.Request;
  * Guard that slows and logs failed authentication attempts, to make 
  * brute-force guessing attacks less feasible. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class RateLimitGuard extends Guard {
     private static final int MIN_MS_BETWEEN_ATTEMPTS = 6000;

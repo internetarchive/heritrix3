@@ -58,8 +58,6 @@ public class ExtractorURI extends Extractor {
 
     /**
      * Constructor
-     * 
-     * @param name
      */
     public ExtractorURI() {
     }

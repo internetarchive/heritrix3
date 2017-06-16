@@ -32,7 +32,7 @@ import org.archive.spring.ConfigString;
  * Then, overlay the CrawlMetadata robotsPolicyName for each group of URIs 
  * that needs custom treatment
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class CustomRobotsPolicy extends RobotsPolicy {
 

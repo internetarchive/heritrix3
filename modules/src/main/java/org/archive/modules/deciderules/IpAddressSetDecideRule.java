@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * IpAddressSetDecideRule must be used with
- * {@link org.archive.crawler.prefetch.Preselector#setRecheckScope(boolean)} set
+ * org.archive.crawler.prefetch.Preselector#setRecheckScope(boolean) set
  * to true because it relies on Heritrix' dns lookup to establish the ip address
  * for a URI before it can run.
  * 
@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * &lt;/bean&gt;
  * </pre>
  * 
- * @contributor Travis Wellman <travis@archive.org>
+ * @author Travis Wellman &lt;travis@archive.org&gt;
  */
 
 public class IpAddressSetDecideRule extends PredicatedDecideRule {

@@ -38,7 +38,7 @@ import com.google.common.collect.HashBiMap;
  * crawler-beans.cxml in order to receive {@link Lifecycle} events.
  * 
  * @see AbstractContentDigestHistory
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class HBaseContentDigestHistory extends AbstractContentDigestHistory implements Lifecycle {
 
@@ -69,7 +69,7 @@ public class HBaseContentDigestHistory extends AbstractContentDigestHistory impl
     }
     /**
      * Add the expected column family
-     * {@link HBasePersistProcessor#COLUMN_FAMILY} to the HBase table if the
+     * {@link #COLUMN_FAMILY} to the HBase table if the
      * table doesn't already have it.
      */
     public void setAddColumnFamily(boolean addColumnFamily) {

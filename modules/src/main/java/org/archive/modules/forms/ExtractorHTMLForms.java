@@ -85,7 +85,7 @@ import org.archive.util.TextUtils;
  * elsewhere should ensure a similar cleanup call to Recorder.endReplays()
  * occurs. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ExtractorHTMLForms extends Extractor {
     @SuppressWarnings("unused")

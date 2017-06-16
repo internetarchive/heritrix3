@@ -52,8 +52,8 @@ import junit.framework.Assert;
 /**
  * Unit test for {@link QuotaEnforcer}.
  *
- * @contributor pjack
- * @contributor nlevitt
+ * @author pjack
+ * @author nlevitt
  */
 public class QuotaEnforcerTest extends CrawlerProcessorTestBase {
     

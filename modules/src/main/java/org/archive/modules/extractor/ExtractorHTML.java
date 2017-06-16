@@ -57,7 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * TODO: Compare against extractors based on HTML parsing libraries for 
  * accuracy, completeness, and speed.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 
@@ -576,7 +576,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     /**
-     * Consider a query-string-like collections of key=value[&key=value]
+     * Consider a query-string-like collections of key=value[&amp;key=value]
      * pairs for URI-like strings in the values. Where URI-like strings are
      * found, add as discovered outlink. 
      * 
@@ -604,11 +604,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     /**
      * Consider whether a given string is URI-like. If so, add as discovered 
      * outlink. 
-     * 
-     * @param curi origin CrawlURI
-     * @param queryString query-string-like string
-     * @param valueContext page context where found
-
      */
     protected void considerIfLikelyUri(CrawlURI curi, CharSequence candidate, 
             CharSequence valueContext, Hop hop) {

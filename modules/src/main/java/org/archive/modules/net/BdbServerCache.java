@@ -32,8 +32,8 @@ import com.sleepycat.je.DatabaseException;
 /**
  * ServerCache backed by BDB big maps; the usual choice for crawls.
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public class BdbServerCache extends DefaultServerCache 
 implements Lifecycle, Checkpointable {

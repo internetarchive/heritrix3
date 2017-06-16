@@ -42,7 +42,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
  * @author eldondev
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class AMQPPublishProcessor extends AMQPProducerProcessor implements Serializable, ApplicationContextAware {
 

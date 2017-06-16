@@ -38,7 +38,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
  * @see UriProcessingFormatter
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class AMQPCrawlLogFeed extends AMQPProducerProcessor implements Lifecycle {
 

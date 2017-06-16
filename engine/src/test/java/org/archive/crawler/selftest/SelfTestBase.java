@@ -50,8 +50,8 @@ import org.mortbay.jetty.handler.ResourceHandler;
  * tests, where the crawler launches an entire crawl exercising multiple
  * features against a test harness website.
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public abstract class SelfTestBase extends TmpDirTestCase {
 

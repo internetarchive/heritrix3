@@ -18,7 +18,7 @@ import org.archive.modules.recrawl.PersistProcessor;
  * <li>constructing row key</li>
  * <li>preparing fetch-history array</li>
  * </ul>
- * @contributor kenji
+ * @author kenji
  */
 abstract public class RecrawlDataSchemaBase implements RecrawlDataSchema {
     private static final Logger logger = Logger.getLogger(RecrawlDataSchemaBase.class.getName());

@@ -26,7 +26,7 @@ import org.apache.commons.httpclient.URIException;
 /**
  * Test TopNSetTest.
 
- * @contributor gojomo
+ * @author gojomo
  */
 public class TopNSetTest extends TestCase{
     

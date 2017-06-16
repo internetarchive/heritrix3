@@ -23,7 +23,7 @@ import org.archive.modules.extractor.Hop;
 
 /**
  * Rule ACCEPTs any CrawlURIs whose path-from-seed ('hopsPath' -- see
- * {@link CandidateURI#getPathFromSeed()}) ends 
+ * {@link CrawlURI#getPathFromSeed()} ends 
  * with at least one, but not more than, the given number of 
  * non-navlink ('L') hops. 
  * 
@@ -80,8 +80,8 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
      * Evaluate whether given object is within the acceptable thresholds of
      * transitive hops.
      * 
-     * @param object Object to make decision on.
-     * @return true if the transitive hops >0 and <= max
+     * @param curi CrawlURI to make decision on.
+     * @return true if the transitive hops &gt;0 and &lt;= max
      */
     protected boolean evaluate(CrawlURI curi) {
         String hopsPath = curi.getPathFromSeed();

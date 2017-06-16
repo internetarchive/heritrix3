@@ -39,7 +39,6 @@ public class NotSurtPrefixedDecideRule extends SurtPrefixedDecideRule {
     //    Logger.getLogger(NotSurtPrefixedDecideRule.class.getName());
     /**
      * Usual constructor. 
-     * @param name
      */
     public NotSurtPrefixedDecideRule() {
     }

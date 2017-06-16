@@ -42,7 +42,7 @@ import org.json.JSONObject;
  * <li>{@code r}: re-crawl data in JSON format</li>
  * <li>{@code z}: do-not-crawl flag - loader discards URL if this column has non-empty value.</li>
  * </ul> 
- * @contributor Kenji Nagahashi
+ * @author Kenji Nagahashi
  */
 public class SingleColumnJsonRecrawlDataSchema extends RecrawlDataSchemaBase
 implements RecrawlDataSchema {

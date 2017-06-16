@@ -51,8 +51,8 @@ import org.springframework.beans.BeansException;
  * Shared superclass for resources that represent functional aspects
  * of a CrawlJob.
  * 
- * @contributor Gojomo
- * @contributor nlevitt
+ * @author Gojomo
+ * @author nlevitt
  */
 public abstract class JobRelatedResource extends BaseResource {
     private final static Logger LOGGER =
@@ -186,7 +186,7 @@ public abstract class JobRelatedResource extends BaseResource {
      *            field name for object
      * @param object
      *            object to make presentable map for
-     * @param beanPathPrefix
+     * @param beanPath
      *            beanPath prefix to apply to sub fields browse links
      * @return the presentable Map
      */
@@ -328,7 +328,6 @@ public abstract class JobRelatedResource extends BaseResource {
     /**
      * Get and modify the PropertyDescriptors associated with the BeanWrapper.
      * @param bwrap
-     * @return
      */
     protected PropertyDescriptor[] getPropertyDescriptors(BeanWrapperImpl bwrap) {
         PropertyDescriptor[] descriptors = bwrap.getPropertyDescriptors();

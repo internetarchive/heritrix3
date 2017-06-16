@@ -88,7 +88,7 @@ import org.springframework.context.Lifecycle;
 
 /**
  * HTTP fetcher that uses <a href="http://hc.apache.org/">Apache HttpComponents</a>.
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class FetchHTTP extends Processor implements Lifecycle {
 
@@ -381,7 +381,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Set to zero for no timeout (Not. recommended. Could hang a thread on an
      * unresponsive server). This timeout is used timing out socket opens and
      * for timing out each socket read. Make sure this value is &lt;
-     * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
+     * {@link #getTimeoutSeconds()} for optimal configuration: ensures at least one
      * retry read.
      */
     public void setSoTimeoutMs(int timeout) {
@@ -793,7 +793,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * Presence of the credential serves as flag to frontier to requeue
      * promptly. If we already tried this domain and still got a 401, then our
      * credentials are bad. Remove them and let this curi die.
-     * @param httpClient 
      * @param response 401 http response 
      * @param curi
      *            CrawlURI that got a 401.
@@ -859,8 +858,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
 
     /**
      * @param response
-     * @param method
-     *            Method that got a 401 or 407.
      * @param curi
      *            CrawlURI that got a 401 or 407.
      * @param authStrategy
@@ -868,7 +865,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
      *            TargetAuthenticationStrategy. Determines whether
      *            Proxy-Authenticate or WWW-Authenticate header is consulted.
      * 
-     * @return Map<authSchemeName -> challenge header value>
+     * @return Map&lt;authSchemeName -&gt; challenge header value&gt;
      */
     protected Map<String, String> extractChallenges(HttpResponse response,
             final CrawlURI curi, AuthenticationStrategy authStrategy) {

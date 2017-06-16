@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Interface for objects that can contribute 'overlays' to replace the
  * usual values in configured objects. 
- * @contributor gojomo
+ * @author gojomo
  */
 public interface OverlayContext {
     /** test if this context has actually been configured with overlays

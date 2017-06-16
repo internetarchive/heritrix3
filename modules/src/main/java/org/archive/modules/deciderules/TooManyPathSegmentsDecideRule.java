@@ -62,7 +62,7 @@ public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
      * Evaluate whether given object is over the threshold number of
      * path-segments.
      * 
-     * @param object
+     * @param curi
      * @return true if the path-segments is exceeded
      */
     @Override

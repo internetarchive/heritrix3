@@ -62,7 +62,7 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
 
 /**
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class AMQPUrlReceiver
 	implements Lifecycle, ApplicationContextAware, ApplicationListener<CrawlStateEvent> {

@@ -43,7 +43,7 @@ import org.archive.modules.CrawlURI;
  * (With an empty candidateUserAgents list, should behave same as the 
  * ObeyRobotsPolicy, but offers the a setting for obeyMetaRobotsNofollow.)
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class FirstNamedRobotsPolicy extends RobotsPolicy {
     

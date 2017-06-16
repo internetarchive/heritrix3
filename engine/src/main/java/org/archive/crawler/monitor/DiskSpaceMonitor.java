@@ -29,7 +29,7 @@ import org.springframework.context.ApplicationListener;
  * <p>
  * Paths are checked available space whenever a {@link StatSnapshotEvent} occurs. 
  * 
- * @contributor Kristinn Sigur&eth;sson
+ * @author Kristinn Sigur&eth;sson
  */
 public class DiskSpaceMonitor implements ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(DiskSpaceMonitor.class.getName());
@@ -125,7 +125,7 @@ public class DiskSpaceMonitor implements ApplicationListener<ApplicationEvent> {
      * Probe via File.getUsableSpace to see if monitored paths have fallen below
      * the pause threshold. If so, request a crawl pause.
      * 
-     * @path The filesystem path to check for usable space
+     * @param path The filesystem path to check for usable space
      */
     protected void checkAvailableSpace(File path) {
         if (!path.exists()) {

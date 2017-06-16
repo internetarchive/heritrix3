@@ -81,7 +81,6 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     /**
      * Return map of full bean-path (starting with a target bean-name)
      * to the alternate value for that targeted property
-     * @return Map<String,Object>
      */
     public Map<String, Object> getMap() {
         return map;

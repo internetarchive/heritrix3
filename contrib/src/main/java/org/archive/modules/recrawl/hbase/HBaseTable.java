@@ -31,8 +31,8 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 
 /**
- * @contributor kenji
- * @contributor nlevitt
+ * @author kenji
+ * @author nlevitt
  */
 public class HBaseTable extends HBaseTableBean {
 

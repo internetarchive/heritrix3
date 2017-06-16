@@ -30,7 +30,7 @@ import org.springframework.beans.BeansException;
  * Test all bundled job directories -- that they build, but have 
  * exactly one validation error (need to enter contact URL).
  * 
- * @contributor pjack
+ * @author pjack
  */
 public class BasicProfileTest extends TmpDirTestCase {
 

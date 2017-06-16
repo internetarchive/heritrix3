@@ -29,7 +29,7 @@ import org.archive.modules.ProcessResult;
  * Simple single-URI scoper, considers passed-in URI as candidate; sets 
  * fetchstatus negative and skips to end of processing if out-of-scope. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class CandidateScoper extends Scoper {
     @SuppressWarnings("unused")

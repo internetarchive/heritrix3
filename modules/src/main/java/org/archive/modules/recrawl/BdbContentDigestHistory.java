@@ -40,7 +40,7 @@ import com.sleepycat.je.DatabaseException;
  * crawler-beans.cxml in order to receive {@link Lifecycle} events.
  * 
  * @see AbstractContentDigestHistory
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class BdbContentDigestHistory extends AbstractContentDigestHistory implements Lifecycle {
 

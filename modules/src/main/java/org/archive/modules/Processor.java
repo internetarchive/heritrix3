@@ -104,13 +104,13 @@ implements HasKeyedProperties,
 
     
     /**
-     * Processes the given URI.  First checks {@link #ENABLED} and
-     * {@link #DECIDE_RULES}.  If ENABLED is false, then nothing happens.
-     * If the DECIDE_RULES indicate REJECT, then the 
-     * {@link #innerRejectProcess(ProcessorURI)} method is invoked, and
+     * Processes the given URI.  First checks {@link #getEnabled()} and
+     * {@link #getShouldProcessRule()}.  If getEnabled() returns false, then nothing happens.
+     * If the shouldProcessRule indicates REJECT, then the 
+     * {@link #innerRejectProcess(CrawlURI)} method is invoked, and
      * the process method returns.
      * 
-     * <p>Next, the {@link #shouldProcess(ProcessorURI)} method is 
+     * <p>Next, the {@link #shouldProcess(CrawlURI)} method is 
      * consulted to see if this Processor knows how to handle the given
      * URI.  If it returns false, then nothing futher occurs.
      * 
@@ -120,7 +120,7 @@ implements HasKeyedProperties,
      * 
      * <p>Otherwise, the URI is considered valid.  This processor's count
      * of handled URIs is incremented, and the 
-     * {@link #innerProcess(ProcessorURI)} method is invoked to actually
+     * {@link #innerProcess(CrawlURI)} method is invoked to actually
      * perform the process.
      * 
      * @param uri  The URI to process
@@ -148,8 +148,8 @@ implements HasKeyedProperties,
     /**
      * Returns the number of URIs this processor has handled.  The returned
      * number does not include URIs that were rejected by the 
-     * {@link #ENABLED} flag, by the {@link #DECIDE_RULES}, or by the 
-     * {@link #shouldProcess(ProcessorURI)} method.
+     * {@link #getEnabled()} flag, by the {@link #getShouldProcessRule()}, or by the 
+     * {@link #shouldProcess(CrawlURI)} method.
      * 
      * @return  the number of URIs this processor has handled
      */
@@ -178,8 +178,8 @@ implements HasKeyedProperties,
 
     /**
      * Actually performs the process.  By the time this method is invoked,
-     * it is known that the given URI passes the {@link #ENABLED}, the 
-     * {@link #DECIDE_RULES} and the {@link #shouldProcess(ProcessorURI)}
+     * it is known that the given URI passes the {@link #getEnabled()}, the 
+     * {@link #getShouldProcessRule()} and the {@link #shouldProcess(CrawlURI)}
      * tests.  
      * 
      * @param uri    the URI to process

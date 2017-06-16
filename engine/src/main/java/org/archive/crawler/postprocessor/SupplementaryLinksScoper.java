@@ -65,9 +65,6 @@ public class SupplementaryLinksScoper extends Scoper {
         kp.put("supplementaryRule", rule);
     }
     
-    /**
-     * @param name Name of this filter.
-     */
     public SupplementaryLinksScoper() {
         super();
     }

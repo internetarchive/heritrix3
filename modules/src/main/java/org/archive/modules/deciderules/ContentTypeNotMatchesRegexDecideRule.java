@@ -37,7 +37,7 @@ public class ContentTypeNotMatchesRegexDecideRule extends
      * Evaluate whether given object's string version does not match 
      * configured regex (by reversing the superclass's answer).
      * 
-     * @param object Object to make decision about.
+     * @param o CrawlURI to make decision about.
      * @return true if the regex is not matched
      */
     @Override

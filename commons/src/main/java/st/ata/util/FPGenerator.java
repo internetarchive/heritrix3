@@ -6,7 +6,7 @@ import java.util.Hashtable;
 /**
 
 <p> This class provides methods that construct fingerprints of strings
-of bytes via operations in <i>GF[2^d]</i> for <i>0 < d <= 64</i>.
+of bytes via operations in <i>GF[2^d]</i> for <i>0 &lt; d &lt;= 64</i>.
 <i>GF[2^d]</i> is represented as the set of polynomials of degree
 <i>d</i> with coefficients in <i>Z(2)</i>, modulo an irreducible
 polynomial <i>P</i> of degree <i>d</i>.  The representation of
@@ -33,7 +33,7 @@ of A in bits.
 <p> The routines named <code>extend[8]</code> and <code>fp[8]</code>
 return reduced results, while <code>extend_[byte/char/int/long]</code>
 do not.  An <em>un</em>reduced result is a number that is equal (mod
-</code>polynomial</code> to the desired fingerprint but may have
+<code>polynomial</code> to the desired fingerprint but may have
 degree <code>degree</code> or higher.  The method <code>reduce</code>
 reduces such a result to a polynomial of degree less than
 <code>degree</code>.  Obtaining reduced results takes longer than

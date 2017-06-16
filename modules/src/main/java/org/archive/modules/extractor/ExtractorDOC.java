@@ -50,9 +50,6 @@ public class ExtractorDOC extends ContentExtractor {
     private static Logger logger =
         Logger.getLogger("org.archive.crawler.extractor.ExtractorDOC");
 
-    /**
-     * @param name
-     */
     public ExtractorDOC() {
     }
 

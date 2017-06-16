@@ -104,8 +104,7 @@ public class CrawlerJournal implements Closeable {
 
     /**
      * Write a line
-     * 
-     * @param string String
+     * @param strs
      */
     public synchronized void writeLine(String... strs) {
         try {
@@ -191,9 +190,6 @@ public class CrawlerJournal implements Closeable {
     /**
      * Handle a checkpoint by rotating the current log to a checkpoint-named
      * file and starting a new log. 
-     * 
-     * @param checkpointDir
-     * @throws IOException
      */
     public synchronized void rotateForCheckpoint(Checkpoint checkpointInProgress) {
         if (this.out == null || !this.gzipFile.exists()) {

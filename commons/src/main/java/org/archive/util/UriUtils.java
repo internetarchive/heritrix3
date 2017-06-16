@@ -83,7 +83,7 @@ import org.archive.url.LaxURLCodec;
  *  with the 'new' isLikelyUri() test is collected (in H3). Enable the 'xest'
  *  methods of the UriUtilsTest class for details. 
  *  
- * @contributor gojomo
+ * @author gojomo
  */
 public class UriUtils {
     private static final Logger LOGGER = Logger.getLogger(UriUtils.class.getName());
@@ -310,8 +310,6 @@ public class UriUtils {
     
     /**
      * Perform additional fixup of likely-URI Strings
-     * 
-     * @param string detected candidate String
      * @return String changed/decoded to increase likelihood it is a 
      * meaningful non-404 URI
      */

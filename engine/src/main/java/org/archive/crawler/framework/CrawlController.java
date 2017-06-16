@@ -62,7 +62,7 @@ import org.xbill.DNS.Lookup;
  * As the "global context" for a crawl, subcomponents will
  * often reach each other through the CrawlController.
  *
- * @contributor gojomo
+ * @author gojomo
  */
 public class CrawlController 
 implements Serializable, 
@@ -313,7 +313,7 @@ implements Serializable,
     /**
      * Send crawl change event to all listeners.
      * @param newState State change we're to tell listeners' about.
-     * @param message Message on state change.
+     * @param status
      */
     protected void sendCrawlStateChangeEvent(State newState, 
             CrawlStatus status) {
@@ -499,7 +499,6 @@ implements Serializable,
     /**
      * Is this crawl actively able/trying to crawl? Includes both 
      * states RUNNING and EMPTY.
-     * @return
      */
     public boolean isActive() {
         return state == State.RUNNING || state == State.EMPTY;

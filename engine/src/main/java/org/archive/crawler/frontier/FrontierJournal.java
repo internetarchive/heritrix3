@@ -120,7 +120,7 @@ public class FrontierJournal extends CrawlerJournal {
      * a Frontier.
      * 
      * @param params JSONObject of import parameters; see Frontier.importURIS()
-     * @param controller CrawlController of crawl to update
+     * @param frontier
      * @throws IOException
      * 
      * @see org.archive.crawler.framework.Frontier#importURIs(String)
