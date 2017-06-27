@@ -19,19 +19,20 @@
 package org.archive.modules.postprocessor;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.frontier.BdbFrontier;
@@ -195,9 +196,9 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         try {
             httpPost.setEntity(new StringEntity(statement));
             HttpResponse response = httpClient().execute(httpPost);
-            EntityUtils.consume(response.getEntity());
+            String payload = IOUtils.toString(response.getEntity().getContent(), Charset.forName("UTF-8"));
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new IOException("expected 200 OK but got " + response.getStatusLine());
+                throw new IOException("expected 200 OK but got " + response.getStatusLine() + " - " + payload);
             }
         } catch (Exception e) {
             logger.warning("problem posting " + statement + " to " + writeUrl + " - " + e);
