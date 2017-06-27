@@ -222,60 +222,67 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             } else {
                 warcContentBytes = 0;
             }
-            crawledBatch.add("(" + sqlValue(new Date(curi.getFetchBeginTime())) + ", "
-                    + sqlValue(curi.getFetchStatus()) + ", "
-                    + sqlValue(curi.getContentSize()) + ", "
-                    + sqlValue(curi.getContentLength()) + ", "
-                    + sqlValue(curi) + ", "
-                    + sqlValue(curi.getPathFromSeed()) + ", "
-                    + sqlValue(curi.isSeed() && !"".equals(curi.getPathFromSeed()) ? 1 : 0) + ", "
-                    + sqlValue(curi.getVia()) + ", "
-                    + sqlValue(MimetypeUtils.truncate(curi.getContentType())) + ", "
-                    + sqlValue(curi.getContentDigestSchemeString()) + ", "
-                    + sqlValue(curi.getSourceTag()) + ", "
-                    + sqlValue(curi.isRevisit() ? 1 : 0) + ", "
-                    + sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
-                    + sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
-                    + sqlValue(warcContentBytes) + ", "
-                    + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
-            if (crawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
-                postCrawledBatch();
+            synchronized (crawledBatch) {
+                crawledBatch.add("(" + sqlValue(new Date(curi.getFetchBeginTime())) + ", "
+                        + sqlValue(curi.getFetchStatus()) + ", "
+                        + sqlValue(curi.getContentSize()) + ", "
+                        + sqlValue(curi.getContentLength()) + ", "
+                        + sqlValue(curi) + ", "
+                        + sqlValue(curi.getPathFromSeed()) + ", "
+                        + sqlValue(curi.isSeed() && !"".equals(curi.getPathFromSeed()) ? 1 : 0) + ", "
+                        + sqlValue(curi.getVia()) + ", "
+                        + sqlValue(MimetypeUtils.truncate(curi.getContentType())) + ", "
+                        + sqlValue(curi.getContentDigestSchemeString()) + ", "
+                        + sqlValue(curi.getSourceTag()) + ", "
+                        + sqlValue(curi.isRevisit() ? 1 : 0) + ", "
+                        + sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
+                        + sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
+                        + sqlValue(warcContentBytes) + ", "
+                        + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+                if (crawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
+                    postCrawledBatch();
+                }
             }
         } else {
-            uncrawledBatch.add("("
-                    + sqlValue(new Date()) + ", "
-                    + sqlValue(curi) + ", "
-                    + sqlValue(curi.getPathFromSeed()) + ", "
-                    + sqlValue(curi.getFetchStatus()) + ", "
-                    + sqlValue(curi.getVia()) + ", "
-                    + sqlValue(curi.getSourceTag()) + ", "
-                    + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
-            if (uncrawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - uncrawledBatchLastTime > BATCH_MAX_TIME_MS) {
-                postUncrawledBatch();
+            synchronized (uncrawledBatch) {
+                uncrawledBatch.add("("
+                        + sqlValue(new Date()) + ", "
+                        + sqlValue(curi) + ", "
+                        + sqlValue(curi.getPathFromSeed()) + ", "
+                        + sqlValue(curi.getFetchStatus()) + ", "
+                        + sqlValue(curi.getVia()) + ", "
+                        + sqlValue(curi.getSourceTag()) + ", "
+                        + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+                if (uncrawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - uncrawledBatchLastTime > BATCH_MAX_TIME_MS) {
+                    postUncrawledBatch();
+                }
             }
-
         }
     }
 
     protected void postCrawledBatch() {
-        String sql = "insert into crawled_url ("
-                + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
-                + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
-                + "warc_offset, warc_content_bytes, host)  values "
-                + StringUtils.join(crawledBatch, ", ")
-                + ";";
-        post(sql);
-        crawledBatchLastTime = System.currentTimeMillis();
-        crawledBatch.clear();
+        synchronized (crawledBatch) {
+            String sql = "insert into crawled_url ("
+                    + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
+                    + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
+                    + "warc_offset, warc_content_bytes, host)  values "
+                    + StringUtils.join(crawledBatch, ", ")
+                    + ";";
+            post(sql);
+            crawledBatchLastTime = System.currentTimeMillis();
+            crawledBatch.clear();
+        }
     }
 
     protected void postUncrawledBatch() {
-        String sql = "insert into uncrawled_url ("
-                + "timestamp, url, hop_path, status_code, via, seed, host) values "
-                + StringUtils.join(uncrawledBatch, ", ")
-                + ";";
-        post(sql);
-        uncrawledBatchLastTime = System.currentTimeMillis();
-        uncrawledBatch.clear();
+        synchronized (uncrawledBatch) {
+            String sql = "insert into uncrawled_url ("
+                    + "timestamp, url, hop_path, status_code, via, seed, host) values "
+                    + StringUtils.join(uncrawledBatch, ", ")
+                    + ";";
+            post(sql);
+            uncrawledBatchLastTime = System.currentTimeMillis();
+            uncrawledBatch.clear();
+        }
     }
 }
