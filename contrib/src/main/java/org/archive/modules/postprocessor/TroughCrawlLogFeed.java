@@ -259,7 +259,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected void postCrawledBatch() {
         String sql = "insert into crawled_url ("
-                + "timestamp, status_code, size, payload_size url, hop_path, is_seed_redirect, "
+                + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
                 + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
                 + "warc_offset, warc_content_bytes, host)  values "
                 + StringUtils.join(crawledBatch, ", ")
