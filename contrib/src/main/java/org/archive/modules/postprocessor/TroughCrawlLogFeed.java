@@ -236,7 +236,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                     + sqlValue(curi.isRevisit() ? 1 : 0) + ", "
                     + sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
                     + sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
-                    + sqlValue(warcContentBytes)
+                    + sqlValue(warcContentBytes) + ", "
                     + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
             if (crawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
                 postCrawledBatch();
