@@ -1828,7 +1828,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         kryo.autoregister(org.apache.commons.httpclient.NameValuePair.class);
         kryo.autoregister(org.apache.commons.httpclient.NameValuePair[].class);
         kryo.autoregister(FetchType.class);
-        kryo.setRegistrationOptional(true);
     }
     
     /**
@@ -1959,12 +1958,14 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     @Override
     public int hashCode() {
         int r = 37;
-        return r ^ hash(via.toString()) ^ hash(uuri.toString())
-                ^ hash(viaContext.toString()) ^ hash(pathFromSeed.toString());
+        return r ^ hash(via) ^ hash(uuri)
+                ^ hash(viaContext) ^ hash(pathFromSeed);
     }
 
     // handles nulls
-    private static int hash(String a) {
+    private static int hash(Object o) {
+        if( o == null) return 0;
+        String a = o.toString();
         return a == null ? 0 : a.hashCode();
     }
 

@@ -20,6 +20,8 @@
 package org.archive.util;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.sun.jna.Native;
@@ -56,6 +58,12 @@ public class FilesystemLinkMaker {
             public int nLength;
             public Pointer lpSecurityDescriptor;
             public boolean bInheritHandle;
+
+            @Override
+            protected List<String> getFieldOrder() {
+                return Arrays.asList(new String[] { "nLength",
+                        "lpSecurityDescriptor", "bInheritHandle" });
+            }
         }
 
         /*

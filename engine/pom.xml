@@ -74,6 +74,12 @@
 			<artifactId>littleproxy</artifactId>
 			<version>0.4</version>
 			<scope>test</scope>
+			<exclusions>
+			   <exclusion>
+			      <groupId>org.slf4j</groupId>
+			      <artifactId>slf4j-log4j12</artifactId>
+			   </exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -104,7 +110,7 @@
 					<excludes>
 						<exclude>**/TestAll.java</exclude>
 					</excludes>
-					<argLine>-server -Xmx256m</argLine>
+					<argLine>-Xmx1g</argLine>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -23,9 +23,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
 import org.archive.bdb.AutoKryo;
+
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
+
+import junit.framework.TestCase;
 
 public class RobotstxtTest extends TestCase {
     public void testParseRobots() throws IOException {
@@ -195,9 +198,9 @@ public class RobotstxtTest extends TestCase {
             assertTrue("user-agent a and b shares the same RobotsDirectives before serialization", da == db);
         }
         ByteBuffer buffer = ByteBuffer.allocateDirect(1024);
-        kryo.writeObject(buffer, rt);
+        kryo.writeObject(new ByteBufferOutput(buffer), rt);
         buffer.flip();
-        Robotstxt rt2 = kryo.readObject(buffer, Robotstxt.class);
+        Robotstxt rt2 = kryo.readObject(new ByteBufferInput(buffer), Robotstxt.class);
         assertNotNull(rt2);
         {
             RobotsDirectives da = rt2.getDirectivesFor("a", false);

@@ -306,7 +306,7 @@ public class CookieStoreTest extends TmpDirTestCase {
             @Override
             public void run() {
                 try {
-                    while (!Thread.interrupted()) {
+                    while (! "DIE".equals(Thread.currentThread().getName())) {
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
                         cookie.setDomain("d" + rand.nextInt() + ".example.com");
                         bdbCookieStore().addCookie(cookie);
@@ -328,7 +328,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         Thread.sleep(5000);
 
         for (int i = 0; i < threads.length; i++) {
-            threads[i].interrupt();
+            threads[i].setName("DIE");
         }
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();
@@ -348,7 +348,7 @@ public class CookieStoreTest extends TmpDirTestCase {
             @Override
             public void run() {
                 try {
-                    while (!Thread.interrupted()) {
+                    while (! "DIE".equals(Thread.currentThread().getName())) {
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
                         cookie.setDomain("d" + rand.nextInt(20) + ".example.com");
                         bdbCookieStore().addCookie(cookie);
@@ -370,7 +370,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         Thread.sleep(1000);
 
         for (int i = 0; i < threads.length; i++) {
-            threads[i].interrupt();
+            threads[i].setName("DIE");
         }
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();

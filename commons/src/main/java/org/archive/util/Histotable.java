@@ -20,6 +20,7 @@
 
 package org.archive.util;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +42,7 @@ import java.util.TreeSet;
  */
 public class Histotable<K> extends TreeMap<K,Long> {    
     private static final long serialVersionUID = 310306238032568623L;
-    
+
     /**
      * Record one more occurence of the given object key.
      * 
@@ -67,6 +68,34 @@ public class Histotable<K> extends TreeMap<K,Long> {
     }
     
     /**
+     * Comparator as serialisable class, for Kyro.
+     * 
+     * @author Andrew Jackson <Andrew.Jackson@bl.uk>
+     *
+     */
+    public static class TreeMapComparator
+            implements Comparator<Map.Entry<?, Long>>, Serializable {
+
+        private static final long serialVersionUID = -8186626602427510643L;
+
+        public int compare(Map.Entry<?, Long> e1, Map.Entry<?, Long> e2) {
+            long firstVal = e1.getValue();
+            long secondVal = e2.getValue();
+            if (firstVal < secondVal) {
+                return 1;
+            }
+            if (secondVal < firstVal) {
+                return -1;
+            }
+            // If the values are the same, sort by keys.
+            String firstKey = ((Map.Entry<?, Long>) e1).getKey().toString();
+            String secondKey = ((Map.Entry<?, Long>) e2).getKey().toString();
+            return firstKey.compareTo(secondKey);
+        }
+
+    }
+
+    /**
      * Get a SortedSet that, when filled with (String key)->(long count) 
      * Entry instances, sorts them by (count, key) descending, as is useful 
      * for most-frequent displays. 
@@ -79,20 +108,7 @@ public class Histotable<K> extends TreeMap<K,Long> {
     public static TreeSet<Map.Entry<?, Long>> getEntryByFrequencySortedSet() {
         // sorted by count
         TreeSet<Map.Entry<?,Long>> sorted = 
-          new TreeSet<Map.Entry<?,Long>>(
-           new Comparator<Map.Entry<?,Long>>() {
-            public int compare(Map.Entry<?,Long> e1, 
-                    Map.Entry<?,Long> e2) {
-                long firstVal = e1.getValue();
-                long secondVal = e2.getValue();
-                if (firstVal < secondVal) { return 1; }
-                if (secondVal < firstVal) { return -1; }
-                // If the values are the same, sort by keys.
-                String firstKey = ((Map.Entry<?,Long>) e1).getKey().toString();
-                String secondKey = ((Map.Entry<?,Long>) e2).getKey().toString();
-                return firstKey.compareTo(secondKey);
-            }
-        });
+                new TreeSet<Map.Entry<?, Long>>(new TreeMapComparator());
         return sorted;
     }
     

@@ -329,7 +329,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
         kryo.register(CrawlServer.class);
         kryo.autoregister(FetchStats.class); 
         kryo.autoregister(Robotstxt.class);
-        kryo.setRegistrationOptional(true); 
     }
     
     //

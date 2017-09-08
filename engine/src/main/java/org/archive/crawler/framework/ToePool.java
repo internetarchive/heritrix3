@@ -67,7 +67,7 @@ public class ToePool extends ThreadGroup implements Reporter {
         Thread[] toes = getToes();
         for(Thread toe : toes) {
             if(toe!=null) {
-                toe.interrupt();
+                toe.interrupt(); // Note doing this will upset BDB-JE
             }
         }
         

@@ -256,6 +256,5 @@ public class Robotstxt implements Serializable {
         kryo.autoregister(HashMap.class);
         kryo.autoregister(LinkedList.class);
         kryo.autoregister(RobotsDirectives.class);
-        kryo.setRegistrationOptional(true); 
     }
 }

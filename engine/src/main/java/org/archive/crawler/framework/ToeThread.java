@@ -346,7 +346,7 @@ implements Reporter, ProgressStatisticsReporter,
      * established.
      */
     protected void kill(){
-        this.interrupt();
+        this.interrupt(); // NOTE doing this will upset BDB-JE
         synchronized(this) {
             if (currentCuri!=null) {
                 currentCuri.setFetchStatus(S_PROCESSING_THREAD_KILLED);

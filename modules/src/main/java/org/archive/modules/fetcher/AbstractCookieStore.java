@@ -18,8 +18,6 @@
  */
 package org.archive.modules.fetcher;
 
-import it.unimi.dsi.mg4j.util.MutableString;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,6 +44,8 @@ import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
+
+import it.unimi.dsi.lang.MutableString;
 
 abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
