@@ -20,11 +20,10 @@
 package org.archive.util;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,12 +51,12 @@ import com.sleepycat.je.Environment;
  * unless/until an object is garbage collected, subsequent get()s will
  * return the exact same object (avoiding redundant creation or disagreement
  * about canonical object state). 
- * <p/>
+ * <p>
  * The backing disk is only guaranteed to be up-to-date after a flush 
  * of all dirty values to disk, as can be forced by sync().
- * <p/>
+ * <p>
  * 
- * <p/>
+ * <p>
  * 
  * @author John Erik Halse
  * @author stack
@@ -103,12 +102,10 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
 
     /**
      * Constructor. You must call
-     * {@link #initialize(Environment, Class, Class, StoredClassCatalog)}
+     * {@link #initialize(Environment, String, Class, StoredClassCatalog)}
      * to finish construction. Construction is two-stepped to support
      * reconnecting a deserialized CachedBdbMap with its backing bdbje
      * database.
-     * 
-     * @param dbName Name of the backing db this instance should use.
      */
     public ObjectIdentityBdbManualCache() {
         super();
@@ -129,11 +126,9 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     /**
      * Call this method when you have an instance when you used the
      * default constructor or when you have a deserialized instance that you
-     * want to reconnect with an extant bdbje environment.  Do not
-     * call this method if you used the
-     * {@link #CachedBdbMap(File, String, Class, Class)} constructor.
+     * want to reconnect with an extant bdbje environment.
      * @param env
-     * @param keyClass
+     * @param dbName
      * @param valueClass
      * @param classCatalog
      * @throws DatabaseException

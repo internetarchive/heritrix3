@@ -31,8 +31,7 @@ public class HasViaDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 3L;
 
     /**
-     * Usual constructor. 
-     * @param name Name of this DecideRule.
+     * Usual constructor.
      */
     public HasViaDecideRule() {
     }

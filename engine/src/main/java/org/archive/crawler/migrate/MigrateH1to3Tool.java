@@ -54,8 +54,8 @@ import org.xml.sax.SAXException;
  * customizations, such as per-host overrides or choices of 
  * alternate implementing classes for Scope, Processors, etc.)
  * 
- * @contributor siznax
- * @contributor gojomo
+ * @author siznax
+ * @author gojomo
  */
 public class MigrateH1to3Tool {
 
@@ -242,7 +242,7 @@ public class MigrateH1to3Tool {
      * nodes, keyed by the pseudo-XPath to their parent element. 
      * 
      * @param h1order Document to extract Map
-     * @return Map<String,String> Xpath-like-String -> non-blank text content
+     * @return Map&lt;String,String&gt; Xpath-like-String -&gt; non-blank text content
      * @throws XPathExpressionException
      */
     public static Map<String,String> flattenH1Order(Document h1order) throws XPathExpressionException {

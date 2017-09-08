@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * A named WorkQueue wrapped with a wake time, perhaps referenced only
  * by name. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 class DelayedWorkQueue implements Delayed, Serializable {
     private static final long serialVersionUID = 1L;

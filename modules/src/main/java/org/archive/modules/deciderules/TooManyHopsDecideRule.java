@@ -61,7 +61,7 @@ public class TooManyHopsDecideRule extends PredicatedDecideRule {
      * Evaluate whether given object is over the threshold number of
      * hops.
      * 
-     * @param object
+     * @param uri
      * @return true if the mx-hops is exceeded
      */
     @Override

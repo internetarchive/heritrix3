@@ -62,11 +62,11 @@ import org.archive.util.DateUtils;
  * This is currently in the early stage of experiment. Both low-level protocol and WBM API
  * semantics will certainly undergo several revisions.
  * <p>Current interface:</p>
- * <p>http://web-beta.archive.org/cdx/search/cdx?url=archive.org&startDate=1999 will return raw
+ * <p>http://web-beta.archive.org/cdx/search/cdx?url=archive.org&amp;startDate=1999 will return raw
  * CDX lines for archive.org, since 1999-01-01 00:00:00.
  * </p>
  * <p>As index is updated in a separate batch processing job, there's no "Store" counterpart.</p>
- * @contributor Kenji Nagahashi.
+ * @author Kenji Nagahashi.
  */
 public class WbmPersistLoadProcessor extends Processor {
     private static final Log log = LogFactory.getLog(WbmPersistLoadProcessor.class);
@@ -226,10 +226,10 @@ public class WbmPersistLoadProcessor extends Processor {
     /**
      * all key-value pairs in this map will be added as HTTP headers.
      * typically used for providing authentication cookies. this method
-     * makes a copy of {@requestHeaders}.
+     * makes a copy of {@link #requestHeaders}.
      * <em>note:</em> this property may be dropped in the future if
      * I come up with better interface.
-     * @param requestHeaders map of &lt;header-name, header-value>.
+     * @param requestHeaders map of &lt;header-name, header-value&gt;.
      */
     public void setRequestHeaders(Map<String, String> requestHeaders) {
         if (requestHeaders == null) {
@@ -274,7 +274,6 @@ public class WbmPersistLoadProcessor extends Processor {
      * total milliseconds spent in API call.
      * it is a sum of time waited for next available connection,
      * and actual HTTP request-response round-trip, across all threads.
-     * @return
      */
     public long getCumulativeFetchTime() {
         return cumulativeFetchTime.get();

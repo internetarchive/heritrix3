@@ -26,7 +26,7 @@ import org.archive.bdb.DisposableStoredSortedMap;
 /**
  * The "Response Codes Report", tallies by response/disposition code.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ResponseCodeReport extends Report {
 

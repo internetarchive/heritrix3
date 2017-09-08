@@ -200,7 +200,6 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
 
     /**
      * Method shared by constructors.
-     * @param env Environment to use.
      * @throws DatabaseException
      */
     protected void initialize(Database db) throws DatabaseException {
@@ -218,7 +217,6 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
     /**
      * Call after deserializing an instance of this class.  Will open the
      * already seen in passed environment.
-     * @param env DB Environment to use.
      * @throws DatabaseException
      */
     public void reopen(Database db)

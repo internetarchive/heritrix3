@@ -78,7 +78,7 @@ public abstract class FPMergeUriUniqFilter implements UriUniqFilter {
     
     /** items awaiting merge
      * TODO: consider only sorting just pre-merge
-     * TODO: consider using a fastutil long->Object class
+     * TODO: consider using a fastutil long-&gt;Object class
      * TODO: consider actually writing items to disk file,
      * as in Najork/Heydon
      */

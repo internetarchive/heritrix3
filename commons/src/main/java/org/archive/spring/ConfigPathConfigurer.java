@@ -50,7 +50,7 @@ import org.springframework.core.Ordered;
  * replace values before fixup, and fixup will still affect the right
  * final values. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ConfigPathConfigurer 
 implements 

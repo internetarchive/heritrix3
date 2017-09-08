@@ -29,7 +29,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.state.ModuleTestBase;
 import org.archive.util.Recorder;
 
 
@@ -48,9 +47,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
 
     
     /**
-     * Sets up the {@link #extractor} and 
-     * {@link ModuleTestBase#processorClass}
-     * fields.
+     * Sets up the {@link #extractor}.
      */
     final public void setUp() {
         extractor = makeExtractor();

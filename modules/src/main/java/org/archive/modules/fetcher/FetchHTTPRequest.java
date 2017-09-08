@@ -116,7 +116,7 @@ import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
 
 /**
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class FetchHTTPRequest {
     
@@ -372,7 +372,7 @@ public class FetchHTTPRequest {
     /**
      * Add the given conditional-GET header, if the setting is enabled and
      * a suitable value is available in the URI history. 
-     * @param setting true/false enablement setting name to consult
+     * @param conditional true/false enablement setting name to consult
      * @param sourceHeader header to consult in URI history
      * @param targetHeader header to set if possible
      */
@@ -436,16 +436,10 @@ public class FetchHTTPRequest {
      * references to credentials). 2. Credentials to be tried are in the curi.
      * Returns true if found credentials to be tried.
      * 
-     * @param curi
-     *            Current CrawlURI.
-     * @param request 
-     * @param targetHost 
-     * @param context
-     *            The context to add credentials to.
      * @return True if prepopulated <code>method</code> with credentials AND
      *         the credentials came from the <code>curi</code>, not from the
      *         CrawlServer. The former is special in that if the
-     *         <code>curi</curi> credentials
+     *         <code>curi</code> credentials
      * succeed, then the caller needs to promote them from the CrawlURI to the
      * CrawlServer so they are available for all subsequent CrawlURIs on this
      * server.

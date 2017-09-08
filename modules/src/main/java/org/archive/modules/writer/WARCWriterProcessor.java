@@ -96,7 +96,7 @@ import org.json.JSONObject;
  * <p>TODO: Remove ANVLRecord. Rename NameValue or use RFC822
  * (commons-httpclient?) or find something else.
  * 
- * @contributor stack
+ * @author stack
  */
 public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWriterPoolSettings {
     @SuppressWarnings("unused")
@@ -187,8 +187,7 @@ public class WARCWriterProcessor extends WriterPoolProcessor implements WARCWrit
      * 
      */
     @Override
-    protected ProcessResult innerProcessResult(CrawlURI puri) {
-        CrawlURI curi = (CrawlURI)puri;
+    protected ProcessResult innerProcessResult(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme().toLowerCase();
         try {
             if (shouldWrite(curi)) {

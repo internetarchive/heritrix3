@@ -39,7 +39,6 @@ public class TrapSuppressExtractor extends ContentExtractor  {
 
     /**
      * Usual constructor. 
-     * @param name
      */
     public TrapSuppressExtractor() {
     }

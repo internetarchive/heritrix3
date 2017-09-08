@@ -261,7 +261,6 @@ implements Closeable,
      * Subclasses should invoke this method with recycle set to "true" in 
      * a private readObject method, to restore queues after a checkpoint.
      * 
-     * @param recycle
      * @throws IOException
      * @throws DatabaseException
      */
@@ -323,7 +322,7 @@ implements Closeable,
      * Choose a per-classKey queue and enqueue it. If this
      * item has made an unready queue ready, place that 
      * queue on the readyClassQueues queue. 
-     * @param caUri CrawlURI.
+     * @param curi CrawlURI.
      */
     protected void processScheduleAlways(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
@@ -481,14 +480,14 @@ implements Closeable,
 
     /**
      * Return a sorted map of all queues of WorkQueue keys, keyed by precedence
-     * @return SortedMap<Integer, Queue<String>> of inactiveQueues
+     * @return SortedMap&lt;Integer, Queue&lt;String&gt;&gt; of inactiveQueues
      */
     protected abstract SortedMap<Integer, Queue<String>> getInactiveQueuesByPrecedence();
 
     /**
      * Create an inactiveQueue to hold queue names at the given precedence
      * @param precedence
-     * @return Queue<String> for names of inactive queues
+     * @return Queue&lt;String&gt; for names of inactive queues
      */
     protected abstract Queue<String> createInactiveQueueForPrecedence(int precedence);
 
@@ -512,7 +511,7 @@ implements Closeable,
     /**
      * Return queue of all retired queue names.
      * 
-     * @return Queue<String> of retired queue names
+     * @return Queue&lt;String&gt; of retired queue names
      */
     protected abstract Queue<String> getRetiredQueues();
 
@@ -1066,7 +1065,6 @@ implements Closeable,
     }
 
     /**
-     * @param match String to  match.
      * @return Number of items deleted.
      */
     public long deleteURIs(String queueRegex, String uriRegex) {
@@ -1216,7 +1214,6 @@ implements Closeable,
     /**
      * This method compiles a human readable report on the status of the frontier
      * at the time of the call.
-     * @param name Name of report.
      * @param writer Where to write to.
      */
     @Override

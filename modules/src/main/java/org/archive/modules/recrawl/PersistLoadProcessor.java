@@ -52,8 +52,8 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * information into the current store at startup. (Whenever possible, it
      * would be better to ensure the original history DB is in its own
      * independent BDB environment, and then copy and reuse that environment in
-     * the followup crawl(s).) Only one of {@preloadSource} and
-     * {@preloadSourceUrl} may be specified.
+     * the followup crawl(s).) Only one of {link @preloadSource} and
+     * {link @preloadSourceUrl} may be specified.
      */
     protected ConfigPath preloadSource = 
         new ConfigFile("preload source","");
@@ -71,7 +71,7 @@ public class PersistLoadProcessor extends PersistOnlineProcessor {
      * current store at startup. (Whenever possible, it would be better to
      * ensure the original history DB is in its own independent BDB environment,
      * and then copy and reuse that environment in the followup crawl(s).)
-     * Only one of {@preloadSource} and {@preloadSourceUrl} may be specified.
+     * Only one of {@link preloadSource} and {@link preloadSourceUrl} may be specified.
      */
     protected String preloadSourceUrl = "";
     public String getPreloadSourceUrl() {

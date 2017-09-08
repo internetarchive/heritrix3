@@ -45,10 +45,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * {@link StatisticsTracker#getTrackSources()} (enabled by default) are both
  * enabled.
  *
- * @contributor nlevitt
+ * @author nlevitt
  * 
- * @see {@link QuotaEnforcer}
- * @see {@link RuntimeLimitEnforcer}
+ * @see QuotaEnforcer
+ * @see RuntimeLimitEnforcer
  */
 public class SourceQuotaEnforcer extends Processor {
 

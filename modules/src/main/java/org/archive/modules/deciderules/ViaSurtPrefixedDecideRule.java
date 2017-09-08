@@ -57,7 +57,7 @@ public class ViaSurtPrefixedDecideRule extends PredicatedDecideRule {
      * Evaluate whether given object's surt form
      * matches one of the supplied surts
      * 
-     * @param object
+     * @param uri
      * @return true if a surt prefix matches
      */
     @Override

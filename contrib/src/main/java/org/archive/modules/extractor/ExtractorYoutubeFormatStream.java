@@ -65,8 +65,8 @@ import org.json.JSONObject;
  * }
  * </pre>
  * 
- * @contributor adam
- * @contributor nlevitt
+ * @author adam
+ * @author nlevitt
  * 
  */
 public class ExtractorYoutubeFormatStream extends Extractor {

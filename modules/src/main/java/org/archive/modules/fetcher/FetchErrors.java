@@ -18,6 +18,8 @@
  */
 package org.archive.modules.fetcher;
 
+import org.archive.modules.CrawlURI;
+
 public class FetchErrors {
 
 

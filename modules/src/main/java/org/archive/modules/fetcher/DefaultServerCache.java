@@ -47,13 +47,13 @@ public class DefaultServerCache extends ServerCache implements Closeable, Serial
     
     
     /**
-     * hostname[:port] -> CrawlServer.
+     * hostname[:port] -&gt; CrawlServer.
      * Set in the initialization.
      */
     protected ObjectIdentityCache<CrawlServer> servers = null;
     
     /**
-     * hostname -> CrawlHost.
+     * hostname -&gt; CrawlHost.
      * Set in the initialization.
      */
     protected ObjectIdentityCache<CrawlHost> hosts = null;

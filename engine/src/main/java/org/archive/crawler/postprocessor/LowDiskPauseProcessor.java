@@ -107,9 +107,6 @@ public class LowDiskPauseProcessor extends Processor {
     public static final Pattern AVAILABLE_EXTRACTOR = 
         Pattern.compile("(?m)\\s(\\d+)\\s+\\d+%\\s+(\\S+)$");
     
-    /**
-     * @param name Name of this writer.
-     */
     public LowDiskPauseProcessor() {
     } 
     

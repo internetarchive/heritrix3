@@ -34,8 +34,7 @@ public class OnHostsDecideRule extends SurtPrefixedDecideRule {
     //private static final Logger logger =
     //    Logger.getLogger(OnHostsDecideRule.class.getName());
     /**
-     * Usual constructor. 
-     * @param name
+     * Usual constructor.
      */
     public OnHostsDecideRule() {
         super();

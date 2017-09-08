@@ -88,7 +88,6 @@ public class LongToIntConsistentHash {
      * 
      * @param longHash
      * @param upTo
-     * @return
      */
     public int bucketFor(long longHash, int upTo) {
         installReplicasUpTo(upTo); 
@@ -110,10 +109,6 @@ public class LongToIntConsistentHash {
 
     /**
      * Convenience alternative which creates longHash from CharSequence
-     * 
-     * @param string
-     * @param upTo
-     * @return
      */
     public int bucketFor(CharSequence cs, int upTo) {
         return bucketFor(hash(cs), upTo);

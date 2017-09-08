@@ -30,7 +30,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * ApplicationEvent published when Heritrix sends a URL to AMQP.
  * Other modules can observe this event to learn when Heritrix sends a URL.
  *
- * @contributor galgeek
+ * @author galgeek
  */
 public class AMQPUrlPublishedEvent extends ApplicationEvent {
     private static final long serialVersionUID = 1L;

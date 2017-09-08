@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.management.openmbean.CompositeData;
 
 import org.archive.crawler.frontier.FrontierJournal;
+import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
@@ -60,8 +61,7 @@ import org.springframework.context.Lifecycle;
  * <p>The methods defined in this interface are those required to get URIs for
  * processing, report the results of processing back (ToeThreads) and to get
  * access to various statistical data along the way. The statistical data is
- * of interest to {@link org.archive.crawler.framework.StatisticsTracker
- * Statistics Tracking} modules. A couple of additional methods are provided
+ * of interest to {@link StatisticsTracker} modules. A couple of additional methods are provided
  * to be able to inspect and manipulate the Frontier at runtime.
  *
  * <p>The statistical data exposed by this interface is:
@@ -72,7 +72,6 @@ import org.springframework.context.Lifecycle;
  *     <li> {@link #succeededFetchCount() Successfully processed URIs}
  *     <li> {@link #failedFetchCount() Failed to process URIs}
  *     <li> {@link #disregardedUriCount() Disregarded URIs}
- *     <li> {@link #totalBytesWritten() Total bytes written}
  * </ul>
  *
  * <p>In addition the frontier may optionally implement an interface that
@@ -84,22 +83,12 @@ import org.springframework.context.Lifecycle;
  * statistics modules or other interested observers to collect info
  * about each completed URI's processing.
  *
- * <p>All URI Frontiers inherit from
- * {@link org.archive.crawler.settings.ModuleType ModuleType}
- * and therefore creating settings follows the usual pattern of pluggable modules
- * in Heritrix.
- *
  * @author Gordon Mohr
  * @author Kristinn Sigurdsson
  *
  * @see org.archive.crawler.framework.CrawlController
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURIDisregardEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURIFailureEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURINeedRetryEvent(CrawlURI)
- * @see org.archive.crawler.framework.CrawlController#fireCrawledURISuccessfulEvent(CrawlURI)
- * @see org.archive.crawler.framework.StatisticsTracker
+ * @see StatisticsTracker
  * @see org.archive.crawler.framework.ToeThread
- * @see org.archive.crawler.settings.ModuleType
  */
 public interface Frontier extends Lifecycle, Reporter {
 
@@ -390,12 +379,6 @@ public interface Frontier extends Lifecycle, Reporter {
      *            information about each URI beyond their names.
      * @return a list of all pending URIs falling within the specification
      *            of the marker
-     * @throws InvalidFrontierMarkerException when the
-     *            <code>URIFronterMarker</code> does not match the internal
-     *            state of the frontier. Tolerance for this can vary
-     *            considerably from one URIFrontier implementation to the next.
-     * @see FrontierMarker
-     * @see #getInitialMarker(String, boolean)
      */
     public CompositeData getURIsList(
             String marker,
@@ -436,7 +419,7 @@ public interface Frontier extends Lifecycle, Reporter {
      * Notify Frontier that it should consider the given UURI as if
      * already scheduled.
      * 
-     * @param u UURI instance to add to the Already Included set.
+     * @param curi CrawlURI instance to add to the Already Included set.
      */
     public void considerIncluded(CrawlURI curi);
 

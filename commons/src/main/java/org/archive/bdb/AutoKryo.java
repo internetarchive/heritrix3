@@ -2,9 +2,14 @@ package org.archive.bdb;
 
 import java.util.ArrayList;
 
+<<<<<<< HEAD
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+=======
+>>>>>>> 4c438d385211107da72e5f9dd635bb7ac4a194a8
 import com.esotericsoftware.kryo.Kryo;
+
+import sun.reflect.ReflectionFactory;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest

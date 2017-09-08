@@ -28,7 +28,7 @@ import org.springframework.core.Ordered;
  * SheetAssociation applied on the basis of DecideRules. If the
  * final ruling is ACCEPT, the named sheets will be overlaid. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class DecideRuledSheetAssociation extends SheetAssociation 
 implements Ordered, Comparable<DecideRuledSheetAssociation>, BeanNameAware {

@@ -27,7 +27,7 @@ import org.archive.modules.CrawlURI;
  * "decision" property, after it's fetched, if the content body is within a
  * specified size range, specified in bytes.
  * 
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class ResponseContentLengthDecideRule extends PredicatedDecideRule {
 

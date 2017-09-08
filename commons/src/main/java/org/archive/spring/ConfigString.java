@@ -29,7 +29,7 @@ import org.archive.io.ReadSource;
  * inline string, path to local file (ConfigPath), or any other 
  * readable-text-source would all be equally welcome. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ConfigString implements ReadSource {
     protected String value;

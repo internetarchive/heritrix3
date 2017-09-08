@@ -11,8 +11,8 @@ import org.springframework.context.Lifecycle;
 
 /**
  * base class for different types of HBaseTable Spring bean implementations.
- * @contributor kenji
- * @contributor nlevitt
+ * @author kenji
+ * @author nlevitt
  *
  */
 public abstract class HBaseTableBean implements Lifecycle {

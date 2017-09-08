@@ -14,7 +14,7 @@ import org.archive.crawler.frontier.precedence.PrecedenceLoader;
  * to load per-URI precedence information from an external file.
  * 
  * <p>Such a file could be generated from PageRank analysis of a previously
- * completed crawl; see {@link http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+Analysis+Notes}.
+ * completed crawl; see <a href="http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+Analysis+Notes">http://webteam.archive.org/confluence/display/Heritrix/Offline+PageRank+Analysis+Notes</a>.
  * (For this minimal functional test, the PreloadedUriPrecedencePolicy input
  * file was simply hand-generated.)
  * 

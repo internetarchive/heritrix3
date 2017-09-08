@@ -28,7 +28,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * Simple representation of a discovered HTML Form. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class HTMLForm {
     public class FormInput {

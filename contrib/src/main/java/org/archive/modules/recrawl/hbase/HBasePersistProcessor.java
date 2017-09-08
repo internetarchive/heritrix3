@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * A base class for processors for keeping de-duplication data in HBase.
  * Table schema is defined by {@link RecrawlDataSchema} implementation. 
- * @contributor kenji
+ * @author kenji
  */
 public abstract class HBasePersistProcessor extends AbstractPersistProcessor {
 

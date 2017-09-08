@@ -29,7 +29,6 @@ extends FetchStatusMatchesRegexDecideRule {
     
     /**
      * Usual constructor. 
-     * @param name
      */
     public FetchStatusNotMatchesRegexDecideRule() {
     }

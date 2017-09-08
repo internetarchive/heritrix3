@@ -276,15 +276,9 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
 
     private AtomicInteger serial = new AtomicInteger();
     
-
-    /**
-     * @param name Name of this processor.
-     * @param description Description for this processor.
-     */
     public WriterPoolProcessor() {
         super();
     }
-
 
     public synchronized void start() {
         if (isRunning()) {
@@ -454,7 +448,9 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             File f = path.getFile();
             if (!f.exists()) {
                 try {
-                    FileUtils.ensureWriteableDirectory(f);
+                    synchronized (this) {
+                        FileUtils.ensureWriteableDirectory(f);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     continue;

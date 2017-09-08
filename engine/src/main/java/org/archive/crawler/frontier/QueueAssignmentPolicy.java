@@ -57,8 +57,6 @@ public abstract class QueueAssignmentPolicy implements Serializable, HasKeyedPro
      * Note that changes to the CrawlURI, or its associated 
      * components (such as CrawlServer), may change its queue
      * assignment.
-     * @param controller This crawls' controller.
-     * 
      * @param cauri CandidateURI to calculate class key for.
      * @return the String key of the queue to assign the CrawlURI 
      */

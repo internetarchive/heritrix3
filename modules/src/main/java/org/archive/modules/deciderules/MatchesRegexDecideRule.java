@@ -53,7 +53,7 @@ public class MatchesRegexDecideRule extends PredicatedDecideRule {
      * Evaluate whether given object's string version
      * matches configured regex
      * 
-     * @param object
+     * @param uri
      * @return true if regex is matched
      */
     @Override

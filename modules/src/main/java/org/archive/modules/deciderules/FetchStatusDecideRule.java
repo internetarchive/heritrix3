@@ -27,7 +27,7 @@ import org.archive.modules.CrawlURI;
  * Rule applies the configured decision for any URI which has a
  * fetch status equal to the 'target-status' setting. 
  *
- * @contributor gojomo
+ * @author gojomo
  */
 public class FetchStatusDecideRule extends PredicatedDecideRule {
 

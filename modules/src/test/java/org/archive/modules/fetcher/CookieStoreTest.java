@@ -45,7 +45,7 @@ import org.archive.util.TmpDirTestCase;
  * Tests that {@link BdbCookieStore} matches behavior of
  * {@link BasicCookieStore}.
  * 
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class CookieStoreTest extends TmpDirTestCase {
 

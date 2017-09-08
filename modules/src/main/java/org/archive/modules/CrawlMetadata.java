@@ -39,7 +39,7 @@ import org.springframework.validation.Validator;
  * Basic crawl metadata, as consulted by functional modules and
  * recorded in ARCs/WARCs.
  * 
- * @contributor pjack
+ * @author pjack
  */
 public class CrawlMetadata 
 implements UserAgentProvider, 

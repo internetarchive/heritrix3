@@ -20,7 +20,6 @@
 package org.archive.util;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -54,18 +53,18 @@ import com.sleepycat.je.Environment;
  * accessible to this class via reflective access to a phantom 
  * referent --is flushed to disk. The next get() will reconsitute a new
  * object, from the disk state.)
- * <p/>
+ * <p>
  * The backing disk is only guaranteed to be up-to-date after a flush 
  * of all in-memory values to disk, as can be forced by sync().
- * <p/>
+ * <p>
  * To ensure that changes/mutations to values in this map are coherent and
  * consistent at the application level, it is assumed that the application
  * level only mutates values that are in this map and does not retain references
  * to values longer than necessary.  This allows mappings to be persisted
  * during GC without explicit transactions or write operations.
- * <p/>
+ * <p>
  * Based on the earlier CachedBdbMap. 
- * <p/>
+ * <p>
  * 
  * @author John Erik Halse
  * @author stack
@@ -128,12 +127,10 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
 
     /**
      * Constructor. You must call
-     * {@link #initialize(Environment, Class, Class, StoredClassCatalog)}
+     * {@link #initialize(Environment, String, Class, StoredClassCatalog)}
      * to finish construction. Construction is two-stepped to support
      * reconnecting a deserialized CachedBdbMap with its backing bdbje
      * database.
-     * 
-     * @param dbName Name of the backing db this instance should use.
      */
     public ObjectIdentityBdbCache() {
         super();
@@ -142,11 +139,9 @@ implements ObjectIdentityCache<V>, Closeable, Serializable {
     /**
      * Call this method when you have an instance when you used the
      * default constructor or when you have a deserialized instance that you
-     * want to reconnect with an extant bdbje environment.  Do not
-     * call this method if you used the
-     * {@link #CachedBdbMap(File, String, Class, Class)} constructor.
+     * want to reconnect with an extant bdbje environment.
      * @param env
-     * @param keyClass
+     * @param dbName
      * @param valueClass
      * @param classCatalog
      * @throws DatabaseException

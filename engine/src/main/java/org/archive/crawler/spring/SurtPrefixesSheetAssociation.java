@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * SheetAssociation applied on the basis of matching SURT prefixes. 
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class SurtPrefixesSheetAssociation extends SheetAssociation {
     protected List<String> surtPrefixes;

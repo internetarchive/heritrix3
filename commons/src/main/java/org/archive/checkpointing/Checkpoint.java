@@ -39,7 +39,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * Represents a single checkpoint, by its name and main store directory.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class Checkpoint implements InitializingBean {
     private final static Logger LOGGER =

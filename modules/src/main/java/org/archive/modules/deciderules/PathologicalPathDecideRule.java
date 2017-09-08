@@ -50,8 +50,6 @@ public class PathologicalPathDecideRule extends DecideRule {
     }
     
     /** Constructs a new PathologicalPathFilter.
-     *
-     * @param name the name of the filter.
      */
     public PathologicalPathDecideRule() {
     }

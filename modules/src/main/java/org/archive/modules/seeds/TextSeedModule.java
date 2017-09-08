@@ -48,7 +48,7 @@ import org.springframework.beans.factory.annotation.Required;
  * as a ConfigFile or ConfigString), and provides a mechanism for
  * adding seeds after a crawl has begun.
  *
- * @contributor gojomo
+ * @author gojomo
  */
 public class TextSeedModule extends SeedModule 
 implements ReadSource {
@@ -191,8 +191,6 @@ implements ReadSource {
     /**
      * Handle a read line that is not a seed, but may still have
      * meaning to seed-consumers (such as scoping beans). 
-     * 
-     * @param uri String seed-containing line
      */
     protected void nonseedLine(String line) {
         publishNonSeedLine(line);
@@ -226,7 +224,6 @@ implements ReadSource {
      * flow from seeds). 
      *
      * @param curi CandidateUri to add
-     * @return true if successful, false if add failed for any reason
      */
     @Override
     public synchronized void addSeed(final CrawlURI curi) {

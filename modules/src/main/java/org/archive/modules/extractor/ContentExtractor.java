@@ -48,7 +48,7 @@ public abstract class ContentExtractor extends Extractor {
      * <p>
      * The second check runs only if
      * {@link ExtractorParameters#getExtractIndependently()} is false. It checks
-     * {@link ExtractorURI#hasBeenLinkExtracted()} result. If that result is
+     * {@link CrawlURI#hasBeenLinkExtracted()} result. If that result is
      * true, then this method returns false, as some other extractor has claimed
      * that links are already extracted.
      * 
@@ -59,7 +59,7 @@ public abstract class ContentExtractor extends Extractor {
      * this method returns false.
      * 
      * <p>
-     * Finally, this method delegates to {@link #innerExtract(ExtractorURI)} and
+     * Finally, this method delegates to {@link #innerExtract(CrawlURI)} and
      * returns that result.
      * 
      * @param uri
@@ -103,7 +103,7 @@ public abstract class ContentExtractor extends Extractor {
     
     /**
      * Actually extracts links.  The given URI will have passed the three
-     * checks described in {@link #shouldProcess(ExtractorURI)}.  Subclasses
+     * checks described in {@link #shouldProcess(CrawlURI)}.  Subclasses
      * should implement this method to discover outlinks in the URI's 
      * content stream.  For instance, {@link ExtractorHTML} extracts links
      * from Anchor tags and so on.

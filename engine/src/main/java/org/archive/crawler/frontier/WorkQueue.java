@@ -210,7 +210,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * (or overlay its value with a URI/queue-specific value) to affect this
      * value.
      * 
-     * @param balance to use
+     * @param budget to use
      */
     protected void setSessionBudget(int budget) {
         this.sessionBudget = budget;
@@ -289,7 +289,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * negative value to effect 'refund'/undo.)
      * 
      * @param amount tp decrement
-     * @return updated budget value
      */
     public void expend(int amount) {
         this.totalExpenditure = this.totalExpenditure + amount;
@@ -547,7 +546,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     
     /**
      * @param writer
-     * @throws IOException
      */
     @Override
     public synchronized void reportTo(PrintWriter writer) {

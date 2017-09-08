@@ -22,6 +22,7 @@ import org.apache.http.HttpVersion;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.RequestLine;
 import org.apache.http.client.methods.AbstractExecutionAwareRequest;
+import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicRequestLine;
 import org.apache.http.util.Args;
 
@@ -73,7 +74,7 @@ public class BasicExecutionAwareRequest extends AbstractExecutionAwareRequest {
     /**
      * Returns the HTTP protocol version to be used for this request.
      *
-     * @see #BasicHttpRequest(String, String)
+     * @see BasicHttpRequest#BasicHttpRequest(String, String)
      */
     public ProtocolVersion getProtocolVersion() {
         return getRequestLine().getProtocolVersion();
@@ -82,7 +83,7 @@ public class BasicExecutionAwareRequest extends AbstractExecutionAwareRequest {
     /**
      * Returns the request line of this request.
      *
-     * @see #BasicHttpRequest(String, String)
+     * @see BasicHttpRequest#BasicHttpRequest(String, String)
      */
     public RequestLine getRequestLine() {
         if (this.requestline == null) {

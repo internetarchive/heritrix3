@@ -46,7 +46,7 @@ import org.archive.util.TextUtils;
  * 
  * <ul>
  * <li> <code>uriRegex</code>: a regular expression to match against the url</li>
- * <li> <code>contentRegexes</code> a map of named regular expressions { name =>
+ * <li> <code>contentRegexes</code> a map of named regular expressions { name =&gt;
  * regex } to run against the content</li>
  * <li> <code>template</code>: the template for constructing the outlinks</li>
  * </ul>
@@ -82,8 +82,8 @@ import org.archive.util.TextUtils;
  * @see <a
  *      href="http://groovy.codehaus.org/Groovy+Templates">http://groovy.codehaus.org/Groovy+Templates</a>
  * 
- * @contributor nlevitt
- * @contributor travis
+ * @author nlevitt
+ * @author travis
  */
 public class ExtractorMultipleRegex extends Extractor {
 
@@ -110,7 +110,7 @@ public class ExtractorMultipleRegex extends Extractor {
         setContentRegexes(new LinkedHashMap<String, String>());
     }
     /**
-     * A map of { name => regex }. The extractor looks for matches for each
+     * A map of { name =&gt; regex }. The extractor looks for matches for each
      * regular expression in the content of the URI being processed. If any of
      * the regular expressions produce no matches, processing of the URI is
      * finished and no outlinks are extracted. If at least one match is found

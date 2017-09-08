@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
- * @contributor nlevitt
+ * @author nlevitt
  */
 public abstract class AMQPProducerProcessor extends Processor {
 

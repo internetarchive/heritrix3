@@ -30,11 +30,11 @@ import org.archive.modules.CrawlURI;
 
 /**
  * Example usage:
- * <pre> &lt;bean class="org.archive.modules.deciderules.ExpressionDecideRule">
- *     &lt;property name="groovyExpression" value='curi.via == null &amp;amp;&amp;amp; curi ==~ "^https?://(?:www\\.)?(facebook|vimeo|flickr)\\.com/.*"'/>
- * &lt/bean></pre>
+ * <pre> &lt;bean class="org.archive.modules.deciderules.ExpressionDecideRule"&gt;
+ *     &lt;property name="groovyExpression" value='curi.via == null &amp;amp;&amp;amp; curi ==~ "^https?://(?:www\\.)?(facebook|vimeo|flickr)\\.com/.*"'/&gt;
+ * &lt;/bean&gt;</pre>
  *
- * @contributor nlevitt
+ * @author nlevitt
  */
 public class ExpressionDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 1L;

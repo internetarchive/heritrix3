@@ -36,7 +36,6 @@ extends MatchesFilePatternDecideRule {
 
     /**
      * Usual constructor. 
-     * @param name
      */
     public NotMatchesFilePatternDecideRule() {
     }
@@ -45,7 +44,7 @@ extends MatchesFilePatternDecideRule {
      * Evaluate whether given object's string version does not match 
      * configured regex (by reversing the superclass's answer).
      * 
-     * @param object Object to make decision about.
+     * @param uri CrawlURI to make decision about.
      * @return true if the regex is not matched
      */
     @Override

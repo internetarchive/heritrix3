@@ -32,8 +32,8 @@ import org.archive.util.TmpDirTestCase;
 /**
  * Test BdbModule.
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public class BdbModuleTest extends TmpDirTestCase {
 

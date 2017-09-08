@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 /**
  * Wrapper for "keytool" utility main class. Loads class dynamically, trying
  * both the old java and new class names.
- * @see http://kris-sigur.blogspot.com/2014/10/heritrix-java-8-and-sunsecuritytoolskey.html
+ * @see <a href="http://kris-sigur.blogspot.com/2014/10/heritrix-java-8-and-sunsecuritytoolskey.html">http://kris-sigur.blogspot.com/2014/10/heritrix-java-8-and-sunsecuritytoolskey.html</a>
  */
 public class KeyTool {
 	public static void main(String[] args) {

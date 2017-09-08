@@ -476,7 +476,6 @@ public class Heritrix {
      * Exploit <code>-Dheritrix.home</code> if available to us.
      * Is current working dir if no heritrix.home property supplied.
      * @return Heritrix home directory.
-     * @throws IOException
      */
     protected static File getHeritrixHome() {
         String home = System.getProperty("heritrix.home");

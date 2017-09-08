@@ -29,8 +29,8 @@ import java.util.logging.Logger;
  * Stub Handler, catching and relaying WARNING/SEVERE events to 
  * AlertThreadGroup.
  * 
- * @contributor pjack
- * @contributor gojomo
+ * @author pjack
+ * @author gojomo
  */
 public class AlertHandler extends Handler {
     // install global AlertHandler

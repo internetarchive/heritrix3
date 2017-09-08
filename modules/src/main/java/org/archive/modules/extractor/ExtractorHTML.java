@@ -57,7 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * TODO: Compare against extractors based on HTML parsing libraries for 
  * accuracy, completeness, and speed.
  * 
- * @contributor gojomo
+ * @author gojomo
  */
 public class ExtractorHTML extends ContentExtractor implements InitializingBean {
 
@@ -187,8 +187,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // sorts are matched specially
     static final String EACH_ATTRIBUTE_EXTRACTOR =
       "(?is)\\s?((href)|(action)|(on\\w*)" // 1, 2, 3, 4 
-     +"|((?:src)|(?:lowsrc)|(?:background)|(?:cite)|(?:longdesc)" // ...
-     +"|(?:usemap)|(?:profile)|(?:datasrc))" // 5
+     +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)|(?:cite)" // ...
+     +"|(?:longdesc)|(?:usemap)|(?:profile)|(?:datasrc))" // 5
      +"|(codebase)|((?:classid)|(?:data))|(archive)|(code)" // 6, 7, 8, 9
      +"|(value)|(style)|(method)" // 10, 11, 12
      +"|([-\\w]{1,"+MAX_ATTR_NAME_REPLACE+"}))" // 13
@@ -201,7 +201,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // 2: HREF - single URI relative to doc base, or occasionally javascript:
     // 3: ACTION - single URI relative to doc base, or occasionally javascript:
     // 4: ON[WHATEVER] - script handler
-    // 5: SRC,LOWSRC,BACKGROUND,CITE,LONGDESC,USEMAP,PROFILE, or DATASRC
+    // 5: SRC,SRCSET,LOWSRC,BACKGROUND,CITE,LONGDESC,USEMAP,PROFILE, or DATASRC
     //    single URI relative to doc base
     // 6: CODEBASE - a single URI relative to doc base, affecting other
     //    attributes
@@ -576,7 +576,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     /**
-     * Consider a query-string-like collections of key=value[&key=value]
+     * Consider a query-string-like collections of key=value[&amp;key=value]
      * pairs for URI-like strings in the values. Where URI-like strings are
      * found, add as discovered outlink. 
      * 
@@ -604,11 +604,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     /**
      * Consider whether a given string is URI-like. If so, add as discovered 
      * outlink. 
-     * 
-     * @param curi origin CrawlURI
-     * @param queryString query-string-like string
-     * @param valueContext page context where found
-
      */
     protected void considerIfLikelyUri(CrawlURI curi, CharSequence candidate, 
             CharSequence valueContext, Hop hop) {
@@ -679,11 +674,25 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             logger.finest("embed (" + hop.getHopChar() + "): " + value.toString() +
                 " from " + curi);
         }
-        addLinkFromString(curi,
-            (value instanceof String)?
-                (String)value: value.toString(),
-            context, hop);
-        numberOfLinksExtracted.incrementAndGet();
+
+        if (context.equals(HTMLLinkContext.IMG_SRCSET.toString()) || context.equals(HTMLLinkContext.SOURCE_SRCSET.toString())) {
+
+            logger.fine("Found srcset listing: " + value.toString());
+
+            String[] links = value.toString().split(",");
+            for (int i=0; i < links.length; i++){
+                String link = links[i].trim().split(" +")[0];
+                logger.finer("Found " + link + " adding to outlinks.");
+                addLinkFromString(curi, link, context, hop);
+                numberOfLinksExtracted.incrementAndGet();
+            }
+        } else {
+            addLinkFromString(curi,
+                (value instanceof String)?
+                    (String)value: value.toString(),
+                context, hop);
+            numberOfLinksExtracted.incrementAndGet();
+        }
     }
 
     

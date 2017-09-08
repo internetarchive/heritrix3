@@ -134,7 +134,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     /** Update the robotstxt
     *
     * @param curi the crawl URI containing the fetched robots.txt
-    * @throws IOException
     */
    public synchronized void updateRobots(CrawlURI curi) {
 
@@ -237,7 +236,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     /**
      * Add an avatar.
      *
-     * @param ca Credential avatar to add to set of avatars.
+     * @param cred Credential avatar to add to set of avatars.
      */
     public void addCredential(Credential cred) {
         if (this.credentials == null) {
@@ -260,7 +259,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     /**
      * Get key to use doing lookup on server instances.
      * 
-     * @param cauri  CandidateURI we're to get server key for.
      * @return String to use as server key.
      * @throws URIException
      */
@@ -303,7 +301,6 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
      * This method will also return true if we haven't tried to get the
      * robots.txt for this server.
      *
-     * @param curi
      * @return true if the robots policy is expired.
      */
     public synchronized boolean isRobotsExpired(int validityDuration) {

@@ -449,7 +449,7 @@ public class QuotaEnforcer extends Processor {
      * 
      * @param curi CrawlURI whose processing is subject to a potential quota
      * limitation
-     * @param quotaKey settings key to get applicable quota
+     * @param key settings key to get applicable quota
      * @param actual current value to compare to quota 
      * @return true is CrawlURI is blocked by a quota, false otherwise
      */
