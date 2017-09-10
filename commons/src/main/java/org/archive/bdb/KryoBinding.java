@@ -21,7 +21,6 @@ package org.archive.bdb;
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.WeakReference;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.sleepycat.bind.EntryBinding;
@@ -36,7 +35,14 @@ import com.sleepycat.je.DatabaseEntry;
 public class KryoBinding<K> implements EntryBinding<K> {
 
     protected Class<K> baseClass;
-    protected AutoKryo kryo = new AutoKryo();
+
+    // Setup ThreadLocal of Kryo instances
+    public static final ThreadLocal<AutoKryo> kryos = new ThreadLocal<AutoKryo>() {
+        @Override
+        protected AutoKryo initialValue() {
+            return new AutoKryo();
+        };
+    };
 
     // This caches a ThreadLocal output buffer for re-use.
     private ThreadLocal<WeakReference<ByteArrayOutputStream>> threadBuffer = new ThreadLocal<WeakReference<ByteArrayOutputStream>>() {
@@ -56,19 +62,16 @@ public class KryoBinding<K> implements EntryBinding<K> {
      */
     public KryoBinding(Class<K> baseClass) {
         this.baseClass = baseClass;
-        kryo.autoregister(baseClass);
+        // kryos.get().autoregister(baseClass);
     }
 
-    public Kryo getKryo() {
-        return kryo;
-    }
-    
     private ByteArrayOutputStream getBuffer() {
         WeakReference<ByteArrayOutputStream> ref = threadBuffer.get();
         ByteArrayOutputStream ob = ref.get();
         if (ob == null) {
             ob = new ByteArrayOutputStream();
-            threadBuffer.set(new WeakReference<ByteArrayOutputStream>(ob));
+            threadBuffer
+                    .set(new WeakReference<ByteArrayOutputStream>(ob));
         }
         return ob;
     }
@@ -79,20 +82,14 @@ public class KryoBinding<K> implements EntryBinding<K> {
      * @see com.sleepycat.bind.serial.SerialBinding#entryToObject
      */
     public void objectToEntry(K object, DatabaseEntry entry) {
-        ByteArrayOutputStream bb = this.getBuffer();
-        bb.reset();
-
-        Output output = new Output(bb);
-        kryo.writeObject(output, object);
-        output.flush();
-        output.close();
-
-        entry.setData(bb.toByteArray());
+        Output output = new Output(getBuffer());
+        kryos.get().writeObject(output, object);
+        entry.setData(output.getBuffer());
     }
 
     @Override
     public K entryToObject(DatabaseEntry entry) {
         Input bb = new Input(entry.getData());
-        return kryo.readObjectOrNull(bb, baseClass);
+        return kryos.get().readObjectOrNull(bb, baseClass);
     }
 }

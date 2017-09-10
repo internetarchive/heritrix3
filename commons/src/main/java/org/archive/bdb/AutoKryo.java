@@ -2,14 +2,9 @@ package org.archive.bdb;
 
 import java.util.ArrayList;
 
-<<<<<<< HEAD
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
-=======
->>>>>>> 4c438d385211107da72e5f9dd635bb7ac4a194a8
 import com.esotericsoftware.kryo.Kryo;
-
-import sun.reflect.ReflectionFactory;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest
@@ -30,16 +25,14 @@ import sun.reflect.ReflectionFactory;
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {
     protected ArrayList<Class<?>> registeredClasses = new ArrayList<Class<?>>(); 
-
+    
     public AutoKryo() {
-        // Avoid necessity of a no-arg constructor, falling back on a different
-        // method if non is present:
+        // Avoid necessity of a no-arg constructor, falling back on a
+        // different method if non is present:
         setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(
                 new StdInstantiatorStrategy()));
-        // setInstantiatorStrategy(new StdInstantiatorStrategy());
-        //setInstantiatorStrategy(new SerializingInstantiatorStrategy());
     }
-    
+
     public void autoregister(Class<?> type) {
         if (registeredClasses.contains(type)) {
             return;
