@@ -122,7 +122,7 @@
 		<dependency>
             <groupId>it.unimi.dsi</groupId>
             <artifactId>fastutil</artifactId>
-            <version>8.1.0</version>
+            <version>7.2.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.anotherbigidea</groupId>
@@ -153,7 +153,7 @@
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>4.0.1</version>
+			<version>3.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
