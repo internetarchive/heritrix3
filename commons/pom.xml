@@ -36,7 +36,7 @@
 		<dependency>
 			<groupId>com.sleepycat</groupId>
 			<artifactId>je</artifactId>
-			<version>7.4.5</version>
+			<version>6.4.25</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
@@ -47,7 +47,13 @@
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
-			<version>1.1</version>
+			<version>1.2</version>
+			<exclusions>
+			   <exclusion>
+			      <groupId>javax.servlet</groupId>
+			      <artifactId>servlet-api</artifactId>
+			   </exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-net</groupId>

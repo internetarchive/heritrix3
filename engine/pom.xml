@@ -111,6 +111,10 @@
 						<exclude>**/TestAll.java</exclude>
 					</excludes>
 					<argLine>-Xmx1g</argLine>
+                    <systemPropertyVariables>
+                        <testtmpdir>${project.build.directory}/heritrix-junit-tests</testtmpdir>
+                        <heritrix.hostname>localhost</heritrix.hostname>
+                    </systemPropertyVariables>
 				</configuration>
 			</plugin>
 		</plugins>

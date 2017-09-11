@@ -201,6 +201,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
     protected void startHeritrix(String path) throws Exception {
         String authPassword = 
             (new BigInteger(SecureRandom.getSeed(16))).abs().toString(16);
+        LOGGER.info("Self-test server password: " + authPassword);
         String[] args = { "-j", path + "/jobs", "-a", authPassword };
         // TODO: add auth password? 
         heritrix = new Heritrix();
