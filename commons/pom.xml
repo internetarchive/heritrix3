@@ -48,12 +48,6 @@
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.2</version>
-			<exclusions>
-			   <exclusion>
-			      <groupId>javax.servlet</groupId>
-			      <artifactId>servlet-api</artifactId>
-			   </exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-net</groupId>
