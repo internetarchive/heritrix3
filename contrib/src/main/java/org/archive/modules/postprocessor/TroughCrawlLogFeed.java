@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -178,7 +179,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         } else if (o instanceof Number) {
             return o.toString();
         } else {
-            return "'" + o + "'";
+            return "'" + StringEscapeUtils.escapeSql(o.toString()) + "'";
         }
     }
 
