@@ -158,7 +158,13 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
     }
     
     protected SurtPrefixSet surtPrefixes = new SurtPrefixSet();
-
+    
+    public SurtPrefixSet getSurtPrefixes() {
+        return surtPrefixes;
+    }
+    public void setSurtPrefixes(SurtPrefixSet surtPrefixes) {
+        this.surtPrefixes = surtPrefixes;
+    }
     public SurtPrefixedDecideRule() {
     }
     
