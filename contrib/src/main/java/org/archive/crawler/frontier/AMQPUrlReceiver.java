@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -297,6 +298,8 @@ public class AMQPUrlReceiver
             }
 
             return connection;
+        } catch (TimeoutException e) {
+            throw new IOException(e);
         } finally {
             lock.unlock();
         }

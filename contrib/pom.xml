@@ -17,7 +17,7 @@
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-client</artifactId>
-			<version>0.96.1.1-cdh5.0.2</version>
+			<version>1.1.2</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jets3t</artifactId>
@@ -44,23 +44,23 @@
 		<dependency>
 			<groupId>com.rabbitmq</groupId>
 			<artifactId>amqp-client</artifactId>
-			<version>3.2.1</version>
+			<version>4.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.itextpdf</groupId>
 			<artifactId>itextpdf</artifactId>
-			<version>5.5.0</version>
+			<version>5.5.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
-			<version>3.1</version>
+			<version>3.4</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.10</artifactId>
-			<version>0.9.0.0</version>
+		   <groupId>org.apache.kafka</groupId>
+		   <artifactId>kafka_2.11</artifactId>
+		   <version>0.10.1.1</version>
 		</dependency>
 	</dependencies>
 	<repositories>
