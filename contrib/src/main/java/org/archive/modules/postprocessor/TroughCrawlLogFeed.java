@@ -276,7 +276,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     }
 
     protected void postUncrawledBatch() {
-        logger.info("posting batch of " + uncrawledBatch.size() + " crawled urls to " + writeUrl);
+        logger.info("posting batch of " + uncrawledBatch.size() + " uncrawled urls to " + writeUrl);
         synchronized (uncrawledBatch) {
             String sql = "insert into uncrawled_url ("
                     + "timestamp, url, hop_path, status_code, via, seed, host) values "
