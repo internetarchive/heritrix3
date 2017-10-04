@@ -97,7 +97,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     protected static final Logger logger = Logger.getLogger(TroughCrawlLogFeed.class.getName());
 
     protected static final int BATCH_MAX_TIME_MS = 20 * 1000;
-    protected static final int BATCH_MAX_SIZE = 500;
+    protected static final int BATCH_MAX_SIZE = 400;
 
     protected List<String> crawledBatch = new ArrayList<String>();
     protected long crawledBatchLastTime = System.currentTimeMillis();
@@ -192,7 +192,6 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     }
 
     protected void post(String statement) {
-        logger.info("posting to " + writeUrl + " - " + statement.substring(0, 200) + "...");
         HttpPost httpPost = new HttpPost(writeUrl);
         try {
             httpPost.setEntity(new StringEntity(statement));
@@ -202,7 +201,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                 throw new IOException("expected 200 OK but got " + response.getStatusLine() + " - " + payload);
             }
         } catch (Exception e) {
-            logger.warning("problem posting " + statement + " to " + writeUrl + " - " + e);
+            logger.warning("problem posting batch to " + writeUrl + " - " + e);
         } finally {
             httpPost.releaseConnection();
         }
@@ -262,6 +261,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     }
 
     protected void postCrawledBatch() {
+        logger.info("posting batch of " + crawledBatch.size() + " crawled urls to " + writeUrl);
         synchronized (crawledBatch) {
             String sql = "insert into crawled_url ("
                     + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
@@ -276,6 +276,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     }
 
     protected void postUncrawledBatch() {
+        logger.info("posting batch of " + uncrawledBatch.size() + " uncrawled urls to " + writeUrl);
         synchronized (uncrawledBatch) {
             String sql = "insert into uncrawled_url ("
                     + "timestamp, url, hop_path, status_code, via, seed, host) values "
