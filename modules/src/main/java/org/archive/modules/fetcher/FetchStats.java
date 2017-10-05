@@ -20,6 +20,7 @@ package org.archive.modules.fetcher;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -54,7 +55,15 @@ public class FetchStats extends CrawledBytesHistotable implements Serializable, 
     public static final String FETCH_NONRESPONSES = "fetchNonResponses"; // processing attempts resulting in no response
                                                                     // (both failures and temp deferrals)
 
-    public interface HasFetchStats {
+    public FetchStats() {
+        super();
+    }
+    // Added to attempt to ensure Kryo can serialize this class
+    public FetchStats(Comparator<String> comparator) {
+        super();
+    }
+    
+   public interface HasFetchStats {
         public FetchStats getSubstats();
     }
     public interface CollectsFetchStats {

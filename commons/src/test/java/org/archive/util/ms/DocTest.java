@@ -30,7 +30,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.logging.Logger;
 
-import org.apache.poi.hdf.extractor.WordDocument;
+import org.apache.poi.hwpf.extractor.WordExtractor;
 
 import junit.framework.TestCase;
 
@@ -89,9 +89,11 @@ public class DocTest extends TestCase {
         FileOutputStream fout = new FileOutputStream(output);
 
         try {
-            WordDocument wd = new WordDocument(finp);        
+            WordExtractor wd = new WordExtractor(finp);
             Writer writer = new OutputStreamWriter(fout, "UTF-16BE");
-            wd.writeAllText(writer);
+            writer.write(wd.getText());
+            writer.close();
+            wd.close();
         } finally {
             close(finp);
             close(fout);

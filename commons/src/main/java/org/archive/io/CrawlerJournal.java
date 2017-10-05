@@ -18,9 +18,6 @@
  */
 package org.archive.io;
 
-import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
-import it.unimi.dsi.mg4j.util.MutableString;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +37,9 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
 import org.archive.util.TextUtils;
+
+import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
+import it.unimi.dsi.lang.MutableString;
 
 /**
  * Utility class for a crawler journal/log that is compressed and 

@@ -19,7 +19,7 @@ public class OneLineSimpleLayout extends Layout {
 
         LogRecord logRecord = new LogRecord(level, event.getMessage().toString());
         logRecord.setLoggerName(event.getLoggerName());
-        logRecord.setMillis(event.getTimeStamp());
+        logRecord.setMillis(event.timeStamp);
         logRecord.setSourceClassName(event.getLoggerName());
         logRecord.setSourceMethodName(event.getLocationInformation().getMethodName());
         logRecord.setThreadID((int) Thread.currentThread().getId());
