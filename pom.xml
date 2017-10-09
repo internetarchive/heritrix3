@@ -372,8 +372,19 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-
-		</plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.9</version>
+                <configuration>
+                    <argLine>-Xmx1g</argLine>
+                    <systemPropertyVariables>
+                        <testtmpdir>${project.build.directory}/heritrix-junit-tests</testtmpdir>
+                        <heritrix.hostname>localhost</heritrix.hostname>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+		</plugins>      
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
