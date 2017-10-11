@@ -48,55 +48,31 @@ public class StatisticsSelfTest extends SelfTestBase {
         StatisticsTracker stats = heritrix.getEngine().getJob("selftest-job").getCrawlController().getStatisticsTracker();
         assertNotNull(stats);
 
-        long dnsCount = stats.getBytesPerHost("dns:");
         // Cope when DNS lookup may or may not be used for localhost:
-        if (dnsCount == -1) {
-            // No DNS record:
-            assertEquals(13, (long) stats.getCrawledBytes()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(12669, (long) stats.getCrawledBytes()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
+        long novelUrls = (long) stats.getCrawledBytes()
+                .get(CrawledBytesHistotable.WARC_NOVEL_URLS);
+        assertTrue(novelUrls == 14 || novelUrls == 13);
+        assertEquals(12669,
+                (long) stats.getCrawledBytes()
+                        .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES)
+                        - stats.getBytesPerHost("dns:"));
 
-            assertEquals(3,
-                    (long) stats.getServerCache().getHostFor("127.0.0.1")
-                            .getSubstats()
-                            .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(2942, (long) stats.getServerCache()
-                    .getHostFor("127.0.0.1").getSubstats()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
-            assertEquals(10,
-                    (long) stats.getServerCache().getHostFor("localhost")
-                            .getSubstats()
-                            .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(9727, (long) stats.getServerCache()
-                    .getHostFor("localhost").getSubstats()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
-        } else {
-            // DNS record exists:
-            assertEquals(14, (long) stats.getCrawledBytes()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(12669,
-                    (long) stats.getCrawledBytes()
-                            .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES)
-                            - stats.getBytesPerHost("dns:"));
-
-            assertEquals(3,
-                    (long) stats.getServerCache().getHostFor("127.0.0.1")
-                            .getSubstats()
-                            .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(2942, (long) stats.getServerCache()
-                    .getHostFor("127.0.0.1").getSubstats()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
-            assertEquals(10,
-                    (long) stats.getServerCache().getHostFor("localhost")
-                            .getSubstats()
-                            .get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-            assertEquals(9727, (long) stats.getServerCache()
-                    .getHostFor("localhost").getSubstats()
-                    .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
-            assertEquals(1, (long) stats.getServerCache().getHostFor("dns:")
-                    .getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
-        }
+        assertEquals(3, (long) stats.getServerCache().getHostFor("127.0.0.1")
+                .getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
+        assertEquals(2942,
+                (long) stats.getServerCache().getHostFor("127.0.0.1")
+                        .getSubstats()
+                        .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
+        assertEquals(10, (long) stats.getServerCache().getHostFor("localhost")
+                .getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
+        assertEquals(9727,
+                (long) stats.getServerCache().getHostFor("localhost")
+                        .getSubstats()
+                        .get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
+        // Cope when DNS lookup may or may not be used for localhost:
+        long novelDnsUrls = (long) stats.getServerCache().getHostFor("dns:")
+                .getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS);
+        assertTrue(novelDnsUrls == 1 | novelDnsUrls == 0);
     }
 
     protected void verifySourceStats() throws Exception {
@@ -119,18 +95,11 @@ public class StatisticsSelfTest extends SelfTestBase {
         assertEquals(9727l, (long) sourceStats.get("novel") - stats.getBytesPerHost("dns:"));
         assertEquals(11l, (long) sourceStats.get("novelCount"));
         long dnsCount = stats.getBytesPerHost("dns:");
-        // Cope when DNS lookup may or may not be used for localhost:
-        if (dnsCount == -1) {
-            // No DNS record:
-            assertEquals(9727l,
-                    (long) sourceStats.get("warcNovelContentBytes"));
-            assertEquals(10l, (long) sourceStats.get("warcNovelUrls"));
-        } else {
-            // DNS record exists:
-            assertEquals(9727l,
+        assertEquals(9727l,
                     (long) sourceStats.get("warcNovelContentBytes") - dnsCount);
-            assertEquals(11l, (long) sourceStats.get("warcNovelUrls"));
-        }
+        long urls = (long) sourceStats.get("warcNovelUrls");
+        // Cope when DNS lookup may or may not be used for localhost:
+        assertTrue(urls == 10 || urls == 11);
     }
 
 }
