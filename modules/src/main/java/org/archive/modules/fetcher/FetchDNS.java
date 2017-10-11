@@ -184,6 +184,7 @@ public class FetchDNS extends Processor {
                 if (address != null) {
                     targetHost.setIP(address, DEFAULT_TTL_FOR_NON_DNS_RESOLVES);
                     curi.setFetchStatus(S_GETBYNAME_SUCCESS);
+                    curi.setContentSize(0);
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine("Found address for " + dnsName +
                             " using native dns.");
