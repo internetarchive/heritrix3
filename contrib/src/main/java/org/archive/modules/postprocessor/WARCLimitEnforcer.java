@@ -22,7 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.CrawlStatus;
 import org.archive.modules.CrawlURI;
@@ -56,6 +57,17 @@ public class WARCLimitEnforcer extends Processor {
         return warcWriter;
     }
 
+    {
+        setWarcWriters(new ArrayList<WARCWriterProcessor>());
+    }
+    @SuppressWarnings("unchecked")
+    public List<WARCWriterProcessor> getWarcWriters() {
+        return (List<WARCWriterProcessor>) kp.get("warcWriters");
+    }
+    public void setWarcWriters(List<WARCWriterProcessor> warcWriters) {
+        kp.put("warcWriters", warcWriters);
+    }
+
     protected CrawlController controller;
     public CrawlController getCrawlController() {
         return this.controller;
@@ -76,14 +88,26 @@ public class WARCLimitEnforcer extends Processor {
             for (String k: limits.get(j).keySet()) {
                 Long limit = limits.get(j).get(k);
 
-                Map<String, AtomicLong> valueBucket = warcWriter.getStats().get(j);
-                if (valueBucket != null) {
-                    AtomicLong value = valueBucket.get(k);
-                    if (value != null
-                            && value.get() >= limit) {
-                        log.info("stopping crawl because warcwriter stats['" + j + "']['" + k + "']=" + value.get() + " exceeds limit " + limit);
-                        controller.requestCrawlStop(CrawlStatus.FINISHED_WRITE_LIMIT);
+                AtomicLong value = null;
+                if(getWarcWriters() !=null && getWarcWriters().size()>0) {
+                    value = new AtomicLong(0);
+                    for (WARCWriterProcessor w: getWarcWriters()) {
+                        Map<String, AtomicLong> valueBucket = w.getStats().get(j);
+                        if(valueBucket != null) {
+                            value.set(value.addAndGet(valueBucket.get(k).get()));
+                        }
                     }
+                }
+                else {
+                    Map<String, AtomicLong> valueBucket = warcWriter.getStats().get(j);
+                    if(valueBucket != null) {
+                        value = valueBucket.get(k);
+                    }
+                }
+                if (value != null
+                        && value.get() >= limit) {
+                    log.info("stopping crawl because warcwriter stats['" + j + "']['" + k + "']=" + value.get() + " exceeds limit " + limit);
+                    controller.requestCrawlStop(CrawlStatus.FINISHED_WRITE_LIMIT);
                 }
             }
         }
