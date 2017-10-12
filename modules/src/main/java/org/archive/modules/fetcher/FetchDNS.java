@@ -84,6 +84,18 @@ public class FetchDNS extends Processor {
     }
     
     /**
+     * Optionally, only allow InetAddress resolution, precisely because it 
+     * may use local 'hosts' files or other mechanisms.
+     */
+    protected boolean disableJavaDnsResolves = false; 
+    public boolean getDisableJavaDnsResolves() {
+        return disableJavaDnsResolves;
+    }
+    public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
+        this.disableJavaDnsResolves = disableJavaDnsResolves;
+    }
+    
+    /**
      * Used to do DNS lookups.
      */
     protected ServerCache serverCache;
@@ -158,10 +170,13 @@ public class FetchDNS extends Processor {
         // Try to get the records for this host (assume domain name)
         // TODO: Bug #935119 concerns potential hang here
         String lookupName = dnsName.endsWith(".") ? dnsName : dnsName + ".";
-        try {
-            rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
-        } catch (TextParseException e) {
-            rrecordSet = null;
+        // If we have not disabled JavaDNS, use that:
+        if( ! this.getDisableJavaDnsResolves()) {
+            try {
+                rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
+            } catch (TextParseException e) {
+                rrecordSet = null;
+            }
         }
         curi.setContentType("text/dns");
         if (rrecordSet != null) {
