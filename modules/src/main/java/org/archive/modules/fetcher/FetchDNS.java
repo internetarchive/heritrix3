@@ -87,8 +87,6 @@ public class FetchDNS extends Processor {
      * Optionally, only allow InetAddress resolution, precisely because it 
      * may use local 'hosts' files or other mechanisms.
      * 
-     * This will not work unless you also set allowNonDnsResolves.
-     * 
      * This should not generally be used in production as it will prevent 
      * DNS lookups from being recorded properly.
      * 
@@ -177,7 +175,7 @@ public class FetchDNS extends Processor {
         // TODO: Bug #935119 concerns potential hang here
         String lookupName = dnsName.endsWith(".") ? dnsName : dnsName + ".";
         // If we have not disabled JavaDNS, use that:
-        if( ! this.getDisableJavaDnsResolves()) {
+        if (!getDisableJavaDnsResolves()) {
             try {
                 rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
             } catch (TextParseException e) {
@@ -194,7 +192,7 @@ public class FetchDNS extends Processor {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Failed find of recordset for " + lookupName);
             }
-            if (getAcceptNonDnsResolves()||"localhost".equals(dnsName)) {
+            if (getAcceptNonDnsResolves()||getDisableJavaDnsResolves()||"localhost".equals(dnsName)) {
                 // Do lookup that bypasses javadns.
                 InetAddress address = null;
                 try {
