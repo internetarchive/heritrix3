@@ -86,6 +86,12 @@ public class FetchDNS extends Processor {
     /**
      * Optionally, only allow InetAddress resolution, precisely because it 
      * may use local 'hosts' files or other mechanisms.
+     * 
+     * This will not work unless you also set allowNonDnsResolves.
+     * 
+     * This should not generally be used in production as it will prevent 
+     * DNS lookups from being recorded properly.
+     * 
      */
     protected boolean disableJavaDnsResolves = false; 
     public boolean getDisableJavaDnsResolves() {
