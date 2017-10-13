@@ -157,6 +157,12 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
             gotSomething = true;
         }
        
+        // special deeming for connection-failure
+         if (curi.getFetchStatus() == S_CONNECT_FAILED) {
+             curi.setFetchStatus(S_DEEMED_NOT_FOUND);
+             gotSomething = true;
+         }
+
        if (!gotSomething) {
            // robots.txt fetch failed and exceptions (ignore/deeming) don't apply; no valid robots info yet
            validRobots = false;
