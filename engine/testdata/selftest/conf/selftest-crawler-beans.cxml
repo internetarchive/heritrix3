@@ -74,6 +74,8 @@ crawlController.pauseAtStart=false
  <bean id="preconditionEnforcer" class="org.archive.crawler.prefetch.PreconditionEnforcer">
  </bean>
  <bean id="fetchDns" class="org.archive.modules.fetcher.FetchDNS">
+     <!-- This setting is not recommended for production crawling -->
+     <property name="disableJavaDnsResolves" value="true"/>
  </bean>
  <bean id="fetchHttp" class="org.archive.modules.fetcher.FetchHTTP">
  </bean>

@@ -72,15 +72,35 @@ public class FetchDNS extends Processor {
     protected InetAddress serverInetAddr = null;
 
     /**
-     * If a DNS lookup fails, whether or not to fallback to InetAddress
+     * If a DNS lookup fails, whether or not to fall back to InetAddress
      * resolution, which may use local 'hosts' files or other mechanisms.
      */
-    protected boolean acceptNonDnsResolves = false; 
+    {
+        setAcceptNonDnsResolves(false);
+    }
     public boolean getAcceptNonDnsResolves() {
-        return acceptNonDnsResolves;
+        return (Boolean) kp.get("acceptNonDnsResolves");
     }
     public void setAcceptNonDnsResolves(boolean acceptNonDnsResolves) {
-        this.acceptNonDnsResolves = acceptNonDnsResolves;
+        kp.put("acceptNonDnsResolves",acceptNonDnsResolves);
+    }
+    
+    /**
+     * Optionally, only allow InetAddress resolution, precisely because it 
+     * may use local 'hosts' files or other mechanisms.
+     * 
+     * This should not generally be used in production as it will prevent 
+     * DNS lookups from being recorded properly.
+     * 
+     */
+    {
+        setDisableJavaDnsResolves(false);
+    }
+    public boolean getDisableJavaDnsResolves() {
+        return (Boolean) kp.get("disableJavaDnsResolves");
+    }
+    public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
+        kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
     }
     
     /**
@@ -158,10 +178,13 @@ public class FetchDNS extends Processor {
         // Try to get the records for this host (assume domain name)
         // TODO: Bug #935119 concerns potential hang here
         String lookupName = dnsName.endsWith(".") ? dnsName : dnsName + ".";
-        try {
-            rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
-        } catch (TextParseException e) {
-            rrecordSet = null;
+        // If we have not disabled JavaDNS, use that:
+        if (!getDisableJavaDnsResolves()) {
+            try {
+                rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
+            } catch (TextParseException e) {
+                rrecordSet = null;
+            }
         }
         curi.setContentType("text/dns");
         if (rrecordSet != null) {
@@ -173,7 +196,7 @@ public class FetchDNS extends Processor {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Failed find of recordset for " + lookupName);
             }
-            if (getAcceptNonDnsResolves()||"localhost".equals(dnsName)) {
+            if (getAcceptNonDnsResolves()||getDisableJavaDnsResolves()||"localhost".equals(dnsName)) {
                 // Do lookup that bypasses javadns.
                 InetAddress address = null;
                 try {
@@ -184,6 +207,7 @@ public class FetchDNS extends Processor {
                 if (address != null) {
                     targetHost.setIP(address, DEFAULT_TTL_FOR_NON_DNS_RESOLVES);
                     curi.setFetchStatus(S_GETBYNAME_SUCCESS);
+                    curi.setContentSize(0);
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine("Found address for " + dnsName +
                             " using native dns.");
