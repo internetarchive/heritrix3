@@ -72,15 +72,17 @@ public class FetchDNS extends Processor {
     protected InetAddress serverInetAddr = null;
 
     /**
-     * If a DNS lookup fails, whether or not to fallback to InetAddress
+     * If a DNS lookup fails, whether or not to fall back to InetAddress
      * resolution, which may use local 'hosts' files or other mechanisms.
      */
-    protected boolean acceptNonDnsResolves = false; 
+    {
+        setAcceptNonDnsResolves(false);
+    }
     public boolean getAcceptNonDnsResolves() {
-        return acceptNonDnsResolves;
+        return (Boolean) kp.get("acceptNonDnsResolves");
     }
     public void setAcceptNonDnsResolves(boolean acceptNonDnsResolves) {
-        this.acceptNonDnsResolves = acceptNonDnsResolves;
+        kp.put("acceptNonDnsResolves",acceptNonDnsResolves);
     }
     
     /**
@@ -91,12 +93,14 @@ public class FetchDNS extends Processor {
      * DNS lookups from being recorded properly.
      * 
      */
-    protected boolean disableJavaDnsResolves = false; 
+    {
+        setDisableJavaDnsResolves(false);
+    }
     public boolean getDisableJavaDnsResolves() {
-        return disableJavaDnsResolves;
+        return (Boolean) kp.get("disableJavaDnsResolves");
     }
     public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
-        this.disableJavaDnsResolves = disableJavaDnsResolves;
+        kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
     }
     
     /**
