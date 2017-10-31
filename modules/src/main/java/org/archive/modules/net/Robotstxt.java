@@ -20,6 +20,7 @@ package org.archive.modules.net;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -80,28 +81,21 @@ public class Robotstxt implements Serializable {
     }
 
     protected void initializeFromReader(BufferedReader reader) throws IOException {
+        BoundedLineReader lineReader = new BoundedLineReader(reader, MAX_SIZE);
         String read;
-        long charCount = 0;
         // current is the disallowed paths for the preceding User-Agent(s)
         RobotsDirectives current = null;
         while (reader != null) {
-            // we count characters instead of bytes because the byte count isn't easily available 
-            if (charCount >= MAX_SIZE) {
-                logger.warning("processed " + charCount + " characters, ignoring the rest (see HER-1990)");
-                reader.close();
-                reader = null;
-                continue;
-            }
-
             do {
-                read = reader.readLine();
-                if (read != null) { 
-                    charCount += read.length();
-                }
+                read = lineReader.readLine();
                 // Skip comments & blanks
-            } while (read != null && charCount < MAX_SIZE
-                    && ((read = read.trim()).startsWith("#") || read.length() == 0));
+            } while (read != null && ((read = read.trim()).startsWith("#") || read.length() == 0));
             if (read == null) {
+                if (lineReader.reachedLimit()) {
+                    // we count characters instead of bytes because the byte count isn't easily available
+                    logger.warning("processed " + lineReader.getCharsProcessed() +
+                            " characters, ignoring the rest (see HER-1990)");
+                }
                 reader.close();
                 reader = null;
             } else {
@@ -191,6 +185,65 @@ public class Robotstxt implements Serializable {
                 }
                 // unknown line; do nothing for now
             }
+        }
+    }
+
+    /**
+     * Read lines from a reader until a character limit is reached.
+     *
+     * Always returns whole lines. If the limit would cause a partial line to be
+     * read the data is discarded.
+     */
+    private static class BoundedLineReader {
+        private final Reader reader;
+        private long remaining;
+        private long charsProcessed = 0;
+
+        BoundedLineReader(Reader reader, long limit) {
+            this.reader = reader;
+            this.remaining = limit;
+        }
+
+        String readLine() throws IOException {
+            StringBuilder buffer = new StringBuilder();
+
+            while (!reachedLimit()) {
+                int c = reader.read();
+
+                if (c < 0) { // end of file
+                    if (buffer.length() > 0) { // file didn't end on a linefeed
+                        charsProcessed += buffer.length();
+                        return buffer.toString();
+                    } else {
+                        return null;
+                    }
+                }
+
+                remaining--;
+
+                if (c == '\r' || c == '\n') {
+                    charsProcessed += buffer.length() + 1;
+                    return buffer.toString();
+                }
+
+                buffer.append((char) c);
+            }
+
+            return null;
+        }
+
+        boolean reachedLimit() {
+            return remaining <= 0;
+        }
+
+        /**
+         * Returns the number of characters that have been read.
+         *
+         * Includes newline characters.
+         * Excludes any partial line data read before the limit is reached.
+         */
+        long getCharsProcessed() {
+            return charsProcessed;
         }
     }
 

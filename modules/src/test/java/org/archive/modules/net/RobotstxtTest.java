@@ -227,4 +227,18 @@ public class RobotstxtTest extends TestCase {
 
         assertEquals(99f, rt.getDirectivesFor("a").getCrawlDelay());
     }
+
+    public void testSizeLimit() throws IOException {
+        StringBuilder builder = new StringBuilder(
+                "User-agent: a\n" +
+                "  Disallow: /\n" +
+                "User-Agent: b\n");
+        for (int i = 0; i < Robotstxt.MAX_SIZE; i++) {
+            builder.append(' ');
+        }
+        builder.append("Disallow: /\n");
+        Robotstxt rt = new Robotstxt(new BufferedReader(new StringReader(builder.toString())));
+        assertFalse("we should parse the first part", rt.getDirectivesFor("a").allows("/foo"));
+        assertTrue("but ignore anything after the size limit", rt.getDirectivesFor("b").allows("/foo"));
+    }
 }
