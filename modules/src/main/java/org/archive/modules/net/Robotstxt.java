@@ -93,10 +93,14 @@ public class Robotstxt implements Serializable {
 
         String[] lines = LINE_SEPARATOR.split(buffer);
         if (buffer.limit() == buffer.capacity()) {
-            int processed = buffer.capacity() - lines[lines.length - 1].length();
+            int processed = buffer.capacity();
+            if (lines.length != 0) {
+                // discard the partial line at the end so we don't process a truncated path
+                int last = lines.length - 1;
+                processed -= lines[last].length();
+                lines[last] = "";
+            }
             logger.warning("processed " + processed + " characters, ignoring the rest (see HER-1990)");
-            // discard the partial line at the end so we don't process a truncated path
-            lines[lines.length - 1] = "";
         }
 
         // current is the disallowed paths for the preceding User-Agent(s)

@@ -243,4 +243,12 @@ public class RobotstxtTest extends TestCase {
         assertTrue("and also ignore any lines after the size limit",
                 rt.getDirectivesFor("c").allows("/foo"));
     }
+
+    public void testAllBlankLines() throws IOException {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < Robotstxt.MAX_SIZE; i++) {
+            builder.append('\n');
+        }
+        new Robotstxt(new StringReader(builder.toString()));
+    }
 }
