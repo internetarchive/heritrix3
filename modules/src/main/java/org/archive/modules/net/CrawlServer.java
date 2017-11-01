@@ -174,10 +174,9 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 
         InputStream contentBodyStream = null;
         try {
-            BufferedReader reader;
             contentBodyStream = curi.getRecorder().getContentReplayInputStream();
 
-            reader = new BufferedReader(new InputStreamReader(contentBodyStream));
+            InputStreamReader reader = new InputStreamReader(contentBodyStream);
             robotstxt = new Robotstxt(reader);
             validRobots = true;
         } catch (IOException e) {
