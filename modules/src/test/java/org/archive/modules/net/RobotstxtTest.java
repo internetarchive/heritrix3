@@ -20,6 +20,7 @@ package org.archive.modules.net;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 
@@ -29,7 +30,7 @@ import org.archive.bdb.AutoKryo;
 
 public class RobotstxtTest extends TestCase {
     public void testParseRobots() throws IOException {
-        BufferedReader reader = new BufferedReader(new StringReader("BLAH"));
+        Reader reader = new StringReader("BLAH");
         Robotstxt r = new Robotstxt(reader);
         assertFalse(r.hasErrors);
         assertEquals(0,r.getNamedUserAgents().size());
@@ -57,8 +58,7 @@ public class RobotstxtTest extends TestCase {
     }
     
     static Robotstxt sampleRobots1() throws IOException {
-        BufferedReader reader = new BufferedReader(
-            new StringReader(
+        Reader reader = new StringReader(
                 "User-agent: *\n" +
                 "Disallow: /cgi-bin/\n" +
                 "Disallow: /details/software\n" +
@@ -78,13 +78,12 @@ public class RobotstxtTest extends TestCase {
                 "Disallow: /\n" +
                 "Crawl-Delay: 20\n"+
                 "Allow: /images/\n"
-            ));
+            );
         return new Robotstxt(reader); 
     }
     
     Robotstxt whitespaceFlawedRobots() throws IOException {
-        BufferedReader reader = new BufferedReader(
-            new StringReader(
+        Reader reader = new StringReader(
                 "  User-agent: *\n" +
                 " Disallow: /cgi-bin/\n" +
                 "  Disallow: /details/software\n" +
@@ -100,7 +99,7 @@ public class RobotstxtTest extends TestCase {
                 "  Disallow: /\n" +
                 " Crawl-Delay: 20\n"+
                 " Allow: /images/\n"
-            ));
+            );
         return new Robotstxt(reader); 
     }
     
@@ -144,8 +143,7 @@ public class RobotstxtTest extends TestCase {
     }
 
     Robotstxt htmlMarkupRobots() throws IOException {
-        BufferedReader reader = new BufferedReader(
-            new StringReader(
+        Reader reader = new StringReader(
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\"><HTML>\n"
                 +"<HEAD>\n"
                 +"<TITLE>/robots.txt</TITLE>\n"
@@ -157,7 +155,7 @@ public class RobotstxtTest extends TestCase {
                 +"\n"
                 +"</BODY>\n"
                 +"</HTML>\n"
-            ));
+            );
         return new Robotstxt(reader); 
     }
     
@@ -188,7 +186,7 @@ public class RobotstxtTest extends TestCase {
         "Disallow:/service\n";
 
         StringReader sr = new StringReader(TEST_ROBOTS_TXT);
-        Robotstxt rt = new Robotstxt(new BufferedReader(sr));
+        Robotstxt rt = new Robotstxt(sr);
         {
             RobotsDirectives da = rt.getDirectivesFor("a", false);
             RobotsDirectives db = rt.getDirectivesFor("b", false);
@@ -216,7 +214,7 @@ public class RobotstxtTest extends TestCase {
                 + "User-agent: a\n"
                 + "Crawl-delay: 99\n";
         StringReader sr = new StringReader(TEST_ROBOTS_TXT);
-        Robotstxt rt = new Robotstxt(new BufferedReader(sr));
+        Robotstxt rt = new Robotstxt(sr);
 
         assertFalse(rt.getDirectivesFor("a").allows("/foo"));
 
@@ -226,5 +224,31 @@ public class RobotstxtTest extends TestCase {
         assertEquals(5f, rt.getDirectivesFor("c").getCrawlDelay());
 
         assertEquals(99f, rt.getDirectivesFor("a").getCrawlDelay());
+    }
+
+    public void testSizeLimit() throws IOException {
+        StringBuilder builder = new StringBuilder(
+                "User-agent: a\n" +
+                        "  Disallow: /\n" +
+                        "User-Agent: b\nDisallow: /");
+        for (int i = 0; i < Robotstxt.MAX_SIZE; i++) {
+            builder.append(' ');
+        }
+        builder.append("\nUser-Agent: c\nDisallow: /\n");
+        Robotstxt rt = new Robotstxt(new StringReader(builder.toString()));
+        assertFalse("we should parse the first few lines",
+                rt.getDirectivesFor("a").allows("/foo"));
+        assertTrue("ignore the line that breaks the size limit",
+                rt.getDirectivesFor("b").allows("/foo"));
+        assertTrue("and also ignore any lines after the size limit",
+                rt.getDirectivesFor("c").allows("/foo"));
+    }
+
+    public void testAllBlankLines() throws IOException {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < Robotstxt.MAX_SIZE; i++) {
+            builder.append('\n');
+        }
+        new Robotstxt(new StringReader(builder.toString()));
     }
 }
