@@ -47,14 +47,14 @@ public class StatisticsSelfTest extends SelfTestBase {
     protected void verifyWarcStats() {
         StatisticsTracker stats = heritrix.getEngine().getJob("selftest-job").getCrawlController().getStatisticsTracker();
         assertNotNull(stats);
-        assertEquals(14, (long) stats.getCrawledBytes().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
+        assertEquals(13, (long) stats.getCrawledBytes().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
         assertEquals(12669, (long) stats.getCrawledBytes().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES) - stats.getBytesPerHost("dns:"));
 
         assertEquals(3, (long) stats.getServerCache().getHostFor("127.0.0.1").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
         assertEquals(2942, (long) stats.getServerCache().getHostFor("127.0.0.1").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
         assertEquals(10, (long) stats.getServerCache().getHostFor("localhost").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
         assertEquals(9727, (long) stats.getServerCache().getHostFor("localhost").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_CONTENT_BYTES));
-        assertEquals(1, (long) stats.getServerCache().getHostFor("dns:").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
+        assertEquals(0, (long) stats.getServerCache().getHostFor("dns:").getSubstats().get(CrawledBytesHistotable.WARC_NOVEL_URLS));
     }
 
     protected void verifySourceStats() throws Exception {
@@ -77,7 +77,7 @@ public class StatisticsSelfTest extends SelfTestBase {
         assertEquals(9727l, (long) sourceStats.get("novel") - stats.getBytesPerHost("dns:"));
         assertEquals(11l, (long) sourceStats.get("novelCount"));
         assertEquals(9727l, (long) sourceStats.get("warcNovelContentBytes") - stats.getBytesPerHost("dns:"));
-        assertEquals(11l, (long) sourceStats.get("warcNovelUrls"));
+        assertEquals(10l, (long) sourceStats.get("warcNovelUrls"));
     }
 
 }

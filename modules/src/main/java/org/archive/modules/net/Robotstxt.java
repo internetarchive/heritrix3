@@ -18,15 +18,17 @@
  */
 package org.archive.modules.net;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.Serializable;
+import java.nio.CharBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.bdb.AutoKryo;
@@ -42,7 +44,8 @@ public class Robotstxt implements Serializable {
     private static final Logger logger =
         Logger.getLogger(Robotstxt.class.getName());
 
-    protected static final long MAX_SIZE = 500*1024;
+    protected static final int MAX_SIZE = 500*1024;
+    private static final Pattern LINE_SEPARATOR = Pattern.compile("\r\n|\r|\n");
     
     // all user agents contained in this robots.txt
     // in order of declaration
@@ -62,12 +65,16 @@ public class Robotstxt implements Serializable {
     public Robotstxt() {
     }
 
-    public Robotstxt(BufferedReader reader) throws IOException {
-        initializeFromReader(reader);
+    public Robotstxt(Reader reader) throws IOException {
+        try {
+            initializeFromReader(reader);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
     }
 
     public Robotstxt(ReadSource customRobots) {
-        BufferedReader reader = new BufferedReader(customRobots.obtainReader());
+        Reader reader = customRobots.obtainReader();
         try {
             initializeFromReader(reader);
         } catch (IOException e) {
@@ -79,32 +86,28 @@ public class Robotstxt implements Serializable {
         }
     }
 
-    protected void initializeFromReader(BufferedReader reader) throws IOException {
-        String read;
-        long charCount = 0;
+    protected void initializeFromReader(Reader reader) throws IOException {
+        CharBuffer buffer = CharBuffer.allocate(MAX_SIZE);
+        while (buffer.hasRemaining() && reader.read(buffer) >= 0) ;
+        buffer.flip();
+
+        String[] lines = LINE_SEPARATOR.split(buffer);
+        if (buffer.limit() == buffer.capacity()) {
+            int processed = buffer.capacity();
+            if (lines.length != 0) {
+                // discard the partial line at the end so we don't process a truncated path
+                int last = lines.length - 1;
+                processed -= lines[last].length();
+                lines[last] = "";
+            }
+            logger.warning("processed " + processed + " characters, ignoring the rest (see HER-1990)");
+        }
+
         // current is the disallowed paths for the preceding User-Agent(s)
         RobotsDirectives current = null;
-        while (reader != null) {
-            // we count characters instead of bytes because the byte count isn't easily available 
-            if (charCount >= MAX_SIZE) {
-                logger.warning("processed " + charCount + " characters, ignoring the rest (see HER-1990)");
-                reader.close();
-                reader = null;
-                continue;
-            }
-
-            do {
-                read = reader.readLine();
-                if (read != null) { 
-                    charCount += read.length();
-                }
-                // Skip comments & blanks
-            } while (read != null && charCount < MAX_SIZE
-                    && ((read = read.trim()).startsWith("#") || read.length() == 0));
-            if (read == null) {
-                reader.close();
-                reader = null;
-            } else {
+        for (String read: lines) {
+            read = read.trim();
+            if (!read.isEmpty() && !read.startsWith("#")) {
                 // remove any html markup
                 read = read.replaceAll("<[^>]+>","");
                 int commentIndex = read.indexOf("#");

@@ -185,8 +185,7 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         assertEquals(4, wwp.getStats().get("totals").get("numRecords").get());
         assertEquals(responseBytes.length, wwp.getStats().get("response").get("contentBytes").get());
 
-        // XXX fails currently, needs https://github.com/iipc/webarchive-commons/pull/51
-        // assertEquals(warc.length(), wwp.getStats().get("totals").get("sizeOnDisk").get());
+        assertEquals(warc.length(), wwp.getStats().get("totals").get("sizeOnDisk").get());
     }
 
     /**
