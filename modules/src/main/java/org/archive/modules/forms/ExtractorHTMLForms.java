@@ -144,17 +144,17 @@ public class ExtractorHTMLForms extends Extractor {
             int offsetInt = (Integer) offset;
             int maxSize = 50000;
             CharSequence relevantSequence = cs.subSequence(offsetInt, cs.length());
-            String method = findAttributeValueGroup("(?i)^[^>]*\\smethod\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,relevantSequence);
-            String action = findAttributeValueGroup("(?i)^[^>]*\\saction\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,relevantSequence);
-            String enctype = findAttributeValueGroup("(?i)^[^>]*\\senctype\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,relevantSequence);
+            String method = findAttributeValueGroup("(?i)^[^>]*\\smethod\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,relevantSequence);
+            String action = findAttributeValueGroup("(?i)^[^>]*\\saction\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,relevantSequence);
+            String enctype = findAttributeValueGroup("(?i)^[^>]*\\senctype\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,relevantSequence);
             HTMLForm form = new HTMLForm();
             form.setMethod(method);
             form.setAction(action);
             form.setEnctype(enctype);
             for(CharSequence input : findGroups("(?i)(<input\\s[^>]*>)|(</?form>)",1,relevantSequence)) {
-                String type = findAttributeValueGroup("(?i)^[^>]*\\stype\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,input);
-                String name = findAttributeValueGroup("(?i)^[^>]*\\sname\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,input);
-                String value = findAttributeValueGroup("(?i)^[^>]*\\svalue\\s*=\\s*([^>\\s]{1,maxSize})[^>]*>",1,input);
+                String type = findAttributeValueGroup("(?i)^[^>]*\\stype\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,input);
+                String name = findAttributeValueGroup("(?i)^[^>]*\\sname\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,input);
+                String value = findAttributeValueGroup("(?i)^[^>]*\\svalue\\s*=\\s*([^>\\s]\{1,maxSize\})[^>]*>",1,input);
                 Matcher m = TextUtils.getMatcher("(?i)^[^>]*\\schecked\\s*[^>]*>", input);
                 boolean checked = false;
                 try {
