@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 import javax.management.openmbean.CompositeData;
 
@@ -32,6 +34,7 @@ import org.archive.crawler.framework.CrawlerProcessorTestBase;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.framework.Frontier.FrontierGroup;
 import org.archive.crawler.frontier.FrontierJournal;
+import org.archive.crawler.frontier.WorkQueue;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
@@ -289,6 +292,22 @@ public class QuotaEnforcerTest extends CrawlerProcessorTestBase {
         @Override
         public void endDisposition() {
         }
+		@Override
+		public long exportPendingUris(PrintWriter writer) {
+			return 0;
+		}
+		@Override
+		public ObjectIdentityCache<WorkQueue> getAllQueues() {
+			return null;
+		}
+		@Override
+		public BlockingQueue<String> getReadyClassQueues() {
+			return null;
+		}
+		@Override
+		public Set<WorkQueue> getInProcessQueues() {
+			return null;
+		}
     }
 
     // separate methods to make it easier to know what failed
