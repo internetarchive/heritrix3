@@ -128,6 +128,14 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         return bdb;
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+    	if (bdb != null) {
+    		bdb.close();
+    	}
+    	super.tearDown();
+    }
+
     public void testBasics() throws InterruptedException, IOException {
         historyStore().store.clear();
         assertTrue(historyStore().store.isEmpty());
