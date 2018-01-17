@@ -19,11 +19,13 @@
 
 package org.archive.crawler.prefetch;
 
-import static org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.crawler.framework.Scoper;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
+import org.archive.modules.fetcher.FetchStatusCodes;
 
 /**
  * Simple single-URI scoper, considers passed-in URI as candidate; sets 
@@ -35,11 +37,19 @@ public class CandidateScoper extends Scoper {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
+    private static final Logger logger = Logger.getLogger(CandidateScoper.class.getName());
+
     @Override
     protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
-        if (!isInScope(curi)) {
-            // Scope rejected
-            curi.setFetchStatus(S_OUT_OF_SCOPE);
+        try {
+            if (!isInScope(curi)) {
+                // Scope rejected
+                curi.setFetchStatus(FetchStatusCodes.S_OUT_OF_SCOPE);
+                return ProcessResult.FINISH;
+            }
+        } catch (Exception e) {
+            curi.setFetchStatus(FetchStatusCodes.S_RUNTIME_EXCEPTION);
+            logger.log(Level.SEVERE, "problem scoping " + curi, e);
             return ProcessResult.FINISH;
         }
         return ProcessResult.PROCEED;
