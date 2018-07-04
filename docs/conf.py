@@ -19,12 +19,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Heritrix'
+project = 'Heritrix Documentation'
 copyright = '2018 Internet Archive and contributors'
 author = 'Internet Archive and contributors'
 
 # The short X.Y version
-version = '3.1'
+version = '3.2.0'
 # The full version, including alpha/beta/rc tags
 release = ''
 
