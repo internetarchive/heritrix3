@@ -231,8 +231,8 @@ Copy Job
    :form copyTo: the name of the new job or profile configuration
 
    :form asProfile: whether to copy the job as a runnable configuration or as a
-   non-runnable profile. The value ``on`` means the job will be copied as a
-   profile. If omitted the job will be copied as a runnable configuration.
+     non-runnable profile. The value ``on`` means the job will be copied as a
+     profile. If omitted the job will be copied as a runnable configuration.
 
    **HTML Example**
 
@@ -309,10 +309,7 @@ Submitting a CXML Job Configuration File
 
        curl -v -T my-crawler-beans.cxml -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/jobdir/crawler-beans.cxml
 
-API Response
-^^^^^^^^^^^^
-
-On success, the Heritrix REST API will return a HTTP 200 with no body.
+   :statuscode 200: On success, the Heritrix REST API will return a HTTP 200 with no body.
 
 Conventions and Assumptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
