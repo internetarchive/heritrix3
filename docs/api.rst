@@ -9,147 +9,11 @@ information about Heritrix, visit \ http://crawler.archive.org/.
 This document is intended for application developers and administrators
 interested in controlling the Heritrix Web crawler through its REST API.
 
-Conventions and Assumptions
----------------------------
-
-The following conventions are used in this document.
-
-+-----------------------------------+-----------------------------------+
-| | Convention                      | | Description                     |
-+===================================+===================================+
-| (identifier)                      | A identifier surrounded by        |
-|                                   | parenthesis indicates a           |
-|                                   | user-defined value. For example,  |
-|                                   | (heritrixhostname) indicates a    |
-|                                   | user-defined hostname that is     |
-|                                   | running Heritrix.                 |
-+-----------------------------------+-----------------------------------+
-| [identifier1,identifier2,...]     | Multiple identifiers surrounded   |
-|                                   | by brackets indicate a predefined |
-|                                   | set of values. For example,       |
-|                                   | [on,off] indicates a set of       |
-|                                   | values comprised of the literals, |
-|                                   | "on" and "off".                   |
-+-----------------------------------+-----------------------------------+
-
-The following curl parameters are used when invoking the API.
-
-+-----------------------------------+-----------------------------------+
-| | curl Parameter                  | | Description                     |
-+===================================+===================================+
-| -v                                | Verbose. Output a detailed        |
-|                                   | account of the curl command to    |
-|                                   | standard out.                     |
-+-----------------------------------+-----------------------------------+
-| -d                                | Data. These are the name/value    |
-|                                   | pairs that are send in the body   |
-|                                   | of a POST.                        |
-+-----------------------------------+-----------------------------------+
-| -k                                | Insecure. Allows connections to   |
-|                                   | SSL sites without certificates.   |
-+-----------------------------------+-----------------------------------+
-| | -u                              | User. Allows the submission of a  |
-|                                   | username and password to          |
-|                                   | authenticate the HTTP request.    |
-+-----------------------------------+-----------------------------------+
-| --anyauth                         | Any authentication type. Allows   |
-|                                   | authentication of the request     |
-|                                   | based on any type of              |
-|                                   | authentication method.            |
-+-----------------------------------+-----------------------------------+
-| --location                        | Follows HTTP redirects. This      |
-|                                   | option is used so that API calls  |
-|                                   | that return data (such as HTML)   |
-|                                   | will not halt upon receipt of a   |
-|                                   | redirect code (such as an HTTP    |
-|                                   | 303).                             |
-+-----------------------------------+-----------------------------------+
-| | -H                              | Set the value of an HTTP header.  |
-|                                   | For example, "Accept:             |
-|                                   | application/xml".                 |
-+-----------------------------------+-----------------------------------+
-
-It is assumed that the reader has a working knowledge of the HTTP
-protocol and Heritrix functionality.  Also, the examples assume that
-Heritrix is run with an administrative username and password of "admin."
-
-REST
-----
-
-Representational State Transfer (REST) is a software architecture for
-distributed hypermedia systems such as the World Wide Web (WWW). REST is
-built on the concept of representations of resources. Resources can be
-any coherent and meaningful concept that may be addressed. A URI is an
-example of a resource. The representation of the resource is typically a
-document that captures the current or intended state of the resource. An
-example of a representation of a resource is an HTML page.
-
-Heritrix uses REST to expose its functionality. The REST implementation
-used by Heritrix is Restlet. Restlet implements the concepts defined by
-REST, including resources and representations. It also provides a REST
-container that processes RESTful requests. The container is the Noelios
-Restlet Engine. For detailed information on Restlet,
-visit \ http://www.restlet.org/.
-
-Heritrix Restlet API
---------------------
-
-Heritrix exposes its REST functionality through HTTPS. The HTTPS
-protocol is used to send requests to retrieve or modify configuration
-settings and manage crawl jobs.
-
-Requirements for API Invocation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 Any client that supports HTTPS can be used to invoke the Heritrix API.
-The most common clients are command line tools such as curl and wget.
-These command line tools are typically found in Unix environments but
-can also be run on a Windows environment by
-installing \ `Cygwin <http://www.cygwin.com/>`__.  Cygwin is a free
-Linux emulation environment for Windows.
-
-API Format
-~~~~~~~~~~
-
-The format used to describe each API is as follows.
-
-+-----------------------------------+-----------------------------------+
-| | Name                            | | Description                     |
-+===================================+===================================+
-| | API Name                        | The name assigned to the API. The |
-|                                   | name is a single word or short    |
-|                                   | phrase that encapsulates the      |
-|                                   | purpose of the API call.          |
-+-----------------------------------+-----------------------------------+
-| URI                               | The URI to call when invoking the |
-|                                   | API.                              |
-+-----------------------------------+-----------------------------------+
-| Description                       | The description of the API. The   |
-|                                   | description provides a detailed   |
-|                                   | overview of what the API          |
-|                                   | accomplishes and when the API     |
-|                                   | should be called.                 |
-+-----------------------------------+-----------------------------------+
-| HTTP Method                       | The HTTP method to use when       |
-|                                   | invoking the API.                 |
-+-----------------------------------+-----------------------------------+
-| HTTP Data                         | The name/value pairs that are     |
-|                                   | submitted with the HTTP request.  |
-+-----------------------------------+-----------------------------------+
-| HTML Example                      | | An example call to the API. The |
-|                                   |   curl command line utility is    |
-|                                   |   the HTTPS client used in the    |
-|                                   |   examples. The call returns HTML |
-|                                   |   output.                         |
-+-----------------------------------+-----------------------------------+
-| | XML Example                     | An example call to the API that   |
-|                                   | returns XML output.  The curl     |
-|                                   | command line utility is the HTTPS |
-|                                   | client used in the examples.      |
-+-----------------------------------+-----------------------------------+
-
-API
----
+The examples in this document use the command line tool curl which
+is typically found in most unix environments. Curl is available for
+\ `download <https://curl.haxx.se/download.html>`__. for many systems
+including Windows.
 
 Create New Job
 ~~~~~~~~~~~~~~
@@ -871,3 +735,129 @@ API Response
 ^^^^^^^^^^^^
 
 On success, the Heritrix REST API will return a HTTP 200 with no body.
+
+Conventions and Assumptions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following conventions are used in this document.
+
++-----------------------------------+-----------------------------------+
+| | Convention                      | | Description                     |
++===================================+===================================+
+| (identifier)                      | A identifier surrounded by        |
+|                                   | parenthesis indicates a           |
+|                                   | user-defined value. For example,  |
+|                                   | (heritrixhostname) indicates a    |
+|                                   | user-defined hostname that is     |
+|                                   | running Heritrix.                 |
++-----------------------------------+-----------------------------------+
+| [identifier1,identifier2,...]     | Multiple identifiers surrounded   |
+|                                   | by brackets indicate a predefined |
+|                                   | set of values. For example,       |
+|                                   | [on,off] indicates a set of       |
+|                                   | values comprised of the literals, |
+|                                   | "on" and "off".                   |
++-----------------------------------+-----------------------------------+
+
+The following curl parameters are used when invoking the API.
+
++-----------------------------------+-----------------------------------+
+| | curl Parameter                  | | Description                     |
++===================================+===================================+
+| -v                                | Verbose. Output a detailed        |
+|                                   | account of the curl command to    |
+|                                   | standard out.                     |
++-----------------------------------+-----------------------------------+
+| -d                                | Data. These are the name/value    |
+|                                   | pairs that are send in the body   |
+|                                   | of a POST.                        |
++-----------------------------------+-----------------------------------+
+| -k                                | Insecure. Allows connections to   |
+|                                   | SSL sites without certificates.   |
++-----------------------------------+-----------------------------------+
+| | -u                              | User. Allows the submission of a  |
+|                                   | username and password to          |
+|                                   | authenticate the HTTP request.    |
++-----------------------------------+-----------------------------------+
+| --anyauth                         | Any authentication type. Allows   |
+|                                   | authentication of the request     |
+|                                   | based on any type of              |
+|                                   | authentication method.            |
++-----------------------------------+-----------------------------------+
+| --location                        | Follows HTTP redirects. This      |
+|                                   | option is used so that API calls  |
+|                                   | that return data (such as HTML)   |
+|                                   | will not halt upon receipt of a   |
+|                                   | redirect code (such as an HTTP    |
+|                                   | 303).                             |
++-----------------------------------+-----------------------------------+
+| | -H                              | Set the value of an HTTP header.  |
+|                                   | For example, "Accept:             |
+|                                   | application/xml".                 |
++-----------------------------------+-----------------------------------+
+
+It is assumed that the reader has a working knowledge of the HTTP
+protocol and Heritrix functionality.  Also, the examples assume that
+Heritrix is run with an administrative username and password of "admin."
+
+API Format
+^^^^^^^^^^
+
+The format used to describe each API is as follows.
+
++-----------------------------------+-----------------------------------+
+| | Name                            | | Description                     |
++===================================+===================================+
+| | API Name                        | The name assigned to the API. The |
+|                                   | name is a single word or short    |
+|                                   | phrase that encapsulates the      |
+|                                   | purpose of the API call.          |
++-----------------------------------+-----------------------------------+
+| URI                               | The URI to call when invoking the |
+|                                   | API.                              |
++-----------------------------------+-----------------------------------+
+| Description                       | The description of the API. The   |
+|                                   | description provides a detailed   |
+|                                   | overview of what the API          |
+|                                   | accomplishes and when the API     |
+|                                   | should be called.                 |
++-----------------------------------+-----------------------------------+
+| HTTP Method                       | The HTTP method to use when       |
+|                                   | invoking the API.                 |
++-----------------------------------+-----------------------------------+
+| HTTP Data                         | The name/value pairs that are     |
+|                                   | submitted with the HTTP request.  |
++-----------------------------------+-----------------------------------+
+| HTML Example                      | | An example call to the API. The |
+|                                   |   curl command line utility is    |
+|                                   |   the HTTPS client used in the    |
+|                                   |   examples. The call returns HTML |
+|                                   |   output.                         |
++-----------------------------------+-----------------------------------+
+| | XML Example                     | An example call to the API that   |
+|                                   | returns XML output.  The curl     |
+|                                   | command line utility is the HTTPS |
+|                                   | client used in the examples.      |
++-----------------------------------+-----------------------------------+
+
+About the REST implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Representational State Transfer (REST) is a software architecture for
+distributed hypermedia systems such as the World Wide Web (WWW). REST is
+built on the concept of representations of resources. Resources can be
+any coherent and meaningful concept that may be addressed. A URI is an
+example of a resource. The representation of the resource is typically a
+document that captures the current or intended state of the resource. An
+example of a representation of a resource is an HTML page.
+
+Heritrix uses REST to expose its functionality. The REST implementation
+used by Heritrix is Restlet. Restlet implements the concepts defined by
+REST, including resources and representations. It also provides a REST
+container that processes RESTful requests. The container is the Noelios
+Restlet Engine. For detailed information on Restlet,
+visit \ http://www.restlet.org/.
+
+Heritrix exposes its REST functionality through HTTPS. The HTTPS
+protocol is used to send requests to retrieve or modify configuration
+settings and manage crawl jobs.
