@@ -20,38 +20,25 @@ Create New Job
 
 .. http:post:: https://(heritrixhost):8443/engine
 
-Description
-^^^^^^^^^^^
+   Creates a new crawl job. It uses the default configuration provided
+   by the profile-defaults profile.
 
-This API creates a new crawl job configuration. It uses the default
-configuration provided by the profile-defaults profile.
+   :form action: must be ``create``
+   :form createpath: the name of the new job
 
-HTTP Data
-^^^^^^^^^
+   **HTML Example**:
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | createpath         | | (jobname)          | | The name of the    |
-|                      |                      |   job.               |
-+----------------------+----------------------+----------------------+
-| | action             | | create             | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
+      curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location \
+        https://localhost:8443/engine
 
-.. code:: bash
+   **XML Example**:
 
-    curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location https://localhost:8443/engine
+   .. code:: bash
 
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+      curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location \
+        -H "Accept: application/xml" https://localhost:8443/engine
 
 Add Job Directory
 ~~~~~~~~~~~~~~~~~
