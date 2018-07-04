@@ -7,6 +7,7 @@ contrib/target
 .classpath
 .project
 .settings
+/docs/_build
 */.classpath
 */.project
 */.settings

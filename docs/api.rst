@@ -11,28 +11,20 @@ interested in controlling the Heritrix Web crawler through its REST API.
 
 Any client that supports HTTPS can be used to invoke the Heritrix API.
 The examples in this document use the command line tool curl which
-is typically found in most unix environments. Curl is available for
-\ `download <https://curl.haxx.se/download.html>`__. for many systems
+is typically found in most unix environments. Curl is 
+\ `available <https://curl.haxx.se/download.html>`__ for many systems
 including Windows.
 
 Create New Job
 ~~~~~~~~~~~~~~
 
-URI
-^^^
-
-https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine
 
 Description
 ^^^^^^^^^^^
 
 This API creates a new crawl job configuration. It uses the default
 configuration provided by the profile-defaults profile.
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 HTTP Data
 ^^^^^^^^^
@@ -64,12 +56,7 @@ XML Example
 Add Job Directory
 ~~~~~~~~~~~~~~~~~
 
-.. _uri-1:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine
 
 .. _description-1:
 
@@ -78,13 +65,6 @@ Description
 
 This API adds a new job directory to the Heritrix configuration. The
 directory must contain a cxml configuration file.
-
-.. _http-method-1:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-1:
 
@@ -122,12 +102,7 @@ XML Example
 Build Job Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _uri-2:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-2:
 
@@ -138,13 +113,6 @@ This API builds the job configuration for the chosen job. It reads an
 XML descriptor file and uses Spring to build the Java objects that are
 necessary for running the crawl. Before a crawl can be run it must be
 built.
-
-.. _http-method-2:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-2:
 
@@ -179,12 +147,7 @@ XML Example
 Launch Job
 ~~~~~~~~~~
 
-.. _uri-3:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-3:
 
@@ -194,13 +157,6 @@ Description
 This API launches a crawl job. The job can be launched in the "paused"
 state or the "unpaused" state. If launched in the "unpaused" state the
 job will immediately begin crawling.
-
-.. _http-method-3:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-3:
 
@@ -235,12 +191,7 @@ XML Example
 Rescan Job Directory
 ~~~~~~~~~~~~~~~~~~~~
 
-.. _uri-4:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine
 
 .. _description-4:
 
@@ -251,13 +202,6 @@ This API rescans the main job directory and returns an HTML page
 containing all the job names. It also returns information about the
 jobs, such as the location of the job configuration file and the number
 of job launches.
-
-.. _http-method-4:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 HTTP Data
 
@@ -289,12 +233,7 @@ XML Example
 Pause Job
 ~~~~~~~~~
 
-.. _uri-5:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-5:
 
@@ -303,13 +242,6 @@ Description
 
 This API pauses an unpaused job. No crawling will occur while a job is
 paused.
-
-.. _http-method-5:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-4:
 
@@ -344,12 +276,7 @@ XML Example
 Unpause Job
 ~~~~~~~~~~~
 
-.. _uri-6:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-6:
 
@@ -358,13 +285,6 @@ Description
 
 This API unpauses a paused job. Crawling will resume (or begin, in the
 case of a job launched in the paused state) if possible.
-
-.. _http-method-6:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-5:
 
@@ -399,12 +319,7 @@ XML Example
 Terminate Job
 ~~~~~~~~~~~~~
 
-.. _uri-7:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-7:
 
@@ -412,13 +327,6 @@ Description
 ^^^^^^^^^^^
 
 This API terminates a running job.
-
-.. _http-method-7:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-6:
 
@@ -453,12 +361,7 @@ XML Example
 Teardown Job
 ~~~~~~~~~~~~
 
-.. _uri-8:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-8:
 
@@ -467,13 +370,6 @@ Description
 
 This API removes the Spring code that is used to run the job. Once a job
 is torn down it must be rebuilt in order to run.
-
-.. _http-method-8:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-7:
 
@@ -508,12 +404,7 @@ XML Example
 Copy Job
 ~~~~~~~~
 
-.. _uri-9:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-9:
 
@@ -523,13 +414,6 @@ Description
 This API copies an existing job configuration to a new job
 configuration. If the "as profile" checkbox is selected, than the job
 configuration is copied as a non-runnable profile configuration.
-
-.. _http-method-9:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 HTTP Data
 
@@ -576,12 +460,7 @@ XML Example
 Checkpoint Job
 ~~~~~~~~~~~~~~
 
-.. _uri-10:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
 
 .. _description-10:
 
@@ -591,13 +470,6 @@ Description
 This API checkpoints the chosen job. Checkpointing writes the current
 state of a crawl to the file system so that the crawl can be recovered
 if it fails.
-
-.. _http-method-10:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-8:
 
@@ -632,12 +504,7 @@ XML Example
 Execute Shell Script in Job
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _uri-11:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)/script
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)/script
 
 .. _description-11:
 
@@ -646,13 +513,6 @@ Description
 
 This API executes a shell script. The script can be written as
 Beanshell, ECMAScript, Groovy, or AppleScript.
-
-.. _http-method-11:
-
-HTTP Method
-^^^^^^^^^^^
-
-POST
 
 .. _http-data-9:
 
@@ -691,12 +551,7 @@ XML Example
 Submitting a CXML Job Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _uri-12:
-
-URI
-^^^
-
-https://(heritrixhost):8443/engine/job/(jobname)/jobdir/crawler-beans.cxml
+.. http:put:: https://(heritrixhost):8443/engine/job/(jobname)/jobdir/crawler-beans.cxml
 
 .. _description-12:
 
@@ -706,13 +561,6 @@ Description
 This API submits the contents of a CXML file for a chosen job. CXML
 files are the configuration files used to control a crawl job. Each job
 has a single CXML file.
-
-.. _http-method-12:
-
-HTTP Method
-^^^^^^^^^^^
-
-PUT
 
 .. _http-data-10:
 
