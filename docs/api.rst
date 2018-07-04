@@ -14,83 +14,60 @@ Conventions and Assumptions
 
 The following conventions are used in this document.
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 50%" />
-   <col style="width: 50%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Convention<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>(identifier)</p></td>
-   <td><p>A identifier surrounded by parenthesis indicates a user-defined value. For example, (heritrixhostname) indicates a user-defined hostname that is running Heritrix.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>[identifier1,identifier2,...]</p></td>
-   <td><p>Multiple identifiers surrounded by brackets indicate a predefined set of values. For example, [on,off] indicates a set of values comprised of the literals, &quot;on&quot; and &quot;off&quot;.</p></td>
-   </tr>
-   </tbody>
-   </table>
++-----------------------------------+-----------------------------------+
+| | Convention                      | | Description                     |
++===================================+===================================+
+| (identifier)                      | A identifier surrounded by        |
+|                                   | parenthesis indicates a           |
+|                                   | user-defined value. For example,  |
+|                                   | (heritrixhostname) indicates a    |
+|                                   | user-defined hostname that is     |
+|                                   | running Heritrix.                 |
++-----------------------------------+-----------------------------------+
+| [identifier1,identifier2,...]     | Multiple identifiers surrounded   |
+|                                   | by brackets indicate a predefined |
+|                                   | set of values. For example,       |
+|                                   | [on,off] indicates a set of       |
+|                                   | values comprised of the literals, |
+|                                   | "on" and "off".                   |
++-----------------------------------+-----------------------------------+
 
 The following curl parameters are used when invoking the API.
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 50%" />
-   <col style="width: 50%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>curl Parameter<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>-v</p></td>
-   <td><p>Verbose. Output a detailed account of the curl command to standard out.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>-d</p></td>
-   <td><p>Data. These are the name/value pairs that are send in the body of a POST.</p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>-k</p></td>
-   <td><p>Insecure. Allows connections to SSL sites without certificates.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>-u<br />
-   </p></td>
-   <td><p>User. Allows the submission of a username and password to authenticate the HTTP request.</p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>--anyauth</p></td>
-   <td><p>Any authentication type. Allows authentication of the request based on any type of authentication method.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>--location</p></td>
-   <td><p>Follows HTTP redirects. This option is used so that API calls that return data (such as HTML) will not halt upon receipt of a redirect code (such as an HTTP 303).</p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>-H<br />
-   </p></td>
-   <td><p>Set the value of an HTTP header. For example, &quot;Accept: application/xml&quot;.</p></td>
-   </tr>
-   </tbody>
-   </table>
++-----------------------------------+-----------------------------------+
+| | curl Parameter                  | | Description                     |
++===================================+===================================+
+| -v                                | Verbose. Output a detailed        |
+|                                   | account of the curl command to    |
+|                                   | standard out.                     |
++-----------------------------------+-----------------------------------+
+| -d                                | Data. These are the name/value    |
+|                                   | pairs that are send in the body   |
+|                                   | of a POST.                        |
++-----------------------------------+-----------------------------------+
+| -k                                | Insecure. Allows connections to   |
+|                                   | SSL sites without certificates.   |
++-----------------------------------+-----------------------------------+
+| | -u                              | User. Allows the submission of a  |
+|                                   | username and password to          |
+|                                   | authenticate the HTTP request.    |
++-----------------------------------+-----------------------------------+
+| --anyauth                         | Any authentication type. Allows   |
+|                                   | authentication of the request     |
+|                                   | based on any type of              |
+|                                   | authentication method.            |
++-----------------------------------+-----------------------------------+
+| --location                        | Follows HTTP redirects. This      |
+|                                   | option is used so that API calls  |
+|                                   | that return data (such as HTML)   |
+|                                   | will not halt upon receipt of a   |
+|                                   | redirect code (such as an HTTP    |
+|                                   | 303).                             |
++-----------------------------------+-----------------------------------+
+| | -H                              | Set the value of an HTTP header.  |
+|                                   | For example, "Accept:             |
+|                                   | application/xml".                 |
++-----------------------------------+-----------------------------------+
 
 It is assumed that the reader has a working knowledge of the HTTP
 protocol and Heritrix functionality.  Also, the examples assume that
@@ -136,55 +113,40 @@ API Format
 
 The format used to describe each API is as follows.
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 50%" />
-   <col style="width: 50%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>API Name<br />
-   </p></td>
-   <td><p>The name assigned to the API. The name is a single word or short phrase that encapsulates the purpose of the API call.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>URI</p></td>
-   <td><p>The URI to call when invoking the API.</p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>Description</p></td>
-   <td><p>The description of the API. The description provides a detailed overview of what the API accomplishes and when the API should be called.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>HTTP Method</p></td>
-   <td><p>The HTTP method to use when invoking the API.</p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>HTTP Data</p></td>
-   <td><p>The name/value pairs that are submitted with the HTTP request.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>HTML Example</p></td>
-   <td><p>An example call to the API. The curl command line utility is the HTTPS client used in the examples. The call returns HTML output.<br />
-   </p></td>
-   </tr>
-   <tr class="odd">
-   <td><p>XML Example<br />
-   </p></td>
-   <td><p>An example call to the API that returns XML output.  The curl command line utility is the HTTPS client used in the examples.</p></td>
-   </tr>
-   </tbody>
-   </table>
++-----------------------------------+-----------------------------------+
+| | Name                            | | Description                     |
++===================================+===================================+
+| | API Name                        | The name assigned to the API. The |
+|                                   | name is a single word or short    |
+|                                   | phrase that encapsulates the      |
+|                                   | purpose of the API call.          |
++-----------------------------------+-----------------------------------+
+| URI                               | The URI to call when invoking the |
+|                                   | API.                              |
++-----------------------------------+-----------------------------------+
+| Description                       | The description of the API. The   |
+|                                   | description provides a detailed   |
+|                                   | overview of what the API          |
+|                                   | accomplishes and when the API     |
+|                                   | should be called.                 |
++-----------------------------------+-----------------------------------+
+| HTTP Method                       | The HTTP method to use when       |
+|                                   | invoking the API.                 |
++-----------------------------------+-----------------------------------+
+| HTTP Data                         | The name/value pairs that are     |
+|                                   | submitted with the HTTP request.  |
++-----------------------------------+-----------------------------------+
+| HTML Example                      | | An example call to the API. The |
+|                                   |   curl command line utility is    |
+|                                   |   the HTTPS client used in the    |
+|                                   |   examples. The call returns HTML |
+|                                   |   output.                         |
++-----------------------------------+-----------------------------------+
+| | XML Example                     | An example call to the API that   |
+|                                   | returns XML output.  The curl     |
+|                                   | command line utility is the HTTPS |
+|                                   | client used in the examples.      |
++-----------------------------------+-----------------------------------+
 
 API
 ---
@@ -211,43 +173,15 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>createpath<br />
-   </p></td>
-   <td><p>(jobname)<br />
-   </p></td>
-   <td><p>The name of the job.<br />
-   </p></td>
-   </tr>
-   <tr class="even">
-   <td><p>action<br />
-   </p></td>
-   <td><p>create<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | createpath         | | (jobname)          | | The name of the    |
+|                      |                      |   job.               |
++----------------------+----------------------+----------------------+
+| | action             | | create             | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 HTML Example
 ^^^^^^^^^^^^
@@ -293,43 +227,15 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>addpath<br />
-   </p></td>
-   <td><p>(job directory to add)<br />
-   </p></td>
-   <td><p>The job directory to add.<br />
-   </p></td>
-   </tr>
-   <tr class="even">
-   <td><p>action<br />
-   </p></td>
-   <td><p>add<br />
-   </p></td>
-   <td><p>The action to invoke<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | addpath            | | (job directory to  | | The job directory  |
+|                      |   add)               |   to add.            |
++----------------------+----------------------+----------------------+
+| | action             | | add                | | The action to      |
+|                      |                      |   invoke             |
++----------------------+----------------------+----------------------+
 
 .. _html-example-1:
 
@@ -381,35 +287,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>build<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | build              | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-2:
 
@@ -460,35 +343,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>launch<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | launch             | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-3:
 
@@ -537,35 +397,12 @@ POST
 
 HTTP Data
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>rescan<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | rescan             | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-4:
 
@@ -615,35 +452,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>pause<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | pause              | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-5:
 
@@ -693,35 +507,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name <br />
-   </p></th>
-   <th><p>Value <br />
-   </p></th>
-   <th><p>Description <br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action <br />
-   </p></td>
-   <td><p>unpause <br />
-   </p></td>
-   <td><p>The action to invoke. <br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | unpause            | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-6:
 
@@ -770,35 +561,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>terminate<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | terminate          | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-7:
 
@@ -848,35 +616,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>teardown<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | teardown           | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-8:
 
@@ -924,39 +669,27 @@ POST
 
 HTTP Data
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>copyTo<br />
-   </p></td>
-   <td><p>(new job or profile configuration name)</p></td>
-   <td><p>The name of the new job or profile configuration.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>asProfile</p></td>
-   <td><p>[on]<br />
-   </p></td>
-   <td><p>Whether to copy the job as a runnable configuration or as a non-runnable profile. &quot;On&quot; means the job will be copied as a profile. If the &quot;asProfile&quot; parameter is ommitted, the job will be copied as a runnable configuration.</p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | copyTo             | (new job or profile  | The name of the new  |
+|                      | configuration name)  | job or profile       |
+|                      |                      | configuration.       |
++----------------------+----------------------+----------------------+
+| asProfile            | | [on]               | Whether to copy the  |
+|                      |                      | job as a runnable    |
+|                      |                      | configuration or as  |
+|                      |                      | a non-runnable       |
+|                      |                      | profile. "On" means  |
+|                      |                      | the job will be      |
+|                      |                      | copied as a profile. |
+|                      |                      | If the "asProfile"   |
+|                      |                      | parameter is         |
+|                      |                      | ommitted, the job    |
+|                      |                      | will be copied as a  |
+|                      |                      | runnable             |
+|                      |                      | configuration.       |
++----------------------+----------------------+----------------------+
 
 .. _html-example-9:
 
@@ -1007,35 +740,12 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>action<br />
-   </p></td>
-   <td><p>checkpoint<br />
-   </p></td>
-   <td><p>The action to invoke.<br />
-   </p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | action             | | checkpoint         | | The action to      |
+|                      |                      |   invoke.            |
++----------------------+----------------------+----------------------+
 
 .. _html-example-10:
 
@@ -1085,39 +795,16 @@ POST
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   <col style="width: 33%" />
-   </colgroup>
-   <thead>
-   <tr class="header">
-   <th><p>Name<br />
-   </p></th>
-   <th><p>Value<br />
-   </p></th>
-   <th><p>Description<br />
-   </p></th>
-   </tr>
-   </thead>
-   <tbody>
-   <tr class="odd">
-   <td><p>engine<br />
-   </p></td>
-   <td><p>[beanshell,js,groovy,AppleScriptEngine]<br />
-   </p></td>
-   <td><p>The script engine to use.</p></td>
-   </tr>
-   <tr class="even">
-   <td><p>script</p></td>
-   <td><p>(code to execute)</p></td>
-   <td><p>The script code to execute.</p></td>
-   </tr>
-   </tbody>
-   </table>
++----------------------+----------------------+----------------------+
+| | Name               | | Value              | | Description        |
++======================+======================+======================+
+| | engine             | | [beanshell,js,groo | The script engine to |
+|                      | vy,AppleScriptEngine | use.                 |
+|                      | ]                    |                      |
++----------------------+----------------------+----------------------+
+| script               | (code to execute)    | The script code to   |
+|                      |                      | execute.             |
++----------------------+----------------------+----------------------+
 
 .. _html-example-11:
 
@@ -1168,20 +855,10 @@ PUT
 HTTP Data
 ^^^^^^^^^
 
-.. raw:: html
-
-   <table>
-   <colgroup>
-   <col style="width: 50%" />
-   <col style="width: 50%" />
-   </colgroup>
-   <tbody>
-   <tr class="odd">
-   <td><p>(CXML file content)</p></td>
-   <td><p>The XML-based text of the CXML file.</p></td>
-   </tr>
-   </tbody>
-   </table>
++-----------------------------------+-----------------------------------+
+| (CXML file content)               | The XML-based text of the CXML    |
+|                                   | file.                             |
++-----------------------------------+-----------------------------------+
 
 Example
 ^^^^^^^
