@@ -45,526 +45,269 @@ Add Job Directory
 
 .. http:post:: https://(heritrixhost):8443/engine [action=add]
 
-.. _description-1:
+   Adds a new job directory to the Heritrix configuration. The directory must
+   contain a cxml configuration file.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``add``
+   :form addpath: the job directory to add
 
-This API adds a new job directory to the Heritrix configuration. The
-directory must contain a cxml configuration file.
 
-.. _http-data-1:
+   **HTML Example**:
 
-HTTP Data
-^^^^^^^^^
+   .. code:: bash
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | addpath            | | (job directory to  | | The job directory  |
-|                      |   add)               |   to add.            |
-+----------------------+----------------------+----------------------+
-| | action             | | add                | | The action to      |
-|                      |                      |   invoke             |
-+----------------------+----------------------+----------------------+
+      curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location https://localhost:8443/engine
 
-.. _html-example-1:
+   **XML Example**:
 
-HTML Example
-^^^^^^^^^^^^
+   .. code:: bash
 
-.. code:: bash
-
-    curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location https://localhost:8443/engine
-
-.. _xml-example-1:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+      curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
 
 Build Job Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=build]
 
-.. _description-2:
+   Builds the job configuration for the chosen job. It reads an XML descriptor
+   file and uses Spring to build the Java objects that are necessary for
+   running the crawl. Before a crawl can be run it must be built.
+   
+   :form action: must be ``build``
 
-Description
-^^^^^^^^^^^
+   **HTML Example**:
 
-This API builds the job configuration for the chosen job. It reads an
-XML descriptor file and uses Spring to build the Java objects that are
-necessary for running the crawl. Before a crawl can be run it must be
-built.
+   .. code:: bash
 
-.. _http-data-2:
+       curl -v -d "action=build" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-HTTP Data
-^^^^^^^^^
+   **XML Example**:
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | build              | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   .. code:: bash
 
-.. _html-example-2:
-
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=build" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-2:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=build" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=build" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Launch Job
 ~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=launch]
 
-.. _description-3:
+   Launches a crawl job. The job can be launched in the "paused" state or the
+   "unpaused" state. If launched in the "unpaused" state the job will
+   immediately begin crawling.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``launch``
 
-This API launches a crawl job. The job can be launched in the "paused"
-state or the "unpaused" state. If launched in the "unpaused" state the
-job will immediately begin crawling.
+   **HTML Example**:
 
-.. _http-data-3:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=launch" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | launch             | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**:
 
-.. _html-example-3:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=launch" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-3:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=launch" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=launch" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Rescan Job Directory
 ~~~~~~~~~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine [action=rescan]
 
-.. _description-4:
+   Rescans the main job directory and returns an HTML page containing all the
+   job names. It also returns information about the jobs, such as the location
+   of the job configuration file and the number of job launches.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``rescan``
 
-This API rescans the main job directory and returns an HTML page
-containing all the job names. It also returns information about the
-jobs, such as the location of the job configuration file and the number
-of job launches.
+   **HTML Example**:
 
-HTTP Data
+   .. code:: bash
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | rescan             | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+       curl -v -d "action=rescan" -k -u admin:admin --anyauth --location https://localhost:8443/engine
 
-.. _html-example-4:
+   **XML Example**:
 
-HTML Example
-^^^^^^^^^^^^
+   .. code:: bash
 
-.. code:: bash
-
-    curl -v -d "action=rescan" -k -u admin:admin --anyauth --location https://localhost:8443/engine
-
-.. _xml-example-4:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=rescan" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+       curl -v -d "action=rescan" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
 
 Pause Job
 ~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=pause]
 
-.. _description-5:
+   Pauses an unpaused job. No crawling will occur while a job is paused.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``pause``
 
-This API pauses an unpaused job. No crawling will occur while a job is
-paused.
+   **HTML Example**
 
-.. _http-data-4:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=pause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | pause              | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**
 
-.. _html-example-5:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=pause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-5:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=pause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=pause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Unpause Job
 ~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=unpause]
 
-.. _description-6:
+   This API unpauses a paused job. Crawling will resume (or begin, in the case
+   of a job launched in the paused state) if possible.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``unpause``
 
-This API unpauses a paused job. Crawling will resume (or begin, in the
-case of a job launched in the paused state) if possible.
+   **HTML Example**
 
-.. _http-data-5:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=unpause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | unpause            | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**
 
-.. _html-example-6:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=unpause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-6:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=unpause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=unpause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Terminate Job
 ~~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=terminate]
 
-.. _description-7:
+   Terminates a running job.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``terminate``
 
-This API terminates a running job.
+   **HTML Example**
 
-.. _http-data-6:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=terminate" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | terminate          | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**
 
-.. _html-example-7:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=terminate" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-7:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=terminate" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=terminate" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Teardown Job
 ~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=teardown]
 
-.. _description-8:
+   Removes the Spring code that is used to run the job. Once a job is torn down
+   it must be rebuilt in order to run.
 
-Description
-^^^^^^^^^^^
+   :form action: must be ``teardown``
 
-This API removes the Spring code that is used to run the job. Once a job
-is torn down it must be rebuilt in order to run.
+   **HTML Example**
 
-.. _http-data-7:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=teardown" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | teardown           | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**
 
-.. _html-example-8:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=teardown" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-8:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=teardown" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "action=teardown" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Copy Job
 ~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [copyTo]
 
-.. _description-9:
+   Copies an existing job configuration to a new job configuration. If the "as
+   profile" checkbox is selected, than the job configuration is copied as a
+   non-runnable profile configuration.
 
-Description
-^^^^^^^^^^^
+   :form copyTo: the name of the new job or profile configuration
 
-This API copies an existing job configuration to a new job
-configuration. If the "as profile" checkbox is selected, than the job
-configuration is copied as a non-runnable profile configuration.
+   :form asProfile: whether to copy the job as a runnable configuration or as a
+   non-runnable profile. The value ``on`` means the job will be copied as a
+   profile. If omitted the job will be copied as a runnable configuration.
 
-HTTP Data
+   **HTML Example**
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | copyTo             | (new job or profile  | The name of the new  |
-|                      | configuration name)  | job or profile       |
-|                      |                      | configuration.       |
-+----------------------+----------------------+----------------------+
-| asProfile            | | [on]               | Whether to copy the  |
-|                      |                      | job as a runnable    |
-|                      |                      | configuration or as  |
-|                      |                      | a non-runnable       |
-|                      |                      | profile. "On" means  |
-|                      |                      | the job will be      |
-|                      |                      | copied as a profile. |
-|                      |                      | If the "asProfile"   |
-|                      |                      | parameter is         |
-|                      |                      | ommitted, the job    |
-|                      |                      | will be copied as a  |
-|                      |                      | runnable             |
-|                      |                      | configuration.       |
-+----------------------+----------------------+----------------------+
+   .. code:: bash
 
-.. _html-example-9:
+       curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-HTML Example
-^^^^^^^^^^^^
+   **XML Example**
 
-.. code:: bash
+   .. code:: bash
 
-    curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-9:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+       curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
 Checkpoint Job
 ~~~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=checkpoint]
 
-.. _description-10:
+   This API checkpoints the chosen job. Checkpointing writes the current state
+   of a crawl to the file system so that the crawl can be recovered if it
+   fails.
 
-Description
-^^^^^^^^^^^
+   ::form action: must be ``checkpoint``
 
-This API checkpoints the chosen job. Checkpointing writes the current
-state of a crawl to the file system so that the crawl can be recovered
-if it fails.
+   **HTML Example**
 
-.. _http-data-8:
+   .. code:: bash
 
-HTTP Data
-^^^^^^^^^
+       curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | action             | | checkpoint         | | The action to      |
-|                      |                      |   invoke.            |
-+----------------------+----------------------+----------------------+
+   **XML Example**
 
-.. _html-example-10:
+   .. code:: bash
 
-HTML Example
-^^^^^^^^^^^^
+       curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
-.. code:: bash
-
-    curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
-
-.. _xml-example-10:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
-
-Execute Shell Script in Job
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Execute Script in Job
+~~~~~~~~~~~~~~~~~~~~~
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname)/script
 
-.. _description-11:
+   Executes a script. The script can be written as Beanshell, ECMAScript,
+   Groovy, or AppleScript.
 
-Description
-^^^^^^^^^^^
+   :form engine: the script engine to use. One of ``beanshell``, ``js``,
+     ``groovy`` or ``AppleScriptEngine``.
 
-This API executes a shell script. The script can be written as
-Beanshell, ECMAScript, Groovy, or AppleScript.
+   :form script: the script code to execute
 
-.. _http-data-9:
+   **HTML Example**
 
-HTTP Data
-^^^^^^^^^
+   .. code:: bash
 
-+----------------------+----------------------+----------------------+
-| | Name               | | Value              | | Description        |
-+======================+======================+======================+
-| | engine             | | [beanshell,js,groo | The script engine to |
-|                      | vy,AppleScriptEngine | use.                 |
-|                      | ]                    |                      |
-+----------------------+----------------------+----------------------+
-| script               | (code to execute)    | The script code to   |
-|                      |                      | execute.             |
-+----------------------+----------------------+----------------------+
+       curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/script
 
-.. _html-example-11:
+   **XML Example**
 
-HTML Example
-^^^^^^^^^^^^
+   .. code:: bash
 
-.. code:: bash
-
-    curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/script
-
-.. _xml-example-11:
-
-XML Example
-^^^^^^^^^^^
-
-.. code:: bash
-
-    curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob/script
+       curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob/script
 
 Submitting a CXML Job Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. http:put:: https://(heritrixhost):8443/engine/job/(jobname)/jobdir/crawler-beans.cxml
 
-.. _description-12:
+   Submits the contents of a CXML file for a chosen job. CXML files are the
+   configuration files used to control a crawl job. Each job has a single CXML
+   file.
 
-Description
-^^^^^^^^^^^
+   **Example**:
 
-This API submits the contents of a CXML file for a chosen job. CXML
-files are the configuration files used to control a crawl job. Each job
-has a single CXML file.
+   .. code:: bash
 
-.. _http-data-10:
-
-HTTP Data
-^^^^^^^^^
-
-+-----------------------------------+-----------------------------------+
-| (CXML file content)               | The XML-based text of the CXML    |
-|                                   | file.                             |
-+-----------------------------------+-----------------------------------+
-
-Example
-^^^^^^^
-
-.. code:: bash
-
-    curl -v -T my-crawler-beans.cxml -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/jobdir/crawler-beans.cxml
+       curl -v -T my-crawler-beans.cxml -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/jobdir/crawler-beans.cxml
 
 API Response
 ^^^^^^^^^^^^
@@ -573,26 +316,6 @@ On success, the Heritrix REST API will return a HTTP 200 with no body.
 
 Conventions and Assumptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The following conventions are used in this document.
-
-+-----------------------------------+-----------------------------------+
-| | Convention                      | | Description                     |
-+===================================+===================================+
-| (identifier)                      | A identifier surrounded by        |
-|                                   | parenthesis indicates a           |
-|                                   | user-defined value. For example,  |
-|                                   | (heritrixhostname) indicates a    |
-|                                   | user-defined hostname that is     |
-|                                   | running Heritrix.                 |
-+-----------------------------------+-----------------------------------+
-| [identifier1,identifier2,...]     | Multiple identifiers surrounded   |
-|                                   | by brackets indicate a predefined |
-|                                   | set of values. For example,       |
-|                                   | [on,off] indicates a set of       |
-|                                   | values comprised of the literals, |
-|                                   | "on" and "off".                   |
-+-----------------------------------+-----------------------------------+
 
 The following curl parameters are used when invoking the API.
 
@@ -634,46 +357,6 @@ The following curl parameters are used when invoking the API.
 It is assumed that the reader has a working knowledge of the HTTP
 protocol and Heritrix functionality.  Also, the examples assume that
 Heritrix is run with an administrative username and password of "admin."
-
-API Format
-^^^^^^^^^^
-
-The format used to describe each API is as follows.
-
-+-----------------------------------+-----------------------------------+
-| | Name                            | | Description                     |
-+===================================+===================================+
-| | API Name                        | The name assigned to the API. The |
-|                                   | name is a single word or short    |
-|                                   | phrase that encapsulates the      |
-|                                   | purpose of the API call.          |
-+-----------------------------------+-----------------------------------+
-| URI                               | The URI to call when invoking the |
-|                                   | API.                              |
-+-----------------------------------+-----------------------------------+
-| Description                       | The description of the API. The   |
-|                                   | description provides a detailed   |
-|                                   | overview of what the API          |
-|                                   | accomplishes and when the API     |
-|                                   | should be called.                 |
-+-----------------------------------+-----------------------------------+
-| HTTP Method                       | The HTTP method to use when       |
-|                                   | invoking the API.                 |
-+-----------------------------------+-----------------------------------+
-| HTTP Data                         | The name/value pairs that are     |
-|                                   | submitted with the HTTP request.  |
-+-----------------------------------+-----------------------------------+
-| HTML Example                      | | An example call to the API. The |
-|                                   |   curl command line utility is    |
-|                                   |   the HTTPS client used in the    |
-|                                   |   examples. The call returns HTML |
-|                                   |   output.                         |
-+-----------------------------------+-----------------------------------+
-| | XML Example                     | An example call to the API that   |
-|                                   | returns XML output.  The curl     |
-|                                   | command line utility is the HTTPS |
-|                                   | client used in the examples.      |
-+-----------------------------------+-----------------------------------+
 
 About the REST implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
