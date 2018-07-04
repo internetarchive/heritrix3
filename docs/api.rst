@@ -18,7 +18,7 @@ including Windows.
 Create New Job
 ~~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine [action=create]
 
    Creates a new crawl job. It uses the default configuration provided
    by the profile-defaults profile.
@@ -43,7 +43,7 @@ Create New Job
 Add Job Directory
 ~~~~~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine [action=add]
 
 .. _description-1:
 
@@ -89,7 +89,7 @@ XML Example
 Build Job Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=build]
 
 .. _description-2:
 
@@ -134,7 +134,7 @@ XML Example
 Launch Job
 ~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=launch]
 
 .. _description-3:
 
@@ -178,7 +178,7 @@ XML Example
 Rescan Job Directory
 ~~~~~~~~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine
+.. http:post:: https://(heritrixhost):8443/engine [action=rescan]
 
 .. _description-4:
 
@@ -220,7 +220,7 @@ XML Example
 Pause Job
 ~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=pause]
 
 .. _description-5:
 
@@ -263,7 +263,7 @@ XML Example
 Unpause Job
 ~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=unpause]
 
 .. _description-6:
 
@@ -306,7 +306,7 @@ XML Example
 Terminate Job
 ~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=terminate]
 
 .. _description-7:
 
@@ -348,7 +348,7 @@ XML Example
 Teardown Job
 ~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=teardown]
 
 .. _description-8:
 
@@ -391,7 +391,7 @@ XML Example
 Copy Job
 ~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [copyTo]
 
 .. _description-9:
 
@@ -447,7 +447,7 @@ XML Example
 Checkpoint Job
 ~~~~~~~~~~~~~~
 
-.. http:post:: https://(heritrixhost):8443/engine/job/(jobname)
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [action=checkpoint]
 
 .. _description-10:
 
