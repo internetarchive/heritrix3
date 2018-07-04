@@ -26,14 +26,14 @@ Create New Job
    :form action: must be ``create``
    :form createpath: the name of the new job
 
-   **HTML Example**:
+   **HTML Example:**
 
    .. code:: bash
 
       curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location \
         https://localhost:8443/engine
 
-   **XML Example**:
+   **XML Example:**
 
    .. code:: bash
 
@@ -52,13 +52,13 @@ Add Job Directory
    :form addpath: the job directory to add
 
 
-   **HTML Example**:
+   **HTML Example:**
 
    .. code:: bash
 
       curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location https://localhost:8443/engine
 
-   **XML Example**:
+   **XML Example:**
 
    .. code:: bash
 
@@ -75,13 +75,13 @@ Build Job Configuration
    
    :form action: must be ``build``
 
-   **HTML Example**:
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=build" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**:
+   **XML Example:**
 
    .. code:: bash
 
@@ -98,13 +98,13 @@ Launch Job
 
    :form action: must be ``launch``
 
-   **HTML Example**:
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=launch" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**:
+   **XML Example:**
 
    .. code:: bash
 
@@ -121,13 +121,13 @@ Rescan Job Directory
 
    :form action: must be ``rescan``
 
-   **HTML Example**:
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=rescan" -k -u admin:admin --anyauth --location https://localhost:8443/engine
 
-   **XML Example**:
+   **XML Example:**
 
    .. code:: bash
 
@@ -142,13 +142,13 @@ Pause Job
 
    :form action: must be ``pause``
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=pause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -164,13 +164,13 @@ Unpause Job
 
    :form action: must be ``unpause``
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=unpause" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -185,13 +185,13 @@ Terminate Job
 
    :form action: must be ``terminate``
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=terminate" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -207,13 +207,13 @@ Teardown Job
 
    :form action: must be ``teardown``
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=teardown" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -234,13 +234,13 @@ Copy Job
      non-runnable profile. The value ``on`` means the job will be copied as a
      profile. If omitted the job will be copied as a runnable configuration.
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -255,15 +255,15 @@ Checkpoint Job
    of a crawl to the file system so that the crawl can be recovered if it
    fails.
 
-   ::form action: must be ``checkpoint``
+   :form action: must be ``checkpoint``
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -282,13 +282,13 @@ Execute Script in Job
 
    :form script: the script code to execute
 
-   **HTML Example**
+   **HTML Example:**
 
    .. code:: bash
 
        curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob/script
 
-   **XML Example**
+   **XML Example:**
 
    .. code:: bash
 
@@ -303,7 +303,7 @@ Submitting a CXML Job Configuration File
    configuration files used to control a crawl job. Each job has a single CXML
    file.
 
-   **Example**:
+   **Example:**
 
    .. code:: bash
 
