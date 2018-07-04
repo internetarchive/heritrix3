@@ -270,6 +270,54 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     }
     
     /**
+     * Test that relative base href's are resolved correctly:
+     * 
+     * See 
+     * 
+     * @throws URIException
+     */
+    public void testRelativeBaseHrefRelativeLinks() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory
+                .getInstance("https://www.schmid-gartenpflanzen.de/forum/index.php/mv/msg/7627/216142/0/"));
+        CharSequence cs = "<base href=\"/forum/\"/>\n" + 
+                "<img src=\"index.php/fa/89652/0/\" border=\"0\" alt=\"index.php/fa/89652/0/\" />";
+        getExtractor().extract(curi, cs);
+
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((CrawlURI) object)
+                        .getURI()
+                        .indexOf(
+                                ".de/forum/index.php/fa/89652/0/") >= 0;
+            }
+        }));
+    }
+
+    /**
+     * Test that absolute base href's are resolved correctly:
+     * 
+     * @throws URIException
+     */
+    public void testAbsoluteBaseHrefRelativeLinks() throws URIException {
+
+        CrawlURI curi = new CrawlURI(UURIFactory
+                .getInstance("https://www.schmid-gartenpflanzen.de/forum/index.php/mv/msg/7627/216142/0/"));
+        CharSequence cs = "<base href=\"https://www.schmid-gartenpflanzen.de/forum/\"/>\n" + 
+                "<img src=\"index.php/fa/89652/0/\" border=\"0\" alt=\"index.php/fa/89652/0/\" />";
+        getExtractor().extract(curi, cs);
+
+        assertTrue(CollectionUtils.exists(curi.getOutLinks(), new Predicate() {
+            public boolean evaluate(Object object) {
+                return ((CrawlURI) object)
+                        .getURI()
+                        .indexOf(
+                                ".de/forum/index.php/fa/89652/0/") >= 0;
+            }
+        }));
+
+    }
+    
+    /**
      * Test if scheme is maintained by speculative hops onto exact 
      * same host
      * 

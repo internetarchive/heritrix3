@@ -423,7 +423,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
                 if (elementStr.equalsIgnoreCase(BASE)) {
                     try {
-                        UURI base = UURIFactory.getInstance(value.toString());
+                        UURI base = UURIFactory.getInstance(curi.getUURI(),value.toString());
                         curi.setBaseURI(base);
                     } catch (URIException e) {
                         logUriError(e, curi.getUURI(), value);
