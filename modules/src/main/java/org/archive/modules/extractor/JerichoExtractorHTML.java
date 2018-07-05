@@ -144,7 +144,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             }
             if ("base".equals(elementName)) {
                 try {
-                    UURI base = UURIFactory.getInstance(attrValue);
+                    UURI base = UURIFactory.getInstance(curi.getUURI(),attrValue);
                     curi.setBaseURI(base);
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), attrValue);
