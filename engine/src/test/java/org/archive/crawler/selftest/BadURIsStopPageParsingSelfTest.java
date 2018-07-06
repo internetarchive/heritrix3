@@ -43,7 +43,7 @@ public class BadURIsStopPageParsingSelfTest extends SelfTestBase
             new HashSet<String>(Arrays.asList(new String[] {
             "index.html", "goodone.html", "goodthree.html", "one.html", 
             "two.html", "three.html", "robots.txt", "favicon.ico",
-            "cata;pgs-new.html", "www.loc.gov/rr/european/egw/polishex.html"
+                    "cata;pgs-new.html"
     })));
     
     @Override
