@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsPolicy;
@@ -421,9 +422,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     // other HREFs treated as links
                     processLink(curi, value, context);
                 }
-                if (elementStr.equalsIgnoreCase(BASE)) {
+                // Set the relative or absolute base URI if it's not already been modified. 
+                // See https://github.com/internetarchive/heritrix3/pull/209
+                if (elementStr.equalsIgnoreCase(BASE) && !curi.containsDataKey(CoreAttributeConstants.A_HTML_BASE)) {
                     try {
-                        UURI base = UURIFactory.getInstance(value.toString());
+                        UURI base = UURIFactory.getInstance(curi.getUURI(),value.toString());
                         curi.setBaseURI(base);
                     } catch (URIException e) {
                         logUriError(e, curi.getUURI(), value);
