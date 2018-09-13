@@ -614,14 +614,18 @@ public abstract class AbstractFrontier
         // Tally per-server, per-host, per-frontier-class running totals
         CrawlServer server = getServerCache().getServerFor(curi.getUURI());
         if (server != null) {
-            server.getSubstats().tally(curi, stage);
-            server.makeDirty(); 
+            synchronized (server) {
+                server.getSubstats().tally(curi, stage);
+                server.makeDirty();
+            }
         }
         try {
             CrawlHost host = getServerCache().getHostFor(curi.getUURI());
             if (host != null) {
-                host.getSubstats().tally(curi, stage);
-                host.makeDirty();
+                synchronized (host) {
+                    host.getSubstats().tally(curi, stage);
+                    host.makeDirty();
+                }
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "unable to tally host stats for " + curi, e);
