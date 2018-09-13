@@ -104,7 +104,7 @@
 					<excludes>
 						<exclude>**/TestAll.java</exclude>
 					</excludes>
-					<argLine>-server -Xmx256m</argLine>
+					<argLine>-server -Xmx1g</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
