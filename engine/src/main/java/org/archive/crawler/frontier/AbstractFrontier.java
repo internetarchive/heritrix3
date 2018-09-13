@@ -627,8 +627,10 @@ public abstract class AbstractFrontier
             logger.log(Level.WARNING, "unable to tally host stats for " + curi, e);
         }
         FrontierGroup group = getGroup(curi);
-        group.tally(curi, stage);
-        group.makeDirty(); 
+        synchronized (group) {
+            group.tally(curi, stage);
+            group.makeDirty();
+        }
     }
 
     protected void doJournalFinishedSuccess(CrawlURI c) {
