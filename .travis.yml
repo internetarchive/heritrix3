@@ -16,8 +16,8 @@ before_install:
  - "echo _JAVA_OPTIONS=$_JAVA_OPTIONS"
 
 script:
- - mvn clean install
- - cd contrib && mvn clean install
+ - travis_wait 30 mvn clean install
+ - cd contrib && travis_wait 30 mvn clean install
  - cd ..
 
 after_failure:
