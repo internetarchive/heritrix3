@@ -15,6 +15,10 @@ before_install:
  - "export _JAVA_OPTIONS=-Xmx1500m"
  - "echo _JAVA_OPTIONS=$_JAVA_OPTIONS"
 
+cache:
+  directories:
+  - $HOME/.m2
+
 script:
  - travis_wait 30 mvn install
  - cd contrib && mvn install
