@@ -602,17 +602,17 @@ implements Closeable,
                         }
                     }
                     readyQ = getQueueFor(key);
-                synchronized (readyQ) {
                     if (readyQ == null) {
                         // readyQ key wasn't in all queues: unexpected
                         logger.severe("Key " + key
                                 + " in readyClassQueues but not allQueues");
                         break findaqueue;
                     }
+                synchronized (readyQ) {
                     if (readyQ.getCount() == 0) {
                         // readyQ is empty and ready: it's exhausted
-                            readyQ.noteExhausted(); 
-                            readyQ.makeDirty();
+                        readyQ.noteExhausted();
+                        readyQ.makeDirty();
                         readyQ = null;
                         continue;
                     }
