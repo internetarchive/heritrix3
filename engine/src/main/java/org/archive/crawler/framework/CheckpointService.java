@@ -393,6 +393,21 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         if(isRunning) {
             throw new RuntimeException("may not set recovery Checkpoint after launch");
         }
+        // If the selectedCheckpoint is 'latest', pick up the latest checkpoint
+        // and use that:
+        if ("latest".equalsIgnoreCase(selectedCheckpoint)) {
+            List<File> cps = this.findAvailableCheckpointDirectories();
+            if (cps == null || cps.size() == 0) {
+                throw new RuntimeException(
+                        "Cannot find any checkpoints so cannot choose the latest one.");
+            }
+            // As per the API above, the most recent checkpoint is the first in
+            // the list:
+            File latestFile = cps.get(0);
+            // For the checkpoint we use the folder name:
+            selectedCheckpoint = latestFile.getName();
+        }
+        // Now setup the checkpoint:
         Checkpoint recoveryCheckpoint = new Checkpoint();
         recoveryCheckpoint.getCheckpointDir().setBase(getCheckpointsDir());
         recoveryCheckpoint.getCheckpointDir().setPath(selectedCheckpoint);
