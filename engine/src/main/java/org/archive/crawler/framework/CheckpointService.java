@@ -398,8 +398,9 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         if ("latest".equalsIgnoreCase(selectedCheckpoint)) {
             List<File> cps = this.findAvailableCheckpointDirectories();
             if (cps == null || cps.size() == 0) {
-                throw new RuntimeException(
-                        "Cannot find any checkpoints so cannot choose the latest one.");
+                LOGGER.warning(
+                        "Cannot find any checkpoints so cannot choose the latest one! Assuming we should launch a new crawl.");
+                return;
             }
             // As per the API above, the most recent checkpoint is the first in
             // the list:
