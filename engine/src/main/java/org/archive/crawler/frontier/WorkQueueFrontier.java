@@ -404,10 +404,10 @@ implements Closeable,
                     deactivateQueue(wq);
                 }
             }
+            // Update recovery log.
+            doJournalAdded(curi);
+            wq.makeDirty();
         }
-        // Update recovery log.
-        doJournalAdded(curi);
-        wq.makeDirty();
         largestQueues.update(wq.getClassKey(), wq.getCount());
     }
 
@@ -536,8 +536,10 @@ implements Closeable,
         while (key != null) {
             WorkQueue q = (WorkQueue)this.allQueues.get(key);
             if(q != null) {
-                unretireQueue(q);
-                q.makeDirty();
+                synchronized (q) {
+                    unretireQueue(q);
+                    q.makeDirty();
+                }
             }
             key = getRetiredQueues().poll();
         }
@@ -600,54 +602,57 @@ implements Closeable,
                         }
                     }
                     readyQ = getQueueFor(key);
-                    if(readyQ==null) {
-                         // readyQ key wasn't in all queues: unexpected
-                        logger.severe("Key "+ key +
-                            " in readyClassQueues but not allQueues");
+                    if (readyQ == null) {
+                        // readyQ key wasn't in all queues: unexpected
+                        logger.severe("Key " + key
+                                + " in readyClassQueues but not allQueues");
                         break findaqueue;
                     }
-                    if(readyQ.getCount()==0) {
+                synchronized (readyQ) {
+                    if (readyQ.getCount() == 0) {
                         // readyQ is empty and ready: it's exhausted
-                        readyQ.noteExhausted(); 
+                        readyQ.noteExhausted();
                         readyQ.makeDirty();
                         readyQ = null;
-                        continue; 
-                    }
-                    if(!inProcessQueues.add(readyQ)) {
-                        // double activation; discard this and move on
-                        // (this guard allows other enqueuings to ready or 
-                        // the various inactive-by-precedence queues to 
-                        // sometimes redundantly enqueue a queue key)
-                        readyQ = null; 
                         continue;
                     }
-                    // queue has gone 'in process' 
+                    if (!inProcessQueues.add(readyQ)) {
+                        // double activation; discard this and move on
+                        // (this guard allows other enqueuings to ready or
+                        // the various inactive-by-precedence queues to
+                        // sometimes redundantly enqueue a queue key)
+                        readyQ = null;
+                        continue;
+                    }
+                    // queue has gone 'in process'
                     readyQ.considerActive();
                     readyQ.setWakeTime(0); // clear obsolete wake time, if any
-                    
-                    // we know readyQ is not empty (getCount()!=0) so peek() shouldn't return null
+
+                    // we know readyQ is not empty (getCount()!=0) so peek()
+                    // shouldn't return null
                     CrawlURI readyQUri = readyQ.peek(this);
                     // see HER-1973 and HER-1946
                     sheetOverlaysManager.applyOverlaysTo(readyQUri);
                     try {
                         KeyedProperties.loadOverridesFrom(readyQUri);
                         readyQ.setSessionBudget(getBalanceReplenishAmount());
-                        readyQ.setTotalBudget(getQueueTotalBudget()); 
+                        readyQ.setTotalBudget(getQueueTotalBudget());
                     } finally {
-                        KeyedProperties.clearOverridesFrom(readyQUri); 
+                        KeyedProperties.clearOverridesFrom(readyQUri);
                     }
-                    
+
                     if (readyQ.isOverSessionBudget()) {
                         deactivateQueue(readyQ);
                         readyQ.makeDirty();
                         readyQ = null;
-                        continue; 
+                        continue;
                     }
                     if (readyQ.isOverTotalBudget()) {
                         retireQueue(readyQ);
                         readyQ.makeDirty();
                         readyQ = null;
-                        continue; 
+                        continue;
+                        }
                     }
                 } while (readyQ == null);
                 
@@ -775,8 +780,10 @@ implements Closeable,
                 WorkQueue candidateQ = (WorkQueue) this.allQueues.get(workQueueKey);
                 if (candidateQ.getPrecedence() > expectedPrecedence) {
                     // queue demoted since placed; re-deactivate
-                    deactivateQueue(candidateQ);
-                    candidateQ.makeDirty();
+                    synchronized (candidateQ) {
+                        deactivateQueue(candidateQ);
+                        candidateQ.makeDirty();
+                    }
                     continue;
                 }
 
@@ -849,17 +856,21 @@ implements Closeable,
         Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
         while(iterSnoozed.hasNext()) {
             WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
-            queue.setWakeTime(0);
-            reenqueueQueue(queue);
-            queue.makeDirty();
+            synchronized(queue) {
+                queue.setWakeTime(0);
+                reenqueueQueue(queue);
+                queue.makeDirty();
+            }
             iterSnoozed.remove(); 
         }
         Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
         while(iterOverflow.hasNext()) {
             WorkQueue queue = iterOverflow.next().getWorkQueue(WorkQueueFrontier.this);
-            queue.setWakeTime(0);
-            reenqueueQueue(queue);
-            queue.makeDirty();
+            synchronized(queue) {
+                queue.setWakeTime(0);
+                reenqueueQueue(queue);
+                queue.makeDirty();
+            }
             iterOverflow.remove(); 
             snoozedOverflowCount.decrementAndGet();
         }
@@ -872,8 +883,10 @@ implements Closeable,
         DelayedWorkQueue waked; 
         while((waked = snoozedClassQueues.poll())!=null) {
             WorkQueue queue = waked.getWorkQueue(this);
-            queue.setWakeTime(0);
-            queue.makeDirty();
+            synchronized(queue) {
+                queue.setWakeTime(0);
+                queue.makeDirty();
+            }
             reenqueueQueue(queue);
         }
         // also consider overflow (usually empty)
@@ -886,8 +899,10 @@ implements Closeable,
                     iter.remove();
                     snoozedOverflowCount.decrementAndGet();
                     WorkQueue queue = dq.getWorkQueue(this);
-                    queue.setWakeTime(0);
-                    queue.makeDirty();
+                    synchronized(queue) {
+                        queue.setWakeTime(0);
+                        queue.makeDirty();
+                    }
                     reenqueueQueue(queue);
                 }
             }
@@ -918,77 +933,88 @@ implements Closeable,
         logNonfatalErrors(curi);
         
         WorkQueue wq = (WorkQueue) curi.getHolder();
-        // always refresh budgeting values from current curi
-        // (whose overlay settings should be active here)
-        wq.setSessionBudget(getBalanceReplenishAmount());
-        wq.setTotalBudget(getQueueTotalBudget());
-        
-        assert (wq.peek(this) == curi) : "unexpected peek " + wq;
+        synchronized (wq) {
 
-        int holderCost = curi.getHolderCost();
+            // always refresh budgeting values from current curi
+            // (whose overlay settings should be active here)
+            wq.setSessionBudget(getBalanceReplenishAmount());
+            wq.setTotalBudget(getQueueTotalBudget());
 
-        if (needsReenqueuing(curi)) {
-            // codes/errors which don't consume the URI, leaving it atop queue
-            if(curi.getFetchStatus()!=S_DEFERRED) {
-                wq.expend(holderCost); // all retries but DEFERRED cost
+            assert (wq.peek(this) == curi) : "unexpected peek " + wq;
+
+            int holderCost = curi.getHolderCost();
+
+            if (needsReenqueuing(curi)) {
+                // codes/errors which don't consume the URI, leaving it atop
+                // queue
+                if (curi.getFetchStatus() != S_DEFERRED) {
+                    wq.expend(holderCost); // all retries but DEFERRED cost
+                }
+                long delay_ms = retryDelayFor(curi) * 1000;
+                curi.processingCleanup(); // lose state that shouldn't burden
+                                          // retry
+                wq.unpeek(curi);
+                wq.update(this, curi); // rewrite any changes
+                handleQueue(wq, curi.includesRetireDirective(), now, delay_ms);
+                appCtx.publishEvent(new CrawlURIDispositionEvent(this, curi,
+                        DEFERRED_FOR_RETRY));
+                doJournalReenqueued(curi);
+                wq.makeDirty();
+                return; // no further dequeueing, logging, rescheduling to occur
             }
-            long delay_ms = retryDelayFor(curi) * 1000;
-            curi.processingCleanup(); // lose state that shouldn't burden retry
-            wq.unpeek(curi);
-            wq.update(this, curi); // rewrite any changes
+
+            // Curi will definitely be disposed of without retry, so remove from
+            // queue
+            wq.dequeue(this, curi);
+            decrementQueuedCount(1);
+            largestQueues.update(wq.getClassKey(), wq.getCount());
+            log(curi);
+
+            if (curi.isSuccess()) {
+                // codes deemed 'success'
+                incrementSucceededFetchCount();
+                totalProcessedBytes.addAndGet(curi.getRecordedSize());
+                appCtx.publishEvent(
+                        new CrawlURIDispositionEvent(this, curi, SUCCEEDED));
+                doJournalFinishedSuccess(curi);
+
+            } else if (isDisregarded(curi)) {
+                // codes meaning 'undo' (even though URI was enqueued,
+                // we now want to disregard it from normal success/failure
+                // tallies)
+                // (eg robots-excluded, operator-changed-scope, etc)
+                incrementDisregardedUriCount();
+                appCtx.publishEvent(
+                        new CrawlURIDispositionEvent(this, curi, DISREGARDED));
+                holderCost = 0; // no charge for disregarded URIs
+                // TODO: consider reinstating forget-URI capability, so URI
+                // could be
+                // re-enqueued if discovered again
+                doJournalDisregarded(curi);
+
+            } else {
+                // codes meaning 'failure'
+                incrementFailedFetchCount();
+                appCtx.publishEvent(
+                        new CrawlURIDispositionEvent(this, curi, FAILED));
+                // if exception, also send to crawlErrors
+                if (curi.getFetchStatus() == S_RUNTIME_EXCEPTION) {
+                    Object[] array = { curi };
+                    loggerModule.getRuntimeErrors().log(Level.WARNING,
+                            curi.getUURI().toString(), array);
+                }
+                // charge queue any extra error penalty
+                wq.noteError(getErrorPenaltyAmount());
+                doJournalFinishedFailure(curi);
+
+            }
+
+            wq.expend(holderCost); // successes & failures charge cost to queue
+
+            long delay_ms = curi.getPolitenessDelay();
             handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
-            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,DEFERRED_FOR_RETRY));
-            doJournalReenqueued(curi);
             wq.makeDirty();
-            return; // no further dequeueing, logging, rescheduling to occur
         }
-
-        // Curi will definitely be disposed of without retry, so remove from queue
-        wq.dequeue(this,curi);
-        decrementQueuedCount(1);
-        largestQueues.update(wq.getClassKey(), wq.getCount());
-        log(curi);
-
-        
-        if (curi.isSuccess()) {
-            // codes deemed 'success' 
-            incrementSucceededFetchCount();
-            totalProcessedBytes.addAndGet(curi.getRecordedSize());
-            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,SUCCEEDED));
-            doJournalFinishedSuccess(curi);
-           
-        } else if (isDisregarded(curi)) {
-            // codes meaning 'undo' (even though URI was enqueued, 
-            // we now want to disregard it from normal success/failure tallies)
-            // (eg robots-excluded, operator-changed-scope, etc)
-            incrementDisregardedUriCount();
-            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,DISREGARDED));
-            holderCost = 0; // no charge for disregarded URIs
-            // TODO: consider reinstating forget-URI capability, so URI could be
-            // re-enqueued if discovered again
-            doJournalDisregarded(curi);
-            
-        } else {
-            // codes meaning 'failure'
-            incrementFailedFetchCount();
-            appCtx.publishEvent(new CrawlURIDispositionEvent(this,curi,FAILED));
-            // if exception, also send to crawlErrors
-            if (curi.getFetchStatus() == S_RUNTIME_EXCEPTION) {
-                Object[] array = { curi };
-                loggerModule.getRuntimeErrors().log(Level.WARNING, curi.getUURI()
-                        .toString(), array);
-            }        
-            // charge queue any extra error penalty
-            wq.noteError(getErrorPenaltyAmount());
-            doJournalFinishedFailure(curi);
-            
-        }
-
-        wq.expend(holderCost); // successes & failures charge cost to queue
-        
-        long delay_ms = curi.getPolitenessDelay();
-        handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
-        wq.makeDirty();
         
         if(curi.getRescheduleTime()>0) {
             // marked up for forced-revisit at a set time
@@ -1073,12 +1099,14 @@ implements Closeable,
         for (String qname: allQueues.keySet()) {
             if (queuePat.matcher(qname).matches()) {
                 WorkQueue wq = getQueueFor(qname);
-                wq.unpeek(null);
-                long delCount = wq.deleteMatching(this, uriRegex);
-                if (!wq.isRetired()) {
-                	count += delCount;
+                synchronized (wq) {
+                    wq.unpeek(null);
+                    long delCount = wq.deleteMatching(this, uriRegex);
+                    if (!wq.isRetired()) {
+                        count += delCount;
+                    }
+                    wq.makeDirty();
                 }
-                wq.makeDirty();
             }
         }
         decrementQueuedCount(count);
@@ -1509,8 +1537,10 @@ implements Closeable,
             KeyedProperties.loadOverridesFrom(curi);
             curi.setClassKey(getClassKey(curi));
             WorkQueue wq = getQueueFor(curi.getClassKey());
-            wq.expend(curi.getHolderCost());
-            wq.makeDirty();
+            synchronized (wq) {
+                wq.expend(curi.getHolderCost());
+                wq.makeDirty();
+            }
         } finally {
             KeyedProperties.clearOverridesFrom(curi); 
         }
