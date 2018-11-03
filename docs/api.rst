@@ -98,7 +98,7 @@ Launch Job
 
    :form action: must be ``launch``
 
-   :form checkpoint: optional field: If supplied, Heritrix will attempt to launch from a checkpoint. Should be the name of a checkpoint (e.g. ``cp00001-20180102121229``) or the special value ``latest``, which will automatically select the most recent checkpoint. If no ``checkpoint`` is specified (or if the ``latest`` checkpoint is requested and there are no valid checkpoints) a new crawl will be launched.
+   :form checkpoint: optional field: If supplied, Heritrix will attempt to launch from a checkpoint. Should be the name of a checkpoint (e.g. ``cp00001-20180102121229``) or (since version 3.3) the special value ``latest``, which will automatically select the most recent checkpoint. If no ``checkpoint`` is specified (or if the ``latest`` checkpoint is requested and there are no valid checkpoints) a new crawl will be launched.
 
    **HTML Example:**
 
