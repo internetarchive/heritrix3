@@ -76,7 +76,7 @@ implements LongFPSet, Serializable {
     }
 
     private void grow() {
-        // Catastrophic event.  Log its occurance.
+        // Catastrophic event.  Log its occurrence.
         logger.info("Doubling fingerprinting slots to "
             + (1 << this.capacityPowerOfTwo));
         long[] oldValues = values;

@@ -35,7 +35,7 @@ import org.restlet.data.Response;
  * Enhanced version of Restlet Directory, which allows the local 
  * filesystem directory to be determined dynamically based on the 
  * request details. Also, via use of an EnhDirectoryResource, adds
- * other capabilities (editting, etc.).
+ * other capabilities (editing, etc.).
  * 
  * @author gojomo
  */

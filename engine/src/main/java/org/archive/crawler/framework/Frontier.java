@@ -93,7 +93,7 @@ import org.springframework.context.Lifecycle;
 public interface Frontier extends Lifecycle, Reporter {
 
     /**
-     * Get the next URI that should be processed. If no URI becomes availible
+     * Get the next URI that should be processed. If no URI becomes available
      * during the time specified null will be returned.
      *
      * @return the next URI that should be processed.
@@ -104,10 +104,10 @@ public interface Frontier extends Lifecycle, Reporter {
     /**
      * Returns true if the frontier contains no more URIs to crawl.
      *
-     * <p>That is to say that there are no more URIs either currently availible
+     * <p>That is to say that there are no more URIs either currently available
      * (ready to be emitted), URIs belonging to deferred hosts or pending URIs
      * in the Frontier. Thus this method may return false even if there is no
-     * currently availible URI.
+     * currently available URI.
      *
      * @return true if the frontier contains no more URIs to crawl.
      */
@@ -235,7 +235,7 @@ public interface Frontier extends Lifecycle, Reporter {
      * the processing chain. Can include failure to acquire prerequisites, to
      * establish a connection with the host and any number of other problems.
      * Does not count those that will be retried, only those that have
-     * permenantly failed.
+     * permanently failed.
      *
      * @return Number of URIs that failed to process.
      */
@@ -336,7 +336,7 @@ public interface Frontier extends Lifecycle, Reporter {
      *                that are stored in cache (usually this means in memory
      *                rather then on disk, but that is an implementation
      *                detail) will be considered. Others will be entierly
-     *                ignored, as if they dont exist. This is usefull for quick
+     *                ignored, as if they don't exist. This is useful for quick
      *                peeks at the top of the URI list.
      * @return A URIFrontierMarker that is set for the 'start' of the frontier's
      *                URI list.
@@ -370,7 +370,7 @@ public interface Frontier extends Lifecycle, Reporter {
      * invoking it.
      *
      * @param marker
-     *            A marker specifing from what position in the Frontier the
+     *            A marker specifying from what position in the Frontier the
      *            list should begin.
      * @param numberOfMatches
      *            how many URIs to add at most to the list before returning it

@@ -38,7 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Processor to preload URI with as much precalculated policy-based 
- * info as possible before it reaches frontier criticial sections.
+ * info as possible before it reaches frontier critical sections.
  * 
  * Frontiers also maintain a direct reference to this class, in case
  * they need to perform remedial preparation for URIs that do not
@@ -195,7 +195,7 @@ public class FrontierPreparer extends Scoper {
         if (getPreferenceDepthHops() == 0) {
             return HIGH;
             // this implies seed redirects are treated as path
-            // length 1, which I belive is standard.
+            // length 1, which I believe is standard.
             // curi.getPathFromSeed() can never be null here, because
             // we're processing a link extracted from curi
         } else if (getPreferenceDepthHops() > 0 && 

@@ -287,7 +287,7 @@ implements Reporter, ProgressStatisticsReporter,
                         currentCuri.setFetchStatus(S_SERIOUS_ERROR);
             context = currentCuri.shortReportLine() + " in " + currentProcessorName;
          }
-        String message = "Serious error occured trying " +
+        String message = "Serious error occurred trying " +
             "to process '" + context + "'\n" + extraInfo;
         logger.log(Level.SEVERE, message.toString(), err);
         setPriority(DEFAULT_PRIORITY);
@@ -307,7 +307,7 @@ implements Reporter, ProgressStatisticsReporter,
         currentCuri.getAnnotations().add("err="+e.getClass().getName());
         currentCuri.getData().put(A_RUNTIME_EXCEPTION, e);
         String message = "Problem " + e + 
-                " occured when trying to process '"
+                " occurred when trying to process '"
                 + currentCuri.toString()
                 + "' at step " + previousStep 
                 + " in " + currentProcessorName +"\n";

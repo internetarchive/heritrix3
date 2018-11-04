@@ -451,7 +451,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                 dbc.database.sync();
             }
         
-            // Do a force checkpoint.  Thats what a sync does (i.e. doSync).
+            // Do a force checkpoint.  That's what a sync does (i.e. doSync).
             CheckpointConfig chkptConfig = new CheckpointConfig();
             chkptConfig.setForce(true);
             

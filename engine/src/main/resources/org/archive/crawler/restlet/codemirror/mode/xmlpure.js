@@ -83,7 +83,7 @@ CodeMirror.defineMode("xmlpure", function(config, parserConfig) {
         return null;
     }
     
-    // return true if the current token is seperated from the tokens before it
+    // return true if the current token is separated from the tokens before it
     // which means either this is the start of the line, or there is at least
     // one space or tab character behind the token
     // otherwise returns false

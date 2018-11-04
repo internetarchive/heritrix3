@@ -368,7 +368,7 @@ public class PreconditionEnforcer extends Processor  {
     *
     * <p>
     * One day, do optimization and avoid running the bulk of the code below.
-    * Argument for running the code everytime is that overrides and refinements
+    * Argument for running the code every time is that overrides and refinements
     * may change what comes back from credential store.
     *
     * @param curi CrawlURI we're checking for any required preconditions.

@@ -492,9 +492,9 @@ public class BdbMultipleWorkQueues {
     /**
      * Method used by BdbFrontier during checkpointing.
      * <p>The backing bdbje database has been marked deferred write so we save
-     * on writes to disk.  Means no guarantees disk will have whats in memory
+     * on writes to disk.  Means no guarantees disk will have what's in memory
      * unless a sync is called (Calling sync on the bdbje Environment is not
-     * sufficent).
+     * sufficient).
      * <p>Package access only because only Frontiers of this package would ever
      * need access.
      * @see <a href="http://www.sleepycat.com/jedocs/GettingStartedGuide/DB.html">Deferred Write Databases</a>

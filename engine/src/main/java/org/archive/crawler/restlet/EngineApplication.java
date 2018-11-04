@@ -139,7 +139,7 @@ public class EngineApplication extends Application {
                 "<a href='javascript:history.back();void(0);'>back</a>.\n");
             }
             else{
-                pw.append("<h1>An error occured</h1>\n");
+                pw.append("<h1>An error occurred</h1>\n");
                 pw.append(
                         "You may be able to recover and try something " +
                         "else by going " +
