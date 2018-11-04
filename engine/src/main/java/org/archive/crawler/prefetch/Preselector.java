@@ -47,7 +47,7 @@ public class Preselector extends Scoper {
      * Recheck if uri is in scope. This is meaningful if the scope is altered
      * during a crawl. URIs are checked against the scope when they are added to
      * queues. Setting this value to true forces the URI to be checked against
-     * the scope when it is comming out of the queue, possibly after the scope
+     * the scope when it is coming out of the queue, possibly after the scope
      * is altered.
      */
     {

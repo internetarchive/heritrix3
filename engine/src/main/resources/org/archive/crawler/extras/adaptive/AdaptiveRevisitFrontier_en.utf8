@@ -1,7 +1,7 @@
 description:
 AdaptiveRevisitFrontier. EXPERIMENTAL Frontier that will repeatedly visit all 
 encountered URIs. Wait time between visits is configurable and is determined 
-by seperate Processor(s). See WaitEvaluators. See documentation for ARFrontier 
+by separate Processor(s). See WaitEvaluators. See documentation for ARFrontier 
 limitations.
 
 
@@ -63,7 +63,7 @@ For retryable problems, seconds to wait before a retry
 
 
 use-uri-uniq-filter-description:
-Should the Frontier use a seperate 'already included' datastructure 
+Should the Frontier use a separate 'already included' datastructure 
 or rely on the queues'. 
 
 

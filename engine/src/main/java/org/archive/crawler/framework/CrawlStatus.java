@@ -2,7 +2,7 @@ package org.archive.crawler.framework;
 
 public enum CrawlStatus {
 
-    /** Inital value. May not be ready to run/incomplete. */    
+    /** Initial value. May not be ready to run/incomplete. */
     CREATED("Created"),
     
     /** Job has been successfully submitted to a CrawlJobHandler. */
@@ -28,7 +28,7 @@ public enum CrawlStatus {
 
     
     /**
-     * Job finished normally when the specifed amount of data (MB) had been
+     * Job finished normally when the specified amount of data (MB) had been
      * downloaded
      */
     FINISHED_DATA_LIMIT("Finished - Maximum amount of data limit hit"),
@@ -43,12 +43,12 @@ public enum CrawlStatus {
     FINISHED_WRITE_LIMIT("Finished - Maximum bytes written"),
     
     /**
-     * Job is going to be temporarly stopped after active threads are finished.
+     * Job is going to be temporarily stopped after active threads are finished.
      */
     WAITING_FOR_PAUSE("Pausing - Waiting for threads to finish"),
     
 
-    /** Job was temporarly stopped. State is kept so it can be resumed */
+    /** Job was temporarily stopped. State is kept so it can be resumed */
     PAUSED("Paused"),
 
 

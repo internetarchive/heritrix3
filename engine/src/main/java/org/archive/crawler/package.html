@@ -31,7 +31,7 @@
         <ol>
             <li> <em>Core classes</em> - these can often be configured but not 
                  replaced.
-            <li> <em>Pluggable classes</em> - these must implment a given interface 
+            <li> <em>Pluggable classes</em> - these must implement a given interface 
                  or extend a specific class but 3rd parties can introduce their own
                  implementations.
         </ol>
@@ -86,7 +86,7 @@
         When a URI is crawled, a {@link org.archive.crawler.framework.ToeThread
         ToeThread} will execute a series of <tt>processors</tt> on it.
     <p>
-        The processors are split into 5 distinct chains that are exectued in sequence:
+        The processors are split into 5 distinct chains that are executed in sequence:
        
                        <ol>
             <li>Pre-fetch processing chain
@@ -129,7 +129,7 @@
         implementations can be made of these to define any arbitrary scope.
         It should be noted though that usually any type of limitations to the scope
         of a crawl can be more easily achived using one of the existing scopes and
-        modifing it with appropriate filters.
+        modifying it with appropriate filters.
     <p>
         {@link org.archive.crawler.framework.CrawlScope CrawlScope} - Base class for
         scopes.<br>

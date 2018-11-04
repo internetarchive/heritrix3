@@ -122,7 +122,7 @@
 
       if (!this.settings.init) this.init();
       
-      // non configureable settings
+      // non configurable settings
       this.settings.$content_el = $this;
       this.settings.$body = $(this.settings.tipContainer);
       this.settings.body_offset = $(this.settings.tipContainer).position();

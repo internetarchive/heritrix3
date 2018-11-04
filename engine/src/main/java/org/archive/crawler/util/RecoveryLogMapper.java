@@ -85,7 +85,7 @@ public class RecoveryLogMapper {
      * recoverLogFileName, will throw throw SeedUrlNotFoundException. Use
      * {@link #RecoveryLogMapper(String)} if you want to just log such cases and
      * keep going. (Those should not happen if the recover log is written
-     * correctly, but we see them in pratice.)
+     * correctly, but we see them in practice.)
      * 
      * @param recoverLogFileName
      * @throws java.io.FileNotFoundException

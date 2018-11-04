@@ -62,7 +62,7 @@ public class IdentityCacheableWrapper<K> implements IdentityCacheable {
     } 
     
     //
-    // AutoKryo suppport
+    // AutoKryo support
     //
     public static void autoregisterTo(AutoKryo kryo) {
         kryo.register(IdentityCacheableWrapper.class);

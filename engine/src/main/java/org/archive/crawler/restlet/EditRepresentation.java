@@ -35,7 +35,7 @@ import org.restlet.resource.FileRepresentation;
 
 /**
  * Representation wrapping a FileRepresentation, displaying its contents
- * in a TextArea for editting. 
+ * in a TextArea for editing.
  * 
  * @author gojomo
  */

@@ -64,7 +64,7 @@ public class CheckpointUtils {
      * Utility function to serialize an object to a file in current checkpoint
      * dir. Facilities
      * to store related files alongside the serialized object in a directory
-     * named with a <code>.auxillary</code> suffix.
+     * named with a <code>.auxiliary</code> suffix.
      *
      * @param o Object to serialize.
      * @param dir Directory to serialize into.

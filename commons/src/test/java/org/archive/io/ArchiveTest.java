@@ -362,7 +362,7 @@ public class ArchiveTest
 
 	/**
 	 * wayback-like replay of ARC record at offset
-	 * @param arcReader an ARCReader intance
+	 * @param arcReader an ARCReader instance
 	 * @throws IOException
 	 */
 	private void replayRecord(ARCReader arcReader) throws IOException {

@@ -4186,7 +4186,7 @@ setDocument = Sizzle.setDocument = function( node ) {
     // Regex strategy adopted from Diego Perini
     assert(function( div ) {
       // Select is set to empty string on purpose
-      // This is to test IE's treatment of not explictly
+      // This is to test IE's treatment of not explicitly
       // setting a boolean content attribute,
       // since its presence should be enough
       // http://bugs.jquery.com/ticket/12359
@@ -6164,7 +6164,7 @@ jQuery.fn.extend({
         if ( hasScripts ) {
           doc = scripts[ scripts.length - 1 ].ownerDocument;
 
-          // Reenable scripts
+          // Re-enable scripts
           jQuery.map( scripts, restoreScript );
 
           // Evaluate executable scripts on first document insertion
@@ -6836,7 +6836,7 @@ jQuery.extend({
         value += "px";
       }
 
-      // Fixes #8908, it can be done more correctly by specifing setters in cssHooks,
+      // Fixes #8908, it can be done more correctly by specifying setters in cssHooks,
       // but it would mean to define eight (for every problematic property) identical functions
       if ( !jQuery.support.clearCloneStyle && value === "" && name.indexOf("background") === 0 ) {
         style[ name ] = "inherit";
@@ -8830,7 +8830,7 @@ function propFilter( props, specialEasing ) {
       value = hooks.expand( value );
       delete props[ name ];
 
-      // not quite $.extend, this wont overwrite keys already present.
+      // not quite $.extend, this won't overwrite keys already present.
       // also - reusing 'index' from above because we have the correct "name"
       for ( index in value ) {
         if ( !( index in props ) ) {
