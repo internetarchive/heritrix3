@@ -17,7 +17,7 @@
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-client</artifactId>
-			<version>0.96.1.1-cdh5.0.2</version>
+			<version>0.98.6-cdh5.3.5</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jets3t</artifactId>
