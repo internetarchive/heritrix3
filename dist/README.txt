@@ -32,7 +32,7 @@ you or adapt their server behavior accordingly.
 
 3. Getting Started
 -------------------
-See the User Manual at <https://webarchive.jira.com/wiki/display/Heritrix/Heritrix+3.0+and+3.1+User+Guide>
+See the User Manual at <https://github.com/internetarchive/heritrix3/wiki/Heritrix%203.0%20and%203.1%20User%20Guide>
 
 
 4. Developer Documentation
@@ -42,10 +42,10 @@ For API documentation, see <https://webarchive.jira.com/wiki/display/Heritrix/He
 and <http://builds.archive.org/javadoc/heritrix-3.2.0/>
 
 
-5. Release History
+5. Latest Releases
 -------------------
-See the Heritrix Release Notes at
-<https://webarchive.jira.com/wiki/display/Heritrix/Release+Notes+-+Heritrix+3.2.0>
+Information about releases can be found at <https://github.com/internetarchive/heritrix3/wiki#latest-releases>
+
 
 6. License
 -----------

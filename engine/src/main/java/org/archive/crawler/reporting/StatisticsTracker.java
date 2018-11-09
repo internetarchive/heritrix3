@@ -252,7 +252,7 @@ public class StatisticsTracker
     protected long crawlStartTime;
     /** wall-clock time the crawl ended */
     protected long crawlEndTime = -1; // Until crawl ends, this value is -1.
-    /** wall-clock time of last pause, while pause in progres */ 
+    /** wall-clock time of last pause, while pause in progress */
     protected long crawlPauseStarted = 0;
     /** duration tally of all time spent in paused state */ 
     protected long crawlTotalPausedTime = 0;

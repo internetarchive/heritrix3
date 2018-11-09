@@ -98,7 +98,7 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
     }
     
     /**
-     * Ensure any properties targetted by this Sheet know to 
+     * Ensure any properties targeted by this Sheet know to
      * check the right property paths for overrides at lookup time,
      * and that the override values are compatible types for their 
      * destination properties. 
@@ -130,7 +130,7 @@ public class Sheet implements BeanFactoryAware, BeanNameAware {
             try {
                 hkp = (HasKeyedProperties) bean;
             } catch (ClassCastException cce) {
-                // targetted bean has no overridable properties
+                // targeted bean has no overridable properties
                 throw new TypeMismatchException(bean,HasKeyedProperties.class,cce);
             }
             // install knowledge of this path 

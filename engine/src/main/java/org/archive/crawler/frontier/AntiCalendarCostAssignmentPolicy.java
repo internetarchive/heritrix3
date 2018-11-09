@@ -51,7 +51,7 @@ public class AntiCalendarCostAssignmentPolicy extends UnitCostAssignmentPolicy {
         Matcher m = TextUtils.getMatcher(CALENDARISH, curi.toString());
         if (m.find()) {
             cost++;
-            // TODO: consider if multiple occurences should cost more
+            // TODO: consider if multiple occurrences should cost more
         }
         TextUtils.recycleMatcher(m);
         return cost;

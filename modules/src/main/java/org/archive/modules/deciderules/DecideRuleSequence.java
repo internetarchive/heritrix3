@@ -171,6 +171,10 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
     @Override
     public void start() {
         if (getLogToFile() && fileLogger == null) {
+            // loggerModule.start() creates the log directory, and evidently
+            // it's possible for this module to start before loggerModule,
+            // so we need to run this here to prevent an exception
+            loggerModule.start();
             fileLogger = loggerModule.setupSimpleLog(getBeanName());
         }
         isRunning = true;

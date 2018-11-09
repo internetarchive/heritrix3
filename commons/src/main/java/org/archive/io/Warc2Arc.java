@@ -128,7 +128,7 @@ public class Warc2Arc {
                int offset = r.getHeader().getContentBegin();
                // This mimetype is not exactly what you'd expect to find in
                // an ARC though technically its 'correct'.  To get right one,
-               // need to parse the HTTP Headers.  Thats messy.  Not doing for
+               // need to parse the HTTP Headers.  That's messy.  Not doing for
                // now.
                String mimetype = r.getHeader().getMimetype();
                // Clean out ISO time string '-', 'T', ':', and 'Z' characters.

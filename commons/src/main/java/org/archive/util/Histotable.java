@@ -43,7 +43,7 @@ public class Histotable<K> extends TreeMap<K,Long> {
     private static final long serialVersionUID = 310306238032568623L;
     
     /**
-     * Record one more occurence of the given object key.
+     * Record one more occurrence of the given object key.
      * 
      * @param key Object key.
      */
@@ -52,7 +52,7 @@ public class Histotable<K> extends TreeMap<K,Long> {
     }
     
     /**
-     * Record <i>count</i> more occurence(s) of the given object key.
+     * Record <i>count</i> more occurrence(s) of the given object key.
      * 
      * @param key Object key.
      */

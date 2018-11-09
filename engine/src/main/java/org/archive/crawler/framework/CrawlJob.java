@@ -637,7 +637,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     }
     
     /**
-     * Return all known ConfigPaths, as an aid to viewing or editting. 
+     * Return all known ConfigPaths, as an aid to viewing or editing.
      * 
      * @return all ConfigPaths known to the ApplicationContext, in a 
      * map by name, or an empty map if no ApplicationContext

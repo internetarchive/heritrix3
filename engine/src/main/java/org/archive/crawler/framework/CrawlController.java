@@ -471,7 +471,7 @@ implements Serializable,
     }
     
     /**
-     * Stop the crawl temporarly.
+     * Stop the crawl temporarily.
      */
     public synchronized void requestCrawlPause() {
         if (state == State.PAUSING || state == State.PAUSED) {

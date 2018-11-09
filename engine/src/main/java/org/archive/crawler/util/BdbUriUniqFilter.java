@@ -243,7 +243,7 @@ implements Lifecycle, Checkpointable, BeanNameAware, DisposableBean {
         }
         if (env != null) {
             try {
-                // This sync flushes whats in RAM. Its expensive operation.
+                // This sync flushes what's in RAM. Its expensive operation.
                 // Without, data can be lost. Not for transactional operation.
                 env.sync();
             } catch (DatabaseException e) {

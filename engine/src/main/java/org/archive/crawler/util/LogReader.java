@@ -801,7 +801,7 @@ public class LogReader
                     pos = lastPos - BUFFERSIZE;
                 }
                 raf.seek(pos);
-                // If less then BUFFERSIZE avaliable read the remaining bytes
+                // If less then BUFFERSIZE available read the remaining bytes
                 if ((lastPos - pos) < BUFFERSIZE) {
                     int remainer = (int) (lastPos - pos);
                     buffer = new byte[remainer];
@@ -818,11 +818,11 @@ public class LogReader
                         }
                     }
                 }
-                // reset last postion
+                // reset last position
                 lastPos = pos;
             } while ((numOfLines <= n) && (pos != 0));
 
-            // print last n line starting from last postion
+            // print last n line starting from last position
             for (pos = lastPos; pos < endPos; pos += buffer.length) {
                 raf.seek(pos);
                 if ((endPos - pos) < BUFFERSIZE) {

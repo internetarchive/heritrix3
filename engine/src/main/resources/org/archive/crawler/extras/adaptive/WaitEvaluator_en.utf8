@@ -16,7 +16,7 @@ whose content change detection is not available.
 
 initial-wait-interval-seconds-description:
 The initial wait time between revisits. Will then be updated according to 
-crawler experiance. I.e. shorter wait, visit more often, if document has 
+crawler experience. I.e. shorter wait, visit more often, if document has 
 changed between visits, and vica versa. 
 
 
@@ -30,8 +30,8 @@ completed.
 
 
 min-wait-interval-seconds-description:
-The minum settable wait time between revisits. Once a URIs wait time 
-reaches this value, it will not be shortened further, regardlesss of 
+The minimum settable wait time between revisits. Once a URIs wait time 
+reaches this value, it will not be shortened further, regardless of 
 subsequent visits that discover changes. 
 
 

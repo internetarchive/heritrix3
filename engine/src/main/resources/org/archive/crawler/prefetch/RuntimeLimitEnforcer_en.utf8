@@ -3,7 +3,7 @@ A processor that halts further progress once a fixed
 amount of time has elapsed since the start of a crawl. 
 It is possible to configure this processor per host, but 
 it should be noted that Heritrix does not track runtime 
-per host seperately. Especially when using facilities 
+per host separately. Especially when using facilities 
 like the BdbFrontier's hold-queues, the actual amount of 
 time spent crawling a host may have little relevance to 
 total elapsed time. Note however that using overrides 

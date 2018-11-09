@@ -22,4 +22,5 @@ import java.util.logging.Logger;
 
 public interface SimpleFileLoggerProvider {
     public Logger setupSimpleLog(String logName);
+    public void start();
 }
