@@ -42,8 +42,8 @@ public class HBaseTable extends HBaseTableBean {
             Logger.getLogger(HBaseTable.class.getName());
 
     protected boolean create = false;
-    protected HConnection hconn = null;
-    protected HTableInterface htable;
+    protected ThreadLocal<HConnection> hconn = new ThreadLocal<HConnection>();
+    protected ThreadLocal<HTableInterface> htable = new ThreadLocal<HTableInterface>();
 
     public boolean getCreate() {
         return create;
@@ -57,24 +57,23 @@ public class HBaseTable extends HBaseTableBean {
     }
 
     protected HConnection hconnection() throws IOException {
-        if (hconn == null) {
-            hconn = HConnectionManager.createConnection(hbase.configuration());
+        if (hconn.get() == null) {
+            hconn.set(HConnectionManager.createConnection(hbase.configuration()));
         }
-        return hconn;
+        return hconn.get();
     }
 
     protected HTableInterface htable() throws IOException {
-        if (htable == null) {
-            htable = hconnection().getTable(htableName);
+        if (htable.get() == null) {
+            htable.set(hconnection().getTable(htableName));
         }
-        return htable();
+        return htable.get();
     }
 
     @Override
     public void put(Put p) throws IOException {
-        HTableInterface table = hconnection().getTable(htableName);
         try {
-            table.put(p);
+            htable().put(p);
         } catch (IOException e) {
             reset();
             throw e;
@@ -83,9 +82,8 @@ public class HBaseTable extends HBaseTableBean {
 
     @Override
     public Result get(Get g) throws IOException {
-        HTableInterface table = hconnection().getTable(htableName);
         try {
-            return table.get(g);
+            return htable().get(g);
         } catch (IOException e) {
             reset();
             throw e;
@@ -93,9 +91,8 @@ public class HBaseTable extends HBaseTableBean {
     }
 
     public HTableDescriptor getHtableDescriptor() throws IOException {
-        HTableInterface table = hconnection().getTable(htableName);
         try {
-            return table.getTableDescriptor();
+            return htable().getTableDescriptor();
         } catch (IOException e) {
             reset();
             throw e;
@@ -128,23 +125,22 @@ public class HBaseTable extends HBaseTableBean {
     }
 
     protected void reset() {
-        logger.info("attempting to reset hbase connection state");
-        if (htable != null) {
+        if (htable.get() != null) {
             try {
-                htable.close();
+                htable.get().close();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "htablename='" + htableName + "' htable.close() threw " + e, e);
             }
-            htable = null;
+            htable.remove();
         }
 
-        if (hconn != null) {
+        if (hconn.get() != null) {
             try {
-                hconn.close();
+                hconn.get().close();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "hconn.close() threw " + e, e);
             }
-            hconn = null;
+            hconn.remove();
         }
     }
 
