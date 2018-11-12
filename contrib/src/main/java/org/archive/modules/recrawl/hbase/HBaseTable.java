@@ -23,10 +23,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTableInterface;
-import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 
@@ -40,6 +42,9 @@ public class HBaseTable extends HBaseTableBean {
             Logger.getLogger(HBaseTable.class.getName());
 
     protected boolean create = false;
+    protected ThreadLocal<HConnection> hconn = new ThreadLocal<HConnection>();
+    protected ThreadLocal<HTableInterface> htable = new ThreadLocal<HTableInterface>();
+
     public boolean getCreate() {
         return create;
     }
@@ -48,81 +53,100 @@ public class HBaseTable extends HBaseTableBean {
         this.create = create;
     }
 
-    protected HTablePool htablePool = null;
-
     public HBaseTable() {
     }
 
-    protected synchronized HTablePool htablePool() throws IOException {
-        if (htablePool == null) {
-            // XXX maxSize = number of toe threads?
-            htablePool = new HTablePool(hbase.configuration(),
-                    Integer.MAX_VALUE);
+    protected HConnection hconnection() throws IOException {
+        if (hconn.get() == null) {
+            hconn.set(HConnectionManager.createConnection(hbase.configuration()));
         }
+        return hconn.get();
+    }
 
-        return htablePool;
+    protected HTableInterface htable() throws IOException {
+        if (htable.get() == null) {
+            htable.set(hconnection().getTable(htableName));
+        }
+        return htable.get();
     }
 
     @Override
     public void put(Put p) throws IOException {
-        HTableInterface table = htablePool().getTable(htableName);
         try {
-            table.put(p);
-        } finally {
-            htablePool().putTable(table);
-            // table.close(); // XXX hbase 0.92
+            htable().put(p);
+        } catch (IOException e) {
+            reset();
+            throw e;
         }
     }
 
     @Override
     public Result get(Get g) throws IOException {
-        HTableInterface table = htablePool().getTable(htableName);
         try {
-            return table.get(g);
-        } finally {
-            htablePool().putTable(table);
-            // table.close(); // XXX hbase 0.92
+            return htable().get(g);
+        } catch (IOException e) {
+            reset();
+            throw e;
         }
     }
 
     public HTableDescriptor getHtableDescriptor() throws IOException {
-        HTableInterface table = htablePool().getTable(htableName);
         try {
-            return table.getTableDescriptor();
-        } finally {
-            htablePool().putTable(table);
+            return htable().getTableDescriptor();
+        } catch (IOException e) {
+            reset();
+            throw e;
         }
     }
 
     @Override
     public void start() {
-        try {
-            if (getCreate()) {
-                HBaseAdmin admin = hbase.admin();
-                if (!admin.tableExists(htableName)) {
-                    HTableDescriptor desc = new HTableDescriptor(htableName);
-                    logger.info("hbase table '" + htableName + "' does not exist, creating it... " + desc);
-                    admin.createTable(desc);
+        int ATTEMPTS = 3;
+
+        for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
+            try {
+                if (getCreate()) {
+                    HBaseAdmin admin = hbase.admin();
+                    if (!admin.tableExists(htableName)) {
+                        HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(htableName));
+                        logger.info("hbase table '" + htableName + "' does not exist, creating it... " + desc);
+                        admin.createTable(desc);
+                    }
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "(attempt " + attempt + "/" + ATTEMPTS + ") problem creating hbase table " + htableName, e);
+                if (attempt >= ATTEMPTS) {
+                    throw new RuntimeException(e);
                 }
             }
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "problem creating hbase table " + htableName, e);
         }
 
         super.start();
     }
 
+    protected void reset() {
+        if (htable.get() != null) {
+            try {
+                htable.get().close();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "htablename='" + htableName + "' htable.close() threw " + e, e);
+            }
+            htable.remove();
+        }
+
+        if (hconn.get() != null) {
+            try {
+                hconn.get().close();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "hconn.close() threw " + e, e);
+            }
+            hconn.remove();
+        }
+    }
+
     @Override
     public synchronized void stop() {
         super.stop();
-        // org.apache.hadoop.io.IOUtils.closeStream(htablePool); // XXX hbase 0.92
-        if (htablePool != null) {
-            try {
-                htablePool.close();
-            } catch (IOException e) {
-                logger.warning("problem closing HTablePool " + htablePool + " - " + e);
-            }
-            htablePool = null;
-        }
+        reset();
     }
 }
