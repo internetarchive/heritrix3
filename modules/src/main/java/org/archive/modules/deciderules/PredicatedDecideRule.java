@@ -28,6 +28,7 @@ import org.archive.modules.CrawlURI;
  * @author gojomo
  */
 public abstract class PredicatedDecideRule extends DecideRule {
+    private static final long serialVersionUID = 1L;
 
     {
         setDecision(DecideResult.ACCEPT);
@@ -48,6 +49,11 @@ public abstract class PredicatedDecideRule extends DecideRule {
             return getDecision();
         }
         return DecideResult.NONE;
+    }
+
+    @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+        return getDecision();
     }
 
     protected abstract boolean evaluate(CrawlURI object);
