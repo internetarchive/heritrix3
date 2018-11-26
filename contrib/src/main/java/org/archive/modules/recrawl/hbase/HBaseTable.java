@@ -101,22 +101,25 @@ public class HBaseTable extends HBaseTableBean {
 
     @Override
     public void start() {
-        int ATTEMPTS = 3;
-
-        for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
-            try {
-                if (getCreate()) {
+        if (getCreate()) {
+            int attempt = 1;
+            while (true) {
+                try {
                     HBaseAdmin admin = hbase.admin();
                     if (!admin.tableExists(htableName)) {
                         HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(htableName));
                         logger.info("hbase table '" + htableName + "' does not exist, creating it... " + desc);
                         admin.createTable(desc);
                     }
-                }
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "(attempt " + attempt + "/" + ATTEMPTS + ") problem creating hbase table " + htableName, e);
-                if (attempt >= ATTEMPTS) {
-                    throw new RuntimeException(e);
+                    break;
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "(attempt " + attempt + ") problem creating hbase table " + htableName, e);
+                    attempt++;
+                    // back off up to 60 seconds between retries
+                    try {
+                        Thread.sleep(Math.min(attempt * 1000, 60000));
+                    } catch (InterruptedException e1) {
+                    }
                 }
             }
         }
