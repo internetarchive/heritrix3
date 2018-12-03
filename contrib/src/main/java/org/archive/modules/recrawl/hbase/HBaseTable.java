@@ -115,6 +115,7 @@ public class HBaseTable extends HBaseTableBean {
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "(attempt " + attempt + ") problem creating hbase table " + htableName, e);
                     attempt++;
+                    reset();
                     // back off up to 60 seconds between retries
                     try {
                         Thread.sleep(Math.min(attempt * 1000, 60000));
@@ -145,6 +146,8 @@ public class HBaseTable extends HBaseTableBean {
             }
             hconn.remove();
         }
+
+        hbase.reset();
     }
 
     @Override
