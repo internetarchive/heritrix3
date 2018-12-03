@@ -111,4 +111,16 @@ public class HBase implements Lifecycle {
     public void start() {
         isRunning = true;
     }
+
+    public synchronized void reset() {
+        if (admin != null) {
+            try {
+                admin.close();
+            } catch (IOException e) {
+                logger.warning("problem closing HBaseAdmin " + admin + " - " + e);
+            }
+
+            admin = null;
+        }
+    }
 }
