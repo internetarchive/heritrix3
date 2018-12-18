@@ -42,7 +42,7 @@ public class HBaseTable extends HBaseTableBean {
             Logger.getLogger(HBaseTable.class.getName());
 
     protected boolean create = false;
-    protected ThreadLocal<HConnection> hconn = new ThreadLocal<HConnection>();
+    protected HConnection hconn = null;
     protected ThreadLocal<HTableInterface> htable = new ThreadLocal<HTableInterface>();
 
     public boolean getCreate() {
@@ -56,11 +56,11 @@ public class HBaseTable extends HBaseTableBean {
     public HBaseTable() {
     }
 
-    protected HConnection hconnection() throws IOException {
-        if (hconn.get() == null) {
-            hconn.set(HConnectionManager.createConnection(hbase.configuration()));
+    protected synchronized HConnection hconnection() throws IOException {
+        if (hconn == null) {
+            hconn = HConnectionManager.createConnection(hbase.configuration());
         }
-        return hconn.get();
+        return hconn;
     }
 
     protected HTableInterface htable() throws IOException {
@@ -138,13 +138,14 @@ public class HBaseTable extends HBaseTableBean {
             htable.remove();
         }
 
-        if (hconn.get() != null) {
+        if (hconn != null) {
             try {
-                hconn.get().close();
+                hconn.close();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "hconn.close() threw " + e, e);
             }
-            hconn.remove();
+            // HConnectionManager.deleteStaleConnection(hconn);
+            hconn = null;
         }
 
         hbase.reset();
