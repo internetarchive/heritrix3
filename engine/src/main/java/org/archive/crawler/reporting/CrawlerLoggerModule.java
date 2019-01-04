@@ -282,8 +282,6 @@ public class CrawlerLoggerModule
     }
     
     public Logger setupSimpleLog(String logName) {
-        Logger logger = Logger.getLogger(logName + ".log");
-        
         Formatter f = new Formatter() {
             public String format(java.util.logging.LogRecord record) {
                 return ArchiveUtils.getLog17Date(record.getMillis()) + " " + record.getMessage() + '\n';
@@ -292,6 +290,7 @@ public class CrawlerLoggerModule
 
         ConfigPath logPath = new ConfigPath(logName + ".log", logName + ".log");
         logPath.setBase(getPath());
+        Logger logger = Logger.getLogger(logPath.getFile().getAbsolutePath());
         try {
             setupLogFile(logger, logPath.getFile().getAbsolutePath(), f, true);
         } catch (IOException e) {
