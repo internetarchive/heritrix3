@@ -240,6 +240,11 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
      * Run a checkpoint of the crawler
      */
     public synchronized String requestCrawlCheckpoint() throws IllegalStateException {
+        if (!controller.hasStarted()) {
+            LOGGER.info("crawl job has not started; ignoring");
+            return null;
+        }
+
         if (isCheckpointing()) {
             throw new IllegalStateException("Checkpoint already running.");
         }
