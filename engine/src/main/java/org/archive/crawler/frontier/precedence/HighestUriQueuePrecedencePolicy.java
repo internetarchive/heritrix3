@@ -66,13 +66,17 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
             switch(stage) {
             case SCHEDULED:
                 // enqueued
-                enqueuedCounts.tally(curi.getPrecedence());
+                synchronized (enqueuedCounts) {
+                    enqueuedCounts.tally(curi.getPrecedence());
+                }
                 break;
             case SUCCEEDED:
             case DISREGARDED:
             case FAILED:
                 // dequeued
-                enqueuedCounts.tally(curi.getPrecedence(),-1);
+                synchronized (enqueuedCounts) {
+                    enqueuedCounts.tally(curi.getPrecedence(), -1);
+                }
                 break;
             case RETRIED:
                 // do nothing, already tallied
@@ -86,8 +90,12 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
         @Override
         public int getPrecedence() {
             // base plus highest URI still in queue
-            Integer delta = (enqueuedCounts.size() > 0) ? enqueuedCounts.firstKey() : 0;
-            return super.getPrecedence() + delta;
+            synchronized (enqueuedCounts) {
+                Integer delta = (enqueuedCounts.size() > 0)
+                        ? enqueuedCounts.firstKey()
+                        : 0;
+                return super.getPrecedence() + delta;
+            }
         }
 
         /*
@@ -98,9 +106,11 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
             StringBuilder sb = new StringBuilder();
             sb.append(super.shortReportLegend());
             sb.append(":");
-            for(Integer p : enqueuedCounts.keySet()) {
-                sb.append(" p");
-                sb.append(p);
+            synchronized (enqueuedCounts) {
+                for (Integer p : enqueuedCounts.keySet()) {
+                    sb.append(" p");
+                    sb.append(p);
+                }
             }
             return sb.toString(); 
         }
@@ -108,10 +118,13 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
         @Override
         public void shortReportLineTo(PrintWriter writer) {
             boolean betwixt = false; 
-            for(Long count : enqueuedCounts.values()) {
-                if(betwixt) writer.print(" ");
-                writer.print(count);
-                betwixt = true;
+            synchronized (enqueuedCounts) {
+                for (Long count : enqueuedCounts.values()) {
+                    if (betwixt)
+                        writer.print(" ");
+                    writer.print(count);
+                    betwixt = true;
+                }
             }
         }
 
