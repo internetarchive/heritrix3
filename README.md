@@ -42,8 +42,8 @@ See the User Manual, available from <https://github.com/internetarchive/heritrix
 ---------------------------
 
 See <http://crawler.archive.org/articles/developer_manual/index.html>.
-For API documentation, see <https://heritrix.readthedocs.io/en/latest/api.html>
-and <http://builds.archive.org/javadoc/heritrix-3.2.0/>
+For REST API documentation, see <https://heritrix.readthedocs.io/en/latest/api.html>
+and for JavaDoc see <http://builds.archive.org/javadoc/heritrix-3.2.0/> (n.b. Javadoc currently out of date).
 
 
 5) Latest Releases
