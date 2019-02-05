@@ -9,8 +9,7 @@ Readme for Heritrix
 6. License
 
 
-1) Introduction
-----------------
+## 1. Introduction
 
 Heritrix is the Internet Archive's open-source, extensible, web-scale,
 archival-quality web crawler project. Heritrix (sometimes spelled heretrix, or
@@ -20,8 +19,7 @@ preserve the digital artifacts of our culture for the benefit of future
 researchers and generations, this name seemed apt.
 
 
-2) Crawl Operators!
---------------------
+## 2. Crawl Operators!
 
 Heritrix is designed to respect the robots.txt
 <http://www.robotstxt.org/wc/robots.html> exclusion directives and META robots
@@ -32,28 +30,24 @@ User-Agent so sites that may be adversely affected by your crawl can contact
 you or adapt their server behavior accordingly.
 
 
-3) Getting Started
--------------------
+## 3. Getting Started
 
 See the User Manual, available from <https://github.com/internetarchive/heritrix3/wiki
 
 
-4) Developer Documentation
----------------------------
+## 4. Developer Documentation
 
 See <http://crawler.archive.org/articles/developer_manual/index.html>.
 For REST API documentation, see <https://heritrix.readthedocs.io/en/latest/api.html>
 and for JavaDoc see <http://builds.archive.org/javadoc/heritrix-3.2.0/> (n.b. Javadoc currently out of date).
 
 
-5) Latest Releases
--------------------
+## 5. Latest Releases
 
 Information about releases can be found at <https://github.com/internetarchive/heritrix3/wiki#latest-releases>
 
 
-6) License
------------
+## 6. License
 
 Heritrix is free software; you can redistribute it and/or modify it
 under the terms of the Apache License, Version 2.0:
