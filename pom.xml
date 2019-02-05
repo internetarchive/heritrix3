@@ -32,7 +32,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
    
     <scm>
        <connection>scm:git:https://github.com/internetarchive/heritrix3.git</connection>
-       <developerConnection>scm:svn:https://github.com/internetarchive/heritrix3.git</developerConnection>
+       <developerConnection>scm:git:https://github.com/internetarchive/heritrix3.git</developerConnection>
        <url>https://github.com/internetarchive/heritrix3</url>
     </scm>            
 
