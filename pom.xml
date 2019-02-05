@@ -143,6 +143,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<module>modules</module>
 		<module>engine</module>
 		<module>dist</module>
+		<module>contrib</module>
 	</modules>
 
 
@@ -427,6 +428,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.3</version>
                     <configuration>
+                      <tagNameFormat>@{project.version}</tagNameFormat>
                       <autoVersionSubmodules>true</autoVersionSubmodules>
                       <useReleaseProfile>false</useReleaseProfile>
                       <releaseProfiles>ossrh</releaseProfiles>
