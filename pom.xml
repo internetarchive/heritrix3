@@ -29,6 +29,12 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	</description>
 	<url>http://crawler.archive.org</url>
 	<inceptionYear>2003</inceptionYear>
+   
+    <scm>
+       <connection>scm:git:https://github.com/internetarchive/heritrix3.git</connection>
+       <developerConnection>scm:svn:https://github.com/internetarchive/heritrix3.git</developerConnection>
+       <url>https://github.com/internetarchive/heritrix3</url>
+    </scm>            
 
 	<licenses>
 		<license>
@@ -390,4 +396,85 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 	</properties>
+    <profiles>
+        <profile>
+            <id>ossrh</id>
+            <distributionManagement>
+              <repository>
+                <id>sonatype-nexus-staging</id>
+                <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+              </repository>
+              <snapshotRepository>
+                <id>sonatype-nexus-snapshots</id>
+                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+              </snapshotRepository>
+            </distributionManagement>
+            <build>
+                <plugins>
+                   <plugin>
+                     <groupId>org.sonatype.plugins</groupId>
+                     <artifactId>nexus-staging-maven-plugin</artifactId>
+                     <version>1.6.7</version>
+                     <extensions>true</extensions>
+                     <configuration>
+                       <serverId>sonatype-nexus-staging</serverId>
+                       <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                       <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                     </configuration>
+                   </plugin>
+                   <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                      <autoVersionSubmodules>true</autoVersionSubmodules>
+                      <useReleaseProfile>false</useReleaseProfile>
+                      <releaseProfiles>ossrh</releaseProfiles>
+                      <goals>deploy</goals>
+                    </configuration>
+                   </plugin>
+                    <plugin>
+                     <groupId>org.apache.maven.plugins</groupId>
+                     <artifactId>maven-source-plugin</artifactId>
+                     <version>2.2.1</version>
+                     <executions>
+                       <execution>
+                         <id>attach-sources</id>
+                         <goals>
+                           <goal>jar-no-fork</goal>
+                         </goals>
+                       </execution>
+                     </executions>
+                   </plugin>
+                   <plugin>
+                     <groupId>org.apache.maven.plugins</groupId>
+                     <artifactId>maven-javadoc-plugin</artifactId>
+                     <version>2.9.1</version>
+                     <executions>
+                       <execution>
+                         <id>attach-javadocs</id>
+                         <goals>
+                           <goal>jar</goal>
+                         </goals>
+                       </execution>
+                     </executions>
+                   </plugin>
+                       <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                          <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                              <goal>sign</goal>
+                            </goals>
+                          </execution>
+                        </executions>
+                      </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
