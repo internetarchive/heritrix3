@@ -107,7 +107,7 @@ public class FetchHistoryProcessor extends Processor {
         curi.getData().put(A_FETCH_HISTORY, history);
 
         if (curi.getFetchStatus() == 304) {
-            if( history[1] != null && history[1].containsKey(A_CONTENT_DIGEST)) {
+            if( history.length >= 2 && history[1] != null && history[1].containsKey(A_CONTENT_DIGEST)) {
                 // Copy forward the content digest as the current digest is simply of an empty response
                 latestFetch.put(A_CONTENT_DIGEST, history[1].get(A_CONTENT_DIGEST));
                 // Create revisit profile
