@@ -291,7 +291,7 @@ public class PreconditionEnforcer extends Processor  {
         // cancel further fetch-processing of this URI, because
         // the domain is unresolvable
         CrawlHost ch = serverCache.getHostFor(curi.getUURI());
-        if (ch == null || ch.hasBeenLookedUp() && ch.getIP() == null) {
+        if (ch == null || ch.getIP() == null && !isIpExpired(curi)) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine( "no dns for " + ch +
                     " cancelling processing for CrawlURI " + curi.toString());
