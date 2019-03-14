@@ -7,6 +7,10 @@ jdk:
  - openjdk7
  - openjdk8
 
+matrix:
+  allow_failures:
+  - jdk: openjdk7
+
 before_install:
  - "export JAVA_OPTS=-Xmx1500m"
  - "echo JAVA_OPTS=$JAVA_OPTS"
