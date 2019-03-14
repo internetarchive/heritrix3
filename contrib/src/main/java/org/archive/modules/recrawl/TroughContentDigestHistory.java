@@ -98,6 +98,10 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
 
     @Override
     public void stop() {
+        try {
+            troughClient().promoteDirtySegments();
+        } catch (MalformedURLException e) {
+        }
     }
 
     @Override

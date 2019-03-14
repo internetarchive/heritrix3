@@ -1,6 +1,7 @@
 package org.archive.trough;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.archive.util.ArchiveUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -83,23 +85,7 @@ public class TroughClient {
             while (true) {
                 try {
                     Thread.sleep(promotionInterval * 1000);
-
-                    String[] promoteThese;
-                    synchronized (dirtySegments) {
-                        promoteThese = dirtySegments.toArray(new String[0]);
-                        dirtySegments.clear();
-                    }
-
-                    if (promoteThese.length > 0) {
-                        logger.info("promoting " + promoteThese.length + " trough segments");
-                    }
-                    for (String segmentId: promoteThese) {
-                        try {
-                            promote(segmentId);
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "problem promoting segment " + segmentId, e);
-                        }
-                    }
+                    promoteDirtySegments();
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "continuing after unexpected exception in promoter thread", e);
                 }
@@ -125,13 +111,13 @@ public class TroughClient {
         if (payload != null) {
             connection.setDoOutput(true);
             byte[] payloadBytes = payload.getBytes("UTF-8");
-            logger.fine(method + " " + url + " " + payloadBytes.length + " bytes " + contentType);
+            logger.finer(method + " " + url + " " + payloadBytes.length + " bytes " + contentType);
             connection.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
             connection.getOutputStream().write(payloadBytes);
             connection.getOutputStream().flush();
             connection.getOutputStream().close();
         } else {
-            logger.fine(method + " " + url);
+            logger.finer(method + " " + url);
         }
 
         return connection;
@@ -139,15 +125,34 @@ public class TroughClient {
 
     @SuppressWarnings("unchecked")
     public void promote(String segmentId) throws IOException, TroughException {
-        String url = segmentManagerUrl() + "/promote";
+        String url;
+        String segmentManagerUrl = segmentManagerUrl();
+        if (segmentManagerUrl.endsWith("/")) {
+            url = segmentManagerUrl + "promote";
+        } else {
+            url = segmentManagerUrl + "/promote";
+        }
+
         JSONObject payload = new JSONObject();
         payload.put("segment", segmentId);
 
         HttpURLConnection connection = httpRequest("POST", url, JSON_MIMETYPE, payload.toString(), SIX_HOURS_MS);
         if (connection.getResponseCode() != 200) {
-            throw new TroughException("received " + connection.getResponseCode() + ": " + connection.getContent()
-            + " in response to POST " + url + " with data " + payload.toString());
+            throw new TroughException(
+                    "received " + connection.getResponseCode() + ": " + responsePayload(connection)
+                    + " in response to POST " + url + " with data " + payload.toString());
         }
+    }
+
+    protected static String responsePayload(HttpURLConnection connection) throws IOException {
+        InputStream in;
+        try {
+            in = connection.getInputStream();
+        } catch (IOException e) {
+            in = connection.getErrorStream();
+        }
+        String result = IOUtils.toString(in, "UTF-8");
+        return result;
     }
 
     /**
@@ -249,12 +254,12 @@ public class TroughClient {
         HttpURLConnection connection;
         try {
             connection = httpRequest("POST", readUrl, SQL_MIMETYPE, sql, TEN_MINUTES_MS);
+
             if (connection.getResponseCode() != 200) {
-                readUrlCache.remove(segmentId);
                 throw new TroughException(
                         "unexpected response" + connection.getResponseCode() + " "
-                        + connection.getResponseMessage() + ": " + connection.getContent()
-                        + " from " + readUrl + " to query: " + sql);
+                                + connection.getResponseMessage() + ": " + responsePayload(connection)
+                                + " from " + readUrl + " to query: " + sql);
             }
 
             Object result = new JSONParser().parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
@@ -288,15 +293,23 @@ public class TroughClient {
         if (result != null && result.size() > 0) {
             return (String) result.get(0).get("url");
         } else {
-            throw new TroughException("failed to obtain read url for trough segment " + segmentId);
+            throw new TroughException("failed to obtain read url for trough segment " + segmentId + " (maybe the segment hasn't been created yet)");
         }
     }
 
     public void registerSchema(String schemaId, String schemaSql) throws IOException {
-        String url = segmentManagerUrl() + "/schema/" + schemaId + "/sql";
+        String url;
+        String segmentManagerUrl = segmentManagerUrl();
+        if (segmentManagerUrl.endsWith("/")) {
+            url = segmentManagerUrl() + "schema/" + schemaId + "/sql";
+        } else {
+            url = segmentManagerUrl() + "/schema/" + schemaId + "/sql";
+        }
+        logger.info("registering schema " + schemaId + " at " + url);
+
         HttpURLConnection connection = httpRequest("PUT", url, SQL_MIMETYPE, schemaSql, TEN_MINUTES_MS);
         if (connection.getResponseCode() != 201 && connection.getResponseCode() != 204) {
-            throw new TroughException("received " + connection.getResponseCode() + ": " + connection.getContent()
+            throw new TroughException("received " + connection.getResponseCode() + ": " + responsePayload(connection)
             + " in response to PUT " + url + " with data " + schemaSql);
         }
     }
@@ -318,7 +331,7 @@ public class TroughClient {
             HttpURLConnection connection = httpRequest("POST", url, "application/sql", sql, TEN_MINUTES_MS);
             if (connection.getResponseCode() != 200) {
                 throw new TroughException("unexpected response" + connection.getResponseCode() + " "
-                        + connection.getResponseMessage() + ": " + connection.getContent()
+                        + connection.getResponseMessage() + ": " + responsePayload(connection)
                         + " from " + url + " to query: " + sql);
             }            
             if (!dirtySegments.contains(segmentId)) {
@@ -350,13 +363,13 @@ public class TroughClient {
         } else {
             provisionUrl = segmentManagerUrl + "/provision";
         }
-        
+
         JSONObject payload = new JSONObject();
         payload.put("segment", segmentId);
         payload.put("schema", schemaId);
         HttpURLConnection connection = httpRequest("POST", provisionUrl, JSON_MIMETYPE, payload.toJSONString(), TEN_MINUTES_MS);
         if (connection.getResponseCode() != 200) {
-            throw new TroughException("received " + connection.getResponseCode() + ": " + connection.getContent()
+            throw new TroughException("received " + connection.getResponseCode() + ": " + responsePayload(connection)
             + " in response to POST " + provisionUrl + " with data " + payload);
         }
 
@@ -371,5 +384,22 @@ public class TroughClient {
             throw new TroughException("write_url missing from response to " + provisionUrl + " - " + result);
         }
         return writeUrl;
+    }
+
+    public void promoteDirtySegments() {
+        String[] promoteThese;
+        synchronized (dirtySegments) {
+            promoteThese = dirtySegments.toArray(new String[0]);
+            dirtySegments.clear();
+        }
+
+        for (String segmentId: promoteThese) {
+            try {
+                logger.info("promoting segment " + segmentId + " to permanent storage in hdfs");
+                promote(segmentId);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem promoting segment " + segmentId, e);
+            }
+        }
     }
 }
