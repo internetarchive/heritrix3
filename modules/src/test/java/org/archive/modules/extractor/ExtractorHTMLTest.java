@@ -512,7 +512,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         CharSequence cs = "<img width=\"800\" height=\"1200\" src=\"/images/foo.jpg\" "
                 + "class=\"attachment-full size-full\" alt=\"\" "
-                + "srcset=\"/images/foo1.jpg 800w, /images/foo2.jpg 480w, /images/foo3.jpg 96w\" "
+                + "srcset=\"/images/foo1.jpg 800w, data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 700w, /images/foo2.jpg 480w, /images/foo3.jpg 96w\" "
                 + "sizes=\"(max-width: 800px) 100vw, 800px\">";
 
         getExtractor().extract(curi, cs);

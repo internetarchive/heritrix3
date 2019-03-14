@@ -685,6 +685,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             String[] links = value.toString().split(",");
             for (int i=0; i < links.length; i++){
                 String link = links[i].trim().split(" +")[0];
+		//base64 encoded images contain a comma, so the next element is a continuation of this encoded image
+		if(link.startsWith("data:image")){
+		    i++;
+		    continue;
+		}
                 logger.finer("Found " + link + " adding to outlinks.");
                 addLinkFromString(curi, link, context, hop);
                 numberOfLinksExtracted.incrementAndGet();
