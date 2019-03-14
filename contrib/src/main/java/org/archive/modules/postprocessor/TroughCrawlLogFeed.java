@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -40,7 +39,7 @@ import org.archive.crawler.frontier.BdbFrontier;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.net.ServerCache;
-import org.archive.util.ArchiveUtils;
+import org.archive.trough.TroughClient;
 import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -171,18 +170,6 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         super.stop();
     }
 
-    protected String sqlValue(Object o) {
-        if (o == null) {
-            return "null";
-        } else if (o instanceof Date) {
-            return "datetime('" + ArchiveUtils.getLog14Date((Date) o) + "')";
-        } else if (o instanceof Number) {
-            return o.toString();
-        } else {
-            return "'" + StringEscapeUtils.escapeSql(o.toString()) + "'";
-        }
-    }
-
     transient protected CloseableHttpClient _httpClient;
     protected CloseableHttpClient httpClient() {
         if (_httpClient == null) {
@@ -223,22 +210,22 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                 warcContentBytes = 0;
             }
             synchronized (crawledBatch) {
-                crawledBatch.add("(" + sqlValue(new Date(curi.getFetchBeginTime())) + ", "
-                        + sqlValue(curi.getFetchStatus()) + ", "
-                        + sqlValue(curi.getContentSize()) + ", "
-                        + sqlValue(curi.getContentLength()) + ", "
-                        + sqlValue(curi) + ", "
-                        + sqlValue(curi.getPathFromSeed()) + ", "
-                        + sqlValue(curi.isSeed() && !"".equals(curi.getPathFromSeed()) ? 1 : 0) + ", "
-                        + sqlValue(curi.getVia()) + ", "
-                        + sqlValue(MimetypeUtils.truncate(curi.getContentType())) + ", "
-                        + sqlValue(curi.getContentDigestSchemeString()) + ", "
-                        + sqlValue(curi.getSourceTag()) + ", "
-                        + sqlValue(curi.isRevisit() ? 1 : 0) + ", "
-                        + sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
-                        + sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
-                        + sqlValue(warcContentBytes) + ", "
-                        + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+                crawledBatch.add("(" + TroughClient.sqlValue(new Date(curi.getFetchBeginTime())) + ", "
+                        + TroughClient.sqlValue((Object) curi.getFetchStatus()) + ", "
+                        + TroughClient.sqlValue((Object) curi.getContentSize()) + ", "
+                        + TroughClient.sqlValue((Object) curi.getContentLength()) + ", "
+                        + TroughClient.sqlValue(curi) + ", "
+                        + TroughClient.sqlValue(curi.getPathFromSeed()) + ", "
+                        + TroughClient.sqlValue((Object) (curi.isSeed() && !"".equals(curi.getPathFromSeed()) ? 1 : 0)) + ", "
+                        + TroughClient.sqlValue(curi.getVia()) + ", "
+                        + TroughClient.sqlValue(MimetypeUtils.truncate(curi.getContentType())) + ", "
+                        + TroughClient.sqlValue(curi.getContentDigestSchemeString()) + ", "
+                        + TroughClient.sqlValue(curi.getSourceTag()) + ", "
+                        + TroughClient.sqlValue((Object) (curi.isRevisit() ? 1 : 0)) + ", "
+                        + TroughClient.sqlValue(curi.getExtraInfo().opt("warcFilename")) + ", "
+                        + TroughClient.sqlValue(curi.getExtraInfo().opt("warcOffset")) + ", "
+                        + TroughClient.sqlValue((Object) warcContentBytes) + ", "
+                        + TroughClient.sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
                 if (crawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
                     postCrawledBatch();
                 }
@@ -246,13 +233,13 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         } else {
             synchronized (uncrawledBatch) {
                 uncrawledBatch.add("("
-                        + sqlValue(new Date()) + ", "
-                        + sqlValue(curi) + ", "
-                        + sqlValue(curi.getPathFromSeed()) + ", "
-                        + sqlValue(curi.getFetchStatus()) + ", "
-                        + sqlValue(curi.getVia()) + ", "
-                        + sqlValue(curi.getSourceTag()) + ", "
-                        + sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
+                        + TroughClient.sqlValue(new Date()) + ", "
+                        + TroughClient.sqlValue(curi) + ", "
+                        + TroughClient.sqlValue(curi.getPathFromSeed()) + ", "
+                        + TroughClient.sqlValue((Object) curi.getFetchStatus()) + ", "
+                        + TroughClient.sqlValue(curi.getVia()) + ", "
+                        + TroughClient.sqlValue(curi.getSourceTag()) + ", "
+                        + TroughClient.sqlValue(serverCache.getHostFor(curi.getUURI()).getHostName()) + ")");
                 if (uncrawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - uncrawledBatchLastTime > BATCH_MAX_TIME_MS) {
                     postUncrawledBatch();
                 }
