@@ -15,13 +15,14 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.trough.TroughClient;
 import org.archive.util.ArchiveUtils;
-import org.springframework.context.Lifecycle;
+import org.springframework.context.ApplicationListener;
 
 /**
  * AbstractContentDigestHistory implementation for trough.
@@ -42,7 +43,7 @@ import org.springframework.context.Lifecycle;
  * 
  * @see <a href="https://github.com/internetarchive/warcprox/blob/c70bf2e2b93/warcprox/dedup.py#L480">trough dedup implementation in warcprox</a>
  */
-public class TroughContentDigestHistory extends AbstractContentDigestHistory implements HasKeyedProperties, Lifecycle {
+public class TroughContentDigestHistory extends AbstractContentDigestHistory implements HasKeyedProperties, ApplicationListener<CrawlStateEvent> {
     private static final Logger logger = Logger.getLogger(TroughContentDigestHistory.class.getName());
 
     protected KeyedProperties kp = new KeyedProperties();
@@ -68,14 +69,14 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         return (String) kp.get("rethinkUrl");
     }
 
-    protected TroughClient _troughClient = null;
-    protected boolean started = false;
+    protected TroughClient troughClient = null;
 
     protected TroughClient troughClient() throws MalformedURLException {
-        if (_troughClient == null) {
-            _troughClient = new TroughClient(getRethinkUrl(), 60 * 60);
+        if (troughClient == null) {
+            troughClient = new TroughClient(getRethinkUrl(), 60 * 60);
+            troughClient.start();
         }
-        return _troughClient;
+        return troughClient;
     }
 
     protected static final String SCHEMA_ID = "warcprox-dedup-v1";
@@ -86,27 +87,37 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
             + "    id varchar(100));\n"; // warc record id
 
     @Override
-    public void start() {
-        try {
-            troughClient().registerSchema(SCHEMA_ID, SCHEMA_SQL);
-        } catch (Exception e) {
-            // can happen. hopefully someone else has registered it
-            logger.log(Level.SEVERE, "will try to continue after problem registering schema " + SCHEMA_ID, e);
-        }
-        started  = true;
-    }
+    public void onApplicationEvent(CrawlStateEvent event) {
+        switch(event.getState()) {
+        case PREPARING:
+            try {
+                // initializes TroughClient and starts promoter thread as a side effect
+                troughClient().registerSchema(SCHEMA_ID, SCHEMA_SQL);
+            } catch (Exception e) {
+                // can happen. hopefully someone else has registered it
+                logger.log(Level.SEVERE, "will try to continue after problem registering schema " + SCHEMA_ID, e);
+            }
+            break;
 
-    @Override
-    public void stop() {
-        try {
-            troughClient().promoteDirtySegments();
-        } catch (MalformedURLException e) {
-        }
-    }
+        case FINISHED:
+            /*
+             * We do this here at FINISHED rather than at STOPPING time to make
+             * sure every URL has had a chance to have its dedup info stored,
+             * before committing the trough segment to permanent storage.
+             *
+             * (When modules implement org.springframework.context.Lifecycle,
+             * stop() is called in the STOPPING phase, before all URLs are
+             * necessarily finished processing.)
+             */
+            if (troughClient != null) {
+                troughClient.stop();
+                troughClient.promoteDirtySegments();
+                troughClient = null;
+            }
+            break;
 
-    @Override
-    public boolean isRunning() {
-        return started;
+        default:
+        }
     }
 
     // dates come back from sqlite in this format: 2019-03-14 00:49:14
