@@ -65,6 +65,7 @@ public class TroughClient {
     protected String[] rethinkServers;
     protected String rethinkDb;
     protected Integer promotionInterval;
+    protected Thread promotrix;
 
     public class TroughException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -79,15 +80,21 @@ public class TroughClient {
         }
     }
 
-    class Promotrix implements Runnable {
+    protected class Promotrix implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
                     Thread.sleep(promotionInterval * 1000);
+                } catch (InterruptedException e) {
+                    logger.info("promoter thread shutting down");
+                    return;
+                }
+
+                try {
                     promoteDirtySegments();
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "continuing after unexpected exception in promoter thread", e);
+                    logger.log(Level.WARNING, "continuing after unexpected exception promoting dirty segments", e);
                 }
             }
         }
@@ -97,7 +104,7 @@ public class TroughClient {
         this(rethinkdbTroughUrl, null);
     }
 
-    protected HttpURLConnection httpRequest(String method, String url, String contentType, String payload, int timeout) throws IOException {
+    protected static HttpURLConnection httpRequest(String method, String url, String contentType, String payload, int timeout) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 
         connection.setConnectTimeout(timeout);
@@ -125,13 +132,7 @@ public class TroughClient {
 
     @SuppressWarnings("unchecked")
     public void promote(String segmentId) throws IOException, TroughException {
-        String url;
-        String segmentManagerUrl = segmentManagerUrl();
-        if (segmentManagerUrl.endsWith("/")) {
-            url = segmentManagerUrl + "promote";
-        } else {
-            url = segmentManagerUrl + "/promote";
-        }
+        String url = segmentManagerUrl("promote");
 
         JSONObject payload = new JSONObject();
         payload.put("segment", segmentId);
@@ -190,6 +191,17 @@ public class TroughClient {
         throw new TroughException(lastE);
     }
 
+    protected String segmentManagerUrl(String subpath) throws TroughException {
+        String base = segmentManagerUrl();
+        if (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        if (subpath.startsWith("/")) {
+            subpath = subpath.substring(1);
+        }
+        return base + "/" + subpath;
+    }
+
     protected String segmentManagerUrl() throws TroughException {
         ReqlExpr reql = r.table("services").optArg("read_mode", "majority").getAll("trough-sync-master")
                 .filter(svc -> r.now().sub(svc.g("last_heartbeat")).lt(svc.g("ttl")));
@@ -216,12 +228,29 @@ public class TroughClient {
         writeUrlCache = new HashMap<String, String>();
         readUrlCache = new HashMap<String, String>();
         dirtySegments = new HashSet<String>();
+        this.promotionInterval = promotionInterval;
+    }
 
+    public void start() {
         if (promotionInterval != null) {
-            this.promotionInterval = promotionInterval;
-            Thread promotrix = new Thread(new Promotrix(), "TroughClient-promotrix");
+            promotrix = new Thread(new Promotrix(), "TroughClient-promotrix");
             promotrix.setDaemon(true);
             promotrix.start();
+        }
+    }
+
+    public void stop() {
+        if (promotrix != null) {
+            promotrix.interrupt();
+            try {
+                promotrix.join(60 * 1000);
+            } catch (InterruptedException e) {
+            }
+            if (promotrix.isAlive()) {
+                logger.warning(promotrix + " is still running after interrupting and waiting one minute; "
+                        + "it should die once the active promotion finishes");
+            }
+            promotrix = null;
         }
     }
 
@@ -240,7 +269,6 @@ public class TroughClient {
         rethinkDb = m.group(2);
     }
 
-    // XXX inherits inconsistency in handling exceptions from warcprox trough client
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> read(String segmentId, String sqlTmpl, Object[] values) throws IOException {
         String readUrl = readUrl(segmentId);
@@ -298,15 +326,8 @@ public class TroughClient {
     }
 
     public void registerSchema(String schemaId, String schemaSql) throws IOException {
-        String url;
-        String segmentManagerUrl = segmentManagerUrl();
-        if (segmentManagerUrl.endsWith("/")) {
-            url = segmentManagerUrl() + "schema/" + schemaId + "/sql";
-        } else {
-            url = segmentManagerUrl() + "/schema/" + schemaId + "/sql";
-        }
+        String url = segmentManagerUrl("schema/" + schemaId + "/sql");
         logger.info("registering schema " + schemaId + " at " + url);
-
         HttpURLConnection connection = httpRequest("PUT", url, SQL_MIMETYPE, schemaSql, TEN_MINUTES_MS);
         if (connection.getResponseCode() != 201 && connection.getResponseCode() != 204) {
             throw new TroughException("received " + connection.getResponseCode() + ": " + responsePayload(connection)
@@ -356,17 +377,12 @@ public class TroughClient {
 
     @SuppressWarnings("unchecked")
     protected String writeUrlNoCache(String segmentId, String schemaId) throws IOException {
-        String provisionUrl;
-        String segmentManagerUrl = segmentManagerUrl();
-        if (segmentManagerUrl.endsWith("/")) {
-            provisionUrl = segmentManagerUrl + "provision";
-        } else {
-            provisionUrl = segmentManagerUrl + "/provision";
-        }
+        String provisionUrl = segmentManagerUrl("provision");
 
         JSONObject payload = new JSONObject();
         payload.put("segment", segmentId);
         payload.put("schema", schemaId);
+
         HttpURLConnection connection = httpRequest("POST", provisionUrl, JSON_MIMETYPE, payload.toJSONString(), TEN_MINUTES_MS);
         if (connection.getResponseCode() != 200) {
             throw new TroughException("received " + connection.getResponseCode() + ": " + responsePayload(connection)
@@ -397,6 +413,9 @@ public class TroughClient {
             try {
                 logger.info("promoting segment " + segmentId + " to permanent storage in hdfs");
                 promote(segmentId);
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
             } catch (Exception e) {
                 logger.log(Level.WARNING, "problem promoting segment " + segmentId, e);
             }
