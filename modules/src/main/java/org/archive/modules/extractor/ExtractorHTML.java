@@ -682,7 +682,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
             logger.fine("Found srcset listing: " + value.toString());
 
-            Matcher matcher = TextUtils.getMatcher("[\\s,]*(\\S*[^,\\s])(?:\\s(?:[^,(]+|\\([^)]*\\))*)?", value);
+            Matcher matcher = TextUtils.getMatcher("[\\s,]*(\\S*[^,\\s])(?:\\s(?:[^,(]+|\\([^)]*(?:\\)|$))*)?", value);
             while (matcher.lookingAt()) {
                 String link = matcher.group(1);
                 matcher.region(matcher.end(), matcher.regionEnd());
