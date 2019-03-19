@@ -32,7 +32,7 @@ you or adapt their server behavior accordingly.
 
 ## 3. Getting Started
 
-See the User Manual, available from <https://github.com/internetarchive/heritrix3/wiki
+See the User Manual, available from <https://github.com/internetarchive/heritrix3/wiki>
 
 
 ## 4. Developer Documentation
