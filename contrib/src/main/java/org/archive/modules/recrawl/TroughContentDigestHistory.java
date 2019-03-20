@@ -21,6 +21,7 @@ import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.trough.TroughClient;
+import org.archive.trough.TroughClient.TroughNoReadUrlException;
 import org.archive.util.ArchiveUtils;
 import org.springframework.context.ApplicationListener;
 
@@ -150,7 +151,10 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
                     + " for uri " + curi + " - " + hist);
                 }
                 contentDigestHistory.putAll(hist);
-            }   
+            }
+        } catch (TroughNoReadUrlException e) {
+            // this is totally normal at the beginning of the crawl, for example
+            logger.log(Level.FINE, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
         }
