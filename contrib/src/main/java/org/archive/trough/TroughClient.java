@@ -80,6 +80,13 @@ public class TroughClient {
         }
     }
 
+    public class TroughNoReadUrlException extends TroughException {
+        private static final long serialVersionUID = 1L;
+        public TroughNoReadUrlException(String msg) {
+            super(msg);
+        }
+    }
+
     protected class Promotrix implements Runnable {
         @Override
         public void run() {
@@ -321,7 +328,7 @@ public class TroughClient {
         if (result != null && result.size() > 0) {
             return (String) result.get(0).get("url");
         } else {
-            throw new TroughException("failed to obtain read url for trough segment " + segmentId + " (maybe the segment hasn't been created yet)");
+            throw new TroughNoReadUrlException("failed to obtain read url for trough segment " + segmentId + " (maybe the segment hasn't been created yet)");
         }
     }
 
