@@ -321,16 +321,6 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
             assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
-            /*
-             * XXX I think browsers differ on this behavior. This is what
-             * org.apache.http.impl.cookie.BrowserCompatSpec does.
-             */
-            // Disable test as appears to fail under HTTP Client 3.5.7
-            //curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
-            //fetcher().process(curi);
-            //assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            //assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
-
             assertEquals(1, cookieStore.getCookies().size());
         }
 
