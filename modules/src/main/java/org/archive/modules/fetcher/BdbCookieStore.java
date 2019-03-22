@@ -20,6 +20,7 @@ package org.archive.modules.fetcher;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -78,7 +79,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
         @Override public int size() { return wrapped.size(); }
         @Override public boolean isEmpty() { throw new RuntimeException("not implemented"); }
         @Override public boolean contains(Object o) { throw new RuntimeException("not implemented"); }
-        @Override public Iterator<T> iterator() { throw new RuntimeException("not implemented"); }
+        @Override public Iterator<T> iterator() { return (Iterator<T>) Arrays.asList(wrapped.toArray()).iterator(); }
         @Override public Object[] toArray() { return wrapped.toArray(); }
         @SuppressWarnings("hiding") @Override public <T> T[] toArray(T[] a) { return wrapped.toArray(a); }
         @Override public boolean add(T e) { throw new RuntimeException("immutable list"); }

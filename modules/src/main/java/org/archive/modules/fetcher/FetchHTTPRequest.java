@@ -400,7 +400,7 @@ public class FetchHTTPRequest {
         if (fetcher.getIgnoreCookies()) {
             requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            requestConfigBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.DEFAULT);
         }
 
         requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
