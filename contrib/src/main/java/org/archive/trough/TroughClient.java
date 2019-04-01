@@ -145,7 +145,9 @@ public class TroughClient {
         JSONObject payload = new JSONObject();
         payload.put("segment", segmentId);
 
+        logger.info("promoting segment " + segmentId + " to permanent storage in hdfs: posting " + payload + " to " + url);
         HttpURLConnection connection = httpRequest("POST", url, JSON_MIMETYPE, payload.toString(), SIX_HOURS_MS);
+
         if (connection.getResponseCode() != 200) {
             throw new TroughException(
                     "received " + connection.getResponseCode() + ": " + responsePayload(connection)
@@ -293,7 +295,7 @@ public class TroughClient {
 
             if (connection.getResponseCode() != 200) {
                 throw new TroughException(
-                        "unexpected response" + connection.getResponseCode() + " "
+                        "unexpected response " + connection.getResponseCode() + " "
                                 + connection.getResponseMessage() + ": " + responsePayload(connection)
                                 + " from " + readUrl + " to query: " + sql);
             }
@@ -301,19 +303,27 @@ public class TroughClient {
             Object result = new JSONParser().parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             return (List<Map<String, Object>>) result;
         } catch (IOException e) {
-            readUrlCache.remove(segmentId);
+            synchronized (readUrlCache) {
+                readUrlCache.remove(segmentId);
+            }
             throw e;
         } catch (ParseException e) {
-            readUrlCache.remove(segmentId);
+            synchronized (readUrlCache) {
+                readUrlCache.remove(segmentId);
+            }
             throw new TroughException("problem parsing json response from " + readUrl, e);
         }
     }
 
     protected String readUrl(String segmentId) throws TroughException {
         if (readUrlCache.get(segmentId) == null) {
-            String url = readUrlNoCache(segmentId);
-            readUrlCache.put(segmentId, url);
-            logger.info("segment " + segmentId + " read url is " + url);
+            synchronized (readUrlCache) {
+                if (readUrlCache.get(segmentId) == null) {
+                    String url = readUrlNoCache(segmentId);
+                    readUrlCache.put(segmentId, url);
+                }
+            }
+            logger.info("segment " + segmentId + " read url is " + readUrlCache.get(segmentId));
         }
         return readUrlCache.get(segmentId);
     }
@@ -364,21 +374,27 @@ public class TroughClient {
                         + " from " + url + " to query: " + sql);
             }            
             if (!dirtySegments.contains(segmentId)) {
-                synchronized (segmentId) {
+                synchronized (dirtySegments) {
                     dirtySegments.add(segmentId);
                 }
             }
         } catch (IOException e) {
-            writeUrlCache.remove("segmentId");
+            synchronized (writeUrlCache) {
+                writeUrlCache.remove(segmentId);
+            }
             throw e;
         }
     }
 
     protected String writeUrl(String segmentId, String schemaId) throws IOException {
         if (writeUrlCache.get(segmentId) == null) {
-            String url = writeUrlNoCache(segmentId, schemaId);
-            writeUrlCache.put(segmentId, url);
-            logger.info("segment " + segmentId + " write url is " + url);
+            synchronized (writeUrlCache) {
+                if (writeUrlCache.get(segmentId) == null) {
+                    String url = writeUrlNoCache(segmentId, schemaId);
+                    writeUrlCache.put(segmentId, url);
+                }
+            }
+            logger.info("segment " + segmentId + " write url is " + writeUrlCache.get(segmentId));
         }
         return writeUrlCache.get(segmentId);
     }
@@ -419,7 +435,6 @@ public class TroughClient {
 
         for (String segmentId: promoteThese) {
             try {
-                logger.info("promoting segment " + segmentId + " to permanent storage in hdfs");
                 promote(segmentId);
                 if (Thread.currentThread().isInterrupted()) {
                     return;
