@@ -196,6 +196,13 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
             processEmbed(curi, attrValue, context, hopType);
         }
+        // SRCSET
+        if (((attr = attributes.get("srcset")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            codebase = StringEscapeUtils.unescapeHtml(attrValue);
+            CharSequence context = elementContext(elementName, attr.getKey());
+            processEmbed(curi, codebase, context);
+        }
         // CODEBASE
         if (((attr = attributes.get("codebase")) != null) &&
                  ((attrValue = attr.getValue()) != null)) {

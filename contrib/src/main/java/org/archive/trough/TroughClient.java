@@ -25,6 +25,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.rethinkdb.RethinkDB;
+import com.rethinkdb.RethinkDBConstants;
 import com.rethinkdb.gen.ast.ReqlExpr;
 import com.rethinkdb.net.Connection;
 
@@ -182,7 +183,7 @@ public class TroughClient {
             try {
                 String[] hostPort = rethinkServers[whichServer].split(":", 2);
                 String host = hostPort[0];
-                int port = 28015;
+                int port = RethinkDBConstants.DEFAULT_PORT;
                 if (hostPort.length == 2) {
                     port = Integer.valueOf(hostPort[1]);
                 }
