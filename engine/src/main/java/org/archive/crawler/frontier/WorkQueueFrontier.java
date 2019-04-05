@@ -442,8 +442,8 @@ implements Closeable,
         synchronized(wq) {
             wq.noteDeactivated();
             inProcessQueues.remove(wq);
-            if(wq.getCount()==0) {
-                System.err.println("deactivate empty queue?");
+            if (wq.getCount() == 0) {
+                logger.info("deactivate empty queue? " + wq.getClassKey());
             }
 
             synchronized (getInactiveQueuesByPrecedence()) {
