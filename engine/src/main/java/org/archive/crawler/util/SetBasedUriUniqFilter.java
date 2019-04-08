@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,6 +44,7 @@ public abstract class SetBasedUriUniqFilter implements UriUniqFilter, Serializab
     protected PrintWriter profileLog;
     protected long duplicateCount = 0;
     protected long duplicatesAtLastSample = 0;
+    protected AtomicLong addedCount = new AtomicLong();
     
     public SetBasedUriUniqFilter() {
         super();
@@ -60,6 +62,11 @@ public abstract class SetBasedUriUniqFilter implements UriUniqFilter, Serializab
 
     protected abstract long setCount();
     
+    @Override
+    public long addedCount() {
+        return addedCount.get();
+    }
+
     public long count() {
         return setCount();
     }
@@ -80,6 +87,7 @@ public abstract class SetBasedUriUniqFilter implements UriUniqFilter, Serializab
     }
     
     public void add(String key, CrawlURI value) {
+        addedCount.incrementAndGet();
         profileLog(key);
         if (setAdd(key)) {
             this.receiver.receive(value);

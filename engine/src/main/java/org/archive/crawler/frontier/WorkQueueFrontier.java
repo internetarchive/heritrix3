@@ -1057,7 +1057,7 @@ implements Closeable,
      * @param now time now in ms 
      * @param delay_ms time to snooze in ms
      */
-    private void snoozeQueue(WorkQueue wq, long now, long delay_ms) {
+    protected void snoozeQueue(WorkQueue wq, long now, long delay_ms) {
         long nextTime = now + delay_ms;
         wq.setWakeTime(nextTime);
         DelayedWorkQueue dq = new DelayedWorkQueue(wq);
@@ -1088,6 +1088,10 @@ implements Closeable,
      */
     public long discoveredUriCount() {
         return (this.uriUniqFilter != null)? this.uriUniqFilter.count(): 0;
+    }
+
+    public long candidateUriCount() {
+        return (this.uriUniqFilter != null) ? this.uriUniqFilter.addedCount() : 0;
     }
 
     /**
@@ -1145,6 +1149,7 @@ implements Closeable,
         map.put("retiredQueues", retiredCount);
         map.put("exhaustedQueues", exhaustedCount);
         map.put("lastReachedState", lastReachedState);
+        map.put("queueReadiedCount", queueReadiedCount.get());
 
         return map;
     }
