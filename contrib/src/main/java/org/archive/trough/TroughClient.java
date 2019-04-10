@@ -182,6 +182,7 @@ public class TroughClient {
         Exception lastE = null;
         for (int i = 0; i <= retries; i++) {
             int whichServer = rand.nextInt(rethinkServers.length);
+            Connection conn = null;
             try {
                 String[] hostPort = rethinkServers[whichServer].split(":", 2);
                 String host = hostPort[0];
@@ -189,12 +190,16 @@ public class TroughClient {
                 if (hostPort.length == 2) {
                     port = Integer.valueOf(hostPort[1]);
                 }
-                Connection conn = r.connection().hostname(host).port(port).db(rethinkDb).connect();
+                conn = r.connection().hostname(host).port(port).db(rethinkDb).connect();
                 Object result = reql.run(conn);
                 return result;
             } catch (Exception e) {
                 logger.warning("rethinkdb query failed (server=" + rethinkServers[whichServer] + "; " + i + " retries left)");
                 lastE = e;
+            } finally {
+                if (conn != null) {
+                    conn.close();
+                }
             }
         }
 
