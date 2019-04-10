@@ -374,7 +374,7 @@ public class TroughClient {
         try {
             HttpURLConnection connection = httpRequest("POST", url, "application/sql", sql, TEN_MINUTES_MS);
             if (connection.getResponseCode() != 200) {
-                throw new TroughException("unexpected response" + connection.getResponseCode() + " "
+                throw new TroughException("unexpected response " + connection.getResponseCode() + " "
                         + connection.getResponseMessage() + ": " + responsePayload(connection)
                         + " from " + url + " to query: " + sql);
             }            
