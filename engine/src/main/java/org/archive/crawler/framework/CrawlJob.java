@@ -172,6 +172,12 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             BufferedReader jobLogReader = new BufferedReader(
                     new InputStreamReader(jobLogIn));
             String line;
+            // If we sliced into the file, make sure we skip to the next line:
+            // (See https://github.com/internetarchive/heritrix3/issues/239)
+            if (startPosition != 0) {
+                line = jobLogReader.readLine();
+            }
+            // Parse lines looking for launch details:
             while ((line = jobLogReader.readLine()) != null) {
                 Matcher m = launchLine.matcher(line);
                 if (m.matches()) {
