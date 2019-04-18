@@ -1,18 +1,34 @@
 # Change Log
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
-
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190207...HEAD)
+## [3.4.0-20190418](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190418) (2019-04-18)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190207...3.4.0-20190418)
 
 **Fixed bugs:**
 
+- Invalid format exception in scanJobLog [\#239](https://github.com/internetarchive/heritrix3/issues/239)
 - Domain name lookup failures get cached forever [\#234](https://github.com/internetarchive/heritrix3/issues/234)
 - Allow failed lookups to expire, for \#234. [\#235](https://github.com/internetarchive/heritrix3/pull/235) ([anjackson](https://github.com/anjackson))
 
 **Closed issues:**
 
+- Failed DNS requests remain enqueued [\#252](https://github.com/internetarchive/heritrix3/issues/252)
 - SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder" [\#236](https://github.com/internetarchive/heritrix3/issues/236)
+- Make FetchHistoryProcessor 304 handler more robust [\#229](https://github.com/internetarchive/heritrix3/issues/229)
 - ToeThread death when using HighestUriPrecedenceProvider [\#221](https://github.com/internetarchive/heritrix3/issues/221)
+- Google Drive robots.txt broken [\#193](https://github.com/internetarchive/heritrix3/issues/193)
+
+**Merged pull requests:**
+
+- set of frontier management changes to support CrawlHQ module [\#253](https://github.com/internetarchive/heritrix3/pull/253) ([dvanduzer](https://github.com/dvanduzer))
+- fix some trough dedup bugs [\#251](https://github.com/internetarchive/heritrix3/pull/251) ([nlevitt](https://github.com/nlevitt))
+- Remove suffix from warcWriter since it is no longer used. [\#249](https://github.com/internetarchive/heritrix3/pull/249) ([ruebot](https://github.com/ruebot))
+- Revert "Upgrade httpclient to 4.5.7 and handle cookies more compliantly" [\#248](https://github.com/internetarchive/heritrix3/pull/248) ([ato](https://github.com/ato))
+- Upgrade httpclient to 4.5.7 and handle cookies more compliantly [\#246](https://github.com/internetarchive/heritrix3/pull/246) ([anjackson](https://github.com/anjackson))
+- Update README.md [\#244](https://github.com/internetarchive/heritrix3/pull/244) ([mikeizbicki](https://github.com/mikeizbicki))
+- Handle commas more compliantly when parsing srcset [\#243](https://github.com/internetarchive/heritrix3/pull/243) ([ato](https://github.com/ato))
+- Trough dedup [\#242](https://github.com/internetarchive/heritrix3/pull/242) ([nlevitt](https://github.com/nlevitt))
+- Ensure we start parsing full lines, for \#239. [\#240](https://github.com/internetarchive/heritrix3/pull/240) ([anjackson](https://github.com/anjackson))
+- Add CHANGELOG; address \#233. [\#238](https://github.com/internetarchive/heritrix3/pull/238) ([ruebot](https://github.com/ruebot))
 
 ## [3.4.0-20190207](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190207) (2019-02-07)
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190205...3.4.0-20190207)
