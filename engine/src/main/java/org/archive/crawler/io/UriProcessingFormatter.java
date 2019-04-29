@@ -151,7 +151,6 @@ extends Formatter implements Preformatter, CoreAttributeConstants {
         }
         
         if (logExtraInfo) {
-            // XXX would we rather have "-" if info's empty?
             buffer.append(" ").append(curi.getExtraInfo());
         }
         
