@@ -67,7 +67,6 @@ public class FetchHistoryProcessor extends Processor {
     @Override
     protected void innerProcess(CrawlURI puri) throws InterruptedException {
         CrawlURI curi = (CrawlURI) puri;
-        curi.addPersistentDataMapKey(A_FETCH_HISTORY);
         HashMap<String, Object> latestFetch = new HashMap<String, Object>();
 
         // save status
