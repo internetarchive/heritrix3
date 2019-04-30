@@ -139,7 +139,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
     }
 
-    private void addVideoOutlink(CrawlURI uri, JsonObject json,
+    protected void addVideoOutlink(CrawlURI uri, JsonObject json,
             String videoUrl) {
         try {
             UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
