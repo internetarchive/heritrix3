@@ -1,3 +1,22 @@
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package org.archive.modules.extractor;
 
 import java.io.IOException;
@@ -24,11 +43,34 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonStreamParser;
 
+/**
+ * Extracts links to media by running youtube-dl in a subprocess. Runs only on
+ * html.
+ *
+ * <p>
+ * Keeps a log of media captured as a result of youtube-dl extraction. The
+ * format of the log is as follows:
+ *
+ * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-timestamp] [seed-url]</pre>
+ *
+ * <p>
+ * The annotation field looks like {@code "youtube-dl:1/3"}. In this example,
+ * "3" is the number of media urls youtube-dl discovered on the page, and "1" is
+ * the index of this media within the page. The intention is to use this for
+ * playback. The rest of the fields included in the log were also chosen to
+ * support creation of an index of media by containing page, to be used for
+ * playback.
+ *
+ * @author nlevitt
+ */
 public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
-    
     private static Logger logger =
             Logger.getLogger(ExtractorYoutubeDL.class.getName());
-    
+
+    protected static final String YDL_CONTAINING_PAGE_DIGEST = "ydl-containing-page-digest";
+    protected static final String YDL_CONTAINING_PAGE_TIMESTAMP = "ydl-containing-page-timestamp";
+    protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
+
     protected transient Logger ydlLogger = null;
 
     protected CrawlerLoggerModule crawlerLoggerModule;
@@ -39,7 +81,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
     public void setCrawlerLoggerModule(CrawlerLoggerModule crawlerLoggerModule) {
         this.crawlerLoggerModule = crawlerLoggerModule;
     }
-    
+
     @Override
     public void start() {
         if (!isRunning) {
@@ -103,12 +145,22 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
             CrawlURI link = uri.createCrawlURI(dest, LinkContext.EMBED_MISC,
                     Hop.EMBED);
+
+            // annotation
             String annotation = "youtube-dl:1/1";
             if (!json.get("playlist_index").isJsonNull()) {
                 annotation = "youtube-dl:" + json.get("playlist_index") + "/"
                         + json.get("n_entries");
             }
             link.getAnnotations().add(annotation);
+
+            // save info unambiguously identifying containing page capture
+            link.getData().put(YDL_CONTAINING_PAGE_URI, uri.toString());
+            link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
+                    ArchiveUtils.get17DigitDate(uri.getFetchBeginTime()));
+            link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
+                    uri.getContentDigestSchemeString());
+
             uri.getOutLinks().add(link);
         } catch (URIException e) {
             logUriError(e, uri.getUURI(), videoUrl);
@@ -136,46 +188,43 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         } else {
             if (uri.getContentSize() > 0) {
                 length = Long.toString(uri.getContentSize());
-            } 
+            }
         }
 
-        String seed = uri.containsDataKey(CoreAttributeConstants.A_SOURCE_TAG) 
+        String seed = uri.containsDataKey(CoreAttributeConstants.A_SOURCE_TAG)
                 ? uri.getSourceTag()
                 : "-";
 
-        // 2019-04-29T21:14:13.139Z     1         53 dns:www.indiewire.com P https://www.indiewire.com/2019/04/gemini-man-trailer-will-smith-ang-lee-1202126973/ text/dns #015 20190429211412388+219 sha1:WAY2F6QNMMIXRR2NWGQH2COJIAKRQO2S - - {"warcFilename":"WEB-20190429211413120-00000-48039~10.30.67.32~6440.warc.gz","warcFileOffset":1530}
         ydlLogger.info(
                 uri.getFetchStatus()
                 + " " + length
                 + " " + MimetypeUtils.truncate(uri.getContentType())
                 + " " + uri.getContentDigestSchemeString()
-                + " " + ydlAnnotation
                 + " " + ArchiveUtils.get17DigitDate(uri.getFetchBeginTime())
                 + " " + uri
-                + " " + containingPageUri(uri)
+                + " " + ydlAnnotation
+                + " " + uri.getData().get(YDL_CONTAINING_PAGE_DIGEST)
+                + " " + uri.getData().get(YDL_CONTAINING_PAGE_TIMESTAMP)
+                + " " + uri.getData().get(YDL_CONTAINING_PAGE_URI)
                 + " " + seed);
-    }
-
-    protected String containingPageUri(CrawlURI uri) {
-        String u = (String) uri.getData().get("containingPage");
-        if (u != null) {
-            return u;
-        } else {
-            return uri.getVia().toString();
-        }
     }
 
     protected void doRedirectInheritance(CrawlURI uri, String ydlAnnotation) {
         for (CrawlURI link: uri.getOutLinks()) {
-            if (link.getLastHop() == "R") {
+            if ("R".equals(link.getLastHop())) {
                 link.getAnnotations().add(ydlAnnotation);
-                link.getData().put("containingPage", containingPageUri(uri));
+                link.getData().put(YDL_CONTAINING_PAGE_URI,
+                        uri.getData().get(YDL_CONTAINING_PAGE_URI));
+                link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
+                        uri.getData().get(YDL_CONTAINING_PAGE_TIMESTAMP));
+                link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
+                        uri.getData().get(YDL_CONTAINING_PAGE_DIGEST));
             }
         }
     }
 
     /**
-     * 
+     *
      * @param uri
      * @return list of json blobs returned by {@code youtube-dl --dump-json}, or
      *         empty list if no videos found, or failure
@@ -184,7 +233,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
     protected List<JsonObject> runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
-         * 
+         *
          * best: Select the best quality format represented by a single file
          * with video and audio.
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
@@ -217,22 +266,21 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
 
         try {
             if (proc.waitFor() != 0) {
-                if (!stderr.contains("ERROR: Unsupported URL:")
-                        && !stderr.contains("ERROR: There's no video in this tweet")) {
-                    logger.warning("youtube-dl exited with status "
+                /*
+                 * youtube-dl is noisy when it fails to find a video. I guess
+                 * the assumption is that you're running it on pages you know
+                 * have videos. We could be hiding real errors in some cases
+                 * but it's just too much noise to log this at WARNING level.
+                 */
+                logger.fine("youtube-dl exited with status "
                         + proc.waitFor() + " " + pb.command()
                         + "\n=== stdout ===\n" + stdout
                         + "\n=== stderr ===\n" + stderr);
-                }
-                // else it just didn't find a video
                 return (List<JsonObject>) Collections.EMPTY_LIST;
             }
         } catch (InterruptedException e) {
             proc.destroyForcibly();
         }
-
-        // logger.info("youtube-dl stdout:\n" + stdout);
-        // logger.info("youtube-dl stderr:\n" + stderr);
 
         ArrayList<JsonObject> ydlJsons = new ArrayList<JsonObject>();
         JsonStreamParser parser = new JsonStreamParser(stdout);
@@ -241,7 +289,9 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 ydlJsons.add((JsonObject) parser.next());
             }
         } catch (JsonParseException e) {
-            logger.log(Level.WARNING,
+            // sometimes we get no output at all from youtube-dl, which
+            // manifests as a JsonIOException
+            logger.log(Level.FINE,
                     "problem parsing json from youtube-dl " + pb.command()
                             + "\n=== stdout ===\n" + stdout
                             + "\n=== stderr ===\n" + stderr,
@@ -252,15 +302,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         return ydlJsons;
     }
 
-    /**
-     * Run youtube-dl on html 200 responses.
-     * 
-     * @see ExtractorHTML#shouldExtract(CrawlURI)
-     */
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         // We have some special sauce (not actually extraction) to apply to
-        // "youtube-dl"-annotated urls, see extract().
+        // "youtube-dl"-annotated urls. See extract().
         if (findYdlAnnotation(uri) != null) {
             return true;
         }
@@ -277,12 +322,12 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         if (uri.getFetchStatus() != 200) {
             return false;
         }
-        
+
         // see https://github.com/internetarchive/brozzler/blob/65fad5e8b/brozzler/ydl.py#L48
         if (uri.getContentLength() <= 0 || uri.getContentLength() >= 200000000) {
             return false;
         }
-        
+
         String mime = uri.getContentType().toLowerCase();
         if (mime.startsWith("text/html")
                 || mime.startsWith("application/xhtml")
