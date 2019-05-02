@@ -25,6 +25,11 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,7 +56,7 @@ import com.google.gson.JsonStreamParser;
  * Keeps a log of media captured as a result of youtube-dl extraction. The
  * format of the log is as follows:
  *
- * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-timestamp] [seed-url]</pre>
+ * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]</pre>
  *
  * <p>
  * The annotation field looks like {@code "youtube-dl:1/3"}. In this example,
@@ -104,6 +109,31 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 return buf.toString();
             }
             buf.append(rbuf, 0, n);
+        }
+    }
+
+    // see https://github.com/internetarchive/heritrix3/pull/257/files#r279990349
+    protected String readToEndInThread(Reader reader) throws IOException {
+        ExecutorService threadPool = Executors.newSingleThreadExecutor();
+        Future<String> future = threadPool.submit(new Callable<String>() {
+            @Override
+            public String call() throws IOException {
+                return readToEnd(reader);
+            }
+        });
+
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            throw new IOException(e); // :shrug:
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException(e);
+            }
+        } finally {
+            threadPool.shutdown();
         }
     }
 
@@ -255,7 +285,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         try {
             stdout = readToEnd(
                     new InputStreamReader(proc.getInputStream(), "UTF-8"));
-            stderr = readToEnd(
+            stderr = readToEndInThread(
                     new InputStreamReader(proc.getErrorStream(), "UTF-8"));
         } catch (IOException e) {
             logger.log(Level.WARNING,
