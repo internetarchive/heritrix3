@@ -283,10 +283,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         String stdout = null;
         String stderr = null;
         try {
-            stdout = readToEnd(
-                    new InputStreamReader(proc.getInputStream(), "UTF-8"));
             stderr = readToEndInThread(
                     new InputStreamReader(proc.getErrorStream(), "UTF-8"));
+            stdout = readToEnd(
+                    new InputStreamReader(proc.getInputStream(), "UTF-8"));
         } catch (IOException e) {
             logger.log(Level.WARNING,
                     "problem reading output from youtube-dl " + pb.command(),
