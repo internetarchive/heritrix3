@@ -42,6 +42,11 @@ public interface UriUniqFilter {
     public long count();
     
     /**
+     * @return Count of URIs added.
+     */
+    public long addedCount();
+
+    /**
      * Count of items added, but not yet filtered in or out. 
      * 
      * Some implementations may buffer up large numbers of pending

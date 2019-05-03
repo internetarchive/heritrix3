@@ -96,7 +96,7 @@ implements Checkpointable, Lifecycle {
     protected void innerProcess(CrawlURI curi) {
         log.writeLine(persistKeyFor(curi), " ", 
                 new String(Base64.encodeBase64(
-                        SerializationUtils.serialize((Serializable)curi.getPersistentDataMap()))));      
+                        SerializationUtils.serialize((Serializable)curi.getData()))));
     }
     
     public void startCheckpoint(Checkpoint checkpointInProgress) {}

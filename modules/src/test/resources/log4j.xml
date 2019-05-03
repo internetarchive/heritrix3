@@ -11,6 +11,10 @@
 		<level value="ERROR" />
 	</logger>
 
+	<logger name="org.mortbay.log">
+		<level value="ERROR" />
+	</logger>
+
 	<root>
 		<level value="WARN" /> 
 		<appender-ref ref="console" />
