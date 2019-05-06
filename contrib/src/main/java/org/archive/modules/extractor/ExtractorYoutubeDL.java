@@ -53,18 +53,22 @@ import com.google.gson.JsonStreamParser;
  * html.
  *
  * <p>
- * Keeps a log of media captured as a result of youtube-dl extraction. The
- * format of the log is as follows:
+ * Keeps a log of containing pages and media captured as a result of youtube-dl
+ * extraction. The format of the log is as follows:
  *
  * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]</pre>
  *
  * <p>
- * The annotation field looks like {@code "youtube-dl:1/3"}. In this example,
- * "3" is the number of media urls youtube-dl discovered on the page, and "1" is
- * the index of this media within the page. The intention is to use this for
- * playback. The rest of the fields included in the log were also chosen to
- * support creation of an index of media by containing page, to be used for
- * playback.
+ * For containing pages, all of the {@code media-*} fields have the value
+ * {@code "-"}, and the annotation field looks like {@code "youtube-dl:3"},
+ * meaning that ExtractorYoutubeDL extracted 3 media links from the page.
+ *
+ * <p>
+ * For media, the annotation field looks like {@code "youtube-dl:1/3"}, meaning
+ * this is the first of three media links extracted from the containing page.
+ * The intention is to use this for playback. The rest of the fields included in
+ * the log were also chosen to support creation of an index of media by
+ * containing page, to be used for playback.
  *
  * @author nlevitt
  */
@@ -160,11 +164,16 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             }
         } else {
             List<JsonObject> ydlJsons = runYoutubeDL(uri);
-            for (JsonObject json: ydlJsons) {
-                if (json.get("url") != null) {
-                    String videoUrl = json.get("url").getAsString();
-                    addVideoOutlink(uri, json, videoUrl);
+            if (ydlJsons != null && !ydlJsons.isEmpty()) {
+                for (JsonObject json: ydlJsons) {
+                    if (json.get("url") != null) {
+                        String videoUrl = json.get("url").getAsString();
+                        addVideoOutlink(uri, json, videoUrl);
+                    }
                 }
+                String annotation = "youtube-dl:" + ydlJsons.size();
+                uri.getAnnotations().add(annotation);
+                logContainingPage(uri, annotation);
             }
         }
     }
@@ -236,6 +245,20 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 + " " + uri.getData().get(YDL_CONTAINING_PAGE_DIGEST)
                 + " " + uri.getData().get(YDL_CONTAINING_PAGE_TIMESTAMP)
                 + " " + uri.getData().get(YDL_CONTAINING_PAGE_URI)
+                + " " + seed);
+    }
+
+    protected void logContainingPage(CrawlURI uri, String annotation) {
+        String seed = uri.containsDataKey(CoreAttributeConstants.A_SOURCE_TAG)
+                ? uri.getSourceTag()
+                : "-";
+
+        ydlLogger.info(
+                "- - - - - -"
+                + " " + annotation
+                + " " + uri.getContentDigestSchemeString()
+                + " " + ArchiveUtils.get17DigitDate(uri.getFetchBeginTime())
+                + " " + uri
                 + " " + seed);
     }
 
