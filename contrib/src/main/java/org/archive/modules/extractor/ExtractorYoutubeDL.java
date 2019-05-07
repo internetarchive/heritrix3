@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -113,31 +112,6 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 return buf.toString();
             }
             buf.append(rbuf, 0, n);
-        }
-    }
-
-    // see https://github.com/internetarchive/heritrix3/pull/257/files#r279990349
-    protected String readToEndInThread(Reader reader) throws IOException {
-        ExecutorService threadPool = Executors.newSingleThreadExecutor();
-        Future<String> future = threadPool.submit(new Callable<String>() {
-            @Override
-            public String call() throws IOException {
-                return readToEnd(reader);
-            }
-        });
-
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            throw new IOException(e); // :shrug:
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof IOException) {
-                throw (IOException) e.getCause();
-            } else {
-                throw new IOException(e);
-            }
-        } finally {
-            threadPool.shutdown();
         }
     }
 
@@ -276,13 +250,52 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
     }
 
+    static protected class ProcessOutput {
+        public String stdout;
+        public String stderr;
+    }
+
+    // read stdout in this thread, stderr in separate thread
+    // see https://github.com/internetarchive/heritrix3/pull/257/files#r279990349
+    protected ProcessOutput readOutput(Process proc) throws IOException {
+        ProcessOutput output = new ProcessOutput();
+
+        Reader err = new InputStreamReader(proc.getErrorStream(), "UTF-8");
+        InputStreamReader out = new InputStreamReader(proc.getInputStream(), "UTF-8");
+        ExecutorService threadPool = Executors.newSingleThreadExecutor();
+
+        Future<String> future = threadPool.submit(new Callable<String>() {
+            @Override
+            public String call() throws IOException {
+                return readToEnd(err);
+            }
+        });
+
+        output.stdout = readToEnd(out);
+
+        try {
+            output.stderr = future.get();
+        } catch (InterruptedException e) {
+            throw new IOException(e); // :shrug:
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException(e);
+            }
+        } finally {
+            threadPool.shutdown();
+        }
+
+        return output;
+    }
+
     /**
      *
      * @param uri
      * @return list of json blobs returned by {@code youtube-dl --dump-json}, or
      *         empty list if no videos found, or failure
      */
-    @SuppressWarnings("unchecked")
     protected List<JsonObject> runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
@@ -300,21 +313,17 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             proc = pb.start();
         } catch (IOException e) {
             logger.log(Level.WARNING, "youtube-dl failed " + pb.command(), e);
-            return (List<JsonObject>) Collections.EMPTY_LIST;
+            return null;
         }
 
-        String stdout = null;
-        String stderr = null;
+        ProcessOutput output;
         try {
-            stderr = readToEndInThread(
-                    new InputStreamReader(proc.getErrorStream(), "UTF-8"));
-            stdout = readToEnd(
-                    new InputStreamReader(proc.getInputStream(), "UTF-8"));
+            output = readOutput(proc);
         } catch (IOException e) {
             logger.log(Level.WARNING,
                     "problem reading output from youtube-dl " + pb.command(),
                     e);
-            return (List<JsonObject>) Collections.EMPTY_LIST;
+            return null;
         }
 
         try {
@@ -327,16 +336,16 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                  */
                 logger.fine("youtube-dl exited with status "
                         + proc.waitFor() + " " + pb.command()
-                        + "\n=== stdout ===\n" + stdout
-                        + "\n=== stderr ===\n" + stderr);
-                return (List<JsonObject>) Collections.EMPTY_LIST;
+                        + "\n=== stdout ===\n" + output.stdout
+                        + "\n=== stderr ===\n" + output.stderr);
+                return null;
             }
         } catch (InterruptedException e) {
             proc.destroyForcibly();
         }
 
-        ArrayList<JsonObject> ydlJsons = new ArrayList<JsonObject>();
-        JsonStreamParser parser = new JsonStreamParser(stdout);
+        List<JsonObject> ydlJsons = new ArrayList<JsonObject>();
+        JsonStreamParser parser = new JsonStreamParser(output.stdout);
         try {
             while (parser.hasNext()) {
                 ydlJsons.add((JsonObject) parser.next());
@@ -346,10 +355,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             // manifests as a JsonIOException
             logger.log(Level.FINE,
                     "problem parsing json from youtube-dl " + pb.command()
-                            + "\n=== stdout ===\n" + stdout
-                            + "\n=== stderr ===\n" + stderr,
+                            + "\n=== stdout ===\n" + output.stdout
+                            + "\n=== stderr ===\n" + output.stderr,
                     e);
-            return (List<JsonObject>) Collections.EMPTY_LIST;
+            return null;
         }
 
         return ydlJsons;
