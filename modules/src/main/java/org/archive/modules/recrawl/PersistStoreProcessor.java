@@ -40,7 +40,7 @@ public class PersistStoreProcessor extends PersistOnlineProcessor
     
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-        store.put(persistKeyFor(curi),curi.getPersistentDataMap());
+        store.put(persistKeyFor(curi), curi.getData());
     }
 
     @Override
