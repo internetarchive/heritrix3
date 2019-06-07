@@ -22,8 +22,6 @@ package org.archive.modules.extractor;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +41,8 @@ import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonStreamParser;
@@ -139,15 +139,17 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 logCapturedVideo(uri, ydlAnnotation);
             }
         } else {
-            List<JsonObject> ydlJsons = runYoutubeDL(uri);
-            if (ydlJsons != null && !ydlJsons.isEmpty()) {
-                for (JsonObject json: ydlJsons) {
+            JsonObject ydlJson = runYoutubeDL(uri);
+            if (ydlJson != null && ydlJson.has("entries")) {
+                JsonArray jsonEntries = ydlJson.getAsJsonArray("entries");
+                for (JsonElement e: jsonEntries) {
+                    JsonObject json = (JsonObject) e;
                     if (json.get("url") != null) {
                         String videoUrl = json.get("url").getAsString();
                         addVideoOutlink(uri, json, videoUrl);
                     }
                 }
-                String annotation = "youtube-dl:" + ydlJsons.size();
+                String annotation = "youtube-dl:" + jsonEntries.size();
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
             }
@@ -292,13 +294,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         return output;
     }
 
-    /**
-     *
-     * @param uri
-     * @return list of json blobs returned by {@code youtube-dl --dump-json}, or
-     *         empty list if no videos found, or failure
-     */
-    protected List<JsonObject> runYoutubeDL(CrawlURI uri) {
+    protected JsonObject runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
          *
@@ -307,7 +303,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-json", "--format=best",
+                "--simulate", "--dump-single-json", "--format=best",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.fine("running " + pb.command());
 
@@ -347,11 +343,11 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             proc.destroyForcibly();
         }
 
-        List<JsonObject> ydlJsons = new ArrayList<JsonObject>();
         JsonStreamParser parser = new JsonStreamParser(output.stdout);
+        JsonObject ydlJson = null;
         try {
-            while (parser.hasNext()) {
-                ydlJsons.add((JsonObject) parser.next());
+            if (parser.hasNext()) {
+                ydlJson  = (JsonObject) parser.next();
             }
         } catch (JsonParseException e) {
             // sometimes we get no output at all from youtube-dl, which
@@ -364,7 +360,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             return null;
         }
 
-        return ydlJsons;
+        return ydlJson;
     }
 
     @Override
