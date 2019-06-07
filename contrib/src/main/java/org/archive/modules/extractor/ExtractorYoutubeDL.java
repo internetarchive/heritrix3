@@ -79,6 +79,8 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
     protected static final String YDL_CONTAINING_PAGE_TIMESTAMP = "ydl-containing-page-timestamp";
     protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
 
+    protected static final int MAX_VIDEOS_PER_PAGE = 1000;
+
     protected transient Logger ydlLogger = null;
 
     protected CrawlerLoggerModule crawlerLoggerModule;
@@ -305,7 +307,8 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-json", "--format=best", uri.toString());
+                "--simulate", "--dump-json", "--format=best",
+                "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.fine("running " + pb.command());
 
         Process proc = null;
