@@ -18,7 +18,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.revisit.RevisitProfile;
 import org.archive.util.ArchiveUtils;
 
-public class RevisitRecordBuilder extends WARCRecordBuilder {
+public class RevisitRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {

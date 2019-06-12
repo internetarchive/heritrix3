@@ -22,7 +22,7 @@ import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
-public class HttpResponseRecordBuilder extends WARCRecordBuilder {
+public class HttpResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {

@@ -16,7 +16,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 
-public class MetadataRecordBuilder extends WARCRecordBuilder {
+public class MetadataRecordBuilder extends BaseWARCRecordBuilder {
 
     /**
      * If you don't want metadata records, take this class out of the chain.

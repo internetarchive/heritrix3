@@ -39,10 +39,10 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                 new MetadataRecordBuilder()));
     }
     @SuppressWarnings("unchecked")
-    public List<WARCRecordBuilder> getChain() {
+    public List<? extends WARCRecordBuilder> getChain() {
         return (List<WARCRecordBuilder>) kp.get("chain");
     }
-    public void setChain(List<WARCRecordBuilder> chain) {
+    public void setChain(List<? extends WARCRecordBuilder> chain) {
         kp.put("chain", chain);
     }
 

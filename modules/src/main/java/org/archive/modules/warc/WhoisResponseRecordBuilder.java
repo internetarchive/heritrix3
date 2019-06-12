@@ -12,7 +12,7 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
-public class WhoisResponseRecordBuilder extends WARCRecordBuilder {
+public class WhoisResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {

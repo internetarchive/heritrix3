@@ -12,7 +12,7 @@ import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
-public class DnsResponseRecordBuilder extends WARCRecordBuilder {
+public class DnsResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {

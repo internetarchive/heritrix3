@@ -14,7 +14,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
 
-public class FtpControlConversationRecordBuilder extends WARCRecordBuilder {
+public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {

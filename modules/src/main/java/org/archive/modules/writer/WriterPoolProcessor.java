@@ -45,7 +45,7 @@ import org.archive.modules.Processor;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
-import org.archive.modules.warc.WARCRecordBuilder;
+import org.archive.modules.warc.BaseWARCRecordBuilder;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
 import org.json.JSONException;
@@ -372,7 +372,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * @param curi CrawlURI
      * @return String of IP address
      * 
-     * @deprecated WARCRecordBuilder instances use {@link WARCRecordBuilder#getHostAddress(CrawlURI)}
+     * @deprecated WARCRecordBuilder instances use {@link BaseWARCRecordBuilder#getHostAddress(CrawlURI)}
      */
     @Deprecated
     protected String getHostAddress(CrawlURI curi) {

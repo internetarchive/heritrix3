@@ -13,7 +13,7 @@ import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
 
-public class FtpResponseRecordBuilder extends WARCRecordBuilder {
+public class FtpResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {
