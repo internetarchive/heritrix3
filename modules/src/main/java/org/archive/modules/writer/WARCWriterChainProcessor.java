@@ -2,7 +2,7 @@ package org.archive.modules.writer;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,7 +12,15 @@ import org.archive.io.warc.WARCWriter;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
+import org.archive.modules.warc.DnsResponseRecordBuilder;
+import org.archive.modules.warc.FtpControlConversationRecordBuilder;
+import org.archive.modules.warc.FtpResponseRecordBuilder;
+import org.archive.modules.warc.HttpRequestRecordBuilder;
+import org.archive.modules.warc.HttpResponseRecordBuilder;
+import org.archive.modules.warc.MetadataRecordBuilder;
+import org.archive.modules.warc.RevisitRecordBuilder;
 import org.archive.modules.warc.WARCRecordBuilder;
+import org.archive.modules.warc.WhoisResponseRecordBuilder;
 import org.archive.spring.HasKeyedProperties;
 
 public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements HasKeyedProperties {
@@ -20,7 +28,15 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
             Logger.getLogger(WARCWriterChainProcessor.class.getName());
     
     {
-        setChain(new ArrayList<WARCRecordBuilder>());
+        setChain(Arrays.asList(
+                new DnsResponseRecordBuilder(),
+                new HttpResponseRecordBuilder(),
+                new WhoisResponseRecordBuilder(),
+                new FtpControlConversationRecordBuilder(),
+                new FtpResponseRecordBuilder(),
+                new RevisitRecordBuilder(),
+                new HttpRequestRecordBuilder(),
+                new MetadataRecordBuilder()));
     }
     @SuppressWarnings("unchecked")
     public List<WARCRecordBuilder> getChain() {

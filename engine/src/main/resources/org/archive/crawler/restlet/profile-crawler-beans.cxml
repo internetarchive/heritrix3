@@ -350,6 +350,7 @@ http://example.example/example
        </property> -->
   <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
   <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+  <!--
   <property name="chain">
    <list>
     <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
@@ -362,6 +363,7 @@ http://example.example/example
     <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
    </list>
   </property>
+  -->
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->
