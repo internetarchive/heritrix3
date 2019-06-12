@@ -21,7 +21,7 @@ import org.archive.util.ArchiveUtils;
 public class RevisitRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme().toLowerCase();
         return curi.isRevisit()
                 && (scheme.startsWith("http") || scheme.equals("ftp"));

@@ -22,7 +22,7 @@ public class MetadataRecordBuilder extends BaseWARCRecordBuilder {
      * If you don't want metadata records, take this class out of the chain.
      */
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme().toLowerCase();
         return scheme.startsWith("http") || "ftp".equals(scheme); 
     }

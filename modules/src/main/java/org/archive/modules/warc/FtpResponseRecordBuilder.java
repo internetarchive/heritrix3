@@ -16,7 +16,7 @@ import org.archive.util.ArchiveUtils;
 public class FtpResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         return !curi.isRevisit() 
                 && "ftp".equals(curi.getUURI().getScheme().toLowerCase());
     }

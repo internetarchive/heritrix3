@@ -15,7 +15,7 @@ import org.archive.util.ArchiveUtils;
 public class WhoisResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         return "whois".equals(curi.getUURI().getScheme().toLowerCase());
     }
 

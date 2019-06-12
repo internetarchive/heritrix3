@@ -8,7 +8,7 @@ import org.archive.modules.CrawlURI;
 
 public interface WARCRecordBuilder {
 
-    boolean shouldProcess(CrawlURI curi);
+    boolean shouldBuildRecord(CrawlURI curi);
 
     WARCRecordInfo buildRecord(CrawlURI curi, URI concurrentTo)
             throws IOException;

@@ -128,7 +128,7 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
     protected void writeRecords(CrawlURI curi, WARCWriter writer) throws IOException {
         URI concurrentTo = null;
         for (WARCRecordBuilder recordBuilder: getChain()) {
-            if (recordBuilder.shouldProcess(curi)) {
+            if (recordBuilder.shouldBuildRecord(curi)) {
                 WARCRecordInfo record = recordBuilder.buildRecord(curi, concurrentTo);
                 if (record != null) {
                     writer.writeRecord(record);

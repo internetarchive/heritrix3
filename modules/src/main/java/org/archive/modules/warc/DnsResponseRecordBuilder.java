@@ -15,7 +15,7 @@ import org.archive.util.ArchiveUtils;
 public class DnsResponseRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         return "dns".equals(curi.getUURI().getScheme().toLowerCase());
     }
 

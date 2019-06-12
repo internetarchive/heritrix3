@@ -15,7 +15,7 @@ import org.archive.util.ArchiveUtils;
 public class HttpRequestRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         return curi.getUURI().getScheme().toLowerCase().startsWith("http");
     }
 

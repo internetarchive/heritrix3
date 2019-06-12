@@ -17,7 +17,7 @@ import org.archive.util.anvl.ANVLRecord;
 public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
-    public boolean shouldProcess(CrawlURI curi) {
+    public boolean shouldBuildRecord(CrawlURI curi) {
         return "ftp".equals(curi.getUURI().getScheme().toLowerCase());
     }
 
