@@ -22,7 +22,9 @@ public class RevisitRecordBuilder extends WARCRecordBuilder {
 
     @Override
     public boolean shouldProcess(CrawlURI curi) {
-        return curi.isRevisit();
+        String scheme = curi.getUURI().getScheme().toLowerCase();
+        return curi.isRevisit()
+                && (scheme.startsWith("http") || scheme.equals("ftp"));
     }
 
     @Override
