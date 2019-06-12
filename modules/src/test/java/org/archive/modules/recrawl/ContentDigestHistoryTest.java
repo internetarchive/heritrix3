@@ -62,8 +62,8 @@ import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPTests;
-import org.archive.modules.writer.WARCWriterProcessor;
-import org.archive.modules.writer.WARCWriterProcessorTest;
+import org.archive.modules.writer.WARCWriterChainProcessor;
+import org.archive.modules.writer.WARCWriterChainProcessorTest;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
@@ -218,7 +218,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         Server server = newHttpServer();
 
         FetchHTTP fetcher = FetchHTTPTests.newTestFetchHttp(getClass().getName());
-        WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
+        WARCWriterChainProcessor warcWriter = WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor();
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
             /* make sure we don't have other stuff hanging around that will

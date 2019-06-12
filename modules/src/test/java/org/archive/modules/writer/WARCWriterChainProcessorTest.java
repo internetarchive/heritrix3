@@ -1,6 +1,7 @@
 package org.archive.modules.writer;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.fetcher.DefaultServerCache;
@@ -12,8 +13,15 @@ public class WARCWriterChainProcessorTest extends WARCWriterProcessorTest {
 
     @Override
     protected Object makeModule() throws Exception {
+        WARCWriterChainProcessor result = makeTestWARCWriterChainProcessor();
+        result.start();
+        return result;
+    }
+
+    public static WARCWriterChainProcessor makeTestWARCWriterChainProcessor()
+            throws IOException {
         File tmp = TmpDirTestCase.tmpDir();
-        tmp = new File(tmp, getClass().getSimpleName());
+        tmp = new File(tmp, WARCWriterChainProcessorTest.class.getSimpleName());
         FileUtils.ensureWriteableDirectory(tmp);
 
         WARCWriterChainProcessor result = new WARCWriterChainProcessor();
@@ -22,7 +30,6 @@ public class WARCWriterChainProcessorTest extends WARCWriterProcessorTest {
         CrawlMetadata metadata = new CrawlMetadata();
         metadata.afterPropertiesSet();
         result.setMetadataProvider(metadata);
-        result.start();
         return result;
     }
 }
