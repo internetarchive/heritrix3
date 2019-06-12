@@ -27,7 +27,7 @@ public class HttpResponseRecordBuilder extends WARCRecordBuilder {
     @Override
     public boolean shouldProcess(CrawlURI curi) {
         return !curi.isRevisit()
-                && "http".equals(curi.getUURI().getScheme().toLowerCase());
+                && curi.getUURI().getScheme().toLowerCase().startsWith("http");
     }
 
     @Override
