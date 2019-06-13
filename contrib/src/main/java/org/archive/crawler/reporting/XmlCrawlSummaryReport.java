@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.archive.crawler.restlet.XmlMarshaller;
-import org.archive.modules.writer.WARCWriterProcessor;
+import org.archive.modules.writer.BaseWARCWriterProcessor;
 import org.archive.util.ArchiveUtils;
 
 public class XmlCrawlSummaryReport extends Report {
@@ -28,7 +28,7 @@ public class XmlCrawlSummaryReport extends Report {
         CrawlStatSnapshot snapshot = stats.getLastSnapshot();
 
         info.put("crawlName", 
-                ((WARCWriterProcessor) stats.appCtx.getBean("warcWriter")).getPrefix());
+                ((BaseWARCWriterProcessor) stats.appCtx.getBean("warcWriter")).getPrefix());
         info.put("crawlJobShortName", 
                 stats.getCrawlController().getMetadata().getJobName());
         info.put("scheduledDate", this.scheduledDate);
