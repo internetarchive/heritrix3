@@ -19,9 +19,14 @@
 
 package org.archive.modules.extractor;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
+import java.net.URI;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -32,8 +37,12 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.warc.BaseWARCRecordBuilder;
+import org.archive.modules.warc.WARCRecordBuilder;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
@@ -46,16 +55,34 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonStreamParser;
+import com.google.gson.internal.Streams;
+import com.google.gson.stream.JsonWriter;
 
 /**
  * Extracts links to media by running youtube-dl in a subprocess. Runs only on
  * html.
  *
  * <p>
+ * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
+ * warc.
+ * 
+ * <p>
+ * To use <code>ExtractorYoutubeDL</code>, add this top-level bean:
+ * 
+ * <pre>
+ * &lt;bean id="extractorYoutubeDL" class="org.archive.modules.extractor.ExtractorYoutubeDL"/&gt;
+ * </pre>
+ * 
+ * Then add <code>&lt;ref bean="extractorYoutubeDL"/&gt;</code> to end of the
+ * fetch chain, and to the end of the warc writer chain.
+ * 
+ * <p>
  * Keeps a log of containing pages and media captured as a result of youtube-dl
  * extraction. The format of the log is as follows:
  *
- * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]</pre>
+ * <pre>
+ * [timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]
+ * </pre>
  *
  * <p>
  * For containing pages, all of the {@code media-*} fields have the value
@@ -71,7 +98,8 @@ import com.google.gson.JsonStreamParser;
  *
  * @author nlevitt
  */
-public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
+public class ExtractorYoutubeDL extends Extractor
+        implements Lifecycle, WARCRecordBuilder {
     private static Logger logger =
             Logger.getLogger(ExtractorYoutubeDL.class.getName());
 
@@ -149,6 +177,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                         addVideoOutlink(uri, json, videoUrl);
                     }
                 }
+
+                // XXX this can be large, consider using a RecordingOutputStream
+                uri.getData().put("ydlJson", ydlJson);
+
                 String annotation = "youtube-dl:" + jsonEntries.size();
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
@@ -399,5 +431,41 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean shouldBuildRecord(CrawlURI curi) {
+        return curi.containsDataKey("ydlJson");
+    }
+
+    @Override
+    public WARCRecordInfo buildRecord(CrawlURI curi, URI concurrentTo)
+            throws IOException {
+        final String timestamp =
+                ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
+
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.metadata);
+        recordInfo.setRecordId(BaseWARCRecordBuilder.generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    "<" + concurrentTo + ">");
+        }
+        recordInfo.setUrl("youtube-dl:" + curi);
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
+        recordInfo.setEnforceLength(true);
+
+        JsonObject ydlJson = (JsonObject) curi.getData().get("ydlJson");
+        StringWriter stringWriter = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(stringWriter);
+        jsonWriter.setIndent(" ");
+        Streams.write(ydlJson, jsonWriter);
+
+        byte[] b = stringWriter.toString().getBytes("UTF-8");
+        recordInfo.setContentStream(new ByteArrayInputStream(b));
+        recordInfo.setContentLength((long) b.length);
+
+        return recordInfo;
     }
 }

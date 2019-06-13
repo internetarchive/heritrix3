@@ -23,7 +23,7 @@ public abstract class BaseWARCRecordBuilder implements WARCRecordBuilder {
         this.serverCache = serverCache;
     }
     
-    public URI generateRecordID() {
+    public static URI generateRecordID() {
         try {
             return new URI("urn:uuid:" + UUID.randomUUID());
         } catch (URISyntaxException e) {
