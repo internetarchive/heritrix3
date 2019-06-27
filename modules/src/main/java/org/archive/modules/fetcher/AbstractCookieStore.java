@@ -232,7 +232,8 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         @Override
         public boolean clearExpired(Date date) {
-            throw new RuntimeException("not implemented");
+            logger.warning("clearExpired not implemented");
+            return false;
         }
 
         @Override
