@@ -288,6 +288,11 @@ http://example.example/example
  </bean>
  <bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
  </bean>
+ <bean id="extractorRobotsTxt" class="org.archive.modules.extractor.ExtractorRobotsTxt">
+ </bean>
+ <bean id="extractorSitemap" class="org.archive.modules.extractor.ExtractorSitemap">
+ </bean>
+ 
  <bean id="extractorHtml" class="org.archive.modules.extractor.ExtractorHTML">
   <!-- <property name="extractJavascript" value="true" /> -->
   <!-- <property name="extractValueAttributes" value="true" /> -->
@@ -320,6 +325,10 @@ http://example.example/example
     <ref bean="fetchHttp"/>
     <!-- ...extract outlinks from HTTP headers... -->
     <ref bean="extractorHttp"/>
+    <!-- ...extract sitemap urls from robots.txt... -->
+    <ref bean="extractorRobotsTxt"/>
+    <!-- ...extract links from sitemaps... -->
+    <ref bean="extractorSitemap"/>
     <!-- ...extract outlinks from HTML content... -->
     <ref bean="extractorHtml"/>
     <!-- ...extract outlinks from CSS content... -->
