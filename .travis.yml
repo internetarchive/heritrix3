@@ -1,16 +1,19 @@
+
 sudo: false
 
 language: java
-
-jdk:
- - oraclejdk8
- - openjdk7
- - openjdk8
-
 matrix:
-  allow_failures:
+  include:
+  - jdk: oraclejdk8
+    dist: trusty
   - jdk: openjdk7
-
+    dist: trusty
+    env: PROJECTS='--projects commons,modules,engine'
+  - jdk: openjdk8
+  - jdk: openjdk11
+  allow_failures:
+  - jdk: openjdk11
+  
 before_install:
  - "export JAVA_OPTS=-Xmx1500m"
  - "echo JAVA_OPTS=$JAVA_OPTS"
@@ -18,14 +21,15 @@ before_install:
  - "echo MAVEN_OPTS=$MAVEN_OPTS"
  - "export _JAVA_OPTIONS=-Xmx1500m"
  - "echo _JAVA_OPTIONS=$_JAVA_OPTIONS"
+ 
+install: mvn dependency:resolve -B -V $PROJECTS
 
 cache:
   directories:
   - $HOME/.m2
 
 script:
- - travis_wait 30 mvn install
- - cd contrib && mvn install
+ - travis_wait 30 mvn install $PROJECTS
 
 after_failure:
   - cat */target/surefire-reports/*.txt
