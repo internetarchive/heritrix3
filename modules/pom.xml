@@ -80,6 +80,9 @@
 				<configuration>
 					<excludes>
 						<exclude>**/TestAll.java</exclude>
+						<!-- exclude FetchHTTPTests because its not meant to be invoked directly and newer
+						  versions of surefire are more lax about the filenames they pickup -->
+						<exclude>**/*Tests.java</exclude>
 					</excludes>
 				</configuration>
 			</plugin>
