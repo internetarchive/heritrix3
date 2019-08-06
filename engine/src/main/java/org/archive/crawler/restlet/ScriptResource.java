@@ -41,12 +41,12 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.representation.Representation;
+import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
-import org.restlet.resource.WriterRepresentation;
+import org.restlet.representation.Variant;
 
 import freemarker.template.Configuration;
 import freemarker.template.ObjectWrapper;
@@ -81,10 +81,10 @@ public class ScriptResource extends JobRelatedResource {
     
     protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
     private Configuration _templateConfiguration;
-    
-    public ScriptResource(Context ctx, Request req, Response res) throws ResourceException {
-        super(ctx, req, res);
-        setModifiable(true);
+
+    @Override
+    public void init(Context ctx, Request req, Response res) throws ResourceException {
+        super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         
@@ -92,7 +92,7 @@ public class ScriptResource extends JobRelatedResource {
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
         tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         setTemplateConfiguration(tmpltCfg);
-        
+
         scriptingConsole = new ScriptingConsole(cj);
     }
     public void setTemplateConfiguration(Configuration tmpltCfg) {
@@ -105,8 +105,8 @@ public class ScriptResource extends JobRelatedResource {
     private ScriptingConsole scriptingConsole;
     
     @Override
-    public void acceptRepresentation(Representation entity) throws ResourceException {
-        Form form = getRequest().getEntityAsForm();
+    public Representation post(Representation entity, Variant variant) throws ResourceException {
+        Form form = new Form(entity);
         chosenEngine = form.getFirstValue("engine");
         String script = form.getFirstValue("script");
         if(StringUtils.isBlank(script)) {
@@ -121,10 +121,11 @@ public class ScriptResource extends JobRelatedResource {
         
         //TODO: log script, results somewhere; job log INFO? 
         
-        getResponse().setEntity(represent());
+        return get(variant);
     }
-    
-    public Representation represent(Variant variant) throws ResourceException {
+
+    @Override
+    public Representation get(Variant variant) throws ResourceException {
         Representation representation;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
             representation = new WriterRepresentation(MediaType.APPLICATION_XML) {

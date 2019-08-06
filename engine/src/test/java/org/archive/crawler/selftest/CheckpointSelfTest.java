@@ -22,10 +22,10 @@ package org.archive.crawler.selftest;
 import java.io.IOException;
 
 import org.archive.crawler.framework.CrawlJob;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.servlet.ServletHandler;
-import org.mortbay.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 
 /**
@@ -85,7 +85,7 @@ public class CheckpointSelfTest extends SelfTestBase {
     
     private Server makeHttpServer(int port) throws Exception {
         Server server = new Server();
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost(HOST);
         sc.setPort(port);
         server.addConnector(sc);

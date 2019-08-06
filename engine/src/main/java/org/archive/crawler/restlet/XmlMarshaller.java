@@ -36,7 +36,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 import org.apache.commons.lang.StringUtils;
-import org.restlet.util.XmlWriter;
+import org.restlet.ext.xml.XmlWriter;
 import org.xml.sax.SAXException;
 
 /**
