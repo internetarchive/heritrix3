@@ -53,6 +53,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.session.DefaultSessionCache;
+import org.eclipse.jetty.server.session.NullSessionDataStore;
 import org.eclipse.jetty.server.session.SessionCache;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.security.Constraint;
@@ -282,6 +283,7 @@ public class FormAuthTest extends TestCase {
 
         SessionHandler sessionHandler = new SessionHandler();
         SessionCache cache = new DefaultSessionCache(sessionHandler);
+        cache.setSessionDataStore(new NullSessionDataStore());
         sessionHandler.setSessionCache(cache);
         sessionHandler.setHandler(authWrapper);
         server.setHandler(sessionHandler);
