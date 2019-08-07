@@ -43,18 +43,17 @@ import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.security.SslSocketConnector;
-import org.mortbay.jetty.servlet.SessionHandler;
-import org.mortbay.log.Log;
 
 import com.google.common.io.Files;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
@@ -64,9 +63,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
         }
 
         @Override
-        public void handle(String target, HttpServletRequest request,
-                HttpServletResponse response, int dispatch) throws IOException,
-                ServletException {
+        public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if (request.getParameter("name") != null) {
                 Cookie cookie = new javax.servlet.http.Cookie(request.getParameter("name"), 
                         request.getParameter("value"));
@@ -114,7 +111,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
         server.setHandler(new TestHandler());
 
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
 
@@ -133,11 +130,18 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
                 "-dname", "CN=127.0.0.1",
                 "-validity","3650"}); // 10 yr validity
 
-        SslSocketConnector ssc = new SslSocketConnector();
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        sslContextFactory.setKeyStorePassword(KEYSTORE_PASSWORD);
+        sslContextFactory.setKeyStorePath(keystoreFile.getPath());
+
+        HttpConfiguration httpsConfig = new HttpConfiguration();
+        httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
+        ServerConnector ssc = new ServerConnector(server,
+                new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+                new HttpConnectionFactory(httpsConfig));
         ssc.setHost("127.0.0.1");
         ssc.setPort(7443);
-        ssc.setKeyPassword(KEYSTORE_PASSWORD);
-        ssc.setKeystore(keystoreFile.getPath());
 
         server.addConnector(sc);
         server.addConnector(ssc);
@@ -345,7 +349,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=example.com");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=example.com\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
@@ -379,7 +383,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=.example.com");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=.example.com\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=.example.com\r\n"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
@@ -413,7 +417,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=somethingelse.com");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=somethingelse.com\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=somethingelse.com\r\n"));
 
             // check fetch of original domain has no cookie
             curi = makeCrawlURI("http://example.com:7777/");
@@ -434,7 +438,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=BAR.example.com");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=bar.example.com\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=bar.example.com\r\n"));
 
             // check fetch of original domain has no cookie
             curi = makeCrawlURI("http://foo.example.com:7777/");
@@ -463,7 +467,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             CrawlURI curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=example.com");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar;Domain=example.com\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
 
             curi = makeCrawlURI("http://FOO.example.com:7777/");
             fetcher().process(curi);

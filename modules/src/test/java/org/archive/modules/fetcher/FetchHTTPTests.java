@@ -157,7 +157,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertEquals(DEFAULT_PAYLOAD_STRING, curi.getRecorder().getContentReplayCharSequence().toString());
         
         if (!exclusions.contains("httpBindAddress")) {
-            assertEquals("127.0.0.1", FetchHTTPTest.getLastRequest().getRemoteAddr());
+            assertTrue(rawResponseString(curi).contains("Client-Host: 127.0.0.1\r\n"));
         }
         
         if (!exclusions.contains("nonFatalFailuresIsEmpty")) {
@@ -262,7 +262,7 @@ public class FetchHTTPTests extends ProcessorTestBase {
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
-        assertEquals("Basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
+        assertEquals("basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
         assertTrue(curi.getCredentials().contains(basicAuthCredential));
         assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
@@ -406,8 +406,8 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().process(curi);
 
         // the client bind address isn't recorded anywhere in heritrix as
-        // far as i can tell, so we get it this way...
-        assertEquals(addr, FetchHTTPTest.getLastRequest().getRemoteAddr());
+        // far as i can tell, so we get the server to echo it back to us...
+        assertTrue(rawResponseString(curi).contains("Client-Host: " + addr + "\r\n"));
 
         runDefaultChecks(curi, "httpBindAddress");
     }
@@ -780,7 +780,9 @@ public class FetchHTTPTests extends ProcessorTestBase {
         fetcher().process(curi);
         // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertTrue(httpRequestString(curi).startsWith("GET /99% HTTP/1.0\r\n"));
-        runDefaultChecks(curi, "requestLine");
+        // jetty 9 rejects requests with paths like this with 400 Bad Request
+        // so we can't run these checks anymore
+        //runDefaultChecks(curi, "requestLine");
     }
     
     public void testTwoQuestionMarks() throws Exception {

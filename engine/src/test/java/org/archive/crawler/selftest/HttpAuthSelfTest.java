@@ -24,17 +24,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.DefaultHandler;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.handler.ResourceHandler;
-import org.mortbay.jetty.security.Constraint;
-import org.mortbay.jetty.security.ConstraintMapping;
-import org.mortbay.jetty.security.HashUserRealm;
-import org.mortbay.jetty.security.SecurityHandler;
-import org.mortbay.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.security.*;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.security.Password;
 
 /**
  * Test HTTP basic authentication
@@ -73,27 +72,27 @@ public class HttpAuthSelfTest
         ConstraintMapping cm = new ConstraintMapping();
         cm.setConstraint(constraint);
         cm.setPathSpec("/basic/*");
+
+        UserStore userStore = new UserStore();
+        userStore.addUser("Mr. Happy Pants", new Password("xyzzy"), new String[]{"rule"});
+        HashLoginService loginService = new HashLoginService("Hyrule");
+        loginService.setUserStore(userStore);
         
-        HashUserRealm realm = new HashUserRealm();
-        realm.setName("Hyrule");
-        realm.put("Mr. Happy Pants", "xyzzy");
-        realm.addUserToRole("Mr. Happy Pants", "user");
-        
-        SecurityHandler securityHandler = new SecurityHandler();
-        securityHandler.setUserRealm(realm);
+        ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
+        securityHandler.setLoginService(loginService);
         securityHandler.setConstraintMappings(new ConstraintMapping[]{cm});
         
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
         rhandler.setResourceBase(getSrcHtdocs().getAbsolutePath());
         
-        ServletHandler servletHandler = new ServletHandler();        
+        ServletHandler servletHandler = new ServletHandler();
         
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { 
+        handlers.setHandlers(new Handler[] {
                 securityHandler, 
                 rhandler, 
                 servletHandler,

@@ -6,9 +6,6 @@ matrix:
   include:
   - jdk: oraclejdk8
     dist: trusty
-  - jdk: openjdk7
-    dist: trusty
-    env: PROJECTS='--projects commons,modules,engine'
   - jdk: openjdk8
   - jdk: openjdk11
   allow_failures:
@@ -22,14 +19,14 @@ before_install:
  - "export _JAVA_OPTIONS=-Xmx1500m"
  - "echo _JAVA_OPTIONS=$_JAVA_OPTIONS"
  
-install: mvn dependency:resolve -B -V $PROJECTS
+install: mvn dependency:resolve -B -V
 
 cache:
   directories:
   - $HOME/.m2
 
 script:
- - travis_wait 30 mvn install $PROJECTS
+ - travis_wait 30 mvn install
 
 after_failure:
   - cat */target/surefire-reports/*.txt

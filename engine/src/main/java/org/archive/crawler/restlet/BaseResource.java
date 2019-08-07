@@ -19,55 +19,14 @@
 
 package org.archive.crawler.restlet;
 
-import java.util.List;
-
-import org.restlet.Context;
-import org.restlet.data.MediaType;
-import org.restlet.data.Preference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Resource;
-import org.restlet.resource.Variant;
+import org.restlet.resource.ServerResource;
 
 /**
  * Abstract {@code Resource} with common shared functionality. 
  * 
  * @author nlevitt
  */
-public abstract class BaseResource extends Resource {
-
-    public BaseResource(Context ctx, Request req, Response res) {
-        super(ctx, req, res);
-    }
-
-    /**
-     * If client can accept text/html, always prefer it. WebKit-based browsers
-     * claim to want application/xml, but we don't want to give it to them. See
-     * <a href="https://webarchive.jira.com/browse/HER-1603">https://webarchive.jira.com/browse/HER-1603</a>
-     */
-    public Variant getPreferredVariant() {
-        boolean addExplicitTextHtmlPreference = false;
-
-        for (Preference<MediaType> mediaTypePreference: getRequest().getClientInfo().getAcceptedMediaTypes()) {
-            if (mediaTypePreference.getMetadata().equals(MediaType.TEXT_HTML)) {
-                mediaTypePreference.setQuality(Float.MAX_VALUE);
-                addExplicitTextHtmlPreference = false;
-                break;
-            } else if (mediaTypePreference.getMetadata().includes(MediaType.TEXT_HTML)) {
-                addExplicitTextHtmlPreference = true;
-            }
-        }
-        
-        if (addExplicitTextHtmlPreference) {
-            List<Preference<MediaType>> acceptedMediaTypes = getRequest().getClientInfo().getAcceptedMediaTypes();
-            acceptedMediaTypes.add(new Preference<MediaType>(MediaType.TEXT_HTML, Float.MAX_VALUE));
-            getRequest().getClientInfo().setAcceptedMediaTypes(acceptedMediaTypes);
-        }
-        
-        
-        return super.getPreferredVariant();
-    }
-    
+public abstract class BaseResource extends ServerResource {
     protected String getStaticRef(String resource) {
         String rootRef = getRequest().getRootRef().toString();
         return rootRef + "/engine/static/" + resource;
