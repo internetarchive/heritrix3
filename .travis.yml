@@ -8,8 +8,6 @@ matrix:
     dist: trusty
   - jdk: openjdk8
   - jdk: openjdk11
-  allow_failures:
-  - jdk: openjdk11
   
 before_install:
  - "export JAVA_OPTS=-Xmx1500m"
