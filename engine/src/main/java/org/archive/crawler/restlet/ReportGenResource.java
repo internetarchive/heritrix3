@@ -23,12 +23,12 @@ import java.io.File;
 
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Variant;
 
 /**
  * Restlet Resource which generates fresh reports and then redirects
@@ -38,24 +38,26 @@ import org.restlet.resource.Variant;
  */
 public class ReportGenResource extends JobRelatedResource {
     protected String reportClass;
-    
-    public ReportGenResource(Context ctx, Request req, Response res) throws ResourceException {
-        super(ctx, req, res);
+
+    @Override
+    public void init(Context ctx, Request req, Response res) throws ResourceException {
+        super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
         reportClass = (String)req.getAttributes().get("reportClass");
     }
 
-    public Representation represent(Variant variant) throws ResourceException {
+    @Override
+    protected Representation get(Variant variant) throws ResourceException {
         // generate report
         if (cj == null || cj.getCrawlController() == null) {
             throw new ResourceException(500);
         }
-        File f = cj.getCrawlController().getStatisticsTracker().writeReportFile(reportClass); 
+        File f = cj.getCrawlController().getStatisticsTracker().writeReportFile(reportClass);
         if (f==null) {
             throw new ResourceException(500);
         }
         // redirect
-        String relative = JobResource.getHrefPath(f,cj);
+        String relative = JobResource.getHrefPath(f, cj);
         if(relative!=null) {
             getResponse().redirectSeeOther("../"+relative+"?m="+f.lastModified());
             return new StringRepresentation("");

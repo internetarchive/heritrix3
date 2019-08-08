@@ -26,19 +26,19 @@ import java.io.StringWriter;
 import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
 import org.restlet.Application;
-import org.restlet.Directory;
-import org.restlet.Redirector;
 import org.restlet.Restlet;
-import org.restlet.Router;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.StringRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.resource.Directory;
+import org.restlet.routing.Redirector;
+import org.restlet.routing.Router;
+import org.restlet.routing.Template;
 import org.restlet.service.StatusService;
-import org.restlet.util.Template;
 
 /**
  * Restlet Application for a Heritrix crawl 'Engine', which is aware of
@@ -56,7 +56,8 @@ public class EngineApplication extends Application {
         setStatusService(new EngineStatusService());
     }
 
-     public synchronized Restlet createRoot() {
+    @Override
+    public Restlet createInboundRoot() {
         Router router = new Router(getContext());
 
         router.attach("/",new Redirector(null,"/engine",Redirector.MODE_CLIENT_TEMPORARY));
