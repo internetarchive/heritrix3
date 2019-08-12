@@ -388,7 +388,9 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
         
         for (String domain: domainCounts.keySet()) {
-            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN + 25);
+            // the cookie store intentionally doesn't synchronize so we allow up to thread.length
+            // additional cookies over the limit
+            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN + threads.length);
         }        
     }
     
