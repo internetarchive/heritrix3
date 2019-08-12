@@ -18,13 +18,12 @@
  */
 package org.archive.crawler.restlet;
 
-import java.util.logging.Logger;
-
 import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
-import org.restlet.data.ChallengeScheme;
-import org.restlet.security.ChallengeAuthenticator;
+import org.restlet.ext.crypto.DigestAuthenticator;
+
+import java.util.logging.Logger;
 
 /**
  * ChallengeAuthenticator that slows and logs failed authentication attempts, to make
@@ -32,15 +31,15 @@ import org.restlet.security.ChallengeAuthenticator;
  * 
  * @author gojomo
  */
-public class RateLimitGuard extends ChallengeAuthenticator {
+public class RateLimitGuard extends DigestAuthenticator {
     private static final int MIN_MS_BETWEEN_ATTEMPTS = 6000;
 
     private static final Logger logger = Logger.getLogger(RateLimitGuard.class.getName());
 
     protected long lastFailureTime = 0;
     
-    public RateLimitGuard(Context context, ChallengeScheme scheme, String realm) throws IllegalArgumentException {
-        super(context, scheme, realm);
+    public RateLimitGuard(Context context, String realm, String serverKey) throws IllegalArgumentException {
+        super(context, realm, serverKey);
     }
 
     @Override
