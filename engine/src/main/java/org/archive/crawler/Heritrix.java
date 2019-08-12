@@ -351,9 +351,9 @@ public class Heritrix {
             MapVerifier verifier = new MapVerifier();
             verifier.getLocalSecrets().put(authLogin, authPassword.toCharArray());
 
-            ChallengeAuthenticator guard = new RateLimitGuard(component.getContext().createChildContext(),
-                    ChallengeScheme.HTTP_DIGEST, "Authentication Required");
-            guard.setVerifier(verifier);
+            RateLimitGuard guard = new RateLimitGuard(component.getContext().createChildContext(),
+                    "Authentication Required", UUID.randomUUID().toString());
+            guard.setWrappedVerifier(verifier);
             guard.setNext(new EngineApplication(engine));
 
             component.getDefaultHost().attach(guard);
