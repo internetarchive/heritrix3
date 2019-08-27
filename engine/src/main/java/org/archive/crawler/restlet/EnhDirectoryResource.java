@@ -50,7 +50,11 @@ public class EnhDirectoryResource extends DirectoryServerResource {
      */
     @Override
     public List<Variant> getVariants() {
-        List<Variant> variants = new LinkedList<>(super.getVariants(Method.GET));
+        List<Variant> superVariants = super.getVariants();
+        if (superVariants == null) {
+            return null; // PUT and DELETE return no content
+        }
+        List<Variant> variants = new LinkedList<>(superVariants);
         Form f = getRequest().getResourceRef().getQueryAsForm();
         String format = f.getFirstValue("format");
         if("textedit".equals(format)) {
@@ -64,7 +68,11 @@ public class EnhDirectoryResource extends DirectoryServerResource {
                 } catch (Exception e) {
                     throw new RuntimeException(e); 
                 }
-                variants = new LinkedList<>(super.getVariants(Method.GET));
+                superVariants = super.getVariants();
+                if (superVariants == null) {
+                    return null;
+                }
+                variants = new LinkedList<>(superVariants);
             }
             // wrap FileRepresentations in EditRepresentations
             ListIterator<Variant> iter = variants.listIterator(); 
