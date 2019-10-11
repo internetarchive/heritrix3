@@ -41,7 +41,7 @@ public class AssignmentLevelSurtQueueAssignmentPolicy extends
 
 	UURI basis = curi.getPolicyBasisUURI();
 	String candidate =  super.getClassKey(curi);
-    candidate = PublicSuffixes.reduceSurtToAssignmentLevel(candidate);
+        candidate = PublicSuffixes.reduceSurtToAssignmentLevel(candidate);
 
 	if(!StringUtils.isEmpty(getForceQueueAssignment())) {
 	    candidate = getForceQueueAssignment();
