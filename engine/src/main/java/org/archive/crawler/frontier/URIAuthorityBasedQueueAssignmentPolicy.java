@@ -90,18 +90,18 @@ implements
         if(getDeferToPrevious() && !StringUtils.isEmpty(curi.getClassKey())) {
             return curi.getClassKey();
         }
+
+        UURI basis = curi.getPolicyBasisUURI();
+        String candidate = getCoreKey(basis);
         
         if(!StringUtils.isEmpty(getForceQueueAssignment())) {
-            return getForceQueueAssignment(); 
+            candidate = getForceQueueAssignment();
         }
         
         // all whois urls in the same queue
         if (curi.getUURI().getScheme().equals("whois")) {
             return "whois...";
         }
-        
-        UURI basis = curi.getPolicyBasisUURI();
-        String candidate = getCoreKey(basis); 
         
         if(StringUtils.isEmpty(candidate)) {
             return DEFAULT_CLASS_KEY;
