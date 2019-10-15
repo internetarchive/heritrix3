@@ -27,8 +27,10 @@ public class HttpRequestRecordBuilder extends BaseWARCRecordBuilder {
 
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setRecordId(generateRecordID());
-        recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
-                "<" + concurrentTo + ">");
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    '<' + concurrentTo.toString() + '>');
+        }
         recordInfo.setType(WARCRecordType.request);
         recordInfo.setUrl(curi.toString());
         recordInfo.setCreate14DigitDate(timestamp);

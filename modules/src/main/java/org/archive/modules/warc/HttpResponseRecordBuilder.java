@@ -1,5 +1,6 @@
 package org.archive.modules.warc;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.format.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
@@ -36,8 +37,12 @@ public class HttpResponseRecordBuilder extends BaseWARCRecordBuilder {
                 ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
 
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.response);
         recordInfo.setRecordId(generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    '<' + concurrentTo.toString() + '>');
+        }
+        recordInfo.setType(WARCRecordType.response);
         recordInfo.setUrl(curi.toString());
         recordInfo.setCreate14DigitDate(timestamp);
         recordInfo.setMimetype(HTTP_RESPONSE_MIMETYPE);
