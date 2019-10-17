@@ -21,6 +21,8 @@
 package org.archive.crawler.restlet;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
@@ -50,7 +52,11 @@ public class EnhDirectoryResource extends DirectoryServerResource {
      */
     @Override
     public List<Variant> getVariants() {
-        List<Variant> variants = new LinkedList<>(super.getVariants(Method.GET));
+        List<Variant> superVariants = super.getVariants();
+        if (superVariants == null) {
+            return null; // PUT and DELETE return no content
+        }
+        List<Variant> variants = new LinkedList<>(superVariants);
         Form f = getRequest().getResourceRef().getQueryAsForm();
         String format = f.getFirstValue("format");
         if("textedit".equals(format)) {
@@ -64,7 +70,11 @@ public class EnhDirectoryResource extends DirectoryServerResource {
                 } catch (Exception e) {
                     throw new RuntimeException(e); 
                 }
-                variants = new LinkedList<>(super.getVariants(Method.GET));
+                superVariants = super.getVariants();
+                if (superVariants == null) {
+                    return null;
+                }
+                variants = new LinkedList<>(superVariants);
             }
             // wrap FileRepresentations in EditRepresentations
             ListIterator<Variant> iter = variants.listIterator(); 
@@ -143,6 +153,30 @@ public class EnhDirectoryResource extends DirectoryServerResource {
         Reference ref = getRequest().getOriginalRef().clone(); 
         /// ref.setQuery(null);
         getResponse().redirectSeeOther(ref);
+        return new EmptyRepresentation();
+    }
+
+    /*
+     * XXX: We override Restlet's default PUT behaviour (see FileClientHelper.handleFilePut) as it unhelpfully changes
+     * the file extension based on the content-type and there's no apparent way to disable that.
+     */
+    @Override
+    public Representation put(Representation entity) throws ResourceException {
+        File file = new File(URI.create(getTargetUri()));
+        if (getTargetUri().endsWith("/") || file.isDirectory()) {
+            return super.put(entity);
+        }
+        boolean created = !file.exists();
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            entity.write(out);
+        } catch (FileNotFoundException e) {
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, e);
+        } catch (IOException e) {
+            throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
+        }
+        if (created) {
+            getResponse().setStatus(Status.SUCCESS_CREATED);
+        }
         return new EmptyRepresentation();
     }
 }
