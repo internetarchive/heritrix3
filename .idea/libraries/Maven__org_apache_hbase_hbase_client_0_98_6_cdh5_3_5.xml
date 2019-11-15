@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.apache.hbase:hbase-client:0.98.6-cdh5.3.5">
+    <CLASSES>
+      <root url="jar://$M2_REPO$/org/apache/hbase/hbase-client/0.98.6-cdh5.3.5/hbase-client-0.98.6-cdh5.3.5.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$M2_REPO$/org/apache/hbase/hbase-client/0.98.6-cdh5.3.5/hbase-client-0.98.6-cdh5.3.5-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$M2_REPO$/org/apache/hbase/hbase-client/0.98.6-cdh5.3.5/hbase-client-0.98.6-cdh5.3.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

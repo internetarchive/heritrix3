@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.apache.avro:avro:1.7.6-cdh5.3.5">
+    <CLASSES>
+      <root url="jar://$M2_REPO$/org/apache/avro/avro/1.7.6-cdh5.3.5/avro-1.7.6-cdh5.3.5.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$M2_REPO$/org/apache/avro/avro/1.7.6-cdh5.3.5/avro-1.7.6-cdh5.3.5-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$M2_REPO$/org/apache/avro/avro/1.7.6-cdh5.3.5/avro-1.7.6-cdh5.3.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

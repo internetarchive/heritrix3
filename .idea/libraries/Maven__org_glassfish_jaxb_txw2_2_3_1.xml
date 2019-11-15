@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.glassfish.jaxb:txw2:2.3.1">
+    <CLASSES>
+      <root url="jar://$M2_REPO$/org/glassfish/jaxb/txw2/2.3.1/txw2-2.3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$M2_REPO$/org/glassfish/jaxb/txw2/2.3.1/txw2-2.3.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$M2_REPO$/org/glassfish/jaxb/txw2/2.3.1/txw2-2.3.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
