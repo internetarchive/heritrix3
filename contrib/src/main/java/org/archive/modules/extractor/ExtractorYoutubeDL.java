@@ -177,12 +177,28 @@ public class ExtractorYoutubeDL extends Extractor
                 }
 
                 int count = 0;
-                for (JsonElement e: jsonEntries) {
+                for (JsonElement jsonE: jsonEntries) {
                     count += 1;
-                    JsonObject json = (JsonObject) e;
-                    if (json.get("url") != null) {
-                        String videoUrl = json.get("url").getAsString();
-                        addVideoOutlink(uri, json, videoUrl);
+                    JsonObject jsonO = (JsonObject) jsonE;
+
+                    // media url
+                    if (jsonO.get("url") != null) {
+                        String videoUrl = jsonO.get("url").getAsString();
+                        addVideoOutlink(uri, jsonO, videoUrl);
+                    }
+
+                    // make sure we extract watch page links from youtube playlists,
+                    // and equivalent for other sites
+                    if (jsonO.get("webpage_url") != null) {
+                        String webpageUrl = jsonO.get("webpage_url").getAsString();
+                        try {
+                            UURI dest = UURIFactory.getInstance(uri.getUURI(), webpageUrl);
+                            CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
+                                    Hop.NAVLINK);
+                            uri.getOutLinks().add(link);
+                        } catch (URIException e1) {
+                            logUriError(e1, uri.getUURI(), webpageUrl);
+                        }
                     }
                 }
 
