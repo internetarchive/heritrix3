@@ -20,6 +20,10 @@ package org.archive.modules.deciderules;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -39,7 +43,19 @@ import org.archive.modules.CrawlURI;
 public class MatchesListRegexDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 3L;
     private static final Logger logger =
-        Logger.getLogger(MatchesListRegexDecideRule.class.getName());
+            Logger.getLogger(MatchesListRegexDecideRule.class.getName());
+
+    /**
+     * The timeout for regular expression matching, in seconds. If set to 0 or negative then no timeout is specified and
+     * there is no upper limit to how long the matching may take. See the corresponding test class MatchesListRegexDecideRuleTest
+     * for a pathological example.
+     */
+    {
+        setTimeoutPerRegexSeconds(0L);
+    }
+    public long getTimeoutPerRegexSeconds() { return (Long) kp.get("timeout");}
+    public void setTimeoutPerRegexSeconds(long timeoutPerRegexSeconds) { kp.put("timeout", timeoutPerRegexSeconds);}
+
 
     /**
      * The list of regular expressions to evalute against the URI.
@@ -91,7 +107,17 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
         boolean listLogicOR = getListLogicalOr();
 
         for (Pattern p: regexes) {
-            boolean matches = p.matcher(str).matches();
+            boolean matches = false;
+            if (getTimeoutPerRegexSeconds() <= 0) {
+                matches = p.matcher(str).matches();
+            } else {
+                CompletableFuture<Boolean> matchesFuture = CompletableFuture.supplyAsync(() -> p.matcher(str).matches());
+                try {
+                    matches = matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    logger.info("Exception while matching regex '" + p + "' to url '" + str + "' so assuming no match. " +  e.getClass().getName());
+                }
+            }
 
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Tested '" + str + "' match with regex '" +
