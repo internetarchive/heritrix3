@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -50,7 +51,6 @@ import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -168,9 +168,17 @@ public class ExtractorYoutubeDL extends Extractor
             }
         } else {
             JsonObject ydlJson = runYoutubeDL(uri);
-            if (ydlJson != null && ydlJson.has("entries")) {
-                JsonArray jsonEntries = ydlJson.getAsJsonArray("entries");
+            if (ydlJson != null && (ydlJson.has("entries") || ydlJson.has("url"))) {
+                Iterable<JsonElement> jsonEntries;
+                if (ydlJson.has("entries")) {
+                    jsonEntries = ydlJson.getAsJsonArray("entries");
+                } else {
+                    jsonEntries = Arrays.asList(ydlJson);
+                }
+
+                int count = 0;
                 for (JsonElement e: jsonEntries) {
+                    count += 1;
                     JsonObject json = (JsonObject) e;
                     if (json.get("url") != null) {
                         String videoUrl = json.get("url").getAsString();
@@ -181,7 +189,7 @@ public class ExtractorYoutubeDL extends Extractor
                 // XXX this can be large, consider using a RecordingOutputStream
                 uri.getData().put("ydlJson", ydlJson);
 
-                String annotation = "youtube-dl:" + jsonEntries.size();
+                String annotation = "youtube-dl:" + count;
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
             }
@@ -379,7 +387,7 @@ public class ExtractorYoutubeDL extends Extractor
         JsonObject ydlJson = null;
         try {
             if (parser.hasNext()) {
-                ydlJson  = (JsonObject) parser.next();
+                ydlJson = (JsonObject) parser.next();
             }
         } catch (JsonParseException e) {
             // sometimes we get no output at all from youtube-dl, which
