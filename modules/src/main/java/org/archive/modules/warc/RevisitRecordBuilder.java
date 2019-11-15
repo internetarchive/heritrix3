@@ -1,5 +1,6 @@
 package org.archive.modules.warc;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_PROFILE;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
 import static org.archive.format.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
@@ -42,8 +43,12 @@ public class RevisitRecordBuilder extends BaseWARCRecordBuilder {
         }
 
         WARCRecordInfo recordInfo = new WARCRecordInfo();
-        recordInfo.setType(WARCRecordType.revisit);
         recordInfo.setRecordId(generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    '<' + concurrentTo.toString() + '>');
+        }
+        recordInfo.setType(WARCRecordType.revisit);
         recordInfo.setUrl(curi.toString());
         recordInfo.setCreate14DigitDate(timestamp);
         String scheme = curi.getUURI().getScheme().toLowerCase();

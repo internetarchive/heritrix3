@@ -1,6 +1,7 @@
 package org.archive.modules.warc;
 
 import static org.archive.format.warc.WARCConstants.FTP_CONTROL_CONVERSATION_MIMETYPE;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 
@@ -31,14 +32,17 @@ public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
         headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
 
         WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setRecordId(generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    '<' + concurrentTo.toString() + '>');
+        }
         recordInfo.setCreate14DigitDate(timestamp);
         recordInfo.setUrl(curi.toString());
         recordInfo.setMimetype(FTP_CONTROL_CONVERSATION_MIMETYPE);
         recordInfo.setExtraHeaders(headers);
         recordInfo.setEnforceLength(true);
         recordInfo.setType(WARCRecordType.metadata);
-
-        recordInfo.setRecordId(generateRecordID());
         
         byte[] b = controlConversation.getBytes("UTF-8");
         
