@@ -348,7 +348,7 @@ public class QuotaEnforcer extends Processor {
      * being force-retired (if the Frontier supports this). Note that if your
      * queues combine URIs that are different with regard to the quota category,
      * the retirement may hold back URIs not in the same quota category. Default
-     * is false.
+     * is true.
      */
     {
         setForceRetire(true);

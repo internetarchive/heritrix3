@@ -26,6 +26,13 @@
 					<artifactId>junit</artifactId>
 					<groupId>junit</groupId>
 				</exclusion>
+				<!-- tools.jar is not available in JDK 11 so exclude it
+				     hbase-client accidentally leaked it as a transitive dependency
+				     https://issues.apache.org/jira/browse/HBASE-13963 -->
+				<exclusion>
+					<groupId>jdk.tools</groupId>
+					<artifactId>jdk.tools</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>

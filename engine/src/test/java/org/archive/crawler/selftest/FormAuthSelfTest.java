@@ -19,19 +19,20 @@
 
 package org.archive.crawler.selftest;
 
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.DefaultHandler;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.handler.ResourceHandler;
-import org.mortbay.jetty.servlet.ServletHandler;
-import org.mortbay.jetty.servlet.ServletHolder;
 
 /**
  * Test form-based authentication
@@ -60,17 +61,17 @@ public class FormAuthSelfTest
     protected void startHttpServer() throws Exception {
         Server server = new Server();
         
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
         rhandler.setResourceBase(getSrcHtdocs().getAbsolutePath());
         
-        ServletHandler servletHandler = new ServletHandler();        
+        ServletHandler servletHandler = new ServletHandler();
         
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { 
+        handlers.setHandlers(new Handler[] {
                 rhandler, 
                 servletHandler,
                 new DefaultHandler() });

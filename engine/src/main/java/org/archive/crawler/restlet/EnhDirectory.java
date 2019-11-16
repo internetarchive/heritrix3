@@ -26,10 +26,12 @@ import java.util.logging.Level;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.restlet.Context;
-import org.restlet.Handler;
 import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.data.Status;
+import org.restlet.resource.Directory;
+import org.restlet.resource.ServerResource;
 
 /**
  * Enhanced version of Restlet Directory, which allows the local 
@@ -39,11 +41,11 @@ import org.restlet.data.Response;
  * 
  * @author gojomo
  */
-public abstract class EnhDirectory extends org.restlet.Directory {
+public abstract class EnhDirectory extends Directory {
     protected IOFileFilter editFilter = FileFilterUtils.falseFileFilter(); 
     protected IOFileFilter pageFilter = FileFilterUtils.falseFileFilter(); 
     protected IOFileFilter tailFilter = FileFilterUtils.falseFileFilter();
-    
+
     public EnhDirectory(Context context, Reference rootLocalReference) {
         super(context, rootLocalReference);
         // TODO Auto-generated constructor stub
@@ -55,21 +57,27 @@ public abstract class EnhDirectory extends org.restlet.Directory {
     }
 
     @Override
-    public Handler findTarget(Request request, Response response) {
-        Handler retVal; 
-        synchronized(this) {
+    public void handle(Request request, Response response) {
+        synchronized (this) {
             Reference oldRef = getRootRef();
             setRootRef(determineRootRef(request));
             try {
-                retVal = new EnhDirectoryResource(this, request, response);
-            } catch (IOException ioe) {
-                getLogger().log(Level.WARNING,
-                        "Unable to find the directory's resource", ioe);
-                retVal = null;
+                super.handle(request, response);
+            } finally {
+                setRootRef(oldRef);
             }
-            setRootRef(oldRef); 
+
+            // XXX: FileRepresentation.isAvailable() returns false for empty files generating status 204 No Content
+            // which confuses browsers. Force it back it 200 OK.
+            if (response.getStatus() == Status.SUCCESS_NO_CONTENT) {
+                response.setStatus(Status.SUCCESS_OK);
+            }
         }
-        return retVal;
+    }
+
+    @Override
+    public ServerResource create(Request request, Response response) {
+        return new EnhDirectoryResource();
     }
 
     protected abstract Reference determineRootRef(Request request);

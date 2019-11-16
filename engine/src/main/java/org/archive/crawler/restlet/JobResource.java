@@ -38,12 +38,13 @@ import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.representation.EmptyRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
-import org.restlet.resource.WriterRepresentation;
+import org.restlet.representation.Variant;
 
 import freemarker.template.Configuration;
 import freemarker.template.ObjectWrapper;
@@ -68,10 +69,10 @@ public class JobResource extends BaseResource {
 
     protected CrawlJob cj;
 
-    public JobResource(Context ctx, Request req, Response res)
+    @Override
+    public void init(Context ctx, Request req, Response res)
             throws ResourceException {
-        super(ctx, req, res);
-        setModifiable(true);
+        super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         cj = getEngine().getJob(
@@ -88,7 +89,9 @@ public class JobResource extends BaseResource {
     public Configuration getTemplateConfiguration(){
         return _templateConfiguration;
     }
-    public Representation represent(Variant variant) throws ResourceException {
+
+    @Override
+    public Representation get(Variant variant) throws ResourceException {
         if (cj == null) {
             throw new ResourceException(404);
         }
@@ -184,19 +187,18 @@ public class JobResource extends BaseResource {
     }
 
     @Override
-    public void acceptRepresentation(Representation entity)
+    public Representation post(Representation entity, Variant variant)
             throws ResourceException {
         if (cj == null) {
             throw new ResourceException(404);
         }
 
         // copy op?
-        Form form = null;
-        form = getRequest().getEntityAsForm();
+        Form form = new Form(entity);
         String copyTo = form.getFirstValue("copyTo");
         if (copyTo != null) {
             copyJob(copyTo, "on".equals(form.getFirstValue("asProfile")));
-            return;
+            return new EmptyRepresentation();
         }
         AlertHandler.ensureStaticInitialization();
         AlertThreadGroup.setThreadLogger(cj.getJobLogger());
@@ -241,6 +243,7 @@ public class JobResource extends BaseResource {
 
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
+        return new EmptyRepresentation();
     }
 
     protected void copyJob(String copyTo, boolean asProfile)

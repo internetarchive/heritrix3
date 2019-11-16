@@ -30,27 +30,21 @@ import javax.servlet.http.HttpServletResponse;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
-import org.mortbay.jetty.NCSARequestLog;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Response;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.HandlerCollection;
-import org.mortbay.jetty.handler.RequestLogHandler;
-import org.mortbay.jetty.security.Authenticator;
-import org.mortbay.jetty.security.BasicAuthenticator;
-import org.mortbay.jetty.security.Constraint;
-import org.mortbay.jetty.security.ConstraintMapping;
-import org.mortbay.jetty.security.DigestAuthenticator;
-import org.mortbay.jetty.security.HashUserRealm;
-import org.mortbay.jetty.security.SecurityHandler;
-import org.mortbay.jetty.security.SslSocketConnector;
-import org.mortbay.jetty.servlet.SessionHandler;
-import org.mortbay.log.Log;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.security.*;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.security.Password;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class FetchHTTPTest extends ProcessorTestBase {
 
@@ -125,12 +119,13 @@ public class FetchHTTPTest extends ProcessorTestBase {
         public TestHandler() {
             super();
         }
-        
+
         @Override
-        public void handle(String target, HttpServletRequest request,
-                HttpServletResponse response, int dispatch) throws IOException,
-                ServletException {
-            
+        public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+
+            // echo the remote host back to the client so tests can reference it
+            response.setHeader("Client-Host", request.getRemoteHost());
+
             if (target.endsWith("/set-cookie")) {
                 response.addCookie(new javax.servlet.http.Cookie("test-cookie-name", "test-cookie-value"));
             }
@@ -221,9 +216,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
     }
 
     protected static Map<Integer, Server> httpServers;
-    protected static Request lastRequest = null;
-    protected static Response lastResponse = null;
-    
+
     protected static SecurityHandler makeAuthWrapper(Authenticator authenticator,
             final String role, String realm, final String login,
             final String password) {
@@ -235,16 +228,15 @@ public class FetchHTTPTest extends ProcessorTestBase {
         constraintMapping.setConstraint(constraint);
         constraintMapping.setPathSpec("/auth/*");
 
-        SecurityHandler authWrapper = new SecurityHandler();
+        ConstraintSecurityHandler authWrapper = new ConstraintSecurityHandler();
         authWrapper.setAuthenticator(authenticator);
         
         authWrapper.setConstraintMappings(new ConstraintMapping[] {constraintMapping});
-        authWrapper.setUserRealm(new HashUserRealm(realm) {
-            {
-                put(login, password);
-                addUserToRole(login, role);
-            }
-        });
+        UserStore userStore = new UserStore();
+        userStore.addUser(login, new Password(password), new String[] {role});
+        HashLoginService loginService = new HashLoginService(realm);
+        loginService.setUserStore(userStore);
+        authWrapper.setLoginService(loginService);
 
         return authWrapper;
     }
@@ -259,24 +251,10 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         HashMap<Integer, Server> servers = new HashMap<Integer,Server>();
 
-        HandlerCollection handlers = new HandlerCollection();
-        handlers.addHandler(new TestHandler());
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
-        NCSARequestLog requestLog = new NCSARequestLog() {
-            @Override
-            public void log(Request request, Response response) {
-                super.log(request, response);
-                lastRequest = request;
-                lastResponse = response;
-            }
-        };
-        requestLogHandler.setRequestLog(requestLog);
-        handlers.addHandler(requestLogHandler);
-
         // server for basic auth
         Server server = new Server();
         
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);
@@ -284,6 +262,8 @@ public class FetchHTTPTest extends ProcessorTestBase {
         SecurityHandler authWrapper = makeAuthWrapper(new BasicAuthenticator(),
                 BASIC_AUTH_ROLE, BASIC_AUTH_REALM, BASIC_AUTH_LOGIN,
                 BASIC_AUTH_PASSWORD);
+        HandlerCollection handlers = new HandlerCollection();
+        handlers.addHandler(new TestHandler());
         authWrapper.setHandler(handlers);
         server.setHandler(authWrapper);
         
@@ -299,16 +279,23 @@ public class FetchHTTPTest extends ProcessorTestBase {
                 "-storepass", KEYSTORE_PASSWORD,
                 "-keypass", KEYSTORE_PASSWORD,
                 "-alias", "jetty",
-                "-genkey", 
+                "-genkey",
                 "-keyalg", "RSA",
                 "-dname", "CN=127.0.0.1",
                 "-validity","3650"}); // 10 yr validity
-        
-        SslSocketConnector ssc = new SslSocketConnector();
+
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        sslContextFactory.setKeyStorePassword(KEYSTORE_PASSWORD);
+        sslContextFactory.setKeyStorePath(keystoreFile.getPath());
+
+        HttpConfiguration httpsConfig = new HttpConfiguration();
+        httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
+        ServerConnector ssc = new ServerConnector(server,
+                new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+                new HttpConnectionFactory(httpsConfig));
         ssc.setHost("127.0.0.1");
         ssc.setPort(7443);
-        ssc.setKeyPassword(KEYSTORE_PASSWORD);
-        ssc.setKeystore(keystoreFile.getPath());
 
         server.addConnector(ssc);
         
@@ -317,7 +304,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         // server for digest auth
         server = new Server();
         
-        sc = new SocketConnector();
+        sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7778);
         server.addConnector(sc);
@@ -325,7 +312,9 @@ public class FetchHTTPTest extends ProcessorTestBase {
         authWrapper = makeAuthWrapper(new DigestAuthenticator(),
                 DIGEST_AUTH_ROLE, DIGEST_AUTH_REALM, DIGEST_AUTH_LOGIN,
                 DIGEST_AUTH_PASSWORD);
-        authWrapper.setHandler(handlers);
+        HandlerCollection handlers2 = new HandlerCollection();
+        handlers2.addHandler(new TestHandler());
+        authWrapper.setHandler(handlers2);
         server.setHandler(authWrapper);
         
         server.start();
@@ -333,7 +322,7 @@ public class FetchHTTPTest extends ProcessorTestBase {
         
         return servers;
     }
-    
+
     protected static void ensureHttpServers() throws Exception {
         if (httpServers == null) { 
             httpServers = startHttpServers();
@@ -362,9 +351,4 @@ public class FetchHTTPTest extends ProcessorTestBase {
             }
         };
     }
-
-    public static Request getLastRequest() {
-        return lastRequest;
-    }
-
 }

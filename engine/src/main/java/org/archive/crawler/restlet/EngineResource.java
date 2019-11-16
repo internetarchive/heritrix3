@@ -30,20 +30,23 @@ import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.models.EngineModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.restlet.Context;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
+import org.restlet.representation.EmptyRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
-import org.restlet.resource.WriterRepresentation;
+import org.restlet.representation.Variant;
 
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+
+import static org.restlet.data.MediaType.APPLICATION_XML;
 
 /**
  * Restlet Resource representing an Engine that may be used
@@ -56,11 +59,12 @@ import freemarker.template.TemplateException;
 public class EngineResource extends BaseResource {
 
     private Configuration _templateConfiguration;
-    public EngineResource(Context ctx, Request req, Response res) {
-        super(ctx, req, res);
-        setModifiable(true);
+
+    @Override
+    public void init(Context ctx, Request req, Response res) {
+        super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
-        getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(APPLICATION_XML));
         
         Configuration tmpltCfg = new Configuration();
         tmpltCfg.setClassForTemplateLoading(this.getClass(),"");        
@@ -74,10 +78,12 @@ public class EngineResource extends BaseResource {
     public Configuration getTemplateConfiguration(){
         return _templateConfiguration;
     }
-    public Representation represent(Variant variant) throws ResourceException {
+
+    @Override
+    protected Representation get(Variant variant) throws ResourceException {
         Representation representation;
-        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
-            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+        if (variant.getMediaType() == APPLICATION_XML) {
+            representation = new WriterRepresentation(APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "engine", makeDataModel());
                 }
@@ -93,10 +99,10 @@ public class EngineResource extends BaseResource {
         representation.setCharacterSet(CharacterSet.UTF_8);
         return representation;
     }
-    
+
     @Override
-    public void acceptRepresentation(Representation entity) throws ResourceException {
-        Form form = getRequest().getEntityAsForm();
+    protected Representation post(Representation entity, Variant variant) throws ResourceException {
+        Form form = new Form(entity);
         String action = form.getFirstValue("action");
         if("rescan".equals(action)) {
             getEngine().findJobConfigs(); 
@@ -182,6 +188,7 @@ public class EngineResource extends BaseResource {
         }
         // default: redirect to GET self
         getResponse().redirectSeeOther(getRequest().getOriginalRef());
+        return new EmptyRepresentation();
     }
     
  

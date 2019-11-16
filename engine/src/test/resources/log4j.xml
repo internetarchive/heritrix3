@@ -11,7 +11,7 @@
 		<level value="ERROR" />
 	</logger>
 
-	<logger name="org.mortbay.log">
+	<logger name="org.eclipse.jetty">
 		<level value="ERROR" />
 	</logger>
 
