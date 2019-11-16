@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
@@ -48,15 +47,11 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonStreamParser;
-import com.google.gson.internal.Streams;
-import com.google.gson.stream.JsonWriter;
 
 /**
  * Extracts links to media by running youtube-dl in a subprocess. Runs only on
@@ -167,30 +162,28 @@ public class ExtractorYoutubeDL extends Extractor
                 logCapturedVideo(uri, ydlAnnotation);
             }
         } else {
-            JsonObject ydlJson = runYoutubeDL(uri);
+            JSONObject ydlJson = runYoutubeDL(uri);
             if (ydlJson != null && (ydlJson.has("entries") || ydlJson.has("url"))) {
-                Iterable<JsonElement> jsonEntries;
+                JSONArray jsonEntries;
                 if (ydlJson.has("entries")) {
-                    jsonEntries = ydlJson.getAsJsonArray("entries");
+                    jsonEntries = ydlJson.getJSONArray("entries");
                 } else {
-                    jsonEntries = Arrays.asList(ydlJson);
+                    jsonEntries = new JSONArray(Arrays.asList(ydlJson));
                 }
 
-                int count = 0;
-                for (JsonElement jsonE: jsonEntries) {
-                    count += 1;
-                    JsonObject jsonO = (JsonObject) jsonE;
+                for (int i = 0; i < jsonEntries.length(); i++) {
+                    JSONObject jsonO = (JSONObject) jsonEntries.get(i);
 
                     // media url
                     if (jsonO.get("url") != null) {
-                        String videoUrl = jsonO.get("url").getAsString();
+                        String videoUrl = jsonO.getString("url");
                         addVideoOutlink(uri, jsonO, videoUrl);
                     }
 
                     // make sure we extract watch page links from youtube playlists,
                     // and equivalent for other sites
                     if (jsonO.get("webpage_url") != null) {
-                        String webpageUrl = jsonO.get("webpage_url").getAsString();
+                        String webpageUrl = jsonO.getString("webpage_url");
                         try {
                             UURI dest = UURIFactory.getInstance(uri.getUURI(), webpageUrl);
                             CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
@@ -205,14 +198,14 @@ public class ExtractorYoutubeDL extends Extractor
                 // XXX this can be large, consider using a RecordingOutputStream
                 uri.getData().put("ydlJson", ydlJson);
 
-                String annotation = "youtube-dl:" + count;
+                String annotation = "youtube-dl:" + jsonEntries.length();
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
             }
         }
     }
 
-    protected void addVideoOutlink(CrawlURI uri, JsonObject json,
+    protected void addVideoOutlink(CrawlURI uri, JSONObject jsonO,
             String videoUrl) {
         try {
             UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
@@ -221,9 +214,9 @@ public class ExtractorYoutubeDL extends Extractor
 
             // annotation
             String annotation = "youtube-dl:1/1";
-            if (!json.get("playlist_index").isJsonNull()) {
-                annotation = "youtube-dl:" + json.get("playlist_index") + "/"
-                        + json.get("n_entries");
+            if (jsonO.opt("playlist_index") != null) {
+                annotation = "youtube-dl:" + jsonO.get("playlist_index") + "/"
+                        + jsonO.get("n_entries");
             }
             link.getAnnotations().add(annotation);
 
@@ -350,7 +343,7 @@ public class ExtractorYoutubeDL extends Extractor
         return output;
     }
 
-    protected JsonObject runYoutubeDL(CrawlURI uri) {
+    protected JSONObject runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
          *
@@ -399,13 +392,10 @@ public class ExtractorYoutubeDL extends Extractor
             proc.destroyForcibly();
         }
 
-        JsonStreamParser parser = new JsonStreamParser(output.stdout);
-        JsonObject ydlJson = null;
         try {
-            if (parser.hasNext()) {
-                ydlJson = (JsonObject) parser.next();
-            }
-        } catch (JsonParseException e) {
+            JSONObject ydlJson = new JSONObject(output.stdout);
+            return ydlJson;
+        } catch (JSONException e) {
             // sometimes we get no output at all from youtube-dl, which
             // manifests as a JsonIOException
             logger.log(Level.FINE,
@@ -415,8 +405,6 @@ public class ExtractorYoutubeDL extends Extractor
                     e);
             return null;
         }
-
-        return ydlJson;
     }
 
     @Override
@@ -480,13 +468,10 @@ public class ExtractorYoutubeDL extends Extractor
         recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
         recordInfo.setEnforceLength(true);
 
-        JsonObject ydlJson = (JsonObject) curi.getData().get("ydlJson");
-        StringWriter stringWriter = new StringWriter();
-        JsonWriter jsonWriter = new JsonWriter(stringWriter);
-        jsonWriter.setIndent(" ");
-        Streams.write(ydlJson, jsonWriter);
+        JSONObject ydlJson = (JSONObject) curi.getData().get("ydlJson");
+        String ydlJsonString = ydlJson.toString(1);
 
-        byte[] b = stringWriter.toString().getBytes("UTF-8");
+        byte[] b = ydlJsonString.getBytes("UTF-8");
         recordInfo.setContentStream(new ByteArrayInputStream(b));
         recordInfo.setContentLength((long) b.length);
 
