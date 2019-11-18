@@ -175,7 +175,7 @@ public class ExtractorYoutubeDL extends Extractor
                     JSONObject jsonO = (JSONObject) jsonEntries.get(i);
 
                     // media url
-                    if (jsonO.get("url") != null) {
+                    if (!jsonO.isNull("url")) {
                         String videoUrl = jsonO.getString("url");
                         addVideoOutlink(uri, jsonO, videoUrl);
                     }
@@ -214,7 +214,7 @@ public class ExtractorYoutubeDL extends Extractor
 
             // annotation
             String annotation = "youtube-dl:1/1";
-            if (jsonO.opt("playlist_index") != null) {
+            if (!jsonO.isNull("playlist_index")) {
                 annotation = "youtube-dl:" + jsonO.get("playlist_index") + "/"
                         + jsonO.get("n_entries");
             }
