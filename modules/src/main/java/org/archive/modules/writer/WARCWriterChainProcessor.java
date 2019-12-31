@@ -23,6 +23,33 @@ import org.archive.modules.warc.WARCRecordBuilder;
 import org.archive.modules.warc.WhoisResponseRecordBuilder;
 import org.archive.spring.HasKeyedProperties;
 
+/**
+ * WARC writer processor. The types of records that to be written can be
+ * configured by including or excluding {@link WARCRecordBuilder}
+ * implementations (see {@link #setChain(List)}).
+ *
+ * <p>This is the default chain:
+ * <pre>
+ *   &lt;property name="chain"&gt;
+ *    &lt;list&gt;
+ *     &lt;bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.HttpResponseRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.RevisitRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/&gt;
+ *     &lt;bean class="org.archive.modules.warc.MetadataRecordBuilder"/&gt;
+ *    &lt;/list&gt;
+ *   &lt;/property&gt;
+ * </pre>
+ *
+ * <p>
+ * Replaces {@link WARCWriterProcessor}.
+ *
+ * @see WARCRecordBuilder
+ * @author nlevitt
+ */
 public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements HasKeyedProperties {
     private static final Logger logger = 
             Logger.getLogger(WARCWriterChainProcessor.class.getName());
