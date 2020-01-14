@@ -25,7 +25,6 @@ import org.apache.http.message.BasicStatusLine;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
-import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.net.UURIFactory;
@@ -122,12 +121,11 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     final byte[] digestValue0 = sha1Digest("0");
     final byte[] digestValue1 = sha1Digest("1");
     fetchHistory[0] = new HashMap<String, Object>();
-    fetchHistory[0].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts + 2000);
     fetchHistory[0].put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, expected_ts + 2000);
     fetchHistory[0].put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
         CONTENT_DIGEST_SCHEME + Base32.encode(digestValue0));
     fetchHistory[1] = new HashMap<String, Object>();
-    fetchHistory[1].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts - 2000);
+    fetchHistory[1].put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, expected_ts - 2000);
     fetchHistory[1].put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
         CONTENT_DIGEST_SCHEME + Base32.encode(digestValue1));
     
@@ -140,7 +138,7 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
     assertEquals("CONTENT_DIGEST", CONTENT_DIGEST_SCHEME+TestNormalHttpResponse.EXPECTED_HASH, hash);
     
-    Long ts = (Long)history.get(FetchHistoryHelper.A_TIMESTAMP);
+    Long ts = (Long)history.get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
     assertNotNull("ts is non-null", ts);
     assertEquals("'ts' has expected timestamp", expected_ts, ts.longValue());
 
