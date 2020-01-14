@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.writer.WARCWriterProcessor;
+import org.archive.modules.writer.WARCWriterChainProcessor;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.trough.TroughClient;
@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationListener;
  * <p>To use, define a {@code TroughContentDigestHistory} top-level bean in your
  * crawler-beans.cxml, then add {@link ContentDigestHistoryLoader} and
  * {@link ContentDigestHistoryStorer} to your fetch chain, sandwiching the
- * {@link WARCWriterProcessor}. In other words, follow the directions at
+ * {@link WARCWriterChainProcessor}. In other words, follow the directions at
  * <a href="https://github.com/internetarchive/heritrix3/wiki/Duplication%20Reduction%20Processors">https://github.com/internetarchive/heritrix3/wiki/Duplication%20Reduction%20Processors</a>
  * but replace the {@link BdbContentDigestHistory} bean with a
  * {@code TroughContentDigestHistory} bean.

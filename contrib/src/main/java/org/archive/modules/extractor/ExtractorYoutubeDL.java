@@ -19,11 +19,14 @@
 
 package org.archive.modules.extractor;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -34,28 +37,47 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.warc.BaseWARCRecordBuilder;
+import org.archive.modules.warc.WARCRecordBuilder;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonStreamParser;
 
 /**
  * Extracts links to media by running youtube-dl in a subprocess. Runs only on
  * html.
  *
  * <p>
+ * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
+ * warc.
+ * 
+ * <p>
+ * To use <code>ExtractorYoutubeDL</code>, add this top-level bean:
+ * 
+ * <pre>
+ * &lt;bean id="extractorYoutubeDL" class="org.archive.modules.extractor.ExtractorYoutubeDL"/&gt;
+ * </pre>
+ * 
+ * Then add <code>&lt;ref bean="extractorYoutubeDL"/&gt;</code> to end of the
+ * fetch chain, and to the end of the warc writer chain.
+ * 
+ * <p>
  * Keeps a log of containing pages and media captured as a result of youtube-dl
  * extraction. The format of the log is as follows:
  *
- * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]</pre>
+ * <pre>
+ * [timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]
+ * </pre>
  *
  * <p>
  * For containing pages, all of the {@code media-*} fields have the value
@@ -71,13 +93,16 @@ import com.google.gson.JsonStreamParser;
  *
  * @author nlevitt
  */
-public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
+public class ExtractorYoutubeDL extends Extractor
+        implements Lifecycle, WARCRecordBuilder {
     private static Logger logger =
             Logger.getLogger(ExtractorYoutubeDL.class.getName());
 
     protected static final String YDL_CONTAINING_PAGE_DIGEST = "ydl-containing-page-digest";
     protected static final String YDL_CONTAINING_PAGE_TIMESTAMP = "ydl-containing-page-timestamp";
     protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
+
+    protected static final int MAX_VIDEOS_PER_PAGE = 1000;
 
     protected transient Logger ydlLogger = null;
 
@@ -137,22 +162,50 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 logCapturedVideo(uri, ydlAnnotation);
             }
         } else {
-            List<JsonObject> ydlJsons = runYoutubeDL(uri);
-            if (ydlJsons != null && !ydlJsons.isEmpty()) {
-                for (JsonObject json: ydlJsons) {
-                    if (json.get("url") != null) {
-                        String videoUrl = json.get("url").getAsString();
-                        addVideoOutlink(uri, json, videoUrl);
+            JSONObject ydlJson = runYoutubeDL(uri);
+            if (ydlJson != null && (ydlJson.has("entries") || ydlJson.has("url"))) {
+                JSONArray jsonEntries;
+                if (ydlJson.has("entries")) {
+                    jsonEntries = ydlJson.getJSONArray("entries");
+                } else {
+                    jsonEntries = new JSONArray(Arrays.asList(ydlJson));
+                }
+
+                for (int i = 0; i < jsonEntries.length(); i++) {
+                    JSONObject jsonO = (JSONObject) jsonEntries.get(i);
+
+                    // media url
+                    if (!jsonO.isNull("url")) {
+                        String videoUrl = jsonO.getString("url");
+                        addVideoOutlink(uri, jsonO, videoUrl);
+                    }
+
+                    // make sure we extract watch page links from youtube playlists,
+                    // and equivalent for other sites
+                    if (jsonO.get("webpage_url") != null) {
+                        String webpageUrl = jsonO.getString("webpage_url");
+                        try {
+                            UURI dest = UURIFactory.getInstance(uri.getUURI(), webpageUrl);
+                            CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
+                                    Hop.NAVLINK);
+                            uri.getOutLinks().add(link);
+                        } catch (URIException e1) {
+                            logUriError(e1, uri.getUURI(), webpageUrl);
+                        }
                     }
                 }
-                String annotation = "youtube-dl:" + ydlJsons.size();
+
+                // XXX this can be large, consider using a RecordingOutputStream
+                uri.getData().put("ydlJson", ydlJson);
+
+                String annotation = "youtube-dl:" + jsonEntries.length();
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
             }
         }
     }
 
-    protected void addVideoOutlink(CrawlURI uri, JsonObject json,
+    protected void addVideoOutlink(CrawlURI uri, JSONObject jsonO,
             String videoUrl) {
         try {
             UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
@@ -161,9 +214,9 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
 
             // annotation
             String annotation = "youtube-dl:1/1";
-            if (!json.get("playlist_index").isJsonNull()) {
-                annotation = "youtube-dl:" + json.get("playlist_index") + "/"
-                        + json.get("n_entries");
+            if (!jsonO.isNull("playlist_index")) {
+                annotation = "youtube-dl:" + jsonO.get("playlist_index") + "/"
+                        + jsonO.get("n_entries");
             }
             link.getAnnotations().add(annotation);
 
@@ -290,13 +343,7 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         return output;
     }
 
-    /**
-     *
-     * @param uri
-     * @return list of json blobs returned by {@code youtube-dl --dump-json}, or
-     *         empty list if no videos found, or failure
-     */
-    protected List<JsonObject> runYoutubeDL(CrawlURI uri) {
+    protected JSONObject runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
          *
@@ -305,7 +352,8 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-json", "--format=best", uri.toString());
+                "--simulate", "--dump-single-json", "--format=best",
+                "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.fine("running " + pb.command());
 
         Process proc = null;
@@ -344,13 +392,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             proc.destroyForcibly();
         }
 
-        List<JsonObject> ydlJsons = new ArrayList<JsonObject>();
-        JsonStreamParser parser = new JsonStreamParser(output.stdout);
         try {
-            while (parser.hasNext()) {
-                ydlJsons.add((JsonObject) parser.next());
-            }
-        } catch (JsonParseException e) {
+            JSONObject ydlJson = new JSONObject(output.stdout);
+            return ydlJson;
+        } catch (JSONException e) {
             // sometimes we get no output at all from youtube-dl, which
             // manifests as a JsonIOException
             logger.log(Level.FINE,
@@ -360,8 +405,6 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                     e);
             return null;
         }
-
-        return ydlJsons;
     }
 
     @Override
@@ -400,5 +443,38 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean shouldBuildRecord(CrawlURI curi) {
+        return curi.containsDataKey("ydlJson");
+    }
+
+    @Override
+    public WARCRecordInfo buildRecord(CrawlURI curi, URI concurrentTo)
+            throws IOException {
+        final String timestamp =
+                ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
+
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.metadata);
+        recordInfo.setRecordId(BaseWARCRecordBuilder.generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    "<" + concurrentTo + ">");
+        }
+        recordInfo.setUrl("youtube-dl:" + curi);
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
+        recordInfo.setEnforceLength(true);
+
+        JSONObject ydlJson = (JSONObject) curi.getData().get("ydlJson");
+        String ydlJsonString = ydlJson.toString(1);
+
+        byte[] b = ydlJsonString.getBytes("UTF-8");
+        recordInfo.setContentStream(new ByteArrayInputStream(b));
+        recordInfo.setContentLength((long) b.length);
+
+        return recordInfo;
     }
 }
