@@ -61,7 +61,6 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                     IdentityCacheableWrapper.class,
                     env.getClassCatalog());
         try {
-            final AtomicInteger level = new AtomicInteger(0);
             final int keyCount = 128 * 1024; // 128K  keys
             final int maxLevel = 64; 
             // initial fill
@@ -71,19 +70,19 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                         key, 
                         new Supplier<IdentityCacheableWrapper<AtomicInteger>>(
                                 new IdentityCacheableWrapper<AtomicInteger>(
-                                        key, new AtomicInteger(level.get()))));
+                                        key, new AtomicInteger(0))));
             }
             // increment all keys
-            for(; level.get() < maxLevel; level.incrementAndGet()) {
+            for(int level = 0; level < maxLevel; level++) {
                 for(int k = 0; k < keyCount; k++) {
                     IdentityCacheableWrapper<AtomicInteger> wrap = cbdbmap.get(""+k);
                     int foundValue = wrap.get().getAndIncrement();
                     wrap.makeDirty();
-                    assertEquals("stale value preinc key "+k, level.get(), foundValue);
+                    assertEquals("stale value preinc key "+k, level, foundValue);
                 }
-                if(level.get() % 10 == 0) {
-                    System.out.println("level to "+level.get());
-                    if(level.get()>0) {
+                if(level % 10 == 0) {
+                    System.out.println("level to "+level);
+                    if(level>0) {
                         TestUtils.forceScarceMemory();
                     }
                     System.out.println("OIBMCT:"+cbdbmap.composeCacheSummary());
