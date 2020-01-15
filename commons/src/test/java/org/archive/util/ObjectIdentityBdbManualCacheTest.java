@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.RandomUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 
 /**
@@ -74,36 +73,6 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                                 new IdentityCacheableWrapper<AtomicInteger>(
                                         key, new AtomicInteger(level.get()))));
             }
-            // backward checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        for(int j=keyCount-1; j >= 0; j--) {
-                            int targetValue = level.get(); 
-                            if(targetValue>=maxLevel) {
-                                break untilmax;
-                            }
-                            assertTrue("stale value revseq key "+j,cbdbmap.get(""+j).get().get()>=targetValue);
-                            Thread.yield();
-                        }
-                    }
-                }
-            };//.start();
-            // random checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        int j = RandomUtils.nextInt(keyCount);
-                        int targetValue = level.get(); 
-                        if(targetValue>=maxLevel) {
-                            break untilmax;
-                        }
-                        assertTrue("stale value random key "+j,
-                                cbdbmap.get(""+j).get().get()>=targetValue);
-                        Thread.yield();
-                    }
-                }
-            };//.start();
             // increment all keys
             for(; level.get() < maxLevel; level.incrementAndGet()) {
                 for(int k = 0; k < keyCount; k++) {
