@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.RandomUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
 
 /**
@@ -54,16 +53,14 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         super.tearDown();
     }
     
-    @SuppressWarnings("unchecked")
     public void testReadConsistencyUnderLoad() throws Exception {
         final ObjectIdentityBdbManualCache<IdentityCacheableWrapper<AtomicInteger>> cbdbmap = 
-            new ObjectIdentityBdbManualCache();
+            new ObjectIdentityBdbManualCache<>();
         cbdbmap.initialize(env, 
                     "consistencyCache",
                     IdentityCacheableWrapper.class,
                     env.getClassCatalog());
         try {
-            final AtomicInteger level = new AtomicInteger(0);
             final int keyCount = 128 * 1024; // 128K  keys
             final int maxLevel = 64; 
             // initial fill
@@ -73,49 +70,19 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                         key, 
                         new Supplier<IdentityCacheableWrapper<AtomicInteger>>(
                                 new IdentityCacheableWrapper<AtomicInteger>(
-                                        key, new AtomicInteger(level.get()))));
+                                        key, new AtomicInteger(0))));
             }
-            // backward checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        for(int j=keyCount-1; j >= 0; j--) {
-                            int targetValue = level.get(); 
-                            if(targetValue>=maxLevel) {
-                                break untilmax;
-                            }
-                            assertTrue("stale value revseq key "+j,cbdbmap.get(""+j).get().get()>=targetValue);
-                            Thread.yield();
-                        }
-                    }
-                }
-            };//.start();
-            // random checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        int j = RandomUtils.nextInt(keyCount);
-                        int targetValue = level.get(); 
-                        if(targetValue>=maxLevel) {
-                            break untilmax;
-                        }
-                        assertTrue("stale value random key "+j,
-                                cbdbmap.get(""+j).get().get()>=targetValue);
-                        Thread.yield();
-                    }
-                }
-            };//.start();
             // increment all keys
-            for(; level.get() < maxLevel; level.incrementAndGet()) {
+            for(int level = 0; level < maxLevel; level++) {
                 for(int k = 0; k < keyCount; k++) {
                     IdentityCacheableWrapper<AtomicInteger> wrap = cbdbmap.get(""+k);
                     int foundValue = wrap.get().getAndIncrement();
                     wrap.makeDirty();
-                    assertEquals("stale value preinc key "+k, level.get(), foundValue);
+                    assertEquals("stale value preinc key "+k, level, foundValue);
                 }
-                if(level.get() % 10 == 0) {
-                    System.out.println("level to "+level.get());
-                    if(level.get()>0) {
+                if(level % 10 == 0) {
+                    System.out.println("level to "+level);
+                    if(level>0) {
                         TestUtils.forceScarceMemory();
                     }
                     System.out.println("OIBMCT:"+cbdbmap.composeCacheSummary());
