@@ -156,8 +156,9 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     FetchHistoryProcessor fhp = new FetchHistoryProcessor();
     fhp.process(curi);
   }
-  
-  public void testInnerProcessResultSingleShotWithRealServer() throws Exception {
+
+  // DISABLED: this relies on wwwb-dedup.us.archive.org which is intermittently returning 503
+  public void xtestInnerProcessResultSingleShotWithRealServer() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     //CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.mext.go.jp/null.gif"));

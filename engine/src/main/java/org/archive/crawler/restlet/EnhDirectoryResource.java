@@ -126,22 +126,14 @@ public class EnhDirectoryResource extends DirectoryServerResource {
     /**
      * Accept a POST used to edit or create a file.
      * 
-     * @see org.restlet.resource.ServerResource#post(Representation, Variant)
+     * @see org.restlet.resource.ServerResource#post(Representation)
      */
     @Override
-    protected Representation post(Representation entity, Variant variant) throws ResourceException {
+    protected Representation post(Representation entity) throws ResourceException {
         // TODO: only allowPost on valid targets
         Form form = new Form(entity);
         String newContents = form.getFirstValue("contents");
-        EditRepresentation er;
-        try {
-            er = (EditRepresentation) getVariants().get(0);
-        } catch (ClassCastException cce) {
-            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
-                    "File modification should use either PUT or " +
-                    "POST with a '?format=textedit' query-string.");
-        }
-        File file = er.getFileRepresentation().getFile(); 
+        File file = new File(URI.create(getTargetUri()));
         try {
             FileUtils.writeStringToFile(file, newContents,"UTF-8");
             Flash.addFlash(getResponse(), "file updated");
