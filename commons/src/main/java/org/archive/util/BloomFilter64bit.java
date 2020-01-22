@@ -129,8 +129,11 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      */
 
     public boolean add( final CharSequence s ) {
-      size++;
-      return delegate.put(s);
+      boolean added = delegate.put(s);
+      if (added) {
+        size++;
+      }
+      return added;
     }
 
     /* (non-Javadoc)
