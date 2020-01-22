@@ -347,22 +347,6 @@ public class ExtractorYoutubeDL extends Extractor
             }
             return n;
         }
-
-        @Override
-        public byte[] readNBytes(int len) throws IOException {
-            byte[] buf = in.readNBytes(len);
-            out.write(buf);
-            return buf;
-        }
-
-        @Override
-        public int readNBytes(byte[] b, int off, int len) throws IOException {
-            int n = in.readNBytes(b, off, len);
-            if (n > 0) {
-                out.write(b, off, n);
-            }
-            return n;
-        }
     }
 
     /**
@@ -488,7 +472,7 @@ public class ExtractorYoutubeDL extends Extractor
                 // the process should already have completed
                 proc.waitFor(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                logger.warning("killing pid " + proc.pid());
+                logger.warning("youtube-dl still running? killing it");
                 proc.destroyForcibly();
             }
             threadPool.shutdown();
