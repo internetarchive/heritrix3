@@ -314,6 +314,9 @@ public class Heritrix {
             useAdhocKeystore(startupOut); 
         }
 
+        // Restlet will reconfigure logging according to the system property
+        // so we must set it for -l to work properly
+        System.setProperty("java.util.logging.config.file", properties.getPath());
         if (properties.exists()) {
             FileInputStream finp = new FileInputStream(properties);
             LogManager.getLogManager().readConfiguration(finp);
