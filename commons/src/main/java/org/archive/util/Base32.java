@@ -30,13 +30,20 @@ public class Base32 {
      */
     @Deprecated
     static public String encode(final byte[] bytes) {
-      return BaseEncoding.base32().encode(bytes);
+      return BaseEncoding.base32()
+          .omitPadding()
+          .lowerCase()
+          .encode(bytes)
+          .toUpperCase();
     }
     /**
      * @deprecated Use {@link com.google.common.io.BaseEncoding#base32()}
      */
     @Deprecated
     static public byte[] decode(final String base32)  {
-      return BaseEncoding.base32().decode(base32);
+      return BaseEncoding.base32()
+          .omitPadding()
+          .lowerCase()
+          .decode(base32.toLowerCase());
     }
 }
