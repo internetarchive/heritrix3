@@ -18,7 +18,7 @@
 	<repositories>
 		<repository>
 			<id>download.oracle.com,maven</id>
-			<url>http://download.oracle.com/maven</url>
+			<url>https://download.oracle.com/maven</url>
 		</repository>
 	</repositories>
 
