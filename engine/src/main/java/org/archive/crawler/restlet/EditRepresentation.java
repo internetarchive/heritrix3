@@ -109,7 +109,6 @@ public class EditRepresentation extends CharacterRepresentation {
         pw.println("</script>");
         pw.println("</body>");
         pw.println("</html>");
-        pw.close();
     }
 
     public FileRepresentation getFileRepresentation() {
