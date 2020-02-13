@@ -33,6 +33,11 @@
 					<groupId>jdk.tools</groupId>
 					<artifactId>jdk.tools</artifactId>
 				</exclusion>
+				<!-- prefer guava 17 from webarchive-commons over guava 12 from hbase-client -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
