@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -29,6 +31,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.archive.modules.CrawlURI;
+import org.archive.util.InterruptibleCharSequence;
 
 /**
  * Rule applies configured decision to any CrawlURIs whose String URI
@@ -37,7 +40,7 @@ import org.archive.modules.CrawlURI;
  * The list of regular expressions can be considered logically AND or OR.
  *
  * @author Kristinn Sigurdsson
- * 
+ *
  * @see MatchesRegexDecideRule
  */
 public class MatchesListRegexDecideRule extends PredicatedDecideRule {
@@ -111,19 +114,28 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
             if (getTimeoutPerRegexSeconds() <= 0) {
                 matches = p.matcher(str).matches();
             } else {
-                CompletableFuture<Boolean> matchesFuture = CompletableFuture.supplyAsync(() -> p.matcher(str).matches());
+                InterruptibleCharSequence interruptible = new InterruptibleCharSequence(str);
+                FutureTask<Boolean> matchesFuture = new FutureTask<>(() -> p.matcher(interruptible).matches());
+                ForkJoinPool.commonPool().submit(matchesFuture);
                 try {
-                    matches = matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    logger.info("Exception while matching regex '" + p + "' to url '" + str + "' so assuming no match. " +  e.getClass().getName());
+                    matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    matchesFuture.cancel(true);
+                    logger.warning("Timed out after " + getTimeoutPerRegexSeconds() + " seconds waiting for '" + p + "' to match.");
+                } catch (InterruptedException e) {
+                    matchesFuture.cancel(true);
+                    logger.warning("InterruptedException while waiting for '" + p + "' to match.");
+                } catch (ExecutionException e) {
+                    matchesFuture.cancel(true);
+                    logger.warning("ExecutionException while waiting for '" + p + "' to match: " + e.getMessage());
                 }
             }
 
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Tested '" + str + "' match with regex '" +
-                    p.pattern() + " and result was " + matches);
+                        p.pattern() + " and result was " + matches);
             }
-            
+
             if(matches){
                 if(listLogicOR){
                     // OR based and we just got a match, done!
@@ -137,12 +149,12 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
                 }
             }
         }
-        
+
         if (listLogicOR) {
             return false;
         } else {
             return true;
         }
     }
-    
+
 }
