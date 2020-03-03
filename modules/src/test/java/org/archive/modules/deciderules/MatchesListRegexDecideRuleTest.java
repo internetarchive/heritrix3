@@ -1,5 +1,6 @@
 package org.archive.modules.deciderules;
 
+import com.google.common.annotations.VisibleForTesting;
 import junit.framework.TestCase;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
@@ -16,7 +17,7 @@ public class MatchesListRegexDecideRuleTest extends TestCase {
      * will never return.
      * @throws URIException
      */
-    public void xtestEvaluate() throws URIException {
+    public void testEvaluate() throws URIException {
         final String regex = "http://www\\.netarkivet\\.dk/((x+x+)+)y";
         String seed = "http://www.netarkivet.dk/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
         MatchesListRegexDecideRule rule = new MatchesListRegexDecideRule();
