@@ -80,7 +80,7 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      * @param roundUp if true, round bit size up to next-nearest-power-of-2
      */
     public BloomFilter64bit(final long n, final int d, Random weightsGenerator, boolean roundUp ) {
-        delegate = com.google.common.hash.BloomFilter.create(Funnels.unencodedCharsFunnel(), Ints.saturatedCast(n), 0.0000003);
+        delegate = com.google.common.hash.BloomFilter.create(Funnels.unencodedCharsFunnel(), Ints.saturatedCast(n), Math.pow(2, -d));
         this.expectedInserts = n; 
         try {
         Method bitSizeMethod = delegate.getClass().getDeclaredMethod("bitSize", new Class[] {});
