@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>com.sleepycat</groupId>
 			<artifactId>je</artifactId>
-			<version>4.1.6</version>
+			<version>7.5.11</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>

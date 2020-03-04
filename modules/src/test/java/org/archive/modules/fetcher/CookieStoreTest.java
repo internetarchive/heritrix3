@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -301,12 +302,14 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().clear();
         basicCookieStore().clear();
         final Random rand = new Random();
+        
+        final AtomicBoolean keepRunning = new AtomicBoolean(true);
 
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try {
-                    while (!Thread.interrupted()) {
+                    while (keepRunning.get()) {
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
                         cookie.setDomain("d" + rand.nextInt() + ".example.com");
                         bdbCookieStore().addCookie(cookie);
@@ -326,10 +329,9 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
 
         Thread.sleep(5000);
-
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].interrupt();
-        }
+        
+        // Shutdown the threads:
+        keepRunning.set(false);
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();
         }
