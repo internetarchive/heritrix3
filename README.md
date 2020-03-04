@@ -1,7 +1,7 @@
 # Heritrix
 [![Build Status](https://travis-ci.org/internetarchive/heritrix3.svg?branch=master)](https://travis-ci.org/internetarchive/heritrix3)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix)
-[![Javadoc](https://javadoc-badge.appspot.com/org.archive/heritrix.svg?label=javadoc)](http://builds.archive.org/javadoc/heritrix-3.2.0/)
+[![Javadoc](https://javadoc-badge.appspot.com/org.archive/heritrix.svg?label=javadoc)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
 [![LICENSE](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](./LICENSE)
 
 ## Introduction
@@ -21,7 +21,7 @@ load your crawl will place on seed sites and set politeness policies accordingly
 
 - [Developer Manual](http://crawler.archive.org/articles/developer_manual/index.html)
 - [REST API documentation](https://heritrix.readthedocs.io/en/latest/api.html)
-- [JavaDoc](http://builds.archive.org/javadoc/heritrix-3.2.0/) (n.b. Javadoc currently out of date)
+- JavaDoc: [engine](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine), [modules](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-modules), [commons](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-commons), [contrib](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-contrib)
 
 
 ## Latest Releases

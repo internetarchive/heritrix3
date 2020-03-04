@@ -18,7 +18,7 @@
 	<repositories>
 		<repository>
 			<id>download.oracle.com,maven</id>
-			<url>http://download.oracle.com/maven</url>
+			<url>https://download.oracle.com/maven</url>
 		</repository>
 	</repositories>
 
@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>com.sleepycat</groupId>
 			<artifactId>je</artifactId>
-			<version>4.1.6</version>
+			<version>7.5.11</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
@@ -119,7 +119,6 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>3.8.2</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>

@@ -22,7 +22,6 @@ package org.archive.modules.recrawl;
 import static org.archive.modules.CoreAttributeConstants.A_FETCH_BEGAN_TIME;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ETAG_HEADER;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_STATUS;
@@ -103,7 +102,7 @@ public class FetchHistoryProcessor extends Processor {
         }
         history[0] = latestFetch;
 
-        curi.getData().put(A_FETCH_HISTORY, history);
+        curi.setFetchHistory(history);
 
         if (curi.getFetchStatus() == 304) {
             if( history.length >= 2 && history[1] != null && history[1].containsKey(A_CONTENT_DIGEST)) {

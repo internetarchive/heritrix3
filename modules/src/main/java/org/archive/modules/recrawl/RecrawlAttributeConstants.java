@@ -19,6 +19,8 @@
 
 package org.archive.modules.recrawl;
 
+import org.archive.modules.CrawlURI;
+
 /**
  * 
  * @author pjack
@@ -28,8 +30,11 @@ public interface RecrawlAttributeConstants {
 
     /* Duplication-reduction / recrawl / history constants */
     
-    /** fetch history array */ 
-    public static final String A_FETCH_HISTORY = "fetch-history";
+    /**
+     * @deprecated Please use {@link org.archive.modules.CrawlURI#getFetchHistory()} and {@link org.archive.modules.CrawlURI#setFetchHistory(java.util.Map[])}
+     */
+    @Deprecated
+    public static final String A_FETCH_HISTORY = CrawlURI.A_FETCH_HISTORY;
     /** content digest */
     public static final String A_CONTENT_DIGEST = "content-digest";
     /** header name (and AList key) for last-modified timestamp */

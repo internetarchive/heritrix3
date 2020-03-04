@@ -31,6 +31,9 @@ public class IdentityCacheableWrapper<K> implements IdentityCacheable {
     
     protected K wrapped; 
     
+    // For Kryo serialization
+    IdentityCacheableWrapper() { }
+
     public IdentityCacheableWrapper(String key, K wrapped) {
         super();
         this.wrapped = wrapped;

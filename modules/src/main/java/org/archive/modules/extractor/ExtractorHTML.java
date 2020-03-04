@@ -445,18 +445,20 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             } else if (attr.start(5) > -1) {
                 // SRC etc.
                 CharSequence context = elementContext(element, attr.group(5));
-                
-                // true, if we expect another HTML page instead of an image etc.
-                final Hop hop;
-                
-                if(!framesAsEmbeds
-                    && (elementStr.equalsIgnoreCase(FRAME) || elementStr
-                        .equalsIgnoreCase(IFRAME))) {
-                    hop = Hop.NAVLINK;
-                } else {
-                    hop = Hop.EMBED;
+                if (!context.toString().toLowerCase().startsWith("data:")) {
+
+                    // true, if we expect another HTML page instead of an image etc.
+                    final Hop hop;
+
+                    if (!framesAsEmbeds
+                            && (elementStr.equalsIgnoreCase(FRAME) || elementStr
+                            .equalsIgnoreCase(IFRAME))) {
+                        hop = Hop.NAVLINK;
+                    } else {
+                        hop = Hop.EMBED;
+                    }
+                    processEmbed(curi, value, context, hop);
                 }
-                processEmbed(curi, value, context, hop);
             } else if (attr.start(6) > -1) {
                 // CODEBASE
                 codebase = (value instanceof String)?

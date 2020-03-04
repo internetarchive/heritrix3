@@ -334,7 +334,7 @@ http://example.example/example
   
  <!-- DISPOSITION CHAIN -->
  <!-- first, processors are declared as top-level named beans  -->
- <bean id="warcWriter" class="org.archive.modules.writer.WARCWriterProcessor">
+ <bean id="warcWriter" class="org.archive.modules.writer.WARCWriterChainProcessor">
   <!-- <property name="compress" value="true" /> -->
   <!-- <property name="prefix" value="IAH" /> -->
   <!-- <property name="maxFileSizeBytes" value="1000000000" /> -->
@@ -349,11 +349,21 @@ http://example.example/example
         </list>
        </property> -->
   <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
-  <!-- <property name="writeRequests" value="true" /> -->
-  <!-- <property name="writeMetadata" value="true" /> -->
-  <!-- <property name="writeRevisitForIdenticalDigests" value="true" /> -->
-  <!-- <property name="writeRevisitForNotModified" value="true" /> -->
   <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+  <!--
+  <property name="chain">
+   <list>
+    <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
+    <bean class="org.archive.modules.warc.HttpResponseRecordBuilder"/>
+    <bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/>
+    <bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/>
+    <bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/>
+    <bean class="org.archive.modules.warc.RevisitRecordBuilder"/>
+    <bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/>
+    <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
+   </list>
+  </property>
+  -->
  </bean>
  <bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
   <!-- <property name="seedsRedirectNewSeeds" value="true" /> -->

@@ -144,7 +144,6 @@ public class PagedRepresentation extends CharacterRepresentation {
         pw.println("</pre>");
         
         emitControls(pw); 
-        pw.close();
     }
 
     /**

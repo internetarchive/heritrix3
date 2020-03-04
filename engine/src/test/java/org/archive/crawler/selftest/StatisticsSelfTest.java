@@ -25,7 +25,7 @@ public class StatisticsSelfTest extends SelfTestBase {
 
     @Override
     protected String changeGlobalConfig(String config) {
-        String warcWriterConfig = " <bean id='warcWriter' class='org.archive.modules.writer.WARCWriterProcessor'/>\n";
+        String warcWriterConfig = " <bean id='warcWriter' class='org.archive.modules.writer.WARCWriterChainProcessor'/>\n";
         config = config.replace("<!--@@MORE_EXTRACTORS@@-->", warcWriterConfig);
         return super.changeGlobalConfig(config);
     }
