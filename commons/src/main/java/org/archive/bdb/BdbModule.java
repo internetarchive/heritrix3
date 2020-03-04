@@ -269,7 +269,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
-        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
+        // https://web.archive.org/web/20100727081707/http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
         long nLockTables = getExpectedConcurrency()-1;
         while(!BigInteger.valueOf(nLockTables).isProbablePrime(Integer.MAX_VALUE)) {
             nLockTables--;
