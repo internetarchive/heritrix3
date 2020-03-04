@@ -20,15 +20,20 @@ package org.archive.crawler.framework;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 import javax.management.openmbean.CompositeData;
 
 import org.archive.crawler.frontier.FrontierJournal;
 import org.archive.crawler.reporting.StatisticsTracker;
+import org.archive.crawler.frontier.WorkQueue;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.util.IdentityCacheable;
+import org.archive.util.ObjectIdentityCache;
 import org.archive.util.Reporter;
 import org.json.JSONException;
 import org.springframework.context.Lifecycle;
@@ -522,4 +527,13 @@ public interface Frontier extends Lifecycle, Reporter {
      * conditions need to be free to call this 'just in case'. 
      */
     public void endDisposition();
+
+    public long exportPendingUris(PrintWriter writer);
+
+    public ObjectIdentityCache<WorkQueue> getAllQueues();
+
+    public BlockingQueue<String> getReadyClassQueues();
+
+    public Set<WorkQueue> getInProcessQueues();
+
 }
