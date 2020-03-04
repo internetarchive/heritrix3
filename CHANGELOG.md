@@ -1,8 +1,7 @@
 # Change Log
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
-
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190418...HEAD)
+## [3.4.0-20200304](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200304) (2020-03-04)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190418...3.4.0-20200304)
 
 **Fixed bugs:**
 
@@ -26,6 +25,8 @@
 
 **Merged pull requests:**
 
+- Use the Wayback Machine to repair a link to Oracle docs. [\#315](https://github.com/internetarchive/heritrix3/pull/315) ([anjackson](https://github.com/anjackson))
+- Utilize the `d` parameter [\#314](https://github.com/internetarchive/heritrix3/pull/314) ([hennekey](https://github.com/hennekey))
 - Exclude hbase-client's guava 12 transitive dependency [\#312](https://github.com/internetarchive/heritrix3/pull/312) ([ato](https://github.com/ato))
 - Fix stream closed exception for Paged view [\#308](https://github.com/internetarchive/heritrix3/pull/308) ([ldko](https://github.com/ldko))
 - Fix stream closed exception by not closing output stream [\#306](https://github.com/internetarchive/heritrix3/pull/306) ([ato](https://github.com/ato))
@@ -45,7 +46,7 @@
 - Add support for forced queue assignment and parallel queues [\#286](https://github.com/internetarchive/heritrix3/pull/286) ([adam-miller](https://github.com/adam-miller))
 - Warc writer chain [\#285](https://github.com/internetarchive/heritrix3/pull/285) ([nlevitt](https://github.com/nlevitt))
 - Fix jobdir PUT [\#283](https://github.com/internetarchive/heritrix3/pull/283) ([ato](https://github.com/ato))
-- WIP: Upgrade BDB JE to version 7.5.11 [\#281](https://github.com/internetarchive/heritrix3/pull/281) ([anjackson](https://github.com/anjackson))
+- Upgrade BDB JE to version 7.5.11 - IMPORTANT CHANGE [\#281](https://github.com/internetarchive/heritrix3/pull/281) ([anjackson](https://github.com/anjackson))
 - Mitigate random CookieStore.testConcurrentLoad test failures [\#280](https://github.com/internetarchive/heritrix3/pull/280) ([ato](https://github.com/ato))
 - JDK11 support: upgrade to Jetty 9.4.19, Restlet 2.4.0 and drop JDK 7 support [\#276](https://github.com/internetarchive/heritrix3/pull/276) ([ato](https://github.com/ato))
 - JDK11 support: remove unused class ObjectIdentityBdbCache and tests [\#273](https://github.com/internetarchive/heritrix3/pull/273) ([ato](https://github.com/ato))
@@ -85,7 +86,6 @@
 - Trough dedup [\#242](https://github.com/internetarchive/heritrix3/pull/242) ([nlevitt](https://github.com/nlevitt))
 - Ensure we start parsing full lines, for \#239. [\#240](https://github.com/internetarchive/heritrix3/pull/240) ([anjackson](https://github.com/anjackson))
 - Add CHANGELOG; address \#233. [\#238](https://github.com/internetarchive/heritrix3/pull/238) ([ruebot](https://github.com/ruebot))
-- fix for test failures in a workspace on NFS-mounted filesystem [\#196](https://github.com/internetarchive/heritrix3/pull/196) ([kngenie](https://github.com/kngenie))
 
 ## [3.4.0-20190207](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190207) (2019-02-07)
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190205...3.4.0-20190207)
@@ -141,6 +141,7 @@
 - Fix link to User Guide [\#207](https://github.com/internetarchive/heritrix3/pull/207) ([maurice-schleussinger](https://github.com/maurice-schleussinger))
 - Add parameter to allow even distribution for parallel queues. [\#205](https://github.com/internetarchive/heritrix3/pull/205) ([adam-miller](https://github.com/adam-miller))
 - catch exceptions scoping outlinks to stop them from derailing process… [\#197](https://github.com/internetarchive/heritrix3/pull/197) ([nlevitt](https://github.com/nlevitt))
+- fix for test failures in a workspace on NFS-mounted filesystem [\#196](https://github.com/internetarchive/heritrix3/pull/196) ([kngenie](https://github.com/kngenie))
 - limit max size of form input [\#194](https://github.com/internetarchive/heritrix3/pull/194) ([galgeek](https://github.com/galgeek))
 - Enforce robots.txt character limit per char not per line [\#192](https://github.com/internetarchive/heritrix3/pull/192) ([ato](https://github.com/ato))
 - Allow JavaDNS to be disabled as part of resolving outstanding build and test issues [\#190](https://github.com/internetarchive/heritrix3/pull/190) ([anjackson](https://github.com/anjackson))
