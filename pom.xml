@@ -409,6 +409,8 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
+		<doclint>none</doclint>
+		<additionalparam>-Xdoclint:none</additionalparam>
 	</properties>
     <profiles>
         <profile>
