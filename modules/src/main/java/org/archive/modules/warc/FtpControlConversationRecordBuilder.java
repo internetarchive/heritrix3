@@ -19,7 +19,7 @@ public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldBuildRecord(CrawlURI curi) {
-        return "ftp".equals(curi.getUURI().getScheme().toLowerCase());
+        return "ftp".equalsIgnoreCase(curi.getUURI().getScheme()) || "sftp".equalsIgnoreCase(curi.getUURI().getScheme());
     }
 
     @Override
