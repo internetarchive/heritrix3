@@ -15,6 +15,54 @@ is typically found in most unix environments. Curl is
 \ `available <https://curl.haxx.se/download.html>`__ for many systems
 including Windows.
 
+Get Engine Status
+~~~~~~~~~~~~~~~~~
+
+.. http:get:: https://(heritrixhost):8443/engine
+
+   Returns information about this instance of Heritrix such as version number, memory usage and the list of crawl jobs.
+
+   **XML Example:**
+
+   .. code:: bash
+
+       curl -v -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+
+   Response:
+
+   .. code:: xml
+
+      <engine>
+        <heritrixVersion>3.3.0-SNAPSHOT-2017-07-12T04:17:56Z</heritrixVersion>
+        <heapReport>
+          <usedBytes>69529904</usedBytes>
+          <totalBytes>589824000</totalBytes>
+          <maxBytes>2885681152</maxBytes>
+        </heapReport>
+        <jobsDir>/heritrix/jobs</jobsDir>
+        <jobsDirUrl>https://localhost:8443/engine/jobsdir/</jobsDirUrl>
+        <availableActions>
+          <value>rescan</value>
+          <value>add</value>
+          <value>create</value>
+        </availableActions>
+        <jobs>
+          <value>
+            <shortName>myjob</shortName>
+            <url>https://localhost:8443/engine/job/myjob</url>
+            <isProfile>false</isProfile>
+            <launchCount>0</launchCount>
+            <lastLaunch/>
+            <hasApplicationContext>false</hasApplicationContext>
+            <statusDescription>Unbuilt</statusDescription>
+            <isLaunchInfoPartial>false</isLaunchInfoPartial>
+            <primaryConfig>/heritrix/jobs/myjob/crawler-beans.cxml</primaryConfig>
+            <primaryConfigUrl>https://localhost:8443/engine/jobdir/crawler-beans.cxml</primaryConfigUrl>
+            <key>myjob</key>
+          </value>
+        </jobs>
+      </engine>
+
 Create New Job
 ~~~~~~~~~~~~~~
 
@@ -77,7 +125,7 @@ Get Job Status
 
        curl -v -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
-   Example response:
+   Response:
 
    .. code:: xml
 
