@@ -419,7 +419,7 @@ public class ExtractorYoutubeDL extends Extractor
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-single-json", "--format=best",
+                "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
 
