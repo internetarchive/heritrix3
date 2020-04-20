@@ -77,9 +77,10 @@ Get Job Status
 
        curl -v -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
-   Example output:
+   Example response:
 
    .. code:: xml
+
       <job>
         <shortName>myjob</shortName>
         <crawlControllerState>FINISHED</crawlControllerState>
