@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.util.ArchiveUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * The "Crawl Report", with summaries of overall crawl size.
