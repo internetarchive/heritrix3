@@ -881,11 +881,13 @@ public class StatisticsTracker
     protected File writeReportFile(Report report, boolean force) {
         File f = new File(getReportsDir().getFile(), report.getFilename());
         
-        if(f.exists() && !controller.isRunning() && controller.hasStarted() && !force) {
+        if(f.exists() && !controller.isRunning() && controller.hasStarted() && !force
+        	&& !(report instanceof CrawlSummaryReport)) {
             // controller already started and stopped 
             // and file exists
             // and force not requested
             // so, don't overwrite
+            // except for crawlReport
             logger.info("reusing report: " + f.getAbsolutePath());
             return f;
         }
