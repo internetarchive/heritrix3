@@ -18,7 +18,7 @@ public class FtpResponseRecordBuilder extends BaseWARCRecordBuilder {
     @Override
     public boolean shouldBuildRecord(CrawlURI curi) {
         return !curi.isRevisit() 
-                && "ftp".equals(curi.getUURI().getScheme().toLowerCase());
+                && ("ftp".equalsIgnoreCase(curi.getUURI().getScheme()) || "sftp".equalsIgnoreCase(curi.getUURI().getScheme()));
     }
 
     @Override

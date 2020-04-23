@@ -184,7 +184,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
                 writeHttpRecords(curi, writer, baseid, timestamp); 
             } else if (lowerCaseScheme.equals("dns")) {
                 writeDnsRecords(curi, writer, baseid, timestamp);
-            } else if (lowerCaseScheme.equals("ftp")) {
+            } else if (lowerCaseScheme.equals("ftp") || lowerCaseScheme.equals("sftp")) {
                 writeFtpRecords(writer, curi, baseid, timestamp);
             } else if (lowerCaseScheme.equals("whois")) {
                 writeWhoisRecords(writer, curi, baseid, timestamp);

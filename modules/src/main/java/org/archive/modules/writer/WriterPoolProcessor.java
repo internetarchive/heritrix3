@@ -346,7 +346,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             retVal = curi.getFetchStatus() == S_WHOIS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
             retVal = curi.getFetchStatus() > 0 && curi.isHttpTransaction();
-        } else if (scheme.equals("ftp")) {
+        } else if (scheme.equals("ftp") || scheme.equals("sftp")) {
             retVal = curi.getFetchStatus() > 0;
         } else {
             logger.info("This writer does not write out scheme " +
