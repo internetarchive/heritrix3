@@ -22,9 +22,9 @@ public class ClientSFTP {
 	protected StringBuilder controlConversation;
 
 	protected Socket dataSocket;
-	protected static Session session = null;
-	protected static Channel channel = null;
-	protected static ChannelSftp channelSFTP = null;
+	protected Session session = null;
+	protected Channel channel = null;
+	protected ChannelSftp channelSFTP = null;
 
 	public ClientSFTP() {
 		this.controlConversation = new StringBuilder();
@@ -35,16 +35,16 @@ public class ClientSFTP {
 		return this.controlConversation.toString();
 	}
 
-	public void connect(String paramString1, String paramString2, int paramInt, String paramString3) throws SocketException, IOException {
+	public void connect(String username, String host, int port, String password) throws SocketException, IOException {
 		JSch jSch = new JSch();
 
 		try {
-			session = jSch.getSession(paramString1, paramString2, paramInt);
+			session = jSch.getSession(username, host, port);
 			session.setConfig("StrictHostKeyChecking", "no");
-			session.setPassword(paramString3);
+			session.setPassword(password);
 			session.connect();
-			this.logger.info("Connected to SFTP server " + paramString2 + ":" + paramInt);
-			this.controlConversation.append("Connected to SFTP server " + paramString2 + ":" + paramInt);
+			this.logger.info("Connected to SFTP server " + host + ":" + port);
+			this.controlConversation.append("Connected to SFTP server " + host + ":" + port);
 		} catch (Exception exception) {
 			this.logger.info("Unable to connect to SFTP server : " + exception.toString());
 			this.controlConversation.append("Unable to connect to SFTP server : " + exception.toString());
@@ -96,13 +96,12 @@ public class ClientSFTP {
 		channelSFTP = null;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	public Map<String, Boolean> getLsFileMap(String paramString) throws Exception {
-		HashMap<Object, Object> hashMap = new HashMap<>();
+		Map<String, Boolean> hashMap = new HashMap<>();
 
 		Vector<ChannelSftp.LsEntry> vector = channelSFTP.ls(paramString);
-		for (byte b = 0; b < vector.size(); b++) {
-			ChannelSftp.LsEntry lsEntry = vector.get(b);
+		for(ChannelSftp.LsEntry lsEntry : vector) {
 			String str = lsEntry.getFilename();
 
 			if (!".".equals(str)) {
@@ -117,7 +116,7 @@ public class ClientSFTP {
 				}
 			}
 		}
-		return (Map) hashMap;
+		return hashMap;
 	}
 
 	protected boolean mkdir(String paramString) throws Exception {
@@ -138,11 +137,11 @@ public class ClientSFTP {
 		return true;
 	}
 
-	protected boolean downRemoteSingleFile(String paramString1, String paramString2) throws Exception {
-		FileOutputStream fileOutputStream = new FileOutputStream(paramString2);
-		channelSFTP.get(paramString1, fileOutputStream);
+	protected boolean downRemoteSingleFile(String src, String dest) throws Exception {
+		FileOutputStream fileOutputStream = new FileOutputStream(dest);
+		channelSFTP.get(src, fileOutputStream);
 
-		this.logger.info("channelSftp download file: " + paramString1);
+		this.logger.info("channelSftp download file: " + src);
 		return true;
 	}
 
