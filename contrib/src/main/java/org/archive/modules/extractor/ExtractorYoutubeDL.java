@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
@@ -504,6 +505,11 @@ public class ExtractorYoutubeDL extends Extractor
 
         // see https://github.com/internetarchive/brozzler/blob/65fad5e8b/brozzler/ydl.py#L48
         if (uri.getContentLength() <= 0 || uri.getContentLength() >= 200000000) {
+            return false;
+        }
+
+        // skip crawl uris received from umbra
+        if (uri.getAnnotations().contains(AMQPUrlReceiver.A_RECEIVED_FROM_AMQP)) {
             return false;
         }
 
