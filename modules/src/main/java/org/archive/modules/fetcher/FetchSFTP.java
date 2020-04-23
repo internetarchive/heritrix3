@@ -228,9 +228,9 @@ public class FetchSFTP extends Processor {
 	}
 
 	/**
-	 * Processes the given URI. If the given URI is not an FTP URI, then
+	 * Processes the given URI. If the given URI is not an SFTP URI, then
 	 * this method does nothing. Otherwise an attempt is made to connect
-	 * to the FTP server.
+	 * to the SFTP server.
 	 * 
 	 * <p>
 	 * If the connection is successful, an attempt will be made to CD to
@@ -238,23 +238,6 @@ public class FetchSFTP extends Processor {
 	 * then it is assumed that the URI represents a directory. If the
 	 * CD command fails, then it is assumed that the URI represents
 	 * a file.
-	 * 
-	 * <p>
-	 * For directories, the directory listing will be fetched using
-	 * the FTP LIST command, and saved to the HttpRecorder. If the
-	 * <code>extract.from.dirs</code> attribute is set to true, then
-	 * the files in the fetched list will be added to the curi as
-	 * extracted FTP links. (It was easier to do that here, rather
-	 * than writing a separate FTPExtractor.)
-	 * 
-	 * <p>
-	 * For files, the file will be fetched using the FTP RETR
-	 * command, and saved to the HttpRecorder.
-	 * 
-	 * <p>
-	 * All file transfers (including directory listings) occur using
-	 * Binary mode transfer. Also, the local passive transfer mode
-	 * is always used, to play well with firewalls.
 	 * 
 	 * @param curi the curi to process
 	 * @throws InterruptedException if the thread is interrupted during
@@ -285,10 +268,10 @@ public class FetchSFTP extends Processor {
 	}
 
 	/**
-	 * Fetches a document from an FTP server.
+	 * Fetches a document from an SFTP server.
 	 * 
 	 * @param curi the URI of the document to fetch
-	 * @param client the FTPClient to use for the fetch
+	 * @param client the SFTPClient to use for the fetch
 	 * @param recorder the recorder to preserve the document in
 	 * @throws IOException if a network or protocol error occurs
 	 * @throws InterruptedException if the thread is interrupted
@@ -314,10 +297,10 @@ public class FetchSFTP extends Processor {
 			curi.getData().put(A_RUNTIME_EXCEPTION, jSchException);
 		}
 
-		boolean bool = false;
+		boolean isDirectory = false;
 		try {
 			client.cd(uuri.getPath());
-			bool = client.isDirectory(uuri.getPath());
+			isDirectory = client.isDirectory(uuri.getPath());
 		} catch (SftpException sftpException) {
 
 			try {
@@ -331,7 +314,7 @@ public class FetchSFTP extends Processor {
 			curi.getData().put(A_RUNTIME_EXCEPTION, exception);
 		}
 
-		if (bool) {
+		if (isDirectory) {
 			curi.getAnnotations().add("sftpDirectoryList");
 		}
 
@@ -348,7 +331,7 @@ public class FetchSFTP extends Processor {
 			}
 
 			try {
-				if (bool) {
+				if (isDirectory) {
 					saveDirectoryToRecorder(curi, channelSftp, recorder);
 
 					curi.setFetchStatus(226);
@@ -369,7 +352,7 @@ public class FetchSFTP extends Processor {
 				client.disconnect();
 				curi.setContentSize(recorder.getRecordedInput().getSize());
 
-				if (bool) {
+				if (isDirectory) {
 					curi.setContentType("text/plain");
 				} else {
 					curi.setContentType("application/octet-stream");
@@ -384,7 +367,7 @@ public class FetchSFTP extends Processor {
 				}
 			}
 			curi.getData().put(A_RUNTIME_EXCEPTION, client.getControlConversation());
-			if (bool) {
+			if (isDirectory) {
 				extract(curi, recorder);
 			}
 		}
