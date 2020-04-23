@@ -507,6 +507,13 @@ public class ExtractorYoutubeDL extends Extractor
             return false;
         }
 
+        // don't check seeds twice, e.g., when processed again post-umbra
+        if (uri.via == null) {
+            if (results.pageUrls && results.pageUrls.contains(uri.toString()))
+                return false
+            }
+        }
+
         String mime = uri.getContentType().toLowerCase();
         if (mime.startsWith("text/html")
                 || mime.startsWith("application/xhtml")
