@@ -509,8 +509,8 @@ public class ExtractorYoutubeDL extends Extractor
 
         // don't check seeds twice, e.g., when processed again post-umbra
         if (uri.via == null) {
-            if (results.pageUrls && results.pageUrls.contains(uri.toString()))
-                return false
+            if (results.pageUrls && results.pageUrls.contains(uri.toString())) {
+                return false;
             }
         }
 
