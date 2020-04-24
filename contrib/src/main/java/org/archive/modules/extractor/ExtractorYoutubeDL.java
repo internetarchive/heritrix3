@@ -33,6 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -111,6 +112,9 @@ public class ExtractorYoutubeDL extends Extractor
     protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
 
     protected static final int MAX_VIDEOS_PER_PAGE = 1000;
+
+    // for shouldExtract
+    protected HashMap<String, Boolean> seedsYDLd = new HashMap<String, Boolean>();
 
     protected transient Logger ydlLogger = null;
 
@@ -508,9 +512,11 @@ public class ExtractorYoutubeDL extends Extractor
         }
 
         // don't check seeds twice, e.g., when processed again post-umbra
-        if (uri.via == null) {
-            if (results.pageUrls && results.pageUrls.contains(uri.toString())) {
+        if (uri.getVia() == null) {
+            if (seedsYDLd.get(uri.toString())) {
                 return false;
+            } else {
+                seedsYDLd.put(uri.toString(), true);
             }
         }
 
