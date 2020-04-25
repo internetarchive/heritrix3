@@ -513,7 +513,7 @@ public class ExtractorYoutubeDL extends Extractor
 
         // don't check seeds twice, e.g., when processed again post-umbra
         if (uri.getVia() == null) {
-            if (seedsYDLd.get(uri.toString())) {
+            if (seedsYDLd.getOrDefault(uri.toString(), false)) {
                 logger.info("skipping second youtube-dl extraction for seed " + uri.toString());
                 return false;
             } else {
