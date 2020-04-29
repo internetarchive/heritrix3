@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
@@ -511,7 +512,7 @@ public class ExtractorYoutubeDL extends Extractor
             return false;
         }
 
-        // don't check seeds twice, e.g., when processed again post-umbra
+        /** // don't check seeds twice, e.g., when processed again post-umbra
         if (uri.getVia() == null) {
             if (seedsYDLd.getOrDefault(uri.toString(), false)) {
                 logger.info("skipping second youtube-dl extraction for seed " + uri.toString());
@@ -520,6 +521,12 @@ public class ExtractorYoutubeDL extends Extractor
                 logger.info("adding seedsYDLd record for seed " + uri.toString());
                 seedsYDLd.put(uri.toString(), true);
             }
+        }
+        */
+
+        // skip checking crawl uris received from umbra
+        if (uri.getAnnotations().contains(AMQPUrlReceiver.A_RECEIVED_FROM_AMQP)) {
+            return false;
         }
 
         String mime = uri.getContentType().toLowerCase();
