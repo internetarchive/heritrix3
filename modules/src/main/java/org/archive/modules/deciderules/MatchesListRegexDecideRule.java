@@ -118,7 +118,7 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
                 FutureTask<Boolean> matchesFuture = new FutureTask<>(() -> p.matcher(interruptible).matches());
                 ForkJoinPool.commonPool().submit(matchesFuture);
                 try {
-                    matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
+                    matches = matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
                 } catch (TimeoutException e) {
                     matchesFuture.cancel(true);
                     logger.warning("Timed out after " + getTimeoutPerRegexSeconds() + " seconds waiting for '" + p + "' to match.");
