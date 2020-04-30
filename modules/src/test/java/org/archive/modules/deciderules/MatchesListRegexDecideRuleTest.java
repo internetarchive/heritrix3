@@ -1,6 +1,5 @@
 package org.archive.modules.deciderules;
 
-import com.google.common.annotations.VisibleForTesting;
 import junit.framework.TestCase;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
