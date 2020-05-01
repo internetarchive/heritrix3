@@ -20,7 +20,6 @@ package org.archive.modules.deciderules;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.FutureTask;
@@ -118,7 +117,7 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
                 FutureTask<Boolean> matchesFuture = new FutureTask<>(() -> p.matcher(interruptible).matches());
                 ForkJoinPool.commonPool().submit(matchesFuture);
                 try {
-                    matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
+                    matches = matchesFuture.get(getTimeoutPerRegexSeconds(), TimeUnit.SECONDS);
                 } catch (TimeoutException e) {
                     matchesFuture.cancel(true);
                     logger.warning("Timed out after " + getTimeoutPerRegexSeconds() + " seconds waiting for '" + p + "' to match.");

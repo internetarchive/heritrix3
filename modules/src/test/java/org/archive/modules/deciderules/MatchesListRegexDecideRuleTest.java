@@ -1,6 +1,5 @@
 package org.archive.modules.deciderules;
 
-import com.google.common.annotations.VisibleForTesting;
 import junit.framework.TestCase;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
@@ -32,4 +31,21 @@ public class MatchesListRegexDecideRuleTest extends TestCase {
         final DecideResult decideResult = rule.decisionFor(curi);
         assertEquals("Expected NONE not " + decideResult , DecideResult.NONE, decideResult);
     }
+
+    public void testEvaluateInTime() throws URIException {
+        final String regex = "http://www\\.netarkivet\\.dk/x+";
+        String seed = "http://www.netarkivet.dk/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+        MatchesListRegexDecideRule rule = new MatchesListRegexDecideRule();
+        List<Pattern> patternList = new ArrayList<>();
+        patternList.add(Pattern.compile(regex));
+        rule.setRegexList(patternList);
+        rule.setEnabled(true);
+        rule.setListLogicalOr(true);
+        rule.setDecision(DecideResult.REJECT);
+        rule.setTimeoutPerRegexSeconds(2);
+        final CrawlURI curi = new CrawlURI(UURIFactory.getInstance(seed));
+        final DecideResult decideResult = rule.decisionFor(curi);
+        assertEquals("Expected REJECT not " + decideResult , DecideResult.REJECT, decideResult);
+    }
+
 }
