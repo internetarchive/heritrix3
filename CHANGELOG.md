@@ -1,5 +1,27 @@
 # Change Log
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200304...HEAD)
+
+**Closed issues:**
+
+- Cannot find class \[ExtractorYoutubeDL\] [\#322](https://github.com/internetarchive/heritrix3/issues/322)
+- Checkpoints 'spoiled' when used to resume crawls [\#277](https://github.com/internetarchive/heritrix3/issues/277)
+
+**Merged pull requests:**
+
+- Warc convention for storing ftp responses has been to use a WARC reso… [\#331](https://github.com/internetarchive/heritrix3/pull/331) ([adam-miller](https://github.com/adam-miller))
+- don't youtubedl receivedFromAMQP [\#330](https://github.com/internetarchive/heritrix3/pull/330) ([galgeek](https://github.com/galgeek))
+- youtube-dl no cache dir [\#329](https://github.com/internetarchive/heritrix3/pull/329) ([galgeek](https://github.com/galgeek))
+- Fix match result is always false in MatchesListRegexDecideRule [\#328](https://github.com/internetarchive/heritrix3/pull/328) ([morokosi](https://github.com/morokosi))
+- best medium-ish size [\#327](https://github.com/internetarchive/heritrix3/pull/327) ([galgeek](https://github.com/galgeek))
+- Add real crawlStatus in the crawlReport [\#326](https://github.com/internetarchive/heritrix3/pull/326) ([clawia](https://github.com/clawia))
+- youtube-dl: request best medium-ish size format [\#325](https://github.com/internetarchive/heritrix3/pull/325) ([galgeek](https://github.com/galgeek))
+- Add parsing for HTML tags \(data-\*\) [\#323](https://github.com/internetarchive/heritrix3/pull/323) ([clawia](https://github.com/clawia))
+- Add support for the SFTP protocol [\#320](https://github.com/internetarchive/heritrix3/pull/320) ([bnfleb](https://github.com/bnfleb))
+- Recycle the regex Matcher after use. [\#317](https://github.com/internetarchive/heritrix3/pull/317) ([adam-miller](https://github.com/adam-miller))
+
 ## [3.4.0-20200304](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200304) (2020-03-04)
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190418...3.4.0-20200304)
 
@@ -34,7 +56,7 @@
 - Replace constant with accessor methods [\#303](https://github.com/internetarchive/heritrix3/pull/303) ([hennekey](https://github.com/hennekey))
 - limit ExtractorYoutubeDL heap usage [\#302](https://github.com/internetarchive/heritrix3/pull/302) ([nlevitt](https://github.com/nlevitt))
 - fix logging config [\#301](https://github.com/internetarchive/heritrix3/pull/301) ([nlevitt](https://github.com/nlevitt))
-- Use Guice instead of custom implementation [\#300](https://github.com/internetarchive/heritrix3/pull/300) ([hennekey](https://github.com/hennekey))
+- Use Guice instead of custom bloom filter implementation [\#300](https://github.com/internetarchive/heritrix3/pull/300) ([hennekey](https://github.com/hennekey))
 - Speed up ObjectIdentityBdbManualCacheTest [\#298](https://github.com/internetarchive/heritrix3/pull/298) ([hennekey](https://github.com/hennekey))
 - Set JUnit version to latest [\#296](https://github.com/internetarchive/heritrix3/pull/296) ([hennekey](https://github.com/hennekey))
 - Disable test that connects to wwwb-dedup.us.archive.org [\#295](https://github.com/internetarchive/heritrix3/pull/295) ([ato](https://github.com/ato))
@@ -52,7 +74,6 @@
 - JDK11 support: remove unused class ObjectIdentityBdbCache and tests [\#273](https://github.com/internetarchive/heritrix3/pull/273) ([ato](https://github.com/ato))
 - JDK11 support: upgrade maven-surefire-plugin to 2.22.2 [\#272](https://github.com/internetarchive/heritrix3/pull/272) ([ato](https://github.com/ato))
 - JDK11 support: exclude tools.jar from hbase-client dependency [\#271](https://github.com/internetarchive/heritrix3/pull/271) ([ato](https://github.com/ato))
-- Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
 - JDK11 support: explicitly depend on JAXB [\#269](https://github.com/internetarchive/heritrix3/pull/269) ([ato](https://github.com/ato))
 - WIP: ExtractorYoutubeDL [\#257](https://github.com/internetarchive/heritrix3/pull/257) ([nlevitt](https://github.com/nlevitt))
 - Update README and add LICENSE.txt [\#256](https://github.com/internetarchive/heritrix3/pull/256) ([ruebot](https://github.com/ruebot))
@@ -76,6 +97,7 @@
 
 **Merged pull requests:**
 
+- Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
 - set of frontier management changes to support CrawlHQ module [\#253](https://github.com/internetarchive/heritrix3/pull/253) ([dvanduzer](https://github.com/dvanduzer))
 - fix some trough dedup bugs [\#251](https://github.com/internetarchive/heritrix3/pull/251) ([nlevitt](https://github.com/nlevitt))
 - Remove suffix from warcWriter since it is no longer used. [\#249](https://github.com/internetarchive/heritrix3/pull/249) ([ruebot](https://github.com/ruebot))
