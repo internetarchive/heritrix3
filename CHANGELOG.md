@@ -1,8 +1,7 @@
 # Change Log
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
-
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200304...HEAD)
+## [3.4.0-20200518](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200518) (2020-05-18)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200304...3.4.0-20200518)
 
 **Closed issues:**
 
@@ -73,7 +72,7 @@
 - JDK11 support: upgrade to Jetty 9.4.19, Restlet 2.4.0 and drop JDK 7 support [\#276](https://github.com/internetarchive/heritrix3/pull/276) ([ato](https://github.com/ato))
 - JDK11 support: remove unused class ObjectIdentityBdbCache and tests [\#273](https://github.com/internetarchive/heritrix3/pull/273) ([ato](https://github.com/ato))
 - JDK11 support: upgrade maven-surefire-plugin to 2.22.2 [\#272](https://github.com/internetarchive/heritrix3/pull/272) ([ato](https://github.com/ato))
-- JDK11 support: exclude tools.jar from hbase-client dependency [\#271](https://github.com/internetarchive/heritrix3/pull/271) ([ato](https://github.com/ato))
+- Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
 - JDK11 support: explicitly depend on JAXB [\#269](https://github.com/internetarchive/heritrix3/pull/269) ([ato](https://github.com/ato))
 - WIP: ExtractorYoutubeDL [\#257](https://github.com/internetarchive/heritrix3/pull/257) ([nlevitt](https://github.com/nlevitt))
 - Update README and add LICENSE.txt [\#256](https://github.com/internetarchive/heritrix3/pull/256) ([ruebot](https://github.com/ruebot))
@@ -97,7 +96,7 @@
 
 **Merged pull requests:**
 
-- Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
+- JDK11 support: exclude tools.jar from hbase-client dependency [\#271](https://github.com/internetarchive/heritrix3/pull/271) ([ato](https://github.com/ato))
 - set of frontier management changes to support CrawlHQ module [\#253](https://github.com/internetarchive/heritrix3/pull/253) ([dvanduzer](https://github.com/dvanduzer))
 - fix some trough dedup bugs [\#251](https://github.com/internetarchive/heritrix3/pull/251) ([nlevitt](https://github.com/nlevitt))
 - Remove suffix from warcWriter since it is no longer used. [\#249](https://github.com/internetarchive/heritrix3/pull/249) ([ruebot](https://github.com/ruebot))
