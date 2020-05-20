@@ -32,7 +32,7 @@ public class FtpResponseRecordBuilder extends BaseWARCRecordBuilder {
             recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
                     '<' + concurrentTo.toString() + '>');
         }
-        recordInfo.setType(WARCRecordType.response);
+        recordInfo.setType(WARCRecordType.resource);
         recordInfo.setUrl(curi.toString());
         recordInfo.setCreate14DigitDate(timestamp);
         recordInfo.setMimetype(curi.getContentType());
