@@ -27,91 +27,30 @@
 package org.archive.util;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.security.SecureRandom;
 import java.util.Random;
 
-/** A Bloom filter.
- *
- * ADAPTED/IMPROVED VERSION OF MG4J it.unimi.dsi.mg4j.util.BloomFilter
- * 
- * <p>KEY CHANGES:
- *
- * <ul>
- * <li>NUMBER_OF_WEIGHTS is 2083, to better avoid collisions between 
- * similar strings (common in the domain of URIs)</li>
- * 
- * <li>Removed dependence on cern.colt MersenneTwister (replaced with
- * SecureRandom) and QuickBitVector (replaced with local methods).</li>
- * 
- * <li>Adapted to allow long bit indices</li>
- * 
- * <li>Stores bitfield in an array of up to 2^22 arrays of 2^26 longs. Thus, 
- * bitfield may grow to 2^48 longs in size -- 2PiB, 2*54 bitfield indexes.
- * (I expect this will outstrip available RAM for the next few years.)</li>
- * </ul>
- * 
- * <hr>
- * 
- * <P>Instances of this class represent a set of character sequences (with 
- * false positives) using a Bloom filter. Because of the way Bloom filters work,
- * you cannot remove elements.
- *
- * <P>Bloom filters have an expected error rate, depending on the number
- * of hash functions used, on the filter size and on the number of elements in 
- * the filter. This implementation uses a variable optimal number of hash 
- * functions, depending on the expected number of elements. More precisely, a 
- * Bloom filter for <var>n</var> character sequences with <var>d</var> hash 
- * functions will use ln 2 <var>d</var><var>n</var> &#8776; 
- * 1.44 <var>d</var><var>n</var> bits; false positives will happen with 
- * probability 2<sup>-<var>d</var></sup>.
- *
- * <P>Hash functions are generated at creation time using universal hashing. 
- * Each hash function uses {@link #NUMBER_OF_WEIGHTS} random integers, which 
- * are cyclically multiplied by the character codes in a character sequence. 
- * The resulting integers are XOR-ed together.
- *
- * <P>This class exports access methods that are very similar to those of 
- * {@link java.util.Set}, but it does not implement that interface, as too 
- * many non-optional methods would be unimplementable (e.g., iterators).
- *
- * @author Sebastiano Vigna
- * @author Gordon Mohr
- */
-public class BloomFilter64bit implements Serializable, BloomFilter {
-    private static final long serialVersionUID = 2L;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.Funnels;
+import com.google.common.primitives.Ints;
 
-    /** The number of weights used to create hash functions. */
-    protected final static int NUMBER_OF_WEIGHTS = 2083; // CHANGED FROM 16
-    /** The number of bits in this filter. */
-    final protected long m;
-    /** if bitfield is an exact power of 2 in length, it is this power */ 
-    protected int power = -1; 
+public class BloomFilter64bit implements Serializable, BloomFilter {
+    private static final long serialVersionUID = 3L;
+
     /** The expected number of inserts; determines calculated size */ 
-    final protected long expectedInserts; 
-    /** The number of hash functions used by this filter. */
-    final protected int d;
-    /** The underlying bit vector */
-    final protected long[][] bits;
-    /** The random integers used to generate the hash functions. */
-    final protected long[][] weight;
+    private final long expectedInserts; 
 
     /** The number of elements currently in the filter. It may be
      * smaller than the actual number of additions of distinct character
      * sequences because of false positives.
      */
-    protected int size;
+    private int size;
 
-    /** The natural logarithm of 2, used in the computation of the number of bits. */
-    protected final static double NATURAL_LOG_OF_2 = Math.log( 2 );
-
-    /** power-of-two to use as maximum size of bitfield subarrays */
-    protected final static int SUBARRAY_POWER_OF_TWO = 26; // 512MiB of longs
-    /** number of longs in one subarray */
-    protected final static int SUBARRAY_LENGTH_IN_LONGS = 1 << SUBARRAY_POWER_OF_TWO; 
-    /** mask for lowest SUBARRAY_POWER_OF_TWO bits */
-    protected final static int SUBARRAY_MASK = SUBARRAY_LENGTH_IN_LONGS - 1; //0x0FFFFFFF
-
-    protected final static boolean DEBUG = false;
+    private final com.google.common.hash.BloomFilter<CharSequence> delegate;
+    private final long bitSize;
+    private final int numHashFunctions;
 
     /** Creates a new Bloom filter with given number of hash functions and 
      * expected number of elements.
@@ -141,45 +80,18 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      * @param roundUp if true, round bit size up to next-nearest-power-of-2
      */
     public BloomFilter64bit(final long n, final int d, Random weightsGenerator, boolean roundUp ) {
+        delegate = com.google.common.hash.BloomFilter.create(Funnels.unencodedCharsFunnel(), Ints.saturatedCast(n), Math.pow(2, -d));
         this.expectedInserts = n; 
-        this.d = d;
-        long lenInLongs = (long)Math.ceil( ( (long)n * (long)d / NATURAL_LOG_OF_2 ) / 64L );
-        if ( lenInLongs > (1L<<48) ) {
-            throw new IllegalArgumentException(
-                    "This filter would require " + lenInLongs + " longs, " +
-                    "greater than this classes maximum of 2^48 longs (2PiB)." );
-        }
-        long lenInBits = lenInLongs * 64L;
-        
-        if(roundUp) {
-            int pow = 0;
-            while((1L<<pow) < lenInBits) {
-                pow++;
-            }
-            this.power = pow;
-            this.m = 1L<<pow;
-            lenInLongs = m/64L;
-        } else {
-            this.m = lenInBits;
-        }
+        try {
+        Method bitSizeMethod = delegate.getClass().getDeclaredMethod("bitSize", new Class[] {});
+        bitSizeMethod.setAccessible(true);
+        bitSize = (long) bitSizeMethod.invoke(delegate, new Object[] {}); 
 
-        
-        int arrayOfArraysLength = (int)((lenInLongs+SUBARRAY_LENGTH_IN_LONGS-1)/SUBARRAY_LENGTH_IN_LONGS);
-        bits = new long[ (int)(arrayOfArraysLength) ][];
-        // ensure last subarray is no longer than necessary
-        long lenInLongsRemaining = lenInLongs; 
-        for(int i = 0; i < bits.length; i++) {
-            bits[i] = new long[(int)Math.min(lenInLongsRemaining,SUBARRAY_LENGTH_IN_LONGS)];
-            lenInLongsRemaining -= bits[i].length;
-        }
-
-        if ( DEBUG ) System.err.println( "Number of bits: " + m );
-
-        weight = new long[ d ][];
-        for( int i = 0; i < d; i++ ) {
-            weight[ i ] = new long[ NUMBER_OF_WEIGHTS ];
-            for( int j = 0; j < NUMBER_OF_WEIGHTS; j++ )
-                 weight[ i ][ j ] = weightsGenerator.nextLong();
+        Field numHashFunctionField = delegate.getClass().getDeclaredField("numHashFunctions");
+        numHashFunctionField.setAccessible(true);
+        numHashFunctions = numHashFunctionField.getInt(delegate);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
         }
     }
 
@@ -193,36 +105,6 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
         return size;
     }
 
-    /** Hashes the given sequence with the given hash function.
-     *
-     * @param s a character sequence.
-     * @param l the length of <code>s</code>.
-     * @param k a hash function index (smaller than {@link #d}).
-     * @return the position in the filter corresponding to <code>s</code> for the hash function <code>k</code>.
-     */
-    protected long hash( final CharSequence s, final int l, final int k ) {
-        final long[] w = weight[ k ];
-        long h = 0;
-        int i = l;
-        while( i-- != 0 ) h ^= s.charAt( i ) * w[ i % NUMBER_OF_WEIGHTS ];
-        long retVal; 
-        if(power>0) {
-            retVal =  h >>> (64-power); 
-        } else { 
-            //                ####----####----
-            retVal =  ( h & 0x7FFFFFFFFFFFFFFFL ) % m;
-        }
-        return retVal; 
-    }
-    
-    public long[] bitIndexesFor(CharSequence s) {
-        long[] ret = new long[d];
-        for(int i = 0; i < d; i++) {
-             ret[i] = hash(s,s.length(),i); 
-        }
-        return ret;
-    }
-    
     /** Checks whether the given character sequence is in this filter.
      *
      * <P>Note that this method may return true on a character sequence that is has
@@ -237,9 +119,7 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      */
 
     public boolean contains( final CharSequence s ) {
-        int i = d, l = s.length();
-        while( i-- != 0 ) if ( ! getBit( hash( s, l, i ) ) ) return false;
-        return true;
+      return delegate.mightContain(s);
     }
 
     /** Adds a character sequence to the filter.
@@ -249,79 +129,19 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
      */
 
     public boolean add( final CharSequence s ) {
-        boolean result = false;
-        int i = d, l = s.length();
-        long h;
-        while( i-- != 0 ) {
-            h = hash( s, l, i );
-            if ( ! setGetBit( h ) ) {
-                result = true;
-            }
-        }
-        if ( result ) size++;
-        return result;
-    }
-    
-    protected final static long ADDRESS_BITS_PER_UNIT = 6; // 64=2^6
-    protected final static long BIT_INDEX_MASK = (1<<6)-1; // = 63 = 2^BITS_PER_UNIT - 1;
-
-    /**
-     * Returns from the local bitvector the value of the bit with 
-     * the specified index. The value is <tt>true</tt> if the bit 
-     * with the index <tt>bitIndex</tt> is currently set; otherwise, 
-     * returns <tt>false</tt>.
-     *
-     * (adapted from cern.colt.bitvector.QuickBitVector)
-     * 
-     * @param     bitIndex   the bit index.
-     * @return    the value of the bit with the specified index.
-     */
-    public boolean getBit(long bitIndex) {
-        long longIndex = bitIndex >>> ADDRESS_BITS_PER_UNIT;
-        int arrayIndex = (int) (longIndex >>> SUBARRAY_POWER_OF_TWO); 
-        int subarrayIndex = (int) (longIndex & SUBARRAY_MASK); 
-        return ((bits[arrayIndex][subarrayIndex] & (1L << (bitIndex & BIT_INDEX_MASK))) != 0);
+      boolean added = delegate.put(s);
+      if (added) {
+        size++;
+      }
+      return added;
     }
 
-    /**
-     * Changes the bit with index <tt>bitIndex</tt> in local bitvector.
-     *
-     * (adapted from cern.colt.bitvector.QuickBitVector)
-     * 
-     * @param     bitIndex   the index of the bit to be set.
+    /* (non-Javadoc)
+     * @see org.archive.util.BloomFilter#getSizeBytes()
      */
-    protected void setBit( long bitIndex) {
-        long longIndex = bitIndex >>> ADDRESS_BITS_PER_UNIT;
-        int arrayIndex = (int) (longIndex >>> SUBARRAY_POWER_OF_TWO); 
-        int subarrayIndex = (int) (longIndex & SUBARRAY_MASK); 
-        bits[arrayIndex][subarrayIndex] |= (1L << (bitIndex & BIT_INDEX_MASK));
+    public long getSizeBytes() {
+      return bitSize / 8;
     }
-    
-    /**
-     * Sets the bit with index <tt>bitIndex</tt> in local bitvector -- 
-     * returning the old value. 
-     *
-     * (adapted from cern.colt.bitvector.QuickBitVector)
-     * 
-     * @param     bitIndex   the index of the bit to be set.
-     */
-    protected boolean setGetBit( long bitIndex) {
-        long longIndex = bitIndex >>> ADDRESS_BITS_PER_UNIT;
-        int arrayIndex = (int) (longIndex >>> SUBARRAY_POWER_OF_TWO); 
-        int subarrayIndex = (int) (longIndex & SUBARRAY_MASK); 
-        long mask = 1L << (bitIndex & BIT_INDEX_MASK);
-        boolean ret = (bits[arrayIndex][subarrayIndex] & mask)!=0;
-        bits[arrayIndex][subarrayIndex] |= mask;
-        return ret; 
-    }
-    
-	/* (non-Javadoc)
-	 * @see org.archive.util.BloomFilter#getSizeBytes()
-	 */
-	public long getSizeBytes() {
-	    // account for ragged-sized last array
-	    return 8*(((bits.length-1)*bits[0].length)+bits[bits.length-1].length);
-	}
 
     @Override
     public long getExpectedInserts() {
@@ -330,6 +150,20 @@ public class BloomFilter64bit implements Serializable, BloomFilter {
 
     @Override
     public long getHashCount() {
-        return d;
+        return numHashFunctions;
+    }
+
+    @VisibleForTesting
+    public boolean getBit(long bitIndex) {
+      try {
+        Field bitsField = delegate.getClass().getDeclaredField("bits");
+        bitsField.setAccessible(true);
+        Object bitarray = bitsField.get(delegate);
+        Method getBitMethod = bitarray.getClass().getDeclaredMethod("get", long.class);
+        getBitMethod.setAccessible(true);
+        return (boolean) getBitMethod.invoke(bitarray, bitIndex);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
 }

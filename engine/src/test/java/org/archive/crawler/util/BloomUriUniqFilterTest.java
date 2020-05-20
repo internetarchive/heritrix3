@@ -67,7 +67,7 @@ implements UriUniqFilter.CrawlUriReceiver {
         this.filter.addForce(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(this.getUri())));
         // Should only have add 'this' once.
-        assertTrue("Count is off", this.filter.count() == 1);
+        assertEquals("Count is off", 1, this.filter.count());
     }
 
     /**
@@ -104,8 +104,7 @@ implements UriUniqFilter.CrawlUriReceiver {
         logger.fine("Readded subset " + list.size() + " in " +
                 (System.currentTimeMillis() - start));
 
-        assertTrue("Count is off: " + filter.count(),
-            filter.count() == MAX_COUNT);
+        assertEquals("Count is off", MAX_COUNT, filter.count());
     }
 
     public void testNote() {

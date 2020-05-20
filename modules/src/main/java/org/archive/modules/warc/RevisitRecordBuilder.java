@@ -25,7 +25,7 @@ public class RevisitRecordBuilder extends BaseWARCRecordBuilder {
     public boolean shouldBuildRecord(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme().toLowerCase();
         return curi.isRevisit()
-                && (scheme.startsWith("http") || scheme.equals("ftp"));
+                && (scheme.startsWith("http") || scheme.equals("ftp") || scheme.equals("sftp"));
     }
 
     @Override

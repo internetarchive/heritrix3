@@ -15,6 +15,54 @@ is typically found in most unix environments. Curl is
 \ `available <https://curl.haxx.se/download.html>`__ for many systems
 including Windows.
 
+Get Engine Status
+~~~~~~~~~~~~~~~~~
+
+.. http:get:: https://(heritrixhost):8443/engine
+
+   Returns information about this instance of Heritrix such as version number, memory usage and the list of crawl jobs.
+
+   **XML Example:**
+
+   .. code:: bash
+
+       curl -v -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+
+   Response:
+
+   .. code:: xml
+
+      <engine>
+        <heritrixVersion>3.3.0-SNAPSHOT-2017-07-12T04:17:56Z</heritrixVersion>
+        <heapReport>
+          <usedBytes>69529904</usedBytes>
+          <totalBytes>589824000</totalBytes>
+          <maxBytes>2885681152</maxBytes>
+        </heapReport>
+        <jobsDir>/heritrix/jobs</jobsDir>
+        <jobsDirUrl>https://localhost:8443/engine/jobsdir/</jobsDirUrl>
+        <availableActions>
+          <value>rescan</value>
+          <value>add</value>
+          <value>create</value>
+        </availableActions>
+        <jobs>
+          <value>
+            <shortName>myjob</shortName>
+            <url>https://localhost:8443/engine/job/myjob</url>
+            <isProfile>false</isProfile>
+            <launchCount>0</launchCount>
+            <lastLaunch/>
+            <hasApplicationContext>false</hasApplicationContext>
+            <statusDescription>Unbuilt</statusDescription>
+            <isLaunchInfoPartial>false</isLaunchInfoPartial>
+            <primaryConfig>/heritrix/jobs/myjob/crawler-beans.cxml</primaryConfig>
+            <primaryConfigUrl>https://localhost:8443/engine/jobdir/crawler-beans.cxml</primaryConfigUrl>
+            <key>myjob</key>
+          </value>
+        </jobs>
+      </engine>
+
 Create New Job
 ~~~~~~~~~~~~~~
 
@@ -63,6 +111,118 @@ Add Job Directory
    .. code:: bash
 
       curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+
+Get Job Status
+~~~~~~~~~~~~~~
+
+.. http:get:: https://(heritrixhost):8443/engine/job/(jobname)
+
+   Returns status information and statistics about the chosen job.
+
+   **XML Example:**
+
+   .. code:: bash
+
+       curl -v -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   Response:
+
+   .. code:: xml
+
+      <job>
+        <shortName>myjob</shortName>
+        <crawlControllerState>FINISHED</crawlControllerState>
+        <crawlExitStatus>FINISHED</crawlExitStatus>
+        <statusDescription>Finished: FINISHED</statusDescription>
+        <availableActions>
+          <value>teardown</value>
+        </availableActions>
+        <launchCount>1</launchCount>
+        <lastLaunch>2020-04-01T02:07:42.531Z</lastLaunch>
+        <isProfile>false</isProfile>
+        <primaryConfig>/heritrix/jobs/myjob/crawler-beans.cxml</primaryConfig>
+        <primaryConfigUrl>https://localhost:8443/engine/job/myjob/jobdir/crawler-beans.cxml</primaryConfigUrl>
+        <url>https://localhost:8443/engine/job/myjob/job/myjob</url>
+        <jobLogTail>
+          <value>2020-04-01T03:50:44.708Z INFO FINISHED 20200401020744</value>
+          <value>2020-04-01T03:50:42.670Z INFO EMPTY 20200401020744</value>
+          <value>2020-04-01T03:50:42.669Z INFO STOPPING 20200401020744</value>
+        </jobLogTail>
+        <uriTotalsReport>
+          <downloadedUriCount>3920</downloadedUriCount>
+          <queuedUriCount>0</queuedUriCount>
+          <totalUriCount>3920</totalUriCount>
+          <futureUriCount>0</futureUriCount>
+        </uriTotalsReport>
+        <sizeTotalsReport>
+          <dupByHash>0</dupByHash>
+          <dupByHashCount>0</dupByHashCount>
+          <notModified>0</notModified>
+          <notModifiedCount>0</notModifiedCount>
+          <novel>2177235508</novel>
+          <novelCount>3920</novelCount>
+          <total>2177235508</total>
+          <totalCount>3920</totalCount>
+          <warcNovelContentBytes>2177235508</warcNovelContentBytes>
+          <warcNovelUrls>3920</warcNovelUrls>
+        </sizeTotalsReport>
+        <rateReport>
+          <currentDocsPerSecond>0.0</currentDocsPerSecond>
+          <averageDocsPerSecond>0.6354171124312226</averageDocsPerSecond>
+          <currentKiBPerSec>0</currentKiBPerSec>
+          <averageKiBPerSec>344</averageKiBPerSec>
+        </rateReport>
+        <loadReport>
+          <busyThreads>0</busyThreads>
+          <totalThreads>0</totalThreads>
+          <congestionRatio>NaN</congestionRatio>
+          <averageQueueDepth>0</averageQueueDepth>
+          <deepestQueueDepth>0</deepestQueueDepth>
+        </loadReport>
+        <elapsedReport>
+          <elapsedMilliseconds>6169176</elapsedMilliseconds>
+          <elapsedPretty>1h42m49s176ms</elapsedPretty>
+        </elapsedReport>
+        <threadReport/>
+        <frontierReport>
+          <totalQueues>1</totalQueues>
+          <inProcessQueues>0</inProcessQueues>
+          <readyQueues>0</readyQueues>
+          <snoozedQueues>0</snoozedQueues>
+          <activeQueues>0</activeQueues>
+          <inactiveQueues>0</inactiveQueues>
+          <ineligibleQueues>0</ineligibleQueues>
+          <retiredQueues>0</retiredQueues>
+          <exhaustedQueues>1</exhaustedQueues>
+          <lastReachedState>FINISH</lastReachedState>
+        </frontierReport>
+        <crawlLogTail>
+          ...
+        </crawlLogTail>
+        <configFiles>
+          ...
+        </configFiles>
+        <isLaunchInfoPartial>false</isLaunchInfoPartial>
+        <isRunning>false</isRunning>
+        <isLaunchable>false</isLaunchable>
+        <hasApplicationContext>true</hasApplicationContext>
+        <alertCount>549</alertCount>
+        <checkpointFiles></checkpointFiles>
+        <alertLogFilePath>/heritrix/jobs/myjob/20200401020744/logs/alerts.log</alertLogFilePath>
+        <crawlLogFilePath>/heritrix/jobs/myjob/20200401020744/logs/crawl.log</crawlLogFilePath>
+        <reports>
+          <value>
+            <className>CrawlSummaryReport</className>
+            <shortName>CrawlSummary</shortName>
+          </value>
+          ...
+        </reports>
+        <heapReport>
+          <usedBytes>66893400</usedBytes>
+          <totalBytes>589824000</totalBytes>
+          <maxBytes>2885681152</maxBytes>
+        </heapReport>
+      </job>
 
 Build Job Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
