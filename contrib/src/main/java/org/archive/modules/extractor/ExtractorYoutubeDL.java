@@ -420,6 +420,7 @@ public class ExtractorYoutubeDL extends Extractor
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
                 "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
+                "--hls-prefer-ffmpeg",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
 
