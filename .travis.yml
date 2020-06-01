@@ -1,6 +1,3 @@
-
-sudo: false
-
 language: java
 matrix:
   include:
