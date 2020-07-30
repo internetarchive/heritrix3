@@ -1,5 +1,6 @@
 package org.archive.modules.writer;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOUtils;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
 import org.archive.modules.CrawlURI;
@@ -159,6 +161,17 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                 WARCRecordInfo record = recordBuilder.buildRecord(curi, concurrentTo);
                 if (record != null) {
                     writer.writeRecord(record);
+                    InputStream is = null;
+                    try {
+                        is = record.getContentStream();
+                        is.close();
+                    }
+                    catch (Exception e){
+                        logger.log(Level.WARNING, "problem closing Warc Record Content Stream " + e);
+                    }
+                    finally {
+                        IOUtils.closeQuietly(record.getContentStream()); //Closing one way or the other seems to leave some file handles open. Calling close() and using closeQuietly() handles both FileStreams and FileChannels 
+                    }
                     if (concurrentTo == null) {
                         concurrentTo = record.getRecordId();
                     }
