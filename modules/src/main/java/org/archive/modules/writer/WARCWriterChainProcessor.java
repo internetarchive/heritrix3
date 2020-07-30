@@ -167,10 +167,10 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                         is.close();
                     }
                     catch (Exception e){
-                        logger.log(Level.WARNING, "problem closing youtube-dl temp file " + e);
+                        logger.log(Level.WARNING, "problem closing Warc Record Content Stream " + e);
                     }
                     finally {
-                        IOUtils.closeQuietly(record.getContentStream()); //but for real, close this time
+                        IOUtils.closeQuietly(record.getContentStream()); //Closing one way or the other seems to leave some file handles open. Calling close() and using closeQuietly() handles both FileStreams and FileChannels 
                     }
                     if (concurrentTo == null) {
                         concurrentTo = record.getRecordId();
