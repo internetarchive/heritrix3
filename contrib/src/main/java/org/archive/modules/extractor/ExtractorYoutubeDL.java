@@ -456,7 +456,8 @@ public class ExtractorYoutubeDL extends Extractor
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
                 "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
-                "--no-cache-dir", "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
+                "--no-cache-dir", "--no-playlist",
+                "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
 
         Process proc = null;
