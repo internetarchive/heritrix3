@@ -982,14 +982,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             int urlIndex = content.indexOf("=") + 1;
             if(urlIndex>0) {
                 String refreshUri = content.substring(urlIndex);
-                try {
-                    int max = getExtractorParameters().getMaxOutlinks();
-                    addRelativeToBase(curi, max, refreshUri, 
-                            HTMLLinkContext.META, Hop.REFER);
-                } catch (URIException e) {
-                    logUriError(e, curi.getUURI(), refreshUri);
-                }
-            }
+		try {
+		    int max = getExtractorParameters().getMaxOutlinks();
+		    if (UriUtils.isVeryLikelyAbsoluteUri(refreshUri)) {
+			add(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
+		    }
+		    addRelativeToBase(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
+		} catch (URIException e) {
+		    logUriError(e, curi.getUURI(), refreshUri);
+		}
+	    }
         }
         else if (content != null) {
             //look for likely urls in 'content' attribute
