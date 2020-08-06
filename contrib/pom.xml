@@ -14,6 +14,28 @@
 	</properties>
 	<dependencies>
 		<dependency>
+			<groupId>org.apache.hbase</groupId>
+			<artifactId>hbase-client</artifactId>
+			<version>0.98.6-cdh5.3.5</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jets3t</artifactId>
+					<groupId>net.java.dev.jets3t</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>junit</artifactId>
+					<groupId>junit</groupId>
+				</exclusion>
+				<!-- tools.jar is not available in JDK 11 so exclude it
+				     hbase-client accidentally leaked it as a transitive dependency
+				     https://issues.apache.org/jira/browse/HBASE-13963 -->
+				<exclusion>
+					<groupId>jdk.tools</groupId>
+					<artifactId>jdk.tools</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-engine</artifactId>
 			<version>${project.version}</version>
