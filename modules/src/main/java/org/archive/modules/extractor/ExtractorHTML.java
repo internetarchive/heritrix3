@@ -986,7 +986,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         } else if ("refresh".equalsIgnoreCase(httpEquiv) && content != null) {
             int urlIndex = content.indexOf("=") + 1;
             if(urlIndex>0) {
-                String refreshUri = content.substring(urlIndex);
+                // strip any quotes ("') characters from the URL value.
+                String refreshUri = TextUtils.replaceAll("[\"']", content.substring(urlIndex), "");
                 try {
                     int max = getExtractorParameters().getMaxOutlinks();
                     addRelativeToBase(curi, max, refreshUri, 
