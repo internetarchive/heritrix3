@@ -986,8 +986,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 		    int max = getExtractorParameters().getMaxOutlinks();
 		    if (UriUtils.isVeryLikelyAbsoluteUri(refreshUri)) {
 			add(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
+		    } else {
+			addRelativeToBase(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
 		    }
-		    addRelativeToBase(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
 		} catch (URIException e) {
 		    logUriError(e, curi.getUURI(), refreshUri);
 		}
