@@ -478,7 +478,7 @@ public class UriUtils {
 		}
 
 		// absolute uri
-		if (TextUtils.matches("^(?i)https?://[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
+	if (TextUtils.matches("^(?i)[\"']?https?://[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?[\"']?", candidate)) {
 			return true;
 		}
 
