@@ -981,19 +981,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         } else if ("refresh".equalsIgnoreCase(httpEquiv) && content != null) {
             int urlIndex = content.indexOf("=") + 1;
             if(urlIndex>0) {
-		// strip any quotes ("') characters from the URL value.
-		String refreshUri = TextUtils.replaceAll("[\"']", content.substring(urlIndex), "");
-		try {
-		    int max = getExtractorParameters().getMaxOutlinks();
-		    if (UriUtils.isVeryLikelyAbsoluteUri(refreshUri)) {
-			add(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
-		    } else {
-			addRelativeToBase(curi, max, refreshUri, HTMLLinkContext.META, Hop.REFER);
-		    }
-		} catch (URIException e) {
-		    logUriError(e, curi.getUURI(), refreshUri);
-		}
-	    }
+                // strip any quotes ("') characters from the URL value.
+                String refreshUri = TextUtils.replaceAll("[\"']", content.substring(urlIndex), "");
+                try {
+                    int max = getExtractorParameters().getMaxOutlinks();
+                    addRelativeToBase(curi, max, refreshUri, 
+                            HTMLLinkContext.META, Hop.REFER);
+                } catch (URIException e) {
+                    logUriError(e, curi.getUURI(), refreshUri);
+                }
+            }
         }
         else if (content != null) {
             //look for likely urls in 'content' attribute

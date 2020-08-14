@@ -403,15 +403,21 @@ public class UriUtils {
     
     
     public static boolean isVeryLikelyUri(CharSequence candidate) {
-
-	if (isVeryLikelyAbsoluteUri(candidate) || isVeryLikelyRelativeUri(candidate)) {
-	    return true;
-	}
-
-	if (!isCandidateUri(candidate)) {
-	    return false;
-	}
-
+        // must have a . or /
+        if (!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
+            return false;
+        }
+        
+        // absolute uri
+        if (TextUtils.matches("^(?i)https?://[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
+            return true;
+        }
+        
+        // "protocol-relative" uri
+        if (TextUtils.matches("^//[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
+            return true;
+        }
+        
         // relative or server-relative uri
         Matcher matcher = TextUtils.getMatcher(LIKELY_RELATIVE_URI_PATTERN, candidate);
         if (!matcher.matches()) {
@@ -462,41 +468,7 @@ public class UriUtils {
         return true;
     }
 
-	protected static boolean isCandidateUri(CharSequence candidate) {
-		// must have a . or /
-		if (!TextUtils.matches(NAIVE_LIKELY_URI_PATTERN, candidate)) {
-			return false;
-		}
 
-		return true;
-	}
-
-	public static boolean isVeryLikelyAbsoluteUri(CharSequence candidate) {
-
-		if (!isCandidateUri(candidate)) {
-			return false;
-		}
-
-		// absolute uri
-	if (TextUtils.matches("^(?i)[\"']?https?://[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?[\"']?", candidate)) {
-			return true;
-		}
-
-		return false;
-	}
-
-	public static boolean isVeryLikelyRelativeUri(CharSequence candidate) {
-		if (!isCandidateUri(candidate)) {
-			return false;
-		}
-
-		// "protocol-relative" uri
-		if (TextUtils.matches("^//[^<>\\s/]+\\.[^<>\\s/]+(?:/[^<>\\s]*)?", candidate)) {
-			return true;
-		}
-
-		return false;
-	}
     
 //
 // legacy likely-URI test from ExtractorJS
