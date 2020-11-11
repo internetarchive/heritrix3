@@ -127,8 +127,7 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                 // We rolled over to a new warc and wrote a warcinfo record.
                 // Tally stats and reset temp stats, to avoid including warcinfo
                 // record in stats for current url.
-                setTotalBytesWritten(getTotalBytesWritten() +
-                    (writer.getPosition() - position));
+                addTotalBytesWritten(writer.getPosition() - position);
                 addStats(writer.getTmpStats());
                 writer.resetTmpStats();
                 writer.resetTmpRecordLog();
