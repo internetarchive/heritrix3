@@ -165,8 +165,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
                 // We rolled over to a new warc and wrote a warcinfo record.
                 // Tally stats and reset temp stats, to avoid including warcinfo
                 // record in stats for current url.
-                setTotalBytesWritten(getTotalBytesWritten() +
-                    (writer.getPosition() - position));
+                addTotalBytesWritten(writer.getPosition() - position);
                 addStats(writer.getTmpStats());
                 writer.resetTmpStats();
                 writer.resetTmpRecordLog();
@@ -644,6 +643,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
         json.put("urlsWritten", urlsWritten);
+	json.put("totalBytesWritten", getTotalBytesWritten());
         json.put("stats", stats);
         return json;
     }
@@ -656,6 +656,9 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         
         if (json.has("urlsWritten")) {
             urlsWritten.set(json.getLong("urlsWritten"));
+        }
+	if (json.has("totalBytesWritten")) {
+            setTotalBytesWritten(json.getLong("totalBytesWritten"));
         }
         
         if (json.has("stats")) {

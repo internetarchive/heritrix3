@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import org.archive.checkpointing.Checkpoint;
@@ -272,7 +273,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     /**
      * Total number of bytes written to disc.
      */
-    private long totalBytesWritten = 0;
+    private AtomicLong totalBytesWritten = new AtomicLong();
 
     private AtomicInteger serial = new AtomicInteger();
     
@@ -314,7 +315,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         if (max <= 0) {
             return ProcessResult.PROCEED;
         }
-        if (max <= this.totalBytesWritten) {
+        if (max <= getTotalBytesWritten()) {
             return ProcessResult.FINISH; // FIXME: Specify reason
 //            controller.requestCrawlStop(CrawlStatus.FINISHED_WRITE_LIMIT);
         }
@@ -432,11 +433,14 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
     }
 
     protected long getTotalBytesWritten() {
-        return totalBytesWritten;
+        return totalBytesWritten.get();
     }
 
     protected void setTotalBytesWritten(long totalBytesWritten) {
-        this.totalBytesWritten = totalBytesWritten;
+        this.totalBytesWritten.set(totalBytesWritten);
+    }
+    protected void addTotalBytesWritten(long bytesWritten) {
+        this.totalBytesWritten.addAndGet(bytesWritten);
     }
 	
     public abstract List<String> getMetadata();
