@@ -10,7 +10,7 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale, archival-
 
 ## Crawl Operators!
 
-Heritrix is designed to respect the [`robots.txt`](http://www.robotstxt.org/wc/robots.html) exclusion directives and [META robots tags](http://www.robotstxt.org/meta.html). Please consider the
+Heritrix is designed to respect the [`robots.txt`](http://www.robotstxt.org/robotstxt.html) exclusion directives and [META robots tags](http://www.robotstxt.org/meta.html). Please consider the
 load your crawl will place on seed sites and set politeness policies accordingly. Also, always identify your crawl with contact information in the `User-Agent` so sites that may be adversely affected by your crawl can contact you or adapt their server behavior accordingly.
 
 ## Getting Started
