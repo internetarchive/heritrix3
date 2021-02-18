@@ -280,9 +280,8 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 	    try {
 		troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
 	    } catch (Exception e) {
-		logger.log(Level.WARNING, "problem posting batch of " + flattenedValues.length + " crawled urls to trough segment " + getSegmentId(), e);
+		logger.log(Level.WARNING, "problem posting batch of " + (flattenedValues.length/16) + " crawled urls to trough segment " + getSegmentId(), e);
 	    }
-	    
 	    crawledBatchLastTime = System.currentTimeMillis();
 	}
     }
