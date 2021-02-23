@@ -119,7 +119,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected TroughClient troughClient() throws MalformedURLException {
         if (troughClient == null) {
-            troughClient = new TroughClient(getRethinkUrl(), 60 * 60);
+            troughClient = new TroughClient(getRethinkUrl(), null);
             troughClient.start();
         }
         return troughClient;
@@ -253,33 +253,37 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected void postCrawledBatch() {
         logger.info("posting batch of " + crawledBatch.size() + " crawled urls trough segment " + getSegmentId());
-        synchronized (crawledBatch) {
-            if (!crawledBatch.isEmpty()) {
-                StringBuffer sqlTmpl = new StringBuffer();
-                sqlTmpl.append("insert into crawled_url ("
-                        + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
-                        + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
-                        + "warc_offset, warc_content_bytes, host)  values "
-                        + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
-                for (int i = 1; i < crawledBatch.size(); i++) {
-                    sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
-                }
+	Object[] flattenedValues = null;
+	StringBuffer sqlTmpl = new StringBuffer();
+	synchronized (crawledBatch) {
+	    if (uncrawledBatch.size() >= BATCH_MAX_SIZE || System.currentTimeMillis() - uncrawledBatchLastTime > BATCH_MAX_TIME_MS) {
+		crawledBatchLastTime = System.currentTimeMillis();
+		if (!crawledBatch.isEmpty()) {
+		    sqlTmpl.append("insert into crawled_url ("
+				   + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
+				   + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
+				   + "warc_offset, warc_content_bytes, host)  values "
+				   + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
+		    for (int i = 1; i < crawledBatch.size(); i++) {
+			sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
+		    }
 
-                Object[] flattenedValues = new Object[16 * crawledBatch.size()];
-                for (int i = 0; i < crawledBatch.size(); i++) {
-                    System.arraycopy(crawledBatch.get(i), 0, flattenedValues, 16 * i, 16);
-                }
-
-                try {
-                    troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "problem posting batch of " + crawledBatch.size() + " crawled urls to trough segment " + getSegmentId(), e);
-                }
-
-                crawledBatchLastTime = System.currentTimeMillis();
-                crawledBatch.clear();
-            }
-        }
+		    flattenedValues = new Object[16 * crawledBatch.size()];
+		    for (int i = 0; i < crawledBatch.size(); i++) {
+			System.arraycopy(crawledBatch.get(i), 0, flattenedValues, 16 * i, 16);
+		    }
+		    crawledBatch.clear();
+		}
+	    }
+	}
+	if(flattenedValues !=null && flattenedValues.length > 0) {
+	    try {
+		troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
+	    } catch (Exception e) {
+		logger.log(Level.WARNING, "problem posting batch of " + (flattenedValues.length/16) + " crawled urls to trough segment " + getSegmentId(), e);
+	    }
+	    crawledBatchLastTime = System.currentTimeMillis();
+	}
     }
     protected void postUncrawledBatch() {
         logger.info("posting batch of " + uncrawledBatch.size() + " uncrawled urls trough segment " + getSegmentId());
