@@ -4,7 +4,17 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_D
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
+import java.io.File;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +55,13 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
     protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
+    }
+
+    public void setSegmentDir(String segmentDir) {
+        kp.put("segmentDir", segmentDir);
+    }
+    public String getSegmentDir() {
+        return (String) kp.get("segmentDir");
     }
 
     public void setSegmentId(String segmentId) {
@@ -153,18 +170,57 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         if (!curi.hasContentDigestHistory() || curi.getContentDigestHistory().isEmpty()) {
             return;
         }
-        Map<String,Object> hist = curi.getContentDigestHistory();
+        if( getSegmentId().isEmpty() || getSegmentDir().isEmpty()) {
+            logger.log(Level.WARNING, "no segment id or path found for url " + curi);
+            return;
+        }
 
-        try {
-            String digestKey = persistKeyFor(curi);
-            Object url = hist.get(A_ORIGINAL_URL);
-            Object date = hist.get(A_ORIGINAL_DATE);
-            Object recordId = hist.get(A_WARC_RECORD_ID);
-            Object[] values = new Object[] { digestKey, url, date, recordId };
-            troughClient().write(getSegmentId(), WRITE_SQL_TMPL, values, SCHEMA_ID);
+        if(!Files.exists(Paths.get(getSegmentDir(),getSegmentId()+".sql")))
+            createLocalSQLiteDB();
+
+        insertLocalSQLiteDB(curi);
+
+
+//        Map<String,Object> hist = curi.getContentDigestHistory();
+//
+//        try {
+//            String digestKey = persistKeyFor(curi);
+//            Object url = hist.get(A_ORIGINAL_URL);
+//            Object date = hist.get(A_ORIGINAL_DATE);
+//            Object recordId = hist.get(A_WARC_RECORD_ID);
+//            Object[] values = new Object[] { digestKey, url, date, recordId };
+//            troughClient().write(getSegmentId(), WRITE_SQL_TMPL, values, SCHEMA_ID);
+//        } catch (Exception e) {
+//            logger.log(Level.WARNING, "problem writing dedup info to trough segment " + getSegmentId() + " for url " + curi, e);
+//
+//        }
+    }
+    public void insertLocalSQLiteDB(CrawlURI curi) {
+        Map<String, Object> hist = curi.getContentDigestHistory();
+
+        Path dbFilePath = Paths.get(getSegmentDir(),getSegmentId()+".sql");
+        String dbUrl="jdbc:sqlite:"+dbFilePath.toString();
+        try (Connection conn = DriverManager.getConnection(dbUrl);
+             PreparedStatement pstmt = conn.prepareStatement(WRITE_SQL_TMPL)) {
+            pstmt.setString(1, persistKeyFor(curi));
+            pstmt.setObject(2, hist.get(A_ORIGINAL_URL));
+            pstmt.setObject(3, hist.get(A_ORIGINAL_DATE));
+            pstmt.setObject(4, hist.get(A_WARC_RECORD_ID));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "problem writing dedup info to local sqlite segment " + getSegmentId() + " for url " + curi, e);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "problem writing dedup info to trough segment " + getSegmentId() + " for url " + curi, e);
+            logger.log(Level.WARNING, "problem writing dedup info to local sqlite segment " + getSegmentId() + " for url " + curi, e);
+        }
+    }
+    public void createLocalSQLiteDB() {
+        Path dbFilePath = Paths.get(getSegmentDir(),getSegmentId()+".sql");
+        String dbUrl="jdbc:sqlite:"+dbFilePath.toString();
+        try (Connection conn = DriverManager.getConnection(dbUrl); Statement stmt = conn.createStatement()) {
+            stmt.execute(SCHEMA_SQL);
 
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Problem creating SQLite dedup db shard " + dbUrl, e);
         }
     }
 }
