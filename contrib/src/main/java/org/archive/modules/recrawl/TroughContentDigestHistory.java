@@ -4,12 +4,7 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_D
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -26,7 +21,6 @@ import java.util.logging.Logger;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.writer.WARCWriterChainProcessor;
-import org.archive.spring.ConfigPath;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.trough.TroughClient;
@@ -58,14 +52,6 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
     protected KeyedProperties kp = new KeyedProperties();
     public KeyedProperties getKeyedProperties() {
         return kp;
-    }
-
-    protected ConfigPath cacheDir = new ConfigPath("Trough sqlite dedup cache directory","dedupCache");
-    public ConfigPath getCacheDir() {
-        return cacheDir;
-    }
-    public void setCacheDir(ConfigPath dir) {
-        this.cacheDir = dir;
     }
 
     public void setSegmentId(String segmentId) {
@@ -108,17 +94,20 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
     // row count that avoids table scan if no deletes
     protected static final String COUNT_SQL =
             "SELECT MAX(_ROWID_) FROM dedup LIMIT 1;";
+    protected static final String DROP_TABLE_DEDUP_SQL =
+            "DROP table dedup;";
     protected static final String SELECT_ALL_SQL =
             "SELECT * FROM dedup;";
     protected ConcurrentHashMap<String, Object> segmentCache = new ConcurrentHashMap<String, Object>();
     // Sync dedup db to trough when rows exceeds
     protected static final int TROUGH_SYNC_MAX_BATCH = 400;
-
+    protected Connection dedupDbConnection = null;
     @Override
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PREPARING:
             try {
+                dedupDbConnection = DriverManager.getConnection("jdbc:sqlite::memory:");
                 // initializes TroughClient and starts promoter thread as a side effect
                 troughClient().registerSchema(SCHEMA_ID, SCHEMA_SQL);
             } catch (Exception e) {
@@ -142,6 +131,7 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
                 troughClient.promoteDirtySegments();
                 troughClient = null;
             }
+            dedupDbConnection = null;
             break;
 
         default:
@@ -183,122 +173,114 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
             return;
         }
 
-        if (getSegmentId().isEmpty() || getCacheDir().toString().length()==0) {
-            logger.log(Level.WARNING, "no segment id or path found for url " + curi);
+        if (getSegmentId().isEmpty()) {
+            logger.log(Level.WARNING, "no segment id found for url " + curi);
             return;
         }
-        try {
-            if (!Files.exists(Paths.get(getCacheDir().getFile().getAbsolutePath())))
-                org.archive.util.FileUtils.ensureWriteableDirectory(getCacheDir().getFile());
-        }
-        catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to create dedup scratch directory: "+getCacheDir().getFile().getAbsolutePath());
-        }
 
-        if (!Files.exists(Paths.get(getCacheDir().getFile().getAbsolutePath(), getSegmentId() + ".sql"))) {
+        if (!segmentCache.containsKey(getSegmentId())) {
             segmentCache.putIfAbsent(getSegmentId(),new Object());
             synchronized (segmentCache.get(getSegmentId())) {
-                if (!Files.exists(Paths.get(getCacheDir().getFile().getAbsolutePath(), getSegmentId() + ".sql")))
-                    createLocalSQLiteDB();
+                    createDedupCacheDbTable();
             }
         }
 
-        insertLocalSQLiteDB(curi);
+        insertSQLiteCacheDB(curi);
     }
-    public void syncToTrough(String segmentId) {
-        logger.log(Level.FINE, "syncing local sqlite db to trough " + segmentId);
-        Path dbFilePath = Paths.get(getCacheDir().getFile().getAbsolutePath(),segmentId+".sql");
-        Path dbSyncFilePath = Paths.get(getCacheDir().getFile().getAbsolutePath(),segmentId+".sql.sync");
-        String dbUrl="jdbc:sqlite:"+dbFilePath.toString();
-        String dbSyncUrl="jdbc:sqlite:"+dbSyncFilePath.toString();
+    protected String segmentizeDedupTableName(String sql)
+    {
+        String tableName = "dedup_" + getSegmentId().replaceAll("-","_");
+        return sql.replace(" dedup"," \""+tableName+"\"");
+    }
+    public void syncToTrough() {
+        logger.log(Level.FINE, "syncing local sqlite db to trough " + getSegmentId());
 
         int totalRows=0;
         ResultSet dedupRows = null;
-        synchronized (segmentCache.get(segmentId)) {
-            try (Connection conn = DriverManager.getConnection(dbUrl);
-                 PreparedStatement rowCountStatement = conn.prepareStatement(COUNT_SQL)) {
+        int rowsRead=0;
+        Object[] flattenedValues = null;
+        synchronized (segmentCache.get(getSegmentId())) {
+            String segmentCountSql = segmentizeDedupTableName(COUNT_SQL);
+            try (PreparedStatement rowCountStatement = dedupDbConnection.prepareStatement(segmentCountSql)) {
                 ResultSet rs = rowCountStatement.executeQuery();
                 rs.next();
                 totalRows = rs.getInt(1);
             } catch (SQLException e) {
-                logger.log(Level.WARNING, "problem reading row count info from local sqlite segment " + segmentId, e);
+                logger.log(Level.WARNING, "problem reading row count info from local sqlite segment " + getSegmentId(), e);
             }
             if (totalRows > TROUGH_SYNC_MAX_BATCH) {
+                flattenedValues = new Object[4 * totalRows];
+                String segmentSelectAllSql = segmentizeDedupTableName(SELECT_ALL_SQL);
+                try (PreparedStatement dedupReadSelect = dedupDbConnection.prepareStatement(segmentSelectAllSql)) {
+                    dedupRows = dedupReadSelect.executeQuery();
+                    while (dedupRows.next()) {
+                        for (int i=0; i<4; i++) {
+                            flattenedValues[(4 * rowsRead) + i] = dedupRows.getObject(i+1);
+                        }
+                        rowsRead++;
+                    }
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "problem reading dedup info from local sqlite segment " + getSegmentId(), e);
+                }
+                String segmentDropTableSql = segmentizeDedupTableName(DROP_TABLE_DEDUP_SQL);
                 try {
-                    Files.move(dbFilePath, dbSyncFilePath, StandardCopyOption.REPLACE_EXISTING); //TODO: delete
-                    createLocalSQLiteDB();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "problem moving aside local sqlite segment " + segmentId, e);
+                    PreparedStatement dropTableStatement = dedupDbConnection.prepareStatement(segmentDropTableSql);
+                    dropTableStatement.execute();
+                    createDedupCacheDbTable();
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "problem removing cache db table " + getSegmentId() + " sql: " + segmentDropTableSql, e);
                 }
             }
         }
 
-        if(totalRows > TROUGH_SYNC_MAX_BATCH) {
+        if(rowsRead > 0) {
             StringBuffer sqlTmpl = new StringBuffer();
+            //don't alter the table name since we're dealing with trough now
             sqlTmpl.append(WRITE_SQL_TMPL + " values (%s, %s, %s, %s)");
-            for(int i=1; i < totalRows; i++){
+            for(int i=1; i < rowsRead; i++){
                 sqlTmpl.append(", (%s, %s, %s, %s)");
             }
-            Object[] flattenedValues = new Object[4 * totalRows];
-
-            int rowId=0;
-            try (Connection conn = DriverManager.getConnection(dbSyncUrl)) {
-                PreparedStatement dedupReadSelect = conn.prepareStatement(SELECT_ALL_SQL);
-                dedupRows = dedupReadSelect.executeQuery();
-
-                while (dedupRows.next()) {
-                    for (int i=0; i<4; i++) {
-                        flattenedValues[(4 * rowId) + i] = dedupRows.getObject(i+1);
-                    }
-                    rowId++;
-                }
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "problem reading dedup info from local sqlite segment " + getSegmentId(), e);
+            try {
+                troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem posting batch of " + rowsRead + " dedup urls to trough segment " + getSegmentId(), e);
             }
-            if(rowId > 0) {
-                try {
-                    troughClient().write(segmentId, sqlTmpl.toString(), flattenedValues);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "problem posting batch of " + totalRows + " dedup urls to trough segment " + segmentId, e);
-                }
-            }
-
         }
     }
-    public void insertLocalSQLiteDB(CrawlURI curi) {
+    public void insertSQLiteCacheDB(CrawlURI curi) {
         Map<String, Object> hist = curi.getContentDigestHistory();
- //TODO in memory dedup-segmentid for table name
-        Path dbFilePath = Paths.get(getCacheDir().getFile().getAbsolutePath(),getSegmentId()+".sql");
-        String dbUrl="jdbc:sqlite:"+dbFilePath.toString();
         int totalRows=0;
+        String segmentWriteSqlTemplate = segmentizeDedupTableName(WRITE_SQL_TMPL);
         synchronized (segmentCache.get(getSegmentId())) {
-            try (Connection conn = DriverManager.getConnection(dbUrl);
-                 PreparedStatement pstmt = conn.prepareStatement(WRITE_SQL_TMPL + " values (?, ?, ?, ?);")) {
+
+            try (PreparedStatement pstmt = dedupDbConnection.prepareStatement(segmentWriteSqlTemplate + " values (?, ?, ?, ?);")) {
                 pstmt.setString(1, persistKeyFor(curi));
                 pstmt.setObject(2, hist.get(A_ORIGINAL_URL));
                 pstmt.setObject(3, hist.get(A_ORIGINAL_DATE));
                 pstmt.setObject(4, hist.get(A_WARC_RECORD_ID));
                 pstmt.executeUpdate();
-
-                PreparedStatement rowCountStatement = conn.prepareStatement(COUNT_SQL);
-                ResultSet rs = rowCountStatement.executeQuery();
-                rs.next();
-                totalRows = rs.getInt(1);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "problem writing dedup info to local sqlite segment " + getSegmentId() + " for url " + curi, e);
+                logger.log(Level.WARNING, "problem writing dedup info to local sqlite segment " + getSegmentId() + " for url " + curi + " sql: " + segmentWriteSqlTemplate, e);
             }
         }
+        String segmentCountSql = segmentizeDedupTableName(COUNT_SQL);
+        try(PreparedStatement rowCountStatement = dedupDbConnection.prepareStatement(segmentCountSql)) {
+            ResultSet rs = rowCountStatement.executeQuery();
+            rs.next();
+            totalRows = rs.getInt(1);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "problem getting row count after dedup insert " + getSegmentId() + " for url " + curi + " sql: "+segmentCountSql, e);
+        }
         if(totalRows > TROUGH_SYNC_MAX_BATCH) {
-            syncToTrough(getSegmentId());
+            syncToTrough();
         }
     }
-    public void createLocalSQLiteDB() {
-        Path dbFilePath = Paths.get(getCacheDir().getFile().getAbsolutePath(),getSegmentId()+".sql");
-        String dbUrl="jdbc:sqlite:"+dbFilePath.toString();
-        try (Connection conn = DriverManager.getConnection(dbUrl); Statement stmt = conn.createStatement()) {
-            stmt.execute(SCHEMA_SQL);
+    public void createDedupCacheDbTable() {
+        String segmentSchema = segmentizeDedupTableName(SCHEMA_SQL);
+        try (Statement stmt = dedupDbConnection.createStatement()) {
+            stmt.execute(segmentSchema);
         } catch (SQLException e) {
-            logger.log(Level.WARNING, "Problem creating SQLite dedup db shard " + dbUrl, e);
+            logger.log(Level.WARNING, "Problem creating SQLite dedup db shard " + getSegmentId() + " with schema "+ segmentSchema, e);
         }
     }
 }
