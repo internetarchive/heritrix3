@@ -224,7 +224,12 @@ public class JobResource extends BaseResource {
         } else if ("pause".equals(action)) {
             cj.getCrawlController().requestCrawlPause();
         } else if ("unpause".equals(action)) {
-            cj.getCrawlController().requestCrawlResume();
+            try {
+                cj.getCrawlController().requestCrawlResume();
+            } catch (Exception e){
+                System.err.println(getName() + ": exception " + e + " during unpause.");
+                e.printStackTrace();
+            }
         } else if ("checkpoint".equals(action)) {
             String cp = cj.getCheckpointService().requestCrawlCheckpoint();
             if (StringUtils.isNotEmpty(cp)) {

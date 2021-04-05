@@ -93,7 +93,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected static final Logger logger = Logger.getLogger(TroughCrawlLogFeed.class.getName());
 
-    protected static final int BATCH_MAX_TIME_MS = 60 * 1000;
+    protected static final int BATCH_MAX_TIME_MS = 20 * 1000;
     protected static final int BATCH_MAX_SIZE = 400;
     protected AtomicInteger crawledBatchSize = new AtomicInteger(0);
     protected AtomicInteger uncrawledBatchSize = new AtomicInteger(0);
@@ -333,28 +333,29 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             }
         }
         if(batch != null && batch.size() > 0) {
-                StringBuffer sqlTmpl = new StringBuffer();
-                sqlTmpl.append(
-                        "insert into uncrawled_url (timestamp, url, hop_path, status_code, via, seed, host)"
-                                + " values (%s, %s, %s, %s, %s, %s, %s)");
+            StringBuffer sqlTmpl = new StringBuffer();
+            sqlTmpl.append(
+                    "insert into uncrawled_url (timestamp, url, hop_path, status_code, via, seed, host)"
+                            + " values (%s, %s, %s, %s, %s, %s, %s)");
 
-                for (int i = 1; i < batch.size(); i++) {
-                    sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s)");
-                }
-
-                Object[] flattenedValues = new Object[7 * batch.size()];
-                for (int i = 0; i < batch.size(); i++) {
-                    System.arraycopy(batch.get(i),0,flattenedValues,7 * i, 7);
-                }
-
-                try {
-                    troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "problem posting batch of " + batch.size() + " uncrawled urls to trough segment " + getSegmentId(), e);
-                }
-
-                uncrawledBatchLastTime = System.currentTimeMillis();
-                uncrawledBatch.clear();
+            for (int i = 1; i < batch.size(); i++) {
+                sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s)");
             }
+
+            Object[] flattenedValues = new Object[7 * batch.size()];
+            for (int i = 0; i < batch.size(); i++) {
+                System.arraycopy(batch.get(i),0,flattenedValues,7 * i, 7);
+            }
+
+            try {
+                troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem posting batch of " + batch.size() + " uncrawled urls to trough segment " + getSegmentId(), e);
+            }
+
+            uncrawledBatchLastTime = System.currentTimeMillis();
+            uncrawledBatch.clear();
+        }
+
     }
 }
