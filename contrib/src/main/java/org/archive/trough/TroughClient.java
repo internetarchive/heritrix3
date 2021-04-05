@@ -8,11 +8,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -60,9 +60,9 @@ public class TroughClient {
     protected static final String SQL_MIMETYPE = "application/sql";
 
     protected Random rand = new Random();
-    protected Map<String,String> writeUrlCache;
-    protected Map<String,String> readUrlCache;
-    protected Set<String> dirtySegments;
+    protected ConcurrentHashMap<String,String> writeUrlCache;
+    protected ConcurrentHashMap<String,String> readUrlCache;
+    protected ConcurrentSkipListSet<String> dirtySegments;
     protected String[] rethinkServers;
     protected String rethinkDb;
     protected Integer promotionInterval;
@@ -240,9 +240,9 @@ public class TroughClient {
      */
     public TroughClient(String rethinkdbTroughUrl, Integer promotionInterval) throws MalformedURLException {
         parseRethinkdbUrl(rethinkdbTroughUrl);
-        writeUrlCache = new HashMap<String, String>();
-        readUrlCache = new HashMap<String, String>();
-        dirtySegments = new HashSet<String>();
+        writeUrlCache = new ConcurrentHashMap<String, String>();
+        readUrlCache = new ConcurrentHashMap<String, String>();
+        dirtySegments = new ConcurrentSkipListSet<String>();
         this.promotionInterval = promotionInterval;
     }
 
@@ -308,26 +308,18 @@ public class TroughClient {
             Object result = new JSONParser().parse(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             return (List<Map<String, Object>>) result;
         } catch (IOException e) {
-            synchronized (readUrlCache) {
-                readUrlCache.remove(segmentId);
-            }
+	    readUrlCache.remove(segmentId);
             throw e;
         } catch (ParseException e) {
-            synchronized (readUrlCache) {
-                readUrlCache.remove(segmentId);
-            }
+	    readUrlCache.remove(segmentId);
             throw new TroughException("problem parsing json response from " + readUrl, e);
         }
     }
 
     protected String readUrl(String segmentId) throws TroughException {
         if (readUrlCache.get(segmentId) == null) {
-            synchronized (readUrlCache) {
-                if (readUrlCache.get(segmentId) == null) {
-                    String url = readUrlNoCache(segmentId);
-                    readUrlCache.put(segmentId, url);
-                }
-            }
+	    String url = readUrlNoCache(segmentId);
+	    readUrlCache.put(segmentId, url);
             logger.info("segment " + segmentId + " read url is " + readUrlCache.get(segmentId));
         }
         return readUrlCache.get(segmentId);
@@ -377,28 +369,19 @@ public class TroughClient {
                 throw new TroughException("unexpected response " + connection.getResponseCode() + " "
                         + connection.getResponseMessage() + ": " + responsePayload(connection)
                         + " from " + url + " to query: " + sql);
-            }            
-            if (!dirtySegments.contains(segmentId)) {
-                synchronized (dirtySegments) {
-                    dirtySegments.add(segmentId);
-                }
             }
+	    dirtySegments.add(segmentId);
         } catch (IOException e) {
-            synchronized (writeUrlCache) {
-                writeUrlCache.remove(segmentId);
-            }
+	    writeUrlCache.remove(segmentId);
             throw e;
         }
     }
 
     protected String writeUrl(String segmentId, String schemaId) throws IOException {
         if (writeUrlCache.get(segmentId) == null) {
-            synchronized (writeUrlCache) {
-                if (writeUrlCache.get(segmentId) == null) {
-                    String url = writeUrlNoCache(segmentId, schemaId);
-                    writeUrlCache.put(segmentId, url);
-                }
-            }
+	    String url = writeUrlNoCache(segmentId, schemaId);
+	    writeUrlCache.put(segmentId, url);
+
             logger.info("segment " + segmentId + " write url is " + writeUrlCache.get(segmentId));
         }
         return writeUrlCache.get(segmentId);
