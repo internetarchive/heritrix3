@@ -172,13 +172,23 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 	this.dumpPendingAtClose = dumpPendingAtClose;
     }
 
+    protected boolean forceBatchPosting = false;
+    protected boolean getForceBatchPosting() {
+	return forceBatchPosting;
+    }
+    protected void setForceBatchPosting(boolean forceBatchPosting) {
+	this.forceBatchPosting = forceBatchPosting;
+    }
+
     @Override
     public synchronized void stop() {
         if (!isRunning) {
             return;
         }
         if (!crawledBatch.isEmpty()) {
-            postCrawledBatch(true);
+	    setForceBatchPosting(true);
+            postCrawledBatch();
+	    setForceBatchPosting(false);
         }
 
         if (frontier instanceof BdbFrontier) {
@@ -193,7 +203,10 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
 	    if(getDumpPendingAtClose()) {
                 logger.info("dumping " + frontier.queuedUriCount() + " queued urls to trough feed");
+		setForceBatchPosting(true);
                 ((BdbFrontier) frontier).forAllPendingDo(closure);
+		postUncrawledBatch();
+		setForceBatchPosting(false);
                 logger.info("dumped " + frontier.queuedUriCount() + " queued urls to trough feed");
 	    }
         } else {
@@ -242,7 +255,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             crawledBatch.add(values);
 
             if (crawledBatchSize.incrementAndGet() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
-                postCrawledBatch(false);
+                postCrawledBatch();
             }
         } else {
             Object[] values = new Object[] {
@@ -262,10 +275,10 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
         }
     }
 
-    protected void postCrawledBatch(boolean force) {
+    protected void postCrawledBatch() {
         ArrayList<Object[]> batch = new ArrayList<Object[]>();
         synchronized (crawledBatch) {
-            if (crawledBatchSize.get() >= BATCH_MAX_SIZE || force) {
+            if (crawledBatchSize.get() >= BATCH_MAX_SIZE || getForceBatchPosting()) {
                 while(!crawledBatch.isEmpty()) {
                     Object[] crawlLine = crawledBatch.poll();
                     if(crawlLine != null)
@@ -273,7 +286,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                     else
                         break;
                 }
-                crawledBatchSize.set(0);
+                crawledBatchSize.getAndSet(crawledBatch.size()); //size() is O(n). Use sparingly
                 logger.info("posting batch of " + batch.size() + " crawled urls to trough segment " + getSegmentId());
             }
         }
@@ -307,7 +320,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
     protected void postUncrawledBatch() {
         ArrayList<Object[]> batch = new ArrayList<Object[]>();
         synchronized (uncrawledBatch) {
-            if (uncrawledBatchSize.get() >= BATCH_MAX_SIZE) {
+            if (uncrawledBatchSize.get() >= BATCH_MAX_SIZE || getForceBatchPosting()) {
                 while(!uncrawledBatch.isEmpty()) {
                     Object[] crawlLine = uncrawledBatch.poll();
                     if(crawlLine != null)
@@ -315,7 +328,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                     else
                         break;
                 }
-                uncrawledBatchSize.set(0);
+                uncrawledBatchSize.getAndSet(uncrawledBatch.size()); //size() is O(n). Use sparingly
                 logger.info("posting batch of " + batch.size() + " uncrawled urls to trough segment " + getSegmentId());
             }
         }
