@@ -94,6 +94,9 @@ public class FetchHistoryHelper {
    * @return seconds since epoch
    */
   public static long parseHttpDate(String dateStr) {
+      if (dateStr == null) {
+          return 0;
+      }
       synchronized (HTTP_DATE_FORMAT) {
           try {
               Date d = HTTP_DATE_FORMAT.parse(dateStr);
