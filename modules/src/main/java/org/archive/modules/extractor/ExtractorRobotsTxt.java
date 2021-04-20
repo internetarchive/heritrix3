@@ -12,9 +12,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.extractor.ContentExtractor;
-import org.archive.modules.extractor.Hop;
-import org.archive.modules.extractor.LinkContext;
 
 public class ExtractorRobotsTxt extends ContentExtractor {
     private static final Logger LOGGER = Logger
@@ -65,8 +62,10 @@ public class ExtractorRobotsTxt extends ContentExtractor {
                     curi.getViaContext());
 
             // Also copy the source over:
-            curiClone.setSourceTag(curi.getSourceTag());
-
+            if (curi.getSourceTag() != null) {
+                curiClone.setSourceTag(curi.getSourceTag());
+            }
+            
             // Parse the robots for the sitemaps.
             List<String> links = parseRobotsTxt(
                     curi.getRecorder()
