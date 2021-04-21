@@ -91,7 +91,7 @@ implements RecrawlDataSchema {
                     jo.put(PROPERTY_ETAG, etag);
                 }
                 String lastmod = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
-                long lastmodSec = FetchHistoryHelper.parseHttpDate(lastmod);
+                long lastmodSec = lastmod != null ? FetchHistoryHelper.parseHttpDate(lastmod) : 0;
                 if (lastmodSec == 0) {
                     try {
                         lastmodSec = uri.getFetchCompletedTime() / 1000;
