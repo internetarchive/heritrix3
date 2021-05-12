@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -91,7 +92,10 @@ public abstract class JobRelatedResource extends BaseResource {
      */
     protected void addPresentableNestedNames(Collection<Object> namedBeans, Object obj,
             Set<Object> alreadyWritten) {
-        if (obj == null || alreadyWritten.contains(obj)
+        if (obj == null
+                || (obj instanceof Optional && !((Optional<?>) obj).isPresent())
+                || obj instanceof Class
+                || alreadyWritten.contains(obj)
                 || obj.getClass().getName().startsWith("org.springframework.")) {
             return;
         }
