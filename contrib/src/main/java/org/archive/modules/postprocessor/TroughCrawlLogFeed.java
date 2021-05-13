@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,6 +93,8 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected static final int BATCH_MAX_TIME_MS = 60 * 1000;
     protected static final int BATCH_MAX_SIZE = 400;
+    protected static final String CRAWLED_BATCH = "crawled";
+    protected static final String UNCRAWLED_BATCH = "uncrawled";
     protected AtomicInteger crawledBatchSize = new AtomicInteger(0);
     protected AtomicInteger uncrawledBatchSize = new AtomicInteger(0);
 
@@ -186,9 +186,9 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             return;
         }
         if (!crawledBatch.isEmpty()) {
-	    setForceBatchPosting(true);
-            postCrawledBatch();
-	    setForceBatchPosting(false);
+            setForceBatchPosting(true);
+            postBatch(crawledBatch, crawledBatchSize, CRAWLED_BATCH);
+            setForceBatchPosting(false);
         }
 
         if (frontier instanceof BdbFrontier) {
@@ -201,14 +201,14 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
                 }
             };
 
-	    if(getDumpPendingAtClose()) {
+            if(getDumpPendingAtClose()) {
                 logger.info("dumping " + frontier.queuedUriCount() + " queued urls to trough feed");
-		setForceBatchPosting(true);
+                setForceBatchPosting(true);
                 ((BdbFrontier) frontier).forAllPendingDo(closure);
-		postUncrawledBatch();
-		setForceBatchPosting(false);
-                logger.info("dumped " + frontier.queuedUriCount() + " queued urls to trough feed");
-	    }
+                postBatch(uncrawledBatch, uncrawledBatchSize, UNCRAWLED_BATCH);
+                setForceBatchPosting(false);
+                    logger.info("dumped " + frontier.queuedUriCount() + " queued urls to trough feed");
+            }
         } else {
             logger.warning("frontier is not a BdbFrontier, cannot dump queued urls to trough feed");
         }
@@ -255,7 +255,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
             crawledBatch.add(values);
 
             if (crawledBatchSize.incrementAndGet() >= BATCH_MAX_SIZE || System.currentTimeMillis() - crawledBatchLastTime > BATCH_MAX_TIME_MS) {
-                postCrawledBatch();
+                postBatch(crawledBatch, crawledBatchSize, CRAWLED_BATCH);
             }
         } else {
             Object[] values = new Object[] {
@@ -270,91 +270,77 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
             uncrawledBatch.add(values);
             if (uncrawledBatchSize.incrementAndGet() >= BATCH_MAX_SIZE || System.currentTimeMillis() - uncrawledBatchLastTime > BATCH_MAX_TIME_MS) {
-                postUncrawledBatch();
+                postBatch(uncrawledBatch, uncrawledBatchSize, UNCRAWLED_BATCH);
             }
         }
     }
 
-    protected void postCrawledBatch() {
-        ArrayList<Object[]> batch = new ArrayList<Object[]>();
-        synchronized (crawledBatch) {
-            if (crawledBatchSize.get() >= BATCH_MAX_SIZE || getForceBatchPosting()) {
-                while(!crawledBatch.isEmpty()) {
-                    Object[] crawlLine = crawledBatch.poll();
+    protected void postBatch(ConcurrentLinkedQueue<Object[]> batch, AtomicInteger batchSize, String batchType) {
+        ArrayList<Object[]> crawlLogLines = new ArrayList<Object[]>();
+        synchronized (batch) {
+            //read and remove log lines from batch into local variable so we can exit the synchronized block asap
+            if (batchSize.get() >= BATCH_MAX_SIZE || getForceBatchPosting()) {
+                while(!batch.isEmpty()) {
+                    Object[] crawlLine = batch.poll();
                     if(crawlLine != null)
-                        batch.add(crawlLine);
+                        crawlLogLines.add(crawlLine);
                     else
                         break;
                 }
-                crawledBatchSize.getAndSet(crawledBatch.size()); //size() is O(n). Use sparingly
-                logger.info("posting batch of " + batch.size() + " crawled urls to trough segment " + getSegmentId());
+                batchSize.getAndSet(batch.size()); //size() is O(n). Use sparingly. Should be near zero right now.
+                logger.info("posting batch of " + crawlLogLines.size() + " " + batchType + " urls to trough segment " + getSegmentId());
             }
         }
-        if( batch != null && batch.size() > 0) {
-                StringBuffer sqlTmpl = new StringBuffer();
-                sqlTmpl.append("insert into crawled_url ("
-                        + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
-                        + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
-                        + "warc_offset, warc_content_bytes, host)  values "
-                        + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
-                for (int i = 1; i < batch.size(); i++) {
-                    sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
-                }
+        if( crawlLogLines != null && crawlLogLines.size() > 0){
+            StringBuffer sqlTmpl = new StringBuffer();
+            int numCols=0;
+            switch(batchType){
+                case CRAWLED_BATCH:
+                    sqlTmpl.append("insert into crawled_url ("
+                            + "timestamp, status_code, size, payload_size, url, hop_path, is_seed_redirect, "
+                            + "via, mimetype, content_digest, seed, is_duplicate, warc_filename, "
+                            + "warc_offset, warc_content_bytes, host)  values "
+                            + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
+                    for (int i = 1; i < crawlLogLines.size(); i++) {
+                        sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)");
+                    }
+                    numCols=16;
+                    break;
+                case UNCRAWLED_BATCH:
+                    sqlTmpl.append(
+                            "insert into uncrawled_url (timestamp, url, hop_path, status_code, via, seed, host)"
+                                    + " values (%s, %s, %s, %s, %s, %s, %s)");
 
-                Object[] flattenedValues = new Object[16 * batch.size()];
-                for (int i = 0; i < batch.size(); i++) {
-                    System.arraycopy(batch.get(i),0,flattenedValues, 16 * i,16);
-                }
-
-                try {
-                    troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "problem posting batch of " + batch.size() + " crawled urls to trough segment " + getSegmentId(), e);
-                }
-
-                crawledBatchLastTime = System.currentTimeMillis();
-                crawledBatch.clear();
+                    for (int i = 1; i < crawlLogLines.size(); i++) {
+                        sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s)");
+                    }
+                    numCols=7;
+                    break;
             }
 
-    }
-    protected void postUncrawledBatch() {
-        ArrayList<Object[]> batch = new ArrayList<Object[]>();
-        synchronized (uncrawledBatch) {
-            if (uncrawledBatchSize.get() >= BATCH_MAX_SIZE || getForceBatchPosting()) {
-                while(!uncrawledBatch.isEmpty()) {
-                    Object[] crawlLine = uncrawledBatch.poll();
-                    if(crawlLine != null)
-                        batch.add(crawlLine);
-                    else
-                        break;
-                }
-                uncrawledBatchSize.getAndSet(uncrawledBatch.size()); //size() is O(n). Use sparingly
-                logger.info("posting batch of " + batch.size() + " uncrawled urls to trough segment " + getSegmentId());
+            /*
+            Trough takes a single object array for the values we insert, so an array of size (N columns * X rows).
+            We read each row in column by column, then repeat for each row.
+             */
+            Object[] flattenedValues = new Object[numCols * crawlLogLines.size()];
+            for (int i = 0; i < crawlLogLines.size(); i++) {
+                System.arraycopy(crawlLogLines.get(i),0,flattenedValues, numCols * i,numCols);
+            }
+
+            try {
+                troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem posting batch of " + crawlLogLines.size() + " " + batchType + " urls to trough segment " + getSegmentId(), e);
+            }
+
+            switch(batchType) {
+                case CRAWLED_BATCH:
+                    crawledBatchLastTime = System.currentTimeMillis();
+                    break;
+                case UNCRAWLED_BATCH:
+                    uncrawledBatchLastTime = System.currentTimeMillis();
+                    break;
             }
         }
-        if(batch != null && batch.size() > 0) {
-                StringBuffer sqlTmpl = new StringBuffer();
-                sqlTmpl.append(
-                        "insert into uncrawled_url (timestamp, url, hop_path, status_code, via, seed, host)"
-                                + " values (%s, %s, %s, %s, %s, %s, %s)");
-
-                for (int i = 1; i < batch.size(); i++) {
-                    sqlTmpl.append(", (%s, %s, %s, %s, %s, %s, %s)");
-                }
-
-                Object[] flattenedValues = new Object[7 * batch.size()];
-                for (int i = 0; i < batch.size(); i++) {
-                    System.arraycopy(batch.get(i),0,flattenedValues,7 * i, 7);
-                }
-
-                try {
-                    troughClient().write(getSegmentId(), sqlTmpl.toString(), flattenedValues);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "problem posting batch of " + batch.size() + " uncrawled urls to trough segment " + getSegmentId(), e);
-                }
-
-                uncrawledBatchLastTime = System.currentTimeMillis();
-                uncrawledBatch.clear();
-            }
     }
 }
