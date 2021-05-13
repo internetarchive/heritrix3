@@ -192,6 +192,7 @@ public class ExtractorMultipleRegex extends Extractor {
             while (matcher.find()) {
                 add(new GroupList(matcher));
             }
+	    TextUtils.recycleMatcher(matcher);
         }
         public MatchList(GroupList... groupList) {
             for (GroupList x: groupList) {
@@ -219,6 +220,7 @@ public class ExtractorMultipleRegex extends Extractor {
             matchLists = new LinkedHashMap<String,MatchList>();
             matchLists.put("uriRegex", new MatchList(new GroupList(matcher)));
         } else {
+	    TextUtils.recycleMatcher(matcher);
             return; // if uri regex doesn't match, we're done
         }
         
@@ -229,6 +231,7 @@ public class ExtractorMultipleRegex extends Extractor {
             curi.getNonFatalFailures().add(e);
             LOGGER.log(Level.WARNING, "Failed get of replay char sequence in "
                     + Thread.currentThread().getName(), e);
+	    TextUtils.recycleMatcher(matcher);
             return;
         }
         
@@ -237,6 +240,7 @@ public class ExtractorMultipleRegex extends Extractor {
             String regex = getContentRegexes().get(regexName);
             MatchList matchList = new MatchList(regex, cs);
             if (matchList.isEmpty()) {
+		TextUtils.recycleMatcher(matcher);
                 return; // no match found for regex, so we can stop now
             }
             matchLists.put(regexName, matchList);
@@ -257,6 +261,7 @@ public class ExtractorMultipleRegex extends Extractor {
             Map<String, Object> bindings = makeBindings(matchLists, regexNames, i);
             buildAndAddOutlink(curi, bindings);
         }
+	TextUtils.recycleMatcher(matcher);
     }
     
     // bindings are the variables available to populate the template

@@ -33,6 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -44,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
@@ -112,22 +114,60 @@ public class ExtractorYoutubeDL extends Extractor
 
     protected static final int MAX_VIDEOS_PER_PAGE = 1000;
 
+    // for shouldExtract
+    protected HashMap<String, Boolean> seedsYDLd = new HashMap<String, Boolean>();
+
     protected transient Logger ydlLogger = null;
 
     // unnamed toethread-local temporary file
     protected transient ThreadLocal<RandomAccessFile> tempfile = new ThreadLocal<RandomAccessFile>() {
         protected RandomAccessFile initialValue() {
-            File t;
-            try {
-                t = File.createTempFile("ydl", ".json");
-                RandomAccessFile f = new RandomAccessFile(t, "rw");
-                t.delete();
-                return f;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return null;
         }
     };
+    protected void closeLocalTempFile() {
+        RandomAccessFile localTemp = tempfile.get();
+        if(localTemp == null || !isOpen(localTemp))
+            return; // avoid making a new temp file just to close it immediately
+        try {
+            getLocalTempFile().close();
+	    tempfile.set(null);
+        }
+        catch (Exception e) {
+            logger.log(Level.WARNING, "problem closing ydl temp file " + e);
+        }
+    }
+    protected RandomAccessFile getLocalTempFile() {
+        RandomAccessFile localTemp = tempfile.get();
+        if(localTemp == null || !isOpen(localTemp)) {
+            localTemp = openNewTempFile();
+            tempfile.set(localTemp);
+        }
+	logger.info("Getting youtube-dl temp file ");
+        return localTemp;
+    }
+    protected boolean isOpen(RandomAccessFile f) {
+        try {
+            f.length();
+            return true;
+        }
+        catch (IOException e) {
+	    logger.info("youtube-dl temp file is not open");
+            return false ;
+        }
+    }
+    protected RandomAccessFile openNewTempFile() {
+	logger.info("Opening New youtube-dl temp file ");
+	File t;
+        try {
+            t = File.createTempFile("ydl", ".json");
+            RandomAccessFile f = new RandomAccessFile(t, "rw");
+            t.delete();
+            return f;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     protected CrawlerLoggerModule crawlerLoggerModule;
     public CrawlerLoggerModule getCrawlerLoggerModule() {
@@ -419,7 +459,8 @@ public class ExtractorYoutubeDL extends Extractor
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-single-json", "--format=best",
+                "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
+                "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
 
@@ -446,7 +487,7 @@ public class ExtractorYoutubeDL extends Extractor
             }
         });
 
-        YoutubeDLResults results = new YoutubeDLResults(tempfile.get());
+        YoutubeDLResults results = new YoutubeDLResults(getLocalTempFile());
 
         try {
             try {
@@ -507,6 +548,11 @@ public class ExtractorYoutubeDL extends Extractor
             return false;
         }
 
+        // skip crawl uris received from umbra
+        if (uri.getAnnotations().contains(AMQPUrlReceiver.A_RECEIVED_FROM_AMQP)) {
+            return false;
+        }
+
         String mime = uri.getContentType().toLowerCase();
         if (mime.startsWith("text/html")
                 || mime.startsWith("application/xhtml")
@@ -524,7 +570,14 @@ public class ExtractorYoutubeDL extends Extractor
         // should build record for containing page, which has an
         // annotation like "youtube-dl:3" (no slash)
         String annotation = findYdlAnnotation(uri);
-        return annotation != null && !annotation.contains("/");
+        boolean shouldBuild = (annotation != null && !annotation.contains("/"));
+
+        // If we processed this uri, then we have an open temp file that won't get closed
+        // for us by the warc writer
+        if(!shouldBuild)
+            closeLocalTempFile();
+
+        return shouldBuild;
     }
 
     @Override
@@ -545,10 +598,10 @@ public class ExtractorYoutubeDL extends Extractor
         recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
         recordInfo.setEnforceLength(true);
 
-        tempfile.get().seek(0);
-        InputStream inputStream = Channels.newInputStream(tempfile.get().getChannel());
+        getLocalTempFile().seek(0);
+        InputStream inputStream = Channels.newInputStream(getLocalTempFile().getChannel());
         recordInfo.setContentStream(inputStream);
-        recordInfo.setContentLength(tempfile.get().length());
+        recordInfo.setContentLength(getLocalTempFile().length());
 
         logger.info("built record timestamp=" + timestamp + " url=" + recordInfo.getUrl());
 
@@ -574,7 +627,7 @@ public class ExtractorYoutubeDL extends Extractor
         ExtractorYoutubeDL e = new ExtractorYoutubeDL();
 
         FileInputStream in = new FileInputStream("/tmp/ydl-single-video.json");
-        YoutubeDLResults results = new YoutubeDLResults(e.tempfile.get());
+        YoutubeDLResults results = new YoutubeDLResults(e.getLocalTempFile());
         e.streamYdlOutput(in, results);
         System.out.println("video urls: " + results.videoUrls);
         System.out.println("page urls: " + results.pageUrls);
@@ -590,7 +643,7 @@ public class ExtractorYoutubeDL extends Extractor
         }
 
         in = new FileInputStream("/tmp/ydl-uncgreensboro-limited.json");
-        results = new YoutubeDLResults(e.tempfile.get());
+        results = new YoutubeDLResults(e.getLocalTempFile());
         e.streamYdlOutput(in, results);
         System.out.println("video urls: " + results.videoUrls);
         System.out.println("page urls: " + results.pageUrls);

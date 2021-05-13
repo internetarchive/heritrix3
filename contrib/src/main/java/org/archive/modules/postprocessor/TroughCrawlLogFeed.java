@@ -91,7 +91,7 @@ public class TroughCrawlLogFeed extends Processor implements Lifecycle {
 
     protected static final Logger logger = Logger.getLogger(TroughCrawlLogFeed.class.getName());
 
-    protected static final int BATCH_MAX_TIME_MS = 60 * 1000;
+    protected static final int BATCH_MAX_TIME_MS = 20 * 1000;
     protected static final int BATCH_MAX_SIZE = 400;
     protected static final String CRAWLED_BATCH = "crawled";
     protected static final String UNCRAWLED_BATCH = "uncrawled";

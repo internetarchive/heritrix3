@@ -53,6 +53,7 @@ public class RateLimitGuard extends DigestAuthenticator {
             long now = System.currentTimeMillis();
             long sleepMs = (lastFailureTime+MIN_MS_BETWEEN_ATTEMPTS)-now;
             if(sleepMs>0) {
+                System.out.println(new java.util.Date() + " " + getName() + ": trying to sleep");
                 try {
                     Thread.sleep(sleepMs);
                 } catch (InterruptedException e) {
