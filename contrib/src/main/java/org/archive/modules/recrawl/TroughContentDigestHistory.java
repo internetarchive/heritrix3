@@ -273,7 +273,7 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
                 sqlTmpl.append(", (%s, %s, %s, %s)");
             }
             try {
-                troughClient().write(segmentId, sqlTmpl.toString(), flattenedValues);
+                troughClient().write(segmentId, sqlTmpl.toString(), flattenedValues, SCHEMA_ID);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "problem posting batch of " + rowsRead + " dedup urls to trough segment " + segmentId, e);
             }
