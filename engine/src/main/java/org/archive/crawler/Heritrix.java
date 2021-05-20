@@ -173,7 +173,7 @@ public class Heritrix {
     }
 
     /**
-     * Launches a local Engine and restfgul web interface given the
+     * Launches a local Engine and restful web interface given the
      * command-line options or defaults. 
      * 
      * @param args Command line arguments.
