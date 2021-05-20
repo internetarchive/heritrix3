@@ -187,6 +187,42 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
     
     /**
+     * Configure the number of cleaner threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#CLEANER_THREADS
+     */
+    protected int jeCleanerThreads = -1;
+    public int getCleanerThreads() {
+        return jeCleanerThreads;
+    }
+    public void setCleanerThreads(int jeCleanerThreads) {
+        this.jeCleanerThreads = jeCleanerThreads;
+    }
+    
+    /**
+     * Configure the number of evictor threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_CORE_THREADS
+     */
+    protected int evictorCoreThreads = -1;    
+	public int getEvictorCoreThreads() {
+		return evictorCoreThreads;
+	}
+	public void setEvictorCoreThreads(int evictorCoreThreads) {
+		this.evictorCoreThreads = evictorCoreThreads;
+	}
+	
+	/**
+     * Configure the maximum number of evictor threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_MAX_THREADS
+     */
+    protected int evictorMaxThreads = -1;
+	public int getEvictorMaxThreads() {
+		return evictorMaxThreads;
+	}
+	public void setEvictorMaxThreads(int evictorMaxThreads) {
+		this.evictorMaxThreads = evictorMaxThreads;
+	}
+    
+    /**
      * Whether to use hard-links to log files to collect/retain
      * the BDB log files needed for a checkpoint. Default is true. 
      * May not work on Windows (especially on pre-NTFS filesystems). 
@@ -275,6 +311,22 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
             nLockTables--;
         }
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
+        
+        // configure the number of cleaner threads, to speed up clearing out old state files:
+        int cleaners = getCleanerThreads();
+        if (cleaners > 0) {
+        	config.setConfigParam(EnvironmentConfig.CLEANER_THREADS, Integer.toString(cleaners));
+        }
+        
+        // configure number if evictor threads, to avoid critical eviction slowdowns:
+        int evictors = this.getEvictorCoreThreads();
+        if (evictors > -1) {
+        	config.setConfigParam(EnvironmentConfig.EVICTOR_CORE_THREADS, Integer.toString(evictors));
+        }
+        int maxEvictors = this.getEvictorMaxThreads();
+        if (maxEvictors > 0) {
+        	config.setConfigParam(EnvironmentConfig.EVICTOR_MAX_THREADS, Integer.toString(maxEvictors));
+        }
         
         // triple this value to 6K because stats show many faults
         config.setConfigParam("je.log.faultReadSize", "6144"); 
