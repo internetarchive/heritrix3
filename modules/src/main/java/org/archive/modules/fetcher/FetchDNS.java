@@ -239,7 +239,7 @@ public class FetchDNS extends Processor {
         try {
         	recordDNS(curi, rrecordSet);
             curi.setFetchStatus(S_DNS_SUCCESS);
-            curi.setDNSServerIPLabel(ResolverConfig.getCurrentConfig().server());
+            curi.setDNSServerIPLabel(ResolverConfig.getCurrentConfig().server().toString());
         } catch (IOException e) {
         	logger.log(Level.SEVERE, "Failed store of DNS Record for " +
         		curi.toString(), e);
