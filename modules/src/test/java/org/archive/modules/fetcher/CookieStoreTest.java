@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -301,12 +302,14 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().clear();
         basicCookieStore().clear();
         final Random rand = new Random();
+        
+        final AtomicBoolean keepRunning = new AtomicBoolean(true);
 
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try {
-                    while (!Thread.interrupted()) {
+                    while (keepRunning.get()) {
                         BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
                         cookie.setDomain("d" + rand.nextInt() + ".example.com");
                         bdbCookieStore().addCookie(cookie);
@@ -326,10 +329,9 @@ public class CookieStoreTest extends TmpDirTestCase {
         }
 
         Thread.sleep(5000);
-
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].interrupt();
-        }
+        
+        // Shutdown the threads:
+        keepRunning.set(false);
         for (int i = 0; i < threads.length; i++) {
             threads[i].join();
         }
@@ -338,60 +340,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertTrue(bdbCookieList.size() > 3000);
         assertCookieListsEquivalent(bdbCookieList, basicCookieStore().getCookies());        
     }
-    
-    public void testConcurrentLoad() throws IOException, InterruptedException {
-        bdbCookieStore().clear();
-        basicCookieStore().clear();
-        final Random rand = new Random();
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while (!Thread.interrupted()) {
-                        BasicClientCookie cookie = new BasicClientCookie(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-                        cookie.setDomain("d" + rand.nextInt(20) + ".example.com");
-                        bdbCookieStore().addCookie(cookie);
-                        basicCookieStore().addCookie(cookie);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-
-        Thread[] threads = new Thread[200];
-        for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(runnable);
-            threads[i].setName("cookie-load-test-" + i);
-            threads[i].start();
-        }
-
-        Thread.sleep(1000);
-
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].interrupt();
-        }
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].join();
-        }
-
-        ArrayList<Cookie> bdbCookieArrayList = new ArrayList<Cookie>(bdbCookieStore().getCookies());
-        Map<String, Integer> domainCounts = new HashMap<String, Integer>();
-        for (Cookie cookie : bdbCookieArrayList) {
-            if (domainCounts.get(cookie.getDomain()) == null) {
-                domainCounts.put(cookie.getDomain(), 1);
-            }
-            else {
-                domainCounts.put(cookie.getDomain(), domainCounts.get(cookie.getDomain()) + 1);
-            }
-        }
-        
-        for (String domain: domainCounts.keySet()) {
-            assertTrue(domainCounts.get(domain) <= BdbCookieStore.MAX_COOKIES_FOR_DOMAIN + 25);
-        }        
-    }
-    
     protected void assertCookieStoreCountEquals(BdbCookieStore bdb, int count) {
         assertEquals(bdb.getCookies().size(), count);
     }    

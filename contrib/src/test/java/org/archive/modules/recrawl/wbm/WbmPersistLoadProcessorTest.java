@@ -80,9 +80,7 @@ public class WbmPersistLoadProcessorTest extends TestCase {
   }
   
   protected Map<String, Object> getFetchHistory(CrawlURI curi, int idx) {
-    Map<String, Object> data = curi.getData();
-    @SuppressWarnings("unchecked")
-    Map<String, Object>[] historyArray = (Map[])data.get(RecrawlAttributeConstants.A_FETCH_HISTORY);
+    Map<String, Object>[] historyArray = curi.getFetchHistory();
     assertNotNull(historyArray);
     Map<String, Object> history = historyArray[idx];
     return history;
@@ -114,10 +112,10 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     // put history entry newer than being loaded (i.e. loaded history entry will not be used for FetchHistoryProcessor
     // check below.
     long expected_ts = DateUtils.parse14DigitDate(TestNormalHttpResponse.EXPECTED_TS).getTime();
-    Map<String, Object>[] fetchHistory = (Map[])curi.getData().get(RecrawlAttributeConstants.A_FETCH_HISTORY);
+    Map<String, Object>[] fetchHistory = curi.getFetchHistory();
     if (fetchHistory == null) {
       fetchHistory = new HashMap[2];
-      curi.getData().put(RecrawlAttributeConstants.A_FETCH_HISTORY, fetchHistory);
+      curi.setFetchHistory(fetchHistory);
     }
     final byte[] digestValue0 = sha1Digest("0");
     final byte[] digestValue1 = sha1Digest("1");
@@ -156,8 +154,9 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     FetchHistoryProcessor fhp = new FetchHistoryProcessor();
     fhp.process(curi);
   }
-  
-  public void testInnerProcessResultSingleShotWithRealServer() throws Exception {
+
+  // DISABLED: this relies on wwwb-dedup.us.archive.org which is intermittently returning 503
+  public void xtestInnerProcessResultSingleShotWithRealServer() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     //CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.mext.go.jp/null.gif"));

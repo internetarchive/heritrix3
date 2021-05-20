@@ -30,8 +30,8 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.resource.CharacterRepresentation;
-import org.restlet.resource.FileRepresentation;
+import org.restlet.representation.CharacterRepresentation;
+import org.restlet.representation.FileRepresentation;
 
 /**
  * Representation wrapping a FileRepresentation, displaying its contents
@@ -40,9 +40,9 @@ import org.restlet.resource.FileRepresentation;
  * @author gojomo
  */
 public class EditRepresentation extends CharacterRepresentation {
-    protected FileRepresentation fileRepresentation; 
+    protected FileRepresentation fileRepresentation;
     protected EnhDirectoryResource dirResource;
-    
+
     public EditRepresentation(FileRepresentation representation, EnhDirectoryResource resource) {
         super(MediaType.TEXT_HTML);
         fileRepresentation = representation;
@@ -109,7 +109,6 @@ public class EditRepresentation extends CharacterRepresentation {
         pw.println("</script>");
         pw.println("</body>");
         pw.println("</html>");
-        pw.close();
     }
 
     public FileRepresentation getFileRepresentation() {

@@ -5,24 +5,19 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_U
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
 import java.net.MalformedURLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.writer.WARCWriterProcessor;
+import org.archive.modules.writer.WARCWriterChainProcessor;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
 import org.archive.trough.TroughClient;
 import org.archive.trough.TroughClient.TroughNoReadUrlException;
-import org.archive.util.ArchiveUtils;
 import org.springframework.context.ApplicationListener;
 
 /**
@@ -31,7 +26,7 @@ import org.springframework.context.ApplicationListener;
  * <p>To use, define a {@code TroughContentDigestHistory} top-level bean in your
  * crawler-beans.cxml, then add {@link ContentDigestHistoryLoader} and
  * {@link ContentDigestHistoryStorer} to your fetch chain, sandwiching the
- * {@link WARCWriterProcessor}. In other words, follow the directions at
+ * {@link WARCWriterChainProcessor}. In other words, follow the directions at
  * <a href="https://github.com/internetarchive/heritrix3/wiki/Duplication%20Reduction%20Processors">https://github.com/internetarchive/heritrix3/wiki/Duplication%20Reduction%20Processors</a>
  * but replace the {@link BdbContentDigestHistory} bean with a
  * {@code TroughContentDigestHistory} bean.
@@ -84,7 +79,7 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
     protected static final String SCHEMA_SQL = "create table dedup (\n"
             + "    digest_key varchar(100) primary key,\n"
             + "    url varchar(2100) not null,\n"
-            + "    date datetime not null,\n"
+            + "    date varchar(100) not null,\n"
             + "    id varchar(100));\n"; // warc record id
 
     @Override
@@ -121,15 +116,6 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         }
     }
 
-    // dates come back from sqlite in this format: 2019-03-14 00:49:14
-    protected static ThreadLocal<SimpleDateFormat> SQLITE_DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-        protected SimpleDateFormat initialValue() {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            return df;
-        }
-    };
-
     @Override
     public void load(CrawlURI curi) {
         // make this call in all cases so that the value is initialized and
@@ -142,13 +128,12 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
             if (!results.isEmpty()) {
                 Map<String,Object> hist = new HashMap<String, Object>();
                 hist.put(A_ORIGINAL_URL, results.get(0).get("url"));
-                Date date = SQLITE_DATE_FORMAT.get().parse((String) results.get(0).get("date"));
-                hist.put(A_ORIGINAL_DATE, ArchiveUtils.getLog14Date(date));
+                hist.put(A_ORIGINAL_DATE, results.get(0).get("date"));
                 hist.put(A_WARC_RECORD_ID, results.get(0).get("id"));
 
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("loaded history by digest " + persistKeyFor(curi)
-                    + " for uri " + curi + " - " + hist);
+                                 + " for uri " + curi + " - " + hist);
                 }
                 contentDigestHistory.putAll(hist);
             }
@@ -173,7 +158,7 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         try {
             String digestKey = persistKeyFor(curi);
             Object url = hist.get(A_ORIGINAL_URL);
-            Date date = ArchiveUtils.parse14DigitISODate((String) hist.get(A_ORIGINAL_DATE), null);
+            Object date = hist.get(A_ORIGINAL_DATE);
             Object recordId = hist.get(A_WARC_RECORD_ID);
             Object[] values = new Object[] { digestKey, url, date, recordId };
             troughClient().write(getSegmentId(), WRITE_SQL_TMPL, values, SCHEMA_ID);

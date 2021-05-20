@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -40,8 +41,8 @@ import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.resource.ResourceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapperImpl;
@@ -58,18 +59,19 @@ public abstract class JobRelatedResource extends BaseResource {
     private final static Logger LOGGER =
             Logger.getLogger(JobRelatedResource.class.getName());
 
-    protected CrawlJob cj; 
+    protected CrawlJob cj;
 
     protected IdentityHashMap<Object, String> beanToNameMap;
-    
-    public JobRelatedResource(Context ctx, Request req, Response res) throws ResourceException {
-        super(ctx, req, res);
+
+    @Override
+    public void init(Context ctx, Request req, Response res) {
+        super.init(ctx, req, res);
         cj = getEngine().getJob((String)req.getAttributes().get("job"));
-        if(cj==null) {
+        if(cj == null) {
             throw new ResourceException(404);
         }
     }
-    
+
     protected Engine getEngine() {
         return ((EngineApplication)getApplication()).getEngine();
     }
@@ -90,7 +92,10 @@ public abstract class JobRelatedResource extends BaseResource {
      */
     protected void addPresentableNestedNames(Collection<Object> namedBeans, Object obj,
             Set<Object> alreadyWritten) {
-        if (obj == null || alreadyWritten.contains(obj)
+        if (obj == null
+                || (obj instanceof Optional && !((Optional<?>) obj).isPresent())
+                || obj instanceof Class
+                || alreadyWritten.contains(obj)
                 || obj.getClass().getName().startsWith("org.springframework.")) {
             return;
         }

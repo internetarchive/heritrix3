@@ -26,6 +26,18 @@
 					<artifactId>junit</artifactId>
 					<groupId>junit</groupId>
 				</exclusion>
+				<!-- tools.jar is not available in JDK 11 so exclude it
+				     hbase-client accidentally leaked it as a transitive dependency
+				     https://issues.apache.org/jira/browse/HBASE-13963 -->
+				<exclusion>
+					<groupId>jdk.tools</groupId>
+					<artifactId>jdk.tools</artifactId>
+				</exclusion>
+				<!-- prefer guava 17 from webarchive-commons over guava 12 from hbase-client -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -67,9 +79,9 @@
 			<version>2.3.3</version>
 		</dependency>
 		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
-			<version>1.1.1</version>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.6</version>
 		</dependency>
 	</dependencies>
 	<repositories>

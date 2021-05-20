@@ -57,7 +57,6 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_FETCH_HISTORY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -122,6 +121,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         Logger.getLogger(CrawlURI.class.getName());
 
     public static final int UNCALCULATED = -1;
+    /** fetch history array */
+    public static final String A_FETCH_HISTORY = "fetch-history";
     
     public static enum FetchType { HTTP_GET, HTTP_POST, UNKNOWN };
 
@@ -1825,6 +1826,10 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     @SuppressWarnings("unchecked")
     public HashMap<String, Object>[] getFetchHistory() {
         return (HashMap<String,Object>[]) getData().get(A_FETCH_HISTORY);
+    }
+
+    public void setFetchHistory(Map<String, Object>[] history) {
+        getData().put(A_FETCH_HISTORY, history);
     }
         
     public HashMap<String, Object> getContentDigestHistory() {

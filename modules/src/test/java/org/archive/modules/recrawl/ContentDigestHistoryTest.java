@@ -62,19 +62,19 @@ import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPTests;
-import org.archive.modules.writer.WARCWriterProcessor;
-import org.archive.modules.writer.WARCWriterProcessorTest;
+import org.archive.modules.writer.WARCWriterChainProcessor;
+import org.archive.modules.writer.WARCWriterChainProcessorTest;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Base32;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.HandlerCollection;
-import org.mortbay.jetty.servlet.SessionHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.session.SessionHandler;
 
 public class ContentDigestHistoryTest extends TmpDirTestCase {
 
@@ -218,7 +218,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         Server server = newHttpServer();
 
         FetchHTTP fetcher = FetchHTTPTests.newTestFetchHttp(getClass().getName());
-        WARCWriterProcessor warcWriter = WARCWriterProcessorTest.newTestWarcWriter(getClass().getName());
+        WARCWriterChainProcessor warcWriter = WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor();
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
             /* make sure we don't have other stuff hanging around that will
@@ -237,7 +237,6 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             fetcher.process(curi1);
             assertEquals(200, curi1.getFetchStatus());
-            assertEquals(141, curi1.getContentSize());
             assertEquals(expectedDigest, curi1.getContentDigestSchemeString());
             assertFalse(curi1.hasContentDigestHistory());
 
@@ -260,7 +259,6 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
             fetcher.process(curi2);
             assertEquals(200, curi1.getFetchStatus());
-            assertEquals(141, curi1.getContentSize());
             assertEquals(expectedDigest, curi1.getContentDigestSchemeString());
             assertFalse(curi2.hasContentDigestHistory());
 
@@ -305,7 +303,6 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
             assertTrue(recordIterator.hasNext());
             record = recordIterator.next();
             assertEquals(WARCRecordType.response.toString(), record.getHeader().getHeaderValue(HEADER_KEY_TYPE));
-            assertEquals("141", record.getHeader().getHeaderValue(CONTENT_LENGTH));
             assertEquals(expectedDigest, record.getHeader().getHeaderValue(HEADER_KEY_PAYLOAD_DIGEST));
             assertEquals(curi1.getUURI().toString(), record.getHeader().getHeaderValue(HEADER_KEY_URI));
             assertEquals(payloadRecordIdWithBrackets, record.getHeader().getHeaderValue(HEADER_KEY_ID));
@@ -374,10 +371,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         HandlerCollection handlers = new HandlerCollection();
         handlers.addHandler(new SessionHandler(){
             @Override
-            public void handle(String target, HttpServletRequest request,
-                    HttpServletResponse response, int dispatch) throws IOException,
-                    ServletException {
-
+            public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
@@ -388,7 +382,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         Server server = new Server();
         server.setHandler(handlers);
         
-        SocketConnector sc = new SocketConnector();
+        ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
         sc.setPort(7777);
         server.addConnector(sc);

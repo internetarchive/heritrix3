@@ -1,5 +1,90 @@
 # Change Log
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...HEAD)
+
+**Closed issues:**
+
+- Add support for the SFTP protocol [\#319](https://github.com/internetarchive/heritrix3/issues/319)
+
+**Merged pull requests:**
+
+- Fixes extractor multiple regex matcher recycle [\#335](https://github.com/internetarchive/heritrix3/pull/335) ([adam-miller](https://github.com/adam-miller))
+- Remove deprecated sudo setting. [\#333](https://github.com/internetarchive/heritrix3/pull/333) ([dengliming](https://github.com/dengliming))
+
+## [3.4.0-20200518](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200518) (2020-05-18)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200304...3.4.0-20200518)
+
+**Closed issues:**
+
+- Cannot find class \[ExtractorYoutubeDL\] [\#322](https://github.com/internetarchive/heritrix3/issues/322)
+- Checkpoints 'spoiled' when used to resume crawls [\#277](https://github.com/internetarchive/heritrix3/issues/277)
+
+**Merged pull requests:**
+
+- Fix match result is always false in MatchesListRegexDecideRule [\#328](https://github.com/internetarchive/heritrix3/pull/328) ([morokosi](https://github.com/morokosi))
+- Add real crawlStatus in the crawlReport [\#326](https://github.com/internetarchive/heritrix3/pull/326) ([clawia](https://github.com/clawia))
+- youtube-dl: request best medium-ish size format [\#325](https://github.com/internetarchive/heritrix3/pull/325) ([galgeek](https://github.com/galgeek))
+- Add parsing for HTML tags \(data-\*\) [\#323](https://github.com/internetarchive/heritrix3/pull/323) ([clawia](https://github.com/clawia))
+- Add support for the SFTP protocol [\#320](https://github.com/internetarchive/heritrix3/pull/320) ([bnfleb](https://github.com/bnfleb))
+
+## [3.4.0-20200304](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200304) (2020-03-04)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190418...3.4.0-20200304)
+
+**Fixed bugs:**
+
+- exception logged when opening/saving crawler-beans.cxml via web interface editor [\#305](https://github.com/internetarchive/heritrix3/issues/305)
+- Java interface text editor error when saving crawler-beans.cxml [\#293](https://github.com/internetarchive/heritrix3/issues/293)
+- Unable to upload crawler-beans.cxml with curl [\#282](https://github.com/internetarchive/heritrix3/issues/282)
+- CookieStoreTest.testConcurrentLoad fails randomly [\#274](https://github.com/internetarchive/heritrix3/issues/274)
+
+**Closed issues:**
+
+- Contrib project has a maven dependency with an older version of guava library.  [\#311](https://github.com/internetarchive/heritrix3/issues/311)
+- BloomFilter64bitTest is slow [\#299](https://github.com/internetarchive/heritrix3/issues/299)
+- ObjectIdentityBdbManualCacheTest is slow [\#297](https://github.com/internetarchive/heritrix3/issues/297)
+- HTTPS console inaccessible via browser [\#279](https://github.com/internetarchive/heritrix3/issues/279)
+- JDK11 support: ssl errors from console [\#275](https://github.com/internetarchive/heritrix3/issues/275)
+- JDK11 support: FetchHTTPTest: ssl handshake\_failure [\#268](https://github.com/internetarchive/heritrix3/issues/268)
+- JDK11 support: org.archive.util.ObjectIdentityBdbCacheTest failures [\#267](https://github.com/internetarchive/heritrix3/issues/267)
+- JDK11 support: ClassNotFoundException: javax.transaction.xa.Xid [\#266](https://github.com/internetarchive/heritrix3/issues/266)
+- JDK11 support: tools.jar [\#265](https://github.com/internetarchive/heritrix3/issues/265)
+- JDK11 support: jaxb [\#264](https://github.com/internetarchive/heritrix3/issues/264)
+
+**Merged pull requests:**
+
+- Use the Wayback Machine to repair a link to Oracle docs. [\#315](https://github.com/internetarchive/heritrix3/pull/315) ([anjackson](https://github.com/anjackson))
+- Utilize the `d` parameter [\#314](https://github.com/internetarchive/heritrix3/pull/314) ([hennekey](https://github.com/hennekey))
+- Exclude hbase-client's guava 12 transitive dependency [\#312](https://github.com/internetarchive/heritrix3/pull/312) ([ato](https://github.com/ato))
+- Fix stream closed exception for Paged view [\#308](https://github.com/internetarchive/heritrix3/pull/308) ([ldko](https://github.com/ldko))
+- Fix stream closed exception by not closing output stream [\#306](https://github.com/internetarchive/heritrix3/pull/306) ([ato](https://github.com/ato))
+- Replace custom Base32 encoding [\#304](https://github.com/internetarchive/heritrix3/pull/304) ([hennekey](https://github.com/hennekey))
+- Replace constant with accessor methods [\#303](https://github.com/internetarchive/heritrix3/pull/303) ([hennekey](https://github.com/hennekey))
+- limit ExtractorYoutubeDL heap usage [\#302](https://github.com/internetarchive/heritrix3/pull/302) ([nlevitt](https://github.com/nlevitt))
+- fix logging config [\#301](https://github.com/internetarchive/heritrix3/pull/301) ([nlevitt](https://github.com/nlevitt))
+- Use Guice instead of custom bloom filter implementation [\#300](https://github.com/internetarchive/heritrix3/pull/300) ([hennekey](https://github.com/hennekey))
+- Speed up ObjectIdentityBdbManualCacheTest [\#298](https://github.com/internetarchive/heritrix3/pull/298) ([hennekey](https://github.com/hennekey))
+- Set JUnit version to latest [\#296](https://github.com/internetarchive/heritrix3/pull/296) ([hennekey](https://github.com/hennekey))
+- Disable test that connects to wwwb-dedup.us.archive.org [\#295](https://github.com/internetarchive/heritrix3/pull/295) ([ato](https://github.com/ato))
+- Fix 'Method Not Allowed' on POST of config editor form [\#294](https://github.com/internetarchive/heritrix3/pull/294) ([ato](https://github.com/ato))
+- Crawltrap regex timeout [\#290](https://github.com/internetarchive/heritrix3/pull/290) ([csrster](https://github.com/csrster))
+- Bdb frontier access [\#289](https://github.com/internetarchive/heritrix3/pull/289) ([csrster](https://github.com/csrster))
+- Attempt to filter out embedded images. [\#288](https://github.com/internetarchive/heritrix3/pull/288) ([csrster](https://github.com/csrster))
+- change trough dedup `date` type to varchar. [\#287](https://github.com/internetarchive/heritrix3/pull/287) ([nlevitt](https://github.com/nlevitt))
+- Add support for forced queue assignment and parallel queues [\#286](https://github.com/internetarchive/heritrix3/pull/286) ([adam-miller](https://github.com/adam-miller))
+- Warc writer chain [\#285](https://github.com/internetarchive/heritrix3/pull/285) ([nlevitt](https://github.com/nlevitt))
+- Fix jobdir PUT [\#283](https://github.com/internetarchive/heritrix3/pull/283) ([ato](https://github.com/ato))
+- Upgrade BDB JE to version 7.5.11 - IMPORTANT CHANGE [\#281](https://github.com/internetarchive/heritrix3/pull/281) ([anjackson](https://github.com/anjackson))
+- Mitigate random CookieStore.testConcurrentLoad test failures [\#280](https://github.com/internetarchive/heritrix3/pull/280) ([ato](https://github.com/ato))
+- JDK11 support: upgrade to Jetty 9.4.19, Restlet 2.4.0 and drop JDK 7 support [\#276](https://github.com/internetarchive/heritrix3/pull/276) ([ato](https://github.com/ato))
+- JDK11 support: remove unused class ObjectIdentityBdbCache and tests [\#273](https://github.com/internetarchive/heritrix3/pull/273) ([ato](https://github.com/ato))
+- JDK11 support: upgrade maven-surefire-plugin to 2.22.2 [\#272](https://github.com/internetarchive/heritrix3/pull/272) ([ato](https://github.com/ato))
+- JDK11 support: exclude tools.jar from hbase-client dependency [\#271](https://github.com/internetarchive/heritrix3/pull/271) ([ato](https://github.com/ato))
+- Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
+- WIP: ExtractorYoutubeDL [\#257](https://github.com/internetarchive/heritrix3/pull/257) ([nlevitt](https://github.com/nlevitt))
+- Update README and add LICENSE.txt [\#256](https://github.com/internetarchive/heritrix3/pull/256) ([ruebot](https://github.com/ruebot))
+
 ## [3.4.0-20190418](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190418) (2019-04-18)
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190207...3.4.0-20190418)
 
@@ -68,6 +153,7 @@
 
 **Merged pull requests:**
 
+- JDK11 support: explicitly depend on JAXB [\#269](https://github.com/internetarchive/heritrix3/pull/269) ([ato](https://github.com/ato))
 - do not checkpoint if crawl job has not started [\#227](https://github.com/internetarchive/heritrix3/pull/227) ([nlevitt](https://github.com/nlevitt))
 - namespace scope log logger to crawl job [\#226](https://github.com/internetarchive/heritrix3/pull/226) ([nlevitt](https://github.com/nlevitt))
 - un-threadlocal the HConnection [\#224](https://github.com/internetarchive/heritrix3/pull/224) ([nlevitt](https://github.com/nlevitt))

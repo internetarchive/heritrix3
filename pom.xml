@@ -100,6 +100,15 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 			<id>builds.archive.org,maven2</id>
 			<url>http://builds.archive.org/maven2</url>
 		</repository>
+        <repository>
+            <id>oracleReleases</id>
+            <name>Oracle Released Java Packages</name>
+            <url>http://download.oracle.com/maven</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots />
+        </repository>
 	</repositories>
 
 	<prerequisites>
@@ -133,6 +142,11 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpmime</artifactId>
 				<version>4.3.6</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>4.13</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -373,15 +387,15 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<artifactId>maven-compiler-plugin</artifactId>
                                <version>3.3</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.9</version>
+                <version>2.22.2</version>
                 <configuration>
                     <argLine>-Xmx1g</argLine>
                     <systemPropertyVariables>
@@ -395,6 +409,8 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
+		<doclint>none</doclint>
+		<additionalparam>-Xdoclint:none</additionalparam>
 	</properties>
     <profiles>
         <profile>

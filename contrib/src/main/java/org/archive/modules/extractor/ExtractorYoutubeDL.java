@@ -19,9 +19,19 @@
 
 package org.archive.modules.extractor;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
+
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -29,13 +39,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
+import org.archive.format.warc.WARCConstants.WARCRecordType;
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.warc.BaseWARCRecordBuilder;
+import org.archive.modules.warc.WARCRecordBuilder;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
@@ -43,19 +59,34 @@ import org.archive.util.MimetypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonStreamParser;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 
 /**
  * Extracts links to media by running youtube-dl in a subprocess. Runs only on
  * html.
  *
  * <p>
+ * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
+ * warc.
+ * 
+ * <p>
+ * To use <code>ExtractorYoutubeDL</code>, add this top-level bean:
+ * 
+ * <pre>
+ * &lt;bean id="extractorYoutubeDL" class="org.archive.modules.extractor.ExtractorYoutubeDL"/&gt;
+ * </pre>
+ * 
+ * Then add <code>&lt;ref bean="extractorYoutubeDL"/&gt;</code> to end of the
+ * fetch chain, and to the end of the warc writer chain.
+ * 
+ * <p>
  * Keeps a log of containing pages and media captured as a result of youtube-dl
  * extraction. The format of the log is as follows:
  *
- * <pre>[timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]</pre>
+ * <pre>
+ * [timestamp] [media-http-status] [media-length] [media-mimetype] [media-digest] [media-timestamp] [media-url] [annotation] [containing-page-digest] [containing-page-timestamp] [containing-page-url] [seed-url]
+ * </pre>
  *
  * <p>
  * For containing pages, all of the {@code media-*} fields have the value
@@ -71,7 +102,8 @@ import com.google.gson.JsonStreamParser;
  *
  * @author nlevitt
  */
-public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
+public class ExtractorYoutubeDL extends Extractor
+        implements Lifecycle, WARCRecordBuilder {
     private static Logger logger =
             Logger.getLogger(ExtractorYoutubeDL.class.getName());
 
@@ -79,7 +111,59 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
     protected static final String YDL_CONTAINING_PAGE_TIMESTAMP = "ydl-containing-page-timestamp";
     protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
 
+    protected static final int MAX_VIDEOS_PER_PAGE = 1000;
+
     protected transient Logger ydlLogger = null;
+
+    // unnamed toethread-local temporary file
+    protected transient ThreadLocal<RandomAccessFile> tempfile = new ThreadLocal<RandomAccessFile>() {
+        protected RandomAccessFile initialValue() {
+            return null;
+        }
+    };
+    protected void closeLocalTempFile() {
+        RandomAccessFile localTemp = tempfile.get();
+        if(localTemp == null || !isOpen(localTemp))
+            return; // avoid making a new temp file just to close it immediately
+        try {
+            getLocalTempFile().close();
+	    tempfile.set(null);
+        }
+        catch (Exception e) {
+            logger.log(Level.WARNING, "problem closing ydl temp file " + e);
+        }
+    }
+    protected RandomAccessFile getLocalTempFile() {
+        RandomAccessFile localTemp = tempfile.get();
+        if(localTemp == null || !isOpen(localTemp)) {
+            localTemp = openNewTempFile();
+            tempfile.set(localTemp);
+        }
+	logger.info("Getting youtube-dl temp file ");
+        return localTemp;
+    }
+    protected boolean isOpen(RandomAccessFile f) {
+        try {
+            f.length();
+            return true;
+        }
+        catch (IOException e) {
+	    logger.info("youtube-dl temp file is not open");
+            return false ;
+        }
+    }
+    protected RandomAccessFile openNewTempFile() {
+	logger.info("Opening New youtube-dl temp file ");
+	File t;
+        try {
+            t = File.createTempFile("ydl", ".json");
+            RandomAccessFile f = new RandomAccessFile(t, "rw");
+            t.delete();
+            return f;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     protected CrawlerLoggerModule crawlerLoggerModule;
     public CrawlerLoggerModule getCrawlerLoggerModule() {
@@ -137,34 +221,38 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
                 logCapturedVideo(uri, ydlAnnotation);
             }
         } else {
-            List<JsonObject> ydlJsons = runYoutubeDL(uri);
-            if (ydlJsons != null && !ydlJsons.isEmpty()) {
-                for (JsonObject json: ydlJsons) {
-                    if (json.get("url") != null) {
-                        String videoUrl = json.get("url").getAsString();
-                        addVideoOutlink(uri, json, videoUrl);
-                    }
+            YoutubeDLResults results = runYoutubeDL(uri);
+            for (int i = 0; i < results.videoUrls.size(); i++) {
+                addVideoOutlink(uri, results.videoUrls.get(i), i, results.videoUrls.size());
+            }
+
+            for (String pageUrl: results.pageUrls) {
+                try {
+                    UURI dest = UURIFactory.getInstance(uri.getUURI(), pageUrl);
+                    CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
+                            Hop.NAVLINK);
+                    uri.getOutLinks().add(link);
+                } catch (URIException e1) {
+                    logUriError(e1, uri.getUURI(), pageUrl);
                 }
-                String annotation = "youtube-dl:" + ydlJsons.size();
+            }
+
+            if (results.videoUrls.size() > 0) {
+                String annotation = "youtube-dl:" + results.videoUrls.size();
                 uri.getAnnotations().add(annotation);
                 logContainingPage(uri, annotation);
             }
         }
     }
 
-    protected void addVideoOutlink(CrawlURI uri, JsonObject json,
-            String videoUrl) {
+    protected void addVideoOutlink(CrawlURI uri, String videoUrl, int playlistIndex, int nEntries) {
         try {
             UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
             CrawlURI link = uri.createCrawlURI(dest, LinkContext.EMBED_MISC,
                     Hop.EMBED);
 
             // annotation
-            String annotation = "youtube-dl:1/1";
-            if (!json.get("playlist_index").isJsonNull()) {
-                annotation = "youtube-dl:" + json.get("playlist_index") + "/"
-                        + json.get("n_entries");
-            }
+            String annotation = "youtube-dl:" + (playlistIndex + 1) + "/" + nEntries;
             link.getAnnotations().add(annotation);
 
             // save info unambiguously identifying containing page capture
@@ -250,53 +338,115 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
     }
 
-    static protected class ProcessOutput {
-        public String stdout;
-        public String stderr;
-    }
+    protected static class YoutubeDLResults {
+        RandomAccessFile jsonFile;
+        List<String> videoUrls = new ArrayList<String>();
+        List<String> pageUrls = new ArrayList<String>();
 
-    // read stdout in this thread, stderr in separate thread
-    // see https://github.com/internetarchive/heritrix3/pull/257/files#r279990349
-    protected ProcessOutput readOutput(Process proc) throws IOException {
-        ProcessOutput output = new ProcessOutput();
-
-        Reader err = new InputStreamReader(proc.getErrorStream(), "UTF-8");
-        InputStreamReader out = new InputStreamReader(proc.getInputStream(), "UTF-8");
-        ExecutorService threadPool = Executors.newSingleThreadExecutor();
-
-        Future<String> future = threadPool.submit(new Callable<String>() {
-            @Override
-            public String call() throws IOException {
-                return readToEnd(err);
+        public YoutubeDLResults(RandomAccessFile jsonFile) {
+            this.jsonFile = jsonFile;
+            try {
+                this.jsonFile.setLength(0);
+                this.jsonFile.seek(0);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        });
-
-        output.stdout = readToEnd(out);
-
-        try {
-            output.stderr = future.get();
-        } catch (InterruptedException e) {
-            throw new IOException(e); // :shrug:
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof IOException) {
-                throw (IOException) e.getCause();
-            } else {
-                throw new IOException(e);
-            }
-        } finally {
-            threadPool.shutdown();
         }
-
-        return output;
     }
 
     /**
-     *
-     * @param uri
-     * @return list of json blobs returned by {@code youtube-dl --dump-json}, or
-     *         empty list if no videos found, or failure
+     * Copies stream to RandomAccessFile <code>out</code> as it is read.
      */
-    protected List<JsonObject> runYoutubeDL(CrawlURI uri) {
+    static class TeedInputStream extends InputStream {
+        private InputStream in;
+        private RandomAccessFile out;
+
+        public TeedInputStream(InputStream in, RandomAccessFile out) {
+            this.in = in;
+            this.out = out;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = in.read();
+            if (b >= 0) {
+                out.write(b);
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte b[], int off, int len) throws IOException {
+            int n = in.read(b, off, len);
+            if (n > 0) {
+                out.write(b, off, n);
+            }
+            return n;
+        }
+    }
+
+    /**
+     * Streams through youtube-dl json output. Sticks video urls in
+     * <code>results.videoUrls</code>, web page urls in
+     * <code>results.pageUrls</code>, and saves the json in anonymous temp file
+     * <code>results.jsonFile</code>.
+     */
+    protected void streamYdlOutput(InputStream in, YoutubeDLResults results) throws IOException {
+        TeedInputStream tee = new TeedInputStream(in, results.jsonFile);
+        try (JsonReader jsonReader = new JsonReader(new InputStreamReader(tee, "UTF-8"))) {
+            while (true) {
+                JsonToken nextToken = jsonReader.peek();
+                switch (nextToken) {
+                case BEGIN_ARRAY:
+                    jsonReader.beginArray();
+                    break;
+                case BEGIN_OBJECT:
+                    jsonReader.beginObject();
+                    break;
+                case BOOLEAN:
+                    jsonReader.nextBoolean();
+                    break;
+                case END_ARRAY:
+                    jsonReader.endArray();
+                    break;
+                case END_DOCUMENT:
+                    return;
+                case END_OBJECT:
+                    jsonReader.endObject();
+                    break;
+                case NAME:
+                    jsonReader.nextName();
+                    break;
+                case NULL:
+                    jsonReader.nextNull();
+                    break;
+                case NUMBER:
+                    jsonReader.nextString();
+                    break;
+                case STRING:
+                    String value = jsonReader.nextString();
+                    if ("$.url".equals(jsonReader.getPath())
+                            || jsonReader.getPath().matches("^\\$\\.entries\\[\\d+\\]\\.url$")) {
+                        results.videoUrls.add(value);
+                    } else if ("$.webpage_url".equals(jsonReader.getPath())
+                            || jsonReader.getPath().matches("^\\$\\.entries\\[\\d+\\]\\.webpage_url$")) {
+                        results.pageUrls.add(value);
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("unexpected json token " + nextToken);
+                }
+            }
+        }
+    }
+
+    /**
+     * Writes output to this.tempFile.get().
+     *
+     * Reads stdout in this thread, stderr in separate thread.
+     * see https://github.com/internetarchive/heritrix3/pull/257/files#r279990349
+     */
+    protected YoutubeDLResults runYoutubeDL(CrawlURI uri) {
         /*
          * --format=best
          *
@@ -305,8 +455,10 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
          * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
          */
         ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-json", "--format=best", uri.toString());
-        logger.fine("running " + pb.command());
+                "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
+                "--no-cache-dir", "--no-playlist",
+                "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
+        logger.info("running: " + String.join(" ", pb.command()));
 
         Process proc = null;
         try {
@@ -316,52 +468,54 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             return null;
         }
 
-        ProcessOutput output;
+        Reader err;
         try {
-            output = readOutput(proc);
+            err = new InputStreamReader(proc.getErrorStream(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        ExecutorService threadPool = Executors.newSingleThreadExecutor();
+
+        Future<String> future = threadPool.submit(new Callable<String>() {
+            @Override
+            public String call() throws IOException {
+                return readToEnd(err);
+            }
+        });
+
+        YoutubeDLResults results = new YoutubeDLResults(getLocalTempFile());
+
+        try {
+            try {
+                streamYdlOutput(proc.getInputStream(), results);
+            } catch (EOFException e) {
+                try {
+                    // this happens when there was no json output, which means no videos
+                    // were found, totally normal
+                    logger.log(Level.FINE, "problem parsing json from youtube-dl " + pb.command() + " " + future.get());
+                } catch (InterruptedException e1) {
+                    throw new IOException(e1);
+                } catch (ExecutionException e1) {
+                    throw new IOException(e1);
+                }
+            }
         } catch (IOException e) {
             logger.log(Level.WARNING,
                     "problem reading output from youtube-dl " + pb.command(),
                     e);
             return null;
-        }
-
-        try {
-            if (proc.waitFor() != 0) {
-                /*
-                 * youtube-dl is noisy when it fails to find a video. I guess
-                 * the assumption is that you're running it on pages you know
-                 * have videos. We could be hiding real errors in some cases
-                 * but it's just too much noise to log this at WARNING level.
-                 */
-                logger.fine("youtube-dl exited with status "
-                        + proc.waitFor() + " " + pb.command()
-                        + "\n=== stdout ===\n" + output.stdout
-                        + "\n=== stderr ===\n" + output.stderr);
-                return null;
+        } finally {
+            try {
+                // the process should already have completed
+                proc.waitFor(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                logger.warning("youtube-dl still running? killing it");
+                proc.destroyForcibly();
             }
-        } catch (InterruptedException e) {
-            proc.destroyForcibly();
+            threadPool.shutdown();
         }
 
-        List<JsonObject> ydlJsons = new ArrayList<JsonObject>();
-        JsonStreamParser parser = new JsonStreamParser(output.stdout);
-        try {
-            while (parser.hasNext()) {
-                ydlJsons.add((JsonObject) parser.next());
-            }
-        } catch (JsonParseException e) {
-            // sometimes we get no output at all from youtube-dl, which
-            // manifests as a JsonIOException
-            logger.log(Level.FINE,
-                    "problem parsing json from youtube-dl " + pb.command()
-                            + "\n=== stdout ===\n" + output.stdout
-                            + "\n=== stderr ===\n" + output.stderr,
-                    e);
-            return null;
-        }
-
-        return ydlJsons;
+        return results;
     }
 
     @Override
@@ -390,6 +544,11 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
             return false;
         }
 
+        // skip crawl uris received from umbra
+        if (uri.getAnnotations().contains(AMQPUrlReceiver.A_RECEIVED_FROM_AMQP)) {
+            return false;
+        }
+
         String mime = uri.getContentType().toLowerCase();
         if (mime.startsWith("text/html")
                 || mime.startsWith("application/xhtml")
@@ -400,5 +559,99 @@ public class ExtractorYoutubeDL extends Extractor implements Lifecycle {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean shouldBuildRecord(CrawlURI uri) {
+        // should build record for containing page, which has an
+        // annotation like "youtube-dl:3" (no slash)
+        String annotation = findYdlAnnotation(uri);
+        boolean shouldBuild = (annotation != null && !annotation.contains("/"));
+
+        // If we processed this uri, then we have an open temp file that won't get closed
+        // for us by the warc writer
+        if(!shouldBuild)
+            closeLocalTempFile();
+
+        return shouldBuild;
+    }
+
+    @Override
+    public WARCRecordInfo buildRecord(CrawlURI curi, URI concurrentTo)
+            throws IOException {
+        final String timestamp =
+                ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
+
+        WARCRecordInfo recordInfo = new WARCRecordInfo();
+        recordInfo.setType(WARCRecordType.metadata);
+        recordInfo.setRecordId(BaseWARCRecordBuilder.generateRecordID());
+        if (concurrentTo != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
+                    "<" + concurrentTo + ">");
+        }
+        recordInfo.setUrl("youtube-dl:" + curi);
+        recordInfo.setCreate14DigitDate(timestamp);
+        recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
+        recordInfo.setEnforceLength(true);
+
+        getLocalTempFile().seek(0);
+        InputStream inputStream = Channels.newInputStream(getLocalTempFile().getChannel());
+        recordInfo.setContentStream(inputStream);
+        recordInfo.setContentLength(getLocalTempFile().length());
+
+        logger.info("built record timestamp=" + timestamp + " url=" + recordInfo.getUrl());
+
+        return recordInfo;
+    }
+
+    public static void main(String[] args) throws IOException {
+        /*
+        File t = File.createTempFile("ydl", ".json");
+        try (RandomAccessFile f = new RandomAccessFile(t, "rw")) {
+            t.delete();
+            f.write("hello!\n".getBytes());
+            System.out.println("length: " + f.length());
+            System.out.println("tell: " + f.getFilePointer());
+            f.seek(0);
+            System.out.println("tell: " + f.getFilePointer());
+            String l = f.readLine();
+            System.out.println("read line: " + l);
+            System.out.println("tell: " + f.getFilePointer());
+        }
+         */
+
+        ExtractorYoutubeDL e = new ExtractorYoutubeDL();
+
+        FileInputStream in = new FileInputStream("/tmp/ydl-single-video.json");
+        YoutubeDLResults results = new YoutubeDLResults(e.getLocalTempFile());
+        e.streamYdlOutput(in, results);
+        System.out.println("video urls: " + results.videoUrls);
+        System.out.println("page urls: " + results.pageUrls);
+
+        results.jsonFile.seek(0);
+        byte[] buf = new byte[4096];
+        while (true) {
+            int n = results.jsonFile.read(buf);
+            if (n < 0) {
+                break;
+            }
+            System.out.write(buf, 0, n);
+        }
+
+        in = new FileInputStream("/tmp/ydl-uncgreensboro-limited.json");
+        results = new YoutubeDLResults(e.getLocalTempFile());
+        e.streamYdlOutput(in, results);
+        System.out.println("video urls: " + results.videoUrls);
+        System.out.println("page urls: " + results.pageUrls);
+
+        results.jsonFile.seek(0);
+        while (true) {
+            int n = results.jsonFile.read(buf);
+            if (n < 0) {
+                break;
+            }
+            System.out.write(buf, 0, n);
+        }
+
     }
 }

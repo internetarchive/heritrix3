@@ -21,24 +21,22 @@
 package org.archive.crawler.restlet;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
 import org.apache.commons.io.FileUtils;
-import org.restlet.data.CharacterSet;
-import org.restlet.data.Form;
-import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
-import org.restlet.resource.FileRepresentation;
-import org.restlet.resource.Representation;
+import org.restlet.data.*;
+import org.restlet.engine.local.DirectoryServerResource;
+import org.restlet.representation.EmptyRepresentation;
+import org.restlet.representation.FileRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
-
-import com.noelios.restlet.local.DirectoryResource;
 
 /**
  * Enhanced version of Restlet DirectoryResource, adding ability to 
@@ -46,20 +44,19 @@ import com.noelios.restlet.local.DirectoryResource;
  * 
  * @author gojomo
  */
-public class EnhDirectoryResource extends DirectoryResource {
-    
-    public EnhDirectoryResource(EnhDirectory directory, Request request, Response response) throws IOException {
-        super(directory, request, response);
-    }
-
-    /** 
+public class EnhDirectoryResource extends DirectoryServerResource {
+    /**
      * Add EditRepresentation as a variant when appropriate. 
      * 
-     * @see com.noelios.restlet.local.DirectoryResource#getVariants()
+     * @see org.restlet.engine.local.DirectoryServerResource#getVariants()
      */
     @Override
     public List<Variant> getVariants() {
-        List<Variant> variants = super.getVariants();
+        List<Variant> superVariants = super.getVariants();
+        if (superVariants == null) {
+            return null; // PUT and DELETE return no content
+        }
+        List<Variant> variants = new LinkedList<>(superVariants);
         Form f = getRequest().getResourceRef().getQueryAsForm();
         String format = f.getFirstValue("format");
         if("textedit".equals(format)) {
@@ -73,7 +70,11 @@ public class EnhDirectoryResource extends DirectoryResource {
                 } catch (Exception e) {
                     throw new RuntimeException(e); 
                 }
-                variants = super.getVariants();
+                superVariants = super.getVariants();
+                if (superVariants == null) {
+                    return null;
+                }
+                variants = new LinkedList<>(superVariants);
             }
             // wrap FileRepresentations in EditRepresentations
             ListIterator<Variant> iter = variants.listIterator(); 
@@ -119,28 +120,20 @@ public class EnhDirectoryResource extends DirectoryResource {
     }
     
     protected EnhDirectory getEnhDirectory() {
-        return (EnhDirectory)getDirectory();
+        return (EnhDirectory) getDirectory();
     }
 
-    /** 
+    /**
      * Accept a POST used to edit or create a file.
      * 
-     * @see org.restlet.resource.Resource#acceptRepresentation(org.restlet.resource.Representation)
+     * @see org.restlet.resource.ServerResource#post(Representation)
      */
-    public void acceptRepresentation(Representation entity)
-    throws ResourceException {
+    @Override
+    protected Representation post(Representation entity) throws ResourceException {
         // TODO: only allowPost on valid targets
-        Form form = getRequest().getEntityAsForm();
+        Form form = new Form(entity);
         String newContents = form.getFirstValue("contents");
-        EditRepresentation er;
-        try {
-            er = (EditRepresentation) getVariants().get(0);
-        } catch (ClassCastException cce) {
-            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
-                    "File modification should use either PUT or " +
-                    "POST with a '?format=textedit' query-string.");
-        }
-        File file = er.getFileRepresentation().getFile(); 
+        File file = new File(URI.create(getTargetUri()));
         try {
             FileUtils.writeStringToFile(file, newContents,"UTF-8");
             Flash.addFlash(getResponse(), "file updated");
@@ -152,6 +145,30 @@ public class EnhDirectoryResource extends DirectoryResource {
         Reference ref = getRequest().getOriginalRef().clone(); 
         /// ref.setQuery(null);
         getResponse().redirectSeeOther(ref);
-        
+        return new EmptyRepresentation();
+    }
+
+    /*
+     * XXX: We override Restlet's default PUT behaviour (see FileClientHelper.handleFilePut) as it unhelpfully changes
+     * the file extension based on the content-type and there's no apparent way to disable that.
+     */
+    @Override
+    public Representation put(Representation entity) throws ResourceException {
+        File file = new File(URI.create(getTargetUri()));
+        if (getTargetUri().endsWith("/") || file.isDirectory()) {
+            return super.put(entity);
+        }
+        boolean created = !file.exists();
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            entity.write(out);
+        } catch (FileNotFoundException e) {
+            throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, e);
+        } catch (IOException e) {
+            throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
+        }
+        if (created) {
+            getResponse().setStatus(Status.SUCCESS_CREATED);
+        }
+        return new EmptyRepresentation();
     }
 }

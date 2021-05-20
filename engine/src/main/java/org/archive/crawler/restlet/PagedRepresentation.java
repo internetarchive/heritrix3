@@ -38,8 +38,8 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.resource.CharacterRepresentation;
-import org.restlet.resource.FileRepresentation;
+import org.restlet.representation.CharacterRepresentation;
+import org.restlet.representation.FileRepresentation;
 
 /**
  * Representation wrapping a FileRepresentation, displaying its contents
@@ -50,7 +50,7 @@ import org.restlet.resource.FileRepresentation;
 public class PagedRepresentation extends CharacterRepresentation {
     // passed-in at construction
     /** wrapped FileRepresentation **/
-    protected FileRepresentation fileRepresentation; 
+    protected FileRepresentation fileRepresentation;
     /** wrapped EnhDirectoryResource; used to formulate self-links **/
     protected EnhDirectoryResource dirResource;
     
@@ -124,7 +124,7 @@ public class PagedRepresentation extends CharacterRepresentation {
     /** 
      * Write the paged HTML. 
      * 
-     * @see org.restlet.resource.Representation#write(java.io.Writer)
+     * @see org.restlet.representation.Representation#write(java.io.Writer)
      */
     @Override
     public void write(Writer writer) throws IOException {
@@ -144,7 +144,6 @@ public class PagedRepresentation extends CharacterRepresentation {
         pw.println("</pre>");
         
         emitControls(pw); 
-        pw.close();
     }
 
     /**

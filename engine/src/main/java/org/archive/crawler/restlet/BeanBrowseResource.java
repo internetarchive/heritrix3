@@ -19,16 +19,12 @@
 
 package org.archive.crawler.restlet;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -36,18 +32,18 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.restlet.models.BeansModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.archive.spring.PathSharingContext;
-import org.archive.util.TextUtils;
 import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.representation.EmptyRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
-import org.restlet.resource.WriterRepresentation;
+import org.restlet.representation.Variant;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 
@@ -69,12 +65,12 @@ public class BeanBrowseResource extends JobRelatedResource {
     protected PathSharingContext appCtx; 
     protected String beanPath; 
     private Configuration _templateConfiguration;
-    
-    public BeanBrowseResource(Context ctx, Request req, Response res) throws ResourceException {
-        super(ctx, req, res);
+
+    @Override
+    public void init(Context ctx, Request req, Response res) throws ResourceException {
+        super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
-        setModifiable(true); // accept POSTs
         appCtx = cj.getJobContext();
         beanPath = (String)req.getAttributes().get("beanPath");
         if (beanPath!=null) {
@@ -99,13 +95,14 @@ public class BeanBrowseResource extends JobRelatedResource {
         return _templateConfiguration;
     }
 
-    public void acceptRepresentation(Representation entity) throws ResourceException {
+    @Override
+    protected Representation post(Representation entity, Variant variant) throws ResourceException {
         if (appCtx == null) {
             throw new ResourceException(404);
         }
 
         // copy op?
-        Form form = getRequest().getEntityAsForm();
+        Form form = new Form(entity);
         beanPath = form.getFirstValue("beanPath");
         
         String newVal = form.getFirstValue("newVal");
@@ -122,6 +119,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         ref.setPath(getBeansRefPath());
         ref.addSegment(beanPath);
         getResponse().redirectSeeOther(ref);
+        return new EmptyRepresentation();
     }
 
     public String getBeansRefPath() {
@@ -137,7 +135,8 @@ public class BeanBrowseResource extends JobRelatedResource {
         return path; 
     }
 
-    public Representation represent(Variant variant) throws ResourceException {
+    @Override
+    public Representation get(Variant variant) throws ResourceException {
         if (appCtx == null) {
             throw new ResourceException(404);
         }
@@ -209,8 +208,8 @@ public class BeanBrowseResource extends JobRelatedResource {
         for(String name: appCtx.getBeanDefinitionNames()) {
             addPresentableNestedNames(nestedNames, appCtx.getBean(name), alreadyWritten);
         }
-        
-        return new BeansModel(cj.getShortName(), 
+
+        return new BeansModel(cj.getShortName(),
                 new Reference(getRequest().getResourceRef().getBaseRef(), "..").getTargetRef().toString(), 
                 beanPath, 
                 bean, 

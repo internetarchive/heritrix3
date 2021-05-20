@@ -53,13 +53,12 @@ public class FetchHistoryHelper {
    */
   @SuppressWarnings("unchecked")
   public static Map<String, Object> getFetchHistory(CrawlURI uri, long timestamp, int historyLength) {
-    Map<String, Object> data = uri.getData();
-    Map<String, Object>[] history = (Map[])data.get(RecrawlAttributeConstants.A_FETCH_HISTORY);
+    Map<String, Object>[] history = uri.getFetchHistory();
     if (history == null) {
       // there's no history records at all.
       // FetchHistoryProcessor assumes history is HashMap[], not Map[].
       history = new HashMap[historyLength];
-      data.put(RecrawlAttributeConstants.A_FETCH_HISTORY, history);
+      uri.setFetchHistory(history);
     }
     for (int i = 0; i < history.length; i++) {
       if (history[i] == null) {
