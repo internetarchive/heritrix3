@@ -118,6 +118,9 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
             "DROP table dedup;";
     protected static final String SELECT_ALL_SQL =
             "SELECT * FROM dedup;";
+    protected static final String DEDUP_QUERY_SQL =
+            "SELECT * FROM dedup WHERE digest_key = ? LIMIT 1";
+
     protected ConcurrentHashMap<String, Object> segmentCache = new ConcurrentHashMap<String, Object>();
     protected Connection dedupDbConnection = null;
     @Override
@@ -168,26 +171,52 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         // WARCWriterProcessor knows it should put the info in there
         HashMap<String, Object> contentDigestHistory = curi.getContentDigestHistory();
 
-        try {
-            String sql = "select * from dedup where digest_key = %s";
-            List<Map<String, Object>> results = troughClient().read(getSegmentId(), sql, new String[] {persistKeyFor(curi)});
-            if (!results.isEmpty()) {
-                Map<String,Object> hist = new HashMap<String, Object>();
-                hist.put(A_ORIGINAL_URL, results.get(0).get("url"));
-                hist.put(A_ORIGINAL_DATE, results.get(0).get("date"));
-                hist.put(A_WARC_RECORD_ID, results.get(0).get("id"));
-
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("loaded history by digest " + persistKeyFor(curi)
-                                 + " for uri " + curi + " - " + hist);
+        //Check in-memory segment first
+        boolean memoryDedupHit = false;
+        if(segmentCache.containsKey(getSegmentId())) {
+            String segmentDedupQuerySql = segmentizeDedupTableName(getSegmentId(), DEDUP_QUERY_SQL);
+            try(PreparedStatement dedupQueryStatement = dedupDbConnection.prepareStatement(segmentDedupQuerySql)) {
+                dedupQueryStatement.setString(1, persistKeyFor(curi));
+                ResultSet rs = dedupQueryStatement.executeQuery();
+                while(rs.next()) {
+                    Map<String, Object> hist = new HashMap<String, Object>();
+                    hist.put(A_ORIGINAL_URL, rs.getString("url"));
+                    hist.put(A_ORIGINAL_DATE, rs.getString("date"));
+                    hist.put(A_WARC_RECORD_ID, rs.getString("id"));
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("loaded in-memory history by digest " + persistKeyFor(curi)
+                                + " for uri " + curi + " - " + hist);
+                    }
+                    contentDigestHistory.putAll(hist);
+                    memoryDedupHit=true;
+                    break;
                 }
-                contentDigestHistory.putAll(hist);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem querying in-memory dedup in " + getSegmentId() + " for url " + curi + " sql: "+segmentDedupQuerySql, e);
             }
-        } catch (TroughNoReadUrlException e) {
-            // this is totally normal at the beginning of the crawl, for example
-            logger.log(Level.FINE, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+        }
+        if(!memoryDedupHit) {
+            try {
+                String sql = "select * from dedup where digest_key = %s";
+                List<Map<String, Object>> results = troughClient().read(getSegmentId(), sql, new String[]{persistKeyFor(curi)});
+                if (!results.isEmpty()) {
+                    Map<String, Object> hist = new HashMap<String, Object>();
+                    hist.put(A_ORIGINAL_URL, results.get(0).get("url"));
+                    hist.put(A_ORIGINAL_DATE, results.get(0).get("date"));
+                    hist.put(A_WARC_RECORD_ID, results.get(0).get("id"));
+
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("loaded history by digest " + persistKeyFor(curi)
+                                + " for uri " + curi + " - " + hist);
+                    }
+                    contentDigestHistory.putAll(hist);
+                }
+            } catch (TroughNoReadUrlException e) {
+                // this is totally normal at the beginning of the crawl, for example
+                logger.log(Level.FINE, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+            }
         }
     }
 
