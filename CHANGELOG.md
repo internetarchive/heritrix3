@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+## [3.4.0-20210527](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210527) (2021-05-27)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...3.4.0-20210527)
 
 **Fixed bugs:**
 
@@ -22,6 +22,7 @@
 
 **Merged pull requests:**
 
+- Update changelog. [\#390](https://github.com/internetarchive/heritrix3/pull/390) ([anjackson](https://github.com/anjackson))
 - Update dependencies 2021 05 26 [\#389](https://github.com/internetarchive/heritrix3/pull/389) ([anjackson](https://github.com/anjackson))
 - Bring changlog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
 - Allow tuning of BDB-JE evictor and cleaner threads. [\#384](https://github.com/internetarchive/heritrix3/pull/384) ([anjackson](https://github.com/anjackson))
