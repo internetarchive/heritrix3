@@ -318,8 +318,20 @@ public class TroughClient {
 
     protected String readUrl(String segmentId) throws TroughException {
         if (readUrlCache.get(segmentId) == null) {
-	    String url = readUrlNoCache(segmentId);
-	    readUrlCache.put(segmentId, url);
+            try {
+                readUrlCache.computeIfAbsent(segmentId, k -> {
+                    try {
+                        return readUrlNoCache(k);
+                    } catch (TroughException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+            catch(RuntimeException e) {
+                if(e.getCause() instanceof TroughException){
+                    throw (TroughException)e.getCause();
+                }
+            }
             logger.info("segment " + segmentId + " read url is " + readUrlCache.get(segmentId));
         }
         return readUrlCache.get(segmentId);
@@ -379,9 +391,20 @@ public class TroughClient {
 
     protected String writeUrl(String segmentId, String schemaId) throws IOException {
         if (writeUrlCache.get(segmentId) == null) {
-	    String url = writeUrlNoCache(segmentId, schemaId);
-	    writeUrlCache.put(segmentId, url);
-
+            try {
+                writeUrlCache.computeIfAbsent(segmentId, k -> {
+                    try {
+                        return writeUrlNoCache(k, schemaId);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+            catch(RuntimeException e) {
+                if(e.getCause() instanceof IOException){
+                    throw (IOException)e.getCause();
+                }
+            }
             logger.info("segment " + segmentId + " write url is " + writeUrlCache.get(segmentId));
         }
         return writeUrlCache.get(segmentId);
