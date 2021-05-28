@@ -197,7 +197,7 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         }
         if(!memoryDedupHit) {
             try {
-                String sql = "select * from dedup where digest_key = %s";
+                String sql = "select * from dedup where digest_key = %s limit 1";
                 List<Map<String, Object>> results = troughClient().read(getSegmentId(), sql, new String[]{persistKeyFor(curi)});
                 if (!results.isEmpty()) {
                     Map<String, Object> hist = new HashMap<String, Object>();
