@@ -18,8 +18,6 @@
  */
 package org.archive.modules.fetcher;
 
-import it.unimi.dsi.mg4j.util.MutableString;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,6 +44,8 @@ import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
+
+import it.unimi.dsi.mg4j.util.MutableString;
 
 abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
@@ -219,7 +219,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
     }
 
     protected class LimitedCookieStoreFacade implements CookieStore {
-        private final List<Cookie> cookies;
+        private List<Cookie> cookies;
 
         protected LimitedCookieStoreFacade(List<Cookie> cookies) {
             this.cookies = cookies;
@@ -232,8 +232,22 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         @Override
         public boolean clearExpired(Date date) {
-            logger.warning("clearExpired not implemented");
-            return false;
+            List<Cookie> validCookies = new ArrayList<Cookie>();
+            for( Cookie c : cookies) {
+                boolean expired = AbstractCookieStore.this.expireCookie(c, date);
+                if( !expired ) {
+                    validCookies.add(c);
+                }
+            }
+            // Replace the cookie list, if any expired:
+            if( validCookies.size() != this.cookies.size() ) {
+                this.cookies = validCookies;
+                logger.info("Cleared expired cookies for date: " + date);
+                return true;
+            } else {
+                logger.info("Cleared no expired cookies for date: " + date);
+                return false;
+            }
         }
 
         @Override
@@ -299,7 +313,8 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         addCookieImpl(cookie);
     }
-
+    
+    abstract public boolean expireCookie(Cookie cookie, Date date);
     abstract protected void addCookieImpl(Cookie cookie);
     abstract public void clear();
     abstract protected void prepare();

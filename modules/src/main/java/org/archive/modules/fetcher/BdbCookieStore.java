@@ -144,6 +144,22 @@ public class BdbCookieStore extends AbstractCookieStore implements
             cookies.remove(key);
         }
     }
+    
+    public boolean expireCookie(Cookie cookie, Date date) {
+        byte[] key;
+        try {
+            key = sortableKey(cookie).getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // impossible
+        }
+
+        if (cookie.isExpired(date)) {
+            cookies.remove(key);
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     protected Collection<Cookie> hostSubset(String host) { 
         try {
