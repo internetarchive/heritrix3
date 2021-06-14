@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210527...HEAD)
+
+**Closed issues:**
+
+- Ensure valid checkpoints can be created when recovering from errors [\#392](https://github.com/internetarchive/heritrix3/issues/392)
+
+**Merged pull requests:**
+
+- Update AMPQ client library to address security warning. [\#394](https://github.com/internetarchive/heritrix3/pull/394) ([anjackson](https://github.com/anjackson))
+- Only update last checkpoint stats if the checkpoint completed, for \#392. [\#393](https://github.com/internetarchive/heritrix3/pull/393) ([anjackson](https://github.com/anjackson))
+- Sync changelog with release. [\#391](https://github.com/internetarchive/heritrix3/pull/391) ([anjackson](https://github.com/anjackson))
+
 ## [3.4.0-20210527](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210527) (2021-05-27)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...3.4.0-20210527)
