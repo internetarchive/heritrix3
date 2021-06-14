@@ -60,7 +60,6 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -88,7 +87,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.DefaultBHttpClientConnection;
-import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -400,7 +398,7 @@ public class FetchHTTPRequest {
         if (fetcher.getIgnoreCookies()) {
             requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            requestConfigBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.DEFAULT);
         }
 
         requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
@@ -524,13 +522,6 @@ public class FetchHTTPRequest {
     protected void populateHttpCredential(HttpHost host, AuthScheme authScheme, String user, String password) {
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
         
-        AuthCache authCache = httpClientContext.getAuthCache();
-        if (authCache == null) {
-            authCache = new BasicAuthCache();
-            httpClientContext.setAuthCache(authCache);
-        }
-        authCache.put(host, authScheme);
-
         if (httpClientContext.getCredentialsProvider() == null) {
             httpClientContext.setCredentialsProvider(new BasicCredentialsProvider());
         }
