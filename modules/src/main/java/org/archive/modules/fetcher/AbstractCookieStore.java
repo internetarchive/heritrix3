@@ -232,20 +232,19 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         @Override
         public boolean clearExpired(Date date) {
-            List<Cookie> validCookies = new ArrayList<Cookie>();
+            int expiredCount = 0;
             for( Cookie c : cookies) {
                 boolean expired = AbstractCookieStore.this.expireCookie(c, date);
-                if( !expired ) {
-                    validCookies.add(c);
+                if( expired ) {
+                    logger.fine("Expired cookie: " + c + " for date: " + date);
+                    expiredCount++;
                 }
             }
             // Replace the cookie list, if any expired:
-            if( validCookies.size() != this.cookies.size() ) {
-                this.cookies = validCookies;
-                logger.info("Cleared expired cookies for date: " + date);
+            if( expiredCount > 0 ) {
+                logger.fine("Expired " + expiredCount + " cookies for date: " + date);
                 return true;
             } else {
-                logger.info("Cleared no expired cookies for date: " + date);
                 return false;
             }
         }
