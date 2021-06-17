@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+## [3.4.0-20210617](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210617) (2021-06-17)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210527...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210527...3.4.0-20210617)
 
 **Closed issues:**
 
@@ -10,6 +10,7 @@
 
 **Merged pull requests:**
 
+- Annotate nested sitemap links as sitemaps [\#398](https://github.com/internetarchive/heritrix3/pull/398) ([kris-sigur](https://github.com/kris-sigur))
 - Update AMPQ client library to address security warning. [\#394](https://github.com/internetarchive/heritrix3/pull/394) ([anjackson](https://github.com/anjackson))
 - Only update last checkpoint stats if the checkpoint completed, for \#392. [\#393](https://github.com/internetarchive/heritrix3/pull/393) ([anjackson](https://github.com/anjackson))
 - Sync changelog with release. [\#391](https://github.com/internetarchive/heritrix3/pull/391) ([anjackson](https://github.com/anjackson))
