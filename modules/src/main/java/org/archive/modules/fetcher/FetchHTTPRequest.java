@@ -398,7 +398,7 @@ public class FetchHTTPRequest {
         if (fetcher.getIgnoreCookies()) {
             requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            requestConfigBuilder.setCookieSpec(CookieSpecs.DEFAULT);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.STANDARD);
         }
 
         requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
