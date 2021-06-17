@@ -160,9 +160,15 @@ public class ExtractorSitemap extends ContentExtractor {
 
             // Add the URI:
         	// Adding 'regular' URL listed in the sitemap
-            addRelativeToBase(curi, max, newUri.toString(),
+            CrawlURI newCuri = addRelativeToBase(curi, max, newUri.toString(),
                     LinkContext.MANIFEST_MISC, Hop.MANIFEST);
 
+            if (isSitemap) {
+                // Annotate as a Site Map:
+                newCuri.getAnnotations().add(
+                        ExtractorRobotsTxt.ANNOTATION_IS_SITEMAP);
+            }
+            
             // And log about it:
             LOGGER.fine("Found " + newUri + " from " + curi + " Dated "
                     + lastModified + " and with isSitemap = " + isSitemap);
