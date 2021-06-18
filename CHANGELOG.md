@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210617...HEAD)
+
+**Merged pull requests:**
+
+- Switch to properties that enforce Java 8 compatibility. [\#399](https://github.com/internetarchive/heritrix3/pull/399) ([anjackson](https://github.com/anjackson))
+
 ## [3.4.0-20210617](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210617) (2021-06-17)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210527...3.4.0-20210617)
