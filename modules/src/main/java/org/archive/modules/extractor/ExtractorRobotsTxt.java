@@ -54,18 +54,6 @@ public class ExtractorRobotsTxt extends ContentExtractor {
     @Override
     protected boolean innerExtract(CrawlURI curi) {
         try {
-
-            // Clone the CrawlURI and change hop path and avoid queueing
-            // sitemaps as prerequisites (i.e. strip P from hop path).
-            CrawlURI curiClone = new CrawlURI(curi.getUURI(),
-                    curi.getPathFromSeed().replace("P", ""), curi.getVia(),
-                    curi.getViaContext());
-
-            // Also copy the source over:
-            if (curi.getSourceTag() != null) {
-                curiClone.setSourceTag(curi.getSourceTag());
-            }
-            
             // Parse the robots for the sitemaps.
             List<String> links = parseRobotsTxt(
                     curi.getRecorder()
@@ -84,7 +72,7 @@ public class ExtractorRobotsTxt extends ContentExtractor {
 
                     // Add links but using the cloned CrawlURI as the crawl
                     // context.
-                    CrawlURI newCuri = addRelativeToBase(curiClone, max, link,
+                    CrawlURI newCuri = addRelativeToBase(curi, max, link,
                             LinkContext.MANIFEST_MISC, Hop.MANIFEST);
 
                     // Annotate as a Site Map:
@@ -94,11 +82,6 @@ public class ExtractorRobotsTxt extends ContentExtractor {
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), link);
                 }
-            }
-
-            // Patch outlinks back into original curi:
-            for (CrawlURI outlink : curiClone.getOutLinks()) {
-                curi.getOutLinks().add(outlink);
             }
 
             // Return number of links discovered:
