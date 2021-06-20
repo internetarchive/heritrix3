@@ -18,13 +18,9 @@
  */
 package org.archive.modules.fetcher;
 
-import it.unimi.dsi.mg4j.util.MutableString;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -126,36 +122,29 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
             return;
         }
 
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(new File(saveCookiesFile));
+        try (BufferedWriter out = Files.newBufferedWriter(Paths.get(saveCookiesFile))) {
             String tab ="\t";
-            out.write("# Heritrix Cookie File\n".getBytes());
-            out.write("# This file is the Netscape cookies.txt format\n\n".getBytes());
+            out.write("# Heritrix Cookie File\n");
+            out.write("# This file is the Netscape cookies.txt format\n\n");
             for (Cookie cookie: new ArrayList<Cookie>(getCookies())) {
-                // Guess an initial size
-                MutableString line = new MutableString(1024 * 2);
-                line.append(cookie.getDomain());
-                line.append(tab);
-                // XXX line.append(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
-                line.append("TRUE");
-                line.append(tab);
-                line.append(cookie.getPath() != null ? cookie.getPath() : "/");
-                line.append(tab);
-                line.append(cookie.isSecure() ? "TRUE" : "FALSE");
-                line.append(tab);
-                line.append(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1);
-                line.append(tab);
-                line.append(cookie.getName());
-                line.append(tab);
-                line.append(cookie.getValue() != null ? cookie.getValue() : "");
-                line.append("\n");
-                out.write(line.toString().getBytes());
+                out.write(cookie.getDomain());
+                out.write(tab);
+                // XXX out.write(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
+                out.write("TRUE");
+                out.write(tab);
+                out.write(cookie.getPath() != null ? cookie.getPath() : "/");
+                out.write(tab);
+                out.write(cookie.isSecure() ? "TRUE" : "FALSE");
+                out.write(tab);
+                out.write(Long.toString(cookie.getExpiryDate() != null ? cookie.getExpiryDate().getTime() / 1000 : -1));
+                out.write(tab);
+                out.write(cookie.getName());
+                out.write(tab);
+                out.write(cookie.getValue() != null ? cookie.getValue() : "");
+                out.write("\n");
             }
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Unable to write " + saveCookiesFile, e);
-        } finally {
-            IOUtils.closeQuietly(out);
         }
     }
 
