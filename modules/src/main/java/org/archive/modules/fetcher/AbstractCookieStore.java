@@ -18,6 +18,7 @@
  */
 package org.archive.modules.fetcher;
 
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -41,8 +42,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.springframework.context.Lifecycle;
-
-import it.unimi.dsi.mg4j.util.MutableString;
 
 abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
