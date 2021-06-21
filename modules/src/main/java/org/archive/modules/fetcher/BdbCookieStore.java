@@ -39,7 +39,6 @@ import com.google.common.net.InternetDomainName;
 import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
-import com.sleepycat.collections.StoredCollection;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
@@ -66,12 +65,8 @@ public class BdbCookieStore extends AbstractCookieStore implements
      * 
      * <p>
      * This class is "restricted" in the sense that it is immutable, and also
-     * because some methods throw {@link RuntimeException} for other reasons.
-     * For example, {@link #iterator()} is not implemented, because we use this
-     * class to wrap a bdb {@link StoredCollection}, and iterators from that
-     * class need to be explicitly closed. Since this class hides the fact that
-     * a StoredCollection underlies it, we simply prevent {@link #iterator()}
-     * from being used.
+     * because some methods throw {@link RuntimeException} because they don't 
+     * make sense in this context.
      */
     public static class RestrictedCollectionWrappedList<T> implements List<T> {
         private Collection<T> wrapped;

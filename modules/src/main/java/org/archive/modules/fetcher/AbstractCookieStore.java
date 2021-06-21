@@ -18,7 +18,10 @@
  */
 package org.archive.modules.fetcher;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -229,7 +232,6 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
                     expiredCount++;
                 }
             }
-            // Replace the cookie list, if any expired:
             if( expiredCount > 0 ) {
                 logger.fine("Expired " + expiredCount + " cookies for date: " + date);
                 return true;
