@@ -141,12 +141,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
     }
     
     public boolean expireCookie(Cookie cookie, Date date) {
-        byte[] key;
-        try {
-            key = sortableKey(cookie).getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // impossible
-        }
+        byte[] key = sortableKey(cookie).getBytes(StandardCharsets.UTF_8);
 
         if (cookie.isExpired(date)) {
             cookies.remove(key);
