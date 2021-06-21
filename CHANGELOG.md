@@ -6,6 +6,8 @@
 
 **Merged pull requests:**
 
+- Remove dependency on mg4j [\#402](https://github.com/internetarchive/heritrix3/pull/402) ([ato](https://github.com/ato))
+- Graceful UI shutdown [\#401](https://github.com/internetarchive/heritrix3/pull/401) ([kris-sigur](https://github.com/kris-sigur))
 - Remove unnecessary fiddling with VIA path in ExtractorRobotsTxt [\#400](https://github.com/internetarchive/heritrix3/pull/400) ([kris-sigur](https://github.com/kris-sigur))
 
 ## [3.4.0-20210618](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210618) (2021-06-18)
