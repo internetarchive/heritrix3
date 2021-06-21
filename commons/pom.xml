@@ -122,12 +122,6 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>it.unimi.dsi</groupId>
-			<artifactId>mg4j</artifactId>
-			<version>1.0.1</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.anotherbigidea</groupId>
 			<artifactId>javaswf</artifactId>
 			<version>CVS-SNAPSHOT-1</version>
