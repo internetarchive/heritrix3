@@ -46,6 +46,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
 import org.archive.crawler.restlet.RateLimitGuard;
@@ -140,6 +141,8 @@ public class Heritrix {
                 "web interface to bind to.");
         options.addOption("p", "web-port", true, "The port the web interface " +
                 "should listen on.");
+        options.addOption("r", "run-job", true, "Run a single job and then exit when it" +
+                "finishes.");
         options.addOption("s", "ssl-params", true,  "Specify a keystore " +
                 "path, keystore password, and key password for HTTPS use. " +
                 "Separate with commas, no whitespace.");
@@ -367,7 +370,17 @@ public class Heritrix {
 "interface will be internet-accessible.");
             }
             if (cl.hasOption('r')) {
-                engine.requestLaunch(cl.getOptionValue('r'));
+                String jobName = cl.getOptionValue('r');
+                engine.requestLaunch(jobName);
+                CrawlJob job = engine.getJob(jobName);
+                if (job == null || job.getCrawlController() == null) {
+                    System.err.println("Failed to launch job: " + jobName);
+                    System.exit(1);
+                }
+                job.getCrawlController().requestCrawlResume();
+                engine.waitForNoRunningJobs(0);
+                engine.shutdown();
+                System.exit(0);
             } 
         } catch (Exception e) {
             // Show any exceptions in STARTLOG.
