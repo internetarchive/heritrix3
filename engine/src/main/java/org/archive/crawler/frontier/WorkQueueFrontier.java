@@ -727,7 +727,7 @@ implements Closeable,
             // next time
             if(getTotalEligibleInactiveQueues()==0) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(250);
                 } catch (InterruptedException e) {
                     // 
                 } 
