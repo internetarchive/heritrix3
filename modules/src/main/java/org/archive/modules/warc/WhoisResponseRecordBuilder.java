@@ -38,9 +38,8 @@ public class WhoisResponseRecordBuilder extends BaseWARCRecordBuilder {
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
         
-        Object whoisServerIP = curi.getData().get(CoreAttributeConstants.A_WHOIS_SERVER_IP);
-        if (whoisServerIP != null) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, whoisServerIP.toString());
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
         
         ReplayInputStream ris =

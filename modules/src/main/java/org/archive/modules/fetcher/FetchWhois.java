@@ -334,10 +334,9 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             }
 
             client.setSoTimeout(getSoTimeoutMs()); // must be after connect()
-            
-            curi.getData().put(CoreAttributeConstants.A_WHOIS_SERVER_IP, 
-                    client.getRemoteAddress().getHostAddress());
-            
+
+            curi.setServerIP(client.getRemoteAddress().getHostAddress());
+
             recorder.inputWrap(client.getInputStream(whoisQuery));
 
             // look for info about whois server in the response
