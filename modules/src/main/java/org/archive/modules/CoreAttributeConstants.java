@@ -53,6 +53,11 @@ public interface CoreAttributeConstants {
     public static final String A_FETCH_BEGAN_TIME= "fetch-began-time";
     public static String A_FETCH_COMPLETED_TIME = "fetch-completed-time";
 
+    /**
+     * IP address of the server the resource was fetched from.
+     */
+    public static final String A_SERVER_IP = "server-ip";
+
     public static String A_RUNTIME_EXCEPTION = "runtime-exception";
     public static String A_NONFATAL_ERRORS = "nonfatal-errors";
 
