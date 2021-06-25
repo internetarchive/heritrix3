@@ -53,6 +53,7 @@ public class FetchFTPTest extends ProcessorTestBase {
             fetchFTP.process(curi);
             assertEquals(payload.length, curi.getContentSize());
             assertEquals(226, curi.getFetchStatus());
+            assertEquals("127.0.0.1", curi.getServerIP());
         } finally {
             server.stop();
             Files.delete(tmpDir.resolve("test.txt"));
