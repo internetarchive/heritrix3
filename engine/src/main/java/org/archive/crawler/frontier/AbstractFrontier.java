@@ -364,7 +364,7 @@ public abstract class AbstractFrontier
                         }
                         reachedState(reachedState);
                         
-                        Thread.sleep(1000);
+                        Thread.sleep(250);
                         
                         if(isEmpty()&&targetState==State.RUN) {
                             requestState(State.EMPTY); 
@@ -384,7 +384,7 @@ public abstract class AbstractFrontier
                                 reachedState(State.PAUSE);
                             }
                             
-                            Thread.sleep(1000);
+                            Thread.sleep(250);
                         }
                         break;
                     case FINISH:
@@ -393,7 +393,7 @@ public abstract class AbstractFrontier
                         outboundLock.writeLock().lock();
                         // process all inbound
                         while (getInProcessCount()>0) {
-                            Thread.sleep(1000);
+                            Thread.sleep(250);
                         }
                         logger.fine("0 urls in process, running final tasks");
                         finalTasks(); 
