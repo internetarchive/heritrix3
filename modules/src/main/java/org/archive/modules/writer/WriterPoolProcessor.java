@@ -372,7 +372,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * @param curi CrawlURI
      * @return String of IP address
      * 
-     * @deprecated WARCRecordBuilder instances use {@link BaseWARCRecordBuilder#getHostAddress(CrawlURI)}
+     * @deprecated WARCRecordBuilder instances use {@link CrawlURI#getServerIP()}
      */
     @Deprecated
     protected String getHostAddress(CrawlURI curi) {
