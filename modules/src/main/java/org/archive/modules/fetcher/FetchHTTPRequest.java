@@ -600,7 +600,7 @@ public class FetchHTTPRequest {
                         DEFAULT_BUFSIZE, chardecoder, charencoder,
                         cconfig.getMessageConstraints(), null, null,
                         DefaultHttpRequestWriterFactory.INSTANCE,
-                        DefaultHttpResponseParserFactory.INSTANCE);
+                        DefaultHttpResponseParserFactory.INSTANCE, curi);
             }
         };
         BasicHttpClientConnectionManager connMan = new BasicHttpClientConnectionManager(
@@ -618,6 +618,7 @@ public class FetchHTTPRequest {
 
         private static final AtomicLong COUNTER = new AtomicLong();
         private String id;
+        private final CrawlURI curi;
 
         public RecordingHttpClientConnection(
                 final int buffersize,
@@ -628,15 +629,17 @@ public class FetchHTTPRequest {
                 final ContentLengthStrategy incomingContentStrategy,
                 final ContentLengthStrategy outgoingContentStrategy,
                 final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
-                final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
+                final HttpMessageParserFactory<HttpResponse> responseParserFactory, CrawlURI curi) {
             super(buffersize, fragmentSizeHint, chardecoder, charencoder,
                     constraints, incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory);
             id = "recording-http-connection-" + Long.toString(COUNTER.getAndIncrement());
+            this.curi = curi;
         }
 
         @Override
         protected InputStream getSocketInputStream(final Socket socket) throws IOException {
+            curi.setServerIP(socket.getInetAddress().getHostAddress());
             Recorder recorder = Recorder.getHttpRecorder();
             if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
                 return recorder.inputWrap(super.getSocketInputStream(socket));
