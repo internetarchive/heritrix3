@@ -1099,21 +1099,12 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
             return null;
         }
     }
-    
-
-
-    public String getDNSServerIPLabel() {
-        if (data == null) {
-            return null;
-        } else {
-            return (String)data.get(A_DNS_SERVER_IP_LABEL);
-        }
-    }
 
     /**
      * Returns the IP address the request was fetched against or null if unavailable.
      */
     public String getServerIP() {
+        if (data == null) return null;
         return (String) data.get(A_SERVER_IP);
     }
 
@@ -1158,11 +1149,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         // FIXME: Previous code automatically added annotation when "localized error"
         // was added, override collection to implement that?
         return list;
-    }
-
-
-    public void setDNSServerIPLabel(String label) {
-        getData().put(A_DNS_SERVER_IP_LABEL, label);
     }
 
     public void setServerIP(String serverIP) {

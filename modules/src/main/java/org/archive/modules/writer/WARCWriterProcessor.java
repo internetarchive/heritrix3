@@ -32,7 +32,6 @@ import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_
 import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.format.warc.WARCConstants.TYPE;
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -221,10 +220,9 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
-        
-        String ip = (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
-        if (ip != null && ip.length() > 0) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
+
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
         
         ReplayInputStream ris =
