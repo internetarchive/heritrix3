@@ -2,7 +2,6 @@ package org.archive.modules.warc;
 
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,10 +37,9 @@ public class DnsResponseRecordBuilder extends BaseWARCRecordBuilder {
         
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
-        
-        String ip = (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
-        if (ip != null && ip.length() > 0) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
+
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
         
         ReplayInputStream ris =

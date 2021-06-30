@@ -435,6 +435,8 @@ public class FetchFTP extends Processor  {
                 // clear
                 recorder.getRecordedInput().setDigest((MessageDigest)null);
             }
+
+            curi.setServerIP(socket.getInetAddress().getHostAddress());
                     
             try {
                 saveToRecorder(curi, socket, recorder);
