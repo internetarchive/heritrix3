@@ -60,6 +60,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -87,6 +88,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.DefaultBHttpClientConnection;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -521,6 +523,17 @@ public class FetchHTTPRequest {
     // http auth credential, either for proxy or target host
     protected void populateHttpCredential(HttpHost host, AuthScheme authScheme, String user, String password) {
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, password);
+        
+        AuthCache authCache = httpClientContext.getAuthCache();
+        if (authCache == null) {
+            authCache = new BasicAuthCache();
+            httpClientContext.setAuthCache(authCache);
+        }
+        // Do not attempt to cache DIGEST auth:
+        // See https://github.com/internetarchive/heritrix3/pull/397
+        if( !(authScheme instanceof org.apache.http.impl.auth.DigestScheme) ) {
+          authCache.put(host, authScheme);
+        }
         
         if (httpClientContext.getCredentialsProvider() == null) {
             httpClientContext.setCredentialsProvider(new BasicCredentialsProvider());
