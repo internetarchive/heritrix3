@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +26,8 @@ import org.archive.modules.warc.RevisitRecordBuilder;
 import org.archive.modules.warc.WARCRecordBuilder;
 import org.archive.modules.warc.WhoisResponseRecordBuilder;
 import org.archive.spring.HasKeyedProperties;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * WARC writer processor. The types of records that to be written can be
@@ -125,8 +129,7 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                 // We rolled over to a new warc and wrote a warcinfo record.
                 // Tally stats and reset temp stats, to avoid including warcinfo
                 // record in stats for current url.
-                setTotalBytesWritten(getTotalBytesWritten() +
-                    (writer.getPosition() - position));
+                addTotalBytesWritten(writer.getPosition() - position);
                 addStats(writer.getTmpStats());
                 writer.resetTmpStats();
                 writer.resetTmpRecordLog();
@@ -176,6 +179,44 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                         concurrentTo = record.getRecordId();
                     }
                 }
+            }
+        }
+    }
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        JSONObject json = super.toCheckpointJson();
+        json.put("urlsWritten", urlsWritten);
+        json.put("stats", stats);
+        return json;
+    }
+    
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+
+        // conditionals below are for backward compatibility with old checkpoints
+        
+        if (json.has("urlsWritten")) {
+            urlsWritten.set(json.getLong("urlsWritten"));
+        }
+        
+        if (json.has("stats")) {
+            HashMap<String, Map<String, Long>> cpStats = new HashMap<String, Map<String, Long>>();
+            JSONObject jsonStats = json.getJSONObject("stats");
+            if (JSONObject.getNames(jsonStats) != null) {
+                for (String key1: JSONObject.getNames(jsonStats)) {
+                    JSONObject jsonSubstats = jsonStats.getJSONObject(key1);
+                    if (!cpStats.containsKey(key1)) {
+                        cpStats.put(key1, new HashMap<String, Long>());
+                    }
+                    Map<String, Long> substats = cpStats.get(key1);
+
+                    for (String key2: JSONObject.getNames(jsonSubstats)) {
+                        long value = jsonSubstats.getLong(key2);
+                        substats.put(key2, value);
+                    }
+                }
+                addStats(cpStats);
             }
         }
     }
