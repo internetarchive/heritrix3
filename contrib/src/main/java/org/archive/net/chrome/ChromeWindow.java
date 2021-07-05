@@ -22,10 +22,13 @@ package org.archive.net.chrome;
 import org.json.JSONObject;
 
 import java.io.Closeable;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.WARNING;
 
 /**
  * A browser window or tab.
@@ -38,12 +41,17 @@ public class ChromeWindow implements Closeable {
     private final String sessionId;
     private boolean closed;
     private CompletableFuture<Void> loadEventFuture;
+    private final Map<String,ChromeRequest> requestMap = new ConcurrentHashMap<>();
+    private Consumer<ChromeRequest> requestConsumer;
+    private final ExecutorService eventExecutor;
 
     public ChromeWindow(ChromeClient client, String targetId) {
         this.client = client;
         this.targetId = targetId;
         this.sessionId = client.call("Target.attachToTarget", "targetId", targetId,
                 "flatten", true).getString("sessionId");
+        eventExecutor = Executors.newSingleThreadExecutor(runnable ->
+                new Thread(runnable, "ChromeWindow (sessionId=" + sessionId +")"));
         client.sessionEventHandlers.put(sessionId, this::handleEvent);
         call("Page.enable"); // for loadEventFired
         call("Page.setLifecycleEventsEnabled", "enabled", true); // for networkidle
@@ -78,9 +86,47 @@ public class ChromeWindow implements Closeable {
     }
 
     private void handleEvent(JSONObject message) {
+        // Run event handlers on a different thread so we don't block the websocket receiving thread.
+        // That would cause a deadlock if an event handler itself made an RPC call as the response could
+        // never be processed.
+        // We use a single thread per window though as the order events are processed is important.
+        eventExecutor.submit(() -> {
+            try {
+                handleEventOnEventThread(message);
+            } catch (Throwable t) {
+                logger.log(WARNING, "Exception handling browser event " + message, t);
+            }
+        });
+    }
+
+    private void handleEventOnEventThread(JSONObject message) {
+        JSONObject params = message.getJSONObject("params");
         switch (message.getString("method")) {
+            case "Fetch.requestPaused":
+                handlePausedRequest(params);
+                break;
+            case "Network.requestWillBeSent":
+                handleRequestWillBeSent(params);
+                break;
+            case "Network.requestWillBeSentExtraInfo":
+                handleRequestWillBeSentExtraInfo(params);
+                break;
+            case "Network.responseReceived":
+                handleResponseReceived(params);
+                break;
+            case "Network.responseReceivedExtraInfo":
+                handleResponseReceivedExtraInfo(params);
+                break;
+            case "Network.loadingFinished":
+                handleLoadingFinished(params);
+                break;
             case "Page.loadEventFired":
                 if (loadEventFuture != null) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                     loadEventFuture.complete(null);
                 }
                 break;
@@ -90,11 +136,77 @@ public class ChromeWindow implements Closeable {
         }
     }
 
+    private void handleRequestWillBeSent(JSONObject params) {
+        String requestId = params.getString("requestId");
+        ChromeRequest request = requestMap.computeIfAbsent(requestId, id -> new ChromeRequest(this, id));
+        request.setRequestJson(params.getJSONObject("request"));
+    }
+
+    private void handleRequestWillBeSentExtraInfo(JSONObject params) {
+        // it seems this event can arrive both before and after requestWillBeSent so we need to cope with that
+        String requestId = params.getString("requestId");
+        ChromeRequest request = requestMap.computeIfAbsent(requestId, id -> new ChromeRequest(this, id));
+        request.setRawRequestHeaders(params.getJSONObject("headers"));
+    }
+
+    private void handleResponseReceived(JSONObject params) {
+        ChromeRequest request = requestMap.get(params.getString("requestId"));
+        if (request == null) {
+            logger.log(WARNING, "Got responseReceived event without corresponding requestWillBeSent");
+            return;
+        }
+        request.setResponseJson(params.getJSONObject("response"));
+    }
+
+    private void handleResponseReceivedExtraInfo(JSONObject params) {
+        ChromeRequest request = requestMap.get(params.getString("requestId"));
+        if (request == null) {
+            logger.log(WARNING, "Got responseReceivedExtraInfo event without corresponding requestWillBeSent");
+            return;
+        }
+        request.setRawResponseHeaders(params.getJSONObject("headers"));
+        request.setResponseHeadersText(params.getString("headersText"));
+    }
+
+    private void handleLoadingFinished(JSONObject params) {
+        ChromeRequest request = requestMap.get(params.getString("requestId"));
+        if (request == null) {
+            logger.log(WARNING, "Got loadingFinished event without corresponding requestWillBeSent");
+            return;
+        }
+        if (requestConsumer != null) {
+            requestConsumer.accept(request);
+        }
+    }
+
     @Override
     public void close() {
         if (closed) return;
         closed = true;
+        eventExecutor.shutdown();
+        try {
+            eventExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         client.call("Target.closeTarget", "targetId", targetId);
         client.sessionEventHandlers.remove(sessionId);
+    }
+
+    public void captureRequests(Consumer<ChromeRequest> requestConsumer) {
+        this.requestConsumer = requestConsumer;
+        call("Network.enable");
+    }
+
+    private void handlePausedRequest(JSONObject params) {
+        if (params.has("responseStatusCode")) {
+            String stream = call("Fetch.takeResponseBodyAsStream", "requestId",
+                    params.getString("requestId")).getString("stream");
+            System.out.println(call("IO.read", "handle", stream));
+            System.out.println("stream " + stream);
+            call("IO.close", "handle", stream);
+        } else {
+            call("Fetch.continueRequest", "requestId", params.getString("requestId"));
+        }
     }
 }
