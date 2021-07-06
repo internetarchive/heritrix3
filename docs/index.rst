@@ -12,7 +12,10 @@ Heritrix 3 Documentation
    :maxdepth: 2
    :caption: Contents:
 
+   getting-started
+   configuring-jobs
    api
+   glossary
 
 Indices and tables
 ==================

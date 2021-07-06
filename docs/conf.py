@@ -39,7 +39,8 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-        'sphinxcontrib.httpdomain'
+    'sphinxcontrib.httpdomain',
+    'sphinx.ext.extlinks'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -154,3 +155,8 @@ texinfo_documents = [
      author, 'Heritrix', 'Archival-quality web crawler.',
      'Miscellaneous'),
 ]
+
+extlinks = {
+    'deciderule': ('https://www.javadoc.io/doc/org.archive.heritrix/heritrix-modules/latest/org/archive/modules'
+                   '/deciderules/%s.html', '')
+}
