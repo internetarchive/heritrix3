@@ -59,8 +59,8 @@ set to "admin" and "admin", respectively.
 
 By default, the Web UI listening address is only bound to the 'localhost' address. Therefore, the Web UI can only be
 accessed on the same machine from which it was launched. The '-b' option may be used to listen on
-different/additional addresses. See `Security Considerations <https://github
-.com/internetarchive/heritrix3/wiki/Security%20Considerations>`__ before changing this default.
+different/additional addresses. See :ref:`Security Considerations <security-considerations>` before changing this
+default.
 
 If the parameter supplied to the ``-a`` option is a file path beginning with "@", the admin username and password
 will be read from a file. This adds an additional layer of protection to the admin username and password by ensuring

@@ -9,10 +9,11 @@ Heritrix 3 Documentation
    them here.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    getting-started
+   operating
    configuring-jobs
    api
    glossary

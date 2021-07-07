@@ -269,10 +269,12 @@ Toe Threads
     apply the set of Processors to it, and finally report it as completed to
     the Frontier.
 
+.. _status-codes:
+
 Status codes
 ------------
 
-Each crawled URI gets a status code.  This code (or number) indicates
+Each crawled URI gets a status code.  This code (or number) indicates
 the result of a URI fetch in Heritrix.
 
 Codes ranging from 200 to 599 are standard HTTP response codes and
