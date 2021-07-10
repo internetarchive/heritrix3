@@ -19,6 +19,17 @@ Installation
 Download the latest Heritrix distribution package linked from the `Heritrix releases page
 <https://github.com/internetarchive/heritrix3/releases>`__ and unzip it somewhere.
 
+The installation will contain the following subdirectories:
+
+bin
+    contains shell scripts/batch files for launching Heritrix.
+lib
+    contains the third-party .jar files the Heritrix application requires to run.
+conf
+    contains various configuration files (such as the configuration for Java logging, and pristine versions of the bundled profiles)
+jobs
+    the default location where operator-created jobs are stored
+
 Environment Variables
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -28,7 +39,7 @@ Environment Variables
 
       export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
 
-#. Set the ``HERITRIX_HOME`` environment variable. The value should be set to the main Heritrix directory.
+#. Set the ``HERITRIX_HOME`` environment variable. The value should be set to the path where Heritrix is installed.
 
    .. code-block:: bash
 
@@ -40,8 +51,8 @@ Environment Variables
 
       chmod u+x $HERITRIX_HOME/bin/heritrix
 
-#. To change the amount of memory allocated to Heritrix (the Java heap size), set the ``JAVA_OPTS`` environmental
-variable. The following example allocates 1GB of memory to Heritrix.
+#. To change the amount of memory allocated to Heritrix (the Java heap size), set the ``JAVA_OPTS`` environment
+   variable. The following example allocates 1GB of memory to Heritrix.
 
    .. code-block:: bash
 
