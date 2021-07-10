@@ -383,6 +383,101 @@ requests.
       </property>
     </bean>
 
+Other Protocols
+---------------
+
+In addition to HTTP Heritrix can be configured to fetch resources using several other internet protocols.
+
+FTP
+~~~
+
+Heritrix supports crawling [FTP](https://en.wikipedia.org/wiki/File_Transfer_Protocol) sites.  Seeds should be added
+in the following format: ```ftp://sftp.example.org/directory``.
+
+The FetchFTP bean needs to be defined:
+
+.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchFTP.java
+
+and added to the FetchChain:
+
+.. code-block:: xml
+
+    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+      <property name="processors">
+        <list>...
+        <ref bean="fetchFTP"/>
+        ...
+       </list>
+      </property>
+    </bean>
+
+SFTP
+~~~~
+
+An optional fetcher for [SFTP](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol) is provided.  Seeds should
+be added in the following format:``sftp://sftp.example.org/directory``.
+
+The FetchSFTP bean needs to be defined:
+
+.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchSFTP.java
+
+and added to the FetchChain:
+
+.. code-block:: xml
+
+    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+      <property name="processors">
+        <list>
+          ...
+          <ref bean="fetchSFTP"/>
+          ...
+        </list>
+      </property>
+    </bean>
+
+WHOIS
+~~~~~
+
+An optional fetcher for domain [WHOIS](https://en.wikipedia.org/wiki/WHOIS) data is provided. A small set of
+well-established WHOIS servers are preconfigured. The fetcher uses an ad-hoc/intuitive interpretation of a 'whois:'
+scheme URI.
+
+Define the fetchWhois bean:
+
+.. code-block:: xml
+
+    <bean id="fetchWhois" class="org.archive.modules.fetcher.FetchWhois">
+      <property name="specialQueryTemplates">
+        <map>
+          <entry key="whois.verisign-grs.com" value="domain %s" />
+          <entry key="whois.arin.net" value="z + %s" />
+          <entry key="whois.denic.de" value="-T dn %s" />
+        </map>
+      </property>
+    </bean>
+
+and add it to the FetchChain:
+
+.. code-block:: xml
+
+    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+      <property name="processors">
+        <list>
+          ...
+          <ref bean="fetchWhois"/>
+          ...
+        </list>
+      </property>
+    </bean>
+
+To configure a whois seed, enter the seed in the following format: ``whois://hostname/path``.  For example,
+``whois://archive.org``.  The whois fetcher will attempt to resolve each host that the crawl encounters using the
+topmost assigned domain and the ip address of the url crawled. So if you crawl ``http://www.archive.org/details/texts``,
+the whois fetcher will attempt to resolve ``whois:archive.org`` and ``whois:207.241.224.2``.
+
+At this time, whois functionality is experimental.  The fetchWhois bean is commented out in the default profile.
+
+
 Modifying a Running Job
 -----------------------
 
