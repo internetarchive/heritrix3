@@ -562,7 +562,7 @@ The following file suffixes are supported:
     does not force them.
 
 .recover
-     .recover file will be treated as a traditional recovery journal. (The recovery journal can approximately reproduce
+    .recover file will be treated as a traditional recovery journal. (The recovery journal can approximately reproduce
     the state of a crawl's queues and already-included set, by repeating all URI-completion and URI-discovery events. A
     recovery journal reproduces less state than a proper checkpoint.) In a first pass, all lines beginning with Fs in the
     recovery journal will be considered included, so that they can not be enqueued again. Then in a second pass, lines
