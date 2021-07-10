@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Heritrix Documentation'
-copyright = '2018 Internet Archive and contributors'
+copyright = 'Internet Archive and contributors'
 author = 'Internet Archive and contributors'
 
 # The short X.Y version
