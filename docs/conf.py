@@ -12,9 +12,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('./_ext'))
 
 
 # -- Project information -----------------------------------------------------
@@ -40,7 +40,8 @@ release = ''
 # ones.
 extensions = [
     'sphinxcontrib.httpdomain',
-    'sphinx.ext.extlinks'
+    'sphinx.ext.extlinks',
+    'beandoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

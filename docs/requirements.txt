@@ -1,1 +1,2 @@
 sphinxcontrib-httpdomain==1.7.0
+javalang==0.13.0
