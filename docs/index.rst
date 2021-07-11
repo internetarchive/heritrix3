@@ -15,6 +15,7 @@ Heritrix 3 Documentation
    getting-started
    operating
    configuring-jobs
+   bean-reference
    api
    glossary
 
