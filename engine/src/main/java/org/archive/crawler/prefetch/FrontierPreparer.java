@@ -50,6 +50,12 @@ public class FrontierPreparer extends Scoper {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1L;
 
+    {
+        setPreferenceDepthHops(-1); // no limit
+    }
+    public int getPreferenceDepthHops() {
+        return (Integer) kp.get("preferenceDepthHops");
+    }
     /**
      * Number of hops (of any sort) from a seed up to which a URI has higher
      * priority scheduling than any remaining seed. For example, if set to 1
@@ -60,78 +66,72 @@ public class FrontierPreparer extends Scoper {
      * with all discovered links processed before remaining seeds. Seed
      * redirects are treated as one hop from a seed.
      */
-    {
-        setPreferenceDepthHops(-1); // no limit
-    }
-    public int getPreferenceDepthHops() {
-        return (Integer) kp.get("preferenceDepthHops");
-    }
     public void setPreferenceDepthHops(int depth) {
         kp.put("preferenceDepthHops",depth);
     }
     
-    /** number of hops of embeds (ERX) to bump to front of host queue */
     {
         setPreferenceEmbedHops(1);
     }
     public int getPreferenceEmbedHops() {
         return (Integer) kp.get("preferenceEmbedHops");
     }
+    /** number of hops of embeds (ERX) to bump to front of host queue */
     public void setPreferenceEmbedHops(int pref) {
         kp.put("preferenceEmbedHops",pref);
     }
     
-    /**
-     * Ordered list of url canonicalization rules.  Rules are applied in the 
-     * order listed from top to bottom.
-     */
     {
         setCanonicalizationPolicy(new RulesCanonicalizationPolicy());
     }
     public UriCanonicalizationPolicy getCanonicalizationPolicy() {
         return (UriCanonicalizationPolicy) kp.get("uriCanonicalizationRules");
     }
+    /**
+     * Ordered list of url canonicalization rules.  Rules are applied in the
+     * order listed from top to bottom.
+     */
     @Autowired(required=false)
     public void setCanonicalizationPolicy(UriCanonicalizationPolicy policy) {
         kp.put("uriCanonicalizationRules",policy);
     }
 
-    /**
-     * Defines how to assign URIs to queues. Can assign by host, by ip, 
-     * by SURT-ordered authority, by SURT-ordered authority truncated to 
-     * a topmost-assignable domain, and into one of a fixed set of buckets 
-     * (1k).
-     */
     {
         setQueueAssignmentPolicy(new SurtAuthorityQueueAssignmentPolicy());
     }
     public QueueAssignmentPolicy getQueueAssignmentPolicy() {
         return (QueueAssignmentPolicy) kp.get("queueAssignmentPolicy");
     }
+    /**
+     * Defines how to assign URIs to queues. Can assign by host, by ip,
+     * by SURT-ordered authority, by SURT-ordered authority truncated to
+     * a topmost-assignable domain, and into one of a fixed set of buckets
+     * (1k).
+     */
     @Autowired(required=false)
     public void setQueueAssignmentPolicy(QueueAssignmentPolicy policy) {
         kp.put("queueAssignmentPolicy",policy);
     }
     
-    /** URI precedence assignment policy to use. */
     {
         setUriPrecedencePolicy(new CostUriPrecedencePolicy());
     }
     public UriPrecedencePolicy getUriPrecedencePolicy() {
         return (UriPrecedencePolicy) kp.get("uriPrecedencePolicy");
     }
+    /** URI precedence assignment policy to use. */
     @Autowired(required=false)
     public void setUriPrecedencePolicy(UriPrecedencePolicy policy) {
         kp.put("uriPrecedencePolicy",policy);
     }
     
-    /** cost assignment policy to use. */
     {
         setCostAssignmentPolicy(new UnitCostAssignmentPolicy());
     }
     public CostAssignmentPolicy getCostAssignmentPolicy() {
         return (CostAssignmentPolicy) kp.get("costAssignmentPolicy");
     }
+    /** cost assignment policy to use. */
     @Autowired(required=false)
     public void setCostAssignmentPolicy(CostAssignmentPolicy policy) {
         kp.put("costAssignmentPolicy",policy);

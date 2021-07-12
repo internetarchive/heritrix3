@@ -83,28 +83,28 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
-    /**
-     * Whether to write 'request' type records. Default is true.
-     */
     {
         setWriteRequests(true);
     }
     public boolean getWriteRequests() {
         return (Boolean) kp.get("writeRequests");
     }
+    /**
+     * Whether to write 'request' type records. Default is true.
+     */
     public void setWriteRequests(boolean writeRequests) {
         kp.put("writeRequests",writeRequests);
     }
     
-    /**
-     * Whether to write 'metadata' type records. Default is true.
-     */
     {
         setWriteMetadata(true);
     }
     public boolean getWriteMetadata() {
         return (Boolean) kp.get("writeMetadata");
     }
+    /**
+     * Whether to write 'metadata' type records. Default is true.
+     */
     public void setWriteMetadata(boolean writeMetadata) {
         kp.put("writeMetadata",writeMetadata);
     }

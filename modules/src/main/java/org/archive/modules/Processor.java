@@ -65,34 +65,34 @@ implements HasKeyedProperties,
         this.beanName = name;
     }
     
-    /** 
-     * Whether or not this process will execute for a particular URI. 
-     * If this is false for a URI, then the URI isn't processed,
-     * regardless of what the DecideRules say.
-     */
     {
         setEnabled(true);
     }
     public boolean getEnabled() {
         return (Boolean) kp.get("enabled");
     }
+    /**
+     * Whether or not this process will execute for a particular URI.
+     * If this is false for a URI, then the URI isn't processed,
+     * regardless of what the DecideRules say.
+     */
     public void setEnabled(boolean enabled) {
         kp.put("enabled",enabled);
     }
     
     
-    /** 
-     * Decide rule(s) (also particular to a URI) that determine whether 
-     * or not a particular URI is processed here. If the rule(s) answer
-     * REJECT, processing is skipped. (ACCEPT or PASS allow processing
-     * to continue). 
-     */
     {
         setShouldProcessRule(new AcceptDecideRule());
     }
     public DecideRule getShouldProcessRule() {
         return (DecideRule) kp.get("shouldProcessRule");
     }
+    /**
+     * Decide rule(s) (also particular to a URI) that determine whether
+     * or not a particular URI is processed here. If the rule(s) answer
+     * REJECT, processing is skipped. (ACCEPT or PASS allow processing
+     * to continue).
+     */
     public void setShouldProcessRule(DecideRule rule) {
         kp.put("shouldProcessRule", rule);
     }

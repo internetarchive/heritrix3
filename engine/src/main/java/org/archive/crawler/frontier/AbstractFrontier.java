@@ -100,37 +100,37 @@ public abstract class AbstractFrontier
         return kp;
     }
     
-    /** for retryable problems, seconds to wait before a retry */
     {
         setRetryDelaySeconds(900);
     }
     public int getRetryDelaySeconds() {
         return (Integer) kp.get("retryDelaySeconds");
     }
+    /** for retryable problems, seconds to wait before a retry */
     public void setRetryDelaySeconds(int delay) {
         kp.put("retryDelaySeconds",delay);
     }
     
-    /** maximum times to emit a CrawlURI without final disposition */
     {
         setMaxRetries(30);
     }
     public int getMaxRetries() {
         return (Integer) kp.get("maxRetries");
     }
+    /** maximum times to emit a CrawlURI without final disposition */
     public void setMaxRetries(int maxRetries) {
         kp.put("maxRetries",maxRetries);
     }
     
-    /**
-     * Recover log on or off attribute.
-     */
     {
         setRecoveryLogEnabled(true);
     }
     public boolean getRecoveryLogEnabled() {
         return (Boolean) kp.get("recoveryLogEnabled");
     }
+    /**
+     * Recover log on or off attribute.
+     */
     public void setRecoveryLogEnabled(boolean enabled) {
         kp.put("recoveryLogEnabled",enabled);
     }

@@ -48,13 +48,13 @@ public class PreloadedUriPrecedencePolicy extends BaseUriPrecedencePolicy
 implements Lifecycle {
     private static final long serialVersionUID = -1474685153995064123L;
     
-    /** Backup URI precedence assignment policy to use. */
     {
         setDefaultUriPrecedencePolicy(new BaseUriPrecedencePolicy());
     }
     public UriPrecedencePolicy getDefaultUriPrecedencePolicy() {
         return (UriPrecedencePolicy) kp.get("defaultUriPrecedencePolicy");
     }
+    /** Backup URI precedence assignment policy to use. */
     public void setDefaultUriPrecedencePolicy(UriPrecedencePolicy policy) {
         kp.put("defaultUriPrecedencePolicy",policy);
     }

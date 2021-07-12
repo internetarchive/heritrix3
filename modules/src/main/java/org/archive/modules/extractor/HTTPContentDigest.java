@@ -72,29 +72,29 @@ public class HTTPContentDigest extends Processor {
         Logger.getLogger(HTTPContentDigest.class.getName());
 
     
-    /**
-     * A regular expression that matches those portions of downloaded documents
-     * that need to be ignored when calculating the content digest. Segments
-     * matching this expression will be rewritten with the blank character for
-     * the content digest.
-     */
     {
         setStripRegex("");
     }
     public String getStripRegex() {
         return (String) kp.get("stripRegex");
     }
+    /**
+     * A regular expression that matches those portions of downloaded documents
+     * that need to be ignored when calculating the content digest. Segments
+     * matching this expression will be rewritten with the blank character for
+     * the content digest.
+     */
     public void setStripRegex(String regex) {
         kp.put("stripRegex",regex);
     }
 
-    /** Maximum file size for - longer files will be ignored. -1 = unlimited*/
     {
         setMaxSizeToDigest(1*1024*1024L); // 1MB
     }
     public long getMaxSizeToDigest() {
         return (Long) kp.get("maxSizeToDigest");
     }
+    /** Maximum file size for - longer files will be ignored. -1 = unlimited*/
     public void setMaxSizeToDigest(long threshold) {
         kp.put("maxSizeToDigest",threshold);
     }

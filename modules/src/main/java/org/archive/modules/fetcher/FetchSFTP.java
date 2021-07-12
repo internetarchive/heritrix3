@@ -39,10 +39,6 @@ public class FetchSFTP extends Processor {
 
 	private static Pattern DIR = Pattern.compile("(.+)$", 8);
 
-	/**
-	 * The username to send to SFTP servers. By convention, the default value of
-	 * "anonymous" is used for publicly available SFTP sites.
-	 */
 	{
 		setUsername("anonymous");
 	}
@@ -51,14 +47,14 @@ public class FetchSFTP extends Processor {
 		return (String) kp.get("username");
 	}
 
+	/**
+	 * The username to send to SFTP servers. By convention, the default value of
+	 * "anonymous" is used for publicly available SFTP sites.
+	 */
 	public void setUsername(String username) {
 		kp.put("username", username);
 	}
 
-	/**
-	 * The password to send to SFTP servers. By convention, anonymous users send
-	 * their email address in this field.
-	 */
 	{
 		setPassword("password");
 	}
@@ -67,13 +63,14 @@ public class FetchSFTP extends Processor {
 		return (String) kp.get("password");
 	}
 
+	/**
+	 * The password to send to SFTP servers. By convention, anonymous users send
+	 * their email address in this field.
+	 */
 	public void setPassword(String pw) {
 		kp.put("password", pw);
 	}
 
-	/**
-	 * Set to true to extract further URIs from SFTP directories. Default is true.
-	 */
 	{
 		setExtractFromDirs(true);
 	}
@@ -88,13 +85,13 @@ public class FetchSFTP extends Processor {
 		return (Boolean) kp.get("extractFromDirs");
 	}
 
+	/**
+	 * Set to true to extract further URIs from SFTP directories. Default is true.
+	 */
 	public void setExtractFromDirs(boolean extractFromDirs) {
 		kp.put("extractFromDirs", extractFromDirs);
 	}
 
-	/**
-	 * Set to true to extract the parent URI from all SFTP URIs. Default is true.
-	 */
 	{
 		setExtractParent(true);
 	}
@@ -109,14 +106,13 @@ public class FetchSFTP extends Processor {
 		return (Boolean) kp.get("extractParent");
 	}
 
+	/**
+	 * Set to true to extract the parent URI from all SFTP URIs. Default is true.
+	 */
 	public void setExtractParent(boolean extractParent) {
 		kp.put("extractParent", extractParent);
 	}
 
-	/**
-	 * Whether or not to perform an on-the-fly digest hash of retrieved
-	 * content-bodies.
-	 */
 	{
 		setDigestContent(true);
 	}
@@ -125,6 +121,10 @@ public class FetchSFTP extends Processor {
 		return (Boolean) kp.get("digestContent");
 	}
 
+	/**
+	 * Whether or not to perform an on-the-fly digest hash of retrieved
+	 * content-bodies.
+	 */
 	public void setDigestContent(boolean digest) {
 		kp.put("digestContent", digest);
 	}
@@ -143,10 +143,6 @@ public class FetchSFTP extends Processor {
 		this.digestAlgorithm = digestAlgorithm;
 	}
 
-	/**
-	 * Maximum length in bytes to fetch. Fetch is truncated at this length. A
-	 * value of 0 means no limit.
-	 */
 	{
 		setMaxLengthBytes(0L); // no limit
 	}
@@ -155,14 +151,14 @@ public class FetchSFTP extends Processor {
 		return (Long) kp.get("maxLengthBytes");
 	}
 
+	/**
+	 * Maximum length in bytes to fetch. Fetch is truncated at this length. A
+	 * value of 0 means no limit.
+	 */
 	public void setMaxLengthBytes(long timeout) {
 		kp.put("maxLengthBytes", timeout);
 	}
 
-	/**
-	 * The maximum KB/sec to use when fetching data from a server. The default
-	 * of 0 means no maximum.
-	 */
 	{
 		setMaxFetchKBSec(0); // no limit
 	}
@@ -171,14 +167,14 @@ public class FetchSFTP extends Processor {
 		return (Integer) kp.get("maxFetchKBSec");
 	}
 
+	/**
+	 * The maximum KB/sec to use when fetching data from a server. The default
+	 * of 0 means no maximum.
+	 */
 	public void setMaxFetchKBSec(int rate) {
 		kp.put("maxFetchKBSec", rate);
 	}
 
-	/**
-	 * If the fetch is not completed in this number of seconds, give up (and
-	 * retry later).
-	 */
 	{
 		setTimeoutSeconds(20 * 60); // 20 minutes
 	}
@@ -187,8 +183,20 @@ public class FetchSFTP extends Processor {
 		return (Integer) kp.get("timeoutSeconds");
 	}
 
+	/**
+	 * If the fetch is not completed in this number of seconds, give up (and
+	 * retry later).
+	 */
 	public void setTimeoutSeconds(int timeout) {
 		kp.put("timeoutSeconds", timeout);
+	}
+
+	{
+		setSoTimeoutMs(20 * 1000); // 20 seconds
+	}
+
+	public int getSoTimeoutMs() {
+		return (Integer) kp.get("soTimeoutMs");
 	}
 
 	/**
@@ -199,14 +207,6 @@ public class FetchSFTP extends Processor {
 	 * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
 	 * retry read.
 	 */
-	{
-		setSoTimeoutMs(20 * 1000); // 20 seconds
-	}
-
-	public int getSoTimeoutMs() {
-		return (Integer) kp.get("soTimeoutMs");
-	}
-
 	public void setSoTimeoutMs(int timeout) {
 		kp.put("soTimeoutMs", timeout);
 	}

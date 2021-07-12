@@ -113,59 +113,59 @@ public class QuotaEnforcer extends Processor {
    // server quotas
    // successes
 
-    /**
-     * Maximum number of fetch successes (e.g. 200 responses) to collect from
-     * one server. Default is -1, meaning no limit.
-     */
     {
         setServerMaxFetchSuccesses(-1L); // no limit
     }
     public long getServerMaxFetchSuccesses() {
         return (Long) kp.get(SERVER_MAX_FETCH_SUCCESSES);
     }
+    /**
+     * Maximum number of fetch successes (e.g. 200 responses) to collect from
+     * one server. Default is -1, meaning no limit.
+     */
     public void setServerMaxFetchSuccesses(long max) {
         kp.put(SERVER_MAX_FETCH_SUCCESSES,max);
     }
 
 
-    /**
-     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
-     * collect from one server. Default is -1, meaning no limit.
-     */
     {
         setServerMaxSuccessKb(-1L); // no limit
     }
     public long getServerMaxSuccessKb() {
         return (Long) kp.get(SERVER_MAX_SUCCESS_KB);
     }
+    /**
+     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
+     * collect from one server. Default is -1, meaning no limit.
+     */
     public void setServerMaxSuccessKb(long max) {
         kp.put(SERVER_MAX_SUCCESS_KB,max);
     }
 
-    /**
-     * Maximum number of fetch responses (incl. error responses) to collect from
-     * one server. Default is -1, meaning no limit.
-     */
     {
         setServerMaxFetchResponses(-1L); // no limit
     }
     public long getServerMaxFetchResponses() {
         return (Long) kp.get(SERVER_MAX_FETCH_RESPONSES);
     }
+    /**
+     * Maximum number of fetch responses (incl. error responses) to collect from
+     * one server. Default is -1, meaning no limit.
+     */
     public void setServerMaxFetchResponses(long max) {
         kp.put(SERVER_MAX_FETCH_RESPONSES,max);
     }
 
-    /**
-     * Maximum amount of response content (incl. error responses) in KB to
-     * collect from one server. Default is -1, meaning no limit.
-     */
     {
         setServerMaxAllKb(-1L); // no limit
     }
     public long getServerMaxAllKb() {
         return (Long) kp.get(SERVER_MAX_ALL_KB);
     }
+    /**
+     * Maximum amount of response content (incl. error responses) in KB to
+     * collect from one server. Default is -1, meaning no limit.
+     */
     public void setServerMaxAllKb(long max) {
         kp.put(SERVER_MAX_ALL_KB,max);
     }
@@ -190,44 +190,44 @@ public class QuotaEnforcer extends Processor {
         kp.put(SERVER_MAX_NOVEL_URLS, max);
     }
     
-    /**
-     * Maximum number of fetch successes (e.g. 200 responses) to collect from
-     * one host. Default is -1, meaning no limit.
-     */
     {
         setHostMaxFetchSuccesses(-1L); // no limit
     }
     public long getHostMaxFetchSuccesses() {
         return (Long) kp.get(HOST_MAX_FETCH_SUCCESSES);
     }
+    /**
+     * Maximum number of fetch successes (e.g. 200 responses) to collect from
+     * one host. Default is -1, meaning no limit.
+     */
     public void setHostMaxFetchSuccesses(long max) {
         kp.put(HOST_MAX_FETCH_SUCCESSES,max);
     }
 
-    /**
-     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
-     * collect from one host. Default is -1, meaning no limit.
-     */
     {
         setHostMaxSuccessKb(-1L); // no limit
     }
     public long getHostMaxSuccessKb() {
         return (Long) kp.get(HOST_MAX_SUCCESS_KB);
     }
+    /**
+     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
+     * collect from one host. Default is -1, meaning no limit.
+     */
     public void setHostMaxSuccessKb(long max) {
         kp.put(HOST_MAX_SUCCESS_KB,max);
     }
 
-    /**
-     * Maximum number of fetch responses (incl. error responses) to collect from
-     * one host. Default is -1, meaning no limit.
-     */
     {
         setHostMaxFetchResponses(-1L); // no limit
     }
     public long getHostMaxFetchResponses() {
         return (Long) kp.get(HOST_MAX_FETCH_RESPONSES);
     }
+    /**
+     * Maximum number of fetch responses (incl. error responses) to collect from
+     * one host. Default is -1, meaning no limit.
+     */
     public void setHostMaxFetchResponses(long max) {
         kp.put(HOST_MAX_FETCH_RESPONSES,max);
     }
@@ -252,72 +252,72 @@ public class QuotaEnforcer extends Processor {
         kp.put(HOST_MAX_NOVEL_URLS, max);
     }
 
-    /**
-     * Maximum amount of response content (incl. error responses) in KB to
-     * collect from one host. Default is -1, meaning no limit.
-     */
     {
         setHostMaxAllKb(-1L); // no limit
     }
     public long getHostMaxAllKb() {
         return (Long) kp.get(HOST_MAX_ALL_KB);
     }
+    /**
+     * Maximum amount of response content (incl. error responses) in KB to
+     * collect from one host. Default is -1, meaning no limit.
+     */
     public void setHostMaxAllKb(long max) {
         kp.put(HOST_MAX_ALL_KB,max);
     }
 
-    /**
-     * Maximum number of fetch successes (e.g. 200 responses) to collect from
-     * one group. Default is -1, meaning no limit.
-     */
     {
         setGroupMaxFetchSuccesses(-1L); // no limit
     }
     public long getGroupMaxFetchSuccesses() {
         return (Long) kp.get(GROUP_MAX_FETCH_SUCCESSES);
     }
+    /**
+     * Maximum number of fetch successes (e.g. 200 responses) to collect from
+     * one group. Default is -1, meaning no limit.
+     */
     public void setGroupMaxFetchSuccesses(long max) {
         kp.put(GROUP_MAX_FETCH_SUCCESSES,max);
     }
 
-    /**
-     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
-     * collect from one group. Default is -1, meaning no limit.
-     */
     {
         setGroupMaxSuccessKb(-1L); // no limit
     }
     public long getGroupMaxSuccessKb() {
         return (Long) kp.get(GROUP_MAX_SUCCESS_KB);
     }
+    /**
+     * Maximum amount of fetch success content (e.g. 200 responses) in KB to
+     * collect from one group. Default is -1, meaning no limit.
+     */
     public void setGroupMaxSuccessKb(long max) {
         kp.put(GROUP_MAX_SUCCESS_KB,max);
     }
 
-    /**
-     * Maximum number of fetch responses (incl. error responses) to collect from
-     * one group. Default is -1, meaning no limit.
-     */
     {
         setGroupMaxFetchResponses(-1L); // no limit
     }
     public long getGroupMaxFetchResponses() {
         return (Long) kp.get(GROUP_MAX_FETCH_RESPONSES);
     }
+    /**
+     * Maximum number of fetch responses (incl. error responses) to collect from
+     * one group. Default is -1, meaning no limit.
+     */
     public void setGroupMaxFetchResponses(long max) {
         kp.put(GROUP_MAX_FETCH_RESPONSES,max);
     }
 
-    /**
-     * Maximum amount of response content (incl. error responses) in KB to
-     * collect from one group. Default is -1, meaning no limit.
-     */
     {
         setGroupMaxAllKb(-1L); // no limit
     }
     public long getGroupMaxAllKb() {
         return (Long) kp.get(GROUP_MAX_ALL_KB);
     }
+    /**
+     * Maximum amount of response content (incl. error responses) in KB to
+     * collect from one group. Default is -1, meaning no limit.
+     */
     public void setGroupMaxAllKb(long max) {
         kp.put(GROUP_MAX_ALL_KB,max);
     }
@@ -343,6 +343,12 @@ public class QuotaEnforcer extends Processor {
     }
 
 
+    {
+        setForceRetire(true);
+    }
+    public boolean getForceRetire() {
+        return (Boolean) kp.get("forceRetire");
+    }
     /**
      * Whether an over-quota situation should result in the containing queue
      * being force-retired (if the Frontier supports this). Note that if your
@@ -350,12 +356,6 @@ public class QuotaEnforcer extends Processor {
      * the retirement may hold back URIs not in the same quota category. Default
      * is true.
      */
-    {
-        setForceRetire(true);
-    }
-    public boolean getForceRetire() {
-        return (Boolean) kp.get("forceRetire");
-    }
     public void setForceRetire(boolean force) {
         kp.put("forceRetire",force);
     }

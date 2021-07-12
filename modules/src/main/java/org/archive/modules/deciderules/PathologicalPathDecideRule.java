@@ -34,17 +34,17 @@ import org.archive.util.TextUtils;
 public class PathologicalPathDecideRule extends DecideRule {
     private static final long serialVersionUID = 3L;
 
-    /**
-     * Number of times the pattern should be allowed to occur. This rule returns
-     * its decision (usually REJECT) if a path-segment is repeated more than
-     * number of times.
-     */
     {
         setMaxRepetitions(2);
     }
     public int getMaxRepetitions() {
         return (Integer) kp.get("maxRepetitions");
     }
+    /**
+     * Number of times the pattern should be allowed to occur. This rule returns
+     * its decision (usually REJECT) if a path-segment is repeated more than
+     * number of times.
+     */
     public void setMaxRepetitions(int maxRepetitions) {
         kp.put("maxRepetitions", maxRepetitions);
     }
