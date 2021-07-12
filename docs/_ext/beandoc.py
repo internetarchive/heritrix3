@@ -116,6 +116,8 @@ def convert_html(soup):
 def format_javadoc(javadoc):
     doc = javadoc.description if javadoc else ''
     doc = doc.replace('\n\n', '<p>').replace('<p><p>', '<p>')
+    doc = re.sub(r'{@link ([^}]+)}', r'\1', doc)
+    doc = re.sub(r'{@code ([^}]+)}', r'<code>\1</code>', doc)
     soup = bs4.BeautifulSoup(doc, features="html.parser")
     return convert_html(soup)
 
