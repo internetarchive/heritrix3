@@ -391,7 +391,7 @@ In addition to HTTP Heritrix can be configured to fetch resources using several 
 FTP
 ~~~
 
-Heritrix supports crawling [FTP](https://en.wikipedia.org/wiki/File_Transfer_Protocol) sites.  Seeds should be added
+Heritrix supports crawling `FTP <https://en.wikipedia.org/wiki/File_Transfer_Protocol>`_ sites.  Seeds should be added
 in the following format: ```ftp://sftp.example.org/directory``.
 
 The FetchFTP bean needs to be defined:
@@ -414,7 +414,7 @@ and added to the FetchChain:
 SFTP
 ~~~~
 
-An optional fetcher for [SFTP](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol) is provided.  Seeds should
+An optional fetcher for `SFTP <https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol>`_ is provided.  Seeds should
 be added in the following format:``sftp://sftp.example.org/directory``.
 
 The FetchSFTP bean needs to be defined:
@@ -438,7 +438,7 @@ and added to the FetchChain:
 WHOIS
 ~~~~~
 
-An optional fetcher for domain [WHOIS](https://en.wikipedia.org/wiki/WHOIS) data is provided. A small set of
+An optional fetcher for domain `WHOIS <https://en.wikipedia.org/wiki/WHOIS>`_ data is provided. A small set of
 well-established WHOIS servers are preconfigured. The fetcher uses an ad-hoc/intuitive interpretation of a 'whois:'
 scheme URI.
 
