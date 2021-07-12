@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.WARNING;
@@ -43,7 +44,6 @@ public class ChromeClient implements Closeable {
     private final DevtoolsSocket devtoolsSocket;
     private final AtomicLong nextMessageId = new AtomicLong(0);
     private final Map<Long, CompletableFuture<JSONObject>> responseFutures = new ConcurrentHashMap<>();
-    private final ExecutorService threadPool = Executors.newCachedThreadPool();
     final ConcurrentHashMap<String, Consumer<JSONObject>> sessionEventHandlers = new ConcurrentHashMap<>();
 
     public ChromeClient(String devtoolsUrl) {
@@ -110,16 +110,7 @@ public class ChromeClient implements Closeable {
             String sessionId = message.getString("sessionId");
             Consumer<JSONObject> handler = sessionEventHandlers.get(sessionId);
             if (handler != null) {
-                // Run event handlers on a different thread so we don't block the websocket receiving thread.
-                // That would cause a deadlock if an event handler itself made an RPC call as the response could
-                // never be processed.
-                threadPool.submit(() -> {
-                    try {
-                        handler.accept(message);
-                    } catch (Throwable t) {
-                        logger.log(WARNING, "Exception handling browser event " + message, t);
-                    }
-                });
+                handler.accept(message);
             } else {
                 logger.log(WARNING, "Received event for unknown session {0}", sessionId);
             }
@@ -164,13 +155,14 @@ public class ChromeClient implements Closeable {
         }
 
         @Override
-        public void onClose(int i, String s, boolean b) {
-
+        public void onClose(int code, String reason, boolean remote) {
+            if (!remote) return;
+            logger.log(WARNING, "Websocket closed by browser: " + reason);
         }
 
         @Override
         public void onError(Exception e) {
-
+            logger.log(Level.SEVERE, "Websocket error", e);
         }
     }
 }
