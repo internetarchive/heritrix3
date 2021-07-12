@@ -33,8 +33,8 @@ FetchWhois
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchWhois.java
 
-Extractors
-----------
+Link Extractors
+---------------
 
 ExtractorChrome (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,6 +56,21 @@ ExtractorHTML
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorHTML.java
 
+AggressiveExtractorHTML
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/AggressiveExtractorHTML.java
+
+JerichoExtractorHTML
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/JerichoExtractorHTML.java
+
+ExtractorHTMLForms
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/forms/ExtractorHTMLForms.java
+
 ExtractorHTTP
 ~~~~~~~~~~~~~
 
@@ -70,6 +85,11 @@ ExtractorJS
 ~~~~~~~~~~~
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorJS.java
+
+KnowledgableExtractorJS (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/KnowledgableExtractorJS.java
 
 ExtractorMultipleRegex
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -105,3 +125,33 @@ ExtractorUniversal
 ~~~~~~~~~~~~~~~~~~
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorUniversal.java
+
+ExtractorURI
+~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorURI.java
+
+ExtractorXML
+~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorXML.java
+
+ExtractorYoutubeDL (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeDL.java
+
+ExtractorYoutubeFormatStream (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeFormatStream.java
+
+ExtractorYoutubeChannelFormatStream (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeChannelFormatStream.java
+
+TrapSuppressExtractor
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/TrapSuppressExtractor.java
