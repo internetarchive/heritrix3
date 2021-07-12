@@ -38,6 +38,7 @@ def parse_java(source_file):
     model['doc'] = javalang.javadoc.parse(clazz.documentation) if clazz.documentation else None
 
     property_defaults = {}
+    property_docs = {}
 
     for member in clazz.body:
         if (isinstance(member, list) and len(member) > 0 and
@@ -52,9 +53,12 @@ def parse_java(source_file):
 
     for field in clazz.fields:
         if field.declarators:
-            value = evaluate_expression(field.declarators[0].initializer)
-            if value is None: continue
-            property_defaults[field.declarators[0].name] = value
+            field_name = field.declarators[0].name
+            field_value = evaluate_expression(field.declarators[0].initializer)
+            if field_value is not None:
+                property_defaults[field_name] = field_value
+            if field.documentation is not None:
+                property_docs[field_name] = field.documentation
 
     for method in clazz.methods:
         if ('public' in method.modifiers and
@@ -62,11 +66,12 @@ def parse_java(source_file):
                 method.name.startswith('set')):
             property_name = method.name[3:4].lower() + method.name[4:]
             value = property_defaults.get(property_name, "")
+            doc = method.documentation or property_docs.get(property_name)
             model['properties'].append({
                 'name': property_name,
                 'value': str(value).replace('"', ''),
                 'type': method.parameters[0].type.name,
-                'doc': javalang.javadoc.parse(method.documentation) if method.documentation else None
+                'doc': javalang.javadoc.parse(doc) if doc else None
             })
     return model
 
