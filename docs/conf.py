@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('./_ext'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Heritrix Documentation'
+project = 'Heritrix 3'
 copyright = 'Internet Archive and contributors'
 author = 'Internet Archive and contributors'
 
