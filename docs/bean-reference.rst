@@ -5,6 +5,120 @@ Bean Reference
     This reference is a work in progress and does not yet cover all available beans. For a more complete list of
     Heritrix beans please refer to the `javadoc <https://www.javadoc.io/doc/org.archive.heritrix/heritrix-modules>`_.
 
+Core Beans
+----------
+
+ActionDirectory
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/ActionDirectory.java
+
+BdbCookieStore
+~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/BdbCookieStore.java
+
+BdbFrontier
+~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/frontier/BdbFrontier.java
+
+BdbModule
+~~~~~~~~~
+
+.. bean-doc:: ../commons/src/main/java/org/archive/bdb/BdbModule.java
+
+BdbServerCache
+~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/net/BdbServerCache.java
+
+BdbUriUniqFilter
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/util/BdbUriUniqFilter.java
+
+CheckpointService
+~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CheckpointService.java
+
+CrawlController
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CrawlController.java
+
+CrawlerLoggerModule
+~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/reporting/CrawlerLoggerModule.java
+
+CrawlLimitEnforcer
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CrawlLimitEnforcer.java
+
+CrawlMetadata
+~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/CrawlMetadata.java
+
+CredentialStore
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/credential/CredentialStore.java
+
+DiskSpaceMonitor
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/monitor/DiskSpaceMonitor.java
+
+RulesCanonicalizationPolicy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/canonicalize/RulesCanonicalizationPolicy.java
+
+SheetOverlaysManager
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/spring/SheetOverlaysManager.java
+
+StatisticsTracker
+~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/reporting/StatisticsTracker.java
+
+TextSeedModule
+~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/seeds/TextSeedModule.java
+
+Candidate Processors
+--------------------
+
+CandidateScoper
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/CandidateScoper.java
+
+FrontierPreparer
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/FrontierPreparer.java
+
+Pre-Fetch Processors
+--------------------
+
+PreconditionEnforcer
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/PreconditionEnforcer.java
+
+Preselector
+~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/Preselector.java
+
 Fetch Processors
 ----------------
 
@@ -155,3 +269,26 @@ TrapSuppressExtractor
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/TrapSuppressExtractor.java
+
+Post-Processors
+---------------
+
+CandidatesProcessor
+~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/CandidatesProcessor.java
+
+DispositionProcessor
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/DispositionProcessor.java
+
+ReschedulingProcessor
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/ReschedulingProcessor.java
+
+WARCWriterChainProcessor
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/writer/WARCWriterChainProcessor.java
