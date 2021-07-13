@@ -93,6 +93,229 @@ TextSeedModule
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/seeds/TextSeedModule.java
 
+Decide Rules
+------------
+
+AcceptDecideRule
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/AcceptDecideRule.java
+
+ClassKeyMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/deciderules/ClassKeyMatchesRegexDecideRule.java
+
+ContentLengthDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentLengthDecideRule.java
+
+ContentTypeMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentTypeMatchesRegexDecideRule.java
+
+ContentTypeNotMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentTypeNotMatchesRegexDecideRule.java
+
+ExpressionDecideRule (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../contrib/src/main/java/org/archive/modules/deciderules/ExpressionDecideRule.java
+
+ExternalGeoLocationDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ExternalGeoLocationDecideRule.java
+
+FetchStatusDecideRule
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusDecideRule.java
+
+FetchStatusMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusMatchesRegexDecideRule.java
+
+FetchStatusNotMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusNotMatchesRegexDecideRule.java
+
+HasViaDecideRule
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HasViaDecideRule.java
+
+HopCrossesAssignmentLevelDomainDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HopCrossesAssignmentLevelDomainDecideRule.java
+
+HopsPathMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HopsPathMatchesRegexDecideRule.java
+
+IdenticalDigestDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/recrawl/IdenticalDigestDecideRule.java
+
+IpAddressSetDecideRule
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/IpAddressSetDecideRule.java
+
+MatchesFilePatternDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesFilePatternDecideRule.java
+
+MatchesListRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesListRegexDecideRule.java
+
+MatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesRegexDecideRule.java
+
+MatchesStatusCodeDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesStatusCodeDecideRule.java
+
+NotMatchesFilePatternDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesFilePatternDecideRule.java
+
+NotMatchesListRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesListRegexDecideRule.java
+
+NotMatchesRegexDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesRegexDecideRule.java
+
+NotMatchesStatusCodeDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesStatusCodeDecideRule.java
+
+NotOnDomainsDecideRule
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotOnDomainsDecideRule.java
+
+NotOnHostsDecideRule
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotOnHostsDecideRule.java
+
+NotSurtPrefixedDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotSurtPrefixedDecideRule.java
+
+OnDomainsDecideRule
+~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/OnDomainsDecideRule.java
+
+OnHostsDecideRule
+~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/OnHostsDecideRule.java
+
+PathologicalPathDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PathologicalPathDecideRule.java
+
+PredicatedDecideRule
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PredicatedDecideRule.java
+
+PrerequisiteAcceptDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PrerequisiteAcceptDecideRule.java
+
+RejectDecideRule
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/RejectDecideRule.java
+
+ResourceLongerThanDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResourceLongerThanDecideRule.java
+
+ResourceNoLongerThanDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResourceNoLongerThanDecideRule.java
+
+ResponseContentLengthDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResponseContentLengthDecideRule.java
+
+SchemeNotInSetDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SchemeNotInSetDecideRule.java
+
+ScriptedDecideRule
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ScriptedDecideRule.java
+
+SeedAcceptDecideRule
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SeedAcceptDecideRule.java
+
+SourceSeedDecideRule
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SourceSeedDecideRule.java
+
+SurtPrefixedDecideRule
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/SurtPrefixedDecideRule.java
+
+TooManyHopsDecideRule
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TooManyHopsDecideRule.java
+
+TooManyPathSegmentsDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TooManyPathSegmentsDecideRule.java
+
+TransclusionDecideRule
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TransclusionDecideRule.java
+
+ViaSurtPrefixedDecideRule
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ViaSurtPrefixedDecideRule.java
+
 Candidate Processors
 --------------------
 
