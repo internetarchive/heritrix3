@@ -96,17 +96,17 @@ public class ExtractorHTMLForms extends Extractor {
     private static Logger logger =
         Logger.getLogger(ExtractorHTMLForms.class.getName());
  
-    /**
-     * If true, report all FORMs. If false, report only those that
-     * appear to be a login-enabling FORM. 
-     * Default is false.
-     */
     {
         setExtractAllForms(false);
     }
     public boolean getExtractAllForms() {
         return (Boolean) kp.get("extractAllForms");
     }
+    /**
+     * If true, report all FORMs. If false, report only those that
+     * appear to be a login-enabling FORM.
+     * Default is false.
+     */
     public void setExtractAllForms(boolean extractAllForms) {
         kp.put("extractAllForms",extractAllForms);
     }

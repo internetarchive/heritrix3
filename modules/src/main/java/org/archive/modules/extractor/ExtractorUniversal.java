@@ -52,15 +52,15 @@ public class ExtractorUniversal extends ContentExtractor {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
-    /**
-     * How deep to look into files for URI strings, in bytes.
-     */
     {
         setMaxSizeToParse(1*1024*1024L); // 1MB
     }
     public long getMaxSizeToParse() {
         return (Long) kp.get("maxSizeToParse");
     }
+    /**
+     * How deep to look into files for URI strings, in bytes.
+     */
     public void setMaxSizeToParse(long threshold) {
         kp.put("maxSizeToParse",threshold);
     }

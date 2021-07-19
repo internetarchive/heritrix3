@@ -56,47 +56,47 @@ public class PreconditionEnforcer extends Processor  {
     private static final Logger logger =
         Logger.getLogger(PreconditionEnforcer.class.getName());
 
-    /**
-     * The minimum interval for which a dns-record will be considered 
-     * valid (in seconds). If the record's DNS TTL is larger, that will 
-     * be used instead.
-     */
     {
         setIpValidityDurationSeconds(6*60*60); // 6 hours
     }
     public int getIpValidityDurationSeconds() {
         return (Integer) kp.get("ipValidityDurationSeconds");
     }
+    /**
+     * The minimum interval for which a dns-record will be considered
+     * valid (in seconds). If the record's DNS TTL is larger, that will
+     * be used instead.
+     */
     public void setIpValidityDurationSeconds(int duration) {
         kp.put("ipValidityDurationSeconds",duration);
     }
 
-    /**
-     * The time in seconds that fetched robots.txt information is considered to
-     * be valid. If the value is set to '0', then the robots.txt information
-     * will never expire.
-     */
     {
         setRobotsValidityDurationSeconds(24*60*60); // 24 hours
     }
     public int getRobotsValidityDurationSeconds() {
         return (Integer) kp.get("robotsValidityDurationSeconds");
     }
+    /**
+     * The time in seconds that fetched robots.txt information is considered to
+     * be valid. If the value is set to '0', then the robots.txt information
+     * will never expire.
+     */
     public void setRobotsValidityDurationSeconds(int duration) {
         kp.put("robotsValidityDurationSeconds",duration);
     }
 
-    /**
-     * Whether to only calculate the robots status of an URI, without actually
-     * applying any exclusions found. If true, exlcuded URIs will only be
-     * annotated in the crawl.log, but still fetched. Default is false.
-     */
     {
         setCalculateRobotsOnly(false);
     }
     public boolean getCalculateRobotsOnly() {
         return (Boolean) kp.get("calculateRobotsOnly");
     }
+    /**
+     * Whether to only calculate the robots status of an URI, without actually
+     * applying any exclusions found. If true, exlcuded URIs will only be
+     * annotated in the crawl.log, but still fetched. Default is false.
+     */
     public void setCalculateRobotsOnly(boolean calcOnly) {
         kp.put("calculateRobotsOnly",calcOnly);
     }   

@@ -116,47 +116,47 @@ implements Closeable,
         this.appCtx = (AbstractApplicationContext)applicationContext;
     }
 
-    /** amount to replenish budget on each activation (duty cycle) */
     {
         setBalanceReplenishAmount(3000);
     }
     public int getBalanceReplenishAmount() {
         return (Integer) kp.get("balanceReplenishAmount");
     }
+    /** amount to replenish budget on each activation (duty cycle) */
     public void setBalanceReplenishAmount(int replenish) {
         kp.put("balanceReplenishAmount",replenish);
     }
 
 
-    /** budget penalty for an error fetch */
     {
         setErrorPenaltyAmount(100);
     }
     public int getErrorPenaltyAmount() {
         return (Integer) kp.get("errorPenaltyAmount");
     }
+    /** budget penalty for an error fetch */
     public void setErrorPenaltyAmount(int penalty) {
         kp.put("errorPenaltyAmount",penalty);
     }
 
-    /** total expenditure to allow a queue before 'retiring' it  */
     {
         setQueueTotalBudget(-1L);
     }
     public long getQueueTotalBudget() {
         return (Long) kp.get("queueTotalBudget");
     }
+    /** total expenditure to allow a queue before 'retiring' it  */
     public void setQueueTotalBudget(long budget) {
         kp.put("queueTotalBudget",budget);
     }
     
-    /** queue precedence assignment policy to use. */
     {
         setQueuePrecedencePolicy(new BaseQueuePrecedencePolicy());
     }
     public QueuePrecedencePolicy getQueuePrecedencePolicy() {
         return (QueuePrecedencePolicy) kp.get("queuePrecedencePolicy");
     }
+    /** queue precedence assignment policy to use. */
     public void setQueuePrecedencePolicy(QueuePrecedencePolicy policy) {
         kp.put("queuePrecedencePolicy",policy);
     }
@@ -727,7 +727,7 @@ implements Closeable,
             // next time
             if(getTotalEligibleInactiveQueues()==0) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(250);
                 } catch (InterruptedException e) {
                     // 
                 } 

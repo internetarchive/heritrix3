@@ -66,16 +66,16 @@ public class ExtractorPDFContent extends ContentExtractor {
             "(\\?([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)?"+       // or possible query
             ")?");
     
-    /**
-     * The maximum size of PDF files to consider.  PDFs larger than this
-     * maximum will not be searched for links.
-     */
     {
         setMaxSizeToParse(10*1024*1024L); // 10MB
     }
     public long getMaxSizeToParse() {
         return (Long) kp.get("maxSizeToParse");
     }
+    /**
+     * The maximum size of PDF files to consider.  PDFs larger than this
+     * maximum will not be searched for links.
+     */
     public void setMaxSizeToParse(long threshold) {
         kp.put("maxSizeToParse",threshold);
     }

@@ -49,9 +49,13 @@ public interface CoreAttributeConstants {
 
     public static String A_RRECORD_SET_LABEL = "dns-records";
     public static String A_DNS_FETCH_TIME    = "dns-fetch-time";
-    public static String A_DNS_SERVER_IP_LABEL = "dns-server-ip";
     public static final String A_FETCH_BEGAN_TIME= "fetch-began-time";
     public static String A_FETCH_COMPLETED_TIME = "fetch-completed-time";
+
+    /**
+     * IP address of the server the resource was fetched from.
+     */
+    public static final String A_SERVER_IP = "server-ip";
 
     public static String A_RUNTIME_EXCEPTION = "runtime-exception";
     public static String A_NONFATAL_ERRORS = "nonfatal-errors";
@@ -113,8 +117,6 @@ public interface CoreAttributeConstants {
     public static final String A_FTP_CONTROL_CONVERSATION = "ftp-control-conversation";
     public static final String A_FTP_FETCH_STATUS = "ftp-fetch-status";
 
-    public static final String A_WHOIS_SERVER_IP = "whois-server-ip";
-    
     public static final String A_HTTP_RESPONSE_HEADERS = "http-response-headers";
     
     public static final String A_HTTP_AUTH_CHALLENGES = "http-auth-challenges";

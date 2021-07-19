@@ -23,21 +23,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/**
- * Parses a Heritrix recovery log file (recover.gz), and builds maps
- * that allow a caller to look up any seed URL and get back an Iterator of all
- * URLs successfully crawled from given seed.
- *
- * Also allows lookup on any crawled
- * URL to find the seed URL from which the crawler reached that URL (through 1
- * or more discovered URL hops, which are collapsed in this lookup).
- * 
- * <p>This code creates some fairly large collections (proprotionate in size to
- * # discovered URLs) so make sure you allocate
- * it a large heap to work in. It also takes a while to process a recover log.
- * <p>See {@link #main()} method at end for test/demo code.
- * @author Mike Schwartz, schwartz at CodeOnTheRoad dot com
- */
 package org.archive.crawler.util;
 
 import org.archive.crawler.frontier.FrontierJournal;
@@ -56,6 +41,21 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Parses a Heritrix recovery log file (recover.gz), and builds maps
+ * that allow a caller to look up any seed URL and get back an Iterator of all
+ * URLs successfully crawled from given seed.
+ *
+ * Also allows lookup on any crawled
+ * URL to find the seed URL from which the crawler reached that URL (through 1
+ * or more discovered URL hops, which are collapsed in this lookup).
+ *
+ * <p>This code creates some fairly large collections (proprotionate in size to
+ * # discovered URLs) so make sure you allocate
+ * it a large heap to work in. It also takes a while to process a recover log.
+ * <p>See {@link #main()} method at end for test/demo code.
+ * @author Mike Schwartz, schwartz at CodeOnTheRoad dot com
+ */
 public class RecoveryLogMapper {
     private static final char LOG_LINE_START_CHAR = FrontierJournal.F_ADD
             .charAt(0);

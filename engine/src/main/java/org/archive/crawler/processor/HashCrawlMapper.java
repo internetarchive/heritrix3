@@ -61,31 +61,31 @@ public class HashCrawlMapper extends CrawlMapper {
         this.crawlerCount = count;
     }
 
-    /**
-     * Whether to use the PublicSuffixes-supplied reduce regex.
-     * 
-     */
     {
         setUsePublicSuffixesRegex(true);
     }
     public boolean getUsePublicSuffixesRegex() {
         return (Boolean) kp.get("usePublicSuffixesRegex");
     }
+    /**
+     * Whether to use the PublicSuffixes-supplied reduce regex.
+     *
+     */
     public void setUsePublicSuffixesRegex(boolean usePublicSuffixes) {
         kp.put("usePublicSuffixesRegex",usePublicSuffixes);
     }
     
-    /**
-     * A regex pattern to apply to the classKey, using the first match as the
-     * mapping key. If empty (the default), use the full classKey.
-     * 
-     */
     {
         setReducePrefixRegex("");
     }
     public String getReducePrefixRegex() {
         return (String) kp.get("reducePrefixRegex");
     }
+    /**
+     * A regex pattern to apply to the classKey, using the first match as the
+     * mapping key. If empty (the default), use the full classKey.
+     *
+     */
     public void setReducePrefixRegex(String regex) {
         kp.put("reducePrefixRegex",regex);
     }

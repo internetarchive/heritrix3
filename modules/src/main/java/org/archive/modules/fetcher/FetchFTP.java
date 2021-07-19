@@ -72,38 +72,34 @@ public class FetchFTP extends Processor  {
      Pattern.compile("(.+)$", Pattern.MULTILINE);
 
     
-    /**
-     * The username to send to FTP servers. By convention, the default value of
-     * "anonymous" is used for publicly available FTP sites.
-     */
     {
         setUsername("anonymous");
     }
     public String getUsername() {
         return (String) kp.get("username");
     }
+    /**
+     * The username to send to FTP servers. By convention, the default value of
+     * "anonymous" is used for publicly available FTP sites.
+     */
     public void setUsername(String username) {
         kp.put("username",username);
     }
 
-    /**
-     * The password to send to FTP servers. By convention, anonymous users send
-     * their email address in this field.
-     */
     {
         setPassword("password");
     }
     public String getPassword() {
         return (String) kp.get("password");
     }
+    /**
+     * The password to send to FTP servers. By convention, anonymous users send
+     * their email address in this field.
+     */
     public void setPassword(String pw) {
         kp.put("password",pw);
     }
 
-    /**
-     * Set to true to extract further URIs from FTP directories. Default is
-     * true.
-     */
     {
         setExtractFromDirs(true);
     }
@@ -116,13 +112,14 @@ public class FetchFTP extends Processor  {
     public boolean getExtractFromDirs() {
         return (Boolean) kp.get("extractFromDirs");
     }
+    /**
+     * Set to true to extract further URIs from FTP directories. Default is
+     * true.
+     */
     public void setExtractFromDirs(boolean extractFromDirs) {
         kp.put("extractFromDirs",extractFromDirs);
     }
     
-    /**
-     * Set to true to extract the parent URI from all FTP URIs. Default is true.
-     */
     {
         setExtractParent(true);
     }
@@ -135,20 +132,23 @@ public class FetchFTP extends Processor  {
     public boolean getExtractParent() {
         return (Boolean) kp.get("extractParent");
     }
+    /**
+     * Set to true to extract the parent URI from all FTP URIs. Default is true.
+     */
     public void setExtractParent(boolean extractParent) {
         kp.put("extractParent",extractParent);
     }
 
-    /**
-     * Whether or not to perform an on-the-fly digest hash of retrieved
-     * content-bodies.
-     */
     {
         setDigestContent(true);
     }
     public boolean getDigestContent() {
         return (Boolean) kp.get("digestContent");
     }
+    /**
+     * Whether or not to perform an on-the-fly digest hash of retrieved
+     * content-bodies.
+     */
     public void setDigestContent(boolean digest) {
         kp.put("digestContent",digest);
     }
@@ -166,48 +166,54 @@ public class FetchFTP extends Processor  {
     }
 
 
-    /**
-     * Maximum length in bytes to fetch. Fetch is truncated at this length. A
-     * value of 0 means no limit.
-     */
     {
         setMaxLengthBytes(0L); // no limit
     }
     public long getMaxLengthBytes() {
         return (Long) kp.get("maxLengthBytes");
     }
+    /**
+     * Maximum length in bytes to fetch. Fetch is truncated at this length. A
+     * value of 0 means no limit.
+     */
     public void setMaxLengthBytes(long timeout) {
         kp.put("maxLengthBytes",timeout);
     }
     
-    /**
-     * The maximum KB/sec to use when fetching data from a server. The default
-     * of 0 means no maximum.
-     */
     {
         setMaxFetchKBSec(0); // no limit
     }
     public int getMaxFetchKBSec() {
         return (Integer) kp.get("maxFetchKBSec");
     }
+    /**
+     * The maximum KB/sec to use when fetching data from a server. The default
+     * of 0 means no maximum.
+     */
     public void setMaxFetchKBSec(int rate) {
         kp.put("maxFetchKBSec",rate);
     }
     
-    /**
-     * If the fetch is not completed in this number of seconds, give up (and
-     * retry later).
-     */
     {
         setTimeoutSeconds(20*60); // 20 minutes
     }
     public int getTimeoutSeconds() {
         return (Integer) kp.get("timeoutSeconds");
     }
+    /**
+     * If the fetch is not completed in this number of seconds, give up (and
+     * retry later).
+     */
     public void setTimeoutSeconds(int timeout) {
         kp.put("timeoutSeconds",timeout);
     }
 
+    {
+        setSoTimeoutMs(20*1000); // 20 seconds
+    }
+    public int getSoTimeoutMs() {
+        return (Integer) kp.get("soTimeoutMs");
+    }
     /**
      * If the socket is unresponsive for this number of milliseconds, give up.
      * Set to zero for no timeout (Not. recommended. Could hang a thread on an
@@ -216,12 +222,6 @@ public class FetchFTP extends Processor  {
      * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
      * retry read.
      */
-    {
-        setSoTimeoutMs(20*1000); // 20 seconds
-    }
-    public int getSoTimeoutMs() {
-        return (Integer) kp.get("soTimeoutMs");
-    }
     public void setSoTimeoutMs(int timeout) {
         kp.put("soTimeoutMs",timeout);
     }
@@ -435,6 +435,8 @@ public class FetchFTP extends Processor  {
                 // clear
                 recorder.getRecordedInput().setDigest((MessageDigest)null);
             }
+
+            curi.setServerIP(socket.getInetAddress().getHostAddress());
                     
             try {
                 saveToRecorder(curi, socket, recorder);

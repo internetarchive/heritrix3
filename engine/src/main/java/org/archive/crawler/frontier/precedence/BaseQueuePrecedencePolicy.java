@@ -38,14 +38,14 @@ implements HasKeyedProperties {
         return kp;
     }
     
-    /** constant precedence to assign; default is 3 (which leaves room 
-     * for a simple overlay to prioritize queues) */
     {
         setBasePrecedence(3);
     }
     public int getBasePrecedence() {
         return (Integer) kp.get("basePrecedence");
     }
+    /** constant precedence to assign; default is 3 (which leaves room
+     * for a simple overlay to prioritize queues) */
     public void setBasePrecedence(int precedence) {
         kp.put("basePrecedence", precedence);
     }

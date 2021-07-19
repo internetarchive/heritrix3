@@ -43,28 +43,28 @@ extends BaseRule {
 //        " nothing.  See User Manual for example usage.";
 
     
-    /**
-     * The regular expression to use to match.
-     */
     {
         setRegex(Pattern.compile("(.*)"));
     }
     public Pattern getRegex() {
         return (Pattern) kp.get("regex");
     }
+    /**
+     * The regular expression to use to match.
+     */
     public void setRegex(Pattern regex) {
         kp.put("regex",regex);
     }
     
-    /**
-     * The format string to use when a match is found.
-     */
     {
         setFormat("$1");
     }
     public String getFormat() {
         return (String) kp.get("format");
     }
+    /**
+     * The format string to use when a match is found.
+     */
     public void setFormat(String format) {
         kp.put("format",format);
     }

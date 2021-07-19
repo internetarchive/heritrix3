@@ -44,16 +44,16 @@ public class ExtractorPDF extends ContentExtractor {
     private static final Logger LOGGER =
         Logger.getLogger(ExtractorPDF.class.getName());
 
-    /**
-     * The maximum size of PDF files to consider.  PDFs larger than this
-     * maximum will not be searched for links.
-     */
     {
         setMaxSizeToParse(10*1024*1024L); // 10MB
     }
     public long getMaxSizeToParse() {
         return (Long) kp.get("maxSizeToParse");
     }
+    /**
+     * The maximum size of PDF files to consider.  PDFs larger than this
+     * maximum will not be searched for links.
+     */
     public void setMaxSizeToParse(long threshold) {
         kp.put("maxSizeToParse",threshold);
     }

@@ -33,20 +33,20 @@ public class TooManyHopsDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = 3L;
 
-    /** default for this class is to REJECT */
+    /* default for this class is to REJECT */
     {
         setDecision(DecideResult.REJECT);
     }
     
-    /**
-     * Max path depth for which this filter will match.
-     */
     {
             setMaxHops(20);
     }
     public int getMaxHops() {
         return (Integer) kp.get("maxHops");
     }
+    /**
+     * Max path depth for which this filter will match.
+     */
     public void setMaxHops(int maxHops) {
         kp.put("maxHops", maxHops);
     }

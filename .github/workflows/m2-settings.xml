@@ -1,0 +1,14 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 http://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <!-- unblock builds.archive.org mirror as it doesn't support https :-( -->
+        <mirror>
+            <id>builds.archive.org,maven2,mirror</id>
+            <mirrorOf>builds.archive.org,maven2</mirrorOf>
+            <name>builds.archive.org,maven2,mirror</name>
+            <url>http://builds.archive.org/maven2</url>
+            <blocked>false</blocked>
+        </mirror>
+    </mirrors>
+</settings>

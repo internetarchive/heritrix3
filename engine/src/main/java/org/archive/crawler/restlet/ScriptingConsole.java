@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.archive.crawler.restlet;
 
 import java.io.PrintWriter;

@@ -58,46 +58,46 @@ public class ExtractorImpliedURI extends Extractor {
         Logger.getLogger(ExtractorImpliedURI.class.getName());
    
     
-    /**
-     * Triggering regular expression. When a discovered URI matches this
-     * pattern, the 'implied' URI will be built. The capturing groups of this
-     * expression are available for the build replacement pattern.
-     */
     {
         setRegex(Pattern.compile("^(.*)$"));
     }
     public Pattern getRegex() {
         return (Pattern) kp.get("regex");
     }
+    /**
+     * Triggering regular expression. When a discovered URI matches this
+     * pattern, the 'implied' URI will be built. The capturing groups of this
+     * expression are available for the build replacement pattern.
+     */
     public void setRegex(Pattern regex) {
         kp.put("regex",regex);
     }
 
     
-    /**
-     * Replacement pattern to build 'implied' URI, using captured groups of
-     * trigger expression.
-     */
     {
         setFormat("");
     }
     public String getFormat() {
         return (String) kp.get("format");
     }
+    /**
+     * Replacement pattern to build 'implied' URI, using captured groups of
+     * trigger expression.
+     */
     public void setFormat(String format) {
         kp.put("format",format);
     }
 
-    /**
-     * If true, all URIs that match trigger regular expression are removed 
-     * from the list of extracted URIs. Default is false.
-     */
     {
         setRemoveTriggerUris(false);
     }
     public boolean getRemoveTriggerUris() {
         return (Boolean) kp.get("removeTriggerUris");
     }
+    /**
+     * If true, all URIs that match trigger regular expression are removed
+     * from the list of extracted URIs. Default is false.
+     */
     public void setRemoveTriggerUris(boolean remove) {
         kp.put("removeTriggerUris",remove);
     }

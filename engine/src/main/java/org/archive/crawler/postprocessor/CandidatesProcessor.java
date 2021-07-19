@@ -82,33 +82,33 @@ public class CandidatesProcessor extends Processor {
         this.loggerModule = loggerModule;
     }
     
-    /**
-     * If enabled, any URL found because a seed redirected to it (original seed
-     * returned 301 or 302), will also be treated as a seed, as long as the hop
-     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
-     */
     {
         setSeedsRedirectNewSeeds(true);
     }
     public boolean getSeedsRedirectNewSeeds() {
         return (Boolean) kp.get("seedsRedirectNewSeeds");
     }
+    /**
+     * If enabled, any URL found because a seed redirected to it (original seed
+     * returned 301 or 302), will also be treated as a seed, as long as the hop
+     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
+     */
     public void setSeedsRedirectNewSeeds(boolean redirect) {
         kp.put("seedsRedirectNewSeeds",redirect);
     }
     protected static final int SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS = 5;
 
-    /**
-     * If true, outlinks from status codes <200 and >=400 
-     * will be sent through candidates processing. Default is
-     * false. 
-     */
     {
         setProcessErrorOutlinks(false);
     }
     public boolean getProcessErrorOutlinks() {
         return (Boolean) kp.get("processErrorOutlinks");
     }
+    /**
+     * If true, outlinks from status codes <200 and >=400
+     * will be sent through candidates processing. Default is
+     * false.
+     */
     public void setProcessErrorOutlinks(boolean errorOutlinks) {
         kp.put("processErrorOutlinks",errorOutlinks);
     }

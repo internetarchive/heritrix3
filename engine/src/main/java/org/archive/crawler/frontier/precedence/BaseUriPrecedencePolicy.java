@@ -36,13 +36,13 @@ implements HasKeyedProperties {
         return kp;
     }
     
-    /** constant precedence to assign; default is 1 */
     {
         setBasePrecedence(1);
     }
     public int getBasePrecedence() {
         return (Integer) kp.get("basePrecedence");
     }
+    /** constant precedence to assign; default is 1 */
     public void setBasePrecedence(int precedence) {
         kp.put("basePrecedence", precedence);
     }

@@ -54,15 +54,15 @@ implements UserAgentProvider,
         return kp;
     }
     
-    /**
-     * Robots policy name
-     */
     {
         setRobotsPolicyName("obey");
     }
     public String getRobotsPolicyName() {
         return (String) kp.get("robotsPolicyName");
     }
+    /**
+     * Robots policy name
+     */
     @Autowired(required=false)
     public void setRobotsPolicyName(String policy) {
         kp.put("robotsPolicyName",policy);

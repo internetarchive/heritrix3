@@ -24,19 +24,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author stack
  * @author gojomo
  * @version $Date: 2009-08-03 23:50:43 -0700 (Mon, 03 Aug 2009) $, $Revision: 6434 $
  */
-public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
+public class ObjectIdentityBdbManualCacheTest {
+    @Rule
+    public TemporaryFolder tmpFolder = new TemporaryFolder();
     EnhancedEnvironment env; 
     private ObjectIdentityBdbManualCache<IdentityCacheableWrapper<HashMap<String,String>>> cache;
-    
-    protected void setUp() throws Exception {
-        super.setUp();
-        File envDir = new File(getTmpDir(),"ObjectIdentityBdbCacheTest");
+
+    @Before
+    public void setUp() throws Exception {
+        File envDir = tmpFolder.newFolder("ObjectIdentityBdbCacheTest");
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
         FileUtils.deleteDirectory(envDir);
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
@@ -44,16 +51,19 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         this.cache = new ObjectIdentityBdbManualCache<IdentityCacheableWrapper<HashMap<String,String>>>();
         this.cache.initialize(env,"setUpCache",IdentityCacheableWrapper.class, env.getClassCatalog());
     }
-    
-    protected void tearDown() throws Exception {
+
+    @After
+    public void tearDown() throws Exception {
         this.cache.close();
         File envDir = env.getHome();
         env.close(); 
         FileUtils.deleteDirectory(envDir);
-        super.tearDown();
     }
-    
+
+    @Test
     public void testReadConsistencyUnderLoad() throws Exception {
+        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 1 minute)",
+                "true".equals(System.getProperty("runSlowTests")));
         final ObjectIdentityBdbManualCache<IdentityCacheableWrapper<AtomicInteger>> cbdbmap = 
             new ObjectIdentityBdbManualCache<>();
         cbdbmap.initialize(env, 
@@ -95,7 +105,8 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         }
         // SUCCESS
     }
-    
+
+    @Test
     public void testBackingDbGetsUpdated() {
         // Set up values.
         final String value = "value";
@@ -129,6 +140,8 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
      * expunged of otherwise unreferenced entries as expected.
      * @throws InterruptedException
      */
+    @Test
+    @Ignore
     public void xestMemMapCleared() throws InterruptedException {
         TestUtils.forceScarceMemory();
         System.gc(); // minimize effects of earlier test heap use
@@ -159,10 +172,5 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         }
         System.out.println(cache.size()+","+cache.memMap.size()+","+cache.memMap.keySet().size()+","+cache.memMap.values().size()+","+countNonNull);
         assertEquals("memMap not cleared", 0, cache.memMap.size());
-    }
-    
-    
-    public static void main(String [] args) {
-        junit.textui.TestRunner.run(ObjectIdentityBdbManualCacheTest.class);
     }
 }

@@ -49,16 +49,16 @@ public abstract class Scoper extends Processor implements Lifecycle {
     
     protected Logger fileLogger = null;
 
-    /**
-     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
-     * is "[timestamp] [decision] [uri]" where decision is 'ACCEPT' or 'REJECT'.
-     */
     {
         setLogToFile(false);
     }
     public boolean getLogToFile() {
         return (Boolean) kp.get("logToFile");
     }
+    /**
+     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
+     * is "[timestamp] [decision] [uri]" where decision is 'ACCEPT' or 'REJECT'.
+     */
     public void setLogToFile(boolean enabled) {
         kp.put("logToFile",enabled);
     }

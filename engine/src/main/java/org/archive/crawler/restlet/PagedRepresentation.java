@@ -26,14 +26,19 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
+import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.util.FileUtils;
+import org.eclipse.jetty.http.HttpStatus;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
@@ -132,18 +137,81 @@ public class PagedRepresentation extends CharacterRepresentation {
         
         PrintWriter pw = new PrintWriter(writer); 
         pw.println("<b>Paged view:</b> "+file);
-        emitControls(pw); 
-        
+        emitControls(pw);
+
+        Function<String, String> syntaxHighlighter = Function.identity();
+        if (file.getName().equals("crawl.log")) {
+            pw.println("<style>\n" +
+                    ".status-neg { color: #777; }\n" +
+                    ".status-2xx { color: #070; }\n" +
+                    ".status-3xx { color: #007; }\n" +
+                    ".status-4xx { color: #770; }\n" +
+                    ".status-5xx { color: #770; }\n" +
+                    "</style>");
+            syntaxHighlighter = this::highlightCrawlLogLine;
+        }
+
         pw.println("<pre>");
         emitBumper(pw, true);
         for(String line : lines) {
-            StringEscapeUtils.escapeHtml(pw,line); 
-            pw.println();
+            pw.println(syntaxHighlighter.apply(StringEscapeUtils.escapeHtml(line)));
         }
         emitBumper(pw, false);
         pw.println("</pre>");
         
         emitControls(pw); 
+    }
+
+    /**
+     * Map of fetch status codes to names.
+     */
+    private static final Map<Integer, String> FETCH_STATUS_NAMES = new HashMap<>();
+
+    static {
+        for (Field field : FetchStatusCodes.class.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) continue;
+            if (!field.getType().equals(int.class)) continue;
+            try {
+                FETCH_STATUS_NAMES.put((Integer)field.get(null), field.getName());
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static final Pattern CRAWL_LOG_PATTERN = Pattern.compile("([^ ]+ +)(-?[0-9]+)( +.*)");
+
+    /**
+     * Performs basic syntax highlighting of a crawl log line. Assumes the line is already HTML escaped.
+     */
+    public String highlightCrawlLogLine(String line) {
+        Matcher m = CRAWL_LOG_PATTERN.matcher(line);
+        if (m.matches()) {
+            String date = m.group(1);
+            String status = m.group(2);
+            String rest = m.group(3);
+
+            int code = Integer.parseInt(status);
+            String clazz = "";
+            if (code < 0) {
+                clazz = "status-neg";
+            } else if (code >= 200 && code <= 299) {
+                clazz = "status-2xx";
+            } else if (code >= 300 && code <= 399) {
+                clazz = "status-3xx";
+            } else if (code >= 400 && code <= 499) {
+                clazz = "status-4xx";
+            } else if (code >= 500 && code <= 599) {
+                clazz = "status-5xx";
+            }
+
+            String reason = FETCH_STATUS_NAMES.get(code);
+            if (reason == null) reason = HttpStatus.getMessage(code);
+
+            return date + "<abbr class='" + clazz + "' title='" + reason + "'>" + status + "</abbr>" + rest;
+        } else {
+            return line;
+        }
     }
 
     /**

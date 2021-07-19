@@ -42,31 +42,31 @@ public class ResourceNoLongerThanDecideRule extends PredicatedDecideRule {
     private static final Logger logger = Logger.
     	getLogger(ResourceNoLongerThanDecideRule.class.getName());
     
-    /**
-     * Shall this rule be used as a midfetch rule? If true, this rule will
-     * determine content length based on HTTP header information, otherwise
-     * the size of the already downloaded content will be used.
-     */
     {
         setUseHeaderLength(true);
     }
     public boolean getUseHeaderLength() {
         return (Boolean) kp.get("useHeaderLength");
     }
+    /**
+     * Shall this rule be used as a midfetch rule? If true, this rule will
+     * determine content length based on HTTP header information, otherwise
+     * the size of the already downloaded content will be used.
+     */
     public void setUseHeaderLength(boolean useHeaderLength) {
         kp.put("useHeaderLength",useHeaderLength);
     }
     
-    /**
-     * Max content-length this filter will allow to pass through. If -1, 
-     * then no limit.
-     */
     {
         setContentLengthThreshold(-1L);
     }
     public long getContentLengthThreshold() {
         return (Long) kp.get("contentLengthThreshold");
     }
+    /**
+     * Max content-length this filter will allow to pass through. If -1,
+     * then no limit.
+     */
     public void setContentLengthThreshold(long threshold) {
         kp.put("contentLengthThreshold",threshold);
     }

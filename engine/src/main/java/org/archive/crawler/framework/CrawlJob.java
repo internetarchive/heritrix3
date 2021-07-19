@@ -408,7 +408,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
      * (Note the crawl may have been configured to start in a 'paused'
      * state.) 
      */
-    public synchronized void launch() {
+    public void launch() {
         if (isProfile()) {
             throw new IllegalArgumentException("Can't launch profile" + this);
         }
@@ -449,9 +449,8 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         getJobLogger().log(Level.INFO,"Job launched");
         scanJobLog();
         launcher.start();
-        // look busy (and give startContext/crawlStart a chance)
         try {
-            Thread.sleep(1500);
+            launcher.join();
         } catch (InterruptedException e) {
             // do nothing
         }

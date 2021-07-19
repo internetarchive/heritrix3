@@ -230,49 +230,55 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     static final String IFRAME = "iframe";
 
     
-    /**
-     * If true, FRAME/IFRAME SRC-links are treated as embedded resources (like
-     * IMG, 'E' hop-type), otherwise they are treated as navigational links.
-     * Default is true.
-     */
     {
         setTreatFramesAsEmbedLinks(true);
     }
     public boolean getTreatFramesAsEmbedLinks() {
         return (Boolean) kp.get("treatFramesAsEmbedLinks");
     }
+    /**
+     * If true, FRAME/IFRAME SRC-links are treated as embedded resources (like
+     * IMG, 'E' hop-type), otherwise they are treated as navigational links.
+     * Default is true.
+     */
     public void setTreatFramesAsEmbedLinks(boolean asEmbeds) {
         kp.put("treatFramesAsEmbedLinks",asEmbeds);
     }
     
-    /**
-     * If true, URIs appearing as the ACTION attribute in HTML FORMs are
-     * ignored. Default is false.
-     */
     {
         setIgnoreFormActionUrls(false);
     }
     public boolean getIgnoreFormActionUrls() {
         return (Boolean) kp.get("ignoreFormActionUrls");
     }
+    /**
+     * If true, URIs appearing as the ACTION attribute in HTML FORMs are
+     * ignored. Default is false.
+     */
     public void setIgnoreFormActionUrls(boolean ignoreActions) {
         kp.put("ignoreFormActionUrls",ignoreActions);
     }
 
-    /**
-     * If true, only ACTION URIs with a METHOD of GET (explicit or implied)
-     * are extracted. Default is true.
-     */
     {
         setExtractOnlyFormGets(true);
     }
     public boolean getExtractOnlyFormGets() {
         return (Boolean) kp.get("extractOnlyFormGets");
     }
+    /**
+     * If true, only ACTION URIs with a METHOD of GET (explicit or implied)
+     * are extracted. Default is true.
+     */
     public void setExtractOnlyFormGets(boolean onlyGets) {
         kp.put("extractOnlyFormGets",onlyGets);
     }
     
+    {
+        setExtractJavascript(true);
+    }
+    public boolean getExtractJavascript() {
+        return (Boolean) kp.get("extractJavascript");
+    }
     /**
      * If true, in-page Javascript is scanned for strings that
      * appear likely to be URIs. This typically finds both valid
@@ -280,42 +286,36 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * sometimes generates webmaster concerns over odd crawler
      * behavior. Default is true.
      */
-    {
-        setExtractJavascript(true);
-    }
-    public boolean getExtractJavascript() {
-        return (Boolean) kp.get("extractJavascript");
-    }
     public void setExtractJavascript(boolean extractJavascript) {
         kp.put("extractJavascript",extractJavascript);
     }    
 
-    /**
-     * If true, strings that look like URIs found in unusual places (such as
-     * form VALUE attributes) will be extracted. This typically finds both valid
-     * and invalid URIs, and attempts to fetch the invalid URIs sometimes
-     * generate webmaster concerns over odd crawler behavior. Default is true.
-     */
     {
         setExtractValueAttributes(true);
     }
     public boolean getExtractValueAttributes() {
         return (Boolean) kp.get("extractValueAttributes");
     }
+    /**
+     * If true, strings that look like URIs found in unusual places (such as
+     * form VALUE attributes) will be extracted. This typically finds both valid
+     * and invalid URIs, and attempts to fetch the invalid URIs sometimes
+     * generate webmaster concerns over odd crawler behavior. Default is true.
+     */
     public void setExtractValueAttributes(boolean extractValueAttributes) {
         kp.put("extractValueAttributes",extractValueAttributes);
     }    
 
-    /**
-     * If true, URIs which end in typical non-HTML extensions (such as .gif)
-     * will not be scanned as if it were HTML. Default is true.
-     */
     {
         setIgnoreUnexpectedHtml(true);
     }
     public boolean getIgnoreUnexpectedHtml() {
         return (Boolean) kp.get("ignoreUnexpectedHtml");
     }
+    /**
+     * If true, URIs which end in typical non-HTML extensions (such as .gif)
+     * will not be scanned as if it were HTML. Default is true.
+     */
     public void setIgnoreUnexpectedHtml(boolean ignoreUnexpectedHtml) {
         kp.put("ignoreUnexpectedHtml",ignoreUnexpectedHtml);
     }

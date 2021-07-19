@@ -317,7 +317,7 @@ public class Engine {
                 return true; 
             }
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (InterruptedException e) {
                 break;
             }
@@ -329,8 +329,8 @@ public class Engine {
             break;
         }
         try {
-            // wait an extra second for good measure
-            Thread.sleep(1000);
+            // wait an extra quarter second for good measure
+            Thread.sleep(250);
         } catch (InterruptedException e) {
             // ignore
         }

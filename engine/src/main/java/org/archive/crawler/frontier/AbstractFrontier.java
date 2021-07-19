@@ -100,37 +100,37 @@ public abstract class AbstractFrontier
         return kp;
     }
     
-    /** for retryable problems, seconds to wait before a retry */
     {
         setRetryDelaySeconds(900);
     }
     public int getRetryDelaySeconds() {
         return (Integer) kp.get("retryDelaySeconds");
     }
+    /** for retryable problems, seconds to wait before a retry */
     public void setRetryDelaySeconds(int delay) {
         kp.put("retryDelaySeconds",delay);
     }
     
-    /** maximum times to emit a CrawlURI without final disposition */
     {
         setMaxRetries(30);
     }
     public int getMaxRetries() {
         return (Integer) kp.get("maxRetries");
     }
+    /** maximum times to emit a CrawlURI without final disposition */
     public void setMaxRetries(int maxRetries) {
         kp.put("maxRetries",maxRetries);
     }
     
-    /**
-     * Recover log on or off attribute.
-     */
     {
         setRecoveryLogEnabled(true);
     }
     public boolean getRecoveryLogEnabled() {
         return (Boolean) kp.get("recoveryLogEnabled");
     }
+    /**
+     * Recover log on or off attribute.
+     */
     public void setRecoveryLogEnabled(boolean enabled) {
         kp.put("recoveryLogEnabled",enabled);
     }
@@ -364,7 +364,7 @@ public abstract class AbstractFrontier
                         }
                         reachedState(reachedState);
                         
-                        Thread.sleep(1000);
+                        Thread.sleep(250);
                         
                         if(isEmpty()&&targetState==State.RUN) {
                             requestState(State.EMPTY); 
@@ -384,7 +384,7 @@ public abstract class AbstractFrontier
                                 reachedState(State.PAUSE);
                             }
                             
-                            Thread.sleep(1000);
+                            Thread.sleep(250);
                         }
                         break;
                     case FINISH:
@@ -393,7 +393,7 @@ public abstract class AbstractFrontier
                         outboundLock.writeLock().lock();
                         // process all inbound
                         while (getInProcessCount()>0) {
-                            Thread.sleep(1000);
+                            Thread.sleep(250);
                         }
                         logger.fine("0 urls in process, running final tasks");
                         finalTasks(); 

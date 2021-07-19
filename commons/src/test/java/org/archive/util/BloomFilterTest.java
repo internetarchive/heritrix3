@@ -21,7 +21,11 @@ package org.archive.util;
 
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 
 /**
@@ -30,7 +34,7 @@ import junit.framework.TestCase;
  * @author gojomo
  * @version $Date: 2009-11-19 14:39:53 -0800 (Thu, 19 Nov 2009) $, $Revision: 6674 $
  */
-public abstract class BloomFilterTest extends TestCase {
+public abstract class BloomFilterTest {
     
     abstract BloomFilter createBloom(long n, int d, Random random);
 
@@ -70,6 +74,8 @@ public abstract class BloomFilterTest extends TestCase {
      * Renamed to non-'test' name so not automatically run, because can 
      * take 15+ minutes to complete.
      */
+    @Test
+    @Ignore
     public void xestOversized() {
         trialWithParameters(200000000,22,200000000,32000000);
     }
@@ -81,15 +87,23 @@ public abstract class BloomFilterTest extends TestCase {
      * Renamed to non-'test' name so not automatically run, because can 
      * take 15+ minutes to complete.
      */
+    @Test
+    @Ignore
     public void xestDefaultFull() {
         trialWithParameters(125000000,22,125000000,34000000);
     }
-  
+
+    @Test
     public void testDefaultAbbreviated() {
+        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 25 seconds)",
+                "true".equals(System.getProperty("runSlowTests")));
         trialWithParameters(125000000,22,17000000,0);
     }
-    
+
+    @Test
     public void testSmall() {
+        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 20 seconds)",
+                "true".equals(System.getProperty("runSlowTests")));
         trialWithParameters(10000000, 20, 10000000, 10000000);
     }
     

@@ -2,9 +2,7 @@ REST API
 ========
 
 This manual describes the REST application programming interface (API)
-of the Heritrix Web crawler.  Heritrix is the Internet Archive's open
-source, extensible, Web-scale, archival-quality Web crawler. For more
-information about Heritrix, visit \ http://crawler.archive.org/.
+of the Heritrix Web crawler.
 
 This document is intended for application developers and administrators
 interested in controlling the Heritrix Web crawler through its REST API.
