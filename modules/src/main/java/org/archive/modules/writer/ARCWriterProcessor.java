@@ -129,8 +129,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             // We just closed the file because it was larger than maxBytes.
             // Add to the totalBytesWritten the size of the first record
             // in the file, if any.
-            setTotalBytesWritten(getTotalBytesWritten() +
-            	(writer.getPosition() - position));
+            addTotalBytesWritten(writer.getPosition() - position);
             position = writer.getPosition();
         }
         
@@ -155,8 +154,7 @@ public class ARCWriterProcessor extends WriterPoolProcessor {
             throw e;
         } finally {
             if (writer != null) {
-            	setTotalBytesWritten(getTotalBytesWritten() +
-            	     (writer.getPosition() - position));
+            	addTotalBytesWritten(writer.getPosition() - position);
                 getPool().returnFile(writer);
                 
                 String filename = writer.getFile().getName();

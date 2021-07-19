@@ -211,7 +211,7 @@ abstract public class BaseWARCWriterProcessor extends WriterPoolProcessor
                 + WARCWriter.getStat(writer.getTmpStats(), WARCWriter.TOTALS, WARCWriter.SIZE_ON_DISK) 
                 + " bytes to " + writer.getFile().getName() + " for " + curi);
         }
-        setTotalBytesWritten(getTotalBytesWritten() + (writer.getPosition() - startPosition));
+        addTotalBytesWritten(writer.getPosition() - startPosition);
 
         curi.addExtraInfo("warcFilename", writer.getFilenameWithoutOccupiedSuffix());
         curi.addExtraInfo("warcFileOffset", startPosition);
