@@ -73,26 +73,16 @@ public class MultiColumnRecrawlDataSchema extends RecrawlDataSchemaBase implemen
                 p.add(columnFamily, COLUMN_ETAG, Bytes.toBytes(etag));
             }
             String lastmod = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
-            if (lastmod != null) {
-                long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
-                if (lastmod_sec == 0) {
-                    try {
-                        lastmod_sec = uri.getFetchCompletedTime();
-                    } catch (NullPointerException ex) {
-                        logger.warning("CrawlURI.getFetchCompletedTime():" + ex + " for " + uri.shortReportLine());
-                    }
-                }
-                if (lastmod_sec != 0)
-                    p.add(columnFamily, COLUMN_LAST_MODIFIED, Bytes.toBytes(lastmod_sec));
-            } else {
+            long lastmodSec = lastmod != null ? FetchHistoryHelper.parseHttpDate(lastmod) : 0;
+            if (lastmodSec == 0) {
                 try {
-                    long completed = uri.getFetchCompletedTime();
-                    if (completed != 0)
-                        p.add(columnFamily, COLUMN_LAST_MODIFIED, Bytes.toBytes(completed));
+                    lastmodSec = uri.getFetchCompletedTime() / 1000;
                 } catch (NullPointerException ex) {
                     logger.warning("CrawlURI.getFetchCompletedTime():" + ex + " for " + uri.shortReportLine());
                 }
             }
+            if (lastmodSec != 0)
+                p.add(columnFamily, COLUMN_LAST_MODIFIED, Bytes.toBytes(lastmodSec));
         }
         return p;
     }

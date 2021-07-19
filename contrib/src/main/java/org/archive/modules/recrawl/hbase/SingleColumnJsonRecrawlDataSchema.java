@@ -91,24 +91,16 @@ implements RecrawlDataSchema {
                     jo.put(PROPERTY_ETAG, etag);
                 }
                 String lastmod = uri.getHttpResponseHeader(RecrawlAttributeConstants.A_LAST_MODIFIED_HEADER);
-                if (lastmod != null) {
-                    long lastmod_sec = FetchHistoryHelper.parseHttpDate(lastmod);
-                    if (lastmod_sec == 0) {
-                        try {
-                            lastmod_sec = uri.getFetchCompletedTime();
-                        } catch (NullPointerException ex) {
-                            logger.warning("CrawlURI.getFetchCompletedTime():" + ex + " for " + uri.shortReportLine());
-                        }
-                    }
-                } else {
+                long lastmodSec = lastmod != null ? FetchHistoryHelper.parseHttpDate(lastmod) : 0;
+                if (lastmodSec == 0) {
                     try {
-                        long completed = uri.getFetchCompletedTime();
-                        if (completed != 0)
-                            jo.put(PROPERTY_LAST_MODIFIED, completed);
+                        lastmodSec = uri.getFetchCompletedTime() / 1000;
                     } catch (NullPointerException ex) {
                         logger.warning("CrawlURI.getFetchCompletedTime():" + ex + " for " + uri.shortReportLine());
                     }
                 }
+                if (lastmodSec != 0)
+                    jo.put(PROPERTY_LAST_MODIFIED, lastmodSec);
             }
         } catch (JSONException ex) {
             // should not happen - all values are either primitive or String.
