@@ -20,6 +20,8 @@ package org.archive.modules.fetcher;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -38,7 +40,6 @@ import com.google.common.net.InternetDomainName;
 import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
-import com.sleepycat.collections.StoredCollection;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
@@ -65,12 +66,8 @@ public class BdbCookieStore extends AbstractCookieStore implements
      * 
      * <p>
      * This class is "restricted" in the sense that it is immutable, and also
-     * because some methods throw {@link RuntimeException} for other reasons.
-     * For example, {@link #iterator()} is not implemented, because we use this
-     * class to wrap a bdb {@link StoredCollection}, and iterators from that
-     * class need to be explicitly closed. Since this class hides the fact that
-     * a StoredCollection underlies it, we simply prevent {@link #iterator()}
-     * from being used.
+     * because some methods throw {@link RuntimeException} because they don't 
+     * make sense in this context.
      */
     public static class RestrictedCollectionWrappedList<T> implements List<T> {
         private Collection<T> wrapped;
@@ -78,7 +75,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
         @Override public int size() { return wrapped.size(); }
         @Override public boolean isEmpty() { throw new RuntimeException("not implemented"); }
         @Override public boolean contains(Object o) { throw new RuntimeException("not implemented"); }
-        @Override public Iterator<T> iterator() { throw new RuntimeException("not implemented"); }
+        @Override public Iterator<T> iterator() { return (Iterator<T>) Arrays.asList(wrapped.toArray()).iterator(); }
         @Override public Object[] toArray() { return wrapped.toArray(); }
         @SuppressWarnings("hiding") @Override public <T> T[] toArray(T[] a) { return wrapped.toArray(a); }
         @Override public boolean add(T e) { throw new RuntimeException("immutable list"); }
@@ -141,6 +138,17 @@ public class BdbCookieStore extends AbstractCookieStore implements
             cookies.put(key, cookie);
         } else {
             cookies.remove(key);
+        }
+    }
+    
+    public boolean expireCookie(Cookie cookie, Date date) {
+        byte[] key = sortableKey(cookie).getBytes(StandardCharsets.UTF_8);
+
+        if (cookie.isExpired(date)) {
+            cookies.remove(key);
+            return true;
+        } else {
+            return false;
         }
     }
 

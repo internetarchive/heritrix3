@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -43,17 +44,23 @@ import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import com.google.common.io.Files;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.eclipse.jetty.http.HttpVersion;
-import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
@@ -285,18 +292,31 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             cookieStore.clear();
             fetcher().setCookieStore(cookieStore);
 
-            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar");
+            CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&maxAge=2");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+            //assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar"));
+            //assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
             assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
+            
+            // Wait for cookie to expire
+            TimeUnit.SECONDS.sleep(2);
+            
+            // check third fetch has no cookies
+            curi = makeCrawlURI("http://example.com:7777/");
+            fetcher().process(curi);
+            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+
+            assertEquals(0, cookieStore.getCookies().size());
         }
 
         public void testBasics() throws URIException, IOException, InterruptedException {
@@ -323,15 +343,6 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             curi = makeCrawlURI("http://example.ORG:7777/");
             fetcher().process(curi);
             assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
-
-            /*
-             * XXX I think browsers differ on this behavior. This is what
-             * org.apache.http.impl.cookie.BrowserCompatSpec does.
-             */
-            curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
-            fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
             assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());

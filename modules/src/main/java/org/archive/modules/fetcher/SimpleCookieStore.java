@@ -78,6 +78,16 @@ public class SimpleCookieStore extends AbstractCookieStore implements CookieStor
     }
 
     @Override
+    public boolean expireCookie(Cookie cookie, Date date) {
+        if( cookie.isExpired(date)) {
+            cookies.getCookies().remove(cookie);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public void clear() {
         cookies.clear();
     }

@@ -18,7 +18,10 @@
  */
 package org.archive.modules.fetcher;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -208,7 +211,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
     }
 
     protected class LimitedCookieStoreFacade implements CookieStore {
-        private final List<Cookie> cookies;
+        private List<Cookie> cookies;
 
         protected LimitedCookieStoreFacade(List<Cookie> cookies) {
             this.cookies = cookies;
@@ -221,7 +224,20 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         @Override
         public boolean clearExpired(Date date) {
-            throw new RuntimeException("not implemented");
+            int expiredCount = 0;
+            for( Cookie c : cookies) {
+                boolean expired = AbstractCookieStore.this.expireCookie(c, date);
+                if( expired ) {
+                    logger.fine("Expired cookie: " + c + " for date: " + date);
+                    expiredCount++;
+                }
+            }
+            if( expiredCount > 0 ) {
+                logger.fine("Expired " + expiredCount + " cookies for date: " + date);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         @Override
@@ -287,7 +303,8 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         addCookieImpl(cookie);
     }
-
+    
+    abstract public boolean expireCookie(Cookie cookie, Date date);
     abstract protected void addCookieImpl(Cookie cookie);
     abstract public void clear();
     abstract protected void prepare();

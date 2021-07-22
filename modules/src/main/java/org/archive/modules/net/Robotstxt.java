@@ -21,6 +21,7 @@ package org.archive.modules.net;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
+import java.nio.Buffer;
 import java.nio.CharBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -89,7 +90,9 @@ public class Robotstxt implements Serializable {
     protected void initializeFromReader(Reader reader) throws IOException {
         CharBuffer buffer = CharBuffer.allocate(MAX_SIZE);
         while (buffer.hasRemaining() && reader.read(buffer) >= 0) ;
-        buffer.flip();
+        //buffer.flip();
+        // Explicit cast as per https://stackoverflow.com/questions/61267495/exception-in-thread-main-java-lang-nosuchmethoderror-java-nio-bytebuffer-flip
+        ((Buffer) buffer).flip();
 
         String[] lines = LINE_SEPARATOR.split(buffer);
         if (buffer.limit() == buffer.capacity()) {
