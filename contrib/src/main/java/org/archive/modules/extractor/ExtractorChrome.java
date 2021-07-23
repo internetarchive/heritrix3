@@ -19,14 +19,12 @@
 
 package org.archive.modules.extractor;
 
+import org.apache.commons.io.IOUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
 import org.archive.modules.CrawlURI;
-import org.archive.net.chrome.ChromeClient;
-import org.archive.net.chrome.ChromeProcess;
-import org.archive.net.chrome.ChromeRequest;
-import org.archive.net.chrome.ChromeWindow;
+import org.archive.net.chrome.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.Recorder;
 import org.json.JSONArray;
@@ -37,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -46,11 +45,11 @@ import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Collections.enumeration;
-import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.WARNING;
+import static java.util.logging.Level.*;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
+import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
 import static org.archive.modules.CrawlURI.FetchType.*;
 
 /**
@@ -115,6 +114,12 @@ public class ExtractorChrome extends ContentExtractor {
      */
     private boolean captureRequests = true;
 
+    /**
+     * The maximum size response body that can be replayed to the browser. Setting this to -1 will cause all requests by
+     * the browser to be made against the live web.
+     */
+    private int maxReplayLength = 100 * 1024 * 1024;
+
     private Semaphore openWindowsSemaphore = null;
     private ChromeProcess process = null;
     private ChromeClient client = null;
@@ -149,6 +154,8 @@ public class ExtractorChrome extends ContentExtractor {
 
     private void visit(CrawlURI curi) throws InterruptedException {
         try (ChromeWindow window = client.createWindow(windowWidth, windowHeight)) {
+            window.interceptRequests(request -> handleInterceptedRequest(curi, request));
+
             if (captureRequests) {
                 window.captureRequests(request -> handleCapturedRequest(curi, request));
             }
@@ -170,7 +177,48 @@ public class ExtractorChrome extends ContentExtractor {
         }
     }
 
+    private void handleInterceptedRequest(CrawlURI curi, InterceptedRequest interceptedRequest) {
+        ChromeRequest request = interceptedRequest.getRequest();
+        if (request.getMethod().equals("GET") && request.getUrl().equals(curi.getURI())) {
+            replayResponseToBrowser(curi, interceptedRequest);
+        } else {
+            interceptedRequest.continueNormally();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void replayResponseToBrowser(CrawlURI curi, InterceptedRequest interceptedRequest) {
+        // There seems to be no easy way to stream the body to the browser so we slurp it into
+        // memory with a size limit. The one way I can see to achieve streaming is to have Heritrix
+        // serve the request over its HTTP server and pass a Heritrix URL to Fetch.fulfillRequest
+        // instead of the body directly. We might need to do that if memory pressure becomes a
+        // problem but for now just keep it simple.
+
+        long bodyLength = curi.getRecorder().getResponseContentLength();
+        if (bodyLength > maxReplayLength) {
+            logger.log(FINE, "Page body too large to replay: {0}", curi.getURI());
+            interceptedRequest.continueNormally();
+            return;
+        }
+
+        byte[] body = new byte[(int)bodyLength];
+        try (InputStream stream = curi.getRecorder().getContentReplayInputStream()) {
+            IOUtils.readFully(stream, body);
+        } catch (IOException e) {
+            logger.log(WARNING, "Error reading back page body: " + curi.getURI(), e);
+            interceptedRequest.continueNormally();
+            return;
+        }
+
+        Map<String,String> headers = (Map<String, String>) curi.getData().get(A_HTTP_RESPONSE_HEADERS);
+        interceptedRequest.fulfill(curi.getFetchStatus(), headers.entrySet(), body);
+    }
+
     private void handleCapturedRequest(CrawlURI via, ChromeRequest request) {
+        if (request.isResponseFulfilledByInterception()) {
+            return;
+        }
+
         Recorder recorder = new Recorder(controller.getScratchDir().getFile(),
                 controller.getRecorderOutBufferBytes(),
                 controller.getRecorderInBufferBytes());

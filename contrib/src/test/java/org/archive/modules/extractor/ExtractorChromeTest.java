@@ -22,10 +22,15 @@ package org.archive.modules.extractor;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
+import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.DispositionChain;
 import org.archive.modules.Processor;
+import org.archive.modules.fetcher.DefaultServerCache;
+import org.archive.modules.fetcher.FetchHTTP;
+import org.archive.modules.fetcher.SimpleCookieStore;
 import org.archive.net.UURIFactory;
+import org.archive.util.Recorder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -100,7 +105,7 @@ public class ExtractorChromeTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
-    public void test() throws IOException {
+    public void test() throws IOException, InterruptedException {
         List<CrawlURI> processedURIs = Collections.synchronizedList(new ArrayList<>());
         CrawlController controller = new CrawlController();
         DispositionChain dispositionChain = new DispositionChain();
@@ -136,22 +141,38 @@ public class ExtractorChromeTest {
         replay(frontier);
         controller.setFrontier(frontier);
 
+        FetchHTTP fetchHTTP = new FetchHTTP();
+        fetchHTTP.setServerCache(new DefaultServerCache());
+        fetchHTTP.setCookieStore(new SimpleCookieStore());
+        fetchHTTP.setUserAgentProvider(new CrawlMetadata());
+        fetchHTTP.start();
+
         ExtractorChrome extractor = new ExtractorChrome(controller, event -> { /* ignored */ });
         try {
             extractor.start();
         } catch (RuntimeException e) {
             assumeNoException("Unable to start Chrome", e);
         }
+
+        Recorder recorder = new Recorder(tempFolder.newFile(), 1024, 1024);
         try {
             CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://127.0.0.1:7778/"));
+
+            Recorder.setHttpRecorder(recorder);
+            curi.setRecorder(recorder);
+            fetchHTTP.process(curi);
+
             extractor.innerExtract(curi);
+
             List<String> outLinks = curi.getOutLinks().stream().map(CrawlURI::toString).sorted().collect(toList());
             assertEquals(Collections.singletonList("http://example.org/page2.html"), outLinks);
         } finally {
             extractor.stop();
+            fetchHTTP.stop();
+            recorder.cleanup();
         }
 
-        assertEquals(3, processedURIs.size());
+        assertEquals(2, processedURIs.size());
         for (CrawlURI curi: processedURIs) {
             assertEquals(200, curi.getFetchStatus());
             assertEquals(curi.getUURI().getPath().equals("/post") ? HTTP_POST : HTTP_GET, curi.getFetchType());

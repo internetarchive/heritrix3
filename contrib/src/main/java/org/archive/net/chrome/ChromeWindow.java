@@ -27,8 +27,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.WARNING;
+import static java.util.logging.Level.*;
 
 /**
  * A browser window or tab.
@@ -43,6 +42,7 @@ public class ChromeWindow implements Closeable {
     private CompletableFuture<Void> loadEventFuture;
     private final Map<String,ChromeRequest> requestMap = new ConcurrentHashMap<>();
     private Consumer<ChromeRequest> requestConsumer;
+    private Consumer<InterceptedRequest> requestInterceptor;
     private final ExecutorService eventExecutor;
 
     public ChromeWindow(ChromeClient client, String targetId) {
@@ -136,6 +136,22 @@ public class ChromeWindow implements Closeable {
         }
     }
 
+    private void handlePausedRequest(JSONObject params) {
+        String networkId = params.getString("networkId");
+        ChromeRequest request = requestMap.computeIfAbsent(networkId, id -> new ChromeRequest(this, id));
+        request.setRequestJson(params.getJSONObject("request"));
+        String id = params.getString("requestId");
+        InterceptedRequest interceptedRequest = new InterceptedRequest(this, id, request);
+        try {
+            requestInterceptor.accept(interceptedRequest);
+        } catch (Exception e) {
+            logger.log(SEVERE, "Request interceptor threw", e);
+        }
+        if (!interceptedRequest.isHandled()) {
+            interceptedRequest.continueNormally();
+        }
+    }
+
     private void handleRequestWillBeSent(JSONObject params) {
         String requestId = params.getString("requestId");
         ChromeRequest request = requestMap.computeIfAbsent(requestId, id -> new ChromeRequest(this, id));
@@ -198,15 +214,8 @@ public class ChromeWindow implements Closeable {
         call("Network.enable");
     }
 
-    private void handlePausedRequest(JSONObject params) {
-        if (params.has("responseStatusCode")) {
-            String stream = call("Fetch.takeResponseBodyAsStream", "requestId",
-                    params.getString("requestId")).getString("stream");
-            System.out.println(call("IO.read", "handle", stream));
-            System.out.println("stream " + stream);
-            call("IO.close", "handle", stream);
-        } else {
-            call("Fetch.continueRequest", "requestId", params.getString("requestId"));
-        }
+    public void interceptRequests(Consumer<InterceptedRequest> requestInterceptor) {
+        this.requestInterceptor = requestInterceptor;
+        call("Fetch.enable");
     }
 }
