@@ -24,6 +24,8 @@ import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.Processor;
+import org.archive.modules.ProcessorChain;
 import org.archive.net.chrome.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.Recorder;
@@ -34,7 +36,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -126,6 +130,7 @@ public class ExtractorChrome extends ContentExtractor {
 
     private final CrawlController controller;
     private final ApplicationEventPublisher eventPublisher;
+    private ProcessorChain extractorChain;
 
     public ExtractorChrome(CrawlController controller, ApplicationEventPublisher eventPublisher) {
         this.controller = controller;
@@ -267,11 +272,15 @@ public class ExtractorChrome extends ContentExtractor {
                     break;
             }
 
-            // send it to the disposition chain to invoke the warc writer etc
-            Frontier frontier = controller.getFrontier(); // allowed to be null to simplify unit tests
+            Frontier frontier = controller.getFrontier();
             curi.getOverlayNames(); // for side-effect of creating the overlayNames list
+
             KeyedProperties.loadOverridesFrom(curi);
             try {
+                // perform link extraction
+                extractorChain.process(curi, null);
+
+                // send the result to the disposition chain to dispatch outlinks and write warcs
                 frontier.beginDisposition(curi);
                 controller.getDispositionChain().process(curi,null);
             } finally {
@@ -308,6 +317,20 @@ public class ExtractorChrome extends ContentExtractor {
                 throw new RuntimeException("Failed to launch browser process", e);
             }
             client = new ChromeClient(process.getDevtoolsUrl());
+        }
+
+        if (extractorChain == null) {
+            // The fetch chain normally includes some preprocessing, fetch and extractor processors, but we want just
+            // the extractors as we let the browser fetch subresources. So we construct a new chain consisting of the
+            // extractors only.
+            List<Processor> extractors = new ArrayList<>();
+            for (Processor processor : controller.getFetchChain().getProcessors()) {
+                if (processor instanceof Extractor) {
+                    extractors.add(processor);
+                }
+            }
+            extractorChain = new ProcessorChain();
+            extractorChain.setProcessors(extractors);
         }
     }
 
