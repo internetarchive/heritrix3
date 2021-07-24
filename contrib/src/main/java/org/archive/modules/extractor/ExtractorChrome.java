@@ -275,6 +275,12 @@ public class ExtractorChrome extends ContentExtractor {
             Frontier frontier = controller.getFrontier();
             curi.getOverlayNames(); // for side-effect of creating the overlayNames list
 
+            // inform the frontier we've already seen this uri so it won't schedule it
+            // we only do this for GETs so a POST doesn't prevent scheduling a GET of the same URI
+            if (request.getMethod().equals("GET")) {
+                frontier.considerIncluded(curi);
+            }
+
             KeyedProperties.loadOverridesFrom(curi);
             try {
                 // perform link extraction
