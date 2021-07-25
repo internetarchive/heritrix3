@@ -18,7 +18,13 @@
  */
 package org.archive.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Wrapper for "keytool" utility main class. Loads class dynamically, trying
@@ -36,8 +42,20 @@ public class KeyTool {
 				// java 8
 				cl = ClassLoader.getSystemClassLoader().loadClass("sun.security.tools.keytool.Main");
 			}
-			Method main = cl.getMethod("main", new String[0].getClass());
+			Method main = cl.getMethod("main", String[].class);
 			main.invoke(null, (Object) args);
+		} catch (IllegalAccessException e) {
+			// java 16
+			List<String> command = new ArrayList<>();
+			command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "keytool");
+			command.addAll(Arrays.asList(args));
+			try {
+				new ProcessBuilder(command).inheritIO().start().waitFor();
+			} catch (IOException e2) {
+				throw new UncheckedIOException(e2);
+			} catch (InterruptedException e2) {
+				Thread.currentThread().interrupt();
+			}
 		} catch (Exception e) {
 			if (e instanceof RuntimeException) {
 				throw (RuntimeException) e;
