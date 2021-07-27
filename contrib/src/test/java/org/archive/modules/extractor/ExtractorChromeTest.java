@@ -22,10 +22,12 @@ package org.archive.modules.extractor;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
-import org.archive.modules.CrawlURI;
-import org.archive.modules.DispositionChain;
-import org.archive.modules.Processor;
+import org.archive.modules.*;
+import org.archive.modules.fetcher.DefaultServerCache;
+import org.archive.modules.fetcher.FetchHTTP;
+import org.archive.modules.fetcher.SimpleCookieStore;
 import org.archive.net.UURIFactory;
+import org.archive.util.Recorder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -40,10 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,10 +67,17 @@ public class ExtractorChromeTest {
                         response.setContentType("text/html");
                         response.getWriter().write("<a href=http://example.org/page2.html>link</a>" +
                                 "<img src=/blue.png>" +
-                                "<script>fetch('/post', {method: 'POST', body: 'hello'});</script>");
+                                "<script>fetch('/post', {method: 'POST', body: 'hello'});</script>" +
+                                "<link rel=stylesheet href=style.css>");
+                        baseRequest.setHandled(true);
+                        break;
+                    case "/style.css":
+                        response.setContentType("text/css");
+                        response.getWriter().write("@media only print { body { background: url('printonly.png'); } }");
                         baseRequest.setHandled(true);
                         break;
                     case "/blue.png":
+                    case "/printonly.png":
                         response.setContentType("image/png");
                         response.getWriter().write("bogus png");
                         baseRequest.setHandled(true);
@@ -100,9 +106,9 @@ public class ExtractorChromeTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
-    public void test() throws IOException {
+    public void test() throws IOException, InterruptedException {
         List<CrawlURI> processedURIs = Collections.synchronizedList(new ArrayList<>());
-        CrawlController controller = new CrawlController();
+
         DispositionChain dispositionChain = new DispositionChain();
         dispositionChain.setProcessors(Arrays.asList(new Processor() {
             @Override
@@ -115,7 +121,13 @@ public class ExtractorChromeTest {
                 processedURIs.add(uri);
             }
         }));
+
+        FetchChain fetchChain = new FetchChain();
+        fetchChain.setProcessors(Arrays.asList(new ExtractorCSS()));
+
+        CrawlController controller = new CrawlController();
         controller.setDispositionChain(dispositionChain);
+        controller.setFetchChain(fetchChain);
         controller.setLoggerModule(new CrawlerLoggerModule() {
             @Override
             public Logger getUriProcessing() {
@@ -136,27 +148,55 @@ public class ExtractorChromeTest {
         replay(frontier);
         controller.setFrontier(frontier);
 
+        FetchHTTP fetchHTTP = new FetchHTTP();
+        fetchHTTP.setServerCache(new DefaultServerCache());
+        fetchHTTP.setCookieStore(new SimpleCookieStore());
+        fetchHTTP.setUserAgentProvider(new CrawlMetadata());
+        fetchHTTP.start();
+
         ExtractorChrome extractor = new ExtractorChrome(controller, event -> { /* ignored */ });
         try {
             extractor.start();
         } catch (RuntimeException e) {
             assumeNoException("Unable to start Chrome", e);
         }
+
+        Recorder recorder = new Recorder(tempFolder.newFile(), 1024, 1024);
         try {
             CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://127.0.0.1:7778/"));
+
+            Recorder.setHttpRecorder(recorder);
+            curi.setRecorder(recorder);
+            fetchHTTP.process(curi);
+
             extractor.innerExtract(curi);
+
             List<String> outLinks = curi.getOutLinks().stream().map(CrawlURI::toString).sorted().collect(toList());
             assertEquals(Collections.singletonList("http://example.org/page2.html"), outLinks);
         } finally {
             extractor.stop();
+            fetchHTTP.stop();
+            recorder.cleanup();
         }
 
         assertEquals(3, processedURIs.size());
+        Set<String> subresourceUrls = new HashSet<>();
         for (CrawlURI curi: processedURIs) {
             assertEquals(200, curi.getFetchStatus());
             assertEquals(curi.getUURI().getPath().equals("/post") ? HTTP_POST : HTTP_GET, curi.getFetchType());
             assertNotNull(curi.getContentDigest());
             assertTrue(curi.getContentSize() > 0);
+            subresourceUrls.add(curi.getURI());
+
+            if (curi.getURI().equals("http://127.0.0.1:7778/style.css")) {
+                assertEquals("check link extraction ran on captured resources",
+                        "http://127.0.0.1:7778/printonly.png",
+                        new ArrayList<>(curi.getOutLinks()).get(0).getURI());
+            }
         }
+        assertEquals(new HashSet<>(Arrays.asList(
+                "http://127.0.0.1:7778/style.css",
+                "http://127.0.0.1:7778/blue.png",
+                "http://127.0.0.1:7778/post")), subresourceUrls);
     }
 }

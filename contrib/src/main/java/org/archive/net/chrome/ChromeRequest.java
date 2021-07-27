@@ -33,6 +33,7 @@ public class ChromeRequest {
     private JSONObject rawResponseHeaders;
     private String responseHeadersText;
     private final long beginTime = System.currentTimeMillis();
+    private boolean responseFulfilledByInterception;
 
     public ChromeRequest(ChromeWindow window, String id) {
         this.window = window;
@@ -150,5 +151,13 @@ public class ChromeRequest {
 
     void setRequestJson(JSONObject requestJson) {
         this.requestJson = requestJson;
+    }
+
+    void setResponseFulfilledByInterception(boolean responseFulfilledByInterception) {
+        this.responseFulfilledByInterception = responseFulfilledByInterception;
+    }
+
+    public boolean isResponseFulfilledByInterception() {
+        return responseFulfilledByInterception;
     }
 }
