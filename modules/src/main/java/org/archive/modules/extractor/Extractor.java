@@ -134,19 +134,18 @@ public abstract class Extractor extends Processor {
 
     /**
      * Create and add a 'Link' to the CrawlURI with given URI/context/hop-type
-     * @param curi
-     * @param uri
-     * @param context
-     * @param hop
+     * @return the new outlink or null if it was not valid
      */
-    protected void addOutlink(CrawlURI curi, String uri, LinkContext context,
+    protected CrawlURI addOutlink(CrawlURI curi, String uri, LinkContext context,
             Hop hop) {
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), uri);
             CrawlURI link = curi.createCrawlURI(dest, context, hop);
             curi.getOutLinks().add(link);
+            return link;
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
+            return null;
         }
     }
     

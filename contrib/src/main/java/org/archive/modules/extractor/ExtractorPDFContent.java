@@ -137,14 +137,7 @@ public class ExtractorPDFContent extends ContentExtractor {
         }
 
         for (String uri: uris) {
-            try {
-                LinkContext lc = LinkContext.NAVLINK_MISC;
-                Hop hop = Hop.NAVLINK;
-                CrawlURI out = curi.createCrawlURI(uri, lc, hop);
-                curi.getOutLinks().add(out);
-            } catch (URIException e1) {
-                logUriError(e1, curi.getUURI(), uri);
-            }
+            addOutlink(curi, uri, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
         }
         
         numberOfLinksExtracted.addAndGet(uris.size());

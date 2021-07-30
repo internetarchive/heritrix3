@@ -227,14 +227,7 @@ public class ExtractorYoutubeDL extends Extractor
             }
 
             for (String pageUrl: results.pageUrls) {
-                try {
-                    UURI dest = UURIFactory.getInstance(uri.getUURI(), pageUrl);
-                    CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
-                            Hop.NAVLINK);
-                    uri.getOutLinks().add(link);
-                } catch (URIException e1) {
-                    logUriError(e1, uri.getUURI(), pageUrl);
-                }
+                addOutlink(uri, pageUrl, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
             }
 
             if (results.videoUrls.size() > 0) {
@@ -246,26 +239,21 @@ public class ExtractorYoutubeDL extends Extractor
     }
 
     protected void addVideoOutlink(CrawlURI uri, String videoUrl, int playlistIndex, int nEntries) {
-        try {
-            UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
-            CrawlURI link = uri.createCrawlURI(dest, LinkContext.EMBED_MISC,
-                    Hop.EMBED);
-
-            // annotation
-            String annotation = "youtube-dl:" + (playlistIndex + 1) + "/" + nEntries;
-            link.getAnnotations().add(annotation);
-
-            // save info unambiguously identifying containing page capture
-            link.getData().put(YDL_CONTAINING_PAGE_URI, uri.toString());
-            link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
-                    ArchiveUtils.get17DigitDate(uri.getFetchBeginTime()));
-            link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
-                    uri.getContentDigestSchemeString());
-
-            uri.getOutLinks().add(link);
-        } catch (URIException e) {
-            logUriError(e, uri.getUURI(), videoUrl);
+        CrawlURI link = addOutlink(uri, videoUrl, LinkContext.EMBED_MISC, Hop.EMBED);
+        if (link == null) {
+            return;
         }
+
+        // annotation
+        String annotation = "youtube-dl:" + (playlistIndex + 1) + "/" + nEntries;
+        link.getAnnotations().add(annotation);
+
+        // save info unambiguously identifying containing page capture
+        link.getData().put(YDL_CONTAINING_PAGE_URI, uri.toString());
+        link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
+                ArchiveUtils.get17DigitDate(uri.getFetchBeginTime()));
+        link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
+                uri.getContentDigestSchemeString());
     }
 
     protected String findYdlAnnotation(CrawlURI uri) {
