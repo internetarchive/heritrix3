@@ -163,6 +163,10 @@ public class ExtractorSitemap extends ContentExtractor {
             CrawlURI newCuri = addRelativeToBase(curi, max, newUri.toString(),
                     LinkContext.MANIFEST_MISC, Hop.MANIFEST);
 
+            if (newCuri == null) {
+                return;
+            }
+
             if (isSitemap) {
                 // Annotate as a Site Map:
                 newCuri.getAnnotations().add(

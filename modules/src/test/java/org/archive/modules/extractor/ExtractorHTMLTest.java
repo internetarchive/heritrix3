@@ -268,6 +268,13 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
             }
         }));
     }
+
+    public void testDataUrisAreIgnored() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com"));
+        CharSequence cs = "<img src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='>";
+        getExtractor().extract(curi, cs);
+        assertEquals(0, curi.getOutLinks().size());
+    }
     
     /**
      * Test that relative base href's are resolved correctly:
@@ -521,7 +528,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         Arrays.sort(links);
 
         String[] dest = {
-                "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
                 "http://www.example.com/a,b,c",
                 "http://www.example.com/images/foo.jpg",
                 "http://www.example.com/images/foo1.jpg",
