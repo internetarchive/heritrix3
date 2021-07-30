@@ -196,11 +196,11 @@ public abstract class Extractor extends Processor {
      * @return the new outlink or null if the outlink was ignored
      */
     public static CrawlURI addRelativeToBase(CrawlURI uri, int max,
-            String newUri, LinkContext context, Hop hop) throws URIException {
+            CharSequence newUri, LinkContext context, Hop hop) throws URIException {
         if (UriUtils.isDataUri(newUri)) {
             return null;
         }
-        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
+        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri.toString());
         return add2(uri, max, dest, context, hop);
     }
 

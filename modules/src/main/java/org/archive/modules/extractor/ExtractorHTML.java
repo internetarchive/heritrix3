@@ -664,7 +664,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             // ReplayCharSequence.
             HTMLLinkContext hc = HTMLLinkContext.get(context.toString());
             int max = getExtractorParameters().getMaxOutlinks();
-            addRelativeToBase(curi, max, uri.toString(), hc, hop);
+            addRelativeToBase(curi, max, uri, hc, hop);
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
         }
@@ -687,22 +687,19 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 				|| context.equals(HTMLLinkContext.IMG_DATA_SRCSET.toString())
 				|| context.equals(HTMLLinkContext.IMG_DATA_ORIGINAL_SET.toString())
 				|| context.equals(HTMLLinkContext.SOURCE_DATA_ORIGINAL_SET.toString())) {
-            logger.fine("Found srcset listing: " + value.toString());
+            logger.log(Level.FINE,"Found srcset listing: {0}", value);
 
             Matcher matcher = TextUtils.getMatcher("[\\s,]*(\\S*[^,\\s])(?:\\s(?:[^,(]+|\\([^)]*(?:\\)|$))*)?", value);
             while (matcher.lookingAt()) {
-                String link = matcher.group(1);
+                CharSequence link = value.subSequence(matcher.start(1), matcher.end(1));
                 matcher.region(matcher.end(), matcher.regionEnd());
-                logger.finer("Found " + link + " adding to outlinks.");
+                logger.log(Level.FINER, "Found {0} adding to outlinks.", link);
                 addLinkFromString(curi, link, context, hop);
                 numberOfLinksExtracted.incrementAndGet();
             }
             TextUtils.recycleMatcher(matcher);
         } else {
-            addLinkFromString(curi,
-                (value instanceof String)?
-                    (String)value: value.toString(),
-                context, hop);
+            addLinkFromString(curi, value, context, hop);
             numberOfLinksExtracted.incrementAndGet();
         }
     }
