@@ -63,8 +63,7 @@ import freemarker.template.TemplateException;
  */
 public class BeanBrowseResource extends JobRelatedResource {
     protected PathSharingContext appCtx; 
-    protected String beanPath; 
-    private Configuration _templateConfiguration;
+    protected String beanPath;
 
     @Override
     public void init(Context ctx, Request req, Response res) throws ResourceException {
@@ -82,17 +81,6 @@ public class BeanBrowseResource extends JobRelatedResource {
         } else {
             beanPath = "";
         }
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
-        setTemplateConfiguration(tmpltCfg);
-    }
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
@@ -225,7 +213,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
-        Configuration tmpltCfg = getTemplateConfiguration();
+        Configuration tmpltCfg = getApplication().getTemplateConfiguration();
 
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));

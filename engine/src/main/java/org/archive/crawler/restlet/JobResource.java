@@ -61,7 +61,6 @@ import freemarker.template.TemplateException;
 public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = FileUtils
             .getRegexFileFilter(".*\\.((c?xml)|(txt))$");
-    private Configuration _templateConfiguration;
 
     @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(JobResource.class
@@ -77,17 +76,6 @@ public class JobResource extends BaseResource {
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         cj = getEngine().getJob(
                 TextUtils.urlUnescape((String) req.getAttributes().get("job")));
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
-        setTemplateConfiguration(tmpltCfg);
-    }
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
@@ -139,7 +127,7 @@ public class JobResource extends BaseResource {
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
-        Configuration tmpltCfg = getTemplateConfiguration();
+        Configuration tmpltCfg = getApplication().getTemplateConfiguration();
 
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));

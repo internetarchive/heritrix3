@@ -58,25 +58,11 @@ import static org.restlet.data.MediaType.APPLICATION_XML;
  */
 public class EngineResource extends BaseResource {
 
-    private Configuration _templateConfiguration;
-
     @Override
     public void init(Context ctx, Request req, Response res) {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(APPLICATION_XML));
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");        
-        tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
-        setTemplateConfiguration(tmpltCfg);
-    }
-
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
@@ -233,7 +219,7 @@ public class EngineResource extends BaseResource {
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
-        Configuration tmpltCfg = getTemplateConfiguration();
+        Configuration tmpltCfg = getApplication().getTemplateConfiguration();
 
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));

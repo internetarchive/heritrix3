@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import freemarker.template.Configuration;
+import freemarker.template.ObjectWrapper;
 import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
 import org.restlet.Application;
@@ -48,12 +50,17 @@ import org.restlet.service.StatusService;
  * @author gojomo
  */
 public class EngineApplication extends Application {
-    protected Engine engine; 
+    protected Engine engine;
+    private final Configuration templateConfiguration;
+
     public EngineApplication(Engine engine) {
         this.engine = engine;
         getMetadataService().addExtension("log", MediaType.TEXT_PLAIN );
         getMetadataService().addExtension("cxml", MediaType.APPLICATION_XML );
         setStatusService(new EngineStatusService());
+        templateConfiguration = new Configuration();
+        templateConfiguration.setClassForTemplateLoading(getClass(), "");
+        templateConfiguration.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
     }
 
     @Override
@@ -159,4 +166,7 @@ public class EngineApplication extends Application {
 
     }
 
+    public Configuration getTemplateConfiguration() {
+        return templateConfiguration;
+    }
 }

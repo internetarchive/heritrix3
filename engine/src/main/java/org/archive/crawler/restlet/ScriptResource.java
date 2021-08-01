@@ -80,28 +80,16 @@ public class ScriptResource extends JobRelatedResource {
     }
     
     protected String chosenEngine = FACTORIES.isEmpty() ? "" : FACTORIES.getFirst().getNames().get(0);
-    private Configuration _templateConfiguration;
 
     @Override
     public void init(Context ctx, Request req, Response res) throws ResourceException {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
-        setTemplateConfiguration(tmpltCfg);
 
         scriptingConsole = new ScriptingConsole(cj);
     }
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
-    }
-        
+
     private ScriptingConsole scriptingConsole;
     
     @Override
@@ -184,7 +172,7 @@ public class ScriptResource extends JobRelatedResource {
         if(!baseRef.endsWith("/")) {
             baseRef += "/";
         }
-        Configuration tmpltCfg = getTemplateConfiguration();
+        Configuration tmpltCfg = getApplication().getTemplateConfiguration();
 
         ViewModel viewModel = new ViewModel();
         viewModel.setFlashes(Flash.getFlashes(getRequest()));

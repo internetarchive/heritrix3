@@ -27,6 +27,11 @@ import org.restlet.resource.ServerResource;
  * @author nlevitt
  */
 public abstract class BaseResource extends ServerResource {
+    @Override
+    public EngineApplication getApplication() {
+        return (EngineApplication) super.getApplication();
+    }
+
     protected String getStaticRef(String resource) {
         String rootRef = getRequest().getRootRef().toString();
         return rootRef + "/engine/static/" + resource;
