@@ -84,9 +84,8 @@ public class JobResource extends BaseResource {
             throw new ResourceException(404);
         }
 
-        Representation representation = null;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
-            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+            return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     CrawlJobModel model = makeDataModel();
                     model.put("heapReport", getEngine().heapReportData());
@@ -94,17 +93,11 @@ public class JobResource extends BaseResource {
                 }
             };
         } else {
-            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
-                public void write(Writer writer) throws IOException {
-                    JobResource.this.writeHtml(writer);
-                }
-            };
+            ViewModel viewModel = new ViewModel();
+            viewModel.put("heapReport", getEngine().heapReportData());
+            viewModel.put("job", makeDataModel());
+            return render("Job.ftl", viewModel);
         }
-
-        // TODO: remove if not necessary in future?
-        // honor requested charset?
-        representation.setCharacterSet(CharacterSet.UTF_8);
-        return representation;
     }
 
     /**
@@ -120,31 +113,6 @@ public class JobResource extends BaseResource {
             baseRef += "/";
         }
         return new CrawlJobModel(cj,baseRef);
-    }
-
-    protected void writeHtml(Writer writer) {
-        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if(!baseRef.endsWith("/")) {
-            baseRef += "/";
-        }
-        Configuration tmpltCfg = getApplication().getTemplateConfiguration();
-
-        ViewModel viewModel = new ViewModel();
-        viewModel.setFlashes(Flash.getFlashes(getRequest()));
-        viewModel.put("baseRef",baseRef);
-        viewModel.put("job", makeDataModel());
-        viewModel.put("heapReport", getEngine().heapReportData());
-
-        try {
-            Template template = tmpltCfg.getTemplate("Job.ftl");
-            template.process(viewModel, writer);
-            writer.flush();
-        } catch (IOException e) { 
-            throw new RuntimeException(e); 
-        } catch (TemplateException e) { 
-            throw new RuntimeException(e); 
-        }
-        
     }
 
     /**
