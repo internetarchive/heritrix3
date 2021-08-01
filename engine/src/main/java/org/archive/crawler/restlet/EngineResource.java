@@ -201,8 +201,4 @@ public class EngineResource extends BaseResource {
         
         return new EngineModel(getEngine(), baseRef);
     }
-
-    protected Engine getEngine() {
-        return ((EngineApplication)getApplication()).getEngine();
-    }
 }

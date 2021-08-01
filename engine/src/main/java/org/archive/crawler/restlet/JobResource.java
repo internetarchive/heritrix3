@@ -138,10 +138,6 @@ public class JobResource extends BaseResource {
         return "../../anypath/" + fullPath;
     }
 
-    protected Engine getEngine() {
-        return ((EngineApplication) getApplication()).getEngine();
-    }
-
     @Override
     public Representation post(Representation entity, Variant variant)
             throws ResourceException {

@@ -22,6 +22,7 @@ package org.archive.crawler.restlet;
 import freemarker.template.ObjectWrapper;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.restlet.data.MediaType;
 import org.restlet.representation.Representation;
@@ -41,6 +42,10 @@ public abstract class BaseResource extends ServerResource {
     @Override
     public EngineApplication getApplication() {
         return (EngineApplication) super.getApplication();
+    }
+
+    protected Engine getEngine() {
+        return getApplication().getEngine();
     }
 
     protected String getStaticRef(String resource) {
