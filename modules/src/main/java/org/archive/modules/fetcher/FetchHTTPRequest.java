@@ -400,7 +400,7 @@ public class FetchHTTPRequest {
         if (fetcher.getIgnoreCookies()) {
             requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            requestConfigBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.STANDARD);
         }
 
         requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
@@ -529,8 +529,12 @@ public class FetchHTTPRequest {
             authCache = new BasicAuthCache();
             httpClientContext.setAuthCache(authCache);
         }
-        authCache.put(host, authScheme);
-
+        // Do not attempt to cache DIGEST auth:
+        // See https://github.com/internetarchive/heritrix3/pull/397
+        if( !(authScheme instanceof org.apache.http.impl.auth.DigestScheme) ) {
+          authCache.put(host, authScheme);
+        }
+        
         if (httpClientContext.getCredentialsProvider() == null) {
             httpClientContext.setCredentialsProvider(new BasicCredentialsProvider());
         }
