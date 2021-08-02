@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210621...HEAD)
+
+**Fixed bugs:**
+
+- Jobs can get stuck STOPPING with "Interrupt leaving unfinished CrawlURI" [\#420](https://github.com/internetarchive/heritrix3/issues/420)
+- Groovy version is incompatible with JDK 16+ [\#419](https://github.com/internetarchive/heritrix3/issues/419)
+- module java.base does not export sun.security.tools.keytool to unnamed module @1ece4432 [\#417](https://github.com/internetarchive/heritrix3/issues/417)
+- Distribution package has broken filesystem permissions [\#413](https://github.com/internetarchive/heritrix3/issues/413)
+- Add WARC-IP-Address header to WARCWriterChainProcessor [\#396](https://github.com/internetarchive/heritrix3/issues/396)
+
+**Merged pull requests:**
+
+- ToeThread: ensure currentCuri is finished before exiting [\#421](https://github.com/internetarchive/heritrix3/pull/421) ([ato](https://github.com/ato))
+- JDK 16 compatibility [\#418](https://github.com/internetarchive/heritrix3/pull/418) ([ato](https://github.com/ato))
+- ExtractorChrome: reduce request duplication between browser and frontier [\#416](https://github.com/internetarchive/heritrix3/pull/416) ([ato](https://github.com/ato))
+- Upgrade maven-assembly-plugin to 3.3.0 to fix file permissions [\#414](https://github.com/internetarchive/heritrix3/pull/414) ([ato](https://github.com/ato))
+- ExtractorChrome: Capture requests made by the browser [\#411](https://github.com/internetarchive/heritrix3/pull/411) ([ato](https://github.com/ato))
+- Warc writer stats fixes [\#410](https://github.com/internetarchive/heritrix3/pull/410) ([ato](https://github.com/ato))
+- Fix WARC-IP-Address and use a common server-ip CrawlURI attribute for all protocols [\#409](https://github.com/internetarchive/heritrix3/pull/409) ([ato](https://github.com/ato))
+- Add basic syntax highlighting to the crawl.log viewer [\#408](https://github.com/internetarchive/heritrix3/pull/408) ([ato](https://github.com/ato))
+- Fix a couple of boring maven warnings [\#407](https://github.com/internetarchive/heritrix3/pull/407) ([ato](https://github.com/ato))
+- Fix and document the -r option which runs a named job on startup [\#406](https://github.com/internetarchive/heritrix3/pull/406) ([ato](https://github.com/ato))
+- Speed up test suite [\#405](https://github.com/internetarchive/heritrix3/pull/405) ([ato](https://github.com/ato))
+- Switch from Travis CI to Github Actions [\#404](https://github.com/internetarchive/heritrix3/pull/404) ([ato](https://github.com/ato))
+- Add ExtractorChrome to contrib [\#403](https://github.com/internetarchive/heritrix3/pull/403) ([ato](https://github.com/ato))
+- Upgrade httpclient to 4.5 [\#397](https://github.com/internetarchive/heritrix3/pull/397) ([anjackson](https://github.com/anjackson))
+
 ## [3.4.0-20210621](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210621) (2021-06-21)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210618...3.4.0-20210621)
