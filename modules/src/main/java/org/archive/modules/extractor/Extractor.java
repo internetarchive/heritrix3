@@ -29,6 +29,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.UriUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,24 +135,29 @@ public abstract class Extractor extends Processor {
 
     /**
      * Create and add a 'Link' to the CrawlURI with given URI/context/hop-type
-     * @param curi
-     * @param uri
-     * @param context
-     * @param hop
+     * @return the new outlink or null if it was invalid or ignored
      */
-    protected void addOutlink(CrawlURI curi, String uri, LinkContext context,
+    protected CrawlURI addOutlink(CrawlURI curi, String uri, LinkContext context,
             Hop hop) {
+        if (UriUtils.isDataUri(uri)) {
+            return null;
+        }
         try {
             UURI dest = UURIFactory.getInstance(curi.getUURI(), uri);
             CrawlURI link = curi.createCrawlURI(dest, context, hop);
             curi.getOutLinks().add(link);
+            return link;
         } catch (URIException e) {
             logUriError(e, curi.getUURI(), uri);
+            return null;
         }
     }
     
     protected void addOutlink(CrawlURI curi, UURI uuri, LinkContext context,
             Hop hop) {
+        if ("data".equalsIgnoreCase(uuri.getScheme())) {
+            return;
+        }
         try {
             CrawlURI link = curi.createCrawlURI(uuri, context, hop);
             curi.getOutLinks().add(link);
@@ -184,16 +190,29 @@ public abstract class Extractor extends Processor {
         ret.append("  " + numberOfLinksExtracted + " links from " + getURICount() +" CrawlURIs\n");
         return ret.toString();
     }
-    
+
+    /**
+     * Adds an outlink to uri relative to uri.getBaseURI().
+     * @return the new outlink or null if the outlink was ignored
+     */
     public static CrawlURI addRelativeToBase(CrawlURI uri, int max,
-            String newUri, LinkContext context, Hop hop) throws URIException {
-        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri);
+            CharSequence newUri, LinkContext context, Hop hop) throws URIException {
+        if (UriUtils.isDataUri(newUri)) {
+            return null;
+        }
+        UURI dest = UURIFactory.getInstance(uri.getBaseURI(), newUri.toString());
         return add2(uri, max, dest, context, hop);
     }
 
-    
+    /**
+     * Adds an outlink to uri relative to uri.getVia().
+     * @return the new outlink or null if the outlink was ignored
+     */
     public static CrawlURI addRelativeToVia(CrawlURI uri, int max, String newUri,
             LinkContext context, Hop hop) throws URIException {
+        if (UriUtils.isDataUri(newUri)) {
+            return null;
+        }
         UURI relTo = uri.getVia();
         if (relTo == null) {
             if (!uri.getAnnotations().contains("usedBaseForVia")) {

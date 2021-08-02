@@ -75,6 +75,10 @@ public class ExtractorRobotsTxt extends ContentExtractor {
                     CrawlURI newCuri = addRelativeToBase(curi, max, link,
                             LinkContext.MANIFEST_MISC, Hop.MANIFEST);
 
+                    if (newCuri == null) {
+                        continue;
+                    }
+
                     // Annotate as a Site Map:
                     newCuri.getAnnotations().add(
                             ExtractorRobotsTxt.ANNOTATION_IS_SITEMAP);
