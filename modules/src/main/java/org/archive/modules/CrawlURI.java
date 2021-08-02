@@ -813,6 +813,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         this.httpRecorder = null;
         this.fetchStatus = S_UNATTEMPTED;
         this.setPrerequisite(false);
+        this.clearPrerequisiteUri();
         this.contentSize = UNCALCULATED;
         this.contentLength = UNCALCULATED;
         // Clear 'links extracted' flag.
