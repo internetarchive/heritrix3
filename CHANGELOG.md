@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+## [3.4.0-20210803](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210803) (2021-08-03)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210621...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210621...3.4.0-20210803)
 
 **Fixed bugs:**
 
