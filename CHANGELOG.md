@@ -14,6 +14,7 @@
 
 **Merged pull requests:**
 
+- Don't extract data URIs [\#423](https://github.com/internetarchive/heritrix3/pull/423) ([ato](https://github.com/ato))
 - ToeThread: ensure currentCuri is finished before exiting [\#421](https://github.com/internetarchive/heritrix3/pull/421) ([ato](https://github.com/ato))
 - JDK 16 compatibility [\#418](https://github.com/internetarchive/heritrix3/pull/418) ([ato](https://github.com/ato))
 - ExtractorChrome: reduce request duplication between browser and frontier [\#416](https://github.com/internetarchive/heritrix3/pull/416) ([ato](https://github.com/ato))
