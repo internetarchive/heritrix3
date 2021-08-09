@@ -72,10 +72,6 @@ public abstract class JobRelatedResource extends BaseResource {
         }
     }
 
-    protected Engine getEngine() {
-        return ((EngineApplication)getApplication()).getEngine();
-    }
-
     /**
      * Starting at (and including) the given object, adds nested Map
      * representations of named beans to the {@code namedBeans} Collection. The

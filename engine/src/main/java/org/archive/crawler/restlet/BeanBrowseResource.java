@@ -33,7 +33,6 @@ import org.archive.crawler.restlet.models.BeansModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.archive.spring.PathSharingContext;
 import org.restlet.Context;
-import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
@@ -47,11 +46,6 @@ import org.restlet.representation.Variant;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 
-import freemarker.template.Configuration;
-import freemarker.template.ObjectWrapper;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
-
 /**
  * Restlet Resource which allows browsing the constructed beans in
  * a hierarchical fashion. 
@@ -63,8 +57,7 @@ import freemarker.template.TemplateException;
  */
 public class BeanBrowseResource extends JobRelatedResource {
     protected PathSharingContext appCtx; 
-    protected String beanPath; 
-    private Configuration _templateConfiguration;
+    protected String beanPath;
 
     @Override
     public void init(Context ctx, Request req, Response res) throws ResourceException {
@@ -82,17 +75,6 @@ public class BeanBrowseResource extends JobRelatedResource {
         } else {
             beanPath = "";
         }
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
-        setTemplateConfiguration(tmpltCfg);
-    }
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
@@ -141,24 +123,17 @@ public class BeanBrowseResource extends JobRelatedResource {
             throw new ResourceException(404);
         }
 
-        Representation representation;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
-            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+            return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "beans", makeDataModel());
                 }
             };
         } else {
-            representation = new WriterRepresentation(
-                    MediaType.TEXT_HTML) {
-                public void write(Writer writer) throws IOException {
-                    BeanBrowseResource.this.writeHtml(writer);
-                }
-            };
+            ViewModel viewModel = new ViewModel();
+            viewModel.put("model", makeDataModel());
+            return render("Beans.ftl", viewModel);
         }
-        // TODO: remove if not necessary in future?
-        representation.setCharacterSet(CharacterSet.UTF_8);
-        return representation;
     }
     
     /**
@@ -218,29 +193,5 @@ public class BeanBrowseResource extends JobRelatedResource {
                 target,
                 nestedNames);
 
-    }
-
-    protected void writeHtml(Writer writer) {
-        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if(!baseRef.endsWith("/")) {
-            baseRef += "/";
-        }
-        Configuration tmpltCfg = getTemplateConfiguration();
-
-        ViewModel viewModel = new ViewModel();
-        viewModel.setFlashes(Flash.getFlashes(getRequest()));
-        viewModel.put("baseRef",baseRef);
-        viewModel.put("model",makeDataModel());
-
-        try {
-            Template template = tmpltCfg.getTemplate("Beans.ftl");
-            template.process(viewModel, writer);
-            writer.flush();
-        } catch (IOException e) { 
-            throw new RuntimeException(e); 
-        } catch (TemplateException e) { 
-            throw new RuntimeException(e); 
-        }
-        
     }
 }
