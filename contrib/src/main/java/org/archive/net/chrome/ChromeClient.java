@@ -39,7 +39,7 @@ import static java.util.logging.Level.WARNING;
  */
 public class ChromeClient implements Closeable {
     private static final Logger logger = Logger.getLogger(ChromeClient.class.getName());
-    private static final int RPC_TIMEOUT_SECONDS = 10;
+    private static final int RPC_TIMEOUT_SECONDS = 60;
 
     private final DevtoolsSocket devtoolsSocket;
     private final AtomicLong nextMessageId = new AtomicLong(0);
