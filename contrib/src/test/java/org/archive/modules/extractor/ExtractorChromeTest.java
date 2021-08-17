@@ -67,6 +67,7 @@ public class ExtractorChromeTest {
                         response.setContentType("text/html");
                         response.getWriter().write("<a href=http://example.org/page2.html>link</a>" +
                                 "<img src=/blue.png>" +
+                                "<img src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='>" +
                                 "<script>fetch('/post', {method: 'POST', body: 'hello'});</script>" +
                                 "<link rel=stylesheet href=style.css>");
                         baseRequest.setHandled(true);

@@ -29,6 +29,7 @@ import org.archive.modules.ProcessorChain;
 import org.archive.net.chrome.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.Recorder;
+import org.archive.util.UriUtils;
 import org.json.JSONArray;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -220,7 +221,7 @@ public class ExtractorChrome extends ContentExtractor {
     }
 
     private void handleCapturedRequest(CrawlURI via, ChromeRequest request) {
-        if (request.isResponseFulfilledByInterception()) {
+        if (request.isResponseFulfilledByInterception() || UriUtils.isDataUri(request.getUrl())) {
             return;
         }
 
