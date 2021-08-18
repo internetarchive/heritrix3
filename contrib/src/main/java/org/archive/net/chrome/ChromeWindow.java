@@ -162,7 +162,9 @@ public class ChromeWindow implements Closeable {
         // it seems this event can arrive both before and after requestWillBeSent so we need to cope with that
         String requestId = params.getString("requestId");
         ChromeRequest request = requestMap.computeIfAbsent(requestId, id -> new ChromeRequest(this, id));
-        request.setRawRequestHeaders(params.getJSONObject("headers"));
+        if (params.has("headers")) {
+            request.setRawRequestHeaders(params.getJSONObject("headers"));
+        }
     }
 
     private void handleResponseReceived(JSONObject params) {
@@ -180,8 +182,12 @@ public class ChromeWindow implements Closeable {
             logger.log(WARNING, "Got responseReceivedExtraInfo event without corresponding requestWillBeSent");
             return;
         }
-        request.setRawResponseHeaders(params.getJSONObject("headers"));
-        request.setResponseHeadersText(params.getString("headersText"));
+        if (params.has("headers")) {
+            request.setRawResponseHeaders(params.getJSONObject("headers"));
+        }
+        if (params.has("headersText")) {
+            request.setResponseHeadersText(params.getString("headersText"));
+        }
     }
 
     private void handleLoadingFinished(JSONObject params) {

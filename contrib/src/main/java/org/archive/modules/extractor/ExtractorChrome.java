@@ -29,6 +29,7 @@ import org.archive.modules.ProcessorChain;
 import org.archive.net.chrome.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.Recorder;
+import org.archive.util.UriUtils;
 import org.json.JSONArray;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -216,11 +217,17 @@ public class ExtractorChrome extends ContentExtractor {
         }
 
         Map<String,String> headers = (Map<String, String>) curi.getData().get(A_HTTP_RESPONSE_HEADERS);
+        if (headers == null) {
+            logger.log(WARNING, "Response headers unavailable in CrawlURI. Letting the browser " +
+                    "refetch {0}", curi.getURI());
+            interceptedRequest.continueNormally();
+            return;
+        }
         interceptedRequest.fulfill(curi.getFetchStatus(), headers.entrySet(), body);
     }
 
     private void handleCapturedRequest(CrawlURI via, ChromeRequest request) {
-        if (request.isResponseFulfilledByInterception()) {
+        if (request.isResponseFulfilledByInterception() || UriUtils.isDataUri(request.getUrl())) {
             return;
         }
 
