@@ -20,7 +20,10 @@
 package org.archive.crawler.reporting;
 
 import java.io.IOException;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.NullPointerException;
+import java.net.SocketException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +48,8 @@ import org.archive.spring.KeyedProperties;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.newsclub.net.unix.AFUNIXSocket;
+import org.newsclub.net.unix.AFUNIXSocketAddress;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -82,7 +87,7 @@ public class CollectdSocketWriter
     public int getWriteInterval() {
         return this.writeInterval;
     }
-    public void setWriteInterval(String writeInterval) {
+    public void setWriteInterval(int writeInterval) {
         this.writeInterval = writeInterval;
     }
 
@@ -92,6 +97,20 @@ public class CollectdSocketWriter
         return isRunning;
     }
 
+    static public class Client {
+        AFUNIXSocket socket;
+
+        public Client(String socketPath) {
+            try {
+                socket = AFUNIXSocket.newInstance();
+                socket.connect(AFUNIXSocketAddress.of(new File(socketPath)));
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, String.format("Unable to connect to Unix Socket %s", socketPath), e);
+            }
+        }
+
+    }
+
     private transient Lock lock = new ReentrantLock(true);
 
     private class CollectdSocketWriterThread extends Thread {
@@ -99,6 +118,8 @@ public class CollectdSocketWriter
         public CollectdSocketWriterThread(String name) {
             super(name);
         }
+
+        // TODO impl read / write
 
         @Override
         public void run() {
