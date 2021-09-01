@@ -97,8 +97,9 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 
 	<repositories>
 		<repository>
-			<id>builds.archive.org,maven2</id>
-			<url>http://builds.archive.org/maven2</url>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2</url>
+			<snapshots><enabled>false</enabled></snapshots>
 		</repository>
         <repository>
             <id>oracleReleases</id>
@@ -107,8 +108,13 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <snapshots />
+			<snapshots><enabled>false</enabled></snapshots>
         </repository>
+		<repository>
+			<id>builds.archive.org,wayback</id>
+			<url>https://web.archive.org/web/20210302013031id_/http://builds.archive.org/maven2</url>
+			<snapshots><enabled>false</enabled></snapshots>
+		</repository>
 	</repositories>
 
 	<dependencyManagement>
