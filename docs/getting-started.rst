@@ -7,7 +7,7 @@ System Requirements
 Heritrix is primarily used on Linux. It may run on other platforms but is not regularly tested or supported on them.
 
 Heritrix requires Java 8 or 11. We recommend using your Linux distribution's OpenJDK 11 packages. Alternatively up to
-date builds of OpenJDK 8 and 11 for several platforms are available from `AdoptOpenJDK <https://adoptopenjdk.net/>`__.
+date builds of OpenJDK 8 and 11 for several platforms are available from `Adoptium <https://adoptium.net/>`__.
 
 The default Java heap for Heritrix is 256MB RAM, which is usually suitable for crawls that range over hundreds of
 hosts.  Assign more of your available RAM to the heap if you are crawling thousands of hosts or experience Java
