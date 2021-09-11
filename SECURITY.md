@@ -26,7 +26,7 @@ private to the maintainers and major users you may contact the following teams
 who should be able coordinate a response with many other organisations that use
 Heritrix via the [IIPC](https://netpreserve.org/):
 
-* [The National Library of Australia's Web Archiving Team](http://pandora.nla.gov.au/contact.html)
+* [The National Library of Australia's Web Archiving Team](https://pandora.nla.gov.au/contact.html)
 * [The UK Web Archive](https://www.webarchive.org.uk/en/ukwa/contact)
 
 Vulnerabilities in services on archive.org or Archive-It should be reported to
