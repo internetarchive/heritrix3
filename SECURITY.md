@@ -29,8 +29,8 @@ Heritrix via the [IIPC](https://netpreserve.org/):
 * [The National Library of Australia's Web Archiving Team](http://pandora.nla.gov.au/contact.html)
 * [The UK Web Archive](https://www.webarchive.org.uk/en/ukwa/contact)
 
-Vulnerabilities in services on archive.org or Archive-It should be reported to 
-[Internet Archive](https://archive.org/about/contact.php).
+Vulnerabilities in services on archive.org or Archive-It should be reported to
+the [Internet Archive](https://archive.org/about/contact.php).
 
 ## Bug Bounty
 
