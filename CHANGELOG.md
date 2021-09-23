@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210803...HEAD)
+
+**Fixed bugs:**
+
+- ExtractorChrome exception on images as data uris [\#430](https://github.com/internetarchive/heritrix3/issues/430)
+- Thread-safely issues with the CookieStore [\#427](https://github.com/internetarchive/heritrix3/issues/427)
+- Cookies being sent to wrong site [\#259](https://github.com/internetarchive/heritrix3/issues/259)
+
+**Closed issues:**
+
+- Trying to get in touch regarding a security issue [\#429](https://github.com/internetarchive/heritrix3/issues/429)
+- Upgrade HTTP Client to 4.5.x [\#245](https://github.com/internetarchive/heritrix3/issues/245)
+
+**Merged pull requests:**
+
+- Add safer cookie iteration [\#434](https://github.com/internetarchive/heritrix3/pull/434) ([anjackson](https://github.com/anjackson))
+- ExtractorChrome bug fixes [\#431](https://github.com/internetarchive/heritrix3/pull/431) ([ato](https://github.com/ato))
+- UI: Refactor duplicate template rendering code [\#424](https://github.com/internetarchive/heritrix3/pull/424) ([ato](https://github.com/ato))
+
 ## [3.4.0-20210803](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210803) (2021-08-03)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210621...3.4.0-20210803)
