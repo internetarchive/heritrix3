@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedMap;
 
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.collection.CompositeCollection;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
@@ -75,9 +76,9 @@ public class BdbCookieStore extends AbstractCookieStore implements
         @Override public int size() { return wrapped.size(); }
         @Override public boolean isEmpty() { throw new RuntimeException("not implemented"); }
         @Override public boolean contains(Object o) { throw new RuntimeException("not implemented"); }
-        @Override public Iterator<T> iterator() { return (Iterator<T>) Arrays.asList(wrapped.toArray()).iterator(); }
-        @Override public Object[] toArray() { return wrapped.toArray(); }
-        @SuppressWarnings("hiding") @Override public <T> T[] toArray(T[] a) { return wrapped.toArray(a); }
+        @Override public Iterator<T> iterator() { return wrapped.iterator(); }
+        @Override public Object[] toArray() { return IteratorUtils.toArray(wrapped.iterator()); }
+        @SuppressWarnings({"hiding", "unchecked"}) @Override public <T> T[] toArray(T[] a) { return (T[]) IteratorUtils.toArray(iterator(), a.getClass()); }
         @Override public boolean add(T e) { throw new RuntimeException("immutable list"); }
         @Override public boolean remove(Object o) { throw new RuntimeException("immutable list"); }
         @Override public boolean containsAll(Collection<?> c) { return wrapped.containsAll(c); }
