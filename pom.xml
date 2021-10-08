@@ -103,17 +103,13 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
         <repository>
             <id>oracleReleases</id>
             <name>Oracle Released Java Packages</name>
-            <url>http://download.oracle.com/maven</url>
+            <url>https://download.oracle.com/maven</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots />
         </repository>
 	</repositories>
-
-	<prerequisites>
-		<maven>2.0.9</maven>
-	</prerequisites>
 
 	<dependencyManagement>
 		<dependencies>
@@ -136,17 +132,17 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
-				<version>4.3.6</version>
+				<version>4.5.13</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpmime</artifactId>
-				<version>4.3.6</version>
+				<version>4.5.13</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
-				<version>4.13</version>
+				<version>4.13.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -382,16 +378,6 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-                               <version>3.3</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<encoding>UTF-8</encoding>
-				</configuration>
-			</plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -411,6 +397,10 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
+		<jetty.version>9.4.37.v20210219</jetty.version>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.release>8</maven.compiler.release>
 	</properties>
     <profiles>
         <profile>

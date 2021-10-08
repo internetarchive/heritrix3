@@ -14,7 +14,7 @@
 	<repositories>
 		<repository>
 			<id>maven-restlet</id>
-			<url>https://maven.restlet.org</url>
+			<url>https://maven.restlet.com</url>
 		</repository>
 	</repositories>
 
@@ -30,17 +30,17 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-server</artifactId>
-			<version>9.4.19.v20190610</version>
+			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-util</artifactId>
-			<version>9.4.19.v20190610</version>
+			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-servlet</artifactId>
-            <version>9.4.19.v20190610</version>
+            <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

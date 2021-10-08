@@ -402,6 +402,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
         kp.put("maxLengthBytes",timeout);
     }
 
+    {
+        setSendRange(false);
+    }
+    public boolean getSendRange() {
+        return (Boolean) kp.get("sendRange");
+    }
     /**
      * Send 'Range' header when a limit ({@link #MAX_LENGTH_BYTES}) on
      * document size.
@@ -413,12 +419,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * the response mid-download. On rare occasion, sending 'Range' will
      * generate '416 Request Range Not Satisfiable' response.
      */
-    {
-        setSendRange(false);
-    }
-    public boolean getSendRange() {
-        return (Boolean) kp.get("sendRange");
-    }
     public void setSendRange(boolean sendRange) {
         kp.put("sendRange",sendRange);
     }

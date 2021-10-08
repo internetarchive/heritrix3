@@ -1,5 +1,4 @@
 # Heritrix
-[![Build Status](https://travis-ci.org/internetarchive/heritrix3.svg?branch=master)](https://travis-ci.org/internetarchive/heritrix3)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix)
 [![Javadoc](https://javadoc-badge.appspot.com/org.archive/heritrix.svg?label=javadoc)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
 [![LICENSE](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](./LICENSE)

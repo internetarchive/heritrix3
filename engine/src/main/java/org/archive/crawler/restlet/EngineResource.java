@@ -25,14 +25,13 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
+import freemarker.template.ObjectWrapper;
 import org.archive.crawler.framework.CrawlJob;
-import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.models.EngineModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
-import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.representation.EmptyRepresentation;
@@ -40,11 +39,6 @@ import org.restlet.representation.Representation;
 import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
-
-import freemarker.template.Configuration;
-import freemarker.template.DefaultObjectWrapper;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
 
 import static org.restlet.data.MediaType.APPLICATION_XML;
 
@@ -58,46 +52,27 @@ import static org.restlet.data.MediaType.APPLICATION_XML;
  */
 public class EngineResource extends BaseResource {
 
-    private Configuration _templateConfiguration;
-
     @Override
     public void init(Context ctx, Request req, Response res) {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(APPLICATION_XML));
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");        
-        tmpltCfg.setObjectWrapper(new DefaultObjectWrapper());
-        setTemplateConfiguration(tmpltCfg);
-    }
-
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
     protected Representation get(Variant variant) throws ResourceException {
-        Representation representation;
         if (variant.getMediaType() == APPLICATION_XML) {
-            representation = new WriterRepresentation(APPLICATION_XML) {
+            return new WriterRepresentation(APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "engine", makeDataModel());
                 }
             };
         } else {
-            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
-                public void write(Writer writer) throws IOException {
-                    EngineResource.this.writeHtml(writer);
-                }
-            };
+            ViewModel viewModel = new ViewModel();
+            viewModel.put("fileSeparator", File.separator);
+            viewModel.put("engine", makeDataModel());
+            return render("Engine.ftl", viewModel, ObjectWrapper.DEFAULT_WRAPPER);
         }
-        // TODO: remove if not necessary in future?
-        representation.setCharacterSet(CharacterSet.UTF_8);
-        return representation;
     }
 
     @Override
@@ -180,9 +155,17 @@ public class EngineResource extends BaseResource {
                     cancel = true; 
                 }
             }
-            if(!cancel) {
-                System.exit(0); 
-            }
+			if (!cancel) {
+				Flash.addFlash(getResponse(), "Shutting down ... bye");
+				new Thread(() -> {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					System.exit(0);
+				}).start();
+			}
         } else if ("gc".equals(action)) {
             System.gc();
         }
@@ -217,34 +200,5 @@ public class EngineResource extends BaseResource {
         }
         
         return new EngineModel(getEngine(), baseRef);
-    }
-    
-    protected void writeHtml(Writer writer) {
-        EngineModel model = makeDataModel();
-        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if(!baseRef.endsWith("/")) {
-            baseRef += "/";
-        }
-        Configuration tmpltCfg = getTemplateConfiguration();
-
-        ViewModel viewModel = new ViewModel();
-        viewModel.setFlashes(Flash.getFlashes(getRequest()));
-        viewModel.put("baseRef",baseRef);
-        viewModel.put("fileSeparator", File.separator);
-        viewModel.put("engine", model);
-
-        try {
-            Template template = tmpltCfg.getTemplate("Engine.ftl");
-            template.process(viewModel, writer);
-            writer.flush();
-        } catch (IOException e) { 
-            throw new RuntimeException(e); 
-        } catch (TemplateException e) { 
-            throw new RuntimeException(e); 
-        }
-    }
-
-    protected Engine getEngine() {
-        return ((EngineApplication)getApplication()).getEngine();
     }
 }

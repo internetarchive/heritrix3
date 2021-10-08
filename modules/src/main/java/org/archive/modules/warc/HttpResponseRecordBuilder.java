@@ -1,12 +1,6 @@
 package org.archive.modules.warc;
 
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_PAYLOAD_DIGEST;
-import static org.archive.format.warc.WARCConstants.HEADER_KEY_TRUNCATED;
-import static org.archive.format.warc.WARCConstants.HTTP_RESPONSE_MIMETYPE;
-import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_HEAD;
-import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_LENGTH;
-import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
+import static org.archive.format.warc.WARCConstants.*;
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
 import static org.archive.modules.CoreAttributeConstants.HEADER_TRUNC;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
@@ -53,6 +47,10 @@ public class HttpResponseRecordBuilder extends BaseWARCRecordBuilder {
         if (curi.getContentDigest() != null) {
             recordInfo.addExtraHeader(HEADER_KEY_PAYLOAD_DIGEST,
                     curi.getContentDigestSchemeString());
+        }
+
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
 
         // Check for truncated annotation

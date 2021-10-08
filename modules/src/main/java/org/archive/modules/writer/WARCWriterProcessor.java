@@ -32,7 +32,6 @@ import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_
 import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.format.warc.WARCConstants.TYPE;
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -84,28 +83,28 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
-    /**
-     * Whether to write 'request' type records. Default is true.
-     */
     {
         setWriteRequests(true);
     }
     public boolean getWriteRequests() {
         return (Boolean) kp.get("writeRequests");
     }
+    /**
+     * Whether to write 'request' type records. Default is true.
+     */
     public void setWriteRequests(boolean writeRequests) {
         kp.put("writeRequests",writeRequests);
     }
     
-    /**
-     * Whether to write 'metadata' type records. Default is true.
-     */
     {
         setWriteMetadata(true);
     }
     public boolean getWriteMetadata() {
         return (Boolean) kp.get("writeMetadata");
     }
+    /**
+     * Whether to write 'metadata' type records. Default is true.
+     */
     public void setWriteMetadata(boolean writeMetadata) {
         kp.put("writeMetadata",writeMetadata);
     }
@@ -166,8 +165,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
                 // We rolled over to a new warc and wrote a warcinfo record.
                 // Tally stats and reset temp stats, to avoid including warcinfo
                 // record in stats for current url.
-                setTotalBytesWritten(getTotalBytesWritten() +
-                    (writer.getPosition() - position));
+                addTotalBytesWritten(writer.getPosition() - position);
                 addStats(writer.getTmpStats());
                 writer.resetTmpStats();
                 writer.resetTmpRecordLog();
@@ -221,10 +219,9 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
-        
-        String ip = (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
-        if (ip != null && ip.length() > 0) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
+
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
         
         ReplayInputStream ris =
@@ -251,9 +248,8 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
         
-        Object whoisServerIP = curi.getData().get(CoreAttributeConstants.A_WHOIS_SERVER_IP);
-        if (whoisServerIP != null) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, whoisServerIP.toString());
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
         }
         
         ReplayInputStream ris =
@@ -647,6 +643,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
     protected JSONObject toCheckpointJson() throws JSONException {
         JSONObject json = super.toCheckpointJson();
         json.put("urlsWritten", urlsWritten);
+	json.put("totalBytesWritten", getTotalBytesWritten());
         json.put("stats", stats);
         return json;
     }
@@ -659,6 +656,9 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         
         if (json.has("urlsWritten")) {
             urlsWritten.set(json.getLong("urlsWritten"));
+        }
+	if (json.has("totalBytesWritten")) {
+            setTotalBytesWritten(json.getLong("totalBytesWritten"));
         }
         
         if (json.has("stats")) {

@@ -71,34 +71,34 @@ public class FetchDNS extends Processor {
     private short TypeType = Type.A;
     protected InetAddress serverInetAddr = null;
 
-    /**
-     * If a DNS lookup fails, whether or not to fall back to InetAddress
-     * resolution, which may use local 'hosts' files or other mechanisms.
-     */
     {
         setAcceptNonDnsResolves(false);
     }
     public boolean getAcceptNonDnsResolves() {
         return (Boolean) kp.get("acceptNonDnsResolves");
     }
+    /**
+     * If a DNS lookup fails, whether or not to fall back to InetAddress
+     * resolution, which may use local 'hosts' files or other mechanisms.
+     */
     public void setAcceptNonDnsResolves(boolean acceptNonDnsResolves) {
         kp.put("acceptNonDnsResolves",acceptNonDnsResolves);
     }
     
-    /**
-     * Optionally, only allow InetAddress resolution, precisely because it 
-     * may use local 'hosts' files or other mechanisms.
-     * 
-     * This should not generally be used in production as it will prevent 
-     * DNS lookups from being recorded properly.
-     * 
-     */
     {
         setDisableJavaDnsResolves(false);
     }
     public boolean getDisableJavaDnsResolves() {
         return (Boolean) kp.get("disableJavaDnsResolves");
     }
+    /**
+     * Optionally, only allow InetAddress resolution, precisely because it
+     * may use local 'hosts' files or other mechanisms.
+     *
+     * This should not generally be used in production as it will prevent
+     * DNS lookups from being recorded properly.
+     *
+     */
     public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
         kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
     }
@@ -115,28 +115,28 @@ public class FetchDNS extends Processor {
         this.serverCache = serverCache;
     }
     
-    /**
-     * Whether or not to perform an on-the-fly digest hash of retrieved
-     * content-bodies.
-     */
     {
         setDigestContent(true);
     }
     public boolean getDigestContent() {
         return (Boolean) kp.get("digestContent");
     }
+    /**
+     * Whether or not to perform an on-the-fly digest hash of retrieved
+     * content-bodies.
+     */
     public void setDigestContent(boolean digest) {
         kp.put("digestContent",digest);
     }
 
-    /**
-     * Which algorithm (for example MD5 or SHA-1) to use to perform an 
-     * on-the-fly digest hash of retrieved content-bodies.
-     */
-    protected String digestAlgorithm = "sha1"; 
+    protected String digestAlgorithm = "sha1";
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }
+    /**
+     * Which algorithm (for example MD5 or SHA-1) to use to perform an
+     * on-the-fly digest hash of retrieved content-bodies.
+     */
     public void setDigestAlgorithm(String digestAlgorithm) {
         this.digestAlgorithm = digestAlgorithm;
     }
@@ -239,7 +239,7 @@ public class FetchDNS extends Processor {
         try {
         	recordDNS(curi, rrecordSet);
             curi.setFetchStatus(S_DNS_SUCCESS);
-            curi.setDNSServerIPLabel(ResolverConfig.getCurrentConfig().server());
+            curi.setServerIP(ResolverConfig.getCurrentConfig().server().getAddress().getHostAddress());
         } catch (IOException e) {
         	logger.log(Level.SEVERE, "Failed store of DNS Record for " +
         		curi.toString(), e);

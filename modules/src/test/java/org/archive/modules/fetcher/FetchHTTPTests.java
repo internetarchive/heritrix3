@@ -130,7 +130,8 @@ public class FetchHTTPTests extends ProcessorTestBase {
         assertEquals(DEFAULT_PAYLOAD_STRING.length(), curi.getContentLength());
         assertEquals(curi.getContentSize(), curi.getRecordedSize());
         
-        // check various 
+        // check various
+        assertNotNull(curi.getServerIP());
         assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi.getContentDigestSchemeString());
         if (!exclusions.contains("contentType")) {
             assertEquals("text/plain;charset=US-ASCII", curi.getContentType());

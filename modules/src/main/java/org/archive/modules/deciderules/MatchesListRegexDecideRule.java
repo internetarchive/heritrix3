@@ -47,21 +47,18 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
     private static final Logger logger =
             Logger.getLogger(MatchesListRegexDecideRule.class.getName());
 
+    {
+        setTimeoutPerRegexSeconds(0L);
+    }
+    public long getTimeoutPerRegexSeconds() { return (Long) kp.get("timeout");}
     /**
      * The timeout for regular expression matching, in seconds. If set to 0 or negative then no timeout is specified and
      * there is no upper limit to how long the matching may take. See the corresponding test class MatchesListRegexDecideRuleTest
      * for a pathological example.
      */
-    {
-        setTimeoutPerRegexSeconds(0L);
-    }
-    public long getTimeoutPerRegexSeconds() { return (Long) kp.get("timeout");}
     public void setTimeoutPerRegexSeconds(long timeoutPerRegexSeconds) { kp.put("timeout", timeoutPerRegexSeconds);}
 
 
-    /**
-     * The list of regular expressions to evalute against the URI.
-     */
     {
         setRegexList(new ArrayList<Pattern>());
     }
@@ -69,21 +66,24 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
     public List<Pattern> getRegexList() {
         return (List<Pattern>) kp.get("regexList");
     }
+    /**
+     * The list of regular expressions to evalute against the URI.
+     */
     public void setRegexList(List<Pattern> patterns) {
         kp.put("regexList", patterns);
     }
 
-    /**
-     * True if the list of regular expression should be considered as logically
-     * AND when matching. False if the list of regular expressions should be
-     * considered as logically OR when matching.
-     */
     {
         setListLogicalOr(true);
     }
     public boolean getListLogicalOr() {
         return (Boolean) kp.get("listLogicalOr");
     }
+    /**
+     * True if the list of regular expression should be considered as logically
+     * AND when matching. False if the list of regular expressions should be
+     * considered as logically OR when matching.
+     */
     public void setListLogicalOr(boolean listLogicalOr) {
         kp.put("listLogicalOr",listLogicalOr);
     }

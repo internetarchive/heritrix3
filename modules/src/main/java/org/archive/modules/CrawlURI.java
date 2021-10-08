@@ -19,62 +19,6 @@
  
 package org.archive.modules;
 
-import static org.archive.modules.CoreAttributeConstants.A_ANNOTATIONS;
-import static org.archive.modules.CoreAttributeConstants.A_CREDENTIALS_KEY;
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
-import static org.archive.modules.CoreAttributeConstants.A_FETCH_COMPLETED_TIME;
-import static org.archive.modules.CoreAttributeConstants.A_FORCE_RETIRE;
-import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
-import static org.archive.modules.CoreAttributeConstants.A_HTML_BASE;
-import static org.archive.modules.CoreAttributeConstants.A_HTTP_AUTH_CHALLENGES;
-import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
-import static org.archive.modules.CoreAttributeConstants.A_NONFATAL_ERRORS;
-import static org.archive.modules.CoreAttributeConstants.A_PREREQUISITE_URI;
-import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
-import static org.archive.modules.SchedulingConstants.NORMAL;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_USER;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_CHAFF;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DELETED_BY_USER;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_UNRESOLVABLE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_OTHER_PREREQUISITE_FAILURE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_PROCESSING_THREAD_KILLED;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PRECLUDED;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PREREQUISITE_FAILURE;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_SERIOUS_ERROR;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_TIMEOUT;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_EMBED_HOPS;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_LINK_HOPS;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_RETRIES;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_UNATTEMPTED;
-import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
-import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.archive.bdb.AutoKryo;
@@ -94,6 +38,16 @@ import org.archive.util.ReportUtils;
 import org.archive.util.Reporter;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.*;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.archive.modules.CoreAttributeConstants.*;
+import static org.archive.modules.SchedulingConstants.NORMAL;
+import static org.archive.modules.fetcher.FetchStatusCodes.*;
+import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DIGEST_HISTORY;
 
 
 /**
@@ -1145,15 +1099,13 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
             return null;
         }
     }
-    
 
-
-    public String getDNSServerIPLabel() {
-        if (data == null) {
-            return null;
-        } else {
-            return (String)data.get(A_DNS_SERVER_IP_LABEL);
-        }
+    /**
+     * Returns the IP address the request was fetched against or null if unavailable.
+     */
+    public String getServerIP() {
+        if (data == null) return null;
+        return (String) data.get(A_SERVER_IP);
     }
 
     public long getFetchBeginTime() {
@@ -1199,9 +1151,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         return list;
     }
 
-
-    public void setDNSServerIPLabel(String label) {
-        getData().put(A_DNS_SERVER_IP_LABEL, label);
+    public void setServerIP(String serverIP) {
+        getData().put(A_SERVER_IP, serverIP);
     }
 
     public void setError(String msg) {

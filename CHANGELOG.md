@@ -1,19 +1,136 @@
-# Change Log
+# Changelog
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+## [3.4.0-20210923](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210923) (2021-09-23)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210803...3.4.0-20210923)
+
+**Fixed bugs:**
+
+- ExtractorChrome exception on images as data uris [\#430](https://github.com/internetarchive/heritrix3/issues/430)
+- Thread-safely issues with the CookieStore [\#427](https://github.com/internetarchive/heritrix3/issues/427)
+- Cookies being sent to wrong site [\#259](https://github.com/internetarchive/heritrix3/issues/259)
 
 **Closed issues:**
 
-- Add support for the SFTP protocol [\#319](https://github.com/internetarchive/heritrix3/issues/319)
+- Trying to get in touch regarding a security issue [\#429](https://github.com/internetarchive/heritrix3/issues/429)
+- Upgrade HTTP Client to 4.5.x [\#245](https://github.com/internetarchive/heritrix3/issues/245)
 
 **Merged pull requests:**
 
+- Add safer cookie iteration [\#434](https://github.com/internetarchive/heritrix3/pull/434) ([anjackson](https://github.com/anjackson))
+- ExtractorChrome bug fixes [\#431](https://github.com/internetarchive/heritrix3/pull/431) ([ato](https://github.com/ato))
+- UI: Refactor duplicate template rendering code [\#424](https://github.com/internetarchive/heritrix3/pull/424) ([ato](https://github.com/ato))
+
+## [3.4.0-20210803](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210803) (2021-08-03)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210621...3.4.0-20210803)
+
+**Fixed bugs:**
+
+- Jobs can get stuck STOPPING with "Interrupt leaving unfinished CrawlURI" [\#420](https://github.com/internetarchive/heritrix3/issues/420)
+- Groovy version is incompatible with JDK 16+ [\#419](https://github.com/internetarchive/heritrix3/issues/419)
+- module java.base does not export sun.security.tools.keytool to unnamed module @1ece4432 [\#417](https://github.com/internetarchive/heritrix3/issues/417)
+- Distribution package has broken filesystem permissions [\#413](https://github.com/internetarchive/heritrix3/issues/413)
+- Add WARC-IP-Address header to WARCWriterChainProcessor [\#396](https://github.com/internetarchive/heritrix3/issues/396)
+
+**Merged pull requests:**
+
+- Don't extract data URIs [\#423](https://github.com/internetarchive/heritrix3/pull/423) ([ato](https://github.com/ato))
+- ToeThread: ensure currentCuri is finished before exiting [\#421](https://github.com/internetarchive/heritrix3/pull/421) ([ato](https://github.com/ato))
+- JDK 16 compatibility [\#418](https://github.com/internetarchive/heritrix3/pull/418) ([ato](https://github.com/ato))
+- ExtractorChrome: reduce request duplication between browser and frontier [\#416](https://github.com/internetarchive/heritrix3/pull/416) ([ato](https://github.com/ato))
+- Upgrade maven-assembly-plugin to 3.3.0 to fix file permissions [\#414](https://github.com/internetarchive/heritrix3/pull/414) ([ato](https://github.com/ato))
+- ExtractorChrome: Capture requests made by the browser [\#411](https://github.com/internetarchive/heritrix3/pull/411) ([ato](https://github.com/ato))
+- Warc writer stats fixes [\#410](https://github.com/internetarchive/heritrix3/pull/410) ([ato](https://github.com/ato))
+- Fix WARC-IP-Address and use a common server-ip CrawlURI attribute for all protocols [\#409](https://github.com/internetarchive/heritrix3/pull/409) ([ato](https://github.com/ato))
+- Add basic syntax highlighting to the crawl.log viewer [\#408](https://github.com/internetarchive/heritrix3/pull/408) ([ato](https://github.com/ato))
+- Fix a couple of boring maven warnings [\#407](https://github.com/internetarchive/heritrix3/pull/407) ([ato](https://github.com/ato))
+- Fix and document the -r option which runs a named job on startup [\#406](https://github.com/internetarchive/heritrix3/pull/406) ([ato](https://github.com/ato))
+- Speed up test suite [\#405](https://github.com/internetarchive/heritrix3/pull/405) ([ato](https://github.com/ato))
+- Switch from Travis CI to Github Actions [\#404](https://github.com/internetarchive/heritrix3/pull/404) ([ato](https://github.com/ato))
+- Add ExtractorChrome to contrib [\#403](https://github.com/internetarchive/heritrix3/pull/403) ([ato](https://github.com/ato))
+- Upgrade httpclient to 4.5 [\#397](https://github.com/internetarchive/heritrix3/pull/397) ([anjackson](https://github.com/anjackson))
+
+## [3.4.0-20210621](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210621) (2021-06-21)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210618...3.4.0-20210621)
+
+**Merged pull requests:**
+
+- Remove dependency on mg4j [\#402](https://github.com/internetarchive/heritrix3/pull/402) ([ato](https://github.com/ato))
+- Graceful UI shutdown [\#401](https://github.com/internetarchive/heritrix3/pull/401) ([kris-sigur](https://github.com/kris-sigur))
+- Remove unnecessary fiddling with VIA path in ExtractorRobotsTxt [\#400](https://github.com/internetarchive/heritrix3/pull/400) ([kris-sigur](https://github.com/kris-sigur))
+
+## [3.4.0-20210618](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210618) (2021-06-18)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210617...3.4.0-20210618)
+
+**Merged pull requests:**
+
+- Switch to properties that enforce Java 8 compatibility. [\#399](https://github.com/internetarchive/heritrix3/pull/399) ([anjackson](https://github.com/anjackson))
+
+## [3.4.0-20210617](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210617) (2021-06-17)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210527...3.4.0-20210617)
+
+**Closed issues:**
+
+- Ensure valid checkpoints can be created when recovering from errors [\#392](https://github.com/internetarchive/heritrix3/issues/392)
+
+**Merged pull requests:**
+
+- Annotate nested sitemap links as sitemaps [\#398](https://github.com/internetarchive/heritrix3/pull/398) ([kris-sigur](https://github.com/kris-sigur))
+- Update AMPQ client library to address security warning. [\#394](https://github.com/internetarchive/heritrix3/pull/394) ([anjackson](https://github.com/anjackson))
+- Only update last checkpoint stats if the checkpoint completed, for \#392. [\#393](https://github.com/internetarchive/heritrix3/pull/393) ([anjackson](https://github.com/anjackson))
+- Sync changelog with release. [\#391](https://github.com/internetarchive/heritrix3/pull/391) ([anjackson](https://github.com/anjackson))
+
+## [3.4.0-20210527](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210527) (2021-05-27)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200518...3.4.0-20210527)
+
+**Fixed bugs:**
+
+- Upgrade dnsjava to cope with Azure CNAME lists [\#344](https://github.com/internetarchive/heritrix3/issues/344)
+- Spring instanciation broken for MatchesListRegexDecideRule [\#337](https://github.com/internetarchive/heritrix3/issues/337)
+
+**Closed issues:**
+
+- Browse Bean template errors on editing Regex Pattern [\#378](https://github.com/internetarchive/heritrix3/issues/378)
+- BrowseBeans broken under Java 11 [\#376](https://github.com/internetarchive/heritrix3/issues/376)
+- Usable variables, e.g. for warcWriter template [\#363](https://github.com/internetarchive/heritrix3/issues/363)
+- Heritrix 3.3 out-of-the-box archives pages with meta noindex [\#351](https://github.com/internetarchive/heritrix3/issues/351)
+- Error Binding hostname or ip to Web UI [\#339](https://github.com/internetarchive/heritrix3/issues/339)
+- Add support for the SFTP protocol [\#319](https://github.com/internetarchive/heritrix3/issues/319)
+- java.nio.BufferUnderflowException in BdbMultipleWorkQueues.get [\#278](https://github.com/internetarchive/heritrix3/issues/278)
+- Upgrade dependencies to spring 4.x.x [\#254](https://github.com/internetarchive/heritrix3/issues/254)
+
+**Merged pull requests:**
+
+- Update changelog. [\#390](https://github.com/internetarchive/heritrix3/pull/390) ([anjackson](https://github.com/anjackson))
+- Update dependencies 2021 05 26 [\#389](https://github.com/internetarchive/heritrix3/pull/389) ([anjackson](https://github.com/anjackson))
+- Bring changlog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
+- Allow tuning of BDB-JE evictor and cleaner threads. [\#384](https://github.com/internetarchive/heritrix3/pull/384) ([anjackson](https://github.com/anjackson))
+- Update to latest version of dnsjava, for \#344 [\#383](https://github.com/internetarchive/heritrix3/pull/383) ([anjackson](https://github.com/anjackson))
+- Avoid error when bean properties have no url available [\#379](https://github.com/internetarchive/heritrix3/pull/379) ([ldko](https://github.com/ldko))
+- Handle empty Optionals when browsing beans [\#377](https://github.com/internetarchive/heritrix3/pull/377) ([ato](https://github.com/ato))
+- Fix misspell in comments [\#368](https://github.com/internetarchive/heritrix3/pull/368) ([webdev4422](https://github.com/webdev4422))
+- Upgrade to Spring 5.3.3 [\#366](https://github.com/internetarchive/heritrix3/pull/366) ([ato](https://github.com/ato))
+- ait youtube-dl options [\#359](https://github.com/internetarchive/heritrix3/pull/359) ([galgeek](https://github.com/galgeek))
+- Strip quotes from URL value. [\#352](https://github.com/internetarchive/heritrix3/pull/352) ([BitBaron](https://github.com/BitBaron))
+- Fixes leaky file handles [\#348](https://github.com/internetarchive/heritrix3/pull/348) ([adam-miller](https://github.com/adam-miller))
+- youtube-dl --no-playlist [\#341](https://github.com/internetarchive/heritrix3/pull/341) ([galgeek](https://github.com/galgeek))
+- Revert "Warc convention for storing ftp responses has been to use a WARC reso…" [\#336](https://github.com/internetarchive/heritrix3/pull/336) ([ato](https://github.com/ato))
 - Fixes extractor multiple regex matcher recycle [\#335](https://github.com/internetarchive/heritrix3/pull/335) ([adam-miller](https://github.com/adam-miller))
+- Warc convention for storing ftp responses has been to use a WARC reso… [\#334](https://github.com/internetarchive/heritrix3/pull/334) ([adam-miller](https://github.com/adam-miller))
 - Remove deprecated sudo setting. [\#333](https://github.com/internetarchive/heritrix3/pull/333) ([dengliming](https://github.com/dengliming))
+- don't youtubedl receivedFromAMQP [\#330](https://github.com/internetarchive/heritrix3/pull/330) ([galgeek](https://github.com/galgeek))
+- youtube-dl no cache dir [\#329](https://github.com/internetarchive/heritrix3/pull/329) ([galgeek](https://github.com/galgeek))
+- best medium-ish size [\#327](https://github.com/internetarchive/heritrix3/pull/327) ([galgeek](https://github.com/galgeek))
+- Recycle the regex Matcher after use. [\#317](https://github.com/internetarchive/heritrix3/pull/317) ([adam-miller](https://github.com/adam-miller))
+- Support for extracting URLs in sitemaps [\#262](https://github.com/internetarchive/heritrix3/pull/262) ([kris-sigur](https://github.com/kris-sigur))
 
 ## [3.4.0-20200518](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200518) (2020-05-18)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20200304...3.4.0-20200518)
 
 **Closed issues:**
@@ -30,6 +147,7 @@
 - Add support for the SFTP protocol [\#320](https://github.com/internetarchive/heritrix3/pull/320) ([bnfleb](https://github.com/bnfleb))
 
 ## [3.4.0-20200304](https://github.com/internetarchive/heritrix3/tree/3.4.0-20200304) (2020-03-04)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190418...3.4.0-20200304)
 
 **Fixed bugs:**
@@ -82,10 +200,12 @@
 - JDK11 support: upgrade maven-surefire-plugin to 2.22.2 [\#272](https://github.com/internetarchive/heritrix3/pull/272) ([ato](https://github.com/ato))
 - JDK11 support: exclude tools.jar from hbase-client dependency [\#271](https://github.com/internetarchive/heritrix3/pull/271) ([ato](https://github.com/ato))
 - Travis fixes [\#270](https://github.com/internetarchive/heritrix3/pull/270) ([ato](https://github.com/ato))
+- JDK11 support: explicitly depend on JAXB [\#269](https://github.com/internetarchive/heritrix3/pull/269) ([ato](https://github.com/ato))
 - WIP: ExtractorYoutubeDL [\#257](https://github.com/internetarchive/heritrix3/pull/257) ([nlevitt](https://github.com/nlevitt))
 - Update README and add LICENSE.txt [\#256](https://github.com/internetarchive/heritrix3/pull/256) ([ruebot](https://github.com/ruebot))
 
 ## [3.4.0-20190418](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190418) (2019-04-18)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190207...3.4.0-20190418)
 
 **Fixed bugs:**
@@ -116,6 +236,7 @@
 - Add CHANGELOG; address \#233. [\#238](https://github.com/internetarchive/heritrix3/pull/238) ([ruebot](https://github.com/ruebot))
 
 ## [3.4.0-20190207](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190207) (2019-02-07)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20190205...3.4.0-20190207)
 
 **Fixed bugs:**
@@ -127,6 +248,7 @@
 - Add synchronized statements for internetarchive/heritrix3\#221. [\#231](https://github.com/internetarchive/heritrix3/pull/231) ([anjackson](https://github.com/anjackson))
 
 ## [3.4.0-20190205](https://github.com/internetarchive/heritrix3/tree/3.4.0-20190205) (2019-02-05)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.2.0...3.4.0-20190205)
 
 **Fixed bugs:**
@@ -153,7 +275,6 @@
 
 **Merged pull requests:**
 
-- JDK11 support: explicitly depend on JAXB [\#269](https://github.com/internetarchive/heritrix3/pull/269) ([ato](https://github.com/ato))
 - do not checkpoint if crawl job has not started [\#227](https://github.com/internetarchive/heritrix3/pull/227) ([nlevitt](https://github.com/nlevitt))
 - namespace scope log logger to crawl job [\#226](https://github.com/internetarchive/heritrix3/pull/226) ([nlevitt](https://github.com/nlevitt))
 - un-threadlocal the HConnection [\#224](https://github.com/internetarchive/heritrix3/pull/224) ([nlevitt](https://github.com/nlevitt))
@@ -310,6 +431,7 @@
 - rename dist/README.md to dist/README.txt so that maven bundles it in the... [\#27](https://github.com/internetarchive/heritrix3/pull/27) ([nlevitt](https://github.com/nlevitt))
 
 ## [3.2.0](https://github.com/internetarchive/heritrix3/tree/3.2.0) (2014-01-10)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.1.1...3.2.0)
 
 **Merged pull requests:**
@@ -331,6 +453,7 @@
 - ScriptedDecideRule\#getEngine\(\) rewrite for better synchronization and thread local mgmt [\#10](https://github.com/internetarchive/heritrix3/pull/10) ([travisfw](https://github.com/travisfw))
 
 ## [3.1.1](https://github.com/internetarchive/heritrix3/tree/3.1.1) (2012-05-02)
+
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.0.0...3.1.1)
 
 **Merged pull requests:**
@@ -343,5 +466,8 @@
 
 ## [3.0.0](https://github.com/internetarchive/heritrix3/tree/3.0.0) (2009-12-05)
 
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/e047bf68e0508176f2c9ba3ab15a7fa1ced6c1be...3.0.0)
 
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
+
+
+\* *This Changelog was automatically generated by [github_changelog_generator](https://github.com/github-changelog-generator/github-changelog-generator)*

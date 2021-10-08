@@ -38,13 +38,13 @@ public abstract class QueueAssignmentPolicy implements Serializable, HasKeyedPro
         return kp;
     }
     
-    /** queue assignment to force onto CrawlURIs; intended to be overridden */
     {
         setForceQueueAssignment("");
     }
     public String getForceQueueAssignment() {
         return (String) kp.get("forceQueueAssignment");
     }
+    /** queue assignment to force onto CrawlURIs; intended to be overridden */
     public void setForceQueueAssignment(String forceQueueAssignment) {
         kp.put("forceQueueAssignment",forceQueueAssignment);
     }

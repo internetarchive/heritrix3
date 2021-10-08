@@ -127,18 +127,18 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
         this.surtsDumpFile.merge(cp);
     }
     
-    /**
-     * Whether to also make the configured decision if a URI's 'via' URI (the
-     * URI from which it was discovered) in SURT form begins with any of the
-     * established prefixes. For example, can be used to ACCEPT URIs that are
-     * 'one hop off' URIs fitting the SURT prefixes. Default is false.
-     */
     {
         setAlsoCheckVia(false);
     }
     public boolean getAlsoCheckVia() {
         return (Boolean) kp.get("alsoCheckVia");
     }
+    /**
+     * Whether to also make the configured decision if a URI's 'via' URI (the
+     * URI from which it was discovered) in SURT form begins with any of the
+     * established prefixes. For example, can be used to ACCEPT URIs that are
+     * 'one hop off' URIs fitting the SURT prefixes. Default is false.
+     */
     public void setAlsoCheckVia(boolean checkVia) {
         kp.put("alsoCheckVia", checkVia);
     }

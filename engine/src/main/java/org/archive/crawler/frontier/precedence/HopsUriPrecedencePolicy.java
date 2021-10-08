@@ -28,13 +28,13 @@ import org.archive.modules.CrawlURI;
 public class HopsUriPrecedencePolicy extends BaseUriPrecedencePolicy {
     private static final long serialVersionUID = 2602303562177294731L;
 
-    /** whether to count only navlinks ('L'), or all hops */
     {
         setNavlinksOnly(true);
     }
     public boolean getNavlinksOnly() {
         return (Boolean) kp.get("navlinksOnly");
     }
+    /** whether to count only navlinks ('L'), or all hops */
     public void setNavlinksOnly(boolean navsOnly) {
         kp.put("navlinksOnly",navsOnly);
     }
