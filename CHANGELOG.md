@@ -91,7 +91,7 @@
 **Fixed bugs:**
 
 - Upgrade dnsjava to cope with Azure CNAME lists [\#344](https://github.com/internetarchive/heritrix3/issues/344)
-- Spring instanciation broken for MatchesListRegexDecideRule [\#337](https://github.com/internetarchive/heritrix3/issues/337)
+- Spring instantiation broken for MatchesListRegexDecideRule [\#337](https://github.com/internetarchive/heritrix3/issues/337)
 
 **Closed issues:**
 
@@ -108,7 +108,7 @@
 
 - Update changelog. [\#390](https://github.com/internetarchive/heritrix3/pull/390) ([anjackson](https://github.com/anjackson))
 - Update dependencies 2021 05 26 [\#389](https://github.com/internetarchive/heritrix3/pull/389) ([anjackson](https://github.com/anjackson))
-- Bring changlog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
+- Bring changelog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
 - Allow tuning of BDB-JE evictor and cleaner threads. [\#384](https://github.com/internetarchive/heritrix3/pull/384) ([anjackson](https://github.com/anjackson))
 - Update to latest version of dnsjava, for \#344 [\#383](https://github.com/internetarchive/heritrix3/pull/383) ([anjackson](https://github.com/anjackson))
 - Avoid error when bean properties have no url available [\#379](https://github.com/internetarchive/heritrix3/pull/379) ([ldko](https://github.com/ldko))
@@ -316,7 +316,7 @@
 - various changes to amqp publish and receive [\#150](https://github.com/internetarchive/heritrix3/pull/150) ([nlevitt](https://github.com/nlevitt))
 - Update to ExtractorHTML.java for cond. comments [\#149](https://github.com/internetarchive/heritrix3/pull/149) ([eleclerc](https://github.com/eleclerc))
 - Don't canonicalize source tag so that SourceSeedDecideRule will work.… [\#148](https://github.com/internetarchive/heritrix3/pull/148) ([vonrosen](https://github.com/vonrosen))
-- More fixes for mutlipart form submission [\#146](https://github.com/internetarchive/heritrix3/pull/146) ([vonrosen](https://github.com/vonrosen))
+- More fixes for multipart form submission [\#146](https://github.com/internetarchive/heritrix3/pull/146) ([vonrosen](https://github.com/vonrosen))
 - Make some urls with whitespace acceptable to JavaScript extractor. [\#145](https://github.com/internetarchive/heritrix3/pull/145) ([vonrosen](https://github.com/vonrosen))
 - run received urls through the candidates processor, to check scope an… [\#144](https://github.com/internetarchive/heritrix3/pull/144) ([nlevitt](https://github.com/nlevitt))
 - handle login forms with \<input type="text"\> fields in addition to use… [\#143](https://github.com/internetarchive/heritrix3/pull/143) ([nlevitt](https://github.com/nlevitt))
