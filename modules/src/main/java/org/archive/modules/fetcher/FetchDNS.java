@@ -66,6 +66,11 @@ public class FetchDNS extends Processor {
 
     private static Logger logger = Logger.getLogger(FetchDNS.class.getName());
 
+    static {
+        // cap size at 1 (we never want a cached value; 0 is non-operative)
+        Lookup.getDefaultCache(DClass.IN).setMaxEntries(1);
+    }
+
     // Defaults.
     private short ClassType = DClass.IN;
     private short TypeType = Type.A;
