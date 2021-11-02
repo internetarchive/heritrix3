@@ -30,6 +30,19 @@ public class ExtractorSitemap extends ContentExtractor {
     private static final Logger LOGGER = Logger
             .getLogger(ExtractorSitemap.class.getName());
 
+    /**
+     * If urlPattern is not null then any url marked as a sitemap and matching the pattern is
+     * assumed to be a sitemap. Otherwise the mime-type is checked (must be "text/xml" or "application/xml") and the
+     * file is "sniffed" for the expected start of a sitemap file.
+     */
+    private String urlPattern = null;
+
+    /**
+     * If true, all urls in the sitemap file are extracted, regardless of whether or not they obey the scoping rules
+     * specified in the sitemap protocol (https://www.sitemaps.org/protocol.html).
+     */
+    private boolean enableLenientExtraction = false;
+
     /* (non-Javadoc)
      * @see org.archive.modules.extractor.ContentExtractor#shouldExtract(org.archive.modules.CrawlURI)
      */
@@ -47,6 +60,10 @@ public class ExtractorSitemap extends ContentExtractor {
                         + ") is declared to be a sitemap (via robots.txt) but is a HTTP "
                         + uri.getFetchStatus() + ".");
             }
+        }
+
+        if (urlPattern != null &&  uri.getURI().matches(urlPattern)) {
+            return true;
         }
 
         // Via content type:
@@ -120,9 +137,8 @@ public class ExtractorSitemap extends ContentExtractor {
     private AbstractSiteMap parseSiteMap(CrawlURI uri) {
         // The thing we will create:
         AbstractSiteMap sitemap = null;
-
-        // Be strict about URLs but allow partial extraction:
-        SiteMapParser smp = new SiteMapParser(true, true);
+        // allow partial extraction
+        SiteMapParser smp = new SiteMapParser(!isEnableLenientExtraction(), true);
         // Parse it up:
         try {
             // Sitemaps are not supposed to be bigger than 50MB (according to
@@ -183,5 +199,33 @@ public class ExtractorSitemap extends ContentExtractor {
         }
 
     }
+
+    public String getUrlPattern() {
+        return urlPattern;
+    }
+
+    /**
+     * If urlPattern is not null then any url marked as a sitemap and matching the pattern is
+     * assumed to be a sitemap. Otherwise the mime-type is checked (must be "text/xml" or "application/xml") and the
+     * file is "sniffed" for the expected start of a sitemap file.
+     * @param urlPattern the url pattern to match
+     */
+    public void setUrlPattern(String urlPattern) {
+        this.urlPattern = urlPattern;
+    }
+
+    public boolean isEnableLenientExtraction() {
+        return enableLenientExtraction;
+    }
+
+    /**
+     * If true, all urls in the sitemap file are extracted, regardless of whether or not they obey the scoping rules
+     * specified in the sitemap protocol (https://www.sitemaps.org/protocol.html).
+     * @param enableLenientExtraction whether to extract all urls
+     */
+    public void setEnableLenientExtraction(boolean enableLenientExtraction) {
+        this.enableLenientExtraction = enableLenientExtraction;
+    }
+
 
 }
