@@ -51,8 +51,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.xbill.DNS.DClass;
-import org.xbill.DNS.Lookup;
 
 /**
  * CrawlController collects all the classes which cooperate to
@@ -289,10 +287,6 @@ implements Serializable,
        
         sExit = CrawlStatus.FINISHED_ABNORMAL;
 
-        // force creation of DNS Cache now -- avoids CacheCleaner in toe-threads group
-        // also cap size at 1 (we never wanta cached value; 0 is non-operative)
-        Lookup.getDefaultCache(DClass.IN).setMaxEntries(1);
-        
         reserveMemory = new LinkedList<byte[]>();
         for(int i = 0; i < RESERVE_BLOCKS; i++) {
             reserveMemory.add(new byte[RESERVE_BLOCK_SIZE]);
