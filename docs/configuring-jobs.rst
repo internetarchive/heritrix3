@@ -383,6 +383,52 @@ requests.
       </property>
     </bean>
 
+Loading Cookies
+---------------
+
+Heritrix can be configured to load a set of cookies from a file. This can be used for example to crawl a website behind
+a login form by manually logging in through the browser and then copying the session cookie.
+
+To enable loading of cookies set the cookiesLoadFile property of the BdbCookieStore bean to a ConfigFile:
+
+.. code-block:: xml
+
+    <bean id="cookieStore" class="org.archive.modules.fetcher.BdbCookieStore">
+      <property name="cookiesLoadFile">
+         <bean class="org.archive.spring.ConfigFile">
+           <property name="path" value="cookies.txt" />
+         </bean>
+      </property>
+    </bean>
+
+The cookies.txt should be in the 7-field tab-separated Netscape cookie file format. An entry might look like::
+
+    www.example.org FALSE / FALSE 1311699995 sessionid 60ddb868550a
+
+.. list-table:: Cookie file tab-separated fields
+
+   * - 1
+     - DOMAIN
+     - The domain that created and has access to the cookie.
+   * - 2
+     - FLAG
+     - A TRUE or FALSE value indicating if subdomains within the given domain can access the cookie.
+   * - 3
+     - PATH
+     - The path within the domain that the cookie is valid for.
+   * - 4
+     - SECURE
+     - A TRUE or FALSE value indicating if the cookie should be sent over HTTPS only.
+   * - 5
+     - EXPIRATION
+     - Expiration time in seconds since 1970-01-01T00:00:00Z, or -1 for no expiration
+   * - 6
+     - NAME
+     - The name of the cookie.
+   * - 7
+     - VALUE
+     - The value of the cookie.
+
 Other Protocols
 ---------------
 
