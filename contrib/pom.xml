@@ -123,6 +123,7 @@
 							src/main/assembly/dist.xml
 						</descriptor>
 					</descriptors>
+					<tarLongFileMode>posix</tarLongFileMode>
 				</configuration>
 				<executions>
 					<execution>
