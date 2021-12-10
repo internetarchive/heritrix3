@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+
+  heritrix:
+    image: heritrix
+    container_name: heritrix
+    # TEST: keeps the container running without doing anything (for inspections)
+    # entrypoint: bash -c 'while :; do :; done & kill -STOP $$! && wait $$!'
+    # env_file: .env
+    environment:
+      - USERNAME=admin
+      - PASSWORD=admin
+      # optional jobname to run (will only run this single job and exit!)
+      # - JOBNAME=myjob
+      # - JAVA_OPTS=-Xmx1024M
+    init: true
+    ports:
+      # if you want to use a .env file with `PORT=8443` for example
+      # - ${PORT}:8443
+      - 8443:8443
+    restart: unless-stopped
+    volumes:
+      # where jobs will be stored
+      - job-files:/opt/heritrix/jobs
+      # or if JOBNAME envvar is used (mount just the single job folder)
+      # jobfolder in the container needs to have the same name as in JOBNAME
+      # - $(pwd)/host_myjob:/opt/heritrix/jobs/myjob
+
+volumes:
+  job-files:
