@@ -69,7 +69,7 @@ mounted directories already exist or have the correct permissions!
 .. code-block:: bash
 
     mkdir jobs
-    docker run --init --rm -d -p 8443:8443 -e "USERNAME=admin" -e "PASSWORD=admin" -v $(pwd)/jobs:/opt/heritrix/jobs heritrix
+    docker run --init --rm -d -p 8443:8443 -e "USERNAME=admin" -e "PASSWORD=admin" -v $(pwd)/jobs:/opt/heritrix/jobs iipc/heritrix
 
 See `Security Considerations`_ about securely running Heritrix.
 

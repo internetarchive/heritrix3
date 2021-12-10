@@ -1,3 +1,7 @@
+# makefile to build and publish images
+# You can override version and repo
+#  make image version=3.4.0-20210923 repo=iipc/
+
 .PHONY: all image-all-version run run-contrib image-all image image-contrib publish-all publish publish-contrib clean-all clean clean-contrib
 
 version ?= 3.4.0-20210923
