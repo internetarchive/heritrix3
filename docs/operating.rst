@@ -34,7 +34,7 @@ Command-line Options
 -p, --web-port PORT
             Sets the port the Web UI will listen on. **Default:** ``8443``
 -r, --run-job JOBNAME
-            Runs the given Job when Heritirx starts. Heritrix will exit when the job finishes.
+            Runs the given Job when Heritrix starts. Heritrix will exit when the job finishes.
 -s, --ssl-params ARG
             Specifies a keystore path, keystore password, and key password for HTTPS use.  Separate the values with
             commas and do not include whitespace. By default Heritrix will generate a self-signed certificate the
@@ -55,6 +55,38 @@ HERITRIX_HOME
     Directory where Heritrix is installed.
 HERITRIX_OUT
     Path messages will be logged to when running in background mode. **Default:** ``$HERITRIX_HOME/heritrix_out.log``
+
+Running Heritrix under Docker
+-----------------------------
+
+Heritrix can also be run under Docker.  The Web UI is enabled by
+default and exposed via port 8443.  The following command creates
+and runs a detached container with username and password for the
+Web UI set to "admin" and "admin", respectively.  It also maps the
+local ``jobs`` directory into the container.  Please ensure that
+mounted directories already exist or have the correct permissions!
+
+.. code-block:: bash
+
+    mkdir jobs
+    docker run --init --rm -d -p 8443:8443 -e "USERNAME=admin" -e "PASSWORD=admin" -v $(pwd)/jobs:/opt/heritrix/jobs iipc/heritrix
+
+See `Security Considerations`_ about securely running Heritrix.
+
+Configurations
+~~~~~~~~~~~~~~
+
+To allow Heritrix to be run within a container, the environment variables
+(``FOREGROUND``, ``JAVA_HOME``, ``HERITRIX_HOME``) are already set and
+should not be changed.  The Heritrix command-line options can't be
+accessed directly and are only exposed via environment variables:
+
+USERNAME, PASSWORD
+    **(Required)** The Web UI username and password.  Will be forwarded to ``-a, --web-admin ARG``.
+CREDSFILE
+    If either ``USERNAME`` or ``PASSWORD`` are not set or empty, ``CREDSFILE`` can alternatively be used to supply the Web UI credentials.  It should be a path within the Heritrix container which can be used to bind-mount local files or docker secrets.  See "@" description for ``-a, --web-admin ARG``.
+JOBNAME
+    This forwards the jobname to the ``-r, --run-job JOBNAME`` command-line option, to run a single job and then quit.  Note that your container should not have a restart policy set to automatically restart on exit.
 
 .. _security-considerations:
 
