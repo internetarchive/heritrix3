@@ -1,6 +1,7 @@
 # Heritrix
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix)
-[![Javadoc](https://javadoc-badge.appspot.com/org.archive/heritrix.svg?label=javadoc)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
+[![Docker](https://img.shields.io/docker/v/iipc/heritrix/latest?label=docker)](https://hub.docker.com/r/iipc/heritrix)
+[![Javadoc](https://javadoc.io/badge2/org.archive/heritrix/javadoc.svg)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
 [![LICENSE](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](./LICENSE)
 
 ## Introduction
