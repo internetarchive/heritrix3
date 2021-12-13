@@ -15,4 +15,5 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file docker/Dockerfile --tag heritrix:$(date +%s)
+      run: docker build . --file Dockerfile --tag heritrix:$(date +%s)
+      working-directory: docker
