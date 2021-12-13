@@ -15,9 +15,13 @@ load your crawl will place on seed sites and set politeness policies accordingly
 
 <sup>†</sup> The newer wildcard extension to robots.txt is [not yet](https://github.com/internetarchive/heritrix3/issues/250) supported.
 
-## Getting Started
+## Documentation
 
-- [User Manual](https://github.com/internetarchive/heritrix3/wiki)
+- [Getting Started](https://heritrix.readthedocs.io/en/latest/getting-started.html)
+- [Operating Heritrix](https://heritrix.readthedocs.io/en/latest/operating.html)
+- [Configuring Crawl Jobs](https://heritrix.readthedocs.io/en/latest/configuring-jobs.html)
+- [Bean Reference](https://heritrix.readthedocs.io/en/latest/bean-reference.html)
+- [Wiki](https://github.com/internetarchive/heritrix3/wiki)
 
 ## Developer Documentation
 
