@@ -146,7 +146,7 @@ Decide Rules
 :deciderule:`ClassKeyMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI class key that matches the supplied regular expression.  A URI class key is a string that specifies the name of the Frontier queue into which a URI should be placed.
 :deciderule:`ContentTypeMatchesRegexDecideRule`
-    This DecideRule applies the configured decision to any URI whose content-type is present and matches the supplied regular expression.
+    This DecideRule applies the configured decision to any URI whose content-type is present and matches the supplied regular expression. The regular expression must match the full content-type sequence. Ex.: ``s/application/javascript;charset=UTF-8/^application\/javascript.*$/g``; ``s/text/html/^.*\/html.*$/g``
 :deciderule:`ContentTypeNotMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI whose content-type does not match the supplied regular expression.
 :deciderule:`FetchStatusMatchesRegexDecideRule`
