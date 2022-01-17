@@ -685,8 +685,17 @@ public class FetchHTTP extends Processor implements Lifecycle {
         
         long contentLength = -1l;
         Header h = response.getLastHeader("content-length");
-        if (h != null && h.getValue().trim().length()>0) {
-            contentLength = Long.parseLong(h.getValue());
+        if (h != null) {
+            // browsers ignore everything after a null character and some buggy web servers rely on this
+            String contentLengthHeader = StringUtils.substringBefore(h.getValue(), "\0").trim();
+            if (!contentLengthHeader.isEmpty()) {
+                try {
+                    contentLength = Long.parseLong(contentLengthHeader);
+                } catch (NumberFormatException e) {
+                    cleanup(curi, e, "invalid content-length header", S_CONNECT_LOST);
+                    return;
+                }
+            }
         }
         try {
             if (!req.request.isAborted()) {
