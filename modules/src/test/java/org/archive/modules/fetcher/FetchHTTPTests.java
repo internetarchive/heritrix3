@@ -501,6 +501,28 @@ public class FetchHTTPTests extends ProcessorTestBase {
             httpProxyServer.stop();
         }
     }
+
+    public void testHttpsProxy() throws Exception {
+        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877);
+        httpProxyServer.start(true, false);
+
+        try {
+            fetcher().setHttpProxyHost("localhost");
+            fetcher().setHttpProxyPort(7877);
+
+            CrawlURI curi = makeCrawlURI("https://localhost:7443/");
+            fetcher().process(curi);
+
+            String requestString = httpRequestString(curi);
+            assertTrue(requestString.contains("Host: localhost:7443\r\n"));
+            // in case of HTTPS we do not have a "Via" header in the recorded request
+            // as this is only present in the "CONNECT" that we do not record
+            assertNull(curi.getHttpResponseHeader("Via"));
+            runDefaultChecks(curi, "hostHeader");
+        } finally {
+            httpProxyServer.stop();
+        }
+    }
     
     public void testMaxFetchKBSec() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
