@@ -687,10 +687,40 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         genericCrawl(curi, cs, dest);
         
-    }  
-    
-	      
-    
+    }
+
+    public void testLinkRel() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+
+        String html = "<link href='/pingback' rel='pingback'>" +
+                "<link href='/style.css' rel=stylesheet>" +
+                "<link rel='my stylesheet rocks' href=/style2.css>" +
+                "<link rel=icon href=/icon.ico>" +
+                "<link href='http://dns-prefetch.example.com/' rel=dns-prefetch>" +
+                "<link href=/without-rel>" +
+                "<link href=/empty-rel rel=>" +
+                "<link href=/just-spaces rel='   '>" +
+                "<link href=/canonical rel=canonical>" +
+                "<link href=/unknown rel=unknown>";
+
+        List<String> expectedLinks = Arrays.asList(
+                "E https://www.example.org/icon.ico",
+                "E https://www.example.org/style.css",
+                "E https://www.example.org/style2.css",
+                "L https://www.example.org/canonical",
+                "L https://www.example.org/unknown"
+        );
+
+        getExtractor().extract(curi, html);
+        List<String> actualLinks = new ArrayList<>();
+        for (CrawlURI link: curi.getOutLinks()) {
+            actualLinks.add(link.getLastHop() + " " + link.getURI());
+        }
+        Collections.sort(actualLinks);
+
+        assertEquals(expectedLinks, actualLinks);
+    }
+
     private void genericCrawl(CrawlURI curi, CharSequence cs,String[] dest){
         getExtractor().extract(curi, cs);
 

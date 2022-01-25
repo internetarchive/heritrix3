@@ -25,10 +25,13 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.google.common.base.Ascii;
 import org.apache.commons.httpclient.URIException;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CoreAttributeConstants;
@@ -77,6 +80,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     public final static String A_META_ROBOTS = "meta-robots";
     
     public final static String A_FORM_OFFSETS = "form-offsets";
+
+    // As per https://infra.spec.whatwg.org/#ascii-whitespace
+    private final static Pattern ASCII_WHITESPACE = Pattern.compile("[\t\n\f\r ]+");
     
     {
         setMaxElementLength(64); 
@@ -385,7 +391,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         // Just in case it's a VALUE whose interpretation depends on accompanying NAME
         CharSequence valueVal = null; 
         CharSequence valueContext = null;
-        CharSequence nameVal = null; 
+        CharSequence nameVal = null;
+
+        // Just in case it's a LINK tag
+        CharSequence linkHref = null;
+        CharSequence linkRel = null;
         
         final boolean framesAsEmbeds = 
             getTreatFramesAsEmbedLinks();
@@ -417,8 +427,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     context = elementContext(element, attr.group(2));
                 }
 
-                if ("a[data-remote='true']/@href".equals(context) || elementStr.equalsIgnoreCase(LINK)) {
-                    // <LINK> elements treated as embeds (css, ico, etc)
+                if (elementStr.equalsIgnoreCase(LINK)) {
+                    // delay handling LINK until the end as we need both HREF and REL
+                    linkHref = value;
+                } else if ("a[data-remote='true']/@href".equals(context)) {
                     processEmbed(curi, value, context);
                 } else {
                     // other HREFs treated as links
@@ -511,14 +523,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 method = value;
                 // form processing finished at end (after ACTION also collected)
             } else if (attr.start(13) > -1) {
-                if("NAME".equalsIgnoreCase(attrName.toString())) {
+                if (Ascii.equalsIgnoreCase(attrName, "NAME")) {
                     // remember 'name' for end-analysis
                     nameVal = value; 
-                }
-                if("FLASHVARS".equalsIgnoreCase(attrName.toString())) {
+                } else if (Ascii.equalsIgnoreCase(attrName, "FLASHVARS")) {
                     // consider FLASHVARS attribute immediately
                     valueContext = elementContext(element,attr.group(13));
                     considerQueryStringValues(curi, value, valueContext,Hop.SPECULATIVE);
+                } else if (Ascii.equalsIgnoreCase(attrName, "REL")) {
+                    // remember 'rel' for end-analysis
+                    linkRel = value;
                 }
                 // any other attribute
                 // ignore for now
@@ -556,6 +570,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     DevUtils.extraInfo(), e);
             }
         }
+
+        // finish handling LINK now both HREF and REL should be available
+        if (linkHref != null && linkRel != null) {
+            processLinkTagWithRel(curi, linkHref, linkRel);
+        }
            
         // finish handling form action, now method is available
         if(action != null) {
@@ -579,6 +598,38 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     considerIfLikelyUri(curi,valueVal,valueContext,Hop.NAVLINK);
                 }
             }
+        }
+    }
+
+    // see: https://html.spec.whatwg.org/multipage/links.html#linkTypes
+    private void processLinkTagWithRel(CrawlURI curi, CharSequence href, CharSequence rel) {
+        boolean emitAsNavLink = false;
+        for (String keyword : ASCII_WHITESPACE.split(rel)) {
+            String linkType = keyword.toLowerCase(Locale.ROOT);
+            switch (linkType) {
+                case "icon":
+                case "stylesheet":
+                case "modulepreload":
+                case "prefetch":
+                case "prerender":
+                    // treat as an embedded resource
+                    processEmbed(curi, href, "link[rel='" + linkType + "']/@href");
+                    return;
+                case "pingback":
+                    // don't extract pingbacks
+                    return;
+                case "dns-prefetch":
+                case "preconnect":
+                case "":
+                    // ignore connection hints
+                    break;
+                default:
+                    // treat anything else as a navigation link
+                    emitAsNavLink = true;
+            }
+        }
+        if (emitAsNavLink) {
+            processLink(curi, href, "link/@href");
         }
     }
 
