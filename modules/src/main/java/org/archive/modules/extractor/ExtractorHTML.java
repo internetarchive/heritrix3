@@ -602,7 +602,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     // see: https://html.spec.whatwg.org/multipage/links.html#linkTypes
-    private void processLinkTagWithRel(CrawlURI curi, CharSequence href, CharSequence rel) {
+    protected void processLinkTagWithRel(CrawlURI curi, CharSequence href, CharSequence rel) {
         boolean emitAsNavLink = false;
         for (String keyword : ASCII_WHITESPACE.split(rel)) {
             String linkType = keyword.toLowerCase(Locale.ROOT);
