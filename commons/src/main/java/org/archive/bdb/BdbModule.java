@@ -177,7 +177,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public long getMaxLogFileSize() {
         return maxLogFileSize;
     }
-    public void setMaxLogFileSize(long cacheSize) {
+    public void setMaxLogFileSize(long maxLogFileSize) {
         this.maxLogFileSize = maxLogFileSize;
     }
     
