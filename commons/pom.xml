@@ -168,12 +168,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-			<version>3.2.3</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
 			<version>1.1.8</version>
