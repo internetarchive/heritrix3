@@ -137,8 +137,11 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             CharSequence context = elementContext(elementName, attr
                     .getKey());
             if ("link".equals(elementName)) {
-                // <LINK> elements treated as embeds (css, ico, etc)
-                processEmbed(curi, attrValue, context);
+                // <LINK> elements treated as embeds (css, ico) or links (next, author) depending on rel
+                String rel = attributes.getValue("rel");
+                if (rel != null) {
+                    processLinkTagWithRel(curi, attrValue, rel);
+                }
             } else {
                 // other HREFs treated as links
                 processLink(curi, attrValue, context);
