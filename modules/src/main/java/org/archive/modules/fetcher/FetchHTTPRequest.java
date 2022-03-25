@@ -175,7 +175,7 @@ public class FetchHTTPRequest {
     // SOCKS5 proxy configuration
     protected String socksProxyHost;
     protected Integer socksProxyPort;
-    protected Boolean useSocksProxy;
+    protected boolean useSocksProxy;
 
     // make this a member variable so it doesn't get gc'd prematurely
     protected HttpClientConnectionManager connMan;
