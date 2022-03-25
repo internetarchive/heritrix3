@@ -86,11 +86,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-		  <groupId>com.github.crawler-commons</groupId>
-		  <artifactId>crawler-commons</artifactId>
-		  <version>1.0</version>
-		</dependency>
-		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
 			<version>0.1.52</version>
