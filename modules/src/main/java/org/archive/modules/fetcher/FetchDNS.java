@@ -66,6 +66,19 @@ public class FetchDNS extends Processor {
 
     private static Logger logger = Logger.getLogger(FetchDNS.class.getName());
 
+    static {
+        // cap size at 1 (we never want a cached value; 0 is non-operative)
+        Lookup.getDefaultCache(DClass.IN).setMaxEntries(1);
+
+        // do a dummy lookup to force the creation of dnsjava NIO selector thread
+        // ensures it doesn't end up in the toe-threads group
+        try {
+            new Lookup("localhost").run();
+        } catch (TextParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Defaults.
     private short ClassType = DClass.IN;
     private short TypeType = Type.A;

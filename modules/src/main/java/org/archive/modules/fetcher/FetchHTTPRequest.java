@@ -217,7 +217,12 @@ public class FetchHTTPRequest {
         if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null && !this.useSocksProxy) {
             this.proxyHost = new HttpHost(proxyHostname, proxyPort);
             this.requestConfigBuilder.setProxy(this.proxyHost);
-            requestLineUri = curi.getUURI().toString();
+            if ("https".equalsIgnoreCase(curi.getUURI().getScheme())) {
+                // with SSL connections the hostname is already send with the CONNECT
+                requestLineUri = curi.getUURI().getEscapedPathQuery();
+            } else {
+                requestLineUri = curi.getUURI().toString();
+            }
         } else {
             requestLineUri = curi.getUURI().getEscapedPathQuery();
         }
@@ -642,7 +647,7 @@ public class FetchHTTPRequest {
                         DEFAULT_BUFSIZE, chardecoder, charencoder,
                         cconfig.getMessageConstraints(), null, null,
                         DefaultHttpRequestWriterFactory.INSTANCE,
-                        DefaultHttpResponseParserFactory.INSTANCE, curi);
+                        DefaultHttpResponseParserFactory.INSTANCE, proxyHost, curi);
             }
         };
         BasicHttpClientConnectionManager connMan = new BasicHttpClientConnectionManager(
@@ -661,6 +666,9 @@ public class FetchHTTPRequest {
         private static final AtomicLong COUNTER = new AtomicLong();
         private String id;
         private final CrawlURI curi;
+        private final boolean isProxyConnect;
+        private boolean shouldWrapInput = true;
+        private boolean shouldWrapOutput = true;
 
         public RecordingHttpClientConnection(
                 final int buffersize,
@@ -671,21 +679,32 @@ public class FetchHTTPRequest {
                 final ContentLengthStrategy incomingContentStrategy,
                 final ContentLengthStrategy outgoingContentStrategy,
                 final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
-                final HttpMessageParserFactory<HttpResponse> responseParserFactory, CrawlURI curi) {
+                final HttpMessageParserFactory<HttpResponse> responseParserFactory,
+                final HttpHost proxy, CrawlURI curi) {
             super(buffersize, fragmentSizeHint, chardecoder, charencoder,
                     constraints, incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory);
             id = "recording-http-connection-" + Long.toString(COUNTER.getAndIncrement());
             this.curi = curi;
+            // if we send HTTPS over a proxy, then the first connection should not be recorded,
+            // as it is only the "CONNECT" to open the SSL-tunnel for the actual connection
+            isProxyConnect = (proxy != null && "https".equalsIgnoreCase(curi.getBaseURI().getScheme()));
+            if (isProxyConnect) {
+                shouldWrapInput = shouldWrapOutput = false;
+            }
         }
 
         @Override
         protected InputStream getSocketInputStream(final Socket socket) throws IOException {
             curi.setServerIP(socket.getInetAddress().getHostAddress());
             Recorder recorder = Recorder.getHttpRecorder();
-            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+
+            if (shouldWrapInput && recorder != null) { // means: !(isSecure() && isProxied()) {
                 return recorder.inputWrap(super.getSocketInputStream(socket));
             } else {
+                if (isProxyConnect) {
+                    shouldWrapInput = true;
+                }
                 return super.getSocketInputStream(socket);
             }
         }
@@ -693,9 +712,14 @@ public class FetchHTTPRequest {
         @Override
         protected OutputStream getSocketOutputStream(final Socket socket) throws IOException {
             Recorder recorder = Recorder.getHttpRecorder();
-            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
+
+            if (shouldWrapOutput && recorder != null) { // means: !(isSecure() && isProxied()) {
                 return recorder.outputWrap(super.getSocketOutputStream(socket));
             } else {
+                // for the next connection we want to record the contents
+                if (isProxyConnect) {
+                    shouldWrapOutput = true;
+                }
                 return super.getSocketOutputStream(socket);
             }
         }

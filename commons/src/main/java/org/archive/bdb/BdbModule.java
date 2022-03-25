@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,7 +44,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
-import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
@@ -177,7 +177,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public long getMaxLogFileSize() {
         return maxLogFileSize;
     }
-    public void setMaxLogFileSize(long cacheSize) {
+    public void setMaxLogFileSize(long maxLogFileSize) {
         this.maxLogFileSize = maxLogFileSize;
     }
     
@@ -548,8 +548,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                     filedata[i] += ","+f.length();
                     if(getUseHardLinkCheckpoints()) {
                         File hardLink = new File(envCpDir,filedata[i]);
-                        if (!FilesystemLinkMaker.makeHardLink(f.getAbsolutePath(), hardLink.getAbsolutePath())) {
-                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link "+hardLink); 
+                        try {
+                            Files.createLink(hardLink.toPath(), f.toPath().toAbsolutePath());
+                        } catch (IOException | UnsupportedOperationException e) {
+                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link " + hardLink, e);
                         }
                     }
                 }
@@ -600,10 +602,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                         LOGGER.log(Level.SEVERE, "unable to delete obstructing file "+destFile);  
                     }
                 }
-                
-                boolean status = FilesystemLinkMaker.makeHardLink(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
-                if (!status) {
-                    LOGGER.log(Level.SEVERE, "unable to create required restore link "+destFile); 
+                try {
+                    Files.createLink(destFile.toPath(), cpFile.toPath().toAbsolutePath());
+                } catch (IOException | UnsupportedOperationException e) {
+                    LOGGER.log(Level.SEVERE, "unable to create required restore link " + destFile, e);
                 }
             }
             
