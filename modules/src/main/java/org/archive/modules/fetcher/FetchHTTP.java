@@ -489,6 +489,27 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
 
+    public String getSocksProxyHost() {
+        return (String) kp.get("socksProxyHost");
+    }
+    /**
+     * Sets a SOCKS5 proxy host to use. This will override any set HTTP proxy.
+     */
+    public void setSocksProxyHost(String socksProxyHost) {
+        kp.put("socksProxyHost",socksProxyHost);
+    }
+
+    public Integer getSocksProxyPort() {
+        return (Integer) kp.get("socksProxyPort");
+    }
+    /**
+     * Sets a SOCKS5 proxy port to use.
+     */
+    public void setSocksProxyPort(Integer socksProxyPort) {
+        kp.put("socksProxyPort",socksProxyPort);
+    }
+
+
     protected transient SSLContext sslContext;
     protected synchronized SSLContext sslContext() {
         if (sslContext == null) {

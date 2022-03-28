@@ -274,14 +274,14 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check second fetch has no cookies
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(0, cookieStore.getCookies().size());
         }
@@ -294,16 +294,16 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&maxAge=2");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
             //assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar"));
             //assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
             
@@ -313,8 +313,8 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             // check third fetch has no cookies
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(0, cookieStore.getCookies().size());
         }
@@ -330,20 +330,20 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check fetch to different domain has no cookie
             curi = makeCrawlURI("http://example.ORG:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
         }
@@ -359,25 +359,25 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=example.com");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check fetch to different domain has no cookie
             curi = makeCrawlURI("http://example.ORG:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
         }
@@ -393,25 +393,25 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=.example.com");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=.example.com\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=.example.com\r\n"));
 
             // check second fetch has expected cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check fetch to different domain has no cookie
             curi = makeCrawlURI("http://example.ORG:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://SUBDOMAIN.example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
         }
@@ -427,20 +427,20 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://example.com:7777/?name=foo&value=bar&domain=somethingelse.com");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=somethingelse.com\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=somethingelse.com\r\n"));
 
             // check fetch of original domain has no cookie
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check fetch of cookie domain has no cookie
             curi = makeCrawlURI("http://somethingelse.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(0, cookieStore.getCookies().size());
 
@@ -448,20 +448,20 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=BAR.example.com");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=bar.example.com\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=bar.example.com\r\n"));
 
             // check fetch of original domain has no cookie
             curi = makeCrawlURI("http://foo.example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             // check fetch of cookie domain has no cookie
             curi = makeCrawlURI("http://bar.example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(0, cookieStore.getCookies().size());
         }
@@ -477,28 +477,28 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://FOO.example.com:7777/?name=foo&value=bar&domain=example.com");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar; Domain=example.com\r\n"));
 
             curi = makeCrawlURI("http://FOO.example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://BAR.example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://somethingelse.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
         }
@@ -514,28 +514,28 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
             CrawlURI curi = makeCrawlURI("http://10.0.0.1:7777/?name=foo&value=bar");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertTrue(FetchHTTPTests.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertTrue(FetchHTTPTest.rawResponseString(curi).contains("Set-Cookie: foo=bar\r\n"));
 
             curi = makeCrawlURI("http://10.0.0.1:7777/");
             fetcher().process(curi);
-            assertTrue(FetchHTTPTests.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertTrue(FetchHTTPTest.httpRequestString(curi).contains("Cookie: foo=bar\r\n"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://192.168.0.1:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://10.0.0.2:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             curi = makeCrawlURI("http://example.com:7777/");
             fetcher().process(curi);
-            assertFalse(FetchHTTPTests.httpRequestString(curi).toLowerCase().contains("cookie:"));
-            assertFalse(FetchHTTPTests.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
+            assertFalse(FetchHTTPTest.httpRequestString(curi).toLowerCase().contains("cookie:"));
+            assertFalse(FetchHTTPTest.rawResponseString(curi).toLowerCase().contains("set-cookie:"));
 
             assertEquals(1, cookieStore.getCookies().size());
         }

@@ -283,6 +283,8 @@ http://example.example/example
   <!-- <property name="httpProxyPort" value="0" /> -->
   <!-- <property name="httpProxyUser" value="" /> -->
   <!-- <property name="httpProxyPassword" value="" /> -->
+  <!-- <property name="socksProxyHost" value=""/> -->
+  <!-- <property name="socksProxyPort" value=""/> -->
   <!-- <property name="digestContent" value="true" /> -->
   <!-- <property name="digestAlgorithm" value="sha1" /> -->
  </bean>
