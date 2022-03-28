@@ -405,6 +405,11 @@ public class FetchHTTPTest {
         List<InetAddress> addrList = new ArrayList<InetAddress>();
         for (NetworkInterface ifc: Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (ifc.isUp()) {
+                // avoid macOS utun interfaces as at least in the case of wireguard
+                // binding to them and then connecting to localhost seems to always
+                // give a client address of localhost instead of the interface IP
+                if (ifc.getName().startsWith("utun")) continue;
+
                 for (InetAddress addr : Collections.list(ifc.getInetAddresses())) {
                     if (addr instanceof Inet4Address) {
                         addrList.add(addr);
