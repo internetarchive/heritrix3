@@ -47,9 +47,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.URIException;
@@ -104,7 +106,7 @@ public class FetchHTTPTest {
         return fetcher;
     }
 
-    protected FetchHTTP socksFetcher() throws IOException {
+    protected FetchHTTP socksFetcher() throws Exception {
         if (socksFetcher == null) {
             socksFetcher = makeSocksModule();
         }
@@ -978,13 +980,46 @@ public class FetchHTTPTest {
         return fetchHttp;
     }
 
-    protected FetchHTTP makeSocksModule() throws IOException {
+    protected FetchHTTP makeSocksModule() throws Exception {
         // configure our test server
         socksServer = new SocksServer();
-        socksServer.start(7800);
+
+
+        // SocksServers opens the socket on a background thread, so we supply a socket factory
+        // wrapper to let us block until the socket is opened and to report any exception that
+        // occurs when binding. This works around a race where we connect to the server before
+        // it is listening.
+        CompletableFuture<Void> socksServerStartedFuture = new CompletableFuture<>();
+        socksServer.start(7800, new ServerSocketFactory() {
+            ServerSocketFactory defaultSocketFactory = ServerSocketFactory.getDefault();
+
+            @Override
+            public ServerSocket createServerSocket(int port) throws IOException {
+                return createServerSocket(port, -1);
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog) throws IOException {
+                return createServerSocket(port, backlog, null);
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException {
+                try {
+                    ServerSocket socket = defaultSocketFactory.createServerSocket(port, backlog, ifAddress);
+                    socksServerStartedFuture.complete(null);
+                    return socket;
+                } catch (Throwable e) {
+                    socksServerStartedFuture.completeExceptionally(e);
+                    throw e;
+                }
+            }
+        });
+        socksServerStartedFuture.get(30, TimeUnit.SECONDS);
 
         FetchHTTP fetchHttp = newSocksTestFetchHttp(getUserAgentString(), "localhost", 7800);
         fetchHttp.start();
+
         return fetchHttp;
     }
     
