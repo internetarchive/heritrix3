@@ -18,7 +18,6 @@
  */
 package org.archive.modules.recrawl;
 
-import static org.archive.format.warc.WARCConstants.CONTENT_LENGTH;
 import static org.archive.format.warc.WARCConstants.CONTENT_TYPE;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_CONCURRENT_TO;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_ID;
@@ -61,7 +60,7 @@ import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchHTTP;
-import org.archive.modules.fetcher.FetchHTTPTests;
+import org.archive.modules.fetcher.FetchHTTPTest;
 import org.archive.modules.writer.WARCWriterChainProcessor;
 import org.archive.modules.writer.WARCWriterChainProcessorTest;
 import org.archive.net.UURI;
@@ -217,7 +216,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
         Server server = newHttpServer();
 
-        FetchHTTP fetcher = FetchHTTPTests.newTestFetchHttp(getClass().getName());
+        FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
         WARCWriterChainProcessor warcWriter = WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor();
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
