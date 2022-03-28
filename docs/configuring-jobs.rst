@@ -557,3 +557,18 @@ Scripting Console
 
 [This section to be written. For now see the
 `Heritrix3 Useful Scripts <https://github.com/internetarchive/heritrix3/wiki/Heritrix3%20Useful%20Scripts>`_ wiki page.]
+
+Configuring SOCKS5 Proxy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+An optional configuration value to route Heritrix crawler traffic through a SOCKS5 proxy. This will override any set
+HTTP proxy configuration. It is facilitated by extending the `org.archive.modules.fetcher.FetchHTTP` bean with
+`socksProxyHost` and `socksProxyPort` values, as in the example below:
+
+```
+<bean class="org.archive.modules.fetcher.FetchHTTP" id="fetchHttp">
+    <!--  ... -->
+    <property name="socksProxyHost" value="127.0.0.1"/>
+    <property name="socksProxyPort" value="24000"/>
+</bean>
+```

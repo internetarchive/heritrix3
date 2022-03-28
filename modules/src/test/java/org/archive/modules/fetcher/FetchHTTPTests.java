@@ -66,6 +66,7 @@ import org.archive.modules.forms.HTMLForm.NameValue;
 import org.archive.modules.recrawl.FetchHistoryProcessor;
 import org.archive.modules.revisit.ServerNotModifiedRevisit;
 import org.archive.net.UURI;
+import org.bbottema.javasocksproxyserver.SocksServer;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.DefaultHttpProxyServer;
 import org.littleshoot.proxy.HttpFilter;
@@ -92,6 +93,8 @@ public class FetchHTTPTests extends ProcessorTestBase {
     // }
 
     protected FetchHTTP fetcher;
+    protected FetchHTTP socksFetcher;
+    protected SocksServer socksServer;
 
     protected FetchHTTP fetcher() throws IOException {
         if (fetcher == null) { 
@@ -99,6 +102,14 @@ public class FetchHTTPTests extends ProcessorTestBase {
         }
         
         return fetcher;
+    }
+
+    protected FetchHTTP socksFetcher() throws IOException {
+        if (socksFetcher == null) {
+            socksFetcher = makeSocksModule();
+        }
+
+        return socksFetcher;
     }
 
     protected String getUserAgentString() {
@@ -898,6 +909,21 @@ public class FetchHTTPTests extends ProcessorTestBase {
         runDefaultChecks(curi, "requestLine", "trailingCRLFCRLF", "fetchTypeGET");
     }
 
+    /**
+     * Tests support for SOCKS5 proxies by using a temporary SOCKS5 server and routing traffic through it.
+     * @throws Exception
+     */    
+    public void testSocksProxy() throws Exception {
+        // create a fetcher with socks enabled
+        FetchHTTP socksFetcher = newSocksTestFetchHttp(getUserAgentString(), "localhost", 7800);
+
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/");
+        socksFetcher().process(curi);
+        runDefaultChecks(curi);
+
+        socksServer.stop();
+    }
+
     @Override
     protected FetchHTTP makeModule() throws IOException {
         FetchHTTP fetchHttp = newTestFetchHttp(getUserAgentString());
@@ -917,6 +943,30 @@ public class FetchHTTPTests extends ProcessorTestBase {
         return fetchHttp;
     }
 
+    protected FetchHTTP makeSocksModule() throws IOException {
+        // configure our test server
+        socksServer = new SocksServer();
+        socksServer.start(7800);
+
+        FetchHTTP fetchHttp = newSocksTestFetchHttp(getUserAgentString(), "localhost", 7800);
+        fetchHttp.start();
+        return fetchHttp;
+    }
+    
+    public static FetchHTTP newSocksTestFetchHttp(String userAgentString, String socksProxyHost, Integer socksProxyPort) {
+        FetchHTTP fetchHttp = new FetchHTTP();
+        fetchHttp.setCookieStore(new SimpleCookieStore());
+        fetchHttp.setServerCache(new DefaultServerCache());
+        fetchHttp.setSocksProxyHost(socksProxyHost);
+        fetchHttp.setSocksProxyPort(socksProxyPort);
+        CrawlMetadata uap = new CrawlMetadata();
+        uap.setUserAgentTemplate(userAgentString);
+        fetchHttp.setUserAgentProvider(uap);
+
+        fetchHttp.start();
+        return fetchHttp;
+    }
+
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
@@ -924,6 +974,16 @@ public class FetchHTTPTests extends ProcessorTestBase {
         if (fetcher != null) {
             fetcher.stop();
             fetcher = null;
+        }
+
+        if (socksFetcher != null) {
+            socksFetcher.stop();
+            socksFetcher = null;
+        }
+
+        if (socksServer != null) {
+            socksServer.stop();
+            socksServer = null;
         }
     }
 }
