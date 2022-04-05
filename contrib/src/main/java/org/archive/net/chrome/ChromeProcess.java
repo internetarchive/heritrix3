@@ -62,7 +62,31 @@ public class ChromeProcess implements Closeable {
         command.add(executable);
         command.add("--headless");
         command.add("--remote-debugging-port=0");
+
+        // https://github.com/GoogleChrome/chrome-launcher/blob/master/docs/chrome-flags-for-tools.md
+        command.add("--disable-background-networking");
+        command.add("--disable-background-timer-throttling");
+        command.add("--disable-backgrounding-occluded-windows");
+        command.add("--disable-breakpad");
+        command.add("--disable-client-side-phishing-detection");
+        command.add("--disable-component-extensions-with-background-pages");
+        command.add("--disable-component-update");
         command.add("--disable-crash-reporter");
+        command.add("--disable-default-apps");
+        command.add("--disable-extensions");
+        command.add("--disable-features=Translate");
+        command.add("--disable-ipc-flooding-protection");
+        command.add("--disable-popup-blocking");
+        command.add("--disable-prompt-on-repost");
+        command.add("--disable-renderer-backgrounding");
+        command.add("--disable-sync");
+        command.add("--metrics-recording-only");
+        command.add("--mute-audio");
+        command.add("--no-default-browser-check");
+        command.add("--no-first-run");
+        command.add("--password-store=basic");
+        command.add("--use-mock-keychain");
+
         command.addAll(commandLineOptions);
         return new ProcessBuilder(command)
                 .inheritIO()
