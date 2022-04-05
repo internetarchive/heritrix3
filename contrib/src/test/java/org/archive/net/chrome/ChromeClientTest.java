@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -33,7 +34,7 @@ public class ChromeClientTest {
     public void navigate() throws Exception {
         ChromeProcess triedProcess;
         try {
-            triedProcess = new ChromeProcess(null);
+            triedProcess = new ChromeProcess(null, Collections.emptyList());
         } catch (IOException e) {
             assumeNoException("Chrome unavailable", e);
             return;

@@ -25,9 +25,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -52,27 +50,34 @@ public class ChromeProcess implements Closeable {
     private final Process process;
     private final String devtoolsUrl;
 
-    public ChromeProcess(String executable) throws IOException {
-        process = executable == null ? launchAny() : launch(executable);
+    public ChromeProcess(String executable, List<String> commandLineOptions) throws IOException {
+        process = executable == null ? launchAny(commandLineOptions) : launch(executable, commandLineOptions);
         runningProcesses.add(process);
         registerShutdownHook();
         devtoolsUrl = readDevtoolsUriFromStderr(process);
     }
 
-    private static Process launch(String executable) throws IOException {
-        return new ProcessBuilder(executable, "--headless", "--remote-debugging-port=0",
-                "--disable-crash-reporter").inheritIO()
-                .redirectError(ProcessBuilder.Redirect.PIPE).start();
+    private static Process launch(String executable, List<String> commandLineOptions) throws IOException {
+        List<String> command = new ArrayList<>();
+        command.add(executable);
+        command.add("--headless");
+        command.add("--remote-debugging-port=0");
+        command.add("--disable-crash-reporter");
+        command.addAll(commandLineOptions);
+        return new ProcessBuilder(command)
+                .inheritIO()
+                .redirectError(ProcessBuilder.Redirect.PIPE)
+                .start();
     }
 
     /**
-     * Try to launch the browser process using each of DEFAULT_EXECUTABLES in turn until one succeeds.
+     * Try to launch the browser process using each of DEFAUSLT_EXECUTABLES in turn until one succeeds.
      */
-    private static Process launchAny() throws IOException {
+    private static Process launchAny(List<String> extraCommandLineOptions) throws IOException {
         IOException lastException = null;
         for (String executable : DEFAULT_EXECUTABLES) {
             try {
-                return launch(executable);
+                return launch(executable, extraCommandLineOptions);
             } catch (IOException e) {
                 lastException = e;
             }

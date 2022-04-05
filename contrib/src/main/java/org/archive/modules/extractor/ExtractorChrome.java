@@ -95,9 +95,15 @@ public class ExtractorChrome extends ContentExtractor {
     private String devtoolsUrl = null;
 
     /**
-     * The name or path to the browser executable. If null common locations will be searched.
+     * The name or path to the browser executable. If null common locations will be searched. Not used if devtoolsUrl
+     * is set.
      */
     private String executable = null;
+
+    /**
+     * Extra command-line options passed to the browser process. Not used if devtoolsUrl is null.
+     */
+    private List<String> commandLineOptions = new ArrayList<>();
 
     /**
      * Width of the browser window.
@@ -325,7 +331,7 @@ public class ExtractorChrome extends ContentExtractor {
             client = new ChromeClient(devtoolsUrl);
         } else {
             try {
-                process = new ChromeProcess(executable);
+                process = new ChromeProcess(executable, commandLineOptions);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to launch browser process", e);
             }
@@ -406,5 +412,13 @@ public class ExtractorChrome extends ContentExtractor {
 
     public void setLoadTimeoutSeconds(int loadTimeoutSeconds) {
         this.loadTimeoutSeconds = loadTimeoutSeconds;
+    }
+
+    public List<String> getCommandLineOptions() {
+        return commandLineOptions;
+    }
+
+    public void setCommandLineOptions(List<String> commandLineOptions) {
+        this.commandLineOptions = commandLineOptions;
     }
 }
