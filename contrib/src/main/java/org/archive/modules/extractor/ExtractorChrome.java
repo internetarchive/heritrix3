@@ -146,7 +146,7 @@ public class ExtractorChrome extends ContentExtractor {
 
     @Override
     protected boolean shouldExtract(CrawlURI uri) {
-        return uri.getContentType().startsWith("text/html");
+        return uri.getContentType().startsWith("text/html") && uri.is2XXSuccess();
     }
 
     @Override
