@@ -41,7 +41,9 @@ public class ChromeProcess implements Closeable {
     private static final Logger logger = Logger.getLogger(ExtractorChrome.class.getName());
 
     private static final String[] DEFAULT_EXECUTABLES = {"chromium-browser", "chromium", "google-chrome",
-            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe", "firefox"};
+            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "firefox"};
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 2;
 
     private static final Set<Process> runningProcesses = Collections.newSetFromMap(new ConcurrentHashMap<>());
