@@ -86,6 +86,7 @@ public class ChromeWindow implements Closeable {
     }
 
     private void handleEvent(JSONObject message) {
+        if (closed) return;
         // Run event handlers on a different thread so we don't block the websocket receiving thread.
         // That would cause a deadlock if an event handler itself made an RPC call as the response could
         // never be processed.
