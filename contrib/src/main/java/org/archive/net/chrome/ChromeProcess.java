@@ -60,7 +60,8 @@ public class ChromeProcess implements Closeable {
     }
 
     private static Process launch(String executable) throws IOException {
-        return new ProcessBuilder(executable, "--headless", "--remote-debugging-port=0").inheritIO()
+        return new ProcessBuilder(executable, "--headless", "--remote-debugging-port=0",
+                "--disable-crash-reporter").inheritIO()
                 .redirectError(ProcessBuilder.Redirect.PIPE).start();
     }
 
