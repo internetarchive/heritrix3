@@ -33,10 +33,7 @@ import org.archive.util.UriUtils;
 import org.json.JSONArray;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +42,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -80,6 +79,7 @@ import static org.archive.modules.CrawlURI.FetchType.*;
  */
 public class ExtractorChrome extends ContentExtractor {
     private static final Logger logger = Logger.getLogger(ExtractorChrome.class.getName());
+    private static final AtomicLong nextRecorderId = new AtomicLong();
 
     private static final Pattern TRANSFER_ENCODING_RE = Pattern.compile("\r\nTransfer-Encoding:[^\n\r]+", CASE_INSENSITIVE);
 
@@ -237,9 +237,9 @@ public class ExtractorChrome extends ContentExtractor {
             return;
         }
 
-        Recorder recorder = new Recorder(controller.getScratchDir().getFile(),
-                controller.getRecorderOutBufferBytes(),
-                controller.getRecorderInBufferBytes());
+        String recorderBaseName = "ExtractorChrome-" + nextRecorderId.getAndIncrement();
+        Recorder recorder = new Recorder(new File(controller.getScratchDir().getFile(), recorderBaseName),
+                controller.getRecorderOutBufferBytes(), controller.getRecorderInBufferBytes());
         try {
             String digestAlgorithm = "sha1";
             recorder.getRecordedInput().setDigest(digestAlgorithm);
