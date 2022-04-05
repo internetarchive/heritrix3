@@ -19,6 +19,7 @@
 
 package org.archive.net.chrome;
 
+import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.json.JSONObject;
 
 import java.io.Closeable;
@@ -212,7 +213,11 @@ public class ChromeWindow implements Closeable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        client.call("Target.closeTarget", "targetId", targetId);
+        try {
+            client.call("Target.closeTarget", "targetId", targetId);
+        } catch (WebsocketNotConnectedException e) {
+            // no need to close the window if the browser has already exited
+        }
         client.sessionEventHandlers.remove(sessionId);
     }
 
