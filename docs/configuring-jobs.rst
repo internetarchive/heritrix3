@@ -559,16 +559,53 @@ Scripting Console
 `Heritrix3 Useful Scripts <https://github.com/internetarchive/heritrix3/wiki/Heritrix3%20Useful%20Scripts>`_ wiki page.]
 
 Configuring SOCKS5 Proxy
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 An optional configuration value to route Heritrix crawler traffic through a SOCKS5 proxy. This will override any set
 HTTP proxy configuration. It is facilitated by extending the `org.archive.modules.fetcher.FetchHTTP` bean with
 `socksProxyHost` and `socksProxyPort` values, as in the example below:
 
-```
-<bean class="org.archive.modules.fetcher.FetchHTTP" id="fetchHttp">
-    <!--  ... -->
-    <property name="socksProxyHost" value="127.0.0.1"/>
-    <property name="socksProxyPort" value="24000"/>
-</bean>
-```
+.. code-block:: xml
+
+    <bean class="org.archive.modules.fetcher.FetchHTTP" id="fetchHttp">
+        <!--  ... -->
+        <property name="socksProxyHost" value="127.0.0.1"/>
+        <property name="socksProxyPort" value="24000"/>
+    </bean>
+
+Configuring DNS over HTTP (DoH)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the local DNS on the server running Heritrix is not able to resolve the DNS names of the crawled sites, e.g. because
+the server is sitting behind an enterprise firewall and can only resolve names of the local network, then using
+DNS-over-HTTP (DoH) might be an alternative to fetch DNS information.
+
+To activate this, one needs to set the `enableDnsOverHttpResolves` setting of the `fetchDns` bean to true, and set the
+`dnsOverHttpServer` to the URL of an DoH server. If one has configured a proxy in the settings for the `fetchHttp` bean,
+this proxy settings will be used to contact the DoH server as well. However due to limitation of the library in use,
+username and password information for the proxy are not supported.
+
+As the implementation relies on the corresponding client in the `dnsjava` library, which is currently labeled as
+experimental, this option comes with some limitations:
+
+   * If you use Java 11 then due to a `well known bug <https://bugs.openjdk.java.net/browse/JDK-8221395>`_ it will not
+     close connections to the DoH server unless Heritrix shuts down.
+     As the DoH server might not accept new connections after some limits while these connections are still open, it is
+     not recommended to use this feature when running Heritrix with Java 11.
+   * For other Java versions, the connection to the DoH server will be closed when the garbage collector runs.
+     Depending on the garbage collector used this will cause a delay of anything between a few seconds and several
+     minutes before closing the connection. Also note that if the garbage collector is explicitely triggered via the
+     Heritrix UI one needs to add the `-XX:-DisableExplicitGC` option in the JAVA_OPTS for Java versions 13 and up as
+     otherwise this action has no effect.
+
+Without making a recommendation the following DoH servers have been tested with the DoH feature:
+
+   * https://dns.google/dns-query
+   * https://cloudflare-dns.com/dns-query
+
+However servers implementing the official `RFC 8484 <https://tools.ietf.org/html/rfc8484>`_ specification
+unfortunately do not work with the current implementation. This includes e.g. the following server:
+
+   * https://dns.digitale-gesellschaft.ch/dns-query
+
+This limitation might be overcome by a newer version of the `dnsjava` library.

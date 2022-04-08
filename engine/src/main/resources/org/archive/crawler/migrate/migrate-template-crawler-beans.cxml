@@ -215,6 +215,8 @@
   <!-- <property name="acceptNonDnsResolves" value="false" /> -->
   <!-- <property name="digestContent" value="true" /> -->
   <!-- <property name="digestAlgorithm" value="sha1" /> -->
+  <!-- <property name="enableDnsOverHttpResolves" value="false" /> -->
+  <!-- <property name="dnsOverHttpServer" value="https://dns.google/dns-query" /> -->
  </bean>
  <bean id="fetchHttp" class="org.archive.modules.fetcher.FetchHTTP">
   <!-- <property name="maxLengthBytes" value="0" /> -->

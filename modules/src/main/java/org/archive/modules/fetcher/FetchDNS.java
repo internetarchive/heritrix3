@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
@@ -42,9 +43,12 @@ import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.InetAddressUtil;
 import org.archive.util.Recorder;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
+import org.xbill.DNS.DohResolver;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.ResolverConfig;
@@ -59,7 +63,7 @@ import org.xbill.DNS.Type;
  *
  * @author multiple
  */
-public class FetchDNS extends Processor {
+public class FetchDNS extends Processor implements BeanFactoryAware {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
@@ -83,6 +87,11 @@ public class FetchDNS extends Processor {
     private short ClassType = DClass.IN;
     private short TypeType = Type.A;
     protected InetAddress serverInetAddr = null;
+
+    private BeanFactory beanFactory;
+    public void setBeanFactory(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
 
     {
         setAcceptNonDnsResolves(false);
@@ -114,6 +123,36 @@ public class FetchDNS extends Processor {
      */
     public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
         kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
+    }
+
+    {
+        setEnableDnsOverHttpResolves(false);
+    }
+    public boolean getEnableDnsOverHttpResolves() {
+        return (Boolean) kp.get("enableDnsOverHttpResolve")
+                && (getDnsOverHttpServer() != null);
+    }
+
+    /**
+     * Switch to DNS-over-HTTP(S) for DNS lookups.
+     * This can be useful if local DNS is limited or unavailable and a public
+     * DNS service needs to be used via HTTP or HTTPS, as other ports are blocked
+     * via an enterprise firewall on the gateway or the like.
+     */
+    public void setEnableDnsOverHttpResolves(boolean enableDnsOverHttpResolve) {
+        kp.put("enableDnsOverHttpResolve",enableDnsOverHttpResolve);
+    }
+
+    public String getDnsOverHttpServer() {
+        return (String) kp.get("dnsOverHttpServer");
+    }
+    /**
+     * URL to the DNS-on-HTTP(S) server.
+     * This setting will only be used if {@link #setEnableDnsOverHttpResolves(boolean)}
+     * is set to true. In that case it is mandatory to define a server here.
+     */
+    public void setDnsOverHttpServer(String dnsOverHttpServer) {
+        kp.put("dnsOverHttpServer", dnsOverHttpServer);
     }
     
     /**
@@ -163,8 +202,8 @@ public class FetchDNS extends Processor {
     protected boolean shouldProcess(CrawlURI curi) {
         return curi.getUURI().getScheme().equals("dns");
     }
-    
-    
+
+
     protected void innerProcess(CrawlURI curi) {
         Record[] rrecordSet = null; // Retrieved dns records
         String dnsName = null;
@@ -194,7 +233,7 @@ public class FetchDNS extends Processor {
         // If we have not disabled JavaDNS, use that:
         if (!getDisableJavaDnsResolves()) {
             try {
-                rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
+                rrecordSet = createDNSLookup(lookupName).run();
             } catch (TextParseException e) {
                 rrecordSet = null;
             }
@@ -377,5 +416,40 @@ public class FetchDNS extends Processor {
             break;
         }
         return arecord;
+    }
+
+    protected Lookup createDNSLookup(String lookupName)
+            throws TextParseException {
+        Lookup lookup = new Lookup(lookupName, TypeType, ClassType);
+
+        if (getEnableDnsOverHttpResolves()) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINER,
+                        "use dns on http with server " + getDnsOverHttpServer());
+            }
+            FetchHTTP fetchHttp = beanFactory.getBean(FetchHTTP.class);
+            if (fetchHttp != null) {
+                String proxyHost = fetchHttp.getHttpProxyHost();
+                Integer proxyPort = fetchHttp.getHttpProxyPort();
+                if (StringUtils.isNotEmpty(proxyHost) && proxyPort != null) {
+                    // FIXME: the current org.xbill.DNS.DohResolver has no way
+                    // to inject a proxy properly so we need to set the
+                    // corresponding system properties
+                    // unfortunately this has a global effect
+                    // also setting a proxy user / password is not supported in
+                    // this way
+                    System.setProperty("http.proxyHost", proxyHost);
+                    System.setProperty("https.proxyHost", proxyHost);
+                    String proxyPortAsString = proxyPort.toString();
+                    System.setProperty("http.proxyPort", proxyPortAsString);
+                    System.setProperty("https.proxyPort", proxyPortAsString);
+                }
+            }
+
+            DohResolver hts = new DohResolver(getDnsOverHttpServer());
+            lookup.setResolver(hts);
+        }
+
+        return lookup;
     }
 }
