@@ -566,7 +566,8 @@ There are two options to specify a proxy for crawling.
 
 The command line options ``--proxy-host`` and ``--proxy-port`` can be used to define a proxy for all jobs.
 If only the ``--proxy-host`` option is given, a default value of 8000 is used for the proxy port.
-These proxy settings are also used when connecting to a "DNS-over-HTTP(s)" server (see section below).
+These proxy settings are also used when connecting to a "DNS-over-HTTP" server
+(see the `section on DNS-over-HTTP <#configuring-dns-over-http-doh>`_ below).
 
 Alternatively one can define a per-job proxy via a the ``httpProxyHost`` and ``httpProxyPort`` properties of the
 ``fetchHttp`` bean. These settings, if both defined, will overwrite the global options. These setting also allow for
