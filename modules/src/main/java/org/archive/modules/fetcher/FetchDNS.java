@@ -118,17 +118,6 @@ public class FetchDNS extends Processor {
         kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
     }
 
-
-    /**
-     * Switch to DNS-over-HTTP(S) for DNS lookups.
-     * This can be useful if local DNS is limited or unavailable and a public
-     * DNS service needs to be used via HTTP or HTTPS, as other ports are blocked
-     * via an enterprise firewall on the gateway or the like.
-     */
-    public void setEnableDnsOverHttpResolves(boolean enableDnsOverHttpResolve) {
-        kp.put("enableDnsOverHttpResolve",enableDnsOverHttpResolve);
-    }
-
     public String getDnsOverHttpServer() {
         return (String) kp.get("dnsOverHttpServer");
     }
