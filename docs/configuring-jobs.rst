@@ -558,6 +558,24 @@ Scripting Console
 [This section to be written. For now see the
 `Heritrix3 Useful Scripts <https://github.com/internetarchive/heritrix3/wiki/Heritrix3%20Useful%20Scripts>`_ wiki page.]
 
+
+Configuring HTTP Proxies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two options to specify a proxy for crawling.
+
+The command line options ``--proxy-host`` and ``--proxy-port`` can be used to define a proxy for all jobs.
+If only the ``--proxy-host`` option is given, a default value of 8000 is used for the proxy port.
+These proxy settings are also used when connecting to a "DNS-over-HTTP(s)" server (see section below).
+
+Alternatively one can define a per-job proxy via a the ``httpProxyHost`` and ``httpProxyPort`` properties of the
+``fetchHttp`` bean. These settings, if both defined, will overwrite the global options. These setting also allow for
+a user and password in the ``httpProxyUser`` and ``httpProxyPassword`` properties, which the global options do not
+support, due to incompatibilities of the different supported Java versions.
+
+Also the optional "SOCKS5" proxy documented in the next section is used on a per-job basis; there are currently no
+global options to define it.
+
 Configuring SOCKS5 Proxy
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -580,10 +598,11 @@ If the local DNS on the server running Heritrix is not able to resolve the DNS n
 the server is sitting behind an enterprise firewall and can only resolve names of the local network, then using
 DNS-over-HTTP (DoH) might be an alternative to fetch DNS information.
 
-To activate this, one needs to set the ``enableDnsOverHttpResolves`` setting of the ``fetchDns`` bean to true, and set the
-``dnsOverHttpServer`` to the URL of an DoH server. If one has configured a proxy in the settings for the ``fetchHttp`` bean,
-this proxy settings will be used to contact the DoH server as well. However due to limitation of the library in use,
-username and password information for the proxy are not supported.
+To activate this, one needs to set the ``dnsOverHttpServer`` setting of the ``fetchDns`` bean to the URL of an DoH server.
+If one has configured a global proxy via the ``--proxy-host`` and ``--proxy-port`` command line options,
+these proxy settings will be used to contact the DoH server as well. However due to limitation of the library in use,
+username and password information for the proxy are not supported. Also any per-job defined proxy settings in the
+``fetchHttp`` bean are not used when contacting the DoH server.
 
 As the implementation relies on the corresponding client in the "dnsjava" library, which is currently labeled as
 experimental, this option comes with some limitations:
@@ -595,8 +614,8 @@ experimental, this option comes with some limitations:
 * For other Java versions, the connection to the DoH server will be closed when the garbage collector runs.
   Depending on the garbage collector used this will cause a delay of anything between a few seconds and several
   minutes before closing the connection. Also note that if the garbage collector is explicitely triggered via the
-  Heritrix UI one needs to add the ``-XX:-DisableExplicitGC`` option in the ``JAVA_OPTS`` for Java versions 13 and up as
-  otherwise this action has no effect.
+  Heritrix UI one needs to add the ``-XX:-DisableExplicitGC`` option in the ``JAVA_OPTS`` for Java versions 13 and up
+  as otherwise this action has no effect.
 
 Without making a recommendation the following DoH servers have been tested with the DoH feature:
 

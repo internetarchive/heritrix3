@@ -43,8 +43,6 @@ import org.archive.modules.net.ServerCache;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.InetAddressUtil;
 import org.archive.util.Recorder;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
@@ -63,7 +61,7 @@ import org.xbill.DNS.Type;
  *
  * @author multiple
  */
-public class FetchDNS extends Processor implements BeanFactoryAware {
+public class FetchDNS extends Processor {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
@@ -87,11 +85,6 @@ public class FetchDNS extends Processor implements BeanFactoryAware {
     private short ClassType = DClass.IN;
     private short TypeType = Type.A;
     protected InetAddress serverInetAddr = null;
-
-    private BeanFactory beanFactory;
-    public void setBeanFactory(BeanFactory beanFactory) {
-        this.beanFactory = beanFactory;
-    }
 
     {
         setAcceptNonDnsResolves(false);
@@ -125,13 +118,6 @@ public class FetchDNS extends Processor implements BeanFactoryAware {
         kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
     }
 
-    {
-        setEnableDnsOverHttpResolves(false);
-    }
-    public boolean getEnableDnsOverHttpResolves() {
-        return (Boolean) kp.get("enableDnsOverHttpResolve")
-                && (getDnsOverHttpServer() != null);
-    }
 
     /**
      * Switch to DNS-over-HTTP(S) for DNS lookups.
@@ -148,8 +134,9 @@ public class FetchDNS extends Processor implements BeanFactoryAware {
     }
     /**
      * URL to the DNS-on-HTTP(S) server.
-     * This setting will only be used if {@link #setEnableDnsOverHttpResolves(boolean)}
-     * is set to true. In that case it is mandatory to define a server here.
+     * If this not set or set to an empty string, no DNS-over-HTTP(S)
+     * will be used; otherwise if should contain the URL to the
+     * DNS-over-HTTPS server.
      */
     public void setDnsOverHttpServer(String dnsOverHttpServer) {
         kp.put("dnsOverHttpServer", dnsOverHttpServer);
@@ -422,31 +409,14 @@ public class FetchDNS extends Processor implements BeanFactoryAware {
             throws TextParseException {
         Lookup lookup = new Lookup(lookupName, TypeType, ClassType);
 
-        if (getEnableDnsOverHttpResolves()) {
-            if (logger.isLoggable(Level.FINE)) {
+        String dohServer = getDnsOverHttpServer();
+        if (StringUtils.isNotEmpty(dohServer)) {
+            if (logger.isLoggable(Level.FINER)) {
                 logger.log(Level.FINER,
-                        "use dns on http with server " + getDnsOverHttpServer());
-            }
-            FetchHTTP fetchHttp = beanFactory.getBean(FetchHTTP.class);
-            if (fetchHttp != null) {
-                String proxyHost = fetchHttp.getHttpProxyHost();
-                Integer proxyPort = fetchHttp.getHttpProxyPort();
-                if (StringUtils.isNotEmpty(proxyHost) && proxyPort != null) {
-                    // FIXME: the current org.xbill.DNS.DohResolver has no way
-                    // to inject a proxy properly so we need to set the
-                    // corresponding system properties
-                    // unfortunately this has a global effect
-                    // also setting a proxy user / password is not supported in
-                    // this way
-                    System.setProperty("http.proxyHost", proxyHost);
-                    System.setProperty("https.proxyHost", proxyHost);
-                    String proxyPortAsString = proxyPort.toString();
-                    System.setProperty("http.proxyPort", proxyPortAsString);
-                    System.setProperty("https.proxyPort", proxyPortAsString);
-                }
+                        "use dns on http with server " + dohServer);
             }
 
-            DohResolver hts = new DohResolver(getDnsOverHttpServer());
+            DohResolver hts = new DohResolver(dohServer);
             lookup.setResolver(hts);
         }
 

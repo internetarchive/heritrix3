@@ -210,6 +210,16 @@ public class FetchHTTPRequest {
         // HTTP proxy settings
         String proxyHostname = (String) fetcher.getAttributeEither(curi, "httpProxyHost");
         Integer proxyPort = (Integer) fetcher.getAttributeEither(curi, "httpProxyPort");
+        if (!(StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) && !this.useSocksProxy) {
+            String sysPropertyPrefix;
+            if ("https".equalsIgnoreCase(curi.getUURI().getScheme())) {
+                sysPropertyPrefix = "https";
+            } else {
+                sysPropertyPrefix = "http";
+            }
+            proxyHostname = System.getProperty(sysPropertyPrefix + ".proxyHost");
+            proxyPort = Integer.getInteger(sysPropertyPrefix + ".proxyPort");
+        }
         
         // use HTTP proxy settings if SOCKS5 has not already been specified
         String requestLineUri;
