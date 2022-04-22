@@ -1090,7 +1090,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @return CharSequence context
      */
     public static CharSequence elementContext(CharSequence element, CharSequence attribute) {
-        return attribute == null? "": element + "/@" + attribute;
+        return attribute == null? "": (element + "/@" + attribute).toLowerCase(Locale.ROOT);
     }
 }
 
