@@ -25,9 +25,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -41,7 +39,9 @@ public class ChromeProcess implements Closeable {
     private static final Logger logger = Logger.getLogger(ExtractorChrome.class.getName());
 
     private static final String[] DEFAULT_EXECUTABLES = {"chromium-browser", "chromium", "google-chrome",
-            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe", "firefox"};
+            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "firefox"};
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 2;
 
     private static final Set<Process> runningProcesses = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -50,26 +50,58 @@ public class ChromeProcess implements Closeable {
     private final Process process;
     private final String devtoolsUrl;
 
-    public ChromeProcess(String executable) throws IOException {
-        process = executable == null ? launchAny() : launch(executable);
+    public ChromeProcess(String executable, List<String> commandLineOptions) throws IOException {
+        process = executable == null ? launchAny(commandLineOptions) : launch(executable, commandLineOptions);
         runningProcesses.add(process);
         registerShutdownHook();
         devtoolsUrl = readDevtoolsUriFromStderr(process);
     }
 
-    private static Process launch(String executable) throws IOException {
-        return new ProcessBuilder(executable, "--headless", "--remote-debugging-port=0").inheritIO()
-                .redirectError(ProcessBuilder.Redirect.PIPE).start();
+    private static Process launch(String executable, List<String> commandLineOptions) throws IOException {
+        List<String> command = new ArrayList<>();
+        command.add(executable);
+        command.add("--headless");
+        command.add("--remote-debugging-port=0");
+
+        // https://github.com/GoogleChrome/chrome-launcher/blob/master/docs/chrome-flags-for-tools.md
+        command.add("--disable-background-networking");
+        command.add("--disable-background-timer-throttling");
+        command.add("--disable-backgrounding-occluded-windows");
+        command.add("--disable-breakpad");
+        command.add("--disable-client-side-phishing-detection");
+        command.add("--disable-component-extensions-with-background-pages");
+        command.add("--disable-component-update");
+        command.add("--disable-crash-reporter");
+        command.add("--disable-default-apps");
+        command.add("--disable-extensions");
+        command.add("--disable-features=Translate");
+        command.add("--disable-ipc-flooding-protection");
+        command.add("--disable-popup-blocking");
+        command.add("--disable-prompt-on-repost");
+        command.add("--disable-renderer-backgrounding");
+        command.add("--disable-sync");
+        command.add("--metrics-recording-only");
+        command.add("--mute-audio");
+        command.add("--no-default-browser-check");
+        command.add("--no-first-run");
+        command.add("--password-store=basic");
+        command.add("--use-mock-keychain");
+
+        command.addAll(commandLineOptions);
+        return new ProcessBuilder(command)
+                .inheritIO()
+                .redirectError(ProcessBuilder.Redirect.PIPE)
+                .start();
     }
 
     /**
-     * Try to launch the browser process using each of DEFAULT_EXECUTABLES in turn until one succeeds.
+     * Try to launch the browser process using each of DEFAUSLT_EXECUTABLES in turn until one succeeds.
      */
-    private static Process launchAny() throws IOException {
+    private static Process launchAny(List<String> extraCommandLineOptions) throws IOException {
         IOException lastException = null;
         for (String executable : DEFAULT_EXECUTABLES) {
             try {
-                return launch(executable);
+                return launch(executable, extraCommandLineOptions);
             } catch (IOException e) {
                 lastException = e;
             }

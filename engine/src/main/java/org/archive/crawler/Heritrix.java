@@ -141,11 +141,15 @@ public class Heritrix {
                 "web interface to bind to.");
         options.addOption("p", "web-port", true, "The port the web interface " +
                 "should listen on.");
-        options.addOption("r", "run-job", true, "Run a single job and then exit when it" +
-                "finishes.");
+        options.addOption("r", "run-job", true, "Run a single job and then exit " +
+                "when it finishes.");
         options.addOption("s", "ssl-params", true,  "Specify a keystore " +
                 "path, keystore password, and key password for HTTPS use. " +
                 "Separate with commas, no whitespace.");
+        options.addOption(null, "proxy-host", true, "Global http(s) proxy host " +
+                "to use for crawling.");
+        options.addOption(null, "proxy-port", true, "Global http(s) proxy port " +
+                "to use for crawling.");
         return options;
     }
     
@@ -307,6 +311,15 @@ public class Heritrix {
             useAdhocKeystore(startupOut); 
         }
 
+        if(cl.hasOption("proxy-host")) {
+            String proxyHost = cl.getOptionValue("proxy-host");
+            String proxyPort = cl.getOptionValue("proxy-port", "8000");
+            System.setProperty("http.proxyHost", proxyHost);
+            System.setProperty("http.proxyPort", proxyPort);
+            System.setProperty("https.proxyHost", proxyHost);
+            System.setProperty("https.proxyPort", proxyPort);
+        }
+
         // Restlet will reconfigure logging according to the system property
         // so we must set it for -l to work properly
         System.setProperty("java.util.logging.config.file", properties.getPath());
@@ -315,7 +328,7 @@ public class Heritrix {
             LogManager.getLogManager().readConfiguration(finp);
             finp.close();
         }
-        
+
         // Set timezone here.  Would be problematic doing it if we're running
         // inside in a container.
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));

@@ -20,9 +20,12 @@
 package org.archive.modules.extractor;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
@@ -33,6 +36,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Ascii;
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.io.IOUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlMetadata;
@@ -1090,7 +1094,31 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      * @return CharSequence context
      */
     public static CharSequence elementContext(CharSequence element, CharSequence attribute) {
-        return attribute == null? "": element + "/@" + attribute;
+        return attribute == null? "": (element + "/@" + attribute).toLowerCase(Locale.ROOT);
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0 || args[0].equals("-h") || args[0].equals("--help")) {
+            System.err.println("Usage: ExtractorHTML URL");
+            System.err.println("Extracts and prints links from the given URL");
+            System.exit(1);
+        }
+
+        String url = args[0];
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance(url));
+
+        ExtractorHTML extractor = new ExtractorHTML();
+        extractor.setExtractorJS(new ExtractorJS());
+        extractor.afterPropertiesSet();
+
+        String content;
+        try (InputStream stream = new URL(url).openStream()) {
+            content = IOUtils.toString(stream, StandardCharsets.ISO_8859_1);
+        }
+        extractor.extract(curi, content);
+        for (CrawlURI link : curi.getOutLinks()) {
+            System.out.println(link.getURI() + " " + link.getLastHop() + " " + link.getViaContext());
+        }
     }
 }
 
