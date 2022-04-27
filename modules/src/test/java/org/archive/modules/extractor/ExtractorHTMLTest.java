@@ -545,8 +545,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         CharSequence cs = "<picture>"
                 + "<source media=\"(min-width: 992px)\" srcset=\"images/foo1.jpg\"> "
-                + "<source media=\"(min-width: 500px)\" srcset=\"images/foo2.jpg\"> "
-                + "<source media=\"(min-width: 0px)\" srcset=\"images/foo3.jpg\"> "
+                + "<source media=\"(min-width: 500px)\" SRCSET=\"images/foo2.jpg\"> "
+                + "<source media=\"(min-width: 0px)\" srcSet=\"images/foo3-1x.jpg 1x, images/foo3-2x.jpg 2x\"> "
                 + "<img src=\"images/foo.jpg\" alt=\"\"> "
                 + "</picture>";
 
@@ -559,7 +559,9 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "http://www.example.com/images/foo.jpg",
                 "http://www.example.com/images/foo1.jpg",
                 "http://www.example.com/images/foo2.jpg",
-                "http://www.example.com/images/foo3.jpg" };
+                "http://www.example.com/images/foo3-1x.jpg",
+                "http://www.example.com/images/foo3-2x.jpg",
+        };
 
         for (int i = 0; i < links.length; i++) {
             assertEquals("outlink from picture", dest[i], links[i].getURI());
