@@ -151,6 +151,7 @@ public class ExtractorChrome extends ContentExtractor {
 
     @Override
     protected boolean innerExtract(CrawlURI uri) {
+        ensureConnected();
         try {
             openWindowsSemaphore.acquire();
             try {
@@ -327,15 +328,11 @@ public class ExtractorChrome extends ContentExtractor {
         if (isRunning) return;
         super.start();
         openWindowsSemaphore = new Semaphore(maxOpenWindows);
-        if (devtoolsUrl != null) {
-            client = new ChromeClient(devtoolsUrl);
-        } else {
-            try {
-                process = new ChromeProcess(executable, commandLineOptions);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to launch browser process", e);
-            }
-            client = new ChromeClient(process.getDevtoolsUrl());
+
+        // If we're enabled by default launch the browser now to get early feedback if there's a connection error.
+        // Otherwise, we launch it on demand so that we don't create browser processes for jobs that don't need it.
+        if (getEnabled()) {
+            ensureConnected();
         }
 
         if (extractorChain == null) {
@@ -350,6 +347,20 @@ public class ExtractorChrome extends ContentExtractor {
             }
             extractorChain = new ProcessorChain();
             extractorChain.setProcessors(extractors);
+        }
+    }
+
+    private synchronized void ensureConnected() {
+        if (client != null) return;
+        if (devtoolsUrl != null) {
+            client = new ChromeClient(devtoolsUrl);
+        } else {
+            try {
+                process = new ChromeProcess(executable, commandLineOptions);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to launch browser process", e);
+            }
+            client = new ChromeClient(process.getDevtoolsUrl());
         }
     }
 
