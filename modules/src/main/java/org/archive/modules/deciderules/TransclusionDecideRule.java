@@ -44,28 +44,28 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
 
     private static final long serialVersionUID = -3975688876990558918L;
 
-    /**
-     * Maximum number of non-navlink (non-'L') hops to ACCEPT.
-     */
     {
         setMaxTransHops(2);
     }
     public int getMaxTransHops() {
         return (Integer) kp.get("maxTransHops");
     }
+    /**
+     * Maximum number of non-navlink (non-'L') hops to ACCEPT.
+     */
     public void setMaxTransHops(int maxTransHops) {
         kp.put("maxTransHops", maxTransHops);
     }
     
-    /**
-     * Maximum number of speculative ('X') hops to ACCEPT.
-     */
     {
         setMaxSpeculativeHops(1);
     }
     public int getMaxSpeculativeHops() {
         return (Integer) kp.get("maxSpeculativeHops");
     }
+    /**
+     * Maximum number of speculative ('X') hops to ACCEPT.
+     */
     public void setMaxSpeculativeHops(int maxSpeculativeHops) {
         kp.put("maxSpeculativeHops", maxSpeculativeHops);
     }
@@ -93,7 +93,7 @@ public class TransclusionDecideRule extends PredicatedDecideRule {
         int specCount = 0; 
         for (int i = hopsPath.length() - 1; i >= 0; i--) {
             char c = hopsPath.charAt(i);
-            if (c == Hop.NAVLINK.getHopChar() || c == Hop.SUBMIT.getHopChar()) {
+            if (c == Hop.NAVLINK.getHopChar() || c == Hop.SUBMIT.getHopChar() || c == Hop.MANIFEST.getHopChar()) {
                 // end of hops counted here
                 break;
             } 

@@ -18,14 +18,67 @@
  */
 package org.archive.modules.fetcher;
 
+import org.apache.ftpserver.FtpServer;
+import org.apache.ftpserver.FtpServerFactory;
+import org.apache.ftpserver.ftplet.FtpException;
+import org.apache.ftpserver.listener.ListenerFactory;
+import org.apache.ftpserver.usermanager.impl.BaseUser;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author pjack
  *
  */
 public class FetchFTPTest extends ProcessorTestBase {
+    public void test() throws Exception {
+        FetchFTP fetchFTP = new FetchFTP();
+        fetchFTP.start();
 
-    // TODO TESTME!
-    
+        Path tmpDir = Files.createTempDirectory("heritrix-ftp-test");
+        byte[] payload = "hello world".getBytes(UTF_8);
+        Files.write(tmpDir.resolve("test.txt"), payload);
+
+        int port = allocatePort();
+        FtpServer server = startFtpServer(port, tmpDir);
+        try {
+            CrawlURI curi = makeCrawlURI("ftp://127.0.0.1:" + port + "/test.txt");
+            fetchFTP.process(curi);
+            assertEquals(payload.length, curi.getContentSize());
+            assertEquals(226, curi.getFetchStatus());
+            assertEquals("127.0.0.1", curi.getServerIP());
+        } finally {
+            server.stop();
+            Files.delete(tmpDir.resolve("test.txt"));
+            Files.delete(tmpDir);
+            fetchFTP.stop();
+        }
+    }
+
+    private FtpServer startFtpServer(int port, Path root) throws FtpException {
+        ListenerFactory listenerFactory = new ListenerFactory();
+        listenerFactory.setPort(port);
+        FtpServerFactory serverFactory = new FtpServerFactory();
+        serverFactory.addListener("default", listenerFactory.createListener());
+        BaseUser user = new BaseUser();
+        user.setName("anonymous");
+        user.setHomeDirectory(root.toString());
+        serverFactory.getUserManager().save(user);
+        FtpServer server = serverFactory.createServer();
+        server.start();
+        return server;
+    }
+
+    private int allocatePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
+    }
 }

@@ -18,17 +18,18 @@
  */
 package org.archive.modules.postprocessor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.CrawlStatus;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
-import org.archive.modules.writer.WARCWriterProcessor;
+import org.archive.modules.writer.BaseWARCWriterProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class WARCLimitEnforcer extends Processor {
@@ -38,7 +39,7 @@ public class WARCLimitEnforcer extends Processor {
 
     protected Map<String, Map<String, Long>> limits = new HashMap<String, Map<String, Long>>();
     /**
-     * Should match structure of {@link WARCWriterProcessor#getStats()}
+     * Should match structure of {@link BaseWARCWriterProcessor#getStats()}
      * @param limits
      */
     public void setLimits(Map<String, Map<String, Long>> limits) {
@@ -48,23 +49,23 @@ public class WARCLimitEnforcer extends Processor {
         return limits;
     }
 
-    protected WARCWriterProcessor warcWriter;
+    protected BaseWARCWriterProcessor warcWriter;
     @Autowired
-    public void setWarcWriter(WARCWriterProcessor warcWriter) {
+    public void setWarcWriter(BaseWARCWriterProcessor warcWriter) {
         this.warcWriter = warcWriter;
     }
-    public WARCWriterProcessor getWarcWriter() {
+    public BaseWARCWriterProcessor getWarcWriter() {
         return warcWriter;
     }
 
     {
-        setWarcWriters(new ArrayList<WARCWriterProcessor>());
+        setWarcWriters(new ArrayList<BaseWARCWriterProcessor>());
     }
     @SuppressWarnings("unchecked")
-    public List<WARCWriterProcessor> getWarcWriters() {
-        return (List<WARCWriterProcessor>) kp.get("warcWriters");
+    public List<BaseWARCWriterProcessor> getWarcWriters() {
+        return (List<BaseWARCWriterProcessor>) kp.get("warcWriters");
     }
-    public void setWarcWriters(List<WARCWriterProcessor> warcWriters) {
+    public void setWarcWriters(List<BaseWARCWriterProcessor> warcWriters) {
         kp.put("warcWriters", warcWriters);
     }
 
@@ -91,7 +92,7 @@ public class WARCLimitEnforcer extends Processor {
                 AtomicLong value = null;
                 if(getWarcWriters() !=null && getWarcWriters().size()>0) {
                     value = new AtomicLong(0);
-                    for (WARCWriterProcessor w: getWarcWriters()) {
+                    for (BaseWARCWriterProcessor w: getWarcWriters()) {
                         Map<String, AtomicLong> valueBucket = w.getStats().get(j);
                         if(valueBucket != null) {
                             value.set(value.addAndGet(valueBucket.get(k).get()));

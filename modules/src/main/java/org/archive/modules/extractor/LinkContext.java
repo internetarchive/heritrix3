@@ -76,6 +76,10 @@ public abstract class LinkContext implements Serializable {
     final public static LinkContext PREREQ_MISC
      = new SimpleLinkContext("=PREREQ_MISC");
 
+    /** Stand-in value for prerequisite urls without other context. */
+    final public static LinkContext MANIFEST_MISC
+     = new SimpleLinkContext("=MANIFEST_MISC");
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;

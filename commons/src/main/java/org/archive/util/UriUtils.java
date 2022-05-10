@@ -88,6 +88,13 @@ import org.archive.url.LaxURLCodec;
 public class UriUtils {
     private static final Logger LOGGER = Logger.getLogger(UriUtils.class.getName());
 
+    /**
+     * Returns true when when given a CharSequence that looks like a data URI.
+     */
+    public static boolean isDataUri(CharSequence candidate) {
+        return TextUtils.matches("(?i)\\s*data:.*", candidate);
+    }
+
     // naive likely-uri test: 
     //    no '<' or '>' 
     //    at least one '.' or '/';

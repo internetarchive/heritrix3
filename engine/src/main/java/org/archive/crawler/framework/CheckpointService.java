@@ -308,12 +308,14 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
             
             appCtx.publishEvent(new CheckpointSuccessEvent(this,
                     checkpointInProgress));
+            
+            // Record the stats associated with this successfully-completed checkpoint:
+            lastCheckpointSnapshot = controller.getStatisticsTracker().getSnapshot();
         } catch (Exception e) {
             checkpointFailed(e);
         } finally {
             checkpointInProgress.writeValidity(
                 controller.getStatisticsTracker().getProgressStamp());
-            lastCheckpointSnapshot = controller.getStatisticsTracker().getSnapshot();
             // close (incl. release locks)
             long finishStart = System.currentTimeMillis();
             for (Checkpointable c : toCheckpoint.values()) {

@@ -25,17 +25,17 @@ public class ContentLengthDecideRule extends DecideRule {
     private static final long serialVersionUID = 3L;
 
 
-    /**
-     * Content-length threshold.  The rule returns ACCEPT if the content-length
-     * is less than this threshold, or REJECT otherwise.  The default is
-     * 2^63, meaning any document will be accepted.
-     */
     {
         setContentLengthThreshold(Long.MAX_VALUE);
     }
     public long getContentLengthThreshold() {
         return (Long) kp.get("contentLengthThreshold");
     }
+    /**
+     * Content-length threshold.  The rule returns ACCEPT if the content-length
+     * is less than this threshold, or REJECT otherwise.  The default is
+     * 2^63, meaning any document will be accepted.
+     */
     public void setContentLengthThreshold(long threshold) {
         kp.put("contentLengthThreshold",threshold);
     }

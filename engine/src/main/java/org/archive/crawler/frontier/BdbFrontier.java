@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -42,6 +44,7 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.ObjectIdentityCache;
 import org.archive.util.Supplier;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -468,4 +471,28 @@ implements Checkpointable, BeanNameAware {
             queueSummaries.put(key, val);
         }
     }
+
+    @Override
+    public long exportPendingUris(PrintWriter writer) {
+        if (pendingUris == null) {
+            return -5L;
+        }
+        return pendingUris.exportPendingUris(writer);
+    }
+
+    @Override
+    public ObjectIdentityCache<WorkQueue> getAllQueues() {
+        return allQueues;
+    }
+
+    @Override
+    public BlockingQueue<String> getReadyClassQueues() {
+        return readyClassQueues;
+    }
+
+    @Override
+    public Set<WorkQueue> getInProcessQueues() {
+        return inProcessQueues;
+    } 
+
 }

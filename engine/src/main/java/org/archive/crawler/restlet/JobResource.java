@@ -61,7 +61,6 @@ import freemarker.template.TemplateException;
 public class JobResource extends BaseResource {
     public static final IOFileFilter EDIT_FILTER = FileUtils
             .getRegexFileFilter(".*\\.((c?xml)|(txt))$");
-    private Configuration _templateConfiguration;
 
     @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(JobResource.class
@@ -77,17 +76,6 @@ public class JobResource extends BaseResource {
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
         cj = getEngine().getJob(
                 TextUtils.urlUnescape((String) req.getAttributes().get("job")));
-        
-        Configuration tmpltCfg = new Configuration();
-        tmpltCfg.setClassForTemplateLoading(this.getClass(),"");
-        tmpltCfg.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
-        setTemplateConfiguration(tmpltCfg);
-    }
-    public void setTemplateConfiguration(Configuration tmpltCfg) {
-        _templateConfiguration=tmpltCfg;
-    }
-    public Configuration getTemplateConfiguration(){
-        return _templateConfiguration;
     }
 
     @Override
@@ -96,9 +84,8 @@ public class JobResource extends BaseResource {
             throw new ResourceException(404);
         }
 
-        Representation representation = null;
         if (variant.getMediaType() == MediaType.APPLICATION_XML) {
-            representation = new WriterRepresentation(MediaType.APPLICATION_XML) {
+            return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     CrawlJobModel model = makeDataModel();
                     model.put("heapReport", getEngine().heapReportData());
@@ -106,17 +93,11 @@ public class JobResource extends BaseResource {
                 }
             };
         } else {
-            representation = new WriterRepresentation(MediaType.TEXT_HTML) {
-                public void write(Writer writer) throws IOException {
-                    JobResource.this.writeHtml(writer);
-                }
-            };
+            ViewModel viewModel = new ViewModel();
+            viewModel.put("heapReport", getEngine().heapReportData());
+            viewModel.put("job", makeDataModel());
+            return render("Job.ftl", viewModel);
         }
-
-        // TODO: remove if not necessary in future?
-        // honor requested charset?
-        representation.setCharacterSet(CharacterSet.UTF_8);
-        return representation;
     }
 
     /**
@@ -132,31 +113,6 @@ public class JobResource extends BaseResource {
             baseRef += "/";
         }
         return new CrawlJobModel(cj,baseRef);
-    }
-
-    protected void writeHtml(Writer writer) {
-        String baseRef = getRequest().getResourceRef().getBaseRef().toString();
-        if(!baseRef.endsWith("/")) {
-            baseRef += "/";
-        }
-        Configuration tmpltCfg = getTemplateConfiguration();
-
-        ViewModel viewModel = new ViewModel();
-        viewModel.setFlashes(Flash.getFlashes(getRequest()));
-        viewModel.put("baseRef",baseRef);
-        viewModel.put("job", makeDataModel());
-        viewModel.put("heapReport", getEngine().heapReportData());
-
-        try {
-            Template template = tmpltCfg.getTemplate("Job.ftl");
-            template.process(viewModel, writer);
-            writer.flush();
-        } catch (IOException e) { 
-            throw new RuntimeException(e); 
-        } catch (TemplateException e) { 
-            throw new RuntimeException(e); 
-        }
-        
     }
 
     /**
@@ -180,10 +136,6 @@ public class JobResource extends BaseResource {
         String fullPath = f.getAbsolutePath();
         fullPath = fullPath.replace(File.separatorChar, '/');
         return "../../anypath/" + fullPath;
-    }
-
-    protected Engine getEngine() {
-        return ((EngineApplication) getApplication()).getEngine();
     }
 
     @Override

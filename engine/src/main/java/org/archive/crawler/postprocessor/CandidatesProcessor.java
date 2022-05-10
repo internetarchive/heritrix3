@@ -23,6 +23,7 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
 
+import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.crawler.spring.SheetOverlaysManager;
@@ -33,6 +34,7 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.KeyedProperties;
+import org.archive.util.ArchiveUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -82,33 +84,49 @@ public class CandidatesProcessor extends Processor {
         this.loggerModule = loggerModule;
     }
     
-    /**
-     * If enabled, any URL found because a seed redirected to it (original seed
-     * returned 301 or 302), will also be treated as a seed, as long as the hop
-     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
-     */
     {
         setSeedsRedirectNewSeeds(true);
     }
     public boolean getSeedsRedirectNewSeeds() {
         return (Boolean) kp.get("seedsRedirectNewSeeds");
     }
+    /**
+     * If enabled, any URL found because a seed redirected to it (original seed
+     * returned 301 or 302), will also be treated as a seed, as long as the hop
+     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
+     */
     public void setSeedsRedirectNewSeeds(boolean redirect) {
         kp.put("seedsRedirectNewSeeds",redirect);
     }
+
+    {
+        setSeedsRedirectNewSeedsAllowTLDs(true);
+    }
+    public boolean getSeedsRedirectNewSeedsAllowTLDs() {
+        return (Boolean) kp.get("seedsRedirectNewSeedsAllowTLDs");
+    }
+    /**
+     * If enabled, any URL found because a seed redirected to it (original seed
+     * returned 301 or 302), will also be treated as a seed, as long as the hop
+     * count is less than {@value #SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS}.
+     */
+    public void setSeedsRedirectNewSeedsAllowTLDs(boolean allowTLDs) {
+        kp.put("seedsRedirectNewSeedsAllowTLDs",allowTLDs);
+    }
+    
     protected static final int SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS = 5;
 
-    /**
-     * If true, outlinks from status codes <200 and >=400 
-     * will be sent through candidates processing. Default is
-     * false. 
-     */
     {
         setProcessErrorOutlinks(false);
     }
     public boolean getProcessErrorOutlinks() {
         return (Boolean) kp.get("processErrorOutlinks");
     }
+    /**
+     * If true, outlinks from status codes <200 and >=400
+     * will be sent through candidates processing. Default is
+     * false.
+     */
     public void setProcessErrorOutlinks(boolean errorOutlinks) {
         kp.put("processErrorOutlinks",errorOutlinks);
     }
@@ -169,7 +187,9 @@ public class CandidatesProcessor extends Processor {
             // apply special seed-status promotion
             if(getSeedsRedirectNewSeeds() && source != null && source.isSeed() 
                     && candidate.getLastHop().equals(Hop.REFER.getHopString())
-                    && candidate.getHopCount() < SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS) {
+                    && candidate.getHopCount() < SEEDS_REDIRECT_NEW_SEEDS_MAX_HOPS
+            		&& (getSeedsRedirectNewSeedsAllowTLDs() || domainIsNotTLD(candidate))
+            				) {
                 candidate.setSeed(true); 
             }
             
@@ -195,6 +215,15 @@ public class CandidatesProcessor extends Processor {
             KeyedProperties.clearOverridesFrom(candidate); 
             KeyedProperties.loadOverridesFrom(source);
         }        
+    }
+    
+    private boolean domainIsNotTLD(CrawlURI candidate) {
+    	try {
+    		return !ArchiveUtils.isTld(candidate.getBaseURI().getHost());
+    	} catch (URIException e) {
+    		// Just swallow this?
+    	}
+    	return false;
     }
     
     /**

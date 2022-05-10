@@ -35,7 +35,7 @@ import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.fetcher.BasicExecutionAwareEntityEnclosingRequest;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPRequest;
-import org.archive.modules.fetcher.FetchHTTPTests;
+import org.archive.modules.fetcher.FetchHTTPTest;
 import org.archive.modules.forms.HTMLForm.NameValue;
 
 public class FormLoginProcessorTest extends ProcessorTestBase {
@@ -90,7 +90,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         assertEquals(FetchType.HTTP_POST, submitCuri.getFetchType());
 
         FetchHTTPRequestSpy reqSpy = new FetchHTTPRequestSpy(
-                FetchHTTPTests.newTestFetchHttp(getClass().getName()),
+                FetchHTTPTest.newTestFetchHttp(getClass().getName()),
                 submitCuri);
         assertTrue(reqSpy.getRequest() instanceof BasicExecutionAwareEntityEnclosingRequest);
         BasicExecutionAwareEntityEnclosingRequest req = (BasicExecutionAwareEntityEnclosingRequest) reqSpy.getRequest();
@@ -128,7 +128,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         assertEquals(FetchType.HTTP_POST, submitCuri.getFetchType());
 
         FetchHTTPRequestSpy reqSpy = new FetchHTTPRequestSpy(
-                FetchHTTPTests.newTestFetchHttp(getClass().getName()),
+                FetchHTTPTest.newTestFetchHttp(getClass().getName()),
                 submitCuri);
         assertTrue(reqSpy.getRequest() instanceof BasicExecutionAwareEntityEnclosingRequest);
         BasicExecutionAwareEntityEnclosingRequest req = (BasicExecutionAwareEntityEnclosingRequest) reqSpy.getRequest();

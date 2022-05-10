@@ -139,46 +139,46 @@ public class FormLoginProcessor extends Processor implements Checkpointable {
                                 }
                             });
     
-    /**
-     * SURT prefix against which configured username/password is
-     * applicable. If non-blank, configured username/password
-     * will only be attempted against forms discovered on URIs 
-     * which have this prefix (aka the 'form province'). 
-     */
     {
         setApplicableSurtPrefix("");
     }
     public String getApplicableSurtPrefix() {
         return (String) kp.get("applicableSurtPrefix");
     }
+    /**
+     * SURT prefix against which configured username/password is
+     * applicable. If non-blank, configured username/password
+     * will only be attempted against forms discovered on URIs
+     * which have this prefix (aka the 'form province').
+     */
     public void setApplicableSurtPrefix(String applicableSurtPrefix) {
         kp.put("applicableSurtPrefix",applicableSurtPrefix);
     }
 
-    /**
-     * Username (or similar) string to use in appropriate 
-     * form input field. If blank, no submission will be attempted.
-     * Default is blank. 
-     */
     {
         setLoginUsername("");
     }
     public String getLoginUsername() {
         return (String) kp.get("loginUsername");
     }
+    /**
+     * Username (or similar) string to use in appropriate
+     * form input field. If blank, no submission will be attempted.
+     * Default is blank.
+     */
     public void setLoginUsername(String loginUsername) {
         kp.put("loginUsername",loginUsername);
     }
     
-    /**
-     * Password string to use in appropriate form input field. 
-     */
     {
         setLoginPassword("");
     }
     public String getLoginPassword() {
         return (String) kp.get("loginPassword");
     }
+    /**
+     * Password string to use in appropriate form input field.
+     */
     public void setLoginPassword(String loginPassword) {
         kp.put("loginPassword",loginPassword);
     }

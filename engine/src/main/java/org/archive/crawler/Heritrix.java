@@ -33,12 +33,7 @@ import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -51,6 +46,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
 import org.archive.crawler.restlet.RateLimitGuard;
@@ -145,9 +141,15 @@ public class Heritrix {
                 "web interface to bind to.");
         options.addOption("p", "web-port", true, "The port the web interface " +
                 "should listen on.");
+        options.addOption("r", "run-job", true, "Run a single job and then exit " +
+                "when it finishes.");
         options.addOption("s", "ssl-params", true,  "Specify a keystore " +
                 "path, keystore password, and key password for HTTPS use. " +
                 "Separate with commas, no whitespace.");
+        options.addOption(null, "proxy-host", true, "Global http(s) proxy host " +
+                "to use for crawling.");
+        options.addOption(null, "proxy-port", true, "Global http(s) proxy port " +
+                "to use for crawling.");
         return options;
     }
     
@@ -178,7 +180,7 @@ public class Heritrix {
     }
 
     /**
-     * Launches a local Engine and restfgul web interface given the
+     * Launches a local Engine and restful web interface given the
      * command-line options or defaults. 
      * 
      * @param args Command line arguments.
@@ -194,17 +196,7 @@ public class Heritrix {
         System.out.println(System.getProperty("java.vendor")
                 + ' ' + System.getProperty("java.runtime.name") 
                 + ' ' + System.getProperty("java.runtime.version"));
-        
-        // ensure using java 1.6+ before hitting a later cryptic error
-        String version = System.getProperty("java.version");
-        float floatVersion = Float.valueOf(version.substring(0,version.indexOf('.',2)));
-        if(floatVersion<1.6) {
-            System.err.println("Heritrix (as of version 3) requires Java 1.6 or higher.");
-            System.err.println("You attempted to launch with: "+version);
-            System.err.println("Please try again with a later Java.");
-            System.exit(1);
-        }
-        
+
         // Set some system properties early.
         // Can't use class names here without loading them.
         String ignoredSchemes = "org.archive.net.UURIFactory.ignored-schemes";
@@ -319,12 +311,24 @@ public class Heritrix {
             useAdhocKeystore(startupOut); 
         }
 
+        if(cl.hasOption("proxy-host")) {
+            String proxyHost = cl.getOptionValue("proxy-host");
+            String proxyPort = cl.getOptionValue("proxy-port", "8000");
+            System.setProperty("http.proxyHost", proxyHost);
+            System.setProperty("http.proxyPort", proxyPort);
+            System.setProperty("https.proxyHost", proxyHost);
+            System.setProperty("https.proxyPort", proxyPort);
+        }
+
+        // Restlet will reconfigure logging according to the system property
+        // so we must set it for -l to work properly
+        System.setProperty("java.util.logging.config.file", properties.getPath());
         if (properties.exists()) {
             FileInputStream finp = new FileInputStream(properties);
             LogManager.getLogManager().readConfiguration(finp);
             finp.close();
         }
-        
+
         // Set timezone here.  Would be problematic doing it if we're running
         // inside in a container.
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -351,9 +355,9 @@ public class Heritrix {
             MapVerifier verifier = new MapVerifier();
             verifier.getLocalSecrets().put(authLogin, authPassword.toCharArray());
 
-            ChallengeAuthenticator guard = new RateLimitGuard(component.getContext().createChildContext(),
-                    ChallengeScheme.HTTP_DIGEST, "Authentication Required");
-            guard.setVerifier(verifier);
+            RateLimitGuard guard = new RateLimitGuard(component.getContext().createChildContext(),
+                    "Authentication Required", UUID.randomUUID().toString());
+            guard.setWrappedVerifier(verifier);
             guard.setNext(new EngineApplication(engine));
 
             component.getDefaultHost().attach(guard);
@@ -369,7 +373,17 @@ public class Heritrix {
 "interface will be internet-accessible.");
             }
             if (cl.hasOption('r')) {
-                engine.requestLaunch(cl.getOptionValue('r'));
+                String jobName = cl.getOptionValue('r');
+                engine.requestLaunch(jobName);
+                CrawlJob job = engine.getJob(jobName);
+                if (job == null || job.getCrawlController() == null) {
+                    System.err.println("Failed to launch job: " + jobName);
+                    System.exit(1);
+                }
+                job.getCrawlController().requestCrawlResume();
+                engine.waitForNoRunningJobs(0);
+                engine.shutdown();
+                System.exit(0);
             } 
         } catch (Exception e) {
             // Show any exceptions in STARTLOG.

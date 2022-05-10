@@ -23,21 +23,27 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.RandomUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author stack
  * @author gojomo
  * @version $Date: 2009-08-03 23:50:43 -0700 (Mon, 03 Aug 2009) $, $Revision: 6434 $
  */
-public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
+public class ObjectIdentityBdbManualCacheTest {
+    @Rule
+    public TemporaryFolder tmpFolder = new TemporaryFolder();
     EnhancedEnvironment env; 
     private ObjectIdentityBdbManualCache<IdentityCacheableWrapper<HashMap<String,String>>> cache;
-    
-    protected void setUp() throws Exception {
-        super.setUp();
-        File envDir = new File(getTmpDir(),"ObjectIdentityBdbCacheTest");
+
+    @Before
+    public void setUp() throws Exception {
+        File envDir = tmpFolder.newFolder("ObjectIdentityBdbCacheTest");
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
         FileUtils.deleteDirectory(envDir);
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
@@ -45,25 +51,26 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         this.cache = new ObjectIdentityBdbManualCache<IdentityCacheableWrapper<HashMap<String,String>>>();
         this.cache.initialize(env,"setUpCache",IdentityCacheableWrapper.class, env.getClassCatalog());
     }
-    
-    protected void tearDown() throws Exception {
+
+    @After
+    public void tearDown() throws Exception {
         this.cache.close();
         File envDir = env.getHome();
         env.close(); 
         FileUtils.deleteDirectory(envDir);
-        super.tearDown();
     }
-    
-    @SuppressWarnings("unchecked")
+
+    @Test
     public void testReadConsistencyUnderLoad() throws Exception {
+        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 1 minute)",
+                "true".equals(System.getProperty("runSlowTests")));
         final ObjectIdentityBdbManualCache<IdentityCacheableWrapper<AtomicInteger>> cbdbmap = 
-            new ObjectIdentityBdbManualCache();
+            new ObjectIdentityBdbManualCache<>();
         cbdbmap.initialize(env, 
                     "consistencyCache",
                     IdentityCacheableWrapper.class,
                     env.getClassCatalog());
         try {
-            final AtomicInteger level = new AtomicInteger(0);
             final int keyCount = 128 * 1024; // 128K  keys
             final int maxLevel = 64; 
             // initial fill
@@ -73,49 +80,19 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
                         key, 
                         new Supplier<IdentityCacheableWrapper<AtomicInteger>>(
                                 new IdentityCacheableWrapper<AtomicInteger>(
-                                        key, new AtomicInteger(level.get()))));
+                                        key, new AtomicInteger(0))));
             }
-            // backward checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        for(int j=keyCount-1; j >= 0; j--) {
-                            int targetValue = level.get(); 
-                            if(targetValue>=maxLevel) {
-                                break untilmax;
-                            }
-                            assertTrue("stale value revseq key "+j,cbdbmap.get(""+j).get().get()>=targetValue);
-                            Thread.yield();
-                        }
-                    }
-                }
-            };//.start();
-            // random checking that all values always at level or higher
-            new Thread() {
-                public void run() {
-                    untilmax: while(true) {
-                        int j = RandomUtils.nextInt(keyCount);
-                        int targetValue = level.get(); 
-                        if(targetValue>=maxLevel) {
-                            break untilmax;
-                        }
-                        assertTrue("stale value random key "+j,
-                                cbdbmap.get(""+j).get().get()>=targetValue);
-                        Thread.yield();
-                    }
-                }
-            };//.start();
             // increment all keys
-            for(; level.get() < maxLevel; level.incrementAndGet()) {
+            for(int level = 0; level < maxLevel; level++) {
                 for(int k = 0; k < keyCount; k++) {
                     IdentityCacheableWrapper<AtomicInteger> wrap = cbdbmap.get(""+k);
                     int foundValue = wrap.get().getAndIncrement();
                     wrap.makeDirty();
-                    assertEquals("stale value preinc key "+k, level.get(), foundValue);
+                    assertEquals("stale value preinc key "+k, level, foundValue);
                 }
-                if(level.get() % 10 == 0) {
-                    System.out.println("level to "+level.get());
-                    if(level.get()>0) {
+                if(level % 10 == 0) {
+                    System.out.println("level to "+level);
+                    if(level>0) {
                         TestUtils.forceScarceMemory();
                     }
                     System.out.println("OIBMCT:"+cbdbmap.composeCacheSummary());
@@ -128,7 +105,8 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         }
         // SUCCESS
     }
-    
+
+    @Test
     public void testBackingDbGetsUpdated() {
         // Set up values.
         final String value = "value";
@@ -162,6 +140,8 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
      * expunged of otherwise unreferenced entries as expected.
      * @throws InterruptedException
      */
+    @Test
+    @Ignore
     public void xestMemMapCleared() throws InterruptedException {
         TestUtils.forceScarceMemory();
         System.gc(); // minimize effects of earlier test heap use
@@ -192,10 +172,5 @@ public class ObjectIdentityBdbManualCacheTest extends TmpDirTestCase {
         }
         System.out.println(cache.size()+","+cache.memMap.size()+","+cache.memMap.keySet().size()+","+cache.memMap.values().size()+","+countNonNull);
         assertEquals("memMap not cleared", 0, cache.memMap.size());
-    }
-    
-    
-    public static void main(String [] args) {
-        junit.textui.TestRunner.run(ObjectIdentityBdbManualCacheTest.class);
     }
 }

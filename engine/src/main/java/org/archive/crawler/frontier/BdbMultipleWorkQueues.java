@@ -19,6 +19,7 @@
 package org.archive.crawler.frontier;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -557,5 +558,31 @@ public class BdbMultipleWorkQueues {
             c.execute(item);
         }
         cursor.close(); 
+    }
+
+    /**
+     * Run through all uris in the pending uris database and write them to the writer.
+     * @param writer destination writer for writting all the uris
+     * @return number of uris written to the writer
+     */
+    public long exportPendingUris(PrintWriter writer) {
+        if (this.pendingUrisDB == null) {
+            return -6L;
+        }
+        sync();
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        long uris = 0L;
+        Cursor cursor = pendingUrisDB.openCursor(null, null);
+        while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
+            if (value.getData().length == 0) {
+                continue;
+            }
+            CrawlURI item = (CrawlURI) crawlUriBinding.entryToObject(value);
+            writer.println(item.toString());
+            ++uris;
+        }
+        cursor.close(); 
+        return uris;
     }
 }

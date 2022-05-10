@@ -80,7 +80,7 @@ public class HBasePersistLoadProcessor extends HBasePersistProcessor {
         // TODO: we want deduplicate robots.txt, too.
         //if (uri.isPrerequisite()) return false;
         String scheme = uri.getUURI().getScheme();
-        if (!(scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp")))  {
+        if (!(scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp") || scheme.equals("sftp")))  {
             return false;
         }
         return true;

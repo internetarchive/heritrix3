@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,7 +44,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
-import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
@@ -172,6 +172,14 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public void setUseSharedCache(boolean useSharedCache) {
         this.useSharedCache = useSharedCache;
     }
+
+    protected long maxLogFileSize = 10000000;
+    public long getMaxLogFileSize() {
+        return maxLogFileSize;
+    }
+    public void setMaxLogFileSize(long maxLogFileSize) {
+        this.maxLogFileSize = maxLogFileSize;
+    }
     
     /**
      * Expected number of concurrent threads; used to tune nLockTables
@@ -185,6 +193,42 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public void setExpectedConcurrency(int expectedConcurrency) {
         this.expectedConcurrency = expectedConcurrency;
     }
+    
+    /**
+     * Configure the number of cleaner threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#CLEANER_THREADS
+     */
+    protected int jeCleanerThreads = -1;
+    public int getCleanerThreads() {
+        return jeCleanerThreads;
+    }
+    public void setCleanerThreads(int jeCleanerThreads) {
+        this.jeCleanerThreads = jeCleanerThreads;
+    }
+    
+    /**
+     * Configure the number of evictor threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_CORE_THREADS
+     */
+    protected int evictorCoreThreads = -1;    
+	public int getEvictorCoreThreads() {
+		return evictorCoreThreads;
+	}
+	public void setEvictorCoreThreads(int evictorCoreThreads) {
+		this.evictorCoreThreads = evictorCoreThreads;
+	}
+	
+	/**
+     * Configure the maximum number of evictor threads (-1 means use the default)
+     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_MAX_THREADS
+     */
+    protected int evictorMaxThreads = -1;
+	public int getEvictorMaxThreads() {
+		return evictorMaxThreads;
+	}
+	public void setEvictorMaxThreads(int evictorMaxThreads) {
+		this.evictorMaxThreads = evictorMaxThreads;
+	}
     
     /**
      * Whether to use hard-links to log files to collect/retain
@@ -269,15 +313,34 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
-        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
+        // https://web.archive.org/web/20100727081707/http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
         long nLockTables = getExpectedConcurrency()-1;
         while(!BigInteger.valueOf(nLockTables).isProbablePrime(Integer.MAX_VALUE)) {
             nLockTables--;
         }
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
         
+        // configure the number of cleaner threads, to speed up clearing out old state files:
+        int cleaners = getCleanerThreads();
+        if (cleaners > 0) {
+        	config.setConfigParam(EnvironmentConfig.CLEANER_THREADS, Integer.toString(cleaners));
+        }
+        
+        // configure number if evictor threads, to avoid critical eviction slowdowns:
+        int evictors = this.getEvictorCoreThreads();
+        if (evictors > -1) {
+        	config.setConfigParam(EnvironmentConfig.EVICTOR_CORE_THREADS, Integer.toString(evictors));
+        }
+        int maxEvictors = this.getEvictorMaxThreads();
+        if (maxEvictors > 0) {
+        	config.setConfigParam(EnvironmentConfig.EVICTOR_MAX_THREADS, Integer.toString(maxEvictors));
+        }
+        
         // triple this value to 6K because stats show many faults
-        config.setConfigParam("je.log.faultReadSize", "6144"); 
+        config.setConfigParam("je.log.faultReadSize", "6144");
+
+        // set max bdb log file size. default 10M
+        config.setConfigParam("je.log.fileMax", Long.toString(getMaxLogFileSize()));
 
         if(!getUseHardLinkCheckpoints()) {
             // to support checkpoints by textual manifest only, 
@@ -485,8 +548,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                     filedata[i] += ","+f.length();
                     if(getUseHardLinkCheckpoints()) {
                         File hardLink = new File(envCpDir,filedata[i]);
-                        if (!FilesystemLinkMaker.makeHardLink(f.getAbsolutePath(), hardLink.getAbsolutePath())) {
-                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link "+hardLink); 
+                        try {
+                            Files.createLink(hardLink.toPath(), f.toPath().toAbsolutePath());
+                        } catch (IOException | UnsupportedOperationException e) {
+                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link " + hardLink, e);
                         }
                     }
                 }
@@ -537,10 +602,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                         LOGGER.log(Level.SEVERE, "unable to delete obstructing file "+destFile);  
                     }
                 }
-                
-                boolean status = FilesystemLinkMaker.makeHardLink(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
-                if (!status) {
-                    LOGGER.log(Level.SEVERE, "unable to create required restore link "+destFile); 
+                try {
+                    Files.createLink(destFile.toPath(), cpFile.toPath().toAbsolutePath());
+                } catch (IOException | UnsupportedOperationException e) {
+                    LOGGER.log(Level.SEVERE, "unable to create required restore link " + destFile, e);
                 }
             }
             

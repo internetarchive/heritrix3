@@ -33,16 +33,16 @@ import org.archive.modules.Processor;
  * @version $Date: 2009-11-16 22:10:42 -0800 (Mon, 16 Nov 2009) $, $Revision: 6665 $
  */
 public class ReschedulingProcessor extends Processor {
-    /**
-     * amount of time to wait before forcing a URI to be rescheduled
-     * default of -1 means "don't reschedule"
-     */
     {
         setRescheduleDelaySeconds(-1L);
     }
     public long getRescheduleDelaySeconds() {
         return (Long) kp.get("rescheduleDelaySeconds");
     }
+    /**
+     * amount of time to wait before forcing a URI to be rescheduled
+     * default of -1 means "don't reschedule"
+     */
     public void setRescheduleDelaySeconds(long rescheduleDelaySeconds) {
         kp.put("rescheduleDelaySeconds",rescheduleDelaySeconds);
     }
