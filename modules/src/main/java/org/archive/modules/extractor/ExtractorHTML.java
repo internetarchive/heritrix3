@@ -1098,17 +1098,48 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0 || args[0].equals("-h") || args[0].equals("--help")) {
-            System.err.println("Usage: ExtractorHTML URL");
-            System.err.println("Extracts and prints links from the given URL");
+        String url = null;
+        CrawlMetadata metadata = new CrawlMetadata();
+
+        for (int i = 0; i < args.length; i++) {
+            if (!args[i].startsWith("-")) {
+                url = args[i];
+                continue;
+            }
+            switch (args[i]) {
+                case "-h":
+                case "--help":
+                    System.out.println("Usage: ExtractorHTML [options] URL");
+                    System.out.println("Extracts and prints links from the given URL");
+                    System.out.println("");
+                    System.out.println("Options:");
+                    System.out.println("  --robots POLICY    Policy for robots meta tags " +
+                            RobotsPolicy.STANDARD_POLICIES.keySet());
+                    System.exit(0);
+                    break;
+                case "--robots":
+                    metadata.setRobotsPolicyName(args[++i]);
+                    break;
+                default:
+                    System.err.println("ExtractorHTML: Unknown option: " + args[i]);
+                    System.err.println("Try --help for usage information.");
+                    System.exit(1);
+            }
+        }
+
+        if (url == null) {
+            System.err.println("ExtractorHTML: No URL specified.");
+            System.err.println("Try --help for usage information.");
             System.exit(1);
         }
 
-        String url = args[0];
         CrawlURI curi = new CrawlURI(UURIFactory.getInstance(url));
+
+        metadata.afterPropertiesSet();
 
         ExtractorHTML extractor = new ExtractorHTML();
         extractor.setExtractorJS(new ExtractorJS());
+        extractor.setMetadata(metadata);
         extractor.afterPropertiesSet();
 
         String content;
