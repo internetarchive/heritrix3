@@ -383,8 +383,108 @@ requests.
       </property>
     </bean>
 
+Authentication and Cookies
+--------------------------
+
+Heritrix can crawl sites behind login by using HTTP authentication, submitting a form or by loading cookies from a file.
+
+Credential Store
+~~~~~~~~~~~~~~~~
+
+Credentials can be added so that Heritrix can gain access to areas of web sites requiring authentication. Credentials
+need to listed in a CredentialStore.
+
+.. code-block:: xml
+
+    <bean id="credentialStore" class="org.archive.modules.credential.CredentialStore">
+      <property name="credentials">
+        <map>
+          <entry key="exampleHttpCredential" value-ref="exampleHttpCredential"/>
+          <entry key="exampleFormCredential" value-ref="exampleFormCredential"/>
+        </map>
+      </property>
+    </bean>
+
+To enable text console logging of authentication interactions, set the FetchHTTP and PreconditionEnforcer log levels to
+fine in ``conf/logging.properties``:
+
+.. code-block::
+
+    org.archive.crawler.fetcher.FetchHTTP.level = FINE
+    org.archive.crawler.prefetch.PreconditionEnforcer.level = FINE
+
+HTTP Basic and Digest Authentication
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In response to a 401 Unauthorized response code Heritrix will do a lookup of a key based on the domain and
+authentication realm in its CredentialStore. If a match is found, then the credential is loaded into the CrawlURI and
+the CrawlURI is marked for immediate retry.
+
+When the CrawlURI is retried, the found credentials are added to the request. If the request succeeds with a 200
+response code, the credentials are promoted to the CrawlServer and all subsequent requests made against the CrawlServer
+will preemptively volunteer the credential. If the credential fails with a 401 response code, the URI is no longer
+retried.
+
+The configured domain should be of the form "hostname:port" unless the port is 80 in which case it must be omitted. For
+HTTPS URLs without an explicit port use port 443.
+
+.. code-block:: xml
+
+    <bean id="exampleHttpCredential" class="org.archive.modules.credential.HttpAuthenticationCredential">
+      <property name="domain" value="www.example.org:443"/>
+      <property name="realm" value="myrealm"/>
+      <property name="login" value="user"/>
+      <property name="password" value="secret"/>
+    </bean>
+
+HTML Form Authentication
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Heritrix can be configured to submit credentials to a HTML form using a GET or POST request.
+
+.. code-block:: xml
+
+    <bean id="exampleFormCredential" class="org.archive.modules.credential.HtmlFormCredential">
+      <property name="domain" value="example.com"/>
+      <property name="loginUri" value="http://example.com/login"/>
+      <property name="formItems">
+        <map>
+          <entry key="login" value="user"/>
+          <entry key="password" value="secret"/>
+          <entry key="submit" value="submit"/>
+        </map>
+      </property>
+    </bean>
+
+domain
+    The domain should be of the form "hostname:port" unless the port is 80 in which case it must be omitted. For
+    HTTPS URLs without an explicit port use port 443.
+
+login-uri
+    A relative or absolute URI to which the HTML Form submits. It is not necessarily the page that contains the HTML
+    Form; rather it is the ACTION URI the to which the form submits.
+
+form-items
+    Form-items are a listing of HTML Form key/value pairs. The submit button usually must be included in the form-items.
+
+.. note::
+
+  There is currently no support for successfully submitting forms with dynamic fields whose required name or value
+  changes for each visitor (such as CSRF tokens).
+
+  For a site with an HTML Form credential, a login is performed against all listed HTML Form credential login-uris
+  after the DNS and robots.txt preconditions are fulfilled.  The crawler will only view sites that have HTML Form
+  credentials from a logged-in perspective.  There is no current way for a single Heritrix job to crawl a site in an
+  unauthenticated state and then re-crawl the site in an authenticated state. (You would have to do this in two
+  separately-configured job launches.)
+
+  The form login is only run once.  Heritrix continues crawling regardless of whether the login succeeds. There is no
+  way of telling Heritrix to retry authentication if the first attempt is not successful.  Neither is there a means for
+  the crawler to report success or failed authentications.  The crawl operator should examine the logs to determine
+  whether authentication succeeded.
+
 Loading Cookies
----------------
+~~~~~~~~~~~~~~~
 
 Heritrix can be configured to load a set of cookies from a file. This can be used for example to crawl a website behind
 a login form by manually logging in through the browser and then copying the session cookie.
