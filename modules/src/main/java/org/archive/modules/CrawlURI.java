@@ -1835,8 +1835,11 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     @Override
     public int hashCode() {
         int r = 37;
-        return r ^ hash(via.toString()) ^ hash(uuri.toString())
-                ^ hash(viaContext.toString()) ^ hash(pathFromSeed.toString());
+        String viaString = (via == null) ? "" : via.toString();
+        String viaContextString = (viaContext == null) ? "" : viaContext.toString();
+        String pathFromSeedString = (pathFromSeed == null) ? "" : pathFromSeed.toString();
+        return r ^ hash(viaString) ^ hash(uuri.toString())
+                ^ hash(viaContextString) ^ hash(pathFromSeedString);
     }
 
     // handles nulls
