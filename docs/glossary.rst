@@ -73,7 +73,8 @@ Discovery Path
     * X - Speculative embed (aggressive JavaScript link extraction)
     * L - Link (normal navigation links like ``<a href=...>``\ )
     * P - Prerequisite (such as DNS lookup or robots.txt)
-    * I - As of Heritrix 3.1. Not necessarily in the source material, but deduced by convention (such as /favicon.ico)
+    * I - Inferred/implied links. Not necessarily in the source material, but deduced by convention (such as /favicon.ico)
+    * M - Manifest (such as links discovered from a sitemap file)
     * S - Synthesized form-submit
 
     The discovery path of a seed is an empty string.
