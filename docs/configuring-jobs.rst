@@ -76,11 +76,13 @@ Robots.txt Honoring Policy
 The valid values of "robotsPolicyName" are:
 
 obey
-    Obey robots.txt directives
+    Obey robots.txt directives and nofollow robots meta tags
 classic
     Same as "obey"
+robotsTxtOnly
+    Obey robots.txt directives but ignore robots meta tags
 ignore
-    Ignore robots.txt directives
+    Ignore robots.txt directives and robots meta tags
 
 .. code-block:: xml
 
@@ -89,6 +91,18 @@ ignore
        <property name="robotsPolicyName" value="obey"/>
    ...
    </bean>
+
+.. note::
+
+   Heritrix currently only supports wildcards (*) at the end of paths in robots.txt rules.
+
+   The only supported value for robots meta tags is "nofollow" which will cause the HTML extractor to stop processing
+   and ignore all links (including embeds like images and stylesheets). Heritrix does not support "rel=nofollow" on
+   individual links.
+
+   .. code-block:: html
+
+       <meta name="robots" content="nofollow"/>
 
 Crawl Scope
 -----------
