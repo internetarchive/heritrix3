@@ -1,5 +1,55 @@
 # Changelog
 
+## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210923...HEAD)
+
+**Fixed bugs:**
+
+- ExtractorHTML matches srcset attribute case-sensitively [\#477](https://github.com/internetarchive/heritrix3/issues/477)
+- Overcrawling due to sitemap links acting like transclusions [\#469](https://github.com/internetarchive/heritrix3/issues/469)
+- "java.lang.NoClassDefFoundError: Could not initialize class org.archive.util.CLibrary" on Apple Silicon [\#467](https://github.com/internetarchive/heritrix3/issues/467)
+- Heritrix crasching on malformed Content-Length header [\#449](https://github.com/internetarchive/heritrix3/issues/449)
+- Java version check throws StringIndexOutOfBoundsException on exact major versions [\#439](https://github.com/internetarchive/heritrix3/issues/439)
+- dnsjava NIO selector thread stuck at 100% after terminating job [\#425](https://github.com/internetarchive/heritrix3/issues/425)
+- Do not treat all URLs from link/@href tags as embeds. [\#263](https://github.com/internetarchive/heritrix3/issues/263)
+- BdbCookieStore  not implemented  iterator at RetryExec  [\#200](https://github.com/internetarchive/heritrix3/issues/200)
+- "RIS already open for ToeThread..." exception during https pages crawl over proxy [\#191](https://github.com/internetarchive/heritrix3/issues/191)
+
+**Closed issues:**
+
+- Heritrix not ignoring robots.txt [\#479](https://github.com/internetarchive/heritrix3/issues/479)
+- JDK18: ExtractorMultipleRegexTest fails due to Groovy asm incompatiblity [\#473](https://github.com/internetarchive/heritrix3/issues/473)
+- Setting of maxLogFileSize in the BDBModule is ineffective [\#464](https://github.com/internetarchive/heritrix3/issues/464)
+- Question about memory usage [\#462](https://github.com/internetarchive/heritrix3/issues/462)
+- Build failing via maven-assembly-plugin: group id is too big [\#447](https://github.com/internetarchive/heritrix3/issues/447)
+- Do not require DNS when using a web proxy [\#211](https://github.com/internetarchive/heritrix3/issues/211)
+
+**Merged pull requests:**
+
+- Bump jsch from 0.1.52 to 0.1.54 in /commons [\#492](https://github.com/internetarchive/heritrix3/pull/492) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump spring-core from 5.3.19 to 5.3.20 in /commons [\#491](https://github.com/internetarchive/heritrix3/pull/491) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump jsch from 0.1.52 to 0.1.54 in /modules [\#490](https://github.com/internetarchive/heritrix3/pull/490) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Add robotsTxtOnly robots policy [\#489](https://github.com/internetarchive/heritrix3/pull/489) ([ato](https://github.com/ato))
+- Removed a potential NPE in hashCode method to CrawlURI which was fata… [\#488](https://github.com/internetarchive/heritrix3/pull/488) ([csrster](https://github.com/csrster))
+- Bump gson from 2.8.6 to 2.8.9 in /contrib [\#486](https://github.com/internetarchive/heritrix3/pull/486) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump spring-core from 5.3.18 to 5.3.19 in /commons [\#480](https://github.com/internetarchive/heritrix3/pull/480) ([dependabot[bot]](https://github.com/apps/dependabot))
+- ExtractorHTML: Fix srcset by normalizing elementContext\(\) to lowercase [\#478](https://github.com/internetarchive/heritrix3/pull/478) ([ato](https://github.com/ato))
+- Issue211: support dns over https if local DNS is not working / available [\#476](https://github.com/internetarchive/heritrix3/pull/476) ([ClemensRobbenhaar](https://github.com/ClemensRobbenhaar))
+- Bump spring-beans from 5.3.14 to 5.3.18 in /commons [\#475](https://github.com/internetarchive/heritrix3/pull/475) ([dependabot[bot]](https://github.com/apps/dependabot))
+- TransclusionDecideRule: Don't treat sitemap links \('M'\) as transclusions [\#470](https://github.com/internetarchive/heritrix3/pull/470) ([ato](https://github.com/ato))
+- Use Files.createLink\(\) and Files.createSymbolicLink\(\) instead of JNA [\#468](https://github.com/internetarchive/heritrix3/pull/468) ([ato](https://github.com/ato))
+- Fix name of parameter in setMaxLogFileSize [\#465](https://github.com/internetarchive/heritrix3/pull/465) ([ClemensRobbenhaar](https://github.com/ClemensRobbenhaar))
+- Add conf to not allow TLDs as seeds found via redirect from other seeds [\#461](https://github.com/internetarchive/heritrix3/pull/461) ([kris-sigur](https://github.com/kris-sigur))
+- Bump spring-core from 5.3.3 to 5.3.14 in /commons [\#460](https://github.com/internetarchive/heritrix3/pull/460) ([dependabot[bot]](https://github.com/apps/dependabot))
+- ExtractorHTML: Determine LINK tag type by parsing REL attribute [\#459](https://github.com/internetarchive/heritrix3/pull/459) ([ato](https://github.com/ato))
+- Fix issue\#191: "RIS already open for ToeThread..." exception during https pages crawl over proxy [\#457](https://github.com/internetarchive/heritrix3/pull/457) ([ClemensRobbenhaar](https://github.com/ClemensRobbenhaar))
+- FetchHTTP: Handle null characters in the Content-Length header [\#452](https://github.com/internetarchive/heritrix3/pull/452) ([ato](https://github.com/ato))
+- Add Dockerfile [\#450](https://github.com/internetarchive/heritrix3/pull/450) ([Querela](https://github.com/Querela))
+- Resolve gid too big [\#448](https://github.com/internetarchive/heritrix3/pull/448) ([ldko](https://github.com/ldko))
+- FetchDNS: Keep dnsjava selector thread out of ToePool [\#444](https://github.com/internetarchive/heritrix3/pull/444) ([ato](https://github.com/ato))
+- Enabled configurable url-matching and extraction for sitemaps. [\#441](https://github.com/internetarchive/heritrix3/pull/441) ([csrster](https://github.com/csrster))
+
 ## [3.4.0-20210923](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210923) (2021-09-23)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210803...3.4.0-20210923)
@@ -91,7 +141,7 @@
 **Fixed bugs:**
 
 - Upgrade dnsjava to cope with Azure CNAME lists [\#344](https://github.com/internetarchive/heritrix3/issues/344)
-- Spring instanciation broken for MatchesListRegexDecideRule [\#337](https://github.com/internetarchive/heritrix3/issues/337)
+- Spring instantiation broken for MatchesListRegexDecideRule [\#337](https://github.com/internetarchive/heritrix3/issues/337)
 
 **Closed issues:**
 
@@ -108,7 +158,7 @@
 
 - Update changelog. [\#390](https://github.com/internetarchive/heritrix3/pull/390) ([anjackson](https://github.com/anjackson))
 - Update dependencies 2021 05 26 [\#389](https://github.com/internetarchive/heritrix3/pull/389) ([anjackson](https://github.com/anjackson))
-- Bring changlog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
+- Bring changelog up to date [\#386](https://github.com/internetarchive/heritrix3/pull/386) ([anjackson](https://github.com/anjackson))
 - Allow tuning of BDB-JE evictor and cleaner threads. [\#384](https://github.com/internetarchive/heritrix3/pull/384) ([anjackson](https://github.com/anjackson))
 - Update to latest version of dnsjava, for \#344 [\#383](https://github.com/internetarchive/heritrix3/pull/383) ([anjackson](https://github.com/anjackson))
 - Avoid error when bean properties have no url available [\#379](https://github.com/internetarchive/heritrix3/pull/379) ([ldko](https://github.com/ldko))
@@ -316,7 +366,7 @@
 - various changes to amqp publish and receive [\#150](https://github.com/internetarchive/heritrix3/pull/150) ([nlevitt](https://github.com/nlevitt))
 - Update to ExtractorHTML.java for cond. comments [\#149](https://github.com/internetarchive/heritrix3/pull/149) ([eleclerc](https://github.com/eleclerc))
 - Don't canonicalize source tag so that SourceSeedDecideRule will work.… [\#148](https://github.com/internetarchive/heritrix3/pull/148) ([vonrosen](https://github.com/vonrosen))
-- More fixes for mutlipart form submission [\#146](https://github.com/internetarchive/heritrix3/pull/146) ([vonrosen](https://github.com/vonrosen))
+- More fixes for multipart form submission [\#146](https://github.com/internetarchive/heritrix3/pull/146) ([vonrosen](https://github.com/vonrosen))
 - Make some urls with whitespace acceptable to JavaScript extractor. [\#145](https://github.com/internetarchive/heritrix3/pull/145) ([vonrosen](https://github.com/vonrosen))
 - run received urls through the candidates processor, to check scope an… [\#144](https://github.com/internetarchive/heritrix3/pull/144) ([nlevitt](https://github.com/nlevitt))
 - handle login forms with \<input type="text"\> fields in addition to use… [\#143](https://github.com/internetarchive/heritrix3/pull/143) ([nlevitt](https://github.com/nlevitt))
