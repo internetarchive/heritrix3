@@ -2,31 +2,11 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210923...HEAD)
-
-**Fixed bugs:**
-
-- ExtractorHTML matches srcset attribute case-sensitively [\#477](https://github.com/internetarchive/heritrix3/issues/477)
-- Overcrawling due to sitemap links acting like transclusions [\#469](https://github.com/internetarchive/heritrix3/issues/469)
-- "java.lang.NoClassDefFoundError: Could not initialize class org.archive.util.CLibrary" on Apple Silicon [\#467](https://github.com/internetarchive/heritrix3/issues/467)
-- Heritrix crasching on malformed Content-Length header [\#449](https://github.com/internetarchive/heritrix3/issues/449)
-- Java version check throws StringIndexOutOfBoundsException on exact major versions [\#439](https://github.com/internetarchive/heritrix3/issues/439)
-- dnsjava NIO selector thread stuck at 100% after terminating job [\#425](https://github.com/internetarchive/heritrix3/issues/425)
-- Do not treat all URLs from link/@href tags as embeds. [\#263](https://github.com/internetarchive/heritrix3/issues/263)
-- BdbCookieStore  not implemented  iterator at RetryExec  [\#200](https://github.com/internetarchive/heritrix3/issues/200)
-- "RIS already open for ToeThread..." exception during https pages crawl over proxy [\#191](https://github.com/internetarchive/heritrix3/issues/191)
-
-**Closed issues:**
-
-- Heritrix not ignoring robots.txt [\#479](https://github.com/internetarchive/heritrix3/issues/479)
-- JDK18: ExtractorMultipleRegexTest fails due to Groovy asm incompatiblity [\#473](https://github.com/internetarchive/heritrix3/issues/473)
-- Setting of maxLogFileSize in the BDBModule is ineffective [\#464](https://github.com/internetarchive/heritrix3/issues/464)
-- Question about memory usage [\#462](https://github.com/internetarchive/heritrix3/issues/462)
-- Build failing via maven-assembly-plugin: group id is too big [\#447](https://github.com/internetarchive/heritrix3/issues/447)
-- Do not require DNS when using a web proxy [\#211](https://github.com/internetarchive/heritrix3/issues/211)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20220727...HEAD)
 
 **Merged pull requests:**
 
+- Update changelog as of 2022-07-27 [\#493](https://github.com/internetarchive/heritrix3/pull/493) ([anjackson](https://github.com/anjackson))
 - Bump jsch from 0.1.52 to 0.1.54 in /commons [\#492](https://github.com/internetarchive/heritrix3/pull/492) ([dependabot[bot]](https://github.com/apps/dependabot))
 - Bump spring-core from 5.3.19 to 5.3.20 in /commons [\#491](https://github.com/internetarchive/heritrix3/pull/491) ([dependabot[bot]](https://github.com/apps/dependabot))
 - Bump jsch from 0.1.52 to 0.1.54 in /modules [\#490](https://github.com/internetarchive/heritrix3/pull/490) ([dependabot[bot]](https://github.com/apps/dependabot))
@@ -49,6 +29,31 @@
 - Resolve gid too big [\#448](https://github.com/internetarchive/heritrix3/pull/448) ([ldko](https://github.com/ldko))
 - FetchDNS: Keep dnsjava selector thread out of ToePool [\#444](https://github.com/internetarchive/heritrix3/pull/444) ([ato](https://github.com/ato))
 - Enabled configurable url-matching and extraction for sitemaps. [\#441](https://github.com/internetarchive/heritrix3/pull/441) ([csrster](https://github.com/csrster))
+
+## [3.4.0-20220727](https://github.com/internetarchive/heritrix3/tree/3.4.0-20220727) (2022-07-27)
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20210923...3.4.0-20220727)
+
+**Fixed bugs:**
+
+- ExtractorHTML matches srcset attribute case-sensitively [\#477](https://github.com/internetarchive/heritrix3/issues/477)
+- Overcrawling due to sitemap links acting like transclusions [\#469](https://github.com/internetarchive/heritrix3/issues/469)
+- "java.lang.NoClassDefFoundError: Could not initialize class org.archive.util.CLibrary" on Apple Silicon [\#467](https://github.com/internetarchive/heritrix3/issues/467)
+- Heritrix crasching on malformed Content-Length header [\#449](https://github.com/internetarchive/heritrix3/issues/449)
+- Java version check throws StringIndexOutOfBoundsException on exact major versions [\#439](https://github.com/internetarchive/heritrix3/issues/439)
+- dnsjava NIO selector thread stuck at 100% after terminating job [\#425](https://github.com/internetarchive/heritrix3/issues/425)
+- Do not treat all URLs from link/@href tags as embeds. [\#263](https://github.com/internetarchive/heritrix3/issues/263)
+- BdbCookieStore  not implemented  iterator at RetryExec  [\#200](https://github.com/internetarchive/heritrix3/issues/200)
+- "RIS already open for ToeThread..." exception during https pages crawl over proxy [\#191](https://github.com/internetarchive/heritrix3/issues/191)
+
+**Closed issues:**
+
+- Heritrix not ignoring robots.txt [\#479](https://github.com/internetarchive/heritrix3/issues/479)
+- JDK18: ExtractorMultipleRegexTest fails due to Groovy asm incompatiblity [\#473](https://github.com/internetarchive/heritrix3/issues/473)
+- Setting of maxLogFileSize in the BDBModule is ineffective [\#464](https://github.com/internetarchive/heritrix3/issues/464)
+- Question about memory usage [\#462](https://github.com/internetarchive/heritrix3/issues/462)
+- Build failing via maven-assembly-plugin: group id is too big [\#447](https://github.com/internetarchive/heritrix3/issues/447)
+- Do not require DNS when using a web proxy [\#211](https://github.com/internetarchive/heritrix3/issues/211)
 
 ## [3.4.0-20210923](https://github.com/internetarchive/heritrix3/tree/3.4.0-20210923) (2021-09-23)
 
