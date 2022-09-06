@@ -68,6 +68,11 @@ CredentialStore
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/credential/CredentialStore.java
 
+DecideRuleSequence
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/DecideRuleSequence.java
+
 DiskSpaceMonitor
 ~~~~~~~~~~~~~~~~
 
