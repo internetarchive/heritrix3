@@ -624,10 +624,13 @@ http://example.example/example
  -->
  
  <!-- DISK SPACE MONITOR: 
-      Pauses the crawl if disk space at monitored paths falls below minimum threshold -->
+      Pauses the crawl if disk space at monitored paths falls below minimum threshold
+      Note: If there's less than 5 GiB free for state directory BDB will throw
+      an error which the crawl job will likely not be to fully recover from.
+      -->
  <!-- 
  <bean id="diskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
-   <property name="pauseThresholdMiB" value="500" />
+   <property name="pauseThresholdMiB" value="8192" />
    <property name="monitorConfigPaths" value="true" />
    <property name="monitorPaths">
      <list>
