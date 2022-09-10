@@ -35,7 +35,7 @@ public class DiskSpaceMonitor implements ApplicationListener<ApplicationEvent> {
     private static final Logger logger = Logger.getLogger(DiskSpaceMonitor.class.getName());
 
     protected List<String> monitorPaths = new ArrayList<String>();
-    protected long pauseThresholdMiB = 500;
+    protected long pauseThresholdMiB = 8192;
     protected CrawlController controller;
     protected ConfigPathConfigurer configPathConfigurer;
     protected boolean monitorConfigPaths = true;
