@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -16,7 +17,7 @@
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-client</artifactId>
-			<version>0.98.6-cdh5.3.5</version>
+			<version>0.98.12.1</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jets3t</artifactId>
@@ -137,6 +138,4 @@
 			</plugin>
 		</plugins>
 	</build>
-</project>
-
-<!-- vim: set ft=xml sw=8 noet: -->
+</project><!-- vim: set ft=xml sw=8 noet: -->
