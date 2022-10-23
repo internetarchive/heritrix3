@@ -58,8 +58,8 @@ Environment Variables
 
       export JAVA_OPTS=-Xmx1024M
 
-Runnning Heritrix
-^^^^^^^^^^^^^^^^^
+Running Heritrix
+^^^^^^^^^^^^^^^^
 
 To launch Heritrix with the Web UI enabled, enter the following command. The username and password for the Web UI are
 set to "admin" and "admin", respectively.
