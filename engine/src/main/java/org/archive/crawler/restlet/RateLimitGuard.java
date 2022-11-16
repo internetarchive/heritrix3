@@ -59,7 +59,7 @@ public class RateLimitGuard extends DigestAuthenticator {
                     // ignore
                 }
             }
-            lastFailureTime = now + sleepMs;
+            lastFailureTime = now;
         }
         return succeeded;
     }
