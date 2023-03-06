@@ -971,6 +971,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         if(!hasApplicationContext()) {
             return "Unbuilt";
         } else if(isRunning()) {
+            if (!getCrawlController().isRunning()) {
+                return "Not running: " + 
+			getCrawlController().getCrawlExitStatus();
+            }
             return "Active: "+getCrawlController().getState();
         } else if(isLaunchable()){
             return "Ready";
