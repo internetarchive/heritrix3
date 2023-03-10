@@ -172,14 +172,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     public void setUseSharedCache(boolean useSharedCache) {
         this.useSharedCache = useSharedCache;
     }
-
-    protected long maxLogFileSize = 10000000;
-    public long getMaxLogFileSize() {
-        return maxLogFileSize;
-    }
-    public void setMaxLogFileSize(long cacheSize) {
-        this.maxLogFileSize = maxLogFileSize;
-    }
     
     /**
      * Expected number of concurrent threads; used to tune nLockTables
@@ -285,10 +277,7 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
         
         // triple this value to 6K because stats show many faults
-        config.setConfigParam("je.log.faultReadSize", "6144");
-
-        // set max bdb log file size. default 10M
-        config.setConfigParam("je.log.fileMax", Long.toString(getMaxLogFileSize()));
+        config.setConfigParam("je.log.faultReadSize", "6144"); 
 
         if(!getUseHardLinkCheckpoints()) {
             // to support checkpoints by textual manifest only, 
