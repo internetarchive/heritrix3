@@ -45,7 +45,8 @@ public class RateLimitGuard extends DigestAuthenticator {
     @Override
     protected boolean authenticate(Request request, Response response) {
         boolean succeeded = super.authenticate(request, response);
-        if (!succeeded) {
+        String authHeader = request.getHeaders().getFirstValue("Authorization", true);
+        if (authHeader != null && !succeeded) {
             logger.warning("authentication failure "+request);
             // wait until at least LAG has passed from last failure
             // holding object lock the whole time, so no other checks
@@ -59,7 +60,7 @@ public class RateLimitGuard extends DigestAuthenticator {
                     // ignore
                 }
             }
-            lastFailureTime = now + sleepMs;
+            lastFailureTime = now;
         }
         return succeeded;
     }

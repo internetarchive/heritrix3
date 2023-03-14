@@ -376,6 +376,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         Database db = dpc.database;
         try {
             db.sync();
+        } catch (DatabaseException e) {
+            LOGGER.log(Level.WARNING, "Error syncing when closing db " + name, e);
+        }
+        try {
             db.close();
         } catch (DatabaseException e) {
             LOGGER.log(Level.WARNING, "Error closing db " + name, e);
@@ -692,6 +696,11 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
 
         try {
             this.bdbEnvironment.sync();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error syncing when closing environment.", e);
+        }
+
+        try {
             this.bdbEnvironment.close();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error closing environment.", e);
