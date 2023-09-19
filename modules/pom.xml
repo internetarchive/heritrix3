@@ -30,12 +30,12 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.groovy</groupId>
+			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy-jsr223</artifactId>
 			<version>${groovy.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.groovy</groupId>
+			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy-templates</artifactId>
 			<version>${groovy.version}</version>
 		</dependency>
@@ -115,6 +115,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<groovy.version>3.0.13</groovy.version>
+		<groovy.version>4.0.15</groovy.version>
 	</properties>
 </project>
