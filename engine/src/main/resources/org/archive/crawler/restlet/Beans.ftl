@@ -125,7 +125,7 @@
 <#macro beanTemplate bean>
 <#if bean.field?? && (bean.field?length>0)>
 	<th>
-		<b><#if bean.field?contains("#")>${bean.field}<#else><a href='${bean.url}'>${bean.field}</a></#if>:</b>
+		<b><#if bean.field?contains("#") || !bean.url??>${bean.field}<#else><a href='${bean.url}'>${bean.field}</a></#if>:</b>
 	</th>
 </#if>
 <td>

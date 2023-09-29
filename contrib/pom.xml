@@ -28,12 +28,12 @@
 		<dependency>
 			<groupId>com.rabbitmq</groupId>
 			<artifactId>amqp-client</artifactId>
-			<version>3.2.1</version>
+			<version>4.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.itextpdf</groupId>
 			<artifactId>itextpdf</artifactId>
-			<version>5.5.0</version>
+			<version>5.5.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
@@ -54,7 +54,12 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.8.6</version>
+			<version>2.8.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.java-websocket</groupId>
+			<artifactId>Java-WebSocket</artifactId>
+			<version>1.5.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.xerial</groupId>
@@ -87,34 +92,26 @@
 			</plugin>
 
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.3.0</version>
 				<configuration>
 					<descriptors>
 						<descriptor>
 							src/main/assembly/dist.xml
 						</descriptor>
 					</descriptors>
+					<tarLongFileMode>posix</tarLongFileMode>
 				</configuration>
 				<executions>
 					<execution>
 						<id>job.assembly.package</id>
 						<phase>package</phase>
 						<goals>
-							<goal>attached</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<encoding>UTF-8</encoding>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>

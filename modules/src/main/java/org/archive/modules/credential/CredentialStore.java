@@ -59,12 +59,6 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
         return kp;
     }
     
-    /**
-     * Credentials used by heritrix authenticating. See
-     * http://crawler.archive.org/proposals/auth/ for background.
-     * 
-     * @see <a href="http://crawler.archive.org/proposals/auth/">http://crawler.archive.org/proposals/auth/</a>
-     */
     {
         setCredentials(new TreeMap<String, Credential>());
     }
@@ -72,6 +66,12 @@ public class CredentialStore implements Serializable, HasKeyedProperties {
     public Map<String,Credential> getCredentials() {
         return (Map<String,Credential>) kp.get("credentials");
     }
+    /**
+     * Credentials used by heritrix authenticating. See
+     * http://crawler.archive.org/proposals/auth/ for background.
+     *
+     * @see <a href="http://crawler.archive.org/proposals/auth/">http://crawler.archive.org/proposals/auth/</a>
+     */
     public void setCredentials(Map<String,Credential> map) {
         kp.put("credentials",map);
     }

@@ -40,7 +40,9 @@
 			</plugin>
 
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.3.0</version>
 				<configuration>
 					<descriptors>
 						<descriptor>
@@ -50,13 +52,14 @@
 							src/main/assembly/src.xml
 						</descriptor>
 					</descriptors>
+					<tarLongFileMode>posix</tarLongFileMode>
 				</configuration>
 				<executions>
 					<execution>
 						<id>job.assembly.package</id>
 						<phase>package</phase>
 						<goals>
-							<goal>attached</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>

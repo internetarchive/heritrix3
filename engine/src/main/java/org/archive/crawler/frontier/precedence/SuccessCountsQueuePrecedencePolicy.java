@@ -65,13 +65,13 @@ public class SuccessCountsQueuePrecedencePolicy extends BaseQueuePrecedencePolic
 //        return precedence;
 //    }
 
-    /** comma-separated list of success-counts at which precedence is bumped*/
     {
         setIncrementCounts("100,1000");
     }
     public String getIncrementCounts() {
         return (String) kp.get("incrementCounts");
     }
+    /** comma-separated list of success-counts at which precedence is bumped*/
     public void setIncrementCounts(String counts) {
         kp.put("incrementCounts",counts);
     }

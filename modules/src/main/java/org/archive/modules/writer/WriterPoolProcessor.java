@@ -19,7 +19,6 @@
 
 package org.archive.modules.writer;
 
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DNS_SUCCESS;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_WHOIS_SUCCESS;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WRITE_TAG;
@@ -348,7 +347,7 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
             retVal = curi.getFetchStatus() == S_WHOIS_SUCCESS;
         } else if (scheme.equals("http") || scheme.equals("https")) {
             retVal = curi.getFetchStatus() > 0 && curi.isHttpTransaction();
-        } else if (scheme.equals("ftp")) {
+        } else if (scheme.equals("ftp") || scheme.equals("sftp")) {
             retVal = curi.getFetchStatus() > 0;
         } else {
             logger.info("This writer does not write out scheme " +
@@ -380,17 +379,15 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
      * @param curi CrawlURI
      * @return String of IP address
      * 
-     * @deprecated WARCRecordBuilder instances use {@link BaseWARCRecordBuilder#getHostAddress(CrawlURI)}
+     * @deprecated WARCRecordBuilder instances use {@link CrawlURI#getServerIP()}
      */
     @Deprecated
     protected String getHostAddress(CrawlURI curi) {
-        // special handling for DNS URIs: want address of DNS server
-        if (curi.getUURI().getScheme().toLowerCase().equals("dns")) {
-            return (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
+        // if possible use the exact IP the fetcher stashed in curi
+        if (curi.getServerIP() != null) {
+            return curi.getServerIP();
         }
-        // otherwise, host referenced in URI
-        // TODO:FIXME: have fetcher insert exact IP contacted into curi,
-        // use that rather than inferred by CrawlHost lookup 
+        // otherwise, consult the cache
         CrawlHost h = getServerCache().getHostFor(curi.getUURI());
         if (h == null) {
             throw new NullPointerException("Crawlhost is null for " +

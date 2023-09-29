@@ -55,6 +55,9 @@ public enum Hop {
      * material, but deduced by convention.
      */
     INFERRED('I'),
+
+    /** Found in some form of site provided URL manifest (e.g. site map) */ 
+    MANIFEST('M'),
     
     /** Synthesized form-submit */ 
     SUBMIT('S');

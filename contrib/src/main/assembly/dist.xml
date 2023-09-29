@@ -12,12 +12,17 @@
 	</dependencySets>
 	<fileSets>
 		<fileSet>
-			<directory>.</directory>
+			<directory>..</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>../dist/README.txt</include>
-				<include>../dist/LICENSE.txt</include>
-				<include>../dist/HOWTO-Launch-Heritrix.txt</include>
+				<include>README*</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>../dist</directory>
+			<outputDirectory>/</outputDirectory>
+			<includes>
+				<include>LICENSE.txt</include>
 			</includes>
 		</fileSet>
 		<fileSet>

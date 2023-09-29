@@ -68,94 +68,94 @@ public class DispositionProcessor extends Processor {
         this.serverCache = serverCache;
     }
     
-    /**
-     * How many multiples of last fetch elapsed time to wait before recontacting
-     * same server.
-     */
     {
         setDelayFactor(5.0f);
     }
     public float getDelayFactor() {
         return (Float) kp.get("delayFactor");
     }
+    /**
+     * How many multiples of last fetch elapsed time to wait before recontacting
+     * same server.
+     */
     public void setDelayFactor(float factor) {
         kp.put("delayFactor",factor);
     }
 
-    /**
-     * always wait this long after one completion before recontacting same
-     * server, regardless of multiple
-     */
     {
         setMinDelayMs(3000);
     }
     public int getMinDelayMs() {
         return (Integer) kp.get("minDelayMs");
     }
+    /**
+     * always wait this long after one completion before recontacting same
+     * server, regardless of multiple
+     */
     public void setMinDelayMs(int minDelay) {
         kp.put("minDelayMs",minDelay);
     }
     
-    /**
-     * Whether to respect a 'Crawl-Delay' (in seconds) given in a site's
-     * robots.txt
-     */
     {
         setRespectCrawlDelayUpToSeconds(300);
     }
     public int getRespectCrawlDelayUpToSeconds() {
         return (Integer) kp.get("respectCrawlDelayUpToSeconds");
     }
+    /**
+     * Whether to respect a 'Crawl-Delay' (in seconds) given in a site's
+     * robots.txt
+     */
     public void setRespectCrawlDelayUpToSeconds(int respect) {
         kp.put("respectCrawlDelayUpToSeconds",respect);
     }
 
-    /** never wait more than this long, regardless of multiple */
     {
         setMaxDelayMs(30000);
     }
     public int getMaxDelayMs() {
         return (Integer) kp.get("maxDelayMs");
     }
+    /** never wait more than this long, regardless of multiple */
     public void setMaxDelayMs(int maxDelay) {
         kp.put("maxDelayMs",maxDelay);
     }    
 
-    /** maximum per-host bandwidth usage */
     {
         setMaxPerHostBandwidthUsageKbSec(0);
     }
     public int getMaxPerHostBandwidthUsageKbSec() {
         return (Integer) kp.get("maxPerHostBandwidthUsageKbSec");
     }
+    /** maximum per-host bandwidth usage */
     public void setMaxPerHostBandwidthUsageKbSec(int max) {
         kp.put("maxPerHostBandwidthUsageKbSec",max);
     }
     
-    /**
-     * Whether to set a CrawlURI's force-retired directive, retiring
-     * its queue when it finishes. Mainly intended for URI-specific 
-     * overlay settings; setting true globally will just retire all queues 
-     * after they offer one URI, rapidly ending a crawl. 
-     */
     {
         setForceRetire(false);
     }
     public boolean getForceRetire() {
         return (Boolean) kp.get("forceRetire");
     }
+    /**
+     * Whether to set a CrawlURI's force-retired directive, retiring
+     * its queue when it finishes. Mainly intended for URI-specific
+     * overlay settings; setting true globally will just retire all queues
+     * after they offer one URI, rapidly ending a crawl.
+     */
     public void setForceRetire(boolean force) {
         kp.put("forceRetire",force);
     }
     
-    /**
-     * Auto-discovered module providing configured (or overridden)
-     * User-Agent value and RobotsHonoringPolicy
-     */
     protected CrawlMetadata metadata;
     public CrawlMetadata getMetadata() {
         return metadata;
     }
+    /**
+     * Auto-discovered module providing configured (or overridden)
+     * User-Agent value and RobotsHonoringPolicy
+     */
     @Autowired
     public void setMetadata(CrawlMetadata provider) {
         this.metadata = provider;

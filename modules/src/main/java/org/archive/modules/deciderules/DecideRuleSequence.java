@@ -39,22 +39,22 @@ public class DecideRuleSequence extends DecideRule implements BeanNameAware, Lif
 
     protected transient Logger fileLogger = null;
 
-    /**
-     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
-     * is: [timestamp] [decisive-rule-num] [decisive-rule-class] [decision]
-     * [uri] [extraInfo]
-     * 
-     * Relies on Spring Lifecycle to initialize the log. Only top-level
-     * beans get the Lifecycle treatment from Spring, so bean must be top-level
-     * for logToFile to work. (This is true of other modules that support
-     * logToFile, and anything else that uses Lifecycle, as well.)
-     */
     {
         setLogToFile(false);
     }
     public boolean getLogToFile() {
         return (Boolean) kp.get("logToFile");
     }
+    /**
+     * If enabled, log decisions to file named logs/{spring-bean-id}.log. Format
+     * is: [timestamp] [decisive-rule-num] [decisive-rule-class] [decision]
+     * [uri] [extraInfo]
+     *
+     * Relies on Spring Lifecycle to initialize the log. Only top-level
+     * beans get the Lifecycle treatment from Spring, so bean must be top-level
+     * for logToFile to work. (This is true of other modules that support
+     * logToFile, and anything else that uses Lifecycle, as well.)
+     */
     public void setLogToFile(boolean enabled) {
         kp.put("logToFile",enabled);
     }

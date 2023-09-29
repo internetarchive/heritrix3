@@ -35,20 +35,20 @@ public class TooManyPathSegmentsDecideRule extends PredicatedDecideRule {
     @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(TooManyPathSegmentsDecideRule.class.getName()); 
 
-    /** default for this class is to REJECT */
+    /* default for this class is to REJECT */
     {
         setDecision(DecideResult.REJECT);
     }
     
-    /**
-     * Number of path segments beyond which this rule will reject URIs.
-     */
     {
         setMaxPathDepth(20);
     }
     public int getMaxPathDepth() {
         return (Integer) kp.get("maxPathDepth");
     }
+    /**
+     * Number of path segments beyond which this rule will reject URIs.
+     */
     public void setMaxPathDepth(int maxPathDepth) {
         kp.put("maxPathDepth", maxPathDepth);
     }

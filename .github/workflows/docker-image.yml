@@ -1,0 +1,15 @@
+name: Docker Image CI
+
+on: workflow_dispatch
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag heritrix:$(date +%s)
+      working-directory: docker

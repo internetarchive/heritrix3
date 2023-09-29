@@ -50,17 +50,17 @@ public class SupplementaryLinksScoper extends Scoper {
         Logger.getLogger(SupplementaryLinksScoper.class.getName());
     
 
-    /**
-     * DecideRules which if their final decision on a link is
-     * REJECT, cause the link to be ruled out-of-scope, even 
-     * if it had previously been accepted by the main scope.
-     */
     {
         setSupplementaryRule(new AcceptDecideRule());
     }
     public DecideRule getSupplementaryRule() {
         return (DecideRule) kp.get("supplementaryRule");
     }
+    /**
+     * DecideRules which if their final decision on a link is
+     * REJECT, cause the link to be ruled out-of-scope, even
+     * if it had previously been accepted by the main scope.
+     */
     public void setSupplementaryRule(DecideRule rule) {
         kp.put("supplementaryRule", rule);
     }

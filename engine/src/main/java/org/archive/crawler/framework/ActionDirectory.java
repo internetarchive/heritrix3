@@ -24,6 +24,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,7 +43,6 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.FilesystemLinkMaker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -266,9 +266,10 @@ public class ActionDirectory implements ApplicationContextAware, Lifecycle, Runn
                 if (!actionDoneDirFile.equals(doneDir.getFile())) {
                     actionDoneDirFile.mkdirs();
                     File doneSymlinkFile = new File(actionDoneDirFile, doneFile.getName());
-                    boolean success = FilesystemLinkMaker.makeSymbolicLink(doneFile.getPath(), doneSymlinkFile.getPath());
-                    if (!success) {
-                        LOGGER.warning("failed to create symlink from " + doneSymlinkFile + " to " + doneFile);
+                    try {
+                        Files.createSymbolicLink(doneSymlinkFile.toPath(), doneFile.toPath());
+                    } catch (IOException | UnsupportedOperationException e) {
+                        LOGGER.log(Level.WARNING, "failed to create symlink from " + doneSymlinkFile + " to " + doneFile, e);
                     }
                 }
             } catch (IOException e) {

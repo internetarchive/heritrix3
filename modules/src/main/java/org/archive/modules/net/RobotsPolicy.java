@@ -36,7 +36,8 @@ abstract public class RobotsPolicy {
         STANDARD_POLICIES.put("obey", ObeyRobotsPolicy.INSTANCE);
         // the obey policy has also historically been called 'classic'
         STANDARD_POLICIES.put("classic", ObeyRobotsPolicy.INSTANCE);
-        STANDARD_POLICIES.put("ignore", IgnoreRobotsPolicy.INSTANCE); 
+        STANDARD_POLICIES.put("ignore", IgnoreRobotsPolicy.INSTANCE);
+        STANDARD_POLICIES.put("robotsTxtOnly", RobotsTxtOnlyPolicy.INSTANCE);
     }
 
     public abstract boolean allows(String userAgent, CrawlURI curi, Robotstxt robotstxt);

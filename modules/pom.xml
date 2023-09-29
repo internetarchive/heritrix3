@@ -32,24 +32,35 @@
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
-			<artifactId>groovy-all</artifactId>
-			<version>1.6.3</version>
+			<artifactId>groovy-jsr223</artifactId>
+			<version>${groovy.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-templates</artifactId>
+			<version>${groovy.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-server</artifactId>
-			<version>9.4.19.v20190610</version>
+			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-security</artifactId>
-			<version>9.4.19.v20190610</version>
+			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.littleshoot</groupId>
 			<artifactId>littleproxy</artifactId>
 			<version>0.4</version>
 			<scope>test</scope>
+			<exclusions>
+			   <exclusion>
+			      <groupId>org.slf4j</groupId>
+			      <artifactId>slf4j-log4j12</artifactId>
+			   </exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -62,6 +73,28 @@
 			<artifactId>slf4j-jdk14</artifactId>
 			<version>1.6.6</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.ftpserver</groupId>
+			<artifactId>ftpserver-core</artifactId>
+			<version>1.1.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.crawler-commons</groupId>
+			<artifactId>crawler-commons</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.bbottema</groupId>
+			<artifactId>java-socks-proxy-server</artifactId>
+			<version>1.1.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.54</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -83,5 +116,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<groovy.version>3.0.13</groovy.version>
 	</properties>
 </project>

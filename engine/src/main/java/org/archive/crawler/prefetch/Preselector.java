@@ -43,6 +43,12 @@ public class Preselector extends Scoper {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 3L;
 
+    {
+        setRecheckScope(false);
+    }
+    public boolean getRecheckScope() {
+        return (Boolean) kp.get("recheckScope");
+    }
     /**
      * Recheck if uri is in scope. This is meaningful if the scope is altered
      * during a crawl. URIs are checked against the scope when they are added to
@@ -50,52 +56,46 @@ public class Preselector extends Scoper {
      * the scope when it is coming out of the queue, possibly after the scope
      * is altered.
      */
-    {
-        setRecheckScope(false);
-    }
-    public boolean getRecheckScope() {
-        return (Boolean) kp.get("recheckScope");
-    }
     public void setRecheckScope(boolean recheck) {
         kp.put("recheckScope",recheck);
     }
 
-    /**
-     * Block all URIs from being processed. This is most likely to be used in
-     * overrides to easily reject certain hosts from being processed.
-     */
     {
         setBlockAll(false);
     }
     public boolean getBlockAll() {
         return (Boolean) kp.get("blockAll");
     }
+    /**
+     * Block all URIs from being processed. This is most likely to be used in
+     * overrides to easily reject certain hosts from being processed.
+     */
     public void setBlockAll(boolean recheck) {
         kp.put("blockAll",recheck);
     }
 
-    /**
-     * Block all URIs matching the regular expression from being processed.
-     */
     {
         setBlockByRegex("");
     }
     public String getBlockByRegex() {
         return (String) kp.get("blockByRegex");
     }
+    /**
+     * Block all URIs matching the regular expression from being processed.
+     */
     public void setBlockByRegex(String regex) {
         kp.put("blockByRegex",regex);
     }
 
-    /**
-     * Allow only URIs matching the regular expression to be processed.
-     */
     {
         setAllowByRegex("");
     }
     public String getAllowByRegex() {
         return (String) kp.get("allowByRegex");
     }
+    /**
+     * Allow only URIs matching the regular expression to be processed.
+     */
     public void setAllowByRegex(String regex) {
         kp.put("allowByRegex",regex);
     }

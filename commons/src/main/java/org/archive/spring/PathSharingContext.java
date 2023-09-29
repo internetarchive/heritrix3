@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +33,6 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.FilesystemLinkMaker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -161,9 +162,10 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
             // attempt to symlink "latest" to launch dir
             File latestSymlink = new File(getConfigurationFile().getParentFile(), "latest");
             latestSymlink.delete();
-            boolean success = FilesystemLinkMaker.makeSymbolicLink(currentLaunchDir.getName(), latestSymlink.getPath());
-            if (!success) {
-                LOGGER.warning("failed to create symlink from " + latestSymlink + " to " + currentLaunchDir);
+            try {
+                Files.createSymbolicLink(latestSymlink.toPath(), Paths.get(currentLaunchDir.getName()));
+            } catch (IOException | UnsupportedOperationException e) {
+                LOGGER.log(Level.WARNING, "failed to create symlink from " + latestSymlink + " to " + currentLaunchDir, e);
             }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "failed to initialize launch directory: " + e);

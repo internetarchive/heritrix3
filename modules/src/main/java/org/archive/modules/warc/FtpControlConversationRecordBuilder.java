@@ -13,13 +13,12 @@ import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;
-import org.archive.util.anvl.ANVLRecord;
 
 public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
 
     @Override
     public boolean shouldBuildRecord(CrawlURI curi) {
-        return "ftp".equals(curi.getUURI().getScheme().toLowerCase());
+        return "ftp".equalsIgnoreCase(curi.getUURI().getScheme()) || "sftp".equalsIgnoreCase(curi.getUURI().getScheme());
     }
 
     @Override
@@ -28,8 +27,6 @@ public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
                 ArchiveUtils.getLog14Date(curi.getFetchBeginTime());
         String controlConversation =
                 curi.getData().get(A_FTP_CONTROL_CONVERSATION).toString();
-        ANVLRecord headers = new ANVLRecord();
-        headers.addLabelValue(HEADER_KEY_IP, getHostAddress(curi));
 
         WARCRecordInfo recordInfo = new WARCRecordInfo();
         recordInfo.setRecordId(generateRecordID());
@@ -40,9 +37,12 @@ public class FtpControlConversationRecordBuilder extends BaseWARCRecordBuilder {
         recordInfo.setCreate14DigitDate(timestamp);
         recordInfo.setUrl(curi.toString());
         recordInfo.setMimetype(FTP_CONTROL_CONVERSATION_MIMETYPE);
-        recordInfo.setExtraHeaders(headers);
         recordInfo.setEnforceLength(true);
         recordInfo.setType(WARCRecordType.metadata);
+
+        if (curi.getServerIP() != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
+        }
         
         byte[] b = controlConversation.getBytes("UTF-8");
         

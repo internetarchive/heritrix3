@@ -132,11 +132,10 @@ implements Reporter, ProgressStatisticsReporter,
                 setStep(Step.ABOUT_TO_GET_URI, null);
 
                 CrawlURI curi = controller.getFrontier().next();
-                
-                
+
                 synchronized(this) {
-                    ArchiveUtils.continueCheck();
                     setCurrentCuri(curi);
+                    ArchiveUtils.continueCheck();
                     currentCuri.setThreadNumber(this.serialNumber);
                     lastStartTime = System.currentTimeMillis();
                     currentCuri.setRecorder(httpRecorder);
@@ -197,9 +196,6 @@ implements Reporter, ProgressStatisticsReporter,
                 }
             }
         } catch (InterruptedException e) {
-            if(currentCuri!=null){
-                logger.log(Level.SEVERE,"Interrupt leaving unfinished CrawlURI "+getName()+" - job may hang",e);
-            }
             // thread interrupted, ok to end
             logger.log(Level.FINE,this.getName()+ " ended with Interruption");
         } catch (Exception e) {
@@ -208,8 +204,16 @@ implements Reporter, ProgressStatisticsReporter,
         } catch (OutOfMemoryError err) {
             seriousError(err);
         } finally {
+            synchronized (this) {
+                if (currentCuri != null) {
+                    logger.log(Level.WARNING,"Leaving with unfinished CrawlURI " + getName() +
+                            " - attempting to finish");
+                    currentCuri.setFetchStatus(S_PROCESSING_THREAD_KILLED);
+                    controller.getFrontier().finished(currentCuri);
+                    setCurrentCuri(null);
+                }
+            }
             controller.getFrontier().endDisposition();
-
         }
 
         setCurrentCuri(null);

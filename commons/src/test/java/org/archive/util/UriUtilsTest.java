@@ -66,6 +66,17 @@ public class UriUtilsTest extends TestCase {
         "images/photo.jpg", 
         "../../images/photo.jpg" };
 
+    public void testIsDataUri() {
+        assertTrue(UriUtils.isDataUri("data:,hello"));
+        assertTrue(UriUtils.isDataUri("data:text/plain,hello"));
+        assertTrue(UriUtils.isDataUri("   data:,hello"));
+        assertTrue(UriUtils.isDataUri("   dAtA:,hello//  "));
+        assertFalse(UriUtils.isDataUri(""));
+        assertFalse(UriUtils.isDataUri(" http://example.org/"));
+        assertFalse(UriUtils.isDataUri("http://example.org/"));
+        assertFalse(UriUtils.isDataUri("\0\1\2\3garbage"));
+    }
+
     /** check that plausible relative image URIs return true with legacy tests */
     public void xestLegacySimpleImageRelatives() {
         legacyTryAll(urisRelativeImages, true);

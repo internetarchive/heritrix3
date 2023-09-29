@@ -24,7 +24,7 @@ public class MetadataRecordBuilder extends BaseWARCRecordBuilder {
     @Override
     public boolean shouldBuildRecord(CrawlURI curi) {
         String scheme = curi.getUURI().getScheme().toLowerCase();
-        return scheme.startsWith("http") || "ftp".equals(scheme); 
+        return scheme.startsWith("http") || "ftp".equals(scheme) || "sftp".equals(scheme); 
     }
 
     @Override

@@ -1,7 +1,7 @@
 # Heritrix
-[![Build Status](https://travis-ci.org/internetarchive/heritrix3.svg?branch=master)](https://travis-ci.org/internetarchive/heritrix3)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.archive/heritrix)
-[![Javadoc](https://javadoc-badge.appspot.com/org.archive/heritrix.svg?label=javadoc)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
+[![Docker](https://img.shields.io/docker/v/iipc/heritrix/latest?label=docker)](https://hub.docker.com/r/iipc/heritrix)
+[![Javadoc](https://javadoc.io/badge2/org.archive/heritrix/javadoc.svg)](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine)
 [![LICENSE](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](./LICENSE)
 
 ## Introduction
@@ -10,12 +10,18 @@ Heritrix is the Internet Archive's open-source, extensible, web-scale, archival-
 
 ## Crawl Operators!
 
-Heritrix is designed to respect the [`robots.txt`](http://www.robotstxt.org/wc/robots.html) exclusion directives and [META robots tags](http://www.robotstxt.org/wc/exclusion.html#meta). Please consider the
+Heritrix is designed to respect the [`robots.txt`](http://www.robotstxt.org/robotstxt.html) exclusion directives<sup>†</sup> and [META nofollow tags](http://www.robotstxt.org/meta.html). Please consider the
 load your crawl will place on seed sites and set politeness policies accordingly. Also, always identify your crawl with contact information in the `User-Agent` so sites that may be adversely affected by your crawl can contact you or adapt their server behavior accordingly.
 
-## Getting Started
+<sup>†</sup> The newer wildcard extension to robots.txt is [not yet](https://github.com/internetarchive/heritrix3/issues/250) supported.
 
-- [User Manual](https://github.com/internetarchive/heritrix3/wiki)
+## Documentation
+
+- [Getting Started](https://heritrix.readthedocs.io/en/latest/getting-started.html)
+- [Operating Heritrix](https://heritrix.readthedocs.io/en/latest/operating.html)
+- [Configuring Crawl Jobs](https://heritrix.readthedocs.io/en/latest/configuring-jobs.html)
+- [Bean Reference](https://heritrix.readthedocs.io/en/latest/bean-reference.html)
+- [Wiki](https://github.com/internetarchive/heritrix3/wiki)
 
 ## Developer Documentation
 
