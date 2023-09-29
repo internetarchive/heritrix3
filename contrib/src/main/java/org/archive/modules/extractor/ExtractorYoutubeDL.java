@@ -63,8 +63,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
 /**
- * Extracts links to media by running youtube-dl in a subprocess. Runs only on
- * html.
+ * Extracts links to media by running yt-dlp in a subprocess. Runs only on html.
  *
  * <p>
  * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
@@ -453,7 +452,7 @@ public class ExtractorYoutubeDL extends Extractor
          * with height no larger than 576...
          * https://github.com/yt-dlp/yt-dlp#format-selection-examples
          */
-        ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
+        ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
                 "--simulate", "--dump-single-json", "-S codec:h264,height:576",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
