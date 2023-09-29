@@ -171,12 +171,6 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
         this.specialQueryTemplates.putAll(m);
     }
 
-    {
-        setSoTimeoutMs(20*1000); // 20 seconds
-    }
-    public int getSoTimeoutMs() {
-        return (Integer) kp.get("soTimeoutMs");
-    }
     /**
      * If the socket is unresponsive for this number of milliseconds, give up.
      * Set to zero for no timeout (Not. recommended. Could hang a thread on an
@@ -185,6 +179,12 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
      * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
      * retry read.
      */
+    {
+        setSoTimeoutMs(20*1000); // 20 seconds
+    }
+    public int getSoTimeoutMs() {
+        return (Integer) kp.get("soTimeoutMs");
+    }
     public void setSoTimeoutMs(int timeout) {
         kp.put("soTimeoutMs",timeout);
     }
@@ -334,9 +334,10 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
             }
 
             client.setSoTimeout(getSoTimeoutMs()); // must be after connect()
-
-            curi.setServerIP(client.getRemoteAddress().getHostAddress());
-
+            
+            curi.getData().put(CoreAttributeConstants.A_WHOIS_SERVER_IP, 
+                    client.getRemoteAddress().getHostAddress());
+            
             recorder.inputWrap(client.getInputStream(whoisQuery));
 
             // look for info about whois server in the response

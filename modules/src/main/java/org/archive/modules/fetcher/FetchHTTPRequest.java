@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
@@ -101,7 +100,6 @@ import org.apache.http.io.HttpMessageWriterFactory;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.Args;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
@@ -170,12 +168,6 @@ public class FetchHTTPRequest {
     protected HttpHost targetHost;
     protected boolean addedCredentials;
     protected HttpHost proxyHost;
-
-    // SOCKS5 proxy configuration
-    protected String socksProxyHost;
-    protected Integer socksProxyPort;
-    protected boolean useSocksProxy;
-
     // make this a member variable so it doesn't get gc'd prematurely
     protected HttpClientConnectionManager connMan;
 
@@ -190,48 +182,14 @@ public class FetchHTTPRequest {
         this.requestConfigBuilder = RequestConfig.custom();
 
         ProtocolVersion httpVersion = fetcher.getConfiguredHttpVersion();
-
-        // SOCKS5 proxy settings
-        this.socksProxyHost = (String) fetcher.getAttributeEither(curi, "socksProxyHost");
-        this.socksProxyPort = (Integer) fetcher.getAttributeEither(curi, "socksProxyPort");
-        
-        // default to not using the proxy
-        this.useSocksProxy = false;
-
-        if (StringUtils.isNotEmpty(this.socksProxyHost) && this.socksProxyPort != null) {
-            // pass configuration into the http client
-            InetSocketAddress socksAddress = new InetSocketAddress(this.socksProxyHost, this.socksProxyPort);
-            this.httpClientContext.setAttribute("socks.address", socksAddress);
-
-            // notify that we should be using the socks proxy for interactions
-            this.useSocksProxy = true;
-        }
-
-        // HTTP proxy settings
         String proxyHostname = (String) fetcher.getAttributeEither(curi, "httpProxyHost");
         Integer proxyPort = (Integer) fetcher.getAttributeEither(curi, "httpProxyPort");
-        if (!(StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) && !this.useSocksProxy) {
-            String sysPropertyPrefix;
-            if ("https".equalsIgnoreCase(curi.getUURI().getScheme())) {
-                sysPropertyPrefix = "https";
-            } else {
-                sysPropertyPrefix = "http";
-            }
-            proxyHostname = System.getProperty(sysPropertyPrefix + ".proxyHost");
-            proxyPort = Integer.getInteger(sysPropertyPrefix + ".proxyPort");
-        }
-        
-        // use HTTP proxy settings if SOCKS5 has not already been specified
+                
         String requestLineUri;
-        if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null && !this.useSocksProxy) {
+        if (StringUtils.isNotEmpty(proxyHostname) && proxyPort != null) {
             this.proxyHost = new HttpHost(proxyHostname, proxyPort);
             this.requestConfigBuilder.setProxy(this.proxyHost);
-            if ("https".equalsIgnoreCase(curi.getUURI().getScheme())) {
-                // with SSL connections the hostname is already send with the CONNECT
-                requestLineUri = curi.getUURI().getEscapedPathQuery();
-            } else {
-                requestLineUri = curi.getUURI().toString();
-            }
+            requestLineUri = curi.getUURI().toString();
         } else {
             requestLineUri = curi.getUURI().getEscapedPathQuery();
         }
@@ -442,7 +400,7 @@ public class FetchHTTPRequest {
         if (fetcher.getIgnoreCookies()) {
             requestConfigBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
         } else {
-            requestConfigBuilder.setCookieSpec(CookieSpecs.STANDARD);
+            requestConfigBuilder.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
         }
 
         requestConfigBuilder.setConnectionRequestTimeout(fetcher.getSoTimeoutMs());
@@ -571,12 +529,8 @@ public class FetchHTTPRequest {
             authCache = new BasicAuthCache();
             httpClientContext.setAuthCache(authCache);
         }
-        // Do not attempt to cache DIGEST auth:
-        // See https://github.com/internetarchive/heritrix3/pull/397
-        if( !(authScheme instanceof org.apache.http.impl.auth.DigestScheme) ) {
-          authCache.put(host, authScheme);
-        }
-        
+        authCache.put(host, authScheme);
+
         if (httpClientContext.getCredentialsProvider() == null) {
             httpClientContext.setCredentialsProvider(new BasicCredentialsProvider());
         }
@@ -598,35 +552,25 @@ public class FetchHTTPRequest {
     }
 
     protected HttpClientConnectionManager buildConnectionManager() {
-        Registry<ConnectionSocketFactory> socketFactoryRegistry;
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", PlainConnectionSocketFactory.INSTANCE)
+                .register(
+                        "https",
+                        new SSLConnectionSocketFactory(fetcher.sslContext(),
+                                new AllowAllHostnameVerifier()) {
 
-        if (this.useSocksProxy) {
-            socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("http", new SocksSocketFactory())
-                    .register("https", new SocksSSLSocketFactory(SSLContexts.createSystemDefault()))
-                    .build();
-        } else {
-            socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("http", PlainConnectionSocketFactory.INSTANCE)
-                    .register(
-                            "https",
-                            new SSLConnectionSocketFactory(fetcher.sslContext(),
-                                    new AllowAllHostnameVerifier()) {
+                            @Override
+                            public Socket createLayeredSocket(
+                                    final Socket socket, final String target,
+                                    final int port, final HttpContext context)
+                                    throws IOException {
 
-                                @Override
-                                public Socket createLayeredSocket(
-                                        final Socket socket, final String target,
-                                        final int port, final HttpContext context)
-                                        throws IOException {
-
-                                    return super.createLayeredSocket(socket,
-                                            isDisableSNI() ? "" : target, port,
-                                            context);
-                                }
-                            })
-                    .build();
-        }
-
+                                return super.createLayeredSocket(socket,
+                                        isDisableSNI() ? "" : target, port,
+                                        context);
+                            }
+                        })
+                .build();
 
         DnsResolver dnsResolver = new ServerCacheResolver(fetcher.getServerCache());
 
@@ -656,7 +600,7 @@ public class FetchHTTPRequest {
                         DEFAULT_BUFSIZE, chardecoder, charencoder,
                         cconfig.getMessageConstraints(), null, null,
                         DefaultHttpRequestWriterFactory.INSTANCE,
-                        DefaultHttpResponseParserFactory.INSTANCE, proxyHost, curi);
+                        DefaultHttpResponseParserFactory.INSTANCE);
             }
         };
         BasicHttpClientConnectionManager connMan = new BasicHttpClientConnectionManager(
@@ -674,10 +618,6 @@ public class FetchHTTPRequest {
 
         private static final AtomicLong COUNTER = new AtomicLong();
         private String id;
-        private final CrawlURI curi;
-        private final boolean isProxyConnect;
-        private boolean shouldWrapInput = true;
-        private boolean shouldWrapOutput = true;
 
         public RecordingHttpClientConnection(
                 final int buffersize,
@@ -688,32 +628,19 @@ public class FetchHTTPRequest {
                 final ContentLengthStrategy incomingContentStrategy,
                 final ContentLengthStrategy outgoingContentStrategy,
                 final HttpMessageWriterFactory<HttpRequest> requestWriterFactory,
-                final HttpMessageParserFactory<HttpResponse> responseParserFactory,
-                final HttpHost proxy, CrawlURI curi) {
+                final HttpMessageParserFactory<HttpResponse> responseParserFactory) {
             super(buffersize, fragmentSizeHint, chardecoder, charencoder,
                     constraints, incomingContentStrategy, outgoingContentStrategy,
                     requestWriterFactory, responseParserFactory);
             id = "recording-http-connection-" + Long.toString(COUNTER.getAndIncrement());
-            this.curi = curi;
-            // if we send HTTPS over a proxy, then the first connection should not be recorded,
-            // as it is only the "CONNECT" to open the SSL-tunnel for the actual connection
-            isProxyConnect = (proxy != null && "https".equalsIgnoreCase(curi.getBaseURI().getScheme()));
-            if (isProxyConnect) {
-                shouldWrapInput = shouldWrapOutput = false;
-            }
         }
 
         @Override
         protected InputStream getSocketInputStream(final Socket socket) throws IOException {
-            curi.setServerIP(socket.getInetAddress().getHostAddress());
             Recorder recorder = Recorder.getHttpRecorder();
-
-            if (shouldWrapInput && recorder != null) { // means: !(isSecure() && isProxied()) {
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
                 return recorder.inputWrap(super.getSocketInputStream(socket));
             } else {
-                if (isProxyConnect) {
-                    shouldWrapInput = true;
-                }
                 return super.getSocketInputStream(socket);
             }
         }
@@ -721,14 +648,9 @@ public class FetchHTTPRequest {
         @Override
         protected OutputStream getSocketOutputStream(final Socket socket) throws IOException {
             Recorder recorder = Recorder.getHttpRecorder();
-
-            if (shouldWrapOutput && recorder != null) { // means: !(isSecure() && isProxied()) {
+            if (recorder != null) {   // XXX || (isSecure() && isProxied())) {
                 return recorder.outputWrap(super.getSocketOutputStream(socket));
             } else {
-                // for the next connection we want to record the contents
-                if (isProxyConnect) {
-                    shouldWrapOutput = true;
-                }
                 return super.getSocketOutputStream(socket);
             }
         }

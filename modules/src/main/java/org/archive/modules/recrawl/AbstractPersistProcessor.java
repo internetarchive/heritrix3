@@ -50,7 +50,7 @@ public abstract class AbstractPersistProcessor extends Processor {
         
         // DNS query need not be persisted
         String scheme = curi.getUURI().getScheme();
-        if (!(scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp") || scheme.equals("sftp"))) {
+        if (!(scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp"))) {
             return false;
         }
         

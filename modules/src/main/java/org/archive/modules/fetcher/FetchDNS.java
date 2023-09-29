@@ -35,7 +35,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.lang.StringUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.net.CrawlHost;
@@ -46,7 +45,6 @@ import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
-import org.xbill.DNS.DohResolver;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.ResolverConfig;
@@ -68,67 +66,41 @@ public class FetchDNS extends Processor {
 
     private static Logger logger = Logger.getLogger(FetchDNS.class.getName());
 
-    static {
-        // cap size at 1 (we never want a cached value; 0 is non-operative)
-        Lookup.getDefaultCache(DClass.IN).setMaxEntries(1);
-
-        // do a dummy lookup to force the creation of dnsjava NIO selector thread
-        // ensures it doesn't end up in the toe-threads group
-        try {
-            new Lookup("localhost").run();
-        } catch (TextParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     // Defaults.
     private short ClassType = DClass.IN;
     private short TypeType = Type.A;
     protected InetAddress serverInetAddr = null;
 
+    /**
+     * If a DNS lookup fails, whether or not to fall back to InetAddress
+     * resolution, which may use local 'hosts' files or other mechanisms.
+     */
     {
         setAcceptNonDnsResolves(false);
     }
     public boolean getAcceptNonDnsResolves() {
         return (Boolean) kp.get("acceptNonDnsResolves");
     }
-    /**
-     * If a DNS lookup fails, whether or not to fall back to InetAddress
-     * resolution, which may use local 'hosts' files or other mechanisms.
-     */
     public void setAcceptNonDnsResolves(boolean acceptNonDnsResolves) {
         kp.put("acceptNonDnsResolves",acceptNonDnsResolves);
     }
     
+    /**
+     * Optionally, only allow InetAddress resolution, precisely because it 
+     * may use local 'hosts' files or other mechanisms.
+     * 
+     * This should not generally be used in production as it will prevent 
+     * DNS lookups from being recorded properly.
+     * 
+     */
     {
         setDisableJavaDnsResolves(false);
     }
     public boolean getDisableJavaDnsResolves() {
         return (Boolean) kp.get("disableJavaDnsResolves");
     }
-    /**
-     * Optionally, only allow InetAddress resolution, precisely because it
-     * may use local 'hosts' files or other mechanisms.
-     *
-     * This should not generally be used in production as it will prevent
-     * DNS lookups from being recorded properly.
-     *
-     */
     public void setDisableJavaDnsResolves(boolean disableJavaDnsResolves) {
         kp.put("disableJavaDnsResolves",disableJavaDnsResolves);
-    }
-
-    public String getDnsOverHttpServer() {
-        return (String) kp.get("dnsOverHttpServer");
-    }
-    /**
-     * URL to the DNS-on-HTTP(S) server.
-     * If this not set or set to an empty string, no DNS-over-HTTP(S)
-     * will be used; otherwise if should contain the URL to the
-     * DNS-over-HTTPS server.
-     */
-    public void setDnsOverHttpServer(String dnsOverHttpServer) {
-        kp.put("dnsOverHttpServer", dnsOverHttpServer);
     }
     
     /**
@@ -143,28 +115,28 @@ public class FetchDNS extends Processor {
         this.serverCache = serverCache;
     }
     
+    /**
+     * Whether or not to perform an on-the-fly digest hash of retrieved
+     * content-bodies.
+     */
     {
         setDigestContent(true);
     }
     public boolean getDigestContent() {
         return (Boolean) kp.get("digestContent");
     }
-    /**
-     * Whether or not to perform an on-the-fly digest hash of retrieved
-     * content-bodies.
-     */
     public void setDigestContent(boolean digest) {
         kp.put("digestContent",digest);
     }
 
-    protected String digestAlgorithm = "sha1";
+    /**
+     * Which algorithm (for example MD5 or SHA-1) to use to perform an 
+     * on-the-fly digest hash of retrieved content-bodies.
+     */
+    protected String digestAlgorithm = "sha1"; 
     public String getDigestAlgorithm() {
         return digestAlgorithm;
     }
-    /**
-     * Which algorithm (for example MD5 or SHA-1) to use to perform an
-     * on-the-fly digest hash of retrieved content-bodies.
-     */
     public void setDigestAlgorithm(String digestAlgorithm) {
         this.digestAlgorithm = digestAlgorithm;
     }
@@ -178,8 +150,8 @@ public class FetchDNS extends Processor {
     protected boolean shouldProcess(CrawlURI curi) {
         return curi.getUURI().getScheme().equals("dns");
     }
-
-
+    
+    
     protected void innerProcess(CrawlURI curi) {
         Record[] rrecordSet = null; // Retrieved dns records
         String dnsName = null;
@@ -209,7 +181,7 @@ public class FetchDNS extends Processor {
         // If we have not disabled JavaDNS, use that:
         if (!getDisableJavaDnsResolves()) {
             try {
-                rrecordSet = createDNSLookup(lookupName).run();
+                rrecordSet = (new Lookup(lookupName, TypeType, ClassType)).run();
             } catch (TextParseException e) {
                 rrecordSet = null;
             }
@@ -267,7 +239,7 @@ public class FetchDNS extends Processor {
         try {
         	recordDNS(curi, rrecordSet);
             curi.setFetchStatus(S_DNS_SUCCESS);
-            curi.setServerIP(ResolverConfig.getCurrentConfig().server().getAddress().getHostAddress());
+            curi.setDNSServerIPLabel(ResolverConfig.getCurrentConfig().server());
         } catch (IOException e) {
         	logger.log(Level.SEVERE, "Failed store of DNS Record for " +
         		curi.toString(), e);
@@ -392,23 +364,5 @@ public class FetchDNS extends Processor {
             break;
         }
         return arecord;
-    }
-
-    protected Lookup createDNSLookup(String lookupName)
-            throws TextParseException {
-        Lookup lookup = new Lookup(lookupName, TypeType, ClassType);
-
-        String dohServer = getDnsOverHttpServer();
-        if (StringUtils.isNotEmpty(dohServer)) {
-            if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER,
-                        "use dns on http with server " + dohServer);
-            }
-
-            DohResolver hts = new DohResolver(dohServer);
-            lookup.setResolver(hts);
-        }
-
-        return lookup;
     }
 }

@@ -1,5 +1,7 @@
 package org.archive.modules.deciderules;
 
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
+
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Set;
@@ -76,11 +78,13 @@ public class IpAddressSetDecideRule extends PredicatedDecideRule {
      * @return String of IP address or null if unable to determine IP address
      */
     protected String getHostAddress(CrawlURI curi) {
-        // if possible use the exact IP the fetcher stashed in curi
-        if (curi.getServerIP() != null) {
-            return curi.getServerIP();
+        // special handling for DNS URIs: want address of DNS server
+        if (curi.getUURI().getScheme().toLowerCase().equals("dns")) {
+            return (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
         }
-        // otherwise, consult the cache
+        // otherwise, host referenced in URI
+        // TODO:FIXME: have fetcher insert exact IP contacted into curi,
+        // use that rather than inferred by CrawlHost lookup 
         String addr = null;
         try {
 	        CrawlHost crlh = getServerCache().getHostFor(curi.getUURI());

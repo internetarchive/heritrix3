@@ -66,16 +66,16 @@ public class ExtractorPDFContent extends ContentExtractor {
             "(\\?([a-z0-9$_\\.\\+!\\*\\'\\(\\),;:@&=-]|%[0-9a-f]{2})*)?"+       // or possible query
             ")?");
     
+    /**
+     * The maximum size of PDF files to consider.  PDFs larger than this
+     * maximum will not be searched for links.
+     */
     {
         setMaxSizeToParse(10*1024*1024L); // 10MB
     }
     public long getMaxSizeToParse() {
         return (Long) kp.get("maxSizeToParse");
     }
-    /**
-     * The maximum size of PDF files to consider.  PDFs larger than this
-     * maximum will not be searched for links.
-     */
     public void setMaxSizeToParse(long threshold) {
         kp.put("maxSizeToParse",threshold);
     }
@@ -137,7 +137,14 @@ public class ExtractorPDFContent extends ContentExtractor {
         }
 
         for (String uri: uris) {
-            addOutlink(curi, uri, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+            try {
+                LinkContext lc = LinkContext.NAVLINK_MISC;
+                Hop hop = Hop.NAVLINK;
+                CrawlURI out = curi.createCrawlURI(uri, lc, hop);
+                curi.getOutLinks().add(out);
+            } catch (URIException e1) {
+                logUriError(e1, curi.getUURI(), uri);
+            }
         }
         
         numberOfLinksExtracted.addAndGet(uris.size());

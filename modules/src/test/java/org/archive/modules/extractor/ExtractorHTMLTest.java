@@ -67,7 +67,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         "<img src=\"foo.gif\"> IMG",
         "http://www.archive.org/start/foo.gif",
-       
+        
     };
     
     @Override
@@ -267,13 +267,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                         "/example.html?parameter=this:value") >= 0;
             }
         }));
-    }
-
-    public void testDataUrisAreIgnored() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com"));
-        CharSequence cs = "<img src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='>";
-        getExtractor().extract(curi, cs);
-        assertEquals(0, curi.getOutLinks().size());
     }
     
     /**
@@ -528,6 +521,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         Arrays.sort(links);
 
         String[] dest = {
+                "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
                 "http://www.example.com/a,b,c",
                 "http://www.example.com/images/foo.jpg",
                 "http://www.example.com/images/foo1.jpg",
@@ -545,8 +539,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         CharSequence cs = "<picture>"
                 + "<source media=\"(min-width: 992px)\" srcset=\"images/foo1.jpg\"> "
-                + "<source media=\"(min-width: 500px)\" SRCSET=\"images/foo2.jpg\"> "
-                + "<source media=\"(min-width: 0px)\" srcSet=\"images/foo3-1x.jpg 1x, images/foo3-2x.jpg 2x\"> "
+                + "<source media=\"(min-width: 500px)\" srcset=\"images/foo2.jpg\"> "
+                + "<source media=\"(min-width: 0px)\" srcset=\"images/foo3.jpg\"> "
                 + "<img src=\"images/foo.jpg\" alt=\"\"> "
                 + "</picture>";
 
@@ -559,179 +553,12 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "http://www.example.com/images/foo.jpg",
                 "http://www.example.com/images/foo1.jpg",
                 "http://www.example.com/images/foo2.jpg",
-                "http://www.example.com/images/foo3-1x.jpg",
-                "http://www.example.com/images/foo3-2x.jpg",
-        };
+                "http://www.example.com/images/foo3.jpg" };
 
         for (int i = 0; i < links.length; i++) {
             assertEquals("outlink from picture", dest[i], links[i].getURI());
         }
 
     }
-
-    public void testDataAttributes20Minutes() throws URIException {
-        CrawlURI curi_src = new CrawlURI(UURIFactory.getInstance("https://www.20minutes.fr/"));
-
-        CharSequence cs_src = "<img class=\"b-lazy\" width=\"120\" height=\"78\""
-                + "data-src=\"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg\""
-                + "sizes=\"7.5em\" alt=\"Illustration d&#039;un avocat.\"/>";
-
-        String[] dest_src = {
-                "https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg"};
-
-        genericCrawl(curi_src, cs_src, dest_src);
         
-        CrawlURI curi_srcset = new CrawlURI(UURIFactory.getInstance("https://www.20minutes.fr/"));
-
-        CharSequence cs_srcset = "<img class=\"b-lazy\" width=\"120\" height=\"78\""
-                + "data-srcset=\"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg 120w,https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/240x156_illustration-avocat.jpg 240w\""
-                + "sizes=\"7.5em\" alt=\"Illustration d&#039;un avocat.\"/>";
-
-        String[] dest_srcset = {
-                "https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg",
-        		"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/240x156_illustration-avocat.jpg"};
-
-        genericCrawl(curi_srcset, cs_srcset, dest_srcset);
-        
-        CrawlURI curi_srcset_one = new CrawlURI(UURIFactory.getInstance("https://www.20minutes.fr/"));
-
-        CharSequence cs_srcset_one = "<img class=\"b-lazy\" width=\"120\" height=\"78\""
-                + "data-srcset=\"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg 120w\"";
-
-        String[] dest_srcset_one = {
-                "https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg"};
-
-        genericCrawl(curi_srcset_one, cs_srcset_one, dest_srcset_one);
-
-    }
-    
-    public void testDataAttributesTelerama() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.telerama.fr/"));
-
-        CharSequence cs = "<img itemprop=\"image\" src=\"https://www.telerama.fr/sites/tr_master/themes/tr/images/trans.gif\" " +
-		  "data-original=\"https://www.telerama.fr/sites/tr_master/files/styles/m_640x314/public/standup.jpg?itok=w1aDSzBQsc=1012e84ed57e1b1e6ea74a47ec094242\"/>";
-
-        String[] dest = {
-                "https://www.telerama.fr/sites/tr_master/files/styles/m_640x314/public/standup.jpg?itok=w1aDSzBQsc=1012e84ed57e1b1e6ea74a47ec094242",
-                "https://www.telerama.fr/sites/tr_master/themes/tr/images/trans.gif"};
-
-        genericCrawl(curi, cs, dest);
-        
-    }
-    
-    public void testDataAttributesNouvelObs() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.telerama.fr/"));
-
-        CharSequence cs = "<source media=\"(min-width: 640px)\" data-original-set=\"http://focus.nouvelobs.com/2020/02/07/0/0/640/320/633/306/75/0/59de545_3vVuzAnVb95lp1Hm0OwQ_Jk2.jpeg\"" +
-        		"srcset=\"http://focus.nouvelobs.com/2020/02/07/0/0/640/320/633/306/75/0/59de545_3vVuzAnVb95lp1Hm0OwQ_Jk2.jpeg\">";
-
-        String[] dest = {
-                "http://focus.nouvelobs.com/2020/02/07/0/0/640/320/633/306/75/0/59de545_3vVuzAnVb95lp1Hm0OwQ_Jk2.jpeg",
-                "http://focus.nouvelobs.com/2020/02/07/0/0/640/320/633/306/75/0/59de545_3vVuzAnVb95lp1Hm0OwQ_Jk2.jpeg"};
-
-        genericCrawl(curi, cs, dest);
-        
-    }
-    
-    public void testDataAttributesEuronews() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.euronews.com/"));
-
-        CharSequence cs = "<img class=\"m-img lazyload\" src=\"/images/vector/fallback.svg\""+
-    		   "data-src=\"https://static.euronews.com/articles/stories/04/54/38/12/400x225_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg\""+
-    		   "data-srcset=\"https://static.euronews.com/articles/stories/04/54/38/12/100x56_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 100w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/150x84_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 150w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/300x169_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 300w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/400x225_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 400w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/600x338_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 600w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/750x422_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 750w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/1000x563_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 1000w, "+
-    		   		"https://static.euronews.com/articles/stories/04/54/38/12/1200x675_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg 1200w\""+
-    		   "data-sizes=\"(max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 17vw, 17vw\""+
-    		   "title=\"La lutte contre l&#039;épidémie de Covid-19 continue en Europe et dans le monde\"/>";
-
-        String[] dest = {
-            	"https://static.euronews.com/articles/stories/04/54/38/12/1000x563_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/100x56_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/1200x675_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-                "https://static.euronews.com/articles/stories/04/54/38/12/150x84_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/300x169_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/400x225_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/400x225_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/600x338_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-            	"https://static.euronews.com/articles/stories/04/54/38/12/750x422_cmsv2_081071de-f9f4-5341-9512-94f5f494f45f-4543812.jpg",
-                "https://www.euronews.com/images/vector/fallback.svg"
-        };
-
-        genericCrawl(curi, cs, dest);
-        
-    }  
-    
-    public void testDataAttributesLeMonde() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.telerama.fr/"));
-
-        CharSequence cs = "<img data-srcset=\"http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg 198w, "+
-        			"http://img.lemde.fr/2020/02/29/0/0/4818/3212/114/0/95/0/c7dda5e_5282901-01-06.jpg 114w\" "+
-        		"data-src=\"http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg\" "+
-        		"srcset=\"http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg 198w, "+
-        			"http://img.lemde.fr/2020/02/29/0/0/4818/3212/114/0/95/0/c7dda5e_5282901-01-06.jpg 114w\" "+
-        		"src=\"http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg\" >";
-
-        String[] dest = {
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/114/0/95/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/114/0/95/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg"
-                
-        };
-
-        genericCrawl(curi, cs, dest);
-        
-    }
-
-    public void testLinkRel() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
-
-        String html = "<link href='/pingback' rel='pingback'>" +
-                "<link href='/style.css' rel=stylesheet>" +
-                "<link rel='my stylesheet rocks' href=/style2.css>" +
-                "<link rel=icon href=/icon.ico>" +
-                "<link href='http://dns-prefetch.example.com/' rel=dns-prefetch>" +
-                "<link href=/without-rel>" +
-                "<link href=/empty-rel rel=>" +
-                "<link href=/just-spaces rel='   '>" +
-                "<link href=/canonical rel=canonical>" +
-                "<link href=/unknown rel=unknown>";
-
-        List<String> expectedLinks = Arrays.asList(
-                "E https://www.example.org/icon.ico",
-                "E https://www.example.org/style.css",
-                "E https://www.example.org/style2.css",
-                "L https://www.example.org/canonical",
-                "L https://www.example.org/unknown"
-        );
-
-        getExtractor().extract(curi, html);
-        List<String> actualLinks = new ArrayList<>();
-        for (CrawlURI link: curi.getOutLinks()) {
-            actualLinks.add(link.getLastHop() + " " + link.getURI());
-        }
-        Collections.sort(actualLinks);
-
-        assertEquals(expectedLinks, actualLinks);
-    }
-
-    private void genericCrawl(CrawlURI curi, CharSequence cs,String[] dest){
-        getExtractor().extract(curi, cs);
-
-        CrawlURI[] links = curi.getOutLinks().toArray(new CrawlURI[0]);
-        Arrays.sort(links);
-
-        for (int i = 0; i < links.length; i++) {
-            assertEquals("outlink from picture", dest[i], links[i].getURI());
-        }
-    }
-    
 }

@@ -16,16 +16,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.archive.modules.fetcher;
+ 
+package org.archive.util;
 
-import org.archive.modules.ProcessorTestBase;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
 
 /**
- * @author pjack
- *
+ * Interface to standard C library functions; initially just link().
+ * 
+ * Via StackOverflow answer:
+ * http://stackoverflow.com/questions/783075/creating-a-hard-link-in-java/3023349#3023349
+ * 
  */
-public class FetchFTPTest extends ProcessorTestBase {
-
-    // TODO TESTME!
+public interface CLibrary extends Library {
+    CLibrary INSTANCE = (CLibrary)
+        Native.loadLibrary((Platform.isWindows() ? "msvcrt" : "c"),
+                           CLibrary.class);
     
+    int link(String existingPath, String newPath);
+    int symlink(String existingPath, String newPath);
 }

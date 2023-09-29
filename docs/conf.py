@@ -12,15 +12,15 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('./_ext'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Heritrix 3'
-copyright = 'Internet Archive and contributors'
+project = 'Heritrix Documentation'
+copyright = '2018 Internet Archive and contributors'
 author = 'Internet Archive and contributors'
 
 # The short X.Y version
@@ -39,9 +39,7 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinxcontrib.httpdomain',
-    'sphinx.ext.extlinks',
-    'beandoc'
+        'sphinxcontrib.httpdomain'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,7 +67,6 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-highlight_language = 'text'
 pygments_style = 'sphinx'
 
 
@@ -157,8 +154,3 @@ texinfo_documents = [
      author, 'Heritrix', 'Archival-quality web crawler.',
      'Miscellaneous'),
 ]
-
-extlinks = {
-    'deciderule': ('https://www.javadoc.io/doc/org.archive.heritrix/heritrix-modules/latest/org/archive/modules'
-                   '/deciderules/%s.html', '')
-}

@@ -19,6 +19,7 @@
 package org.archive.io;
 
 import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
+import it.unimi.dsi.mg4j.util.MutableString;
 
 import java.io.Closeable;
 import java.io.File;
@@ -117,6 +118,24 @@ public class CrawlerJournal implements Closeable {
                 Level.SEVERE,
                 "problem writing journal line: "+StringUtils.join(strs), 
                 e);
+        }
+    }
+
+    /**
+     * Write a line. 
+     * 
+     * @param mstring MutableString to write
+     */
+    public synchronized void writeLine(MutableString mstring) {
+        if (this.out == null) {
+            return;
+        }
+        try {
+            mstring.write(out);
+            this.out.write("\n");
+            noteLine();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"problem writing journal line: "+mstring, e);
         }
     }
 

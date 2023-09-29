@@ -64,7 +64,8 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
 /**
- * Extracts links to media by running yt-dlp in a subprocess. Runs only on html.
+ * Extracts links to media by running youtube-dl in a subprocess. Runs only on
+ * html.
  *
  * <p>
  * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
@@ -230,7 +231,14 @@ public class ExtractorYoutubeDL extends Extractor
             }
 
             for (String pageUrl: results.pageUrls) {
-                addOutlink(uri, pageUrl, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+                try {
+                    UURI dest = UURIFactory.getInstance(uri.getUURI(), pageUrl);
+                    CrawlURI link = uri.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
+                            Hop.NAVLINK);
+                    uri.getOutLinks().add(link);
+                } catch (URIException e1) {
+                    logUriError(e1, uri.getUURI(), pageUrl);
+                }
             }
 
             if (results.videoUrls.size() > 0) {
@@ -242,21 +250,26 @@ public class ExtractorYoutubeDL extends Extractor
     }
 
     protected void addVideoOutlink(CrawlURI uri, String videoUrl, int playlistIndex, int nEntries) {
-        CrawlURI link = addOutlink(uri, videoUrl, LinkContext.EMBED_MISC, Hop.EMBED);
-        if (link == null) {
-            return;
+        try {
+            UURI dest = UURIFactory.getInstance(uri.getUURI(), videoUrl);
+            CrawlURI link = uri.createCrawlURI(dest, LinkContext.EMBED_MISC,
+                    Hop.EMBED);
+
+            // annotation
+            String annotation = "youtube-dl:" + (playlistIndex + 1) + "/" + nEntries;
+            link.getAnnotations().add(annotation);
+
+            // save info unambiguously identifying containing page capture
+            link.getData().put(YDL_CONTAINING_PAGE_URI, uri.toString());
+            link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
+                    ArchiveUtils.get17DigitDate(uri.getFetchBeginTime()));
+            link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
+                    uri.getContentDigestSchemeString());
+
+            uri.getOutLinks().add(link);
+        } catch (URIException e) {
+            logUriError(e, uri.getUURI(), videoUrl);
         }
-
-        // annotation
-        String annotation = "youtube-dl:" + (playlistIndex + 1) + "/" + nEntries;
-        link.getAnnotations().add(annotation);
-
-        // save info unambiguously identifying containing page capture
-        link.getData().put(YDL_CONTAINING_PAGE_URI, uri.toString());
-        link.getData().put(YDL_CONTAINING_PAGE_TIMESTAMP,
-                ArchiveUtils.get17DigitDate(uri.getFetchBeginTime()));
-        link.getData().put(YDL_CONTAINING_PAGE_DIGEST,
-                uri.getContentDigestSchemeString());
     }
 
     protected String findYdlAnnotation(CrawlURI uri) {
@@ -444,7 +457,7 @@ public class ExtractorYoutubeDL extends Extractor
          * with height no larger than 576...
          * https://github.com/yt-dlp/yt-dlp#format-selection-examples
          */
-        ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
+        ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
                 "--simulate", "--dump-single-json", "-S codec:h264,height:576",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());

@@ -23,7 +23,6 @@ import java.io.PrintWriter;
 
 import org.archive.crawler.util.CrawledBytesHistotable;
 import org.archive.util.ArchiveUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * The "Crawl Report", with summaries of overall crawl size.
@@ -36,11 +35,7 @@ public class CrawlSummaryReport extends Report {
     public void write(PrintWriter writer, StatisticsTracker stats) {
         CrawlStatSnapshot snapshot = stats.getLastSnapshot(); 
         writer.println("crawl name: " + stats.getCrawlController().getMetadata().getJobName());
-        String crawlStatus = stats.getCrawlController().getCrawlExitStatus().desc;
-        if (stats.getCrawlController().isRunning() ) {
-        	crawlStatus = StringUtils.capitalize(stats.getCrawlController().getState().toString().toLowerCase()) + " - Active"; 
-        } 
-        writer.println("crawl status: " + crawlStatus);
+        writer.println("crawl status: " + stats.getCrawlController().getCrawlExitStatus().desc);
         writer.println("duration: " +
                 ArchiveUtils.formatMillisecondsToConventional(stats.getCrawlElapsedTime()));
         writer.println();

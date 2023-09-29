@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -181,7 +180,7 @@ public class AMQPUrlReceiver
                             // start up again
                             try {
                                 startConsumer();
-                            } catch (IOException | TimeoutException e) {
+                            } catch (IOException e) {
                                 logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again after 10 seconds)", e);
                             }
                         }
@@ -194,7 +193,7 @@ public class AMQPUrlReceiver
                                     consumerTag = null;
                                     logger.info("Cancelled URLConsumer.");
                                 }
-                            } catch (IOException | TimeoutException e) {
+                            } catch (IOException e) {
                                 logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 10 seconds)", e);
                             }
                         }
@@ -210,7 +209,7 @@ public class AMQPUrlReceiver
             }
         }
 
-        public void startConsumer() throws IOException, TimeoutException {
+        public void startConsumer() throws IOException {
             Consumer consumer = new UrlConsumer(channel());
             channel().exchangeDeclare(getExchange(), "direct", true);
             channel().queueDeclare(getQueueName(), durable,
@@ -236,7 +235,7 @@ public class AMQPUrlReceiver
                     // try to synchronously start the consumer right now, so
                     // that the queue is bound before crawling starts
                     starterRestarter.startConsumer();
-                } catch (IOException | TimeoutException e) {
+                } catch (IOException e) {
                     logger.log(Level.SEVERE, "problem starting AMQP consumer (will try again soon)", e);
                 }
                 starterRestarter.start();
@@ -279,7 +278,7 @@ public class AMQPUrlReceiver
     transient protected Connection connection = null;
     transient protected Channel channel = null;
 
-    protected Connection connection() throws IOException, TimeoutException {
+    protected Connection connection() throws IOException {
         lock.lock();
         try {
             if (connection != null && !connection.isOpen()) {
@@ -303,7 +302,7 @@ public class AMQPUrlReceiver
         }
     }
 
-    protected Channel channel() throws IOException, TimeoutException {
+    protected Channel channel() throws IOException {
         lock.lock();
         try {
             if (channel != null && !channel.isOpen()) {

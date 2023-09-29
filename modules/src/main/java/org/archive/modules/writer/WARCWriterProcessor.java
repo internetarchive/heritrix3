@@ -32,6 +32,7 @@ import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_
 import static org.archive.format.warc.WARCConstants.NAMED_FIELD_TRUNCATED_VALUE_TIME;
 import static org.archive.format.warc.WARCConstants.PROFILE_REVISIT_IDENTICAL_DIGEST;
 import static org.archive.format.warc.WARCConstants.TYPE;
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_CONTROL_CONVERSATION;
 import static org.archive.modules.CoreAttributeConstants.A_FTP_FETCH_STATUS;
 import static org.archive.modules.CoreAttributeConstants.A_SOURCE_TAG;
@@ -83,28 +84,28 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
     private static final Logger logger = 
         Logger.getLogger(WARCWriterProcessor.class.getName());
 
+    /**
+     * Whether to write 'request' type records. Default is true.
+     */
     {
         setWriteRequests(true);
     }
     public boolean getWriteRequests() {
         return (Boolean) kp.get("writeRequests");
     }
-    /**
-     * Whether to write 'request' type records. Default is true.
-     */
     public void setWriteRequests(boolean writeRequests) {
         kp.put("writeRequests",writeRequests);
     }
     
+    /**
+     * Whether to write 'metadata' type records. Default is true.
+     */
     {
         setWriteMetadata(true);
     }
     public boolean getWriteMetadata() {
         return (Boolean) kp.get("writeMetadata");
     }
-    /**
-     * Whether to write 'metadata' type records. Default is true.
-     */
     public void setWriteMetadata(boolean writeMetadata) {
         kp.put("writeMetadata",writeMetadata);
     }
@@ -182,7 +183,7 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
                 writeHttpRecords(curi, writer, baseid, timestamp); 
             } else if (lowerCaseScheme.equals("dns")) {
                 writeDnsRecords(curi, writer, baseid, timestamp);
-            } else if (lowerCaseScheme.equals("ftp") || lowerCaseScheme.equals("sftp")) {
+            } else if (lowerCaseScheme.equals("ftp")) {
                 writeFtpRecords(writer, curi, baseid, timestamp);
             } else if (lowerCaseScheme.equals("whois")) {
                 writeWhoisRecords(writer, curi, baseid, timestamp);
@@ -219,9 +220,10 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
-
-        if (curi.getServerIP() != null) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
+        
+        String ip = (String)curi.getData().get(A_DNS_SERVER_IP_LABEL);
+        if (ip != null && ip.length() > 0) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
         }
         
         ReplayInputStream ris =
@@ -248,8 +250,9 @@ public class WARCWriterProcessor extends BaseWARCWriterProcessor implements WARC
         recordInfo.setContentLength(curi.getRecorder().getRecordedInput().getSize());
         recordInfo.setEnforceLength(true);
         
-        if (curi.getServerIP() != null) {
-            recordInfo.addExtraHeader(HEADER_KEY_IP, curi.getServerIP());
+        Object whoisServerIP = curi.getData().get(CoreAttributeConstants.A_WHOIS_SERVER_IP);
+        if (whoisServerIP != null) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, whoisServerIP.toString());
         }
         
         ReplayInputStream ris =

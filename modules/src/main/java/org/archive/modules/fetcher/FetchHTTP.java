@@ -402,12 +402,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
         kp.put("maxLengthBytes",timeout);
     }
 
-    {
-        setSendRange(false);
-    }
-    public boolean getSendRange() {
-        return (Boolean) kp.get("sendRange");
-    }
     /**
      * Send 'Range' header when a limit ({@link #MAX_LENGTH_BYTES}) on
      * document size.
@@ -419,6 +413,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
      * the response mid-download. On rare occasion, sending 'Range' will
      * generate '416 Request Range Not Satisfiable' response.
      */
+    {
+        setSendRange(false);
+    }
+    public boolean getSendRange() {
+        return (Boolean) kp.get("sendRange");
+    }
     public void setSendRange(boolean sendRange) {
         kp.put("sendRange",sendRange);
     }
@@ -488,27 +488,6 @@ public class FetchHTTP extends Processor implements Lifecycle {
             sslContext = null;
         }
     }
-
-    public String getSocksProxyHost() {
-        return (String) kp.get("socksProxyHost");
-    }
-    /**
-     * Sets a SOCKS5 proxy host to use. This will override any set HTTP proxy.
-     */
-    public void setSocksProxyHost(String socksProxyHost) {
-        kp.put("socksProxyHost",socksProxyHost);
-    }
-
-    public Integer getSocksProxyPort() {
-        return (Integer) kp.get("socksProxyPort");
-    }
-    /**
-     * Sets a SOCKS5 proxy port to use.
-     */
-    public void setSocksProxyPort(Integer socksProxyPort) {
-        kp.put("socksProxyPort",socksProxyPort);
-    }
-
 
     protected transient SSLContext sslContext;
     protected synchronized SSLContext sslContext() {
@@ -706,17 +685,8 @@ public class FetchHTTP extends Processor implements Lifecycle {
         
         long contentLength = -1l;
         Header h = response.getLastHeader("content-length");
-        if (h != null) {
-            // browsers ignore everything after a null character and some buggy web servers rely on this
-            String contentLengthHeader = StringUtils.substringBefore(h.getValue(), "\0").trim();
-            if (!contentLengthHeader.isEmpty()) {
-                try {
-                    contentLength = Long.parseLong(contentLengthHeader);
-                } catch (NumberFormatException e) {
-                    cleanup(curi, e, "invalid content-length header", S_CONNECT_LOST);
-                    return;
-                }
-            }
+        if (h != null && h.getValue().trim().length()>0) {
+            contentLength = Long.parseLong(h.getValue());
         }
         try {
             if (!req.request.isAborted()) {

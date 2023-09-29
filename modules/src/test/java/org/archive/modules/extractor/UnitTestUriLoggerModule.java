@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 package org.archive.modules.extractor;
 
 import java.util.logging.Level;

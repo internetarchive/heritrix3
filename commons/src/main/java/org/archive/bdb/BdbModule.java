@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +43,7 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.spring.ConfigPath;
+import org.archive.util.FilesystemLinkMaker;
 import org.archive.util.IdentityCacheable;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.ObjectIdentityCache;
@@ -195,42 +195,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
     }
     
     /**
-     * Configure the number of cleaner threads (-1 means use the default)
-     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#CLEANER_THREADS
-     */
-    protected int jeCleanerThreads = -1;
-    public int getCleanerThreads() {
-        return jeCleanerThreads;
-    }
-    public void setCleanerThreads(int jeCleanerThreads) {
-        this.jeCleanerThreads = jeCleanerThreads;
-    }
-    
-    /**
-     * Configure the number of evictor threads (-1 means use the default)
-     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_CORE_THREADS
-     */
-    protected int evictorCoreThreads = -1;    
-	public int getEvictorCoreThreads() {
-		return evictorCoreThreads;
-	}
-	public void setEvictorCoreThreads(int evictorCoreThreads) {
-		this.evictorCoreThreads = evictorCoreThreads;
-	}
-	
-	/**
-     * Configure the maximum number of evictor threads (-1 means use the default)
-     * https://docs.oracle.com/cd/E17277_02/html/java/com/sleepycat/je/EnvironmentConfig.html#EVICTOR_MAX_THREADS
-     */
-    protected int evictorMaxThreads = -1;
-	public int getEvictorMaxThreads() {
-		return evictorMaxThreads;
-	}
-	public void setEvictorMaxThreads(int evictorMaxThreads) {
-		this.evictorMaxThreads = evictorMaxThreads;
-	}
-    
-    /**
      * Whether to use hard-links to log files to collect/retain
      * the BDB log files needed for a checkpoint. Default is true. 
      * May not work on Windows (especially on pre-NTFS filesystems). 
@@ -313,28 +277,12 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         config.setSharedCache(getUseSharedCache());
         
         // we take the advice literally from...
-        // https://web.archive.org/web/20100727081707/http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
+        // http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#33
         long nLockTables = getExpectedConcurrency()-1;
         while(!BigInteger.valueOf(nLockTables).isProbablePrime(Integer.MAX_VALUE)) {
             nLockTables--;
         }
         config.setConfigParam("je.lock.nLockTables", Long.toString(nLockTables));
-        
-        // configure the number of cleaner threads, to speed up clearing out old state files:
-        int cleaners = getCleanerThreads();
-        if (cleaners > 0) {
-        	config.setConfigParam(EnvironmentConfig.CLEANER_THREADS, Integer.toString(cleaners));
-        }
-        
-        // configure number if evictor threads, to avoid critical eviction slowdowns:
-        int evictors = this.getEvictorCoreThreads();
-        if (evictors > -1) {
-        	config.setConfigParam(EnvironmentConfig.EVICTOR_CORE_THREADS, Integer.toString(evictors));
-        }
-        int maxEvictors = this.getEvictorMaxThreads();
-        if (maxEvictors > 0) {
-        	config.setConfigParam(EnvironmentConfig.EVICTOR_MAX_THREADS, Integer.toString(maxEvictors));
-        }
         
         // triple this value to 6K because stats show many faults
         config.setConfigParam("je.log.faultReadSize", "6144");
@@ -376,10 +324,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
         Database db = dpc.database;
         try {
             db.sync();
-        } catch (DatabaseException e) {
-            LOGGER.log(Level.WARNING, "Error syncing when closing db " + name, e);
-        }
-        try {
             db.close();
         } catch (DatabaseException e) {
             LOGGER.log(Level.WARNING, "Error closing db " + name, e);
@@ -552,10 +496,8 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                     filedata[i] += ","+f.length();
                     if(getUseHardLinkCheckpoints()) {
                         File hardLink = new File(envCpDir,filedata[i]);
-                        try {
-                            Files.createLink(hardLink.toPath(), f.toPath().toAbsolutePath());
-                        } catch (IOException | UnsupportedOperationException e) {
-                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link " + hardLink, e);
+                        if (!FilesystemLinkMaker.makeHardLink(f.getAbsolutePath(), hardLink.getAbsolutePath())) {
+                            LOGGER.log(Level.SEVERE, "unable to create required checkpoint link "+hardLink); 
                         }
                     }
                 }
@@ -606,10 +548,10 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
                         LOGGER.log(Level.SEVERE, "unable to delete obstructing file "+destFile);  
                     }
                 }
-                try {
-                    Files.createLink(destFile.toPath(), cpFile.toPath().toAbsolutePath());
-                } catch (IOException | UnsupportedOperationException e) {
-                    LOGGER.log(Level.SEVERE, "unable to create required restore link " + destFile, e);
+                
+                boolean status = FilesystemLinkMaker.makeHardLink(cpFile.getAbsolutePath(), destFile.getAbsolutePath());
+                if (!status) {
+                    LOGGER.log(Level.SEVERE, "unable to create required restore link "+destFile); 
                 }
             }
             
@@ -696,11 +638,6 @@ public class BdbModule implements Lifecycle, Checkpointable, Closeable, Disposab
 
         try {
             this.bdbEnvironment.sync();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error syncing when closing environment.", e);
-        }
-
-        try {
             this.bdbEnvironment.close();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error closing environment.", e);
