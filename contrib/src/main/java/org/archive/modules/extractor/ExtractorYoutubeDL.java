@@ -435,13 +435,14 @@ public class ExtractorYoutubeDL extends Extractor
      */
     protected YoutubeDLResults runYoutubeDL(CrawlURI uri) {
         /*
-         * updated for yt-dlp v.2023.07.06
-         * Download the best video with best codec no better than h264 and 
-         * with height no larger than 576...
          * https://github.com/yt-dlp/yt-dlp#format-selection-examples
+         * updated for yt-dlp v.2023.07.06 and higher
+         * Download the best video with best vcodec no better than h264 and
+         * the best audio with best acodec no better than aac and
+         * with neither height nor width larger than 576.
          */
         ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
-                "--simulate", "--dump-single-json", "-S codec:h264,height:576",
+                "--simulate", "--dump-single-json", "-S res:576,hcodec:h264,acodec:aac",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
