@@ -63,8 +63,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
 /**
- * Extracts links to media by running youtube-dl in a subprocess. Runs only on
- * html.
+ * Extracts links to media by running yt-dlp in a subprocess. Runs only on html.
  *
  * <p>
  * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
@@ -436,14 +435,14 @@ public class ExtractorYoutubeDL extends Extractor
      */
     protected YoutubeDLResults runYoutubeDL(CrawlURI uri) {
         /*
-         * --format=best
-         *
-         * best: Select the best quality format represented by a single file
-         * with video and audio.
-         * https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection
+         * https://github.com/yt-dlp/yt-dlp#format-selection-examples
+         * updated for yt-dlp v.2023.07.06 and higher
+         * Download the best video with best vcodec no better than h264 and
+         * the best audio with best acodec no better than aac and
+         * with neither height nor width larger than 576.
          */
-        ProcessBuilder pb = new ProcessBuilder("youtube-dl", "--ignore-config",
-                "--simulate", "--dump-single-json", "--format=best[height <=? 576]",
+        ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
+                "--simulate", "--dump-single-json", "-S res:576,hcodec:h264,acodec:aac",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));

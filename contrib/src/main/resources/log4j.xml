@@ -11,6 +11,10 @@
 		<level value="ERROR" />
 	</logger>
 
+	<logger name="org.apache.pdfbox">
+		<level value="ERROR" />
+	</logger>
+
 	<logger name="org.eclipse.jetty">
 		<level value="ERROR" />
 	</logger>
