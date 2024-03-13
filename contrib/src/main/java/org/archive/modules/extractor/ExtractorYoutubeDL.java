@@ -67,7 +67,7 @@ import com.google.gson.stream.JsonToken;
  * Extracts links to media by running yt-dlp in a subprocess. Runs only on html.
  *
  * <p>
- * Also implements {@link WARCRecordBuilder} to write youtube-dl json to the
+ * Also implements {@link WARCRecordBuilder} to write yt-dlp json to the
  * warc.
  * 
  * <p>
@@ -81,7 +81,7 @@ import com.google.gson.stream.JsonToken;
  * fetch chain, and to the end of the warc writer chain.
  * 
  * <p>
- * Keeps a log of containing pages and media captured as a result of youtube-dl
+ * Keeps a log of containing pages and media captured as a result of yt-dlp
  * extraction. The format of the log is as follows:
  *
  * <pre>
@@ -143,7 +143,7 @@ public class ExtractorYoutubeDL extends Extractor
             localTemp = openNewTempFile();
             tempfile.set(localTemp);
         }
-	logger.info("Getting youtube-dl temp file ");
+	logger.info("Getting yt-dlp temp file ");
         return localTemp;
     }
     protected boolean isOpen(RandomAccessFile f) {
@@ -152,12 +152,12 @@ public class ExtractorYoutubeDL extends Extractor
             return true;
         }
         catch (IOException e) {
-	    logger.info("youtube-dl temp file is not open");
+	    logger.info("yt-dlp temp file is not open");
             return false ;
         }
     }
     protected RandomAccessFile openNewTempFile() {
-	logger.info("Opening New youtube-dl temp file ");
+	logger.info("Opening New yt-dlp temp file ");
 	File t;
         try {
             t = File.createTempFile("ydl", ".json");
@@ -213,7 +213,7 @@ public class ExtractorYoutubeDL extends Extractor
      * - If {@code uri} is annotated "youtube-dl" and is an actual video
      *   download, log a line to ExtractorYoutubeDL.log
      *
-     * - If {@link #shouldExtract(CrawlURI)}, do youtube-dl extraction.
+     * - If {@link #shouldExtract(CrawlURI)}, do yt-dlp extraction.
      */
     @Override
     protected void extract(CrawlURI uri) {
@@ -390,7 +390,7 @@ public class ExtractorYoutubeDL extends Extractor
     }
 
     /**
-     * Streams through youtube-dl json output. Sticks video urls in
+     * Streams through yt-dlp json output. Sticks video urls in
      * <code>results.videoUrls</code>, web page urls in
      * <code>results.pageUrls</code>, and saves the json in anonymous temp file
      * <code>results.jsonFile</code>.
@@ -468,7 +468,7 @@ public class ExtractorYoutubeDL extends Extractor
         try {
             proc = pb.start();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "youtube-dl failed " + pb.command(), e);
+            logger.log(Level.WARNING, "yt-dlp failed " + pb.command(), e);
             return null;
         }
 
@@ -496,7 +496,7 @@ public class ExtractorYoutubeDL extends Extractor
                 try {
                     // this happens when there was no json output, which means no videos
                     // were found, totally normal
-                    logger.log(Level.FINE, "problem parsing json from youtube-dl " + pb.command() + " " + future.get());
+                    logger.log(Level.FINE, "problem parsing json from yt-dlp " + pb.command() + " " + future.get());
                 } catch (InterruptedException e1) {
                     throw new IOException(e1);
                 } catch (ExecutionException e1) {
@@ -505,7 +505,7 @@ public class ExtractorYoutubeDL extends Extractor
             }
         } catch (IOException e) {
             logger.log(Level.WARNING,
-                    "problem reading output from youtube-dl " + pb.command(),
+                    "problem reading output from yt-dlp " + pb.command(),
                     e);
             return null;
         } finally {
@@ -513,7 +513,7 @@ public class ExtractorYoutubeDL extends Extractor
                 // the process should already have completed
                 proc.waitFor(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                logger.warning("youtube-dl still running? killing it");
+                logger.warning("yt-dlp still running? killing it");
                 proc.destroyForcibly();
             }
             threadPool.shutdown();
@@ -530,13 +530,13 @@ public class ExtractorYoutubeDL extends Extractor
             return true;
         }
 
-        // Otherwise, check if we want to run youtube-dl on the url.
+        // Otherwise, check if we want to run yt-dlp on the url.
         return shouldExtract(uri);
     }
 
     /**
-     * Returns {@code true} if we should run youtube-dl on this url. We run
-     * youtube-dl on html 200s that are not too huge.
+     * Returns {@code true} if we should run yt-dlp on this url. We run
+     * yt-dlp on html 200s that are not too huge.
      */
     protected boolean shouldExtract(CrawlURI uri) {
         if (uri.getFetchStatus() != 200) {
