@@ -454,8 +454,8 @@ public class ExtractorYoutubeDL extends Extractor
          * the best audio with best acodec no better than aac and
          * with neither height nor width larger than 576.
          */
-        ProcessBuilder pb = new ProcessBuilder("nice", "-n", Integer.toString(NICE_MOD), "yt-dlp", "--ignore-config",
-                "--simulate", "--dump-single-json", "-S vcodec:h264,res:576,acodec:aac",
+        ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
+                "--simulate", "--dump-single-json", "-S vcodec:h264,res:720,acodec:aac",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
