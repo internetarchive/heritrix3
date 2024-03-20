@@ -452,10 +452,11 @@ public class ExtractorYoutubeDL extends Extractor
          * updated for yt-dlp v.2023.07.06 and higher
          * Download the best video with best vcodec no better than h264 and
          * the best audio with best acodec no better than aac and
-         * with neither height nor width larger than 576.
+         * with smallest dimension no larger than 360 (small youtube.com
+	 * single-file available). (TODO: make collection or seed specific)
          */
         ProcessBuilder pb = new ProcessBuilder("nice", "-n", Integer.toString(NICE_MOD), "yt-dlp", "--ignore-config",
-                "--simulate", "--dump-single-json", "-S res:576,hcodec:h264,acodec:aac",
+                "--simulate", "--dump-single-json", "-S vcodec:h264,res:360,acodec:aac",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
