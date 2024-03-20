@@ -442,7 +442,7 @@ public class ExtractorYoutubeDL extends Extractor
          * with neither height nor width larger than 576.
          */
         ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--ignore-config",
-                "--simulate", "--dump-single-json", "-S vcodec:h264,res:576,acodec:aac",
+                "--simulate", "--dump-single-json", "-S vcodec:h264,res:720,acodec:aac",
                 "--no-cache-dir", "--no-playlist",
                 "--playlist-end=" + MAX_VIDEOS_PER_PAGE, uri.toString());
         logger.info("running: " + String.join(" ", pb.command()));
