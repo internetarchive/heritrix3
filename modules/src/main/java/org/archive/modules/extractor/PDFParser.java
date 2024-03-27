@@ -18,12 +18,13 @@
  */
 package org.archive.modules.extractor;
 
-import com.lowagie.text.pdf.PdfReader;
-import com.lowagie.text.pdf.PdfName;
-import com.lowagie.text.pdf.PdfObject;
-import com.lowagie.text.pdf.PdfDictionary;
-import com.lowagie.text.pdf.PRIndirectReference;
-import com.lowagie.text.pdf.PdfArray;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 
 import java.io.*;
 import java.util.*;
@@ -36,16 +37,11 @@ import java.util.*;
  * @author Parker Thompson
  *
  */
-//TODO make this more effecient, it currently had to read the whole file into memory
-// before processing can begin, and appears to take much longer than it "should"
-// to parse small, but admittedly complex, documents.
-public class PDFParser {
+public class PDFParser implements Closeable {
 
     protected ArrayList<String> foundURIs;
-    protected ArrayList<ArrayList<Integer>> encounteredReferences;
-    protected PdfReader documentReader;
+    protected PDDocument documentReader;
     protected byte[] document;
-    protected PdfDictionary catalog;
 
     public PDFParser(String doc) throws IOException {
         resetState();
@@ -62,14 +58,8 @@ public class PDFParser {
      */
     protected void resetState(){
         foundURIs = new ArrayList<String>();
-        encounteredReferences = new ArrayList<ArrayList<Integer>>();
         documentReader = null;
         document = null;
-        catalog = null;
-
-        for(int i=0; i < encounteredReferences.size(); i++){
-            encounteredReferences.add(new ArrayList<Integer>());
-        }
     }
 
     /**
@@ -101,55 +91,7 @@ public class PDFParser {
      */
     protected void getInFromFile(String doc) throws IOException{
         File documentOnDisk = new File(doc);
-
-        long length = documentOnDisk.length();
-        document = new byte[(int)length];
-
-        FileInputStream inStream = new FileInputStream(documentOnDisk);
-
-        inStream.read(document);
-    }
-
-    /**
-     * Indicates, based on a PDFObject's generation/id pair whether
-     * the parser has already encountered this object (or a reference to it)
-     * so we don't infinitely loop on circuits within the PDF.
-     * @param generation
-     * @param id
-     * @return True if already seen.
-     */
-    protected boolean haveSeen(int generation, int id){
-
-        // if we can't store this generation grow our list until we can
-        if(generation >= encounteredReferences.size()){
-            for(int i=encounteredReferences.size(); i <= generation; i++){
-                encounteredReferences.add(new ArrayList<Integer>());
-            }
-
-            // clearly we haven't seen it
-            return false;
-        }
-
-        ArrayList<Integer> generationList
-         = encounteredReferences.get(generation);
-        
-        for (int i: generationList) {
-            if(i == id){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Note that an object (id/generation pair) has been seen by this parser
-     * so that it can be handled differently when it is encountered again.
-     * @param generation
-     * @param id
-     */
-    protected void markAsSeen(int generation, int id){
-        ArrayList<Integer> objectIds = encounteredReferences.get(generation);
-        objectIds.add(id);
+        documentReader = Loader.loadPDF(documentOnDisk);
     }
 
     /**
@@ -170,10 +112,8 @@ public class PDFParser {
      */
     protected void initialize() throws IOException{
         if(document != null){
-            documentReader = new PdfReader(document);
+            documentReader = Loader.loadPDF(document);
         }
-
-        catalog = documentReader.getCatalog();
     }
 
     /**
@@ -181,73 +121,32 @@ public class PDFParser {
      * Returns an array list representing all URIs found in the document catalog tree.
      * @return URIs from all objects found in a Pdf document's catalog.
      */
-    public ArrayList<String> extractURIs(){
-        extractURIs(catalog);
+    public ArrayList<String> extractURIs() throws IOException {
+        for (PDPage page : documentReader.getPages()) {
+            for (PDAnnotation annotation : page.getAnnotations()) {
+                if (annotation instanceof PDAnnotationLink) {
+                    PDAnnotationLink link = (PDAnnotationLink) annotation;
+                    PDAction action = link.getAction();
+                    if (action instanceof PDActionURI) {
+                        PDActionURI uri = (PDActionURI) action;
+                        foundURIs.add(uri.getURI());
+                    }
+                }
+            }
+        }
         return getURIs();
     }
 
-    /**
-     * Parse a PdfDictionary, looking for URIs recursively and adding
-     * them to foundURIs
-     * @param entity
-     */
-    @SuppressWarnings("unchecked")
-    protected void extractURIs(PdfObject entity){
-
-            // deal with dictionaries
-            if(entity.isDictionary()){
-
-                PdfDictionary dictionary= (PdfDictionary)entity;
-
-                Set<PdfName> allkeys = dictionary.getKeys();
-                for (PdfName key: allkeys) {
-                    PdfObject value = dictionary.get(key);
-
-                    // see if it's the key is a UR[I,L]
-                    if( key.toString().equals("/URI") ||
-		            key.toString().equals("/URL") ) {
-                        foundURIs.add(value.toString());
-
-                    }else{
-                        this.extractURIs(value);
-                    }
-
-                }
-
-            // deal with arrays
-            }else if(entity.isArray()){
-
-                PdfArray array = (PdfArray)entity;
-                for (PdfObject pdfObject : (Iterable<PdfObject>)array.getArrayList()) {
-                    this.extractURIs(pdfObject);
-                }
-
-            // deal with indirect references
-            }else if(entity.getClass() == PRIndirectReference.class){
-
-                    PRIndirectReference indirect = (PRIndirectReference)entity;
-
-                    // if we've already seen a reference to this object
-                    if( haveSeen( indirect.getGeneration(), indirect.getNumber()) ){
-                        return;
-
-                    // note that we've seen it if it's new
-                    }else{
-                        markAsSeen(indirect.getGeneration(), indirect.getNumber() );
-                    }
-
-                    // dereference the "pointer" and process the object
-                    indirect.getReader(); // FIXME: examine side-effects
-                    PdfObject direct = PdfReader.getPdfObject(indirect);
-
-                    this.extractURIs(direct);
-            }
+    @Override
+    public void close() throws IOException {
+        if (documentReader != null) {
+            documentReader.close();
+        }
     }
 
     public static void main(String[] argv){
-
         try {
-            PDFParser parser = new PDFParser("/home/parkert/files/pdfspec.pdf");
+            PDFParser parser = new PDFParser("/tmp/pdfspec.pdf");
             ArrayList<String> uris = parser.extractURIs();
             Iterator<String> i = uris.iterator();
             while(i.hasNext()){
