@@ -89,12 +89,12 @@ public class ExtractorPDF extends ContentExtractor {
             throw new RuntimeException(ioe);
         }
 
-        PDFParser parser;
         ArrayList<String> uris;
         try {
             curi.getRecorder().copyContentBodyTo(tempFile);
-            parser = new PDFParser(tempFile.getAbsolutePath());
-            uris = parser.extractURIs();
+            try (PDFParser parser = new PDFParser(tempFile.getAbsolutePath())){
+                uris = parser.extractURIs();
+            }
         } catch (IOException e) {
             curi.getNonFatalFailures().add(e);
             return false;
