@@ -19,6 +19,7 @@
 
 package org.archive.crawler.util;
 
+import java.util.Comparator;
 import java.util.Map;
 
 import org.archive.io.warc.WARCWriter;
@@ -49,6 +50,10 @@ implements CoreAttributeConstants {
 
     public CrawledBytesHistotable() {
         super();
+    }
+
+    protected CrawledBytesHistotable(Comparator<String> comparator) {
+        super(comparator);
     }
 
     @SuppressWarnings("unchecked")
