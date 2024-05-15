@@ -91,14 +91,14 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<pluginRepositories>
 		<pluginRepository>
 			<id>builds.archive.org,maven2</id>
-			<url>http://builds.archive.org/maven2</url>
+			<url>https://builds.archive.org/maven2</url>
 		</pluginRepository>
 	</pluginRepositories>
 
 	<repositories>
 		<repository>
 			<id>builds.archive.org,maven2</id>
-			<url>http://builds.archive.org/maven2</url>
+			<url>https://builds.archive.org/maven2</url>
 		</repository>
         <repository>
             <id>oracleReleases</id>
