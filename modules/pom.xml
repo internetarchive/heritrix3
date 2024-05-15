@@ -120,6 +120,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<groovy.version>4.0.15</groovy.version>
+		<groovy.version>4.0.21</groovy.version>
 	</properties>
 </project>
