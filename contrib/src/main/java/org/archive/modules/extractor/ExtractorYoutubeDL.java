@@ -41,10 +41,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
@@ -53,10 +55,9 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.warc.BaseWARCRecordBuilder;
 import org.archive.modules.warc.WARCRecordBuilder;
-import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
+import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -110,6 +111,7 @@ public class ExtractorYoutubeDL extends Extractor
     protected static final String YDL_CONTAINING_PAGE_DIGEST = "ydl-containing-page-digest";
     protected static final String YDL_CONTAINING_PAGE_TIMESTAMP = "ydl-containing-page-timestamp";
     protected static final String YDL_CONTAINING_PAGE_URI = "ydl-containing-page-uri";
+    protected static final String YDL_JSON_FILE_DIGEST = "ydl-json-file-digest";
 
     protected static final int MAX_VIDEOS_PER_PAGE = 1000;
     protected static final int NICE_MOD = 10;
@@ -118,6 +120,7 @@ public class ExtractorYoutubeDL extends Extractor
     protected HashMap<String, Boolean> seedsYDLd = new HashMap<String, Boolean>();
 
     protected transient Logger ydlLogger = null;
+    private static final AtomicLong nextRecorderId = new AtomicLong();
 
     // unnamed toethread-local temporary file
     protected transient ThreadLocal<RandomAccessFile> tempfile = new ThreadLocal<RandomAccessFile>() {
@@ -176,6 +179,12 @@ public class ExtractorYoutubeDL extends Extractor
     @Autowired
     public void setCrawlerLoggerModule(CrawlerLoggerModule crawlerLoggerModule) {
         this.crawlerLoggerModule = crawlerLoggerModule;
+    }
+
+    @Autowired
+    protected CrawlController controller;
+    public void setCrawlController(CrawlController controller) {
+        this.controller = controller;
     }
 
     @Override
@@ -389,6 +398,12 @@ public class ExtractorYoutubeDL extends Extractor
         }
     }
 
+    /** Dummy output stream to swallow bytes without storing anything. */
+    public class NullOutputStream extends OutputStream {
+        @Override
+        public void write(int b) throws IOException {}
+    }
+
     /**
      * Streams through yt-dlp json output. Sticks video urls in
      * <code>results.videoUrls</code>, web page urls in
@@ -598,6 +613,22 @@ public class ExtractorYoutubeDL extends Extractor
         recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
         recordInfo.setEnforceLength(true);
 
+        //Use the recorder object to calculate the content digest and store it on the curi.
+        //Must be calculated now, before the warc writer closes the file stream.
+        //We don't need an extra copy, so just write to NullOutputStream.
+        String recorderBaseName = "ExtractorYoutubeDL-" + nextRecorderId.getAndIncrement();
+        Recorder recorder = new Recorder(new File(controller.getScratchDir().getFile(), recorderBaseName),
+                controller.getRecorderOutBufferBytes(), controller.getRecorderInBufferBytes());
+        recorder.getRecordedInput().setDigest("sha1");
+        getLocalTempFile().seek(0);
+        recorder.inputWrap(Channels.newInputStream(getLocalTempFile().getChannel()));
+        recorder.getRecordedInput().startDigest();
+        recorder.outputWrap(new NullOutputStream());
+        recorder.getRecordedInput().readFully();
+        curi.getData().put(YDL_JSON_FILE_DIGEST,recorder.getRecordedInput().getDigestValue());
+        recorder.getRecordedOutput().close();
+        //Leave InputStream open for warc writer to handle, but close our NullOutputStream
+
         getLocalTempFile().seek(0);
         InputStream inputStream = Channels.newInputStream(getLocalTempFile().getChannel());
         recordInfo.setContentStream(inputStream);
@@ -606,6 +637,40 @@ public class ExtractorYoutubeDL extends Extractor
         logger.info("built record timestamp=" + timestamp + " url=" + recordInfo.getUrl());
 
         return recordInfo;
+    }
+
+    /**
+     * Because we are writing an additional WARC Metadata Record for the json video info, there is no CrawlURI for that
+     * record, and thus nothing ever goes through the frontier to be logged to the crawl.log. To log this capture we
+     * Create a CrawlURI <code>pseudoCuri</code> object and assign the appropriate values and then call to the logger.
+     *
+     * @param recordInfo WARCRecordInfo object that was just written
+     * @param curi CrawlURI that generated the WARCRecordInfo Object
+     */
+    @Override
+    public void postWrite(WARCRecordInfo recordInfo, CrawlURI curi) {
+        CrawlURI pseudoCuri = null;
+        try {
+            pseudoCuri = curi.createCrawlURI(recordInfo.getUrl(), LinkContext.EMBED_MISC, Hop.INFERRED);
+
+            pseudoCuri.getAnnotations().add("youtube-dl:");
+            pseudoCuri.setThreadNumber(curi.getThreadNumber());
+            pseudoCuri.setContentSize(recordInfo.getContentLength());
+            pseudoCuri.setContentType(recordInfo.getMimetype());
+            pseudoCuri.addExtraInfo("warcFilename", recordInfo.getWARCFilename());
+            pseudoCuri.addExtraInfo("warcFileOffset", recordInfo.getWARCFileOffset());
+            pseudoCuri.setFetchStatus(204);
+            pseudoCuri.setContentDigest("sha1",(byte[])curi.getData().get(YDL_JSON_FILE_DIGEST));
+            pseudoCuri.addExtraInfo("contentSize", recordInfo.getContentLength());
+
+            Object array[] = {pseudoCuri};
+            this.controller.getLoggerModule().getUriProcessing().log(Level.INFO,
+                    curi.getUURI().toString(), array);
+        } catch (URIException e) {
+            logger.log(Level.WARNING, "Exception while parsing UURI for youtube-dl metadata record " + recordInfo.getUrl(), e);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Exception while generating digest for youtube-dl metadata record " + recordInfo.getUrl(), e);
+        }
     }
 
     public static void main(String[] args) throws IOException {

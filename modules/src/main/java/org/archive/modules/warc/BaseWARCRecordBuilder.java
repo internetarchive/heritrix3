@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 
+import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -63,4 +64,7 @@ public abstract class BaseWARCRecordBuilder implements WARCRecordBuilder {
         return h.getIP().getHostAddress();
     }
 
+    public void postWrite(WARCRecordInfo recordInfo, CrawlURI curi) {
+        return;
+    }
 }
