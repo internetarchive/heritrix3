@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
@@ -181,6 +182,19 @@ public class ExtractorYoutubeDL extends Extractor
     protected CrawlController controller;
     public void setCrawlController(CrawlController controller) {
         this.controller = controller;
+    }
+
+    {
+        setLogMetadataRecord(true);
+    }
+    public boolean getLogMetadataRecord() {
+        return (Boolean) kp.get("logMetadataRecord");
+    }
+    /**
+     * Whether or not to create a crawl.log entry for any WARC Metadata Records written.
+     */
+    public void setLogMetadataRecord(boolean logMetadataRecord) {
+        kp.put("logMetadataRecord",logMetadataRecord);
     }
 
     @Override
@@ -646,6 +660,9 @@ public class ExtractorYoutubeDL extends Extractor
      */
     @Override
     public void postWrite(WARCRecordInfo recordInfo, CrawlURI curi) {
+        if(!this.getLogMetadataRecord())
+            return;
+
         CrawlURI pseudoCuri = null;
         try {
             pseudoCuri = curi.createCrawlURI(recordInfo.getUrl(), LinkContext.EMBED_MISC, Hop.INFERRED);
