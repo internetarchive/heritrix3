@@ -5,6 +5,14 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_U
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
 
 import java.net.MalformedURLException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,11 +73,30 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         return (String) kp.get("rethinkUrl");
     }
 
+
+    {
+        setTroughSyncMaxBatchSize(400);
+    }
+    /**
+     * @param troughSyncMaxBatchSize number of dedup rows to buffer before syncing to Trough.
+     */
+    public void setTroughSyncMaxBatchSize(int troughSyncMaxBatchSize) { kp.put("troughSyncMaxBatchSize", troughSyncMaxBatchSize); }
+    public int getTroughSyncMaxBatchSize() { return (int) kp.get("troughSyncMaxBatchSize"); }
+
+    {
+        setTroughPromotionInterval(3600);
+    }
+    /**
+     * @param troughPromotionInterval number of seconds between runs of the Trough Client promoter thread.
+     */
+    public void setTroughPromotionInterval(int troughPromotionInterval) { kp.put("troughPromotionInterval", troughPromotionInterval); }
+    public int getTroughPromotionInterval() { return (int) kp.get("troughPromotionInterval"); }
+
     protected TroughClient troughClient = null;
 
     protected TroughClient troughClient() throws MalformedURLException {
         if (troughClient == null) {
-            troughClient = new TroughClient(getRethinkUrl(), 60 * 60);
+            troughClient = new TroughClient(getRethinkUrl(), getTroughPromotionInterval());
             troughClient.start();
         }
         return troughClient;
@@ -81,12 +108,27 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
             + "    url varchar(2100) not null,\n"
             + "    date varchar(100) not null,\n"
             + "    id varchar(100));\n"; // warc record id
+    protected static final String WRITE_SQL_TMPL =
+            "insert or ignore into dedup (digest_key, url, date, id)";
 
+    // row count that avoids table scan if no deletes
+    protected static final String COUNT_SQL =
+            "SELECT MAX(_ROWID_) FROM dedup LIMIT 1;";
+    protected static final String DROP_TABLE_DEDUP_SQL =
+            "DROP table dedup;";
+    protected static final String SELECT_ALL_SQL =
+            "SELECT * FROM dedup;";
+    protected static final String DEDUP_QUERY_SQL =
+            "SELECT * FROM dedup WHERE digest_key = ? LIMIT 1";
+
+    protected ConcurrentHashMap<String, Object> segmentCache = new ConcurrentHashMap<String, Object>();
+    protected Connection dedupDbConnection = null;
     @Override
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PREPARING:
             try {
+                dedupDbConnection = DriverManager.getConnection("jdbc:sqlite::memory:");
                 // initializes TroughClient and starts promoter thread as a side effect
                 troughClient().registerSchema(SCHEMA_ID, SCHEMA_SQL);
             } catch (Exception e) {
@@ -106,10 +148,17 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
              * necessarily finished processing.)
              */
             if (troughClient != null) {
+                //force all in memory segments to sync to trough before final promotion
+                Enumeration<String> segments = segmentCache.keys();
+                while(segments.hasMoreElements()){
+                    String segmentId = segments.nextElement();
+                    syncToTrough(segmentId,true);
+                }
                 troughClient.stop();
                 troughClient.promoteDirtySegments();
                 troughClient = null;
             }
+            dedupDbConnection = null;
             break;
 
         default:
@@ -122,49 +171,177 @@ public class TroughContentDigestHistory extends AbstractContentDigestHistory imp
         // WARCWriterProcessor knows it should put the info in there
         HashMap<String, Object> contentDigestHistory = curi.getContentDigestHistory();
 
-        try {
-            String sql = "select * from dedup where digest_key = %s";
-            List<Map<String, Object>> results = troughClient().read(getSegmentId(), sql, new String[] {persistKeyFor(curi)});
-            if (!results.isEmpty()) {
-                Map<String,Object> hist = new HashMap<String, Object>();
-                hist.put(A_ORIGINAL_URL, results.get(0).get("url"));
-                hist.put(A_ORIGINAL_DATE, results.get(0).get("date"));
-                hist.put(A_WARC_RECORD_ID, results.get(0).get("id"));
-
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("loaded history by digest " + persistKeyFor(curi)
-                                 + " for uri " + curi + " - " + hist);
+        //Check in-memory segment first
+        boolean memoryDedupHit = false;
+        if(segmentCache.containsKey(getSegmentId())) {
+            String segmentDedupQuerySql = segmentizeDedupTableName(getSegmentId(), DEDUP_QUERY_SQL);
+            try(PreparedStatement dedupQueryStatement = dedupDbConnection.prepareStatement(segmentDedupQuerySql)) {
+                dedupQueryStatement.setString(1, persistKeyFor(curi));
+                ResultSet rs = dedupQueryStatement.executeQuery();
+                while(rs.next()) {
+                    Map<String, Object> hist = new HashMap<String, Object>();
+                    hist.put(A_ORIGINAL_URL, rs.getString("url"));
+                    hist.put(A_ORIGINAL_DATE, rs.getString("date"));
+                    hist.put(A_WARC_RECORD_ID, rs.getString("id"));
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("loaded in-memory history by digest " + persistKeyFor(curi)
+                                + " for uri " + curi + " - " + hist);
+                    }
+                    contentDigestHistory.putAll(hist);
+                    memoryDedupHit=true;
+                    break;
                 }
-                contentDigestHistory.putAll(hist);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem querying in-memory dedup in " + getSegmentId() + " for url " + curi + " sql: "+segmentDedupQuerySql, e);
             }
-        } catch (TroughNoReadUrlException e) {
-            // this is totally normal at the beginning of the crawl, for example
-            logger.log(Level.FINE, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+        }
+        if(!memoryDedupHit) {
+            try {
+                String sql = "select * from dedup where digest_key = %s limit 1";
+                List<Map<String, Object>> results = troughClient().read(getSegmentId(), sql, new String[]{persistKeyFor(curi)});
+                if (!results.isEmpty()) {
+                    Map<String, Object> hist = new HashMap<String, Object>();
+                    hist.put(A_ORIGINAL_URL, results.get(0).get("url"));
+                    hist.put(A_ORIGINAL_DATE, results.get(0).get("date"));
+                    hist.put(A_WARC_RECORD_ID, results.get(0).get("id"));
+
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("loaded history by digest " + persistKeyFor(curi)
+                                + " for uri " + curi + " - " + hist);
+                    }
+                    contentDigestHistory.putAll(hist);
+                }
+            } catch (TroughNoReadUrlException e) {
+                // this is totally normal at the beginning of the crawl, for example
+                logger.log(Level.FINE, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem retrieving dedup info from trough segment " + getSegmentId() + " for url " + curi, e);
+            }
         }
     }
-
-    protected static final String WRITE_SQL_TMPL = 
-            "insert or ignore into dedup (digest_key, url, date, id) values (%s, %s, %s, %s);";
 
     @Override
     public void store(CrawlURI curi) {
         if (!curi.hasContentDigestHistory() || curi.getContentDigestHistory().isEmpty()) {
             return;
         }
-        Map<String,Object> hist = curi.getContentDigestHistory();
 
-        try {
-            String digestKey = persistKeyFor(curi);
-            Object url = hist.get(A_ORIGINAL_URL);
-            Object date = hist.get(A_ORIGINAL_DATE);
-            Object recordId = hist.get(A_WARC_RECORD_ID);
-            Object[] values = new Object[] { digestKey, url, date, recordId };
-            troughClient().write(getSegmentId(), WRITE_SQL_TMPL, values, SCHEMA_ID);
+        if (getSegmentId().isEmpty()) {
+            logger.log(Level.WARNING, "no segment id found for url " + curi);
+            return;
+        }
+
+        if (!segmentCache.containsKey(getSegmentId())) {
+            synchronized (getSegmentId()) {
+                if (!segmentCache.containsKey(getSegmentId())) {
+                    segmentCache.putIfAbsent(getSegmentId(),new Object());
+                    createDedupCacheDbTable(getSegmentId());
+                }
+            }
+        }
+
+        insertSQLiteCacheDB(getSegmentId(), curi);
+    }
+    protected String segmentizeDedupTableName(String segmentId, String sql)
+    {
+        String tableName = "dedup_" + segmentId.replaceAll("-","_");
+        return sql.replace(" dedup"," \""+tableName+"\"");
+    }
+    public void syncToTrough(String segmentId, boolean forceSync) {
+        logger.log(Level.FINE, "syncing local sqlite db to trough " + segmentId);
+
+        int totalRows=0;
+        ResultSet dedupRows = null;
+        int rowsRead=0;
+        Object[] flattenedValues = null;
+        synchronized (segmentCache.get(segmentId)) {
+            String segmentCountSql = segmentizeDedupTableName(segmentId, COUNT_SQL);
+            try (PreparedStatement rowCountStatement = dedupDbConnection.prepareStatement(segmentCountSql)) {
+                ResultSet rs = rowCountStatement.executeQuery();
+                rs.next();
+                totalRows = rs.getInt(1);
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "problem reading row count info from local sqlite segment " + segmentId, e);
+            }
+            if (forceSync || totalRows > getTroughSyncMaxBatchSize()) {
+                /*
+                Trough takes a single object array for the values we insert, so an array of size (N columns * X rows).
+                We read each row in column by column, then repeat for each row.
+                 */
+                flattenedValues = new Object[4 * totalRows];
+                String segmentSelectAllSql = segmentizeDedupTableName(segmentId, SELECT_ALL_SQL);
+                try (PreparedStatement dedupReadSelect = dedupDbConnection.prepareStatement(segmentSelectAllSql)) {
+                    dedupRows = dedupReadSelect.executeQuery();
+                    while (dedupRows.next()) {
+                        for (int i=0; i<4; i++) {
+                            flattenedValues[(4 * rowsRead) + i] = dedupRows.getObject(i+1);
+                        }
+                        rowsRead++;
+                    }
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "problem reading dedup info from local sqlite segment " + segmentId, e);
+                }
+                //Delete the cache db and rebuild it
+                String segmentDropTableSql = segmentizeDedupTableName(segmentId, DROP_TABLE_DEDUP_SQL);
+                try {
+                    PreparedStatement dropTableStatement = dedupDbConnection.prepareStatement(segmentDropTableSql);
+                    dropTableStatement.execute();
+                    createDedupCacheDbTable(segmentId);
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "problem removing cache db table " + segmentId + " sql: " + segmentDropTableSql, e);
+                }
+            }
+        }
+
+        if(rowsRead > 0) {
+            //Store dedup values into Trough
+            StringBuffer sqlTmpl = new StringBuffer();
+            //don't alter the table name since we're dealing with trough now
+            sqlTmpl.append(WRITE_SQL_TMPL + " values (%s, %s, %s, %s)");
+            for(int i=1; i < rowsRead; i++){
+                sqlTmpl.append(", (%s, %s, %s, %s)");
+            }
+            try {
+                troughClient().write(segmentId, sqlTmpl.toString(), flattenedValues, SCHEMA_ID);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem posting batch of " + rowsRead + " dedup urls to trough segment " + segmentId, e);
+            }
+        }
+    }
+    public void insertSQLiteCacheDB(String segmentId, CrawlURI curi) {
+        Map<String, Object> hist = curi.getContentDigestHistory();
+        int totalRows=0;
+        String segmentWriteSqlTemplate = segmentizeDedupTableName(segmentId, WRITE_SQL_TMPL);
+        synchronized (segmentCache.get(segmentId)) {
+
+            try (PreparedStatement pstmt = dedupDbConnection.prepareStatement(segmentWriteSqlTemplate + " values (?, ?, ?, ?);")) {
+                pstmt.setString(1, persistKeyFor(curi));
+                pstmt.setObject(2, hist.get(A_ORIGINAL_URL));
+                pstmt.setObject(3, hist.get(A_ORIGINAL_DATE));
+                pstmt.setObject(4, hist.get(A_WARC_RECORD_ID));
+                pstmt.executeUpdate();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "problem writing dedup info to local sqlite segment " + segmentId + " for url " + curi + " sql: " + segmentWriteSqlTemplate, e);
+            }
+        }
+        String segmentCountSql = segmentizeDedupTableName(segmentId, COUNT_SQL);
+        try(PreparedStatement rowCountStatement = dedupDbConnection.prepareStatement(segmentCountSql)) {
+            ResultSet rs = rowCountStatement.executeQuery();
+            rs.next();
+            totalRows = rs.getInt(1);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "problem writing dedup info to trough segment " + getSegmentId() + " for url " + curi, e);
-
+            logger.log(Level.WARNING, "problem getting row count after dedup insert " + segmentId + " for url " + curi + " sql: "+segmentCountSql, e);
+        }
+        if(totalRows > getTroughSyncMaxBatchSize()) {
+            syncToTrough(getSegmentId(), false);
+        }
+    }
+    public void createDedupCacheDbTable(String segmentId) {
+        String segmentSchema = segmentizeDedupTableName(segmentId, SCHEMA_SQL);
+        try (Statement stmt = dedupDbConnection.createStatement()) {
+            stmt.execute(segmentSchema);
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Problem creating SQLite dedup db shard " + segmentId + " with schema "+ segmentSchema, e);
         }
     }
 }
