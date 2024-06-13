@@ -42,6 +42,7 @@ import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.ServerCache;
@@ -359,6 +360,12 @@ implements Lifecycle, Checkpointable, WriterPoolSettings {
         if (retVal == false) {
             // status not deserving writing
             curi.getAnnotations().add(ANNOTATION_UNWRITTEN + ":status");
+            return false;
+        }
+        
+        if (getShouldProcessRule().decisionFor(curi) == DecideResult.REJECT) {
+            curi.getAnnotations().add(ANNOTATION_UNWRITTEN + ":rejected("
+                    + getShouldProcessRule().getClass() + ")");
             return false;
         }
         
