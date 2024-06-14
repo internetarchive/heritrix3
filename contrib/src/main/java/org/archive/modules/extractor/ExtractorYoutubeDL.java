@@ -56,6 +56,8 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.warc.BaseWARCRecordBuilder;
 import org.archive.modules.warc.WARCRecordBuilder;
+import org.archive.net.UURI;
+import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
 import org.archive.util.Recorder;
