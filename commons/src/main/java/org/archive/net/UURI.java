@@ -21,21 +21,41 @@ package org.archive.net;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
 
+import com.esotericsoftware.kryo.DefaultSerializer;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.apache.commons.httpclient.URIException;
 import org.archive.url.UsableURI;
 
-import com.esotericsoftware.kryo.CustomSerialization;
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.serialize.StringSerializer;
 
 /**
  * Usable URI. The bulk of the functionality of this class has moved to
  * {@link UsableURI} in the archive-commons project. This class adds Kryo
  * serialization.
  */
-public class UURI extends UsableURI implements CustomSerialization {
+@DefaultSerializer(UURI.KryoSerializer.class)
+public class UURI extends UsableURI {
+
+    public static class KryoSerializer extends Serializer<UURI> {
+        @Override
+        public void write(Kryo kryo, Output output, UURI uuri) {
+            output.writeString(uuri.toCustomString());
+        }
+
+        @Override
+        public UURI read(Kryo kryo, Input input, Class<? extends UURI> aClass) {
+            UURI uuri = new UURI();
+            try {
+                uuri.parseUriReference(input.readString(), true);
+            } catch (URIException e) {
+                throw new RuntimeException("Error deserializing UURI", e);
+            }
+            return uuri;
+        }
+    }
 
     private static final long serialVersionUID = -8946640480772772310L;
 
@@ -50,21 +70,6 @@ public class UURI extends UsableURI implements CustomSerialization {
     /* needed for kryo serialization */
     protected UURI() {
         super();
-    }
-
-    @Override
-    public void writeObjectData(Kryo kryo, ByteBuffer buffer) {
-        StringSerializer.put(buffer, toCustomString());
-    }
-
-    @Override
-    public void readObjectData(Kryo kryo, ByteBuffer buffer) {
-        try {
-            parseUriReference(StringSerializer.get(buffer), true);
-        } catch (URIException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
 
     private void writeObject(ObjectOutputStream stream) throws IOException {

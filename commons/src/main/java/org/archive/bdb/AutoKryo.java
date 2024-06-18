@@ -1,94 +1,52 @@
 package org.archive.bdb;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.SerializationException;
-
-import sun.reflect.ReflectionFactory;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.esotericsoftware.kryo.util.MapReferenceResolver;
+import org.objenesis.strategy.SerializingInstantiatorStrategy;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest
- * other classes to register together, and use the same (Sun-JVM-only) trick
+ * other classes to register together, and use SerializingInstantiatorStrategy
  * for deserializing classes without no-arg constructors.
- * 
- * newInstance technique and constructor caching inspired by the 
- * KryoReflectionFactorySupport class of Martin Grotzke's kryo-serializers 
- * project. <a href="https://github.com/magro/kryo-serializers">https://github.com/magro/kryo-serializers</a>
- * 
- * TODO: more comments!
- * 
+ *
  * @author gojomo
  */
 @SuppressWarnings("unchecked")
 public class AutoKryo extends Kryo {
-    protected ArrayList<Class<?>> registeredClasses = new ArrayList<Class<?>>(); 
-    
-    @Override
-    protected void handleUnregisteredClass(@SuppressWarnings("rawtypes") Class type) {
-        System.err.println("UNREGISTERED FOR KRYO "+type+" in "+registeredClasses.get(0));
-        super.handleUnregisteredClass(type);
+    protected ArrayList<Class<?>> registeredClasses = new ArrayList<>();
+    protected Set<Class<?>> referenceClasses = new HashSet<>();
+
+    public AutoKryo() {
+        super();
+        setInstantiatorStrategy(new DefaultInstantiatorStrategy(new SerializingInstantiatorStrategy()));
     }
 
     public void autoregister(Class<?> type) {
         if (registeredClasses.contains(type)) {
             return;
         }
-        registeredClasses.add(type); 
+        registeredClasses.add(type);
         try {
-            invokeStatic(
-                "autoregisterTo", 
-                type,
-                new Class[]{ ((Class<?>)AutoKryo.class), }, 
-                new Object[] { this, });
+            type.getMethod("autoregisterTo", new Class[]{AutoKryo.class}).invoke(null, this);
         } catch (Exception e) {
             register(type); 
         }
     }
 
-    protected static final ReflectionFactory REFLECTION_FACTORY = ReflectionFactory.getReflectionFactory();
-    protected static final Object[] INITARGS = new Object[0];
-    protected static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<Class<?>, Constructor<?>>();
-    
-    @Override
-    public <T> T newInstance(Class<T> type) {
-        SerializationException ex = null; 
-        try {
-            return super.newInstance(type);
-        } catch (SerializationException se) {
-            ex = se;
+    public void useReferencesFor(Class<?> clazz) {
+        if (!getReferences()) {
+            setReferenceResolver(new MapReferenceResolver() {
+                @Override
+                public boolean useReferences(Class type) {
+                    return referenceClasses.contains(type);
+                }
+            });
         }
-        try {
-            Constructor<?> constructor = CONSTRUCTOR_CACHE.get(type);
-            if(constructor == null) {
-                constructor = REFLECTION_FACTORY.newConstructorForSerialization( 
-                        type, Object.class.getDeclaredConstructor( new Class[0] ) );
-                constructor.setAccessible( true );
-                CONSTRUCTOR_CACHE.put(type, constructor);
-            }
-            Object inst = constructor.newInstance( INITARGS );
-            return (T) inst;
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-             e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        throw ex;
-    }
-
-    protected Object invokeStatic(String method, Class<?> clazz, Class<?>[] types, Object[] args) throws Exception {
-        return clazz.getMethod(method, types).invoke(null, args);
+        referenceClasses.add(clazz);
     }
 }

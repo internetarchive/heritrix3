@@ -20,6 +20,7 @@ package org.archive.modules.fetcher;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -62,6 +63,15 @@ public class FetchStats extends CrawledBytesHistotable implements Serializable, 
     }
 
     protected long lastSuccessTime;
+
+    public FetchStats() {
+        super();
+    }
+
+    // Kryo constructor
+    public FetchStats(Comparator<String> comparator) {
+        super(comparator);
+    }
 
     public synchronized void tally(CrawlURI curi, Stage stage) {
         switch(stage) {

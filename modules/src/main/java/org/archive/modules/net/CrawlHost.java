@@ -29,6 +29,9 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.fetcher.FetchStats;
 import org.archive.util.IdentityCacheable;
@@ -75,7 +78,7 @@ public class CrawlHost implements Serializable, FetchStats.HasFetchStats, Identi
 
     // Used when bandwith constraint are used
     private long earliestNextURIEmitTime = 0;
-    
+
     /** 
      * Create a new CrawlHost object.
      *
@@ -245,26 +248,24 @@ public class CrawlHost implements Serializable, FetchStats.HasFetchStats, Identi
          * holds hostname, but heritrix doesn't use that; and retrieving it can
          * result in dns lookup, so we don't serialize it.
          */
-        kryo.register(Inet4Address.class, new Serializer() {
+        kryo.register(Inet4Address.class, new Serializer<Inet4Address>() {
+
             @Override
-            public void writeObjectData(ByteBuffer buffer, Object object) {
-                Inet4Address i4a = (Inet4Address) object;
-                kryo.writeObject(buffer, i4a.getAddress());
+            public void write(Kryo kryo, Output output, Inet4Address inet4Address) {
+                kryo.writeObject(output, inet4Address.getAddress());
             }
-            
+
             @Override
-            @SuppressWarnings("unchecked")
-            public <T> T readObjectData(ByteBuffer buffer, Class<T> type) {
-                byte[] address = kryo.readObject(buffer, byte[].class);
+            public Inet4Address read(Kryo kryo, Input input, Class<? extends Inet4Address> aClass) {
+                byte[] address = kryo.readObject(input, byte[].class);
                 try {
-                    return (T) InetAddress.getByAddress(address);
+                    return (Inet4Address) InetAddress.getByAddress(address);
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
             }
         });
         kryo.autoregister(byte[].class);
-        kryo.setRegistrationOptional(true);
     }
     
     //

@@ -41,7 +41,14 @@ import java.util.TreeSet;
  */
 public class Histotable<K> extends TreeMap<K,Long> {    
     private static final long serialVersionUID = 310306238032568623L;
-    
+
+    public Histotable() {
+    }
+
+    protected Histotable(Comparator<K> comparator) {
+        super(comparator);
+    }
+
     /**
      * Record one more occurrence of the given object key.
      * 
