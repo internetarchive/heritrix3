@@ -42,10 +42,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
@@ -60,7 +60,6 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.MimetypeUtils;
-import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -123,7 +122,6 @@ public class ExtractorYoutubeDL extends Extractor
     protected HashMap<String, Boolean> seedsYDLd = new HashMap<String, Boolean>();
 
     protected transient Logger ydlLogger = null;
-    private static final AtomicLong nextRecorderId = new AtomicLong();
 
     // unnamed toethread-local temporary file
     protected transient ThreadLocal<RandomAccessFile> tempfile = new ThreadLocal<RandomAccessFile>() {
@@ -629,24 +627,12 @@ public class ExtractorYoutubeDL extends Extractor
         recordInfo.setMimetype("application/vnd.youtube-dl_formats+json;charset=utf-8");
         recordInfo.setEnforceLength(true);
 
-        //Use the recorder object to calculate the content digest and store it on the curi.
-        //Must be calculated now, before the warc writer closes the file stream.
-        //We don't need an extra copy, so just write to NullOutputStream.
-        String recorderBaseName = "ExtractorYoutubeDL-" + nextRecorderId.getAndIncrement();
-        Recorder recorder = new Recorder(new File(controller.getScratchDir().getFile(), recorderBaseName),
-                controller.getRecorderOutBufferBytes(), controller.getRecorderInBufferBytes());
-        recorder.getRecordedInput().setDigest("sha1");
-        getLocalTempFile().seek(0);
-        recorder.inputWrap(Channels.newInputStream(getLocalTempFile().getChannel()));
-        recorder.getRecordedInput().startDigest();
-        recorder.outputWrap(new NullOutputStream());
-        recorder.getRecordedInput().readFully();
-        curi.getData().put(YDL_JSON_FILE_DIGEST,recorder.getRecordedInput().getDigestValue());
-        recorder.getRecordedOutput().close();
-        //Leave InputStream open for warc writer to handle, but close our NullOutputStream
-
         getLocalTempFile().seek(0);
         InputStream inputStream = Channels.newInputStream(getLocalTempFile().getChannel());
+        curi.getData().put(YDL_JSON_FILE_DIGEST, DigestUtils.sha1(inputStream));
+        //Leave InputStream open for warc writer to handle
+
+        getLocalTempFile().seek(0);
         recordInfo.setContentStream(inputStream);
         recordInfo.setContentLength(getLocalTempFile().length());
 
