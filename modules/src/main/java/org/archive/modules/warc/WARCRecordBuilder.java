@@ -43,4 +43,6 @@ public interface WARCRecordBuilder {
     WARCRecordInfo buildRecord(CrawlURI curi, URI concurrentTo)
             throws IOException;
 
+    void postWrite(WARCRecordInfo warcRecordInfo, CrawlURI curi);
+
 }
