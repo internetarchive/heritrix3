@@ -163,7 +163,9 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
             if (recordBuilder.shouldBuildRecord(curi)) {
                 WARCRecordInfo record = recordBuilder.buildRecord(curi, concurrentTo);
                 if (record != null) {
+                    record.setWARCFileOffset(writer.getPosition());
                     writer.writeRecord(record);
+                    record.setWARCFilename(writer.getFilenameWithoutOccupiedSuffix());
                     InputStream is = null;
                     try {
                         is = record.getContentStream();
@@ -178,6 +180,7 @@ public class WARCWriterChainProcessor extends BaseWARCWriterProcessor implements
                     if (concurrentTo == null) {
                         concurrentTo = record.getRecordId();
                     }
+                    recordBuilder.postWrite(record, curi);
                 }
             }
         }
