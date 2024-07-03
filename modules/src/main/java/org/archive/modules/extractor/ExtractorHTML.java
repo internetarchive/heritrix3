@@ -1052,7 +1052,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         else if (content != null) {
             //look for likely urls in 'content' attribute
             try {
-                if (UriUtils.isVeryLikelyUri(content)) {
+                if (UriUtils.isVeryLikelyUri(UriUtils.speculativeFixup(content, curi.getUURI()))) {
                     int max = getExtractorParameters().getMaxOutlinks();
                     addRelativeToBase(curi, max, content, 
                             HTMLLinkContext.META, Hop.SPECULATIVE);                    
