@@ -19,6 +19,9 @@
 
 package org.archive.modules.extractor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
@@ -39,15 +42,33 @@ public class ExtractorHTTP extends Extractor {
     }
 
     /** should all HTTP URIs be used to infer a link to the site's root? */
-    protected boolean inferRootPage = false; 
+    protected boolean inferRootPage = false;
+    /**
+     * @deprecated Deprecated in favor of {@link #getInferPaths()} which allows the specification of arbitrary
+     *             paths and can be overridden with sheets. 
+     */
     public boolean getInferRootPage() {
         return inferRootPage;
     }
+    /**
+     * @deprecated Deprecated in favor of {@link #setInferPaths(List)} which allows the specification of arbitrary
+     *             paths and can be overridden with sheets. 
+     */
     public void setInferRootPage(boolean inferRootPage) {
         this.inferRootPage = inferRootPage;
     }
 
-
+    {
+    	setInferPaths(new ArrayList<>());
+    }
+    @SuppressWarnings("unchecked")
+    public List<String> getInferPaths() {
+    	return (List<String>) kp.get("inferPaths");
+    }
+    public void setInferPaths(List<String> inferPaths) {
+        kp.put("inferPaths", inferPaths);
+    }
+    
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         if (uri.getFetchStatus() <= 0) {
@@ -67,8 +88,11 @@ public class ExtractorHTTP extends Extractor {
 
         // try /favicon.ico for every HTTP(S) URI
         addOutlink(curi, "/favicon.ico", LinkContext.INFERRED_MISC, Hop.INFERRED);
-        if(getInferRootPage()) {
+        if (getInferRootPage()) {
             addOutlink(curi, "/", LinkContext.INFERRED_MISC, Hop.INFERRED);
+        }
+        for (String inferPath : getInferPaths()) {
+            addOutlink(curi, inferPath, LinkContext.INFERRED_MISC, Hop.INFERRED);
         }
     }
 
