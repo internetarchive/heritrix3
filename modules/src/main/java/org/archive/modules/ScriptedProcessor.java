@@ -42,7 +42,7 @@ import org.springframework.context.ApplicationContextAware;
  * Script source may be provided via a file local to the crawler or
  * an inline configuration string. 
  * 
- * The source must include a function "run()" taking one argument. 
+ * The source must include a function "process()" taking one argument. 
  * Each processed CrawlURI is passed to this script function. 
  * 
  * Other variables available to the script include 'self' (this 
