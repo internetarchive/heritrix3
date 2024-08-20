@@ -378,11 +378,6 @@ FetchWhois
 Link Extractors
 ---------------
 
-ExtractorChrome (contrib)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorChrome.java
-
 ExtractorCSS
 ~~~~~~~~~~~~
 
