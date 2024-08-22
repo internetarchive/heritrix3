@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  *      extracted potential URLs not starting with a scheme are ignored.
  *   </li>
  *   <li>
- *   	<b>maxLength</b>: Maximum length of extracted potential URLs. Any string longer than
+ *   	<b>maximumCandidateLength</b>: Maximum length of extracted potential URLs. Any string longer than
  *      this will be ignored. 
  *   </li>
  *   <li>
