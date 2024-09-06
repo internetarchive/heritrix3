@@ -1706,7 +1706,6 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         kryo.autoregister(org.apache.commons.httpclient.NameValuePair.class);
         kryo.autoregister(org.apache.commons.httpclient.NameValuePair[].class);
         kryo.autoregister(FetchType.class);
-        kryo.setRegistrationOptional(true);
     }
     
     /**

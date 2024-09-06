@@ -19,6 +19,7 @@
 
 package org.archive.modules.forms;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,7 +166,7 @@ public class HTMLForm {
         }
     }
 
-    public static class NameValue {
+    public static class NameValue implements Serializable {
         public String name, value;
         public NameValue(String name, String value) {
             this.name = name;
