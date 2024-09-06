@@ -217,6 +217,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.version>5.3.27</spring.version>
+		<spring.version>5.3.39</spring.version>
 	</properties>
 </project>
