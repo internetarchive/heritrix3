@@ -2,11 +2,47 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20220727...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20240909...HEAD)
 
-**Merged pull requests:**
+## [3.4.0-20240909 2024-09-09](https://github.com/internetarchive/heritrix3/releases/edit/3.4.0-20240909)
 
-- Update changelog as of 2022-07-27 [\#493](https://github.com/internetarchive/heritrix3/pull/493) ([anjackson](https://github.com/anjackson))
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20220727...3.4.0-20240909)
+
+#### Compatibility Note
+
+Checkpoints and crawl state created with older versions of Heritrix will not be loadable as kryo has been significantly updated. [Replaying the recovery log](https://heritrix.readthedocs.io/en/latest/operating.html#crawl-recovery) may be an alternative in some cases.
+
+#### New Features
+- JDK 22 support
+- Added `ConfigurableExtractorJS` for more flexible JavaScript extraction. (#602)
+- Added `HostnameQueueAssignmentPolicyWithLimits` with optional name length limits. (#598)
+- `ExtractorHTML` can now extract more variants of alternative resolution image URLs. (#605)
+- `ExtractorHTTP` can now be configured with extra inferred paths (#597)
+- `ExtractorYoutubeDL`  metadata records can now be optionally logged to crawl.log (#593)
+
+#### Removals
+- Removed `ExtractorChrome` from contrib (#601)
+
+#### Fixes
+- Reduced false positive speculative URLs from meta tags (#595)
+- Fixed BdbModule resource leak on job teardown (f4280012ae5f23763f1e19d196a245ae49f9b697)
+- Corrected function name in `ScriptedProcessor` Javadoc. (#599)
+- Updated Maven builds to use HTTPS for resolving dependencies.
+- Reset CrawlURI status for hasPrerequisite() so that it isn't preserved between attempts (#600)
+- Fixed older junit3 tests not being run (#592)
+- Increased DiskSpaceMonitor default pause threshold to 8 GiB (#499)
+- Stopping logging authentication failures when header is missing (#539)
+- Fixed console still showing job running after crash (#549)
+
+#### Dependency Upgrades
+- Transitioned `PDFParser` and `ExtractorPDF` to pdfbox (#575)
+- Transitioned `ExtractorYoutubeDL` to yt-dlp
+- commons-net 3.9.0
+- com.rabbitmq:amqp-client 5.18.0
+- dnsjava 3.6.0
+- groovy 4.0.21
+- kryo 5.6.0
+- spring-expression 5.3.39
 
 ## [3.4.0-20220727](https://github.com/internetarchive/heritrix3/tree/3.4.0-20220727) (2022-07-27)
 
