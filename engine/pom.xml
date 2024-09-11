@@ -70,11 +70,6 @@
 			<artifactId>org.restlet.ext.crypto</artifactId>
 			<version>2.4.0</version>
 		</dependency>
-		<dependency>
-			<groupId>joda-time</groupId>
-			<artifactId>joda-time</artifactId>
-			<version>1.6</version>
-		</dependency>
 		<!-- jaxb is no longer included in jdk11+ -->
 		<dependency>
 			<groupId>javax.xml.bind</groupId>

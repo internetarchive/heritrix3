@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -68,7 +69,6 @@ import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.TextUtils;
-import org.joda.time.DateTime;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -98,10 +98,10 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     protected PathSharingContext ac; 
     protected int launchCount; 
     protected boolean isLaunchInfoPartial;
-    protected DateTime lastLaunch;
+    protected Instant lastLaunch;
     protected AlertThreadGroup alertThreadGroup;
     
-    protected DateTime xmlOkAt = new DateTime(0L);
+    protected Instant xmlOkAt = Instant.ofEpochMilli(0);
     protected Logger jobLogger;
     
     public CrawlJob(File cxml) {
@@ -154,7 +154,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         return jobLogger;
     }
 
-    public DateTime getLastLaunch() {
+    public Instant getLastLaunch() {
         return lastLaunch;
     }
     public int getLaunchCount() {
@@ -191,7 +191,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 Matcher m = launchLine.matcher(line);
                 if (m.matches()) {
                     launchCount++;
-                    lastLaunch = new DateTime(m.group(1));
+                    lastLaunch = Instant.parse(m.group(1));
                 }
             }
             jobLogReader.close();
@@ -251,14 +251,14 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     public void checkXML() {
         // TODO: suppress check if XML unchanged? job.log when XML changed? 
 
-        DateTime testTime = new DateTime(getPrimaryConfig().lastModified());
+        Instant testTime = Instant.ofEpochMilli(getPrimaryConfig().lastModified());
         Document doc = getDomDocument(getPrimaryConfig());
         // TODO: check for other minimal requirements, like
         // presence of a few key components (CrawlController etc.)? 
         if(doc!=null) {
             xmlOkAt = testTime; 
         } else {
-            xmlOkAt = new DateTime(0L);
+            xmlOkAt = Instant.ofEpochMilli(0);
         }
 
     }
@@ -290,7 +290,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
      * @return true if the primary configuration file passed XML testing
      */
     public boolean isXmlOk() {
-        return xmlOkAt.getMillis() >= getPrimaryConfig().lastModified();
+        return xmlOkAt.toEpochMilli() >= getPrimaryConfig().lastModified();
     }
     
     
@@ -588,7 +588,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
             // all this stuff should happen even in case ac.close() bugs out
             ac = null;
             
-            xmlOkAt = new DateTime(0);
+            xmlOkAt = Instant.ofEpochMilli(0);
             
             if (currentLaunchJobLogHandler != null) {
                 getJobLogger().removeHandler(currentLaunchJobLogHandler);
@@ -615,7 +615,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
         public String format(LogRecord record) {
             StringBuilder sb = new StringBuilder();
             sb
-              .append(new DateTime(record.getMillis()))
+              .append(Instant.ofEpochMilli(record.getMillis()))
               .append(" ")
               .append(record.getLevel())
               .append(" ")
