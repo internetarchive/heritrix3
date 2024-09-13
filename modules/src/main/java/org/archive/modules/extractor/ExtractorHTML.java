@@ -197,8 +197,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // matched by the above. attributes known to be URIs of various
     // sorts are matched specially
     static final String EACH_ATTRIBUTE_EXTRACTOR =
-      "(?is)\\s?((href)|(action)|(on\\w*)" // 1, 2, 3, 4 
-     +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)|(?:cite)" // ...
+      "(?is)\\s?((href|(?:cite))|(action)|(on\\w*)" // 1, 2, 3, 4
+     +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)" // ...
      +"|(?:longdesc)|(?:usemap)|(?:profile)|(?:datasrc)" // ...
      +"|(?:data-src)|(?:data-srcset)|(?:data-original)|(?:data-original-set))" // 5
      +"|(codebase)|((?:classid)|(?:data))|(archive)|(code)" // 6, 7, 8, 9
@@ -210,10 +210,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      +"|(\\S{1,"+MAX_ATTR_VAL_REPLACE+"}))"; // 16
     // groups:
     // 1: attribute name
-    // 2: HREF - single URI relative to doc base, or occasionally javascript:
+    // 2: HREF, CITE - single URI relative to doc base, or occasionally javascript:
     // 3: ACTION - single URI relative to doc base, or occasionally javascript:
     // 4: ON[WHATEVER] - script handler
-    // 5: SRC,SRCSET,LOWSRC,BACKGROUND,CITE,LONGDESC,USEMAP,PROFILE, or 
+    // 5: SRC,SRCSET,LOWSRC,BACKGROUND,LONGDESC,USEMAP,PROFILE, or
     //    DATA-SRC, DATA-ORIGINAL single URI relative to doc base
     //    DATA-SRCSET, DATA-ORIGINAL-SET multi URI relative to doc base
     // 6: CODEBASE - a single URI relative to doc base, affecting other
