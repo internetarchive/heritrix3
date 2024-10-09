@@ -23,6 +23,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -50,10 +52,6 @@ import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.FileUtils;
 import org.archive.util.anvl.ANVLRecord;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.ISODateTimeFormat;
-
 
 /**
  * Convert ARCs to (sortof) WARCs.
@@ -61,6 +59,8 @@ import org.joda.time.format.ISODateTimeFormat;
  * @version $Date$ $Revision$
  */
 public class Arc2Warc {
+    private static final DateTimeFormatter ARC_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+            .withZone(ZoneOffset.UTC);
     protected RecordIDGenerator generator = new UUIDGenerator();
     
     private static void usage(HelpFormatter formatter, Options options,
@@ -156,10 +156,8 @@ public class Arc2Warc {
 
        // convert ARC date to WARC-Date format
        String arcDateString = r.getHeader().getDate();
-       String warcDateString = DateTimeFormat.forPattern("yyyyMMddHHmmss")
-           .withZone(DateTimeZone.UTC)
-               .parseDateTime(arcDateString)
-                   .toString(ISODateTimeFormat.dateTimeNoMillis());
+
+       String warcDateString = DateTimeFormatter.ISO_DATE_TIME.format(ARC_DATE_FORMAT.parse(arcDateString));
        recordInfo.setCreate14DigitDate(warcDateString);
 
        ANVLRecord ar = new ANVLRecord();
