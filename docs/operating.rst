@@ -198,8 +198,7 @@ Log Files
 Each crawl job has its own set of log files found in the ``logs`` subdirectory of a job launch directory.
 
 Logging can be configured by modifying the ``logging.properties`` file
-that is located under the ``$HERITRIX_HOME/conf`` directory. For information on using
-logging properties, visit http://logging.apache.org/log4j/.
+that is located under the ``$HERITRIX_HOME/conf`` directory.
 
 alerts.log
 ~~~~~~~~~~
