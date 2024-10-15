@@ -151,14 +151,16 @@
 		<dependency>
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
-			<version>1.1.8</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.hadoop</groupId>
-					<artifactId>hadoop-core</artifactId>
-				</exclusion>
-			</exclusions>
+			<version>1.1.10</version>
 		</dependency>
+
+		<!-- TODO: remove dependency on log4j -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
