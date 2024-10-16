@@ -43,6 +43,9 @@ public class ConfigurableExtractorJS extends ExtractorJS {
     public void setStrict(boolean strict) {
         kp.put("strictMode", strict);
     }
+    {
+    	setStrict(false);
+    }
 
     /** Maximum length of extracted potential URLs */
     public int getMaximumCandidateLength() {
