@@ -151,14 +151,9 @@
 		<dependency>
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
-			<version>1.1.8</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.hadoop</groupId>
-					<artifactId>hadoop-core</artifactId>
-				</exclusion>
-			</exclusions>
+			<version>1.1.10</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>

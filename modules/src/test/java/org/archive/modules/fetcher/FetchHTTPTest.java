@@ -32,27 +32,18 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
@@ -72,15 +63,16 @@ import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.bbottema.javasocksproxyserver.SocksServer;
-import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.proxy.ConnectHandler;
+import org.eclipse.jetty.proxy.ProxyServlet;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.littleshoot.proxy.DefaultHttpProxyServer;
-import org.littleshoot.proxy.HttpFilter;
-import org.littleshoot.proxy.HttpRequestFilter;
-import org.littleshoot.proxy.ProxyAuthorizationHandler;
 
 public class FetchHTTPTest {
     
@@ -440,27 +432,51 @@ public class FetchHTTPTest {
         runDefaultChecks(curi, "httpBindAddress");
     }
 
-    protected static class ProxiedRequestRememberer implements HttpRequestFilter {
-        protected HttpRequest lastProxiedRequest = null;
-        public HttpRequest getLastProxiedRequest() {
-            return lastProxiedRequest;
+    public static class TestProxyServlet extends ProxyServlet {
+        @Override
+        protected void onServerResponseHeaders(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Response serverResponse) {
+            super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+            proxyResponse.addHeader("Via", "test-proxy-servlet");
         }
 
         @Override
-        public void filter(HttpRequest httpRequest) {
-            lastProxiedRequest = httpRequest;
+        protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+            String expectedUser = (String) getServletContext().getAttribute("proxy-user");
+            if (expectedUser != null) {
+                String expectedPassword = (String) getServletContext().getAttribute("proxy-password");
+                String expectedHeader = "Basic " + Base64.getEncoder().encodeToString((expectedUser + ":" + expectedPassword).getBytes());
+                String authHeader = request.getHeader("Proxy-Authorization");
+                if (!expectedHeader.equals(authHeader)) {
+                    response.setHeader("Proxy-Authenticate", "Basic realm=\"test\"");
+                    response.sendError(407);
+                    return;
+                }
+            }
+            super.service(request, response);
         }
+    }
 
-        public void clear() {
-            lastProxiedRequest = null;
-        }
+    private static Server newHttpProxy() {
+        return newHttpProxy(null, null);
+    }
+
+    private static Server newHttpProxy(String user, String password) {
+        Server httpProxyServer = new Server(new InetSocketAddress("localhost", 7877));
+        ConnectHandler connectHandler = new ConnectHandler();
+        httpProxyServer.setHandler(connectHandler);
+        ServletContextHandler context = new ServletContextHandler(connectHandler, "/",
+                ServletContextHandler.SESSIONS);
+        ServletHolder proxyServlet = new ServletHolder(TestProxyServlet.class);
+        context.addServlet(proxyServlet, "/*");
+        context.setAttribute("proxy-user", user);
+        context.setAttribute("proxy-password", password);
+        return httpProxyServer;
     }
 
     @Test
     public void testHttpProxy() throws Exception {
-        ProxiedRequestRememberer proxiedRequestRememberer = new ProxiedRequestRememberer();
-        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877, proxiedRequestRememberer, new HashMap<String, HttpFilter>());
-        httpProxyServer.start(true, false);
+        Server httpProxyServer = newHttpProxy(null, null);
+        httpProxyServer.start();
 
         try {
             fetcher().setHttpProxyHost("localhost");
@@ -471,12 +487,9 @@ public class FetchHTTPTest {
 
             String requestString = httpRequestString(curi);
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.0\r\n"));
-            assertNotNull(curi.getHttpResponseHeader("Via"));
+            assertEquals("test-proxy-servlet", curi.getHttpResponseHeader("Via"));
             
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
-            
-            // check that our little proxy server really handled a request
-            assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
             
             runDefaultChecks(curi, "requestLine");
         } finally {
@@ -486,16 +499,8 @@ public class FetchHTTPTest {
 
     @Test
     public void testHttpProxyAuth() throws Exception {
-        ProxiedRequestRememberer proxiedRequestRememberer = new ProxiedRequestRememberer();
-        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877, proxiedRequestRememberer, new HashMap<String, HttpFilter>());
-        httpProxyServer.addProxyAuthenticationHandler(new ProxyAuthorizationHandler() {
-            @Override
-            public boolean authenticate(String userName, String password) {
-                // logger.info("username=" + userName + " password=" + password);
-                return "http-proxy-user".equals(userName) && "http-proxy-password".equals(password);
-            }
-        });
-        httpProxyServer.start(true, false);
+        Server httpProxyServer = newHttpProxy("http-proxy-user", "http-proxy-password");
+        httpProxyServer.start();
 
         try {
             fetcher().setHttpProxyHost("localhost");
@@ -511,12 +516,10 @@ public class FetchHTTPTest {
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
 
-            assertNull(proxiedRequestRememberer.getLastProxiedRequest()); // request didn't make it this far
             assertNotNull(curi.getHttpResponseHeader("Proxy-Authenticate"));
             assertEquals(407, curi.getFetchStatus());
 
             // fetch original again now that credentials should be populated
-            proxiedRequestRememberer.clear();
             curi = makeCrawlURI("http://localhost:7777/");
             fetcher().process(curi);
 
@@ -524,7 +527,6 @@ public class FetchHTTPTest {
             assertTrue(requestString.startsWith("GET http://localhost:7777/ HTTP/1.1\r\n"));
             assertTrue(requestString.contains("Proxy-Connection: close\r\n"));
             assertNotNull(curi.getHttpResponseHeader("Via"));
-            assertNotNull(proxiedRequestRememberer.getLastProxiedRequest());
             runDefaultChecks(curi, "requestLine");
         } finally {
             httpProxyServer.stop();
@@ -533,8 +535,8 @@ public class FetchHTTPTest {
 
     @Test
     public void testHttpsProxy() throws Exception {
-        DefaultHttpProxyServer httpProxyServer = new DefaultHttpProxyServer(7877);
-        httpProxyServer.start(true, false);
+        Server httpProxyServer = newHttpProxy();
+        httpProxyServer.start();
 
         try {
             fetcher().setHttpProxyHost("localhost");
