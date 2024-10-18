@@ -14,6 +14,17 @@
 	</properties>
 	<dependencies>
 		<dependency>
+			<groupId>org.archive.heritrix</groupId>
+			<artifactId>heritrix-engine</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.archive.heritrix</groupId>
+			<artifactId>heritrix-modules</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-client</artifactId>
 			<version>0.98.6-cdh5.3.5</version>
@@ -38,19 +49,15 @@
 					<groupId>com.google.guava</groupId>
 					<artifactId>guava</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>commons-io</groupId>
+					<artifactId>commons-io</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-collections</groupId>
+					<artifactId>commons-collections</artifactId>
+				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.archive.heritrix</groupId>
-			<artifactId>heritrix-engine</artifactId>
-			<version>${project.version}</version>
-			<!-- scope>compile</scope -->
-		</dependency>
-		<dependency>
-			<groupId>org.archive.heritrix</groupId>
-			<artifactId>heritrix-modules</artifactId>
-			<version>${project.version}</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.rabbitmq</groupId>
