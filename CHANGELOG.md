@@ -4,6 +4,23 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20240909...HEAD)
 
+#### Removals
+- Removed HBase modules from contrib. [#621](https://github.com/internetarchive/heritrix3/pull/621)
+
+#### Fixes
+- ConfigurableExtractorJS: Set default value (false) for strict property. [#612](https://github.com/internetarchive/heritrix3/pull/612)
+- ExtractorHTML: Treat `cite` attribute as a navlink instead of embed. [#608](https://github.com/internetarchive/heritrix3/pull/608)
+- Building no longer require the builds.archive.org repository. [#614](https://github.com/internetarchive/heritrix3/pull/614)
+- Updated to new URL of the restlet repository.
+
+#### Dependency Upgrades
+- Removed hbase, joda-time, log4j 
+- commons-io 2.14.0
+- kafka-clients 3.8.0
+- ftpserver-core 1.2.0
+- jetty 9.4.56.v20240826
+- webarchive-commons 1.1.10
+
 ## [3.4.0-20240909](https://github.com/internetarchive/heritrix3/releases/3.4.0-20240909) 2024-09-09
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20220727...3.4.0-20240909)
