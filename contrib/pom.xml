@@ -66,12 +66,6 @@
 			<version>1.16.1</version>
 		</dependency>
 	</dependencies>
-	<repositories>
-		<repository>
-			<id>repository.cloudera.com,artifactory,cloudera-repos</id>
-			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-		</repository>
-	</repositories>
 	<build>
 		<plugins>
 			<plugin>
