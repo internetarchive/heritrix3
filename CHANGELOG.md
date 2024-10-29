@@ -2,7 +2,11 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20240909...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.5.0...HEAD)
+
+## [3.5.0](https://github.com/internetarchive/heritrix3/releases/3.5.0) 2024-10-29
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20240909...3.5.0)
 
 #### Removals
 - Removed HBase modules from contrib. [#621](https://github.com/internetarchive/heritrix3/pull/621)
