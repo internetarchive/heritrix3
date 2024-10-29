@@ -1441,6 +1441,9 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * Tally up the number of transitive (non-simple-link) hops at
      * the end of this CrawlURI's pathFromSeed.
      * 
+     * {@link Hop#NAVLINK} and {@link Hop#MANIFEST} are regarded as 
+     * "simple links". All other hop types are regarded as transitive. 
+     * 
      * In some cases, URIs with greater than zero but less than some
      * threshold such hops are treated specially. 
      * 
@@ -1453,7 +1456,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         String path = getPathFromSeed();
         int transCount = 0;
         for(int i=path.length()-1;i>=0;i--) {
-            if(path.charAt(i)==Hop.NAVLINK.getHopChar()) {
+            if(path.charAt(i)==Hop.NAVLINK.getHopChar()
+            		|| path.charAt(i)==Hop.MANIFEST.getHopChar()) {
                 break;
             }
             transCount++;
