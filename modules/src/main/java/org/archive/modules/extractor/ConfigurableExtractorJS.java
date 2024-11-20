@@ -7,29 +7,38 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.archive.modules.CrawlURI;
+
 /**
  * <p>Subclasses the standard ExtractorJS to add some configuration option. All options default to
- * the standard behavior of {@link ExtractorJS}. All configuration options can be overridden on
- * a per-sheet basis.</p>
+ * the standard behavior of {@link ExtractorJS}. 
  * 
  * <p>
  * The configuration options are:
  * <ul>
  *   <li>
  *   	<b>strict</b>: Enables strict mode where only non-relative URLs are extracted. Any 
- *      extracted potential URLs not starting with a scheme are ignored.
+ *      extracted potential URLs not starting with a scheme are ignored. Can be overriden on a per-sheet 
+ *      basis.
  *   </li>
  *   <li>
  *   	<b>maximumCandidateLength</b>: Maximum length of extracted potential URLs. Any string longer than
- *      this will be ignored. 
+ *      this will be ignored. Can be overriden on a per-sheet basis.
  *   </li>
  *   <li>
  *   	<b>rejectRelativeIgnoreSet</b>: A set of literal strings that should never be considered.
- *      Any extracted potential URLs matching a value in this set will be ignored. 
+ *      Any extracted potential URLs matching a value in this set will be ignored. Can not be overriden
+ *      on a per-sheet basis. 
  *   </li>
  *   <li>
  *   	<b>rejectRelativeMatchingRegexList</b>: A list of regular expressions. Any extracted 
- *      potential URLs matching a regular expression on this list will be ignored. 
+ *      potential URLs matching a regular expression on this list will be ignored. Can not be overriden
+ *      on a per-sheet basis. 
+ *   </li>
+ *   <li>
+ *   	<b>forceStrictIfUrlMatchingRegexList</b>: A list of regular expressions. Any URL that matches 
+ *      one or more of the regular expressions on this list will be processed in strict mode, with only 
+ *      absolute URLs extracted, not any relative ones. Can not be overriden on a per-sheet basis. 
  *   </li>
  * </ul>
  * </p> 
@@ -63,7 +72,7 @@ public class ConfigurableExtractorJS extends ExtractorJS {
      * The list of regular expressions to evalute potential <em>relative</em> url against, rejecting any that match.
      */
     private List<String> rejectRelativeMatchingRegexList = new ArrayList<>();
-    private List<Pattern> rejectRelativeMatchingRegexListPatterns;
+    private List<Pattern> rejectRelativeMatchingRegexListPatterns = new ArrayList<>();
 
     public List<String> getRejectRelativeMatchingRegexList() {
         return rejectRelativeMatchingRegexList;
@@ -79,6 +88,27 @@ public class ConfigurableExtractorJS extends ExtractorJS {
 		rejectRelativeMatchingRegexListPatterns.add(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE));
     }
     
+
+    /**
+     * Any URL that matches any of the regular expressions on this list will
+     * be processed in strict mode, with only absolute URL extracted, not any relative ones. 
+     */
+    private List<String> forceStrictIfUrlMatchingRegexList = new ArrayList<>();
+    private List<Pattern> forceStrictIfUrlMatchingRegexListPatterns = new ArrayList<>();
+
+    public List<String> getForceStrictIfUrlMatchingRegexList() {
+        return forceStrictIfUrlMatchingRegexList;
+    }
+    public void setforceStrictIfUrlMatchingRegexList(List<String> patterns) {
+    	forceStrictIfUrlMatchingRegexList = patterns;
+    	forceStrictIfUrlMatchingRegexListPatterns = new ArrayList<>();
+    	for (String p : patterns) {
+    		forceStrictIfUrlMatchingRegexListPatterns.add(Pattern.compile(p, Pattern.CASE_INSENSITIVE));
+    	}
+    }
+    public void addForceStrictIfUrlMatchingRegex(String pattern) {
+    	forceStrictIfUrlMatchingRegexListPatterns.add(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE));
+    }
 
 
     /**
@@ -99,10 +129,10 @@ public class ConfigurableExtractorJS extends ExtractorJS {
     
     
     @Override
-    protected boolean shouldAddUri(String candidate) {
+    protected boolean shouldAddUri(CrawlURI curi, String candidate) {
     	return passesMaxLength(candidate) &&
-    			passesStrictMode(candidate) && 
-    			super.shouldAddUri(candidate) &&  
+    			passesStrictMode(curi, candidate) && 
+    			super.shouldAddUri(curi, candidate) &&  
         		!isOnRejectList(candidate);
     }
     
@@ -112,8 +142,19 @@ public class ConfigurableExtractorJS extends ExtractorJS {
     	return max <= 0 || candidate.length() <= max;
     }
     
-    protected boolean passesStrictMode(String candidate) {
-    	return !getStrict() || hasScheme(candidate);
+    protected boolean passesStrictMode(CrawlURI curi, String candidate) {
+    	boolean strict = getStrict();
+    	if (!strict) {
+    		for (Pattern p : forceStrictIfUrlMatchingRegexListPatterns) {
+    			if (p.matcher(curi.getURI()).matches()) {
+    				// Force strict
+    				strict = true;
+    				break;
+    			}
+    		}
+    	}
+    	
+    	return !strict || hasScheme(candidate);
     }
     
     protected boolean hasScheme(String candidate) {

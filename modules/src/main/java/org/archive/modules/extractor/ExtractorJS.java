@@ -173,7 +173,7 @@ public class ExtractorJS extends ContentExtractor {
         }
         candidate = UriUtils.speculativeFixup(candidate, curi.getUURI());
 
-        if (shouldAddUri(candidate)) {
+        if (shouldAddUri(curi, candidate)) {
             try {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 if (handlingJSFile) {
@@ -193,7 +193,7 @@ public class ExtractorJS extends ContentExtractor {
         return false;
     }
     
-    protected boolean shouldAddUri(String candidate) {
+    protected boolean shouldAddUri(CrawlURI curi, String candidate) {
     	return UriUtils.isVeryLikelyUri(candidate);
     }
     
