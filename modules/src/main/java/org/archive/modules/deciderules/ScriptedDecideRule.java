@@ -30,10 +30,10 @@ import javax.script.ScriptException;
 import org.apache.commons.io.IOUtils;
 import org.archive.io.ReadSource;
 import org.archive.modules.CrawlURI;
+import org.archive.spring.Required;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 

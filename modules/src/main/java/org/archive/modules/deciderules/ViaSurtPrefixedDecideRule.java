@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.archive.modules.CrawlURI;
+import org.archive.spring.Required;
 import org.archive.util.SurtPrefixSet;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Rule applies the configured decision for any URI which has a 'via' whose

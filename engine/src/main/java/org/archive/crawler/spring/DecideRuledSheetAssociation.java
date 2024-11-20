@@ -20,8 +20,8 @@
 package org.archive.crawler.spring;
 
 import org.archive.modules.deciderules.DecideRule;
+import org.archive.spring.Required;
 import org.springframework.beans.factory.BeanNameAware;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.Ordered;
 
 /**

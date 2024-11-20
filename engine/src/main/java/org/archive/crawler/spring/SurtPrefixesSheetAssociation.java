@@ -19,9 +19,9 @@
  
 package org.archive.crawler.spring;
 
-import java.util.List;
+import org.archive.spring.Required;
 
-import org.springframework.beans.factory.annotation.Required;
+import java.util.List;
 
 /**
  * SheetAssociation applied on the basis of matching SURT prefixes. 

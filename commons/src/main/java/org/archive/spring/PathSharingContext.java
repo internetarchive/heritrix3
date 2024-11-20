@@ -68,18 +68,28 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
 
     public PathSharingContext(String configLocation) throws BeansException {
         super(configLocation);
+        init();
     }
     public PathSharingContext(String[] configLocations, ApplicationContext parent) throws BeansException {
         super(configLocations, parent);
+        init();
     }
     public PathSharingContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
         super(configLocations, refresh, parent);
+        init();
     }
     public PathSharingContext(String[] configLocations, boolean refresh) throws BeansException {
         super(configLocations, refresh);
+        init();
     }
     public PathSharingContext(String[] configLocations) throws BeansException {
         super(configLocations);
+        init();
+    }
+
+    private void init() {
+        // enforce @Required annotation
+        addBeanFactoryPostProcessor(beanFactory -> beanFactory.addBeanPostProcessor(new RequiredAnnotationBeanPostProcessor()));
     }
 
     public String getPrimaryConfigurationPath() {
@@ -201,4 +211,6 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
         }
         return data;
     }
+
+
 }
