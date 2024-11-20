@@ -395,9 +395,9 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<jetty.version>9.4.56.v20240826</jetty.version>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.release>8</maven.compiler.release>
+		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
     <profiles>
         <profile>
