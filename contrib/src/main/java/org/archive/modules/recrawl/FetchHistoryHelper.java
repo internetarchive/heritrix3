@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 
 /**
@@ -33,10 +34,6 @@ import org.archive.modules.CrawlURI;
  */
 public class FetchHistoryHelper {
   private static final Log logger = LogFactory.getLog(FetchHistoryHelper.class);
-  /**
-   * key for storing timestamp in crawl history map.
-   */
-  public static final String A_TIMESTAMP = ".ts";
 
   /**
    * returns a Map to store recrawl data, positioned properly in CrawlURI's
@@ -59,10 +56,10 @@ public class FetchHistoryHelper {
     for (int i = 0; i < history.length; i++) {
       if (history[i] == null) {
         history[i] = new HashMap<String, Object>();
-        history[i].put(A_TIMESTAMP, timestamp);
+        history[i].put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, timestamp);
         return history[i];
       }
-      Object ts = history[i].get(A_TIMESTAMP);
+      Object ts = history[i].get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
       // no timestamp value is regarded as older than anything.
       if (!(ts instanceof Long) || timestamp > (Long)ts) {
         if (i < history.length - 2) {
@@ -71,7 +68,7 @@ public class FetchHistoryHelper {
           history[i + 1] = history[i];
         }
         history[i] = new HashMap<String, Object>();
-        history[i].put(A_TIMESTAMP, timestamp);
+        history[i].put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, timestamp);
         return history[i];
       }
     }

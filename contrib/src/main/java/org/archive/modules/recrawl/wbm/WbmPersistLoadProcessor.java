@@ -455,7 +455,7 @@ public class WbmPersistLoadProcessor extends Processor {
         }
         if (info != null) {
             Map<String, Object> history = FetchHistoryHelper.getFetchHistory(curi,
-                    (Long)info.get(FetchHistoryHelper.A_TIMESTAMP), historyLength);
+                    (Long)info.get(CoreAttributeConstants.A_FETCH_BEGAN_TIME), historyLength);
             if (history != null)
                 history.putAll(info);
             loadedCount.incrementAndGet();
@@ -516,10 +516,6 @@ public class WbmPersistLoadProcessor extends Processor {
         if (tsbuffer.remaining() == 0) {
             try {
                 long ts = DateUtils.parse14DigitDate(new String(tsbuffer.array())).getTime();
-                // A_TIMESTAMP has been used for sorting history long before A_FETCH_BEGAN_TIME
-                // field was introduced. Now FetchHistoryProcessor fails if A_FETCH_BEGAN_TIME is
-                // not set. We could stop storing A_TIMESTAMP and sort by A_FETCH_BEGAN_TIME.
-                info.put(FetchHistoryHelper.A_TIMESTAMP, ts);
                 info.put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, ts);
             } catch (ParseException ex) {
             }
