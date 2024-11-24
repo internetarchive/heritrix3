@@ -128,6 +128,10 @@ public class Heritrix {
                 "\"password\" (which leaves username as the default 'admin'), " +
                 "\"username:password\", or \"@filename\" for a file that " +
                 "includes the single line \"username:password\". ");
+        options.addOption("c", "checkpoint", true,
+                "Recovers from the given checkpoint. May only be used with the " +
+                "--run-job option. The special value 'latest' will recover the " +
+                "last checkpoint or if none exist will launch a new crawl.");
         options.addOption("j", "jobs-dir", true, "The jobs directory.  " +
                         "Defaults to ./jobs");
         options.addOption("l", "logging-properties", true, 
@@ -265,6 +269,11 @@ public class Heritrix {
             System.exit(1);
             authPassword = ""; // suppresses uninitialized warning
         }
+
+        if (cl.hasOption('c') && !cl.hasOption('r')) {
+            System.err.println("Cannot use --checkpoint without --run-job.");
+            System.exit(1);
+        }
         
         File jobsDir = null; 
         if (cl.hasOption('j')) {
@@ -374,12 +383,21 @@ public class Heritrix {
             }
             if (cl.hasOption('r')) {
                 String jobName = cl.getOptionValue('r');
-                engine.requestLaunch(jobName);
                 CrawlJob job = engine.getJob(jobName);
-                if (job == null || job.getCrawlController() == null) {
+                if (job == null) {
+                    System.err.println("Job not found: " + jobName);
+                    System.exit(1);
+                }
+                job.validateConfiguration();
+                if (cl.hasOption('c')) {
+                    job.getCheckpointService().setRecoveryCheckpointByName(cl.getOptionValue('c'));
+                }
+                job.launch();
+                if (job.getCrawlController() == null) {
                     System.err.println("Failed to launch job: " + jobName);
                     System.exit(1);
                 }
+
                 job.getCrawlController().requestCrawlResume();
                 engine.waitForNoRunningJobs(0);
                 engine.shutdown();

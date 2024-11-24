@@ -27,6 +27,9 @@ Command-line Options
 -b, --web-bind-hosts HOST
             Specifies a comma-separated list of hostnames/IP-addresses to bind to the Web UI. You may use '/' as a
             shorthand for 'all addresses'.  **Default**: ``localhost/127.0.0.1``
+ -c,--checkpoint ARG
+            Recovers from the given checkpoint. May only be used with the --run-job option. The special value 'latest'
+            will recover the last checkpoint or if none exist will launch a new crawl.
 -j, --job-dirs PATH
             Sets the directory Heritrix stores jobs in. **Default:** ``$HERITRIX_HOME/jobs``
 -l, --logging-properties PATH
