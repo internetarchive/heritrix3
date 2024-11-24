@@ -7,7 +7,7 @@ import java.util.Set;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.esotericsoftware.kryo.util.MapReferenceResolver;
-import org.objenesis.strategy.SerializingInstantiatorStrategy;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 /**
  * Extensions to Kryo to let classes control their own registration, suggest
@@ -23,7 +23,7 @@ public class AutoKryo extends Kryo {
 
     public AutoKryo() {
         super();
-        setInstantiatorStrategy(new DefaultInstantiatorStrategy(new SerializingInstantiatorStrategy()));
+        setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     }
 
     public void autoregister(Class<?> type) {
