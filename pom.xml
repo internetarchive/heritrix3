@@ -352,6 +352,16 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<!-- Retain method parameter names. This is required for some autowiring like AbstractFrontier.setScope()
+					https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-6.1-Release-Notes#parameter-name-retention -->
+					<parameters>true</parameters>
+				</configuration>
+			</plugin>
+			<plugin>
 				<!-- install source jars to maven repo
 				http://maven.apache.org/plugins/maven-source-plugin/usage.html -->
 				<groupId>org.apache.maven.plugins</groupId>
@@ -395,9 +405,9 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<jetty.version>9.4.56.v20240826</jetty.version>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.release>8</maven.compiler.release>
+		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
     <profiles>
         <profile>

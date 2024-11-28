@@ -36,12 +36,12 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.Required;
 import org.archive.spring.WriteTarget;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DevUtils;
 import org.archive.util.iterator.LineReadingIterator;
 import org.archive.util.iterator.RegexLineIterator;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Module that announces a list of seeds from a text source (such

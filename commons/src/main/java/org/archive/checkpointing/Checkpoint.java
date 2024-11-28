@@ -30,11 +30,11 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.spring.ConfigPath;
+import org.archive.spring.Required;
 import org.archive.util.ArchiveUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Represents a single checkpoint, by its name and main store directory.
