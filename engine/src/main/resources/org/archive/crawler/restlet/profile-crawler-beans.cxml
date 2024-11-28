@@ -564,6 +564,7 @@ http://example.example/example
  <bean id="checkpointService" 
    class="org.archive.crawler.framework.CheckpointService">
   <!-- <property name="checkpointIntervalMinutes" value="-1"/> -->
+  <!-- <property name="checkpointOnShutdown" value="true"/> -->
   <!-- <property name="checkpointsDir" value="checkpoints"/> -->
   <!-- <property name="forgetAllButLatest" value="true"/> -->
  </bean>

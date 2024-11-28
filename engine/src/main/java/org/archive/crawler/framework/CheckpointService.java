@@ -56,7 +56,7 @@ import org.springframework.validation.Validator;
  * build and before launch (setRecoveryCheckpointByName).
  * 
  * Offers optional automatic checkpointing at a configurable interval 
- * in minutes. 
+ * in minutes.
  * 
  * @author stack
  * @author gojomo
@@ -80,6 +80,8 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     protected TimerTask checkpointTask = null; 
     protected ConfigPath checkpointsDir = 
         new ConfigPath("checkpoints subdirectory","checkpoints");
+    protected Thread shutdownHook;
+
     public ConfigPath getCheckpointsDir() {
         return checkpointsDir;
     }
@@ -105,6 +107,21 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         if(checkpointIntervalMinutes!=oldVal) {
             setupCheckpointTask();
         }
+    }
+
+    protected boolean checkpointOnShutdown = false;
+
+    public boolean getCheckpointOnShutdown() {
+        return checkpointOnShutdown;
+    }
+
+    /**
+     * Whether a checkpoint should be made when the JVM is shutdown.
+     * Default is false.
+     */
+    public void setCheckpointOnShutdown(boolean checkpointOnShutdown) {
+        this.checkpointOnShutdown = checkpointOnShutdown;
+        setupShutdownHook();
     }
     
     protected boolean forgetAllButLatest = false;
@@ -179,6 +196,7 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
         }   
         this.isRunning = true; 
         setupCheckpointTask();
+        setupShutdownHook();
     }
     
     /**
@@ -221,12 +239,31 @@ public class CheckpointService implements Lifecycle, ApplicationContextAware, Ha
     public synchronized boolean isRunning() {
         return isRunning; 
     }
-    
+
+    protected synchronized void setupShutdownHook() {
+        if (!checkpointOnShutdown || shutdownHook != null || !isRunning) return;
+        shutdownHook = new Thread(() -> {
+            if (!checkpointOnShutdown) return;
+            LOGGER.info("Checkpointing on shutdown");
+            try {
+                // pause first to ensure no crawling occurs between the checkpoint and process termination
+                controller.requestCrawlPause();
+                requestCrawlCheckpoint();
+            } catch (Exception e) {
+                LOGGER.severe("Failed to checkpoint on shutdown: " + e.getMessage());
+            }
+        });
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
     
     public synchronized void stop() {
         LOGGER.info("Cleaned up Checkpoint TimerThread.");
         this.timer.cancel();
-        this.isRunning = false; 
+        this.isRunning = false;
+        if (shutdownHook != null) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            shutdownHook = null;
+        }
     }
     
     /**

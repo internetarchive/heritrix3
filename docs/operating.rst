@@ -27,6 +27,9 @@ Command-line Options
 -b, --web-bind-hosts HOST
             Specifies a comma-separated list of hostnames/IP-addresses to bind to the Web UI. You may use '/' as a
             shorthand for 'all addresses'.  **Default**: ``localhost/127.0.0.1``
+ -c,--checkpoint ARG
+            Recovers from the given checkpoint. May only be used with the --run-job option. The special value 'latest'
+            will recover the last checkpoint or if none exist will launch a new crawl.
 -j, --job-dirs PATH
             Sets the directory Heritrix stores jobs in. **Default:** ``$HERITRIX_HOME/jobs``
 -l, --logging-properties PATH
@@ -685,11 +688,18 @@ To configure Heritrix to automatically run checkpoints periodically, set the
 
   <bean id="checkpointService" class="org.archive.crawler.framework.CheckpointService">
     <property name="checkpointIntervalMinutes" value="60"/>
+    <property name="checkpointOnShutdown" value="true"/>
     <!-- <property name="checkpointsDir" value="checkpoints"/> -->
-    <!-- <property name="forgetAllButLatest" value="true"/> -->
+    <property name="forgetAllButLatest" value="true"/>
   </bean>
 
-By default only the latest checkpoint will be kept.
+When ``checkpointOnShutdown`` is enabled Heritrix will create a checkpoint if the job is running when the JVM is
+gracefully shutdown. Note that if Heritrix is killed, crashes or the server it is running on unexpectedly loses
+power the shutdown checkpoint will not be created. Consequently it may be ideal to enable both shutdown and interval
+checkpoints together.
+
+Setting ``forgetAllButLatest``` will ensure only the latest checkpoint is kept.
+
 
 Restarting from a Checkpoint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -707,6 +717,10 @@ The web UI provides an option to restart a crawl from a checkpoint:
 7. Click unpause
 
 The job will now begin running from the chosen checkpoint.
+
+When running a job from the command-line with the ``--run-job`` CLI option you can use the ``--checkpoint`` to restart
+the job from a named checkpoint. The special name ``latest`` will restart from the latest checkpoint if any exist,
+otherwise it will launch a new crawl.
 
 Crawl Recovery
 --------------
