@@ -2,7 +2,54 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.5.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...HEAD)
+
+## 3.6.0
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.5.0...3.6.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.6.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.6.0/pom)
+
+#### Java Compatibility Notice
+
+This release of Heritrix **requires Java 17 or later**.
+
+#### New Features
+- **Automatic Checkpoints on Shutdown**: Added `checkpointOnShutdown` option to `CheckpointService` to enable automatic checkpoints if Heritrix is gracefully terminated. [#626](https://github.com/internetarchive/heritrix3/pull/626)
+- **Command-Line Checkpoint Selection**: The `--checkpoint` command-line option restarts from a named checkpoint when using the `--run-job` option. [#626](https://github.com/internetarchive/heritrix3/pull/626)
+- **ConfigurableExtractorJS forceStrictIfUrlMatchingRegexList**: URLs matching the regular expressions on this list will be processed in strict mode, with only absolute URLs extracted, not  relative ones. [#624](https://github.com/internetarchive/heritrix3/pull/624)
+
+#### Changes
+- **Upgraded to Spring Framework 6.1**: The Spring `@Required` annotation has been removed, so it was replaced with a custom implementation to maintain backward compatibility with existing crawl configurations. Spring 6 requires Java 17 so Heritrix does now too. [#625](https://github.com/internetarchive/heritrix3/pull/625)
+
+#### Fixes
+- **Manifest Hop Priority**: Links from sitemaps are now given the same priority as normal navigation links. They were incorrectly being prioritized as transitive hops (embeds). [#623](https://github.com/internetarchive/heritrix3/pull/623)
+- **SLF4J Logging**: Heritrix now includes `slf4j-jdk14` to eliminate a startup warning message and fix logging for dependencies (such as crawler-commons) that use SLF4J. Heritrix doesn't use SLF4J itself. [#628](https://github.com/internetarchive/heritrix3/pull/628)
+
+#### Dependency Upgrades
+- amqp-client 5.23.0
+- commons-cli 1.9.0
+- commons-codec 1.17.1
+- commons-io 2.18.0
+- commons-net 3.11.1
+- crawler-commons 1.4
+- dnsjava 3.6.2
+- easymock 5.5.0
+- freemarker 2.3.33
+- groovy 4.0.24
+- gson 2.11.0
+- httpcomponents 4.5.14
+- java-socks-proxy-server 4.1.2
+- java-websocket removed
+- jaxb-runtime 4.0.5
+- jsch switched to mwiede fork 0.2.21
+- junit 4.13.2
+- kafka-clients 3.9.0
+- kryo 5.6.2
+- pdfbox 3.0.3
+- slf4j 2.0.16
+- spring-framework 6.1.15
+- webarchive-commons 1.2.0
 
 ## [3.5.0](https://github.com/internetarchive/heritrix3/releases/3.5.0) 2024-10-29
 
