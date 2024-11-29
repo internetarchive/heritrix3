@@ -44,14 +44,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.restlet.jse</groupId>
+            <groupId>org.restlet</groupId>
             <artifactId>org.restlet</artifactId>
-            <version>2.4.0</version>
+            <version>${restlet.version}</version>
         </dependency>
 		<dependency>
-			<groupId>org.restlet.jse</groupId>
+			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.jetty</artifactId>
-			<version>2.4.0</version>
+			<version>${restlet.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.jetty</groupId>
@@ -60,15 +60,15 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>org.restlet.jse</groupId>
+			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.xml</artifactId>
-			<version>2.4.0</version>
+			<version>${restlet.version}</version>
 		</dependency>
 		<dependency>
 			<!-- for HTTP Digest auth -->
-			<groupId>org.restlet.jse</groupId>
+			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.crypto</artifactId>
-			<version>2.4.0</version>
+			<version>${restlet.version}</version>
 		</dependency>
 		<!-- jaxb is no longer included in jdk11+ -->
 		<dependency>
@@ -118,5 +118,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<restlet.version>2.5.0-rc1</restlet.version>
 	</properties>
 </project>
