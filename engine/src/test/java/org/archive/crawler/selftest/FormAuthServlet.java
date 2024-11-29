@@ -18,12 +18,12 @@
  */
 package org.archive.crawler.selftest;
 
-import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 
 /**
@@ -36,8 +36,8 @@ public class FormAuthServlet extends HttpServlet {
 
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
-    throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+    throws IOException {
         String username = req.getParameter("username");
         String password = req.getParameter("password");
         if (username.equals("Mr. Happy Pants") && password.equals("xyzzy")) {

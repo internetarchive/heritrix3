@@ -22,10 +22,10 @@ package org.archive.crawler.selftest;
 import java.io.IOException;
 
 import org.archive.crawler.framework.CrawlJob;
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 
 
 /**

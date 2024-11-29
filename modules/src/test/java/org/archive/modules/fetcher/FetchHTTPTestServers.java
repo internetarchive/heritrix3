@@ -23,22 +23,22 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
 
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Password;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -112,20 +112,20 @@ public class FetchHTTPTestServers {
 
     protected static final byte[] EIGHTY_BYTE_LINE = "1234567890123456789012345678901234567890123456789012345678901234567890123456789\n".getBytes();
 
-    protected static class TestHandler extends SessionHandler {
+    protected static class TestServlet extends HttpServlet {
 
-        public TestHandler() {
+        public TestServlet() {
             super();
         }
 
         @Override
-        public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-
-            // echo the remote host back to the client so tests can reference it
+        protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // echo the remote host back to the client so tests can reference it
             response.setHeader("Client-Host", request.getRemoteHost());
 
+            String target = request.getRequestURI();
             if (target.endsWith("/set-cookie")) {
-                response.addCookie(new javax.servlet.http.Cookie("test-cookie-name", "test-cookie-value"));
+                response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
             }
             
             if (target.equals("/200k")) {
@@ -135,7 +135,6 @@ public class FetchHTTPTestServers {
                 for (int i = 0; i < 200000 / EIGHTY_BYTE_LINE.length; i++) {
                     response.getOutputStream().write(EIGHTY_BYTE_LINE);
                 }
-                ((Request)request).setHandled(true);
             } else if (target.equals("/slow.txt")) {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(200);
@@ -147,80 +146,66 @@ public class FetchHTTPTestServers {
                     } catch (InterruptedException e) {
                     }
                 }
-                ((Request)request).setHandled(true);
             } else if (target.equals("/chunked.txt")) {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(200);
                 // response.setContentLength(HttpTokens.CHUNKED_CONTENT);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
                 response.getOutputStream().flush();
-                ((Request)request).setHandled(true);
             } else if (request.getHeader("Accept-Encoding") != null
                     && request.getHeader("Accept-Encoding").contains("gzip")) {
                 response.setHeader("Content-Encoding", "gzip");
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_GZIPPED_PAYLOAD);
-                ((Request)request).setHandled(true);
             } else if (target.equals("/401-no-challenge")) {
                 response.setStatus(401);
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             } else if (target.equals("/cp1251")) {
                 response.setContentType("text/plain;charset=cp1251");
                 response.setStatus(200);
                 response.getOutputStream().write(CP1251_PAYLOAD);
-                ((Request)request).setHandled(true);
             } else if (target.equals("/unsupported-charset")) {
                 response.setContentType("text/plain;charset=UNSUPPORTED-CHARSET");
                 response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             } else if (target.equals("/invalid-charset")) {
                 response.setContentType("text/plain;charset=%%INVALID-CHARSET%%");
                 response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             } else if (target.equals("/if-modified-since")) {
                 if (request.getHeader("if-modified-since") != null) {
                     response.setStatus(304);
-                    ((Request)request).setHandled(true);
                 } else {
                     response.setContentType("text/plain;charset=US-ASCII");
                     response.setDateHeader("Last-Modified", 0);
                     response.setStatus(200);
                     response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                    ((Request)request).setHandled(true);
                 }
             } else if (target.equals("/if-none-match")) {
                 if (request.getHeader("if-none-match") != null) {
                     response.setStatus(304);
-                    ((Request)request).setHandled(true);
                 } else {
                     response.setContentType("text/plain;charset=US-ASCII");
                     response.setHeader("ETag", ETAG_TEST_VALUE);
                     response.setStatus(200);
                     response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                    ((Request)request).setHandled(true);
                 }
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setStatus(200);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             }
         }
     }
 
     protected static Map<Integer, Server> httpServers;
 
-    protected static SecurityHandler makeAuthWrapper(Authenticator authenticator,
+    protected static ConstraintSecurityHandler makeAuthWrapper(Authenticator authenticator,
             final String role, String realm, final String login,
             final String password) {
-        Constraint constraint = new Constraint();
-        constraint.setRoles(new String[] { role });
-        constraint.setAuthenticate(true);
+        Constraint constraint = Constraint.from(role);
 
         ConstraintMapping constraintMapping = new ConstraintMapping();
         constraintMapping.setConstraint(constraint);
@@ -228,7 +213,6 @@ public class FetchHTTPTestServers {
 
         ConstraintSecurityHandler authWrapper = new ConstraintSecurityHandler();
         authWrapper.setAuthenticator(authenticator);
-        
         authWrapper.setConstraintMappings(new ConstraintMapping[] {constraintMapping});
         UserStore userStore = new UserStore();
         userStore.addUser(login, new Password(password), new String[] {role});
@@ -245,8 +229,6 @@ public class FetchHTTPTestServers {
      * @return map(port->server)
      */
     public static Map<Integer,Server> startHttpServers() throws Exception {
-        Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
-        
         HashMap<Integer, Server> servers = new HashMap<Integer,Server>();
 
         // server for basic auth
@@ -257,14 +239,17 @@ public class FetchHTTPTestServers {
         sc.setPort(7777);
         server.addConnector(sc);
 
-        SecurityHandler authWrapper = makeAuthWrapper(new BasicAuthenticator(),
+        ConstraintSecurityHandler authWrapper = makeAuthWrapper(new BasicAuthenticator(),
                 BASIC_AUTH_ROLE, BASIC_AUTH_REALM, BASIC_AUTH_LOGIN,
                 BASIC_AUTH_PASSWORD);
-        HandlerCollection handlers = new HandlerCollection();
-        handlers.addHandler(new TestHandler());
-        authWrapper.setHandler(handlers);
-        server.setHandler(authWrapper);
-        
+
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        context.addServlet(TestServlet.class, "/");
+        context.setSecurityHandler(authWrapper);
+
+        server.setHandler(context);
+
         servers.put(sc.getPort(), server);
         
         File keystoreFile = new File(TmpDirTestCase.tmpDir(), "keystore");
@@ -282,12 +267,14 @@ public class FetchHTTPTestServers {
                 "-dname", "CN=127.0.0.1",
                 "-validity","3650"}); // 10 yr validity
 
-        SslContextFactory sslContextFactory = new SslContextFactory();
+        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setKeyStorePassword(KEYSTORE_PASSWORD);
         sslContextFactory.setKeyStorePath(keystoreFile.getPath());
 
         HttpConfiguration httpsConfig = new HttpConfiguration();
-        httpsConfig.addCustomizer(new SecureRequestCustomizer());
+        SecureRequestCustomizer customizer = new SecureRequestCustomizer();
+        customizer.setSniHostCheck(false); // disable SNI host check because it fails on localhost
+        httpsConfig.addCustomizer(customizer);
 
         ServerConnector ssc = new ServerConnector(server,
                 new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
@@ -310,11 +297,12 @@ public class FetchHTTPTestServers {
         authWrapper = makeAuthWrapper(new DigestAuthenticator(),
                 DIGEST_AUTH_ROLE, DIGEST_AUTH_REALM, DIGEST_AUTH_LOGIN,
                 DIGEST_AUTH_PASSWORD);
-        HandlerCollection handlers2 = new HandlerCollection();
-        handlers2.addHandler(new TestHandler());
-        authWrapper.setHandler(handlers2);
-        server.setHandler(authWrapper);
-        
+        ServletContextHandler context2 = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context2.setContextPath("/");
+        context2.addServlet(TestServlet.class, "/");
+        context2.setSecurityHandler(authWrapper);
+        server.setHandler(context2);
+
         server.start();
         servers.put(sc.getPort(), server);
         

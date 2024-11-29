@@ -41,9 +41,11 @@ import org.archive.util.TmpDirTestCase;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 
 /**
  * Base class for 'self tests', integrations tests formatted as unit 
@@ -187,11 +189,10 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
-        rhandler.setResourceBase(getSrcHtdocs().getAbsolutePath());
-        
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { rhandler, new DefaultHandler() });
-        server.setHandler(handlers);
+        ResourceFactory resourceFactory = ResourceFactory.of(server);
+        rhandler.setBaseResource(resourceFactory.newResource(getSrcHtdocs().toPath().toAbsolutePath()));
+
+        server.setHandler(new Handler.Sequence(rhandler, new DefaultHandler()));
         
         this.httpServer = server;
         server.start();
