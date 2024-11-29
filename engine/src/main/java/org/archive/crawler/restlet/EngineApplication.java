@@ -137,7 +137,7 @@ public class EngineApplication extends Application {
     protected class EngineStatusService extends StatusService {
 
         @Override
-        public Representation getRepresentation(Status status, Request request, Response response) {
+        public Representation toRepresentation(Status status, Request request, Response response) {
             StringWriter st = new StringWriter();
             PrintWriter pw = new PrintWriter(st);
             if(status.getCode()==404){
