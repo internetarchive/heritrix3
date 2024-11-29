@@ -82,23 +82,18 @@
 		<dependency>
 			<groupId>com.github.crawler-commons</groupId>
 			<artifactId>crawler-commons</artifactId>
-			<version>1.0</version>
+			<version>1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.bbottema</groupId>
 			<artifactId>java-socks-proxy-server</artifactId>
-			<version>1.1.0</version>
+			<version>4.1.2</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.jcraft</groupId>
-			<artifactId>jsch</artifactId>
-			<version>0.1.54</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>3.0.1</version>
+			<version>3.0.3</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -120,6 +115,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<groovy.version>4.0.21</groovy.version>
+		<groovy.version>4.0.24</groovy.version>
 	</properties>
 </project>

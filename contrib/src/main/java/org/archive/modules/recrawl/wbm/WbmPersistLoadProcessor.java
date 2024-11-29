@@ -34,8 +34,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
@@ -57,6 +55,8 @@ import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DateUtils;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * A {@link Processor} for retrieving recrawl info from remote Wayback Machine index.
  * This is currently in the early stage of experiment. Both low-level protocol and WBM API
@@ -69,7 +69,7 @@ import org.archive.util.DateUtils;
  * @author Kenji Nagahashi.
  */
 public class WbmPersistLoadProcessor extends Processor {
-    private static final Log log = LogFactory.getLog(WbmPersistLoadProcessor.class);
+    private static final System.Logger log = System.getLogger(WbmPersistLoadProcessor.class.getName());
 
     private HttpClient client;
     private PoolingHttpClientConnectionManager conman;
@@ -415,7 +415,7 @@ public class WbmPersistLoadProcessor extends Processor {
                 cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
                 if (sl.getStatusCode() != 200) {
-                    log.error("GET " + url + " failed with status=" + sl.getStatusCode() + " " + sl.getReasonPhrase());
+                    log.log(ERROR, "GET " + url + " failed with status=" + sl.getStatusCode() + " " + sl.getReasonPhrase());
                     entity = resp.getEntity();
                     entity.getContent().close();
                     entity = null;
@@ -423,9 +423,9 @@ public class WbmPersistLoadProcessor extends Processor {
                 }
                 entity = resp.getEntity();
             } catch (IOException ex) {
-                log.error("GEt " + url + " failed with error " + ex.getMessage());
+                log.log(ERROR, "GEt " + url + " failed with error " + ex.getMessage());
             } catch (Exception ex) {
-                log.error("GET " + url + " failed with error ", ex);
+                log.log(ERROR, "GET " + url + " failed with error ", ex);
             }
         } while (entity == null && ++attempts < 3);
         if (entity == null) {
@@ -440,7 +440,7 @@ public class WbmPersistLoadProcessor extends Processor {
         try {
             is = getCDX(curi.toString());
         } catch (IOException ex) {
-            log.error(ex.getMessage());
+            log.log(ERROR, ex.getMessage());
             errorCount.incrementAndGet();
             return ProcessResult.PROCEED;
         }
@@ -448,7 +448,7 @@ public class WbmPersistLoadProcessor extends Processor {
         try {
             info = getLastCrawl(is);
         } catch (IOException ex) {
-            log.error("error parsing response", ex);
+            log.log(ERROR, "error parsing response", ex);
         } finally {
             if (is != null)
                 ArchiveUtils.closeQuietly(is);
