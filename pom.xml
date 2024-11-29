@@ -18,7 +18,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<groupId>org.archive</groupId>
 	<!--This project is parent to all under 'projects' subdirectory-->
 	<artifactId>heritrix</artifactId>
-	<version>3.6.0</version>
+	<version>3.6.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Heritrix 3</name>
 	<description>
@@ -30,10 +30,9 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
    
     <scm>
        <connection>scm:git:https://github.com/internetarchive/heritrix3.git</connection>
-       <developerConnection>scm:git:https://github.com/internetarchive/heritrix3.git</developerConnection>
+       <developerConnection>scm:git:git@github.com:internetarchive/heritrix3.git</developerConnection>
        <url>https://github.com/internetarchive/heritrix3</url>
-      <tag>3.6.0</tag>
-  </scm>            
+  </scm>
 
 	<licenses>
 		<license>
@@ -54,39 +53,6 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<name>Internet Archive</name>
 		<url>http://www.archive.org/</url>
 	</organization>
-	<issueManagement>
-		<system>JIRA</system>
-		<url>http://webteam.archive.org/jira</url>
-	</issueManagement>
-	<ciManagement>
-		<system>jenkins</system>
-		<url>https://builds.archive.org/</url>
-	</ciManagement>
-	<mailingLists>
-		<mailingList>
-			<name>Crawler Discussion List</name>
-			<subscribe>
-				archive-crawler-subscribe@yahoogroups.com
-			</subscribe>
-			<unsubscribe>
-				archive-crawler-unsubscribe@yahoogroups.com
-			</unsubscribe>
-			<archive>
-				http://groups.yahoo.com/group/archive-crawler/
-			</archive>
-		</mailingList>
-		<mailingList>
-			<name>Crawler Commits</name>
-			<subscribe>
-				http://lists.sourceforge.net/lists/listinfo/archive-crawler-cvs
-			</subscribe>
-			<unsubscribe>
-				http://lists.sourceforge.net/lists/listinfo/archive-crawler-cvs
-			</unsubscribe>
-			<archive>http://sourceforge.net/mailarchive/forum.php?forum=archive-crawler-cvs
-			</archive>
-		</mailingList>
-	</mailingLists>
 
 	<repositories>
         <repository>
