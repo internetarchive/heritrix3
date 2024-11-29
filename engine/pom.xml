@@ -11,13 +11,6 @@
 	<packaging>jar</packaging>
 	<name>Heritrix 3: 'engine' subproject</name>
 
-	<repositories>
-		<repository>
-			<id>maven-restlet</id>
-			<url>https://maven.restlet.talend.com</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
