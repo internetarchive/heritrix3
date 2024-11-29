@@ -21,8 +21,6 @@ package org.archive.modules.recrawl;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.archive.modules.CrawlURI;
 
 /**
@@ -32,8 +30,7 @@ import org.archive.modules.CrawlURI;
  *
  */
 public class FetchHistoryHelper {
-  private static final Log logger = LogFactory.getLog(FetchHistoryHelper.class);
-  /**
+    /**
    * key for storing timestamp in crawl history map.
    */
   public static final String A_TIMESTAMP = ".ts";
