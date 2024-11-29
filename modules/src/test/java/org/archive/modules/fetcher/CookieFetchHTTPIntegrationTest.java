@@ -25,11 +25,11 @@ import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.Closure;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
@@ -44,16 +44,14 @@ import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
 import org.archive.util.KeyTool;
 import org.archive.util.TmpDirTestCase;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import com.google.common.io.Files;
@@ -64,15 +62,15 @@ import junit.framework.TestSuite;
 
 public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
 
-    protected static class TestHandler extends SessionHandler {
-        public TestHandler() {
+    protected static class TestServlet extends HttpServlet {
+        public TestServlet() {
             super();
         }
 
         @Override
-        public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
             if (request.getParameter("name") != null) {
-                Cookie cookie = new javax.servlet.http.Cookie(request.getParameter("name"), 
+                Cookie cookie = new Cookie(request.getParameter("name"),
                         request.getParameter("value"));
                 if (request.getParameter("domain") != null) {
                     cookie.setDomain(request.getParameter("domain"));
@@ -85,12 +83,6 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
                 }
                 if (request.getParameter("secure") != null) {
                     cookie.setSecure(request.getParameter("secure").equals(1));
-                }
-                if (request.getParameter("comment") != null) {
-                    cookie.setComment(request.getParameter("comment"));
-                }
-                if (request.getParameter("version") != null) {
-                    cookie.setVersion(Integer.valueOf(request.getParameter("version")));
                 }
                 response.addCookie(cookie);
             }
@@ -106,17 +98,16 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
             } else {
                 response.getOutputStream().println("0 cookies received");
             }
-
-            ((Request)request).setHandled(true);
         }
     }
 
     public static Server startHttpServer() throws Exception {
-        Log.getLogger(Server.class.getCanonicalName()).setDebugEnabled(true);
-
         Server server = new Server();
 
-        server.setHandler(new TestHandler());
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        context.addServlet(TestServlet.class, "/");
+        server.setHandler(context);
 
         ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");
@@ -137,7 +128,7 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
                 "-dname", "CN=127.0.0.1",
                 "-validity","3650"}); // 10 yr validity
 
-        SslContextFactory sslContextFactory = new SslContextFactory();
+        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setKeyStorePassword(KEYSTORE_PASSWORD);
         sslContextFactory.setKeyStorePath(keystoreFile.getPath());
 

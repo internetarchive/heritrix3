@@ -19,13 +19,13 @@
  
 package org.archive.crawler.selftest;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.Enumeration;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author pjack
@@ -37,8 +37,8 @@ public class UserAgentServlet extends HttpServlet {
     private String from;
     
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
-    throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    throws IOException {
         Enumeration<?> e = req.getHeaderNames();
         while (e.hasMoreElements()) {
             String name = (String)e.nextElement();

@@ -31,8 +31,8 @@
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
+			<groupId>org.eclipse.jetty.ee10</groupId>
+			<artifactId>jetty-ee10-servlet</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
@@ -45,12 +45,6 @@
 			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.jetty</artifactId>
 			<version>${restlet.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-client</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet</groupId>
@@ -109,6 +103,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<restlet.version>2.5.0</restlet.version>
+		<restlet.version>2.6.0-m2</restlet.version>
 	</properties>
 </project>

@@ -47,10 +47,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
@@ -69,11 +65,11 @@ import org.archive.spring.ConfigPath;
 import org.archive.util.Base32;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.util.Callback;
 
 public class ContentDigestHistoryTest extends TmpDirTestCase {
 
@@ -367,19 +363,16 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
     protected Server newHttpServer() throws Exception {
-        HandlerCollection handlers = new HandlerCollection();
-        handlers.addHandler(new SessionHandler(){
+        Server server = new Server();
+        server.setHandler(new Handler.Abstract.NonBlocking() {
             @Override
-            public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-                response.setContentType("text/plain;charset=US-ASCII");
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
+            public boolean handle(Request request, Response response, Callback callback) throws Exception {
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain;charset=US-ASCII");
+                response.setStatus(HttpStatus.OK_200);
+                Content.Sink.write(response, true, DEFAULT_PAYLOAD_STRING, callback);
+                return true;
             }
         });
-
-        Server server = new Server();
-        server.setHandler(handlers);
         
         ServerConnector sc = new ServerConnector(server);
         sc.setHost("127.0.0.1");

@@ -41,10 +41,10 @@ import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NoHttpResponseException;
@@ -63,12 +63,12 @@ import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
 import org.bbottema.javasocksproxyserver.SocksServer;
-import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.proxy.ConnectHandler;
-import org.eclipse.jetty.proxy.ProxyServlet;
+import org.eclipse.jetty.client.Response;
+import org.eclipse.jetty.ee10.proxy.ProxyServlet;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.handler.ConnectHandler;
 import org.junit.*;
 
 public class FetchHTTPTest {
@@ -270,7 +270,7 @@ public class FetchHTTPTest {
 
         // check that we got the expected response and the fetcher did its thing
         assertEquals(401, curi.getFetchStatus());
-        assertEquals("basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
+        assertEquals("Basic realm=\"basic-auth-realm\"", curi.getHttpResponseHeader("WWW-Authenticate"));
         assertTrue(curi.getCredentials().contains(basicAuthCredential));
         assertTrue(curi.getHttpAuthChallenges() != null && curi.getHttpAuthChallenges().containsKey("basic"));
         
@@ -461,8 +461,9 @@ public class FetchHTTPTest {
         Server httpProxyServer = new Server(new InetSocketAddress("localhost", 7877));
         ConnectHandler connectHandler = new ConnectHandler();
         httpProxyServer.setHandler(connectHandler);
-        ServletContextHandler context = new ServletContextHandler(connectHandler, "/",
-                ServletContextHandler.SESSIONS);
+        ServletContextHandler context = new ServletContextHandler( "/", ServletContextHandler.SESSIONS);
+        connectHandler.setHandler(context);
+
         ServletHolder proxyServlet = new ServletHolder(TestProxyServlet.class);
         context.addServlet(proxyServlet, "/*");
         context.setAttribute("proxy-user", user);

@@ -19,14 +19,15 @@
 
 package org.archive.crawler.selftest;
 
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,19 +67,16 @@ public class FormAuthSelfTest
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
-        rhandler.setResourceBase(getSrcHtdocs().getAbsolutePath());
-        
-        ServletHandler servletHandler = new ServletHandler();
-        
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] {
-                rhandler, 
-                servletHandler,
-                new DefaultHandler() });
-        server.setHandler(handlers);
-        
-        ServletHolder holder = new ServletHolder(new FormAuthServlet());
-        servletHandler.addServletWithMapping(holder, "/login/*");
+        ResourceFactory resourceFactory = ResourceFactory.of(server);
+        rhandler.setBaseResource(resourceFactory.newResource(getSrcHtdocs().toPath().toAbsolutePath()));
+
+        ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        contextHandler.addServlet(FormAuthServlet.class, "/login/*");
+
+        server.setHandler(new Handler.Sequence(
+                rhandler,
+                contextHandler,
+                new DefaultHandler()));
 
         this.httpServer = server;
         this.httpServer.start();
