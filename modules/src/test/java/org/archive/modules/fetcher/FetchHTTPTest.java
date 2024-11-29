@@ -984,7 +984,7 @@ public class FetchHTTPTest {
 
     protected FetchHTTP makeSocksModule() throws Exception {
         // configure our test server
-        socksServer = new SocksServer();
+        socksServer = new SocksServer(7800);
 
 
         // SocksServers opens the socket on a background thread, so we supply a socket factory
@@ -992,7 +992,7 @@ public class FetchHTTPTest {
         // occurs when binding. This works around a race where we connect to the server before
         // it is listening.
         CompletableFuture<Void> socksServerStartedFuture = new CompletableFuture<>();
-        socksServer.start(7800, new ServerSocketFactory() {
+        socksServer.setFactory(new ServerSocketFactory() {
             ServerSocketFactory defaultSocketFactory = ServerSocketFactory.getDefault();
 
             @Override
@@ -1017,6 +1017,7 @@ public class FetchHTTPTest {
                 }
             }
         });
+        socksServer.start();
         socksServerStartedFuture.get(30, TimeUnit.SECONDS);
 
         FetchHTTP fetchHttp = newSocksTestFetchHttp(getUserAgentString(), "localhost", 7800);
