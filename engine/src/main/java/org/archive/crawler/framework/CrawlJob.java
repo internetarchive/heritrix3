@@ -251,8 +251,14 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
     public void checkXML() {
         // TODO: suppress check if XML unchanged? job.log when XML changed? 
 
-        Instant testTime = Instant.ofEpochMilli(getPrimaryConfig().lastModified());
-        Document doc = getDomDocument(getPrimaryConfig());
+        File primaryConfig = getPrimaryConfig();
+        Instant testTime = Instant.ofEpochMilli(primaryConfig.lastModified());
+        if (primaryConfig.toString().endsWith(".groovy")) {
+            // just assume Groovy configs are OK
+            xmlOkAt = testTime;
+            return;
+        }
+        Document doc = getDomDocument(primaryConfig);
         // TODO: check for other minimal requirements, like
         // presence of a few key components (CrawlController etc.)? 
         if(doc!=null) {
