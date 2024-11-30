@@ -153,6 +153,11 @@
 			<artifactId>jsch</artifactId>
 			<version>0.2.21</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.groovy</groupId>
+			<artifactId>groovy</artifactId>
+			<version>${groovy.version}</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<resources>

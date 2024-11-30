@@ -34,9 +34,15 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.archive.util.ArchiveUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
+import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.EncodedResource;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -46,9 +52,13 @@ import org.springframework.validation.Validator;
  * 
  * Notable extensions:
  * 
- * Remembers its primary XML configuration file, and can report its filesystem
+ * Remembers its primary configuration file, and can report its filesystem
  * path.
- * 
+ *
+ * Supports both Spring XML and Groovy Bean Definition DSL.
+ *
+ * Automatically enables annotation processing (&lt;context:annotation-config/&gt;).
+ *
  * Reports a summary of Errors collected from self-Validating Beans.
  * 
  * Generates launchId from timestamp, creates launch directory
@@ -212,5 +222,37 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
         return data;
     }
 
+    /**
+     * Load bean definitions from XML or Groovy.
+     */
+    @Override
+    protected void loadBeanDefinitions(XmlBeanDefinitionReader xmlReader) throws BeansException, IOException {
+        // This is essentially <context:annotation-config/>
+        // By doing it here we don't need to include it in every crawl config.
+        AnnotationConfigUtils.registerAnnotationConfigProcessors(xmlReader.getRegistry());
 
+        GroovyBeanDefinitionReader groovyReader = new GroovyBeanDefinitionReader(xmlReader.getRegistry()) {
+            // By default, the Groovy reader loads XML from .xml and Groovy for everything else, but
+            // Heritrix uses .cxml so we override it to only use the Groovy reader for .groovy files
+            // and the XML reader for everything else.
+            @Override
+            public int loadBeanDefinitions(EncodedResource encodedResource) throws BeanDefinitionStoreException {
+                String filename = encodedResource.getResource().getFilename();
+                if (filename != null && filename.endsWith(".groovy")) {
+                    return super.loadBeanDefinitions(encodedResource);
+                }
+                return xmlReader.loadBeanDefinitions(encodedResource);
+            }
+        };
+        groovyReader.setEnvironment(getEnvironment());
+
+        Resource[] configResources = getConfigResources();
+        if (configResources != null) {
+            groovyReader.loadBeanDefinitions(configResources);
+        }
+        String[] configLocations = getConfigLocations();
+        if (configLocations != null) {
+            groovyReader.loadBeanDefinitions(configLocations);
+        }
+    }
 }
