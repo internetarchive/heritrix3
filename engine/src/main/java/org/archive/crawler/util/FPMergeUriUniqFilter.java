@@ -18,8 +18,6 @@
  */
 package org.archive.crawler.util;
 
-import it.unimi.dsi.fastutil.longs.LongIterator;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -260,7 +258,7 @@ public abstract class FPMergeUriUniqFilter implements UriUniqFilter {
         PendingItem currPend = null; 
         
         Iterator<PendingItem> pendIter = pendingSet.iterator();
-        LongIterator fpIter = beginFpMerge();
+        Iterator<Long> fpIter = beginFpMerge();
 
         currPend = (PendingItem) (pendIter.hasNext() ? pendIter.next() : null);
         currFp = (Long) (fpIter.hasNext() ? fpIter.next() : null); 
@@ -332,7 +330,7 @@ public abstract class FPMergeUriUniqFilter implements UriUniqFilter {
      * 
      * @return Iterator over all previously-known FPs
      */
-    abstract protected LongIterator beginFpMerge();
+    abstract protected Iterator<Long> beginFpMerge();
 
     
     /**

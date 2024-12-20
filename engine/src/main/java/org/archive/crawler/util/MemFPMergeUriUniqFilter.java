@@ -18,8 +18,8 @@
  */
 package org.archive.crawler.util;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongIterator;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Crude all-in-memory FP-merging UriUniqFilter. 
@@ -27,13 +27,13 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author gojomo
  */
 public class MemFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
-    protected LongArrayList allFps = new LongArrayList();
+    protected LongArrayList allFps = new LongArrayList(16);
     protected LongArrayList newFps;
     
     /* (non-Javadoc)
      * @see org.archive.crawler.util.FPMergeUriUniqFilter#beginFpMerge()
      */
-    protected LongIterator beginFpMerge() {
+    protected Iterator<Long> beginFpMerge() {
         newFps = new LongArrayList((int) (allFps.size()+(pending()/2)));
         return allFps.iterator();
     }
@@ -58,6 +58,43 @@ public class MemFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
      */
     public long count() {
         return allFps.size();
+    }
+
+
+    protected static class LongArrayList {
+        private long[] array;
+        private int size;
+
+        public LongArrayList(int capacity) {
+            this.array = new long[capacity];
+        }
+
+        public void add(long value) {
+            if (size >= array.length) {
+                array = Arrays.copyOf(array, array.length*2);
+            }
+            array[size++] = value;
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public Iterator<Long> iterator() {
+            return new Iterator<>() {
+                private int position = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return position < size;
+                }
+
+                @Override
+                public Long next() {
+                    return array[position++];
+                }
+            };
+        }
     }
 
 }

@@ -18,9 +18,6 @@
  */
 package org.archive.crawler.util;
 
-import it.unimi.dsi.fastutil.longs.LongIterators;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -30,6 +27,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.archive.util.ArchiveUtils;
@@ -59,7 +58,7 @@ public class DiskFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
     /* (non-Javadoc)
      * @see org.archive.crawler.util.FPMergeUriUniqFilter#beginFpMerge()
      */
-    protected LongIterator beginFpMerge() {
+    protected Iterator<Long> beginFpMerge() {
         newFpsFile = new File(scratchDir,ArchiveUtils.get17DigitDate()+".fp");
         if(newFpsFile.exists()) {
             throw new RuntimeException(newFpsFile+" exists");
@@ -71,7 +70,7 @@ public class DiskFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
         }
         newCount = 0;
         if(currentFps==null) {
-            return LongIterators.EMPTY_ITERATOR;
+            return Collections.emptyIterator();
         }
         try {
             oldFps = new DataInputStream(new BufferedInputStream(new FileInputStream(currentFps)));
@@ -120,7 +119,7 @@ public class DiskFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
         return count;
     }
 
-    public class DataFileLongIterator implements LongIterator {
+    public class DataFileLongIterator implements Iterator<Long> {
         DataInputStream in; 
         long next;
         boolean nextIsValid = false; 
@@ -170,37 +169,8 @@ public class DiskFPMergeUriUniqFilter extends FPMergeUriUniqFilter {
                 throw new NoSuchElementException();
             }
             // 'next' is guaranteed set by a hasNext() which returned true
-            Long returnObj = new Long(this.next);
             this.nextIsValid = false;
-            return returnObj;
-        }
-        
-        /* (non-Javadoc)
-         * @see java.util.Iterator#remove()
-         */
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-        
-        /* (non-Javadoc)
-         * @see it.unimi.dsi.fastutil.longs.LongIterator#nextLong()
-         */
-        public long nextLong() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            // 'next' is guaranteed non-null by a hasNext() which returned true
-            this.nextIsValid = false; // after this return, 'next' needs refresh
             return this.next;
         }
-
-        /* (non-Javadoc)
-         * @see it.unimi.dsi.fastutil.longs.LongIterator#skip(int)
-         */
-        public int skip(int arg0) {
-            return 0;
-        }
     }
-
 }
