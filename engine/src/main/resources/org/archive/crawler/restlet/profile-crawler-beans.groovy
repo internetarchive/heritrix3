@@ -281,6 +281,7 @@ http://example.example/example
         // maxElementLength = 1024
         // maxAttributeNameLength = 1024
         // maxAttributeValueLength = 16384
+        // obeyRelNofollow = false
     }
     extractorCss(ExtractorCSS)
     extractorJs(ExtractorJS)

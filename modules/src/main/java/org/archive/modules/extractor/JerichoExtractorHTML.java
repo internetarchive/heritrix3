@@ -142,6 +142,13 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                 if (rel != null) {
                     processLinkTagWithRel(curi, attrValue, rel);
                 }
+            } else if ("a".equals(elementName)) {
+                String rel = attributes.getValue("rel");
+                if (rel != null && getObeyRelNofollow() && TextUtils.matches("(?i).*\\bnofollow\\b.*", rel)) {
+                    if (logger.isLoggable(Level.FINEST)) logger.finest("ignoring nofollow link: " + attrValue);
+                } else {
+                    processLink(curi, attrValue, context);
+                }
             } else {
                 // other HREFs treated as links
                 processLink(curi, attrValue, context);

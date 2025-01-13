@@ -306,6 +306,7 @@ http://example.example/example
   <!-- <property name="maxElementLength" value="1024" /> -->
   <!-- <property name="maxAttributeNameLength" value="1024" /> -->
   <!-- <property name="maxAttributeValueLength" value="16384" /> -->
+  <!-- <property name="obeyRelNofollow" value="false" /> -->
  </bean>
  <bean id="extractorCss" class="org.archive.modules.extractor.ExtractorCSS">
  </bean> 

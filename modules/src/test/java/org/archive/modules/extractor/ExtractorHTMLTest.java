@@ -19,11 +19,8 @@
 
 package org.archive.modules.extractor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -721,6 +718,31 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         Collections.sort(actualLinks);
 
         assertEquals(expectedLinks, actualLinks);
+    }
+
+    public void testDisobeyRelNofollow() throws URIException {
+        String html = "<a href=/normal><a href=/nofollow rel=nofollow><a href=/both><a href=/both rel=nofollow>";
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().setObeyRelNofollow(false);
+        getExtractor().extract(curi, html);
+        Set<String> links = curi.getOutLinks().stream().map(CrawlURI::getURI).collect(Collectors.toSet());
+        assertEquals(Set.of("https://www.example.org/both",
+                "https://www.example.org/normal",
+                "https://www.example.org/nofollow"), links);
+    }
+
+    public void testRelNofollow() throws URIException {
+        String html = "<a href=/normal></a><a href=/nofollow rel=nofollow></a><a href=/both></a>" +
+                      "<a href=/both rel=nofollow></a>" +
+                      "<a href=/multi1 rel='noopener nofollow'></a>" +
+                      "<a href=/multi2 rel=\"nofollow nopener\"></a>" +
+                      "<a href=/multi3 rel='noopener nofollow noentry'></a>";
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().setObeyRelNofollow(true);
+        getExtractor().extract(curi, html);
+        Set<String> links = curi.getOutLinks().stream().map(CrawlURI::getURI).collect(Collectors.toSet());
+        assertEquals(Set.of("https://www.example.org/both",
+                "https://www.example.org/normal"), links);
     }
 
     private void genericCrawl(CrawlURI curi, CharSequence cs,String[] dest){
