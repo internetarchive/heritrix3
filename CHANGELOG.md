@@ -4,6 +4,46 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...HEAD)
 
+## 3.7.0
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...3.7.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.7.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.7.0/pom)
+
+#### New Features
+
+- **Groovy crawl configs** (experimental): Groovy Bean Definition DSL can now be used as an experimental alternative to
+  Spring XML. This enables more terse and human-readable job configuration with inline scripting capabilities. There is
+  no user interface for it in this release. For now, you must manually create a [crawler-beans.groovy](https://github.com/internetarchive/heritrix3/blob/4e8bda1/engine/src/main/resources/org/archive/crawler/restlet/profile-crawler-beans.groovy)
+  file in your job directory.
+  [#632](https://github.com/internetarchive/heritrix3/pull/632)
+
+- **ExtractorHTML obeyRelNofollow**: This option skips extraction of links marked `rel=nofollow`. This is useful for
+  avoiding crawler traps on some sites. [#638](https://github.com/internetarchive/heritrix3/pull/638)
+
+#### Fixes
+
+- **Cookie rejected warning**: The slf4j change in 3.6.0 inadvertently caused a previously hidden warning to be logged
+  to `job.log` when a server sends a `Set-Cookie` header with a disallowed domain value. This warning is now suppressed
+  since it occurs frequently and does not require any action from the crawl operator. [#640](https://github.com/internetarchive/heritrix3/pull/640)
+
+#### Changes
+
+- **Removed fastutil**: A small number of usages of fastutil were replaced with standard library equivalents in
+  webarchive-commons and Heritrix. This reduced the Heritrix distribution size from 51 MB to 34 MB. 
+  [iipc/webarchive-commons#101](https://github.com/iipc/webarchive-commons/pull/101)
+
+#### Dependency Upgrades
+
+- amqp-client 5.24.0
+- commons-codec 1.17.2
+- freemarker 2.3.34
+- jetty 9.4.57.v20241219
+- jsch 0.2.22
+- restlet 2.5.0
+- spring 6.1.16
+- webarchive-commons 1.3.0
+
 ## 3.6.0
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.tar.gz))
