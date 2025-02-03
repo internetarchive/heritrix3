@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
-			<version>1.17.1</version>
+			<version>1.17.2</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -151,7 +151,7 @@
 		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.2.21</version>
+			<version>0.2.22</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.groovy</groupId>
@@ -211,6 +211,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.version>6.1.15</spring.version>
+		<spring.version>6.1.16</spring.version>
 	</properties>
 </project>
