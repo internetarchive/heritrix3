@@ -37,6 +37,7 @@
 
 - amqp-client 5.24.0
 - commons-codec 1.17.2
+- ftpserver-core 1.2.1
 - freemarker 2.3.34
 - jetty 9.4.57.v20241219
 - jsch 0.2.22
