@@ -160,5 +160,5 @@ texinfo_documents = [
 
 extlinks = {
     'deciderule': ('https://www.javadoc.io/doc/org.archive.heritrix/heritrix-modules/latest/org/archive/modules'
-                   '/deciderules/%s.html', '')
+                   '/deciderules/%s.html', 'DecideRule: %s')
 }
