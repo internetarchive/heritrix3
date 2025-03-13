@@ -204,7 +204,7 @@
 					<excludes>
 						<exclude>**/Test*.java</exclude>
 					</excludes>
-					<argLine>-Xmx1g</argLine>
+					<argLine>-Xmx1g --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
