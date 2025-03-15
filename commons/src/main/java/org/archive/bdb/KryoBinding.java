@@ -21,9 +21,12 @@ package org.archive.bdb;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.DefaultSerializers;
 import com.esotericsoftware.kryo.util.Pool;
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.je.DatabaseEntry;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Binding for use with BerkeleyDB-JE that uses Kryo serialization rather
@@ -39,6 +42,7 @@ public class KryoBinding<K> implements EntryBinding<K> {
     Pool<AutoKryo> kryoPool = new Pool<AutoKryo>(true, false, POOL_SIZE) {
         protected AutoKryo create () {
             AutoKryo kryo = new AutoKryo();
+            kryo.addDefaultSerializer(AtomicInteger.class, DefaultSerializers.AtomicIntegerSerializer.class);
             kryo.autoregister(baseClass);
             kryo.setRegistrationRequired(false);
             kryo.setWarnUnregisteredClasses(true);
