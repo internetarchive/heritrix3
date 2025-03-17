@@ -196,15 +196,15 @@ public class ExtractorYoutubeDL extends Extractor
     }
 
     {
-        setProcessCommand(Arrays.asList("yt-dlp", "--ignore-config",
+        setProcessArguments(Arrays.asList("yt-dlp", "--ignore-config",
                 "--simulate", "--dump-single-json", "-S vcodec:h264,res:720,acodec:aac",
                 "--no-cache-dir", "--no-playlist", "--playlist-end=" + MAX_VIDEOS_PER_PAGE ));
     }
-    public List<String> getProcessCommand() {
-        return (List<String>) kp.get("processCommand");
+    public List<String> getProcessArguments() {
+        return (List<String>) kp.get("processArguments");
     }
-    public void setProcessCommand(List<String> processCommand) {
-        kp.put("processCommand", processCommand);
+    public void setProcessArguments(List<String> processArguments) {
+        kp.put("processArguments", processArguments);
     }
 
     @Override
@@ -481,9 +481,9 @@ public class ExtractorYoutubeDL extends Extractor
          * the best audio with best acodec no better than aac and
          * with the smallest dimension no larger than 720.
          */
-        List<String> processCommand = getProcessCommand();
-        processCommand.add(uri.toString());
-        ProcessBuilder pb = new ProcessBuilder(processCommand);
+        ArrayList<String> processArguments = new ArrayList<String>(getProcessArguments());
+        processArguments.add(uri.toString());
+        ProcessBuilder pb = new ProcessBuilder(processArguments);
         logger.info("running: " + String.join(" ", pb.command()));
 
         Process proc = null;
