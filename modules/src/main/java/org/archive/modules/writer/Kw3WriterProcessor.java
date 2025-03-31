@@ -411,8 +411,7 @@ public class Kw3WriterProcessor extends Processor {
   private void chmod(File file, String permissions) {
       Process proc = null;
       try {
-          proc = Runtime.getRuntime().exec("chmod " + permissions + " " +
-                  file.getAbsolutePath());
+          proc = Runtime.getRuntime().exec(new String[]{"chmod", permissions, file.getAbsolutePath()});
           proc.waitFor();
           proc.getInputStream().close();
           proc.getOutputStream().close();
