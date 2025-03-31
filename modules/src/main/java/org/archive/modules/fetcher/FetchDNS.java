@@ -292,10 +292,10 @@ public class FetchDNS extends Processor {
 		}
 		try {
 			targetHost.setIP(InetAddress.getByAddress(dnsName, new byte[] {
-					(byte) (new Integer(matcher.group(1)).intValue()),
-					(byte) (new Integer(matcher.group(2)).intValue()),
-					(byte) (new Integer(matcher.group(3)).intValue()),
-					(byte) (new Integer(matcher.group(4)).intValue()) }),
+					(byte) Integer.parseInt(matcher.group(1)),
+					(byte) Integer.parseInt(matcher.group(2)),
+					(byte) Integer.parseInt(matcher.group(3)),
+					(byte) Integer.parseInt(matcher.group(4)) }),
 					CrawlHost.IP_NEVER_EXPIRES); // Never expire numeric IPs
 			curi.setFetchStatus(S_DNS_SUCCESS);
 		} catch (UnknownHostException e) {

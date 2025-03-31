@@ -13,10 +13,10 @@ import org.archive.modules.CrawlURI;
 public class MatchesStatusCodeDecideRule extends PredicatedDecideRule {
 
     /** Default lower bound */
-    public final static Integer DEFAULT_LOWER_BOUND = new Integer(0);
+    public final static Integer DEFAULT_LOWER_BOUND = 0;
 
     /** Default upper bound */
-    public final static Integer DEFAULT_UPPER_BOUND = new Integer(600);
+    public final static Integer DEFAULT_UPPER_BOUND = 600;
 
     /**
      * Creates a new MatchStatusCodeDecideRule instance. Note that
