@@ -373,7 +373,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<additionalparam>-Xdoclint:none</additionalparam>
 		<groovy.version>4.0.24</groovy.version>
 		<jetty.version>9.4.57.v20241219</jetty.version>
-		<slf4j.version>2.0.16</slf4j.version>
+		<slf4j.version>2.0.17</slf4j.version>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.release>17</maven.compiler.release>
