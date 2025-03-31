@@ -47,6 +47,7 @@ public class ExtractorHTTP extends Extractor {
      * @deprecated Deprecated in favor of {@link #getInferPaths()} which allows the specification of arbitrary
      *             paths and can be overridden with sheets. 
      */
+    @Deprecated
     public boolean getInferRootPage() {
         return inferRootPage;
     }
@@ -54,6 +55,7 @@ public class ExtractorHTTP extends Extractor {
      * @deprecated Deprecated in favor of {@link #setInferPaths(List)} which allows the specification of arbitrary
      *             paths and can be overridden with sheets. 
      */
+    @Deprecated
     public void setInferRootPage(boolean inferRootPage) {
         this.inferRootPage = inferRootPage;
     }

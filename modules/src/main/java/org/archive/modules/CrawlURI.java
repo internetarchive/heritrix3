@@ -906,6 +906,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
      * @param digestValue
      * @deprecated Use {@link #setContentDigest(String, byte[])}
      */
+    @Deprecated
     public void setContentDigest(byte[] digestValue) {
         setContentDigest("SHA1", digestValue);
     }
