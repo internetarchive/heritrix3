@@ -4,6 +4,35 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...HEAD)
 
+## 3.8.0
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.7.0...3.8.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.8.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.8.0/pom)
+
+#### New Features
+
+- **ExtractorYoutubeDL processArguments**: New option for overriding the default `yt-dlp` process arguments. [#644](https://github.com/internetarchive/heritrix3/pull/644)
+
+#### Fixes
+
+- **Slow tests**: Fixed `ObjectIdentityBdbManualCacheTest` so it no longer fails when running tests with `-DrunSlowTests=true`.
+- **Test stability**: Disabled `FetchHTTPTest.testHostHeaderDefaultPort` due to sporadic test failures.
+- **Code cleanup**: Fixed some compiler and IDE warnings. Removed unused utility classes (JavaLiterals, LogUtils).
+
+#### Dependency Upgrades
+
+- **amqp-client**: 5.24.0 → 5.25.0
+- **beanshell**: 2.0b5 → 2.0b6
+- **commons-codec**: 1.17.2 → 1.18.0
+- **dnsjava**: 3.6.2 → 3.6.3
+- **groovy**: 4.0.24 → 4.0.26
+- **gson**: 2.11.0 → 2.12.1
+- **jsch**: 0.2.22 → 0.2.24
+- **pdfbox**: 3.0.3 → 3.0.4
+- **slf4j**: 2.0.16 → 2.0.17
+- **spring**: 6.1.16 → 6.2.5
+
 ## 3.7.0
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.tar.gz))
