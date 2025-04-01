@@ -176,25 +176,25 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
                 isLaunchInfoPartial = true;
                 startPosition = jobLog.length()-(FileUtils.ONE_KB * 100);
             }
-            FileInputStream jobLogIn = new FileInputStream(jobLog);
-            jobLogIn.getChannel().position(startPosition);
-            BufferedReader jobLogReader = new BufferedReader(
-                    new InputStreamReader(jobLogIn));
-            String line;
-            // If we sliced into the file, make sure we skip to the next line:
-            // (See https://github.com/internetarchive/heritrix3/issues/239)
-            if (startPosition != 0) {
-                line = jobLogReader.readLine();
-            }
-            // Parse lines looking for launch details:
-            while ((line = jobLogReader.readLine()) != null) {
-                Matcher m = launchLine.matcher(line);
-                if (m.matches()) {
-                    launchCount++;
-                    lastLaunch = Instant.parse(m.group(1));
+            try (FileInputStream jobLogIn = new FileInputStream(jobLog)) {
+                jobLogIn.getChannel().position(startPosition);
+                BufferedReader jobLogReader = new BufferedReader(
+                        new InputStreamReader(jobLogIn));
+                String line;
+                // If we sliced into the file, make sure we skip to the next line:
+                // (See https://github.com/internetarchive/heritrix3/issues/239)
+                if (startPosition != 0) {
+                    line = jobLogReader.readLine();
+                }
+                // Parse lines looking for launch details:
+                while ((line = jobLogReader.readLine()) != null) {
+                    Matcher m = launchLine.matcher(line);
+                    if (m.matches()) {
+                        launchCount++;
+                        lastLaunch = Instant.parse(m.group(1));
+                    }
                 }
             }
-            jobLogReader.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
