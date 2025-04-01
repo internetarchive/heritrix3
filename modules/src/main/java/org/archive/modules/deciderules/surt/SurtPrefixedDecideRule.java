@@ -78,6 +78,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
      * @deprecated redundant now that we have
      *             {@link SurtPrefixedDecideRule#surtsSource}
      */
+    @Deprecated
     public ConfigFile getSurtsSourceFile() {
         if (getSurtsSource() instanceof ConfigFile) {
             return (ConfigFile) getSurtsSource();
@@ -86,6 +87,7 @@ public class SurtPrefixedDecideRule extends PredicatedDecideRule implements
         }
     }
     /** @deprecated */
+    @Deprecated
     public void setSurtsSourceFile(ConfigFile cp) {
         setSurtsSource(cp);
     }

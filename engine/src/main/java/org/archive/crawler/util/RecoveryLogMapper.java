@@ -53,7 +53,7 @@ import java.util.logging.Logger;
  * <p>This code creates some fairly large collections (proprotionate in size to
  * # discovered URLs) so make sure you allocate
  * it a large heap to work in. It also takes a while to process a recover log.
- * <p>See {@link #main()} method at end for test/demo code.
+ * <p>See {@link #main(String[])} method at end for test/demo code.
  * @author Mike Schwartz, schwartz at CodeOnTheRoad dot com
  */
 public class RecoveryLogMapper {

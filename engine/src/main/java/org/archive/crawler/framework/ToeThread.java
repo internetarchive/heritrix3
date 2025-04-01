@@ -72,10 +72,8 @@ implements Reporter, ProgressStatisticsReporter,
     private int serialNumber;
     
     /**
-     * Each ToeThead has an instance of HttpRecord that gets used
+     * Each ToeThead has an instance of Recorder that gets used
      * over and over by each request.
-     * 
-     * @see org.archive.util.RecorderMarker
      */
     private Recorder httpRecorder = null;
 

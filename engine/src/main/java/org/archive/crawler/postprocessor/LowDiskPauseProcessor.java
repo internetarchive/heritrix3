@@ -100,7 +100,7 @@ public class LowDiskPauseProcessor extends Processor {
         this.recheckThresholdKb = recheckThresholdKb;
     }
     
-    protected int contentSinceCheck = 0;
+    protected long contentSinceCheck = 0;
     
     public static final Pattern VALID_DF_OUTPUT = 
         Pattern.compile("(?s)^Filesystem\\s+1K-blocks\\s+Used\\s+Available\\s+Use%\\s+Mounted on\\n.*");

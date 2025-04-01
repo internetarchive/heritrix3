@@ -108,6 +108,7 @@ public class UriUtils {
      * @deprecated produces too many false positives,
      *             {@link #isVeryLikelyUri(CharSequence)} is preferred
      */
+    @Deprecated
     public static boolean isLikelyUri(CharSequence candidate) {
         return isPossibleUri(candidate) && !isLikelyFalsePositive(candidate);
     }

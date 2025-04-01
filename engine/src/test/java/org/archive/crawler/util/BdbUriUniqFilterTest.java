@@ -104,10 +104,10 @@ implements UriUniqFilter.CrawlUriReceiver {
      */
     public void testCreateKeyCollisions() {
         HashSet<Long> fingerprints = new HashSet<Long>();
-        fingerprints.add(new Long(BdbUriUniqFilter
-                .createKey("dns:mail.daps.dla.mil")));
-        fingerprints.add(new Long(BdbUriUniqFilter
-                .createKey("dns:militaryreview.army.mil")));
+        fingerprints.add(BdbUriUniqFilter
+                .createKey("dns:mail.daps.dla.mil"));
+        fingerprints.add(BdbUriUniqFilter
+                .createKey("dns:militaryreview.army.mil"));
         assertEquals("colliding fingerprints",2,fingerprints.size());
     }
     

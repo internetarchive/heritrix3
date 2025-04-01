@@ -181,9 +181,7 @@ public class FetchWhois extends Processor implements CoreAttributeConstants,
      * If the socket is unresponsive for this number of milliseconds, give up.
      * Set to zero for no timeout (Not. recommended. Could hang a thread on an
      * unresponsive server). This timeout is used timing out socket opens and
-     * for timing out each socket read. Make sure this value is &lt;
-     * {@link #TIMEOUT_SECONDS} for optimal configuration: ensures at least one
-     * retry read.
+     * for timing out each socket read.
      */
     public void setSoTimeoutMs(int timeout) {
         kp.put("soTimeoutMs",timeout);

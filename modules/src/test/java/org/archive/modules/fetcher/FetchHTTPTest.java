@@ -69,10 +69,7 @@ import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 public class FetchHTTPTest {
     
@@ -919,6 +916,7 @@ public class FetchHTTPTest {
 
     // see https://webarchive.jira.com/browse/HER-2063
     @Test
+    @Ignore("Relies on external service and can randomly fail")
     public void testHostHeaderDefaultPort() throws Exception {
         CrawlURI curi = makeCrawlURI("http://example.com/");
         fetcher().process(curi);

@@ -940,7 +940,7 @@ implements Closeable,
             wq.setSessionBudget(getBalanceReplenishAmount());
             wq.setTotalBudget(getQueueTotalBudget());
 
-            assert (wq.peek(this) == curi) : "unexpected peek " + wq;
+            if ((wq.peek(this) != curi)) throw new AssertionError("unexpected peek " + wq);
 
             int holderCost = curi.getHolderCost();
 
@@ -1224,10 +1224,6 @@ implements Closeable,
                 getInactiveQueuesByPrecedence().tailMap(getPrecedenceFloor()));
     }
 
-    /**
-     * @param iqueue 
-     * @return
-     */
     private int tallyInactiveTotals(SortedMap<Integer,Queue<String>> iqueues) {
         int inactiveCount = 0; 
         for(Queue<String> q : iqueues.values()) {
