@@ -1224,10 +1224,6 @@ implements Closeable,
                 getInactiveQueuesByPrecedence().tailMap(getPrecedenceFloor()));
     }
 
-    /**
-     * @param iqueue 
-     * @return
-     */
     private int tallyInactiveTotals(SortedMap<Integer,Queue<String>> iqueues) {
         int inactiveCount = 0; 
         for(Queue<String> q : iqueues.values()) {
