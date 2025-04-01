@@ -940,7 +940,7 @@ implements Closeable,
             wq.setSessionBudget(getBalanceReplenishAmount());
             wq.setTotalBudget(getQueueTotalBudget());
 
-            assert (wq.peek(this) == curi) : "unexpected peek " + wq;
+            if ((wq.peek(this) != curi)) throw new AssertionError("unexpected peek " + wq);
 
             int holderCost = curi.getHolderCost();
 
