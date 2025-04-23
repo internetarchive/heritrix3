@@ -179,6 +179,6 @@ implements Serializable {
         kryo.autoregister(HashSet.class);
         kryo.autoregister(SimplePrecedenceProvider.class);
         kryo.autoregister(byte[].class);
-	kryo.autoregister(HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider.class);
+        kryo.autoregister(HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider.class);
     }
 }
