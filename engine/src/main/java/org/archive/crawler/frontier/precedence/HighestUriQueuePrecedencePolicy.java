@@ -20,6 +20,7 @@ package org.archive.crawler.frontier.precedence;
 
 import java.io.PrintWriter;
 
+import org.archive.bdb.AutoKryo;
 import org.archive.crawler.frontier.WorkQueue;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats.Stage;
@@ -128,5 +129,10 @@ public class HighestUriQueuePrecedencePolicy extends BaseQueuePrecedencePolicy {
             }
         }
 
+        // Kryo support
+        public static void autoregisterTo(AutoKryo kryo) {
+            kryo.register(HighestUriPrecedenceProvider.class);
+            kryo.autoregister(org.archive.util.Histotable.class);
+        }
     }
 }

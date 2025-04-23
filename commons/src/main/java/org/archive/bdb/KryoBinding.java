@@ -46,7 +46,6 @@ public class KryoBinding<K> implements EntryBinding<K> {
             AutoKryo kryo = new AutoKryo();
             kryo.addDefaultSerializer(AtomicInteger.class, DefaultSerializers.AtomicIntegerSerializer.class);
             kryo.addDefaultSerializer(Histotable.class, JavaSerializer.class);
-            kryo.register(org.archive.util.Histotable.class);
             kryo.autoregister(baseClass);
             kryo.setRegistrationRequired(false);
             kryo.setWarnUnregisteredClasses(true);
