@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -16,18 +16,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.archive.crawler.frontier.precedence;
 
+import com.sleepycat.je.DatabaseEntry;
+import junit.framework.TestCase;
+import org.archive.bdb.KryoBinding;
 import org.archive.state.ModuleTestBase;
-
 
 /**
  * Tests for HighestUriQueuePrecedencePolicy
  */
 public class HighestUriQueuePrecedencePolicyTest extends ModuleTestBase {
 
-    //TODO add tests
+    public void testHighestUriPrecedenceProvider() {
+        HighestUriQueuePrecedencePolicy policy = new HighestUriQueuePrecedencePolicy();
+        HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider provider = policy.new HighestUriPrecedenceProvider(0);
 
+        KryoBinding<HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider> binding = new KryoBinding<>(HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider.class);
+        DatabaseEntry dbEntry = new DatabaseEntry();
+        binding.objectToEntry(provider, dbEntry);
+
+        HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider provider2 = binding.entryToObject(dbEntry);
+        TestCase.assertEquals(provider.getClass(), provider2.getClass());
+    }
 }
 
