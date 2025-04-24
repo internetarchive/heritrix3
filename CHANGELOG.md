@@ -4,6 +4,10 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...HEAD)
 
+#### Fixes
+
+- **Fixed HighestUriPrecedenceProvider:** Added Histotable serializer and Kryo autoregistration. #647
+
 ## 3.8.0
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.tar.gz))
