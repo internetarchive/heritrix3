@@ -26,6 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.bdb.AutoKryo;
+import org.archive.crawler.frontier.precedence.HighestUriQueuePrecedencePolicy;
 import org.archive.crawler.frontier.precedence.SimplePrecedenceProvider;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.fetcher.FetchStats;
@@ -178,5 +179,6 @@ implements Serializable {
         kryo.autoregister(HashSet.class);
         kryo.autoregister(SimplePrecedenceProvider.class);
         kryo.autoregister(byte[].class);
+        kryo.autoregister(HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider.class);
     }
 }
