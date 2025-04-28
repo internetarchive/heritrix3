@@ -45,6 +45,14 @@
 			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.jetty</artifactId>
 			<version>${restlet.version}</version>
+			<exclusions>
+				<!-- exclude quiche native library as it's very large and we don't use Restlet's
+				HTTP/3 support currently -->
+				<exclusion>
+					<groupId>org.mortbay.jetty.quiche</groupId>
+					<artifactId>jetty-quiche-native</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet</groupId>
