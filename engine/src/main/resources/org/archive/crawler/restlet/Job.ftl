@@ -190,7 +190,7 @@
 							<i>none</i>
 							<#else>
 							${job.alertCount}
-							<a href="/engine/anypath/${job.alertLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a></li>
+							<a href="${job.alertLogFileUrl}?format=paged&amp;pos=-1&amp;lines=-128">tail alert log...</a></li>
 							</#if>
 						</td>
 					</tr>
@@ -272,7 +272,7 @@
 <#if (job.isRunning || (job.hasApplicationContext && !job.isLaunchable))>
 <div class="row">
 	<div class="large-12 columns">
-		<h3>Crawl Log <a href="/engine/anypath/${job.crawlLogFilePath}?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y">more</a></h3>
+		<h3>Crawl Log <a href="${job.crawlLogFileUrl}?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y">more</a></h3>
 		<div class="row">
 			<div class="large-12 columns">
 				<div class="log-viewer" >
@@ -306,7 +306,7 @@
 						</td>
 						<td>
 							<#if config.path??>
-							<a href='/engine/anypath/${config.path}<#if config.path?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path}</a><#if config.editable> [<a href="/engine/anypath/${config.path}?format=textedit">edit</a>]</#if>
+							<a href='${config.url}<#if config.path?ends_with("log")>?format=paged&amp;pos=-1&amp;lines=-128&amp;reverse=y</#if>'>${config.path}</a><#if config.editable> [<a href="${config.url}?format=textedit">edit</a>]</#if>
 							<#else>
 							<i>unset</i>
 							</#if>

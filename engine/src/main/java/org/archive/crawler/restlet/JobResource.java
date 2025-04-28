@@ -135,7 +135,8 @@ public class JobResource extends BaseResource {
         // conditional on whether /anypath/ service is present?
         String fullPath = f.getAbsolutePath();
         fullPath = fullPath.replace(File.separatorChar, '/');
-        return "../../anypath/" + fullPath;
+        if (!fullPath.startsWith("/")) fullPath = "/" + fullPath;
+        return "../../anypath" + fullPath;
     }
 
     @Override
