@@ -68,6 +68,12 @@ public class HttpResponseRecordBuilder extends BaseWARCRecordBuilder {
             recordInfo.addExtraHeader(HEADER_KEY_TRUNCATED, value);
         }
 
+        if (anno.contains("h2")) {
+            recordInfo.addExtraHeader("WARC-Protocol", "h2");
+        } else if (anno.contains("h3")) {
+            recordInfo.addExtraHeader("WARC-Protocol", "h3");
+        }
+
         if (curi.getData().containsKey(A_WARC_RESPONSE_HEADERS)) {
             for (Object headerObj: curi.getDataList(A_WARC_RESPONSE_HEADERS)) {
                 String[] kv = StringUtils.split(((String) headerObj), ":", 2);

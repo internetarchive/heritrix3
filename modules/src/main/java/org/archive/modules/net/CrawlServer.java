@@ -78,6 +78,9 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
      */
     private transient Set<Credential> credentials =  null;
 
+    protected int http3Port;
+    protected long http3Expiry;
+
     /**
      * Creates a new CrawlServer object.
      *
@@ -249,7 +252,38 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 	public synchronized boolean isValidRobots() {
 		return validRobots;
 	}
-    
+
+    public synchronized void clearAltSvc() {
+        http3Port = 0;
+        http3Expiry = 0;
+    }
+
+    /**
+     * Sets the HTTP/3 alt-svc port and expiry time.
+     * @param port UDP port number for HTTP/3 service
+     * @param expiry time in milliseconds since epoch to stop using it
+     */
+    public synchronized void setHttp3AltSvc(int port, long expiry) {
+        http3Port = port;
+        http3Expiry = expiry;
+    }
+
+    /**
+     * Retrieves the HTTP/3 alternative service port for the server.
+     * This port is valid only if the associated expiry time has not been reached.
+     * If the expiry time has passed, the method returns 0.
+     *
+     * @return the HTTP/3 alternative service port if valid, or 0 if expired.
+     */
+    public synchronized int getHttp3AltSvcPort() {
+        if (http3Port <= 0) return 0;
+        if (http3Expiry < System.currentTimeMillis()) {
+            http3Port = 0;
+            return 0;
+        }
+        return http3Port;
+    }
+
     /**
      * Get key to use doing lookup on server instances.
      * 
