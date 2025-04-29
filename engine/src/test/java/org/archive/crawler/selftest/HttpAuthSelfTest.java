@@ -24,15 +24,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.eclipse.jetty.util.security.Password;
 
 /**
@@ -64,10 +65,7 @@ public class HttpAuthSelfTest
     protected void startHttpServer() throws Exception {
         Server server = new Server();
         
-        Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__BASIC_AUTH);;
-        constraint.setRoles(new String[]{"user","admin","moderator"});
-        constraint.setAuthenticate(true);
+        Constraint constraint = Constraint.from("user","admin","moderator");
 
         ConstraintMapping cm = new ConstraintMapping();
         cm.setConstraint(constraint);
@@ -87,17 +85,13 @@ public class HttpAuthSelfTest
         sc.setPort(7777);
         server.addConnector(sc);
         ResourceHandler rhandler = new ResourceHandler();
-        rhandler.setResourceBase(getSrcHtdocs().getAbsolutePath());
+        ResourceFactory resourceFactory = ResourceFactory.of(server);
+        rhandler.setBaseResource(resourceFactory.newResource(getSrcHtdocs().toPath().toAbsolutePath()));
         
-        ServletHandler servletHandler = new ServletHandler();
-        
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] {
-                securityHandler, 
-                rhandler, 
-                servletHandler,
-                new DefaultHandler() });
-        server.setHandler(handlers);
+        server.setHandler(new Handler.Sequence(
+                securityHandler,
+                rhandler,
+                new DefaultHandler()));
 
         this.httpServer = server;
         this.httpServer.start();

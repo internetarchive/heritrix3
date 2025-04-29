@@ -22,10 +22,11 @@ package org.archive.crawler.selftest;
 import java.io.IOException;
 
 import org.archive.crawler.framework.CrawlJob;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 
 
 /**
@@ -89,8 +90,6 @@ public class CheckpointSelfTest extends SelfTestBase {
         sc.setHost(HOST);
         sc.setPort(port);
         server.addConnector(sc);
-        ServletHandler servletHandler = new ServletHandler();
-        server.setHandler(servletHandler);
 
         RandomServlet random = new RandomServlet();
         random.setHost(HOST);
@@ -99,8 +98,10 @@ public class CheckpointSelfTest extends SelfTestBase {
         random.setMaxHops(MAX_HOPS);
         random.setPathRoot("random");
 
-        ServletHolder holder = new ServletHolder(random);
-        servletHandler.addServletWithMapping(holder, "/random/*");
+        ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        contextHandler.addServlet(random, "/random/*");
+        server.setHandler(contextHandler);
+
         server.start();
         return server;
     }

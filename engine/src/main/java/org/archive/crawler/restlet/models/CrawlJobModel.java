@@ -17,6 +17,7 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.crawler.framework.CrawlController.State;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.reporting.Report;
+import org.archive.crawler.restlet.JobResource;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;
@@ -134,10 +135,16 @@ public class CrawlJobModel extends LinkedHashMap<String, Object> implements Seri
             }
         }
         this.put("checkpointFiles",checkpointFiles);
-        if (crawlJob.hasApplicationContext())
-            this.put("alertLogFilePath",crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile().getAbsolutePath());
-        if(crawlJob.isRunning() || (crawlJob.hasApplicationContext() && !crawlJob.isLaunchable()))
-            this.put("crawlLogFilePath",crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile().getAbsolutePath());
+        if (crawlJob.hasApplicationContext()) {
+            File file = crawlJob.getCrawlController().getLoggerModule().getAlertsLogPath().getFile();
+            this.put("alertLogFilePath", file.getAbsolutePath());
+            this.put("alertLogFileUrl", JobResource.getHrefPath(file, crawlJob));
+        }
+        if(crawlJob.isRunning() || (crawlJob.hasApplicationContext() && !crawlJob.isLaunchable())) {
+            File file = crawlJob.getCrawlController().getLoggerModule().getCrawlLogPath().getFile();
+            this.put("crawlLogFilePath", file.getAbsolutePath());
+            this.put("crawlLogFileUrl", JobResource.getHrefPath(file, crawlJob));
+        }
         this.put("reports", generateReports());
     }
     public String formatBytes(Long bytes){
@@ -209,7 +216,7 @@ public class CrawlJobModel extends LinkedHashMap<String, Object> implements Seri
             configMap.put("key", key);
             configMap.put("name", cp.getName());
             configMap.put("path",FileUtils.tryToCanonicalize(cp.getFile()).getAbsolutePath());
-            configMap.put("url",baseRef+"engine/anypath/"+configMap.get("path"));
+            configMap.put("url", baseRef + JobResource.getHrefPath(cp.getFile(), crawlJob));
             configMap.put("editable", EDIT_FILTER.accept(cp.getFile()));
             referencedPaths.add(configMap);
         }

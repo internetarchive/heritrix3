@@ -27,10 +27,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import junit.framework.TestCase;
 
 import org.apache.commons.httpclient.URIException;
@@ -44,19 +44,18 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.archive.util.TmpDirTestCase;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
-import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.RequestLogHandler;
-import org.eclipse.jetty.server.session.DefaultSessionCache;
-import org.eclipse.jetty.server.session.NullSessionDataStore;
-import org.eclipse.jetty.server.session.SessionCache;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.session.DefaultSessionCache;
+import org.eclipse.jetty.session.NullSessionDataStore;
+import org.eclipse.jetty.session.SessionCache;
 import org.eclipse.jetty.util.security.Password;
 
 /* Somewhat redundant to org.archive.crawler.selftest.FormAuthSelfTest, but 
@@ -169,7 +168,7 @@ public class FormAuthTest extends TestCase {
         getFetcher().process(curi);
         logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertEquals(302, curi.getFetchStatus());
-        assertTrue(curi.getHttpResponseHeader("Location").startsWith("http://localhost:7779/login.html"));
+        assertTrue(curi.getHttpResponseHeader("Location").startsWith("/login.html"));
 
         PreconditionEnforcer preconditionEnforcer = new PreconditionEnforcer();
         preconditionEnforcer.setServerCache(getFetcher().getServerCache());
@@ -188,7 +187,7 @@ public class FormAuthTest extends TestCase {
         getFetcher().process(loginUri);
         logger.info('\n' + httpRequestString(loginUri) + "\n\n" + rawResponseString(loginUri));
         assertEquals(302, loginUri.getFetchStatus()); // 302 on successful login
-        assertEquals("http://localhost:7779/auth/1", loginUri.getHttpResponseHeader("location"));
+        assertEquals("/auth/1", loginUri.getHttpResponseHeader("location"));
 
         curi = makeCrawlURI("http://localhost:7779/auth/1");
         getFetcher().process(curi);
@@ -206,29 +205,28 @@ public class FormAuthTest extends TestCase {
             + "<div> <input type='submit' /> </div>" + "</form>" + "</body>"
             + "</html>";
 
-    protected static class FormAuthTestHandler extends SessionHandler {
+    protected static class FormAuthTestServlet extends HttpServlet {
 
-        public FormAuthTestHandler() {
+        public FormAuthTestServlet() {
             super();
         }
 
         @Override
-        public void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            String target = request.getRequestURI();
             if (target.endsWith("/set-cookie")) {
-                response.addCookie(new javax.servlet.http.Cookie("test-cookie-name", "test-cookie-value"));
+                response.addCookie(new Cookie("test-cookie-name", "test-cookie-value"));
             }
             
             if (target.equals("/login.html")) {
                 response.setContentType("text/html;charset=US-ASCII");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(LOGIN_HTML.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             } else {
                 response.setContentType("text/plain;charset=US-ASCII");
                 response.setDateHeader("Last-Modified", 0);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getOutputStream().write(DEFAULT_PAYLOAD_STRING.getBytes("US-ASCII"));
-                ((Request)request).setHandled(true);
             }
         }
     }
@@ -236,9 +234,7 @@ public class FormAuthTest extends TestCase {
     protected static SecurityHandler makeAuthWrapper(Authenticator authenticator,
             final String role, String realm, final String login,
             final String password) {
-        Constraint constraint = new Constraint();
-        constraint.setRoles(new String[] { role });
-        constraint.setAuthenticate(true);
+        Constraint constraint = Constraint.from(role);
 
         ConstraintMapping constraintMapping = new ConstraintMapping();
         constraintMapping.setConstraint(constraint);
@@ -266,27 +262,19 @@ public class FormAuthTest extends TestCase {
         sc.setHost("127.0.0.1");
         sc.setPort(7779);
         server.addConnector(sc);
-        
-        HandlerCollection handlers = new HandlerCollection();
-        handlers.addHandler(new FormAuthTestHandler());
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
-        NCSARequestLog requestLog = new NCSARequestLog();
-        requestLogHandler.setRequestLog(requestLog);
-        handlers.addHandler(requestLogHandler);
-        
+
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        context.addServlet(FormAuthTestServlet.class, "/");
+
         FormAuthenticator formAuthenticatrix = new FormAuthenticator("/login.html", null, false);
 
         SecurityHandler authWrapper = makeAuthWrapper(formAuthenticatrix,
                 FORM_AUTH_ROLE, FORM_AUTH_REALM, FORM_AUTH_LOGIN,
                 FORM_AUTH_PASSWORD);
-        authWrapper.setHandler(handlers);
 
-        SessionHandler sessionHandler = new SessionHandler();
-        SessionCache cache = new DefaultSessionCache(sessionHandler);
-        cache.setSessionDataStore(new NullSessionDataStore());
-        sessionHandler.setSessionCache(cache);
-        sessionHandler.setHandler(authWrapper);
-        server.setHandler(sessionHandler);
+        context.setSecurityHandler(authWrapper);
+        server.setHandler(context);
         
         server.start();
     }

@@ -49,14 +49,14 @@ import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.restlet.EngineApplication;
+import org.archive.crawler.restlet.NoSniHostCheckHttpsServerHelper;
 import org.archive.crawler.restlet.RateLimitGuard;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.KeyTool;
 import org.restlet.Component;
+import org.restlet.Context;
 import org.restlet.Server;
-import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Protocol;
-import org.restlet.security.ChallengeAuthenticator;
 import org.restlet.security.MapVerifier;
 
 
@@ -154,6 +154,7 @@ public class Heritrix {
                 "to use for crawling.");
         options.addOption(null, "proxy-port", true, "Global http(s) proxy port " +
                 "to use for crawling.");
+        options.addOption(null, "sni-host-check", false, "Validates SNI hostname against the SSL certificate");
         return options;
     }
     
@@ -349,13 +350,21 @@ public class Heritrix {
             engine = new Engine(jobsDir);
             component = new Component();
 
+            // disable SNI host check by default for backwards compatibility with existing ad-hoc certificates
+            String helperClass = null;
+            if (!cl.hasOption("sni-host-check")) {
+                org.restlet.engine.Engine.getInstance().getRegisteredServers().add(
+                        new NoSniHostCheckHttpsServerHelper(null));
+                helperClass = NoSniHostCheckHttpsServerHelper.class.getName();
+            }
+
             if(bindHosts.isEmpty()) {
                 // listen all addresses
-                setupServer(component, port, null, keystorePath, keystorePassword, keyPassword);
+                setupServer(component, port, null, keystorePath, keystorePassword, keyPassword, helperClass);
             } else {
                 // bind only to declared addresses, or just 'localhost'
                 for(String address : bindHosts) {
-                    setupServer(component, port, address, keystorePath, keystorePassword, keyPassword);
+                    setupServer(component, port, address, keystorePath, keystorePassword, keyPassword, helperClass);
                 }
             }
             component.getClients().add(Protocol.FILE);
@@ -504,8 +513,10 @@ public class Heritrix {
      * @param keystorePassword
      * @param keyPassword
      */
-    protected void setupServer(Component component, int port, String address, String keystorePath, String keystorePassword, String keyPassword) {
-        Server server = component.getServers().add(Protocol.HTTPS, address, port);
+    protected void setupServer(Component component, int port, String address, String keystorePath, String keystorePassword, String keyPassword, String helperClass) {
+        Context serverContext = component.getServers().getContext().createChildContext();
+        Server server = new Server(serverContext, List.of(Protocol.HTTPS), address, port, null, helperClass);
+        component.getServers().add(server);
         server.getContext().getParameters().add("keystorePath", keystorePath);
         server.getContext().getParameters().add("keystorePassword", keystorePassword);
         server.getContext().getParameters().add("keyPassword", keyPassword);

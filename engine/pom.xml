@@ -31,8 +31,8 @@
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
+			<groupId>org.eclipse.jetty.ee10</groupId>
+			<artifactId>jetty-ee10-servlet</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
@@ -46,9 +46,11 @@
 			<artifactId>org.restlet.ext.jetty</artifactId>
 			<version>${restlet.version}</version>
 			<exclusions>
+				<!-- exclude quiche native library as it's very large and we don't use Restlet's
+				HTTP/3 support currently -->
 				<exclusion>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-client</artifactId>
+					<groupId>org.mortbay.jetty.quiche</groupId>
+					<artifactId>jetty-quiche-native</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -109,6 +111,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<restlet.version>2.5.0</restlet.version>
+		<restlet.version>2.6.0-m2</restlet.version>
 	</properties>
 </project>
