@@ -86,7 +86,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     protected boolean useHTTP2 = true;
     protected boolean useHTTP3 = false;
 
-    public FetchHTTP2(ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
+    public FetchHTTP2(@Autowired ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
         this.serverCache = serverCache;
         this.cookieStore = cookieStore;
     }
@@ -320,7 +320,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     /**
      * Reconstructs the HTTP request and records it.
      */
-    private static void recordRequest(Request request, Recorder recorder) throws IOException {
+    public static void recordRequest(Request request, Recorder recorder) throws IOException {
         String target = request.getPath();
         if (request.getQuery() != null) target += "?" + request.getQuery();
         String recordVersion = request.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
@@ -332,13 +332,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
      * Reconstructs the HTTP response and records it.
      */
     private static void recordResponse(Response response, Recorder recorder, InputStreamResponseListener listener) throws IOException {
-        // Since the transfer encoding has been decoded, we need to remove the header
-        HttpFields headers = HttpFields.build(response.getHeaders())
-                .remove(EnumSet.of(HttpHeader.TRANSFER_ENCODING));
-        String recordVersion = response.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
-        String reason = response.getReason() == null ? "" : response.getReason();
-        String header = recordVersion + " " + response.getStatus() + " " + reason + "\r\n" +
-                headers.asString();
+        String header = formatResponseHeader(response);
         ByteArrayInputStream headerStream = new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII));
         try (InputStream inputStream = listener.getInputStream()) {
             var streams = List.of(headerStream, inputStream);
@@ -347,10 +341,21 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         }
     }
 
+    public static String formatResponseHeader(Response response) {
+        // Since the transfer encoding has been decoded, we need to remove the header
+        HttpFields headers = HttpFields.build(response.getHeaders())
+                .remove(EnumSet.of(HttpHeader.TRANSFER_ENCODING));
+        String recordVersion = response.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
+        String reason = response.getReason() == null ? "" : response.getReason();
+        String header = recordVersion + " " + response.getStatus() + " " + reason + "\r\n" +
+                headers.asString();
+        return header;
+    }
+
     /**
      * Updates the CrawlURI with details from the HTTP response header.
      */
-    private void updateCrawlURIWithResponseHeader(CrawlURI curi, Response response) {
+    public void updateCrawlURIWithResponseHeader(CrawlURI curi, Response response) {
         // Status
         curi.setFetchStatus(response.getStatus());
 
@@ -405,7 +410,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     /**
      * Updates the CrawlURI with details from the Recorder after it is closed.
      */
-    private void updateCrawlURIOnCompletion(CrawlURI curi, Recorder recorder) {
+    public void updateCrawlURIOnCompletion(CrawlURI curi, Recorder recorder) {
         curi.setFetchCompletedTime(System.currentTimeMillis());
         if (digestAlgorithm != null) {
             curi.setContentDigest(digestAlgorithm, recorder.getRecordedInput().getDigestValue());
