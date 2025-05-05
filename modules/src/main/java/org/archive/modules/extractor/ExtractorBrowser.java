@@ -5,9 +5,10 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.DispositionChain;
 import org.archive.modules.Processor;
 import org.archive.modules.fetcher.FetchHTTP2;
-import org.archive.net.UURIFactory;
 import org.archive.net.WebdriverBiDi;
+import org.archive.net.WebdriverBiDi.BrowsingContext;
 import org.archive.net.WebdriverBiDi.Network;
+import org.archive.net.WebdriverBiDi.Script;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.io.*;
@@ -29,8 +30,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ExtractorWebdriverBiDi extends Processor {
-    private static final System.Logger log = System.getLogger(ExtractorWebdriverBiDi.class.getName());
+/**
+ * HTML link extractor which uses a real web browser via WebDriver BiDi. Subresources loaded by the
+ * browser are recorded using a MITM proxy. Must be used in conjunction with {@link FetchHTTP2}.
+ */
+public class ExtractorBrowser extends Processor {
+    private static final System.Logger log = System.getLogger(ExtractorBrowser.class.getName());
     public static final String REQUEST_ID_HEADER = "Heritrix-Request-ID";
     private final DispositionChain dispositionChain;
     private SslConnectionFactory sslConnectionFactory;
@@ -38,9 +43,9 @@ public class ExtractorWebdriverBiDi extends Processor {
     private final Map<String, RequestRecorder> requestRecorders = new ConcurrentHashMap<>();
     private final FetchHTTP2 fetcher;
     private ConfigPath scratchDir = new ConfigPath("scratch subdirectory", "scratch");
-    private WebdriverBiDi browser;
+    private WebdriverBiDi webdriver;
 
-    public ExtractorWebdriverBiDi(FetchHTTP2 fetcher, DispositionChain dispositionChain) {
+    public ExtractorBrowser(FetchHTTP2 fetcher, DispositionChain dispositionChain) {
         this.fetcher = fetcher;
         this.dispositionChain = dispositionChain;
     }
@@ -72,20 +77,20 @@ public class ExtractorWebdriverBiDi extends Processor {
 
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-        var tab = browser.browsingContext().create(WebdriverBiDi.BrowsingContext.CreateType.tab).context();
+        var tab = webdriver.browsingContext().create(BrowsingContext.CreateType.tab).context();
         try {
-            browser.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
+            webdriver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
                     List.of(new Network.UrlPatternPattern("pattern", "http"),
                             new Network.UrlPatternPattern("pattern", "https")));
-            browser.session().subscribe(List.of("network.beforeRequestSent"), List.of(tab));
-            browser.on(Network.BeforeRequestSent.class, event -> {
+            webdriver.session().subscribe(List.of("browsingContext.contextCreated"), null);
+            webdriver.on(Network.BeforeRequestSent.class, tab, event -> {
                 if (event.request().url().startsWith("data:") || !event.isBlocked()) return;
                 CrawlURI subCuri;
                 try {
                     subCuri = curi.createCrawlURI(event.request().url(), LinkContext.EMBED_MISC, Hop.EMBED);
                 } catch (URIException e) {
                     log.log(System.Logger.Level.ERROR, "Error creating CrawlURI, ignoring request", e);
-                    browser.network().continueRequestAsync(event.request().request());
+                    webdriver.network().continueRequestAsync(event.request().request());
                     return;
                 }
                 var requestId = UUID.randomUUID().toString();
@@ -94,16 +99,37 @@ public class ExtractorWebdriverBiDi extends Processor {
                 requestRecorders.put(requestId, new RequestRecorder(subCuri, event));
                 List<Network.Header> requestHeaders = event.request().headers();
                 requestHeaders.add(new Network.Header(REQUEST_ID_HEADER, requestId));
-                browser.network().continueRequestAsync(event.request().request(), requestHeaders);
+                webdriver.network().continueRequestAsync(event.request().request(), requestHeaders);
             });
-            browser.browsingContext().navigate(tab, "https://www.abc.net.au/");
+            var navigation = webdriver.browsingContext().navigate(tab, "https://www.abc.net.au/", BrowsingContext.ReadinessState.complete);
+            System.out.println("Navigated to " + navigation);
+            var result = webdriver.script().evaluateOrThrow("""
+                (function() {
+                    const links = new Set();
+                    for (const el of document.querySelectorAll('a[href]')) {
+                        let href = el.href;
+                        if (href instanceof SVGAnimatedString) {
+                            href = new URL(href.baseVal, el.ownerDocument.location.href).toString();
+                        }
+                        if (href.startsWith('http://') || href.startsWith('https://')) {
+                            links.add(href.replace(/#.*$/, ''));
+                        }
+                    }
+                    return Array.from(links);
+                })();
+                """, new Script.ContextTarget(tab, "heritrix"), false);
+
+            for (String url : (List<String>)result.result().javaValue()) {
+
+            }
+            System.out.println("Result: " + result.result().javaValue());
 
             // TODO: wait for idle
 
             Thread.sleep(10000);
 
         } finally {
-            browser.browsingContext().close(tab);
+            webdriver.browsingContext().close(tab);
         }
     }
 
@@ -145,21 +171,10 @@ public class ExtractorWebdriverBiDi extends Processor {
         }
         try {
             int proxyPort = ((InetSocketAddress) ((ServerSocketChannel) proxyServer.getConnectors()[0].getTransport()).getLocalAddress()).getPort();
-            this.browser = new WebdriverBiDi(proxyPort);
+            this.webdriver = new WebdriverBiDi(proxyPort);
         } catch (Exception e) {
             log.log(System.Logger.Level.ERROR, "Error starting browser", e);
             throw new RuntimeException(e);
-        }
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        ExtractorWebdriverBiDi extractorWebdriverBiDi = new ExtractorWebdriverBiDi(new FetchHTTP2(null, null), null);
-        extractorWebdriverBiDi.start();
-        try {
-            extractorWebdriverBiDi.innerProcess(new CrawlURI(UURIFactory.getInstance("https://www.abc.net.au/")));
-        } finally {
-            extractorWebdriverBiDi.stop();
         }
     }
 
@@ -188,7 +203,7 @@ public class ExtractorWebdriverBiDi extends Processor {
 
             // Don't call super to avoid adding the Via and Forwarded proxy headers as
             // the proxy shouldn't be visible to the server.
-            super.addProxyHeaders(clientToProxyRequest, proxyToServerRequest);
+            //super.addProxyHeaders(clientToProxyRequest, proxyToServerRequest);
         }
 
         @Override
@@ -239,16 +254,12 @@ public class ExtractorWebdriverBiDi extends Processor {
 
     public class RequestRecorder {
         private final CrawlURI curi;
-        private final Network.BeforeRequestSent beforeEvent;
-        private org.eclipse.jetty.client.Request request;
-        private org.eclipse.jetty.client.Response response;
         private final WritableByteChannel requestBodyChannel;
         private ByteBuffer responseBodyBuffer;
         private final byte[] buffer = new byte[8192];
 
         public RequestRecorder(CrawlURI curi, Network.BeforeRequestSent beforeEvent) {
             this.curi = curi;
-            this.beforeEvent = beforeEvent;
             try {
                 File responseTempFile = File.createTempFile("heritrix-bidi", ".tmp");
                 responseTempFile.deleteOnExit();
@@ -271,7 +282,6 @@ public class ExtractorWebdriverBiDi extends Processor {
         }
 
         public void handleRequestHeader(org.eclipse.jetty.client.Request request) {
-            this.request = request;
             try {
                 FetchHTTP2.recordRequest(request, curi.getRecorder());
             } catch (Exception e) {
@@ -281,7 +291,6 @@ public class ExtractorWebdriverBiDi extends Processor {
         }
 
         public void handleResponseHeader(org.eclipse.jetty.client.Response response) {
-            this.response = response;
             writeToResponse(ByteBuffer.wrap(FetchHTTP2.formatResponseHeader(response).getBytes(StandardCharsets.US_ASCII)));
             fetcher.updateCrawlURIWithResponseHeader(curi, response);
         }
