@@ -9,10 +9,11 @@ import org.json.JSONTokener;
 import org.json.JSONWriter;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.RecordComponent;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Client for the BiDirectional WebDriver Protocol for remotely controlling browsers.
@@ -93,9 +95,10 @@ public class WebdriverBiDi implements Closeable {
         return future;
     }
 
-    public <T extends Event> void on(Class<T> eventClass, Consumer<T> handler) {
+    public <T extends Event> void on(Class<T> eventClass, BrowsingContext.Context context, Consumer<T> handler) {
         String eventName = StringUtils.uncapitalize(eventClass.getEnclosingClass().getSimpleName()) + "." +
                 StringUtils.uncapitalize(eventClass.getSimpleName());
+        session().subscribe(Collections.singletonList(eventName), Collections.singletonList(context));
         eventHandlers.put(eventName, node -> {
             handler.accept(fromJson(node, eventClass));
         });
@@ -106,27 +109,31 @@ public class WebdriverBiDi implements Closeable {
         String prefix = domainClass.getSimpleName().substring(0, 1).toLowerCase(Locale.ROOT)
                 + domainClass.getSimpleName().substring(1) + ".";
         return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{domainClass},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "equals" -> proxy == args[0];
-                    case "hashCode" -> System.identityHashCode(proxy);
-                    case "toString" -> domainClass.getName();
-                    default -> {
-                        var map = new LinkedHashMap<String, Object>();
-                        for (int i = 0; i < args.length; i++) {
-                            map.put(method.getParameters()[i].getName(), args[i]);
+                (proxy, method, args) -> {
+                    if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
+                    return switch (method.getName()) {
+                        case "equals" -> proxy == args[0];
+                        case "hashCode" -> System.identityHashCode(proxy);
+                        case "toString" -> domainClass.getName();
+                        default -> {
+                            var map = new LinkedHashMap<String, Object>();
+                            for (int i = 0; i < args.length; i++) {
+                                map.put(method.getParameters()[i].getName(), args[i]);
+                            }
+                            String methodName = method.getName();
+                            if (methodName.endsWith("_")) methodName = methodName.substring(0, methodName.length() - 1);
+                            if (methodName.endsWith("Async"))
+                                methodName = methodName.substring(0, methodName.length() - 5);
+                            var future = send(prefix + methodName, map);
+                            if (method.getReturnType() == CompletableFuture.class &&
+                                    method.getGenericReturnType() instanceof ParameterizedType parameterizedType &&
+                                    parameterizedType.getActualTypeArguments()[0] instanceof Class<?> typeClass) {
+                                yield future.thenApply(result -> fromJson(result, typeClass));
+                            } else {
+                                yield fromJson(future.get(), method.getReturnType());
+                            }
                         }
-                        String methodName = method.getName();
-                        if (methodName.endsWith("_")) methodName = methodName.substring(0, methodName.length() - 1);
-                        if (methodName.endsWith("Async")) methodName = methodName.substring(0, methodName.length() - 5);
-                        var future = send(prefix + methodName, map);
-                        if (method.getReturnType() == CompletableFuture.class &&
-                                method.getGenericReturnType() instanceof ParameterizedType parameterizedType &&
-                                parameterizedType.getActualTypeArguments()[0] instanceof Class<?> typeClass) {
-                            yield future.thenApply(result -> fromJson(result, typeClass));
-                        } else {
-                            yield fromJson(future.get(), method.getReturnType());
-                        }
-                    }
+                    };
                 });
     }
 
@@ -140,6 +147,10 @@ public class WebdriverBiDi implements Closeable {
 
     public BrowsingContext browsingContext() {
         return domain(BrowsingContext.class);
+    }
+
+    public Script script() {
+        return domain(Script.class);
     }
 
     private static Object toJson(Object value) {
@@ -194,46 +205,84 @@ public class WebdriverBiDi implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T fromJson(JSONObject json, Class<T> clazz) {
+    private static <T> T fromJson(Object value, Class<T> type) {
         try {
-            if (clazz == void.class) return null;
-            if (!clazz.isRecord()) throw new UnsupportedOperationException("Not a record type: " + clazz);
-            RecordComponent[] components = clazz.getRecordComponents();
-            Object[] values = new Object[components.length];
-            for (int i = 0; i < components.length; i++) {
-                var component = components[i];
-                Class<?> type = component.getType();
-                Object value = json.opt(component.getName());
-                if (value == JSONObject.NULL) value = null;
-                if (value == null || type.isPrimitive() || type.isAssignableFrom(value.getClass())) {
-                    values[i] = value;
-                } else if (type == Long.class && value instanceof Number number) {
-                    values[i] = number.longValue();
-                } else if (Identifier.class.isAssignableFrom(type)) {
-                    values[i] = type.getDeclaredConstructor(String.class).newInstance(json.getString(component.getName()));
-                } else if (type.isAssignableFrom(List.class)) {
-                    values[i] = json.getJSONArray(component.getName()).toList();
-                } else if (type.isEnum()) {
-                    values[i] = Enum.valueOf((Class<Enum>) type, json.getString(component.getName()));
-                } else if (type.isRecord()) {
-                    if (value instanceof JSONObject jsonObject) {
-                        values[i] = fromJson(jsonObject, type);
-                    } else if (value instanceof String string) {
-                        values[i] = type.getConstructor(String.class).newInstance(string);
-                    } else {
-                        throw new UnsupportedOperationException("Unsupported type: " + type);
+            if (value == JSONObject.NULL) {
+                return null;
+            }
+            if (value == null || type.isPrimitive() || type.isAssignableFrom(value.getClass())) {
+                return (T) value;
+            }
+            if (type == Long.class && value instanceof Number number) {
+                return (T) (Long) number.longValue();
+            }
+            if (type == byte[].class && value instanceof JSONObject jsonObject) {
+                switch (jsonObject.getString("type")) {
+                    case "base64" -> {
+                        return (T) Base64.getDecoder().decode(jsonObject.getString("value"));
                     }
-                } else if (type == JSONObject.class) {
-                    values[i] = json.getJSONObject(component.getName());
-                } else {
-                    throw new UnsupportedOperationException("Unsupported type: " + component + " (value '" + value + "')");
+                    case "string" -> {
+                        return (T) jsonObject.getString("value").getBytes(StandardCharsets.UTF_8);
+                    }
                 }
             }
-            return (T) clazz.getDeclaredConstructors()[0].newInstance(values);
+            if (Identifier.class.isAssignableFrom(type) && value instanceof String string) {
+                return type.getDeclaredConstructor(String.class).newInstance(string);
+            }
+            if (type.isAssignableFrom(List.class) && value instanceof JSONArray array) {
+                return (T) array.toList();
+            }
+            if (type.isEnum() && value instanceof String string) {
+                return (T) Enum.valueOf((Class<Enum>) type, string);
+            }
+            if (type.isRecord()) {
+                if (value instanceof JSONObject jsonObject) {
+                    RecordComponent[] components = type.getRecordComponents();
+                    Class<?>[] componentTypes = new Class<?>[components.length];
+                    Object[] values = new Object[components.length];
+                    for (int i = 0; i < components.length; i++) {
+                        componentTypes[i] = components[i].getType();
+                        var componentValue = jsonObject.opt(components[i].getName());
+                        if (components[i].getGenericType() instanceof ParameterizedType parameterizedType) {
+                            if (parameterizedType.getRawType() == List.class && componentValue instanceof JSONArray array) {
+                                Class<?> listType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+                                var list = new ArrayList<>();
+                                for (Object item : array) {
+                                    list.add(fromJson(item, listType));
+                                }
+                                values[i] = list;
+                            } else {
+                                throw new UnsupportedOperationException("Unsupported type: " + parameterizedType + " for " + components[i] + " in " + type + " (value '" + jsonObject + "')");
+                            }
+                        } else {
+                            values[i] = fromJson(componentValue, components[i].getType());
+                        }
+                    }
+                    return (T) type.getDeclaredConstructor(componentTypes).newInstance(values);
+                } else if (value instanceof String string) {
+                    return type.getConstructor(String.class).newInstance(string);
+                } else {
+                    throw new UnsupportedOperationException("Unsupported type: " + type);
+                }
+            }
+            if (type.isInterface() && type.isSealed() && value instanceof JSONObject jsonObject) {
+                String typeName = jsonObject.getString("type");
+                if (typeName == null) throw new UnsupportedOperationException("Missing 'type' field in " + jsonObject);
+                return (T) fromJson(jsonObject, getSubclassByTypeName(type, typeName));
+            }
+            throw new UnsupportedOperationException("Unsupported type: " + type + " (value '" + value + "')");
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new RuntimeException(e);
+                 InvocationTargetException | IllegalArgumentException e) {
+            throw new RuntimeException("Couldn't map to " + type + ": " + e.getMessage(), e);
         }
+    }
+
+    private static Class<?> getSubclassByTypeName(Class<?> type, String typeName) {
+        for (Class<?> subclass : type.getPermittedSubclasses()) {
+            TypeName annotation = subclass.getDeclaredAnnotation(TypeName.class);
+            if (annotation != null && annotation.value().equals(typeName)) return subclass;
+        }
+        throw new UnsupportedOperationException("Unsupported 'type' for " + type + ": " + typeName);
     }
 
     @Override
@@ -248,28 +297,41 @@ public class WebdriverBiDi implements Closeable {
         String id();
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    @interface TypeName {
+        String value();
+    }
+
+    // https://w3c.github.io/webdriver-bidi/#module-browsingContext
     public interface BrowsingContext {
         CreateResult create(CreateType type);
 
-        NavigateResult navigate(Context context, String url);
+        NavigateResult navigate(Context context, String url, ReadinessState wait);
 
         void close(Context context);
 
         enum CreateType {tab, window}
 
+        enum ReadinessState {none, interactive, complete}
+
         record CreateResult(Context context) {
+        }
+
+        record Load(Context context, Navigation navigation, long timestamp, String url) implements Event {
         }
 
         record NavigateResult(Navigation navigation, String url) {
         }
 
-        record Context(String id) implements Identifier  {
+        record Context(String id) implements Identifier {
         }
 
-        record Navigation(String id) implements Identifier  {
+        record Navigation(String id) implements Identifier {
         }
     }
 
+    // https://w3c.github.io/webdriver-bidi/#module-network
     public interface Network {
         AddInterceptResult addIntercept(List<InterceptPhase> phases,
                                         List<BrowsingContext.Context> contexts,
@@ -282,6 +344,7 @@ public class WebdriverBiDi implements Closeable {
         void continueRequest(Request request, String method, String url);
 
         CompletableFuture<Void> continueRequestAsync(Request request);
+
         CompletableFuture<Void> continueRequestAsync(Request request, List<Header> headers);
 
         void provideResponse(Request request, byte[] body, List<Header> headers, String reasonPhrase, int statusCode);
@@ -291,7 +354,8 @@ public class WebdriverBiDi implements Closeable {
         record AddInterceptResult(Intercept intercept) {
         }
 
-        record Intercept(String id) implements Identifier  {}
+        record Intercept(String id) implements Identifier {
+        }
 
         record BeforeRequestSent(
                 BrowsingContext.Context context,
@@ -309,11 +373,11 @@ public class WebdriverBiDi implements Closeable {
                 byte[] value,
                 String domain,
                 String path,
-                long size,
-                boolean httpOnly,
-                boolean secure,
+                Long size,
+                Boolean httpOnly,
+                Boolean secure,
                 SameSite sameSite,
-                long expiry) {
+                Long expiry) {
         }
 
         record Header(String name, byte[] value) {
@@ -327,7 +391,8 @@ public class WebdriverBiDi implements Closeable {
 
         enum InitiatorType {parser, script, preflight, other}
 
-        record Request(String id) implements Identifier {}
+        record Request(String id) implements Identifier {
+        }
 
         record RequestData(
                 Request request,
@@ -339,7 +404,8 @@ public class WebdriverBiDi implements Closeable {
                 long bodySize,
                 String destination,
                 String initiatorType
-        ) { }
+        ) {
+        }
 
         enum SameSite {strict, lax, none}
 
@@ -351,6 +417,7 @@ public class WebdriverBiDi implements Closeable {
         }
     }
 
+    // https://w3c.github.io/webdriver-bidi/#module-session
     public interface Session {
         NewResult new_(CapabilitiesRequest capabilities);
 
@@ -365,13 +432,85 @@ public class WebdriverBiDi implements Closeable {
         record CapabilityRequest(
                 boolean acceptInsecureCerts,
                 ProxyConfiguration proxy
-        ) {}
+        ) {
+        }
 
         record ProxyConfiguration(
                 String proxyType,
                 String httpProxy,
                 String sslProxy
-        ) {}
+        ) {
+        }
+    }
+
+    // https://www.w3.org/TR/webdriver-bidi/#module-script
+    public interface Script {
+        EvaluateResult evaluate(String expression, Target target, boolean awaitPromise);
+
+        default EvaluateResultSuccess evaluateOrThrow(String expression, Target target, boolean awaitPromise) {
+            var result = evaluate(expression, target, awaitPromise);
+            if (result instanceof EvaluateResultSuccess success) {
+                return success;
+            } else if (result instanceof EvaluateResultException exception) {
+                throw new RuntimeException(exception.exceptionDetails().text());
+            } else {
+                throw new RuntimeException("Unexpected EvaluateResult: " + result);
+            }
+        }
+
+        sealed interface EvaluateResult permits EvaluateResultSuccess, EvaluateResultException {}
+
+        @TypeName("success")
+        record EvaluateResultSuccess(RemoteValue result, Realm realm) implements EvaluateResult {
+        }
+
+        @TypeName("exception")
+        record EvaluateResultException(ExceptionDetails exceptionDetails, Realm realm) implements EvaluateResult {
+        }
+
+        record ExceptionDetails(String text /* TODO */) {
+        }
+
+        sealed interface RemoteValue {
+            Object javaValue();
+        }
+
+        @TypeName("number")
+        record NumberValue(Number value) implements RemoteValue {
+            @Override
+            public Number javaValue() {
+                return value;
+            }
+        }
+
+        @TypeName("string")
+        record StringValue(String value) implements RemoteValue {
+            @Override
+            public String javaValue() {
+                return value;
+            }
+        }
+
+        @TypeName("array")
+        record ArrayRemoteValue(List<RemoteValue> value) implements RemoteValue {
+            @Override
+            public List<?> javaValue() {
+                return value.stream().map(RemoteValue::javaValue).collect(Collectors.toList());
+            }
+        }
+
+        sealed interface Target {
+        }
+
+        record ContextTarget(BrowsingContext.Context context, String sandbox) implements Target {
+        }
+
+        record RealmTarget(Realm realm) implements Target {
+        }
+
+        record Realm(String id) implements Identifier {
+        }
+
     }
 
     private class Listener implements WebSocket.Listener {
@@ -410,7 +549,7 @@ public class WebdriverBiDi implements Closeable {
                             throw new UnsupportedOperationException("Unsupported message type: " + message.getString("type"));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(System.Logger.Level.ERROR, "Error handling message", e);
                 webSocket.abort();
             }
             return null;
@@ -418,7 +557,7 @@ public class WebdriverBiDi implements Closeable {
 
         @Override
         public void onError(WebSocket webSocket, Throwable error) {
-            error.printStackTrace();
+            logger.log(System.Logger.Level.ERROR, "WebSocket error", error);
         }
     }
 }
