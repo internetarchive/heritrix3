@@ -313,7 +313,24 @@ http://example.example/example
  <bean id="extractorJs" class="org.archive.modules.extractor.ExtractorJS">
  </bean>
  <bean id="extractorSwf" class="org.archive.modules.extractor.ExtractorSWF">
- </bean>    
+ </bean>
+ <!--
+ <bean id="browser" class="org.archive.crawler.processor.Browser">
+  <property name="behaviors">
+   <list>
+    <bean class="org.archive.modules.behaviors.ScrollDown" />
+    <bean class="org.archive.modules.behaviors.ExtractLinks" />
+   </list>
+  </property>
+  <property name="concurrency" value="20" />
+  <property name="executable" value="firefox" />
+  <property name="options">
+   <list>
+    <value>-headless</value>
+   </list>
+  </property>
+ </bean>
+ -->
  <!-- now, processors are assembled into ordered FetchChain bean -->
  <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
   <property name="processors">
@@ -341,6 +358,8 @@ http://example.example/example
     <ref bean="extractorJs"/>
     <!-- ...extract outlinks from Flash content... -->
     <ref bean="extractorSwf"/>
+    <!-- ...visit in a web browser... -->
+    <!-- <ref bean="browser"/> -->
    </list>
   </property>
  </bean>
