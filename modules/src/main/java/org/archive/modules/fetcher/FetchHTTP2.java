@@ -138,6 +138,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         httpClient.setFollowRedirects(false); // we handle redirects ourselves
         httpClient.setDestinationIdleTimeout(5 * 60 * 1000);
         httpClient.setConnectTimeout(20 * 1000);
+        httpClient.setMaxConnectionsPerDestination(6);
         if (serverCache != null) httpClient.setSocketAddressResolver(this::resolveSocketAddress);
         if (cookieStore != null) httpClient.setHttpCookieStore(new CookieStoreAdaptor(cookieStore));
         return httpClient;
@@ -213,7 +214,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
             }
             request.send(listener);
             recordRequest(request, recorder);
-            Response response = listener.get(getTimeoutSeconds(), java.util.concurrent.TimeUnit.SECONDS);
+            Response response = listener.get(getTimeoutSeconds(), TimeUnit.SECONDS);
             handleAltSvcHeader(curi, response);
             updateCrawlURIWithResponseHeader(curi, response);
             recordResponse(response, recorder, listener);
@@ -526,6 +527,10 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
      */
     public void setMaxFetchKBSec(int rate) {
         kp.put("maxFetchKBSec",rate);
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
     }
 
     private record CookieAdaptor(Cookie cookie) implements HttpCookie {
