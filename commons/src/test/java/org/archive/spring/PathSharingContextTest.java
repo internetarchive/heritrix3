@@ -1,9 +1,9 @@
 package org.archive.spring;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PathSharingContextTest {
     @Test
@@ -19,14 +19,14 @@ public class PathSharingContextTest {
     private static void testConfig(String name, String configPath) {
         try (var context = new PathSharingContext(configPath)) {
             context.validate();
-            assertTrue("should be no validation errors", context.getAllErrors().isEmpty());
-            assertEquals("primaryConfiguationPath should be correct", configPath, context.getPrimaryConfigurationPath());
+            assertTrue(context.getAllErrors().isEmpty(), "should be no validation errors");
+            assertEquals(configPath, context.getPrimaryConfigurationPath(), "primaryConfiguationPath should be correct");
             Bean1 bean1 = context.getBean("bean1", Bean1.class);
             Bean2 bean2 = context.getBean("bean2", Bean2.class);
-            assertNotNull("bean1 should not be null", bean1);
-            assertNotNull("bean2 should not be null", bean2);
-            assertEquals("bean1.name should be set", name, bean1.name);
-            assertEquals("bean1 should be autowired into bean2", bean1, bean2.bean1);
+            assertNotNull(bean1, "bean1 should not be null");
+            assertNotNull(bean2, "bean2 should not be null");
+            assertEquals(name, bean1.name, "bean1.name should be set");
+            assertEquals(bean1, bean2.bean1, "bean1 should be autowired into bean2");
         }
     }
 

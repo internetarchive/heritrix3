@@ -21,6 +21,7 @@ package org.archive.modules.fetcher;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +32,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import junit.framework.TestCase;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
@@ -43,27 +43,27 @@ import org.archive.modules.credential.HtmlFormCredential;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
-import org.archive.util.TmpDirTestCase;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.session.DefaultSessionCache;
-import org.eclipse.jetty.session.NullSessionDataStore;
-import org.eclipse.jetty.session.SessionCache;
 import org.eclipse.jetty.util.security.Password;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /* Somewhat redundant to org.archive.crawler.selftest.FormAuthSelfTest, but 
  * the code is written, it's easier to run in eclipse, and no doubt tests 
  * somewhat different stuff. */
-public class FormAuthTest extends TestCase {
+public class FormAuthTest {
 
     private static Logger logger = Logger.getLogger(FormAuthTest.class.getName());
+    @TempDir
+    Path tempDir;
 
     protected static final String DEFAULT_PAYLOAD_STRING = "abcdefghijklmnopqrstuvwxyz0123456789\n";
 
@@ -91,7 +91,7 @@ public class FormAuthTest extends TestCase {
 
     protected Recorder getRecorder() throws IOException {
         if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
+            Recorder httpRecorder = new Recorder(tempDir.toFile(),
                     getClass().getName(), 16 * 1024, 512 * 1024);
             Recorder.setHttpRecorder(httpRecorder);
         }
@@ -141,7 +141,8 @@ public class FormAuthTest extends TestCase {
         byte[] buf = IOUtils.toByteArray(curi.getRecorder().getRecordedOutput().getReplayInputStream());
         return new String(buf, "US-ASCII");
     }
-    
+
+    @Test
     public void testFormAuth() throws Exception {
         startHttpServers();
 

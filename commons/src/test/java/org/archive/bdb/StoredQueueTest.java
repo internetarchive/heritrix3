@@ -20,28 +20,34 @@
 package org.archive.bdb;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.FileUtils;
-import org.archive.bdb.BdbModule;
-import org.archive.bdb.StoredQueue;
-import org.archive.util.TmpDirTestCase;
 import org.archive.util.bdbje.EnhancedEnvironment;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-public class StoredQueueTest extends TmpDirTestCase {
+import static org.junit.jupiter.api.Assertions.*;
+
+public class StoredQueueTest {
+    @TempDir
+    Path tempDir;
     StoredQueue<String> queue;
     EnhancedEnvironment env;
     Database db; 
     File envDir; 
 
-    protected void setUp() throws Exception {
-        super.setUp();
-        this.envDir = new File(getTmpDir(),"StoredMapTest");
+    @BeforeEach
+    public void setUp() throws Exception {
+        this.envDir = new File(tempDir.toFile(),"StoredMapTest");
         org.archive.util.FileUtils.ensureWriteableDirectory(this.envDir);
         try {
             EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -55,88 +61,88 @@ public class StoredQueueTest extends TmpDirTestCase {
         }
         this.queue = new StoredQueue<String>(db, String.class, env.getClassCatalog());
     }
-    
+
+    @AfterEach
     protected void tearDown() throws Exception {
         db.close();
         env.close(); 
         FileUtils.deleteDirectory(this.envDir);
-        super.tearDown();
     }
-    
+
+    @Test
     public void testAdd() {
-        assertEquals("not empty at start",0,queue.size());
+        assertEquals(0, queue.size(), "not empty at start");
         fill(queue, 10);
-        assertEquals("unexpected size at full",10,queue.size());
+        assertEquals(10, queue.size(), "unexpected size at full");
     }
 
     /**
-     * @deprecated Use {@link #fill(Queue,int)} instead
+     * @deprecated Use {@link #fill(Queue, int)} instead
      */
     protected void fill(int size) {
         fill(queue, size);
     }
 
     protected void fill(java.util.Queue<String> q, int size) {
-        for(int i = 1; i <= size; i++) {
-            q.add("item-"+i);
+        for (int i = 1; i <= size; i++) {
+            q.add("item-" + i);
         }
     }
-    
+
     protected int drain(java.util.Queue<String> q) {
-        int count = 0; 
-        while(true) {
+        int count = 0;
+        while (true) {
             try {
                 q.remove();
                 count++;
-            } catch(NoSuchElementException nse) {
+            } catch (NoSuchElementException nse) {
                 return count;
             }
         }
     }
 
+    @Test
     public void testClear() {
         fill(queue, 10);
         queue.clear();
-        assertEquals("unexpected size after clear",0,queue.size());
+        assertEquals(0, queue.size(), "unexpected size after clear");
     }
 
+    @Test
     public void testRemove() {
         fill(queue, 10);
-        assertEquals("unexpected remove value","item-1",queue.remove());
-        assertEquals("improper count of removed items",9,drain(queue));
-        try {
+        assertEquals("item-1", queue.remove(), "unexpected remove value");
+        assertEquals(9, drain(queue), "improper count of removed items");
+        assertThrows(NoSuchElementException.class, () -> {
             queue.remove();
-            fail("expected NoSuchElementException not received");
-        } catch (NoSuchElementException nse) {
-            // do nothing
-        }
+        });
     }
-    
+
+    @Test
     public void testOrdering() {
         fill(queue, 10);
-        for(int i = 1; i <= 10; i++) {
-            assertEquals("unexpected remove value","item-"+i,queue.remove());
+        for (int i = 1; i <= 10; i++) {
+            assertEquals("item-" + i, queue.remove(), "unexpected remove value");
         }
     }
 
+    @Test
     public void testElement() {
         fill(queue, 10);
-        assertEquals("unexpected element value","item-1",queue.element());
-        assertEquals("unexpected element value",queue.peek(),queue.element());
+        assertEquals("item-1", queue.element(), "unexpected element value");
+        assertEquals(queue.peek(), queue.element(), "unexpected element value");
         queue.clear();
-        try {
+        assertThrows(NoSuchElementException.class, () -> {
             queue.element();
-            fail("expected NoSuchElementException not received");
-        } catch (NoSuchElementException nse) {
-            // do nothing
-        }
+        });
     }
-    
+
+    @Test
     public void testIdentity() {
-        fill(queue,10);
+        fill(queue, 10);
         String peek1 = queue.peek();
         String peek2 = queue.peek();
-        assertTrue("peeks of same item note identical object",peek1==peek2);
+        assertSame(peek1, peek2, "peeks of same item note identical object");
     }
 
     public void xestTimingsAgainstLinkedBlockingQueue() {

@@ -1,15 +1,19 @@
 package org.archive.modules.deciderules;
 
 import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MatchesStatusCodeDecideRuleTest extends ModuleTestBase {
 
+    @Test
     public void testInBounds() throws Exception {
         MatchesStatusCodeDecideRule dr = makeDecideRule(400,499);
         CrawlURI testUri = createTestUri("http://www.archive.org");
@@ -17,7 +21,8 @@ public class MatchesStatusCodeDecideRuleTest extends ModuleTestBase {
 
         assertTrue(dr.evaluate(testUri));
     }
-    
+
+    @Test
     public void testOutOfBounds() throws Exception {
         MatchesStatusCodeDecideRule dr = makeDecideRule(400,499);
         CrawlURI testUri = createTestUri("http://www.archive.org");
@@ -25,7 +30,8 @@ public class MatchesStatusCodeDecideRuleTest extends ModuleTestBase {
      
         assertFalse(dr.evaluate(testUri));
     }
-    
+
+    @Test
     public void testNoStatusYet() throws Exception {
         MatchesStatusCodeDecideRule dr = makeDecideRule(400,499);
         CrawlURI testUri = createTestUri("http://www.archive.org");

@@ -48,9 +48,9 @@ import org.archive.modules.net.CrawlServer;
 import org.archive.net.UURIFactory;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.ObjectIdentityMemCache;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.Assert;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for {@link QuotaEnforcer}.
@@ -154,7 +154,7 @@ public class QuotaEnforcerTest extends CrawlerProcessorTestBase {
                 }
                 return group;
             } catch (URIException e) {
-                Assert.fail();
+                fail();
                 return null;
             }
         }
@@ -311,40 +311,52 @@ public class QuotaEnforcerTest extends CrawlerProcessorTestBase {
     }
 
     // separate methods to make it easier to know what failed
+    @Test
     public void testHostNovelKbForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "host", true);
     }
+    @Test
     public void testServerNovelKbForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "server", true);
     }
+    @Test
     public void testGroupNovelKbForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "group", true);
     }
+    @Test
     public void testHostNovelKbNoForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "host", false);
     }
+    @Test
     public void testServerNovelKbNoForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "server", false);
     }
+    @Test
     public void testGroupNovelKbNoForceRetire() throws URIException, InterruptedException {
         testNovel("kb", "group", false);
     }
-    
+
+    @Test
     public void testHostNovelUrlsForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "host", true);
     }
+    @Test
     public void testServerNovelUrlsForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "server", true);
     }
+    @Test
     public void testGroupNovelUrlsForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "group", true);
     }
+    @Test
     public void testHostNovelUrlsNoForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "host", false);
     }
+    @Test
     public void testServerNovelUrlsNoForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "server", false);
     }
+    @Test
     public void testGroupNovelUrlsNoForceRetire() throws URIException, InterruptedException {
         testNovel("urls", "group", false);
     }

@@ -19,15 +19,18 @@
 package org.archive.crawler.frontier.precedence;
 
 import com.sleepycat.je.DatabaseEntry;
-import junit.framework.TestCase;
 import org.archive.bdb.KryoBinding;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for HighestUriQueuePrecedencePolicy
  */
 public class HighestUriQueuePrecedencePolicyTest extends ModuleTestBase {
 
+    @Test
     public void testHighestUriPrecedenceProvider() {
         HighestUriQueuePrecedencePolicy policy = new HighestUriQueuePrecedencePolicy();
         HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider provider = policy.new HighestUriPrecedenceProvider(0);
@@ -37,7 +40,7 @@ public class HighestUriQueuePrecedencePolicyTest extends ModuleTestBase {
         binding.objectToEntry(provider, dbEntry);
 
         HighestUriQueuePrecedencePolicy.HighestUriPrecedenceProvider provider2 = binding.entryToObject(dbEntry);
-        TestCase.assertEquals(provider.getClass(), provider2.getClass());
+        assertEquals(provider.getClass(), provider2.getClass());
     }
 }
 

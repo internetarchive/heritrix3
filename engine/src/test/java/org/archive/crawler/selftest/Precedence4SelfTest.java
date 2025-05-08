@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Tests that operators can manually assign precedence values to individual 
  * URLs.

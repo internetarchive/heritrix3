@@ -96,9 +96,9 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<version>4.5.14</version>
 			</dependency>
 			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.13.2</version>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter</artifactId>
+				<version>5.12.2</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -347,15 +347,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<!-- Allow older junit3 style tests to be discovered -->
-						<artifactId>surefire-junit4</artifactId>
-						<version>2.22.2</version>
-					</dependency>
-				</dependencies>
+                <version>3.5.3</version>
                 <configuration>
                     <argLine>-Xmx1g</argLine>
                     <systemPropertyVariables>

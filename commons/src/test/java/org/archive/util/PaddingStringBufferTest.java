@@ -18,9 +18,11 @@
  */
 package org.archive.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * JUnit test suite for PaddingStringBuffer
@@ -28,161 +30,145 @@ import junit.framework.TestSuite;
  * @author <a href="mailto:me@jamesc.net">James Casey</a>
  * @version $Id$
  */
-public class PaddingStringBufferTest extends TestCase {
-    /**
-     * Create a new PaddingStringBufferTest object
-     *
-     * @param testName the name of the test
-     */
-    public PaddingStringBufferTest(final String testName) {
-        super(testName);
-    }
+public class PaddingStringBufferTest {
 
-    /**
-     * run all the tests for PaddingStringBufferTest
-     *
-     * @param argv the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    /**
-     * return the suite of tests for PaddingStringBufferTest
-     *
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(PaddingStringBufferTest.class);
-    }
-
+    @BeforeEach
     public void setUp() {
         buf = new PaddingStringBuffer();
     }
 
     /** first check that padTo works ok, since all depends on it */
+    @Test
     public void testPadTo() {
         PaddingStringBuffer retBuf;
-        assertEquals("nothing in buffer", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing in buffer");
         retBuf = buf.padTo(5);
-        assertEquals("retBuf same as buf", retBuf, buf);
-        assertEquals("5 spaces", "     ", buf.toString());
+        assertEquals(retBuf, buf, "retBuf same as buf");
+        assertEquals("     ", buf.toString(), "5 spaces");
 
         // now do a smaller value - nothing should happen
         buf.padTo(4);
-        assertEquals("5 spaces", "     ", buf.toString());
+        assertEquals("     ", buf.toString(), "5 spaces");
 
         // now pad tro a greater length
         buf.padTo(10);
-        assertEquals("10 spaces", "          ", buf.toString());
+        assertEquals("          ", buf.toString(), "10 spaces");
     }
 
     /** test that append(String) works correctly */
+    @Test
     public void testAppendString() {
         // a buf to hold the return buffer
         PaddingStringBuffer retBuf;
-        assertEquals("nothing in buffer", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing in buffer");
         retBuf = buf.append("foo");
-        assertEquals("foo in buffer", "foo", buf.toString());
-        assertEquals("retBuf good", retBuf.toString(), buf.toString());
+        assertEquals("foo", buf.toString(), "foo in buffer");
+        assertEquals(retBuf.toString(), buf.toString(), "retBuf good");
         retBuf = buf.append("bar");
-        assertEquals("foobar in buffer", "foobar", buf.toString());
-        assertEquals("retBuf good", retBuf.toString(), buf.toString());
+        assertEquals("foobar", buf.toString(), "foobar in buffer");
+        assertEquals(retBuf.toString(), buf.toString(), "retBuf good");
     }
 
     /** check the reset method clears the buffer */
+    @Test
     public void testReset() {
         // append something into the buffer
-        assertEquals("nothing in buffer", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing in buffer");
         buf.append("foo");
-        assertEquals("buffer is 'foo'", "foo", buf.toString());
+        assertEquals("foo", buf.toString(), "buffer is 'foo'");
         buf.reset();
-        assertEquals("nothing in buffer after reset", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing in buffer after reset");
     }
 
     /** test the raAppend(String) works in the simple cases */
+    @Test
     public void testRaAppend() {
         // a buf to hold the return buffer
         PaddingStringBuffer retBuf;
-        assertEquals("nothing in buffer", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing in buffer");
         retBuf = buf.raAppend(5, "foo");
-        assertEquals("foo in buffer", "  foo", buf.toString());
-        assertEquals("retBuf good", retBuf.toString(), buf.toString());
+        assertEquals("  foo", buf.toString(), "foo in buffer");
+        assertEquals(retBuf.toString(), buf.toString(), "retBuf good");
         retBuf = buf.raAppend(9, "bar");
-        assertEquals("foobar in buffer", "  foo bar", buf.toString());
-        assertEquals("retBuf good", retBuf.toString(), buf.toString());
+        assertEquals("  foo bar", buf.toString(), "foobar in buffer");
+        assertEquals(retBuf.toString(), buf.toString(), "retBuf good");
 
         // now check with out-of-range columns - should just append
         buf = new PaddingStringBuffer();
         buf.raAppend(-1, "foo");
-        assertEquals("no padding for -1", "foo", buf.toString());
+        assertEquals("foo", buf.toString(), "no padding for -1");
         buf = new PaddingStringBuffer();
         buf.raAppend(0, "foo");
-        assertEquals("no padding for 0", "foo", buf.toString());
+        assertEquals("foo", buf.toString(), "no padding for 0");
 
     }
 
     /** test the newline() */
+    @Test
     public void testNewline(){
-        assertEquals("nothing should be in the buffer", "", buf.toString());
+        assertEquals("", buf.toString(), "nothing should be in the buffer");
         buf.newline();
-        assertTrue("should contain newline", buf.toString().indexOf('\n')!=-1);
-        assertEquals("line position should be 0",0,buf.linePos);
+        assertTrue(buf.toString().indexOf('\n')!=-1, "should contain newline");
+        assertEquals(0, (Object) buf.linePos, "line position should be 0");
     }
 
     /** check what happens when we right append, but the string is longer
      * than the space */
+    @Test
     public void testRaAppendWithTooLongString() {
         buf.raAppend(3,"foobar");
-        assertEquals("no padding when padding col less than string length",
-                "foobar", buf.toString());
+        assertEquals("foobar", buf.toString(), "no padding when padding col less than string length");
         buf.reset();
     }
 
     /** check it all works with the length == the length of the string */
+    @Test
     public void testRaAppendWithExactLengthString() {
         buf.raAppend(6, "foobar");
         buf.raAppend(12, "foobar");
-        assertEquals("no padding with exact length string",
-                "foobarfoobar", buf.toString());
+        assertEquals("foobarfoobar", buf.toString(), "no padding with exact length string");
     }
 
     /** check that append(int) works */
+    @Test
     public void testAppendInt() {
         buf.append((int)1);
-        assertEquals("buffer is '1'", "1", buf.toString());
+        assertEquals("1", buf.toString(), "buffer is '1'");
         buf.append((int)234);
-        assertEquals("buffer is '1234'", "1234", buf.toString());
+        assertEquals("1234", buf.toString(), "buffer is '1234'");
     }
 
     /** check that raAppend(int) works */
+    @Test
     public void testRaAppendInt() {
         // right-append '1' to column 5
         buf.raAppend(5, (int)1);
-        assertEquals("buf is '    1'", "    1", buf.toString());
+        assertEquals("    1", buf.toString(), "buf is '    1'");
         // try appending a too-long int
 
         buf.raAppend(6,(int)123);
-        assertEquals("'123' appended", "    1123", buf.toString());
+        assertEquals("    1123", buf.toString(), "'123' appended");
     }
 
     /** check that  append(long) works */
+    @Test
     public void testAppendLong() {
         buf.append((long)1);
-        assertEquals("buffer is '1'", "1", buf.toString());
+        assertEquals("1", buf.toString(), "buffer is '1'");
         buf.append((long)234);
-        assertEquals("buffer is '1234'", "1234", buf.toString());
+        assertEquals("1234", buf.toString(), "buffer is '1234'");
     }
 
     /** check that raAppend(long) works */
+    @Test
     public void testRaAppendLong() {
         // right-append '1' to column 5
         buf.raAppend(5, (long) 1);
-        assertEquals("buf is '    1'", "    1", buf.toString());
+        assertEquals("    1", buf.toString(), "buf is '    1'");
         // try appending a too-long int
 
         buf.raAppend(6, (long) 123);
-        assertEquals("'123' appended", "    1123", buf.toString());
+        assertEquals("    1123", buf.toString(), "'123' appended");
     }
 
     /** a temp buffer for testing with */

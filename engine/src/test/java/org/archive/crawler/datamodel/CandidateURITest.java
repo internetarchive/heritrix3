@@ -24,16 +24,18 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import junit.framework.TestCase;
-
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test  CandidateURI serialization.
  * @author stack
  */
-public class CandidateURITest extends TestCase {
+public class CandidateURITest {
+    @Test
     public void testSerialization()
     throws IOException, ClassNotFoundException {
         doOneSerialization("http://www.archive.org/");
@@ -46,8 +48,7 @@ public class CandidateURITest extends TestCase {
         CrawlURI cauri =
             new CrawlURI(UURIFactory.getInstance(urlStr));
         cauri = serialize(cauri);
-        assertEquals(urlStr + " doesn't serialize", urlStr,
-            cauri.getUURI().toString());  
+        assertEquals(urlStr, cauri.getUURI().toString(), urlStr + " doesn't serialize");
     }
     
     private CrawlURI serialize(CrawlURI cauri)

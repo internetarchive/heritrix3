@@ -32,10 +32,10 @@ import java.util.logging.Logger;
 
 import org.apache.poi.hdf.extractor.WordDocument;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
 
-public class DocTest extends TestCase {
+public class DocTest {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     
@@ -49,7 +49,7 @@ public class DocTest extends TestCase {
             : new File("commons/src/test/java/org/archive/util/ms");
     }
 
-    // Rename to testAgainstPOI to actually run the test.
+    @Test
     public void testAgainstPOI() throws IOException {
         int errors = 0;
         long start = System.currentTimeMillis();

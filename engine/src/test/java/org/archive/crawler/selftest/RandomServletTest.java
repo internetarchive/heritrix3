@@ -19,16 +19,18 @@
 
 package org.archive.crawler.selftest;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author pjack
  *
  */
-public class RandomServletTest extends TestCase {
+public class RandomServletTest {
 
     
-    
+    @Test
     public void testPathParse() {
         for (int i = 0; i < 1000; i++) {
             String s = RandomServletLinkWriter.toPath(i);

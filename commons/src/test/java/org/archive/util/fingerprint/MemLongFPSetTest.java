@@ -19,9 +19,6 @@
 package org.archive.util.fingerprint;
 
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 /**
  * JUnit test suite for MemLongFPSet
  *
@@ -29,39 +26,8 @@ import junit.framework.TestSuite;
  * @version $ Id:$
  */
 public class MemLongFPSetTest extends LongFPSetTestCase {
-        /**
-         * Create a new MemLongFPSetTest object
-         *
-         * @param testName the name of the test
-         */
-        public MemLongFPSetTest(final String testName) {
-                super(testName);
-        }
-
-        /**
-         * run all the tests for MemLongFPSetTest
-         *
-         * @param argv the command line arguments
-         */
-        public static void main(String argv[]) {
-                junit.textui.TestRunner.run(suite());
-        }
-
-        /**
-         * return the suite of tests for MemLongFPSetTest
-         *
-         * @return the suite of test
-         */
-        public static Test suite() {
-                return new TestSuite(MemLongFPSetTest.class);
-        }
-
         protected LongFPSet makeLongFPSet() {
                 return new MemLongFPSet();
-        }
-
-        public void testFoo() {
-
         }
 }
 

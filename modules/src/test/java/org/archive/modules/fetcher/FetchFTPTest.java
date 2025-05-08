@@ -25,6 +25,7 @@ import org.apache.ftpserver.listener.ListenerFactory;
 import org.apache.ftpserver.usermanager.impl.BaseUser;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessorTestBase;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -32,12 +33,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author pjack
  *
  */
 public class FetchFTPTest extends ProcessorTestBase {
+    @Test
     public void test() throws Exception {
         FetchFTP fetchFTP = new FetchFTP();
         fetchFTP.start();

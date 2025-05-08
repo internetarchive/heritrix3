@@ -19,52 +19,57 @@
  
 package org.archive.crawler.util;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.URIException;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test TopNSetTest.
 
  * @author gojomo
  */
-public class TopNSetTest extends TestCase{
+public class TopNSetTest {
     
+    @Test
     public void testOne() throws URIException {
         TopNSet tops = new TopNSet(20); 
-        tops.update("foo",999); 
-        assertEquals("wrong-sized set",1, tops.getTopSet().size());
-        assertEquals("bad largest","foo",tops.getLargest());
-        assertEquals("bad smallest","foo",tops.getSmallest());
+        tops.update("foo",999);
+        assertEquals(1, tops.getTopSet().size(), "wrong-sized set");
+        assertEquals("foo", tops.getLargest(), "bad largest");
+        assertEquals("foo", tops.getSmallest(), "bad smallest");
     }
-    
-    
+
+
+    @Test
     public void testTwo() throws URIException {
         TopNSet tops = new TopNSet(20); 
         tops.update("foo",999); 
-        tops.update("bar",101); 
-        assertEquals("wrong-sized set",2,tops.getTopSet().size());
-        assertEquals("bad largest","foo",tops.getLargest());
-        assertEquals("bad smallest","bar",tops.getSmallest());
+        tops.update("bar",101);
+        assertEquals(2, tops.getTopSet().size(), "wrong-sized set");
+        assertEquals("foo", tops.getLargest(), "bad largest");
+        assertEquals("bar", tops.getSmallest(), "bad smallest");
     }
-    
+
+    @Test
     public void testInversion() throws URIException {
         TopNSet tops = new TopNSet(20); 
         tops.update("foo",999); 
         tops.update("bar",101); 
         tops.update("foo",9);
-        assertEquals("wrong-sized set",2,tops.getTopSet().size());
-        assertEquals("bad largest","bar",tops.getLargest());
-        assertEquals("bad smallest","foo",tops.getSmallest());
+        assertEquals(2, tops.getTopSet().size(), "wrong-sized set");
+        assertEquals("bar", tops.getLargest(), "bad largest");
+        assertEquals("foo", tops.getSmallest(), "bad smallest");
     }
-    
+
+    @Test
     public void testOverflowUp() throws URIException {
         TopNSet tops = new TopNSet(20); 
         for(int i = 0; i <= 100; i++) {
             tops.update(Integer.toString(i),i);
         }
-        assertEquals("wrong-sized set",20,tops.getTopSet().size());
-        assertEquals("bad largest","100",tops.getLargest());
-        assertEquals("bad smallest","81",tops.getSmallest());
+        assertEquals(20, tops.getTopSet().size(), "wrong-sized set");
+        assertEquals("100", tops.getLargest(), "bad largest");
+        assertEquals("81", tops.getSmallest(), "bad smallest");
     }
 }

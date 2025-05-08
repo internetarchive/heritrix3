@@ -19,16 +19,20 @@
 package org.archive.util;
 
 import java.io.File;
+import java.lang.ref.SoftReference;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.util.bdbje.EnhancedEnvironment;
-import org.junit.*;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author stack
@@ -36,14 +40,17 @@ import static org.junit.Assume.assumeTrue;
  * @version $Date: 2009-08-03 23:50:43 -0700 (Mon, 03 Aug 2009) $, $Revision: 6434 $
  */
 public class ObjectIdentityBdbManualCacheTest {
-    @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
-    EnhancedEnvironment env; 
+    private static final Logger logger =
+            Logger.getLogger(ObjectIdentityBdbManualCacheTest.class.getName());
+
+    @TempDir
+    Path tempDir;
+    EnhancedEnvironment env;
     private ObjectIdentityBdbManualCache<IdentityCacheableWrapper<HashMap<String,String>>> cache;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        File envDir = tmpFolder.newFolder("ObjectIdentityBdbCacheTest");
+        File envDir = tempDir.toFile();
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
         FileUtils.deleteDirectory(envDir);
         org.archive.util.FileUtils.ensureWriteableDirectory(envDir);
@@ -52,7 +59,7 @@ public class ObjectIdentityBdbManualCacheTest {
         this.cache.initialize(env,"setUpCache",IdentityCacheableWrapper.class, env.getClassCatalog());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         this.cache.close();
         File envDir = env.getHome();
@@ -61,10 +68,9 @@ public class ObjectIdentityBdbManualCacheTest {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = "runSlowTests", matches = "true", disabledReason = "it takes about 1 minute")
     public void testReadConsistencyUnderLoad() throws Exception {
-        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 1 minute)",
-                "true".equals(System.getProperty("runSlowTests")));
-        final ObjectIdentityBdbManualCache<IdentityCacheableWrapper<AtomicInteger>> cbdbmap = 
+        final ObjectIdentityBdbManualCache<IdentityCacheableWrapper<AtomicInteger>> cbdbmap =
             new ObjectIdentityBdbManualCache<>();
         cbdbmap.initialize(env, 
                     "consistencyCache",
@@ -88,12 +94,12 @@ public class ObjectIdentityBdbManualCacheTest {
                     IdentityCacheableWrapper<AtomicInteger> wrap = cbdbmap.get(""+k);
                     int foundValue = wrap.get().getAndIncrement();
                     wrap.makeDirty();
-                    assertEquals("stale value preinc key "+k, level, foundValue);
+                    assertEquals(level, foundValue, "stale value preinc key "+k);
                 }
                 if(level % 10 == 0) {
                     System.out.println("level to "+level);
                     if(level>0) {
-                        TestUtils.forceScarceMemory();
+                        forceScarceMemory();
                     }
                     System.out.println("OIBMCT:"+cbdbmap.composeCacheSummary());
                 }
@@ -130,20 +136,19 @@ public class ObjectIdentityBdbManualCacheTest {
         for (int i = 0; i < upperbound; i++) {
             HashMap<String,String> m = this.cache.get(key + Integer.toString(i)).get();
             String v = m.get(key);
-            assertNotNull("value should not be null",v);
-            assertEquals("value incorrect", value, v);
+            assertNotNull(v,"value should not be null");
+            assertEquals(value, v, "value incorrect");
         }
     }
     
     /**
      * Test that in scarce memory conditions, the memory map is 
      * expunged of otherwise unreferenced entries as expected.
-     * @throws InterruptedException
      */
     @Test
-    @Ignore
+    @Disabled
     public void xestMemMapCleared() throws InterruptedException {
-        TestUtils.forceScarceMemory();
+        forceScarceMemory();
         System.gc(); // minimize effects of earlier test heap use
         assertEquals(0, cache.memMap.size());
         assertEquals(0, cache.diskMap.size());
@@ -155,9 +160,9 @@ public class ObjectIdentityBdbManualCacheTest {
                         new IdentityCacheableWrapper<HashMap<String,String>>(
                             key, new HashMap<String,String>())));           
         }
-        assertEquals(cache.memMap.size(), 10000);
-        assertEquals(cache.size(), 10000);
-        TestUtils.forceScarceMemory();
+        assertEquals(10000, cache.memMap.size());
+        assertEquals(10000, cache.size());
+        forceScarceMemory();
         Thread.sleep(6000);
         // The 'canary' trick may make this explicit page-out, or
         // a page-out riggered by a get() or put...(), unnecessary --
@@ -171,6 +176,26 @@ public class ObjectIdentityBdbManualCacheTest {
             }
         }
         System.out.println(cache.size()+","+cache.memMap.size()+","+cache.memMap.keySet().size()+","+cache.memMap.values().size()+","+countNonNull);
-        assertEquals("memMap not cleared", 0, cache.memMap.size());
+        assertEquals(0, cache.memMap.size(), "memMap not cleared");
+    }
+
+    /**
+     * Temporarily exhaust memory, forcing weak/soft references to
+     * be broken.
+     */
+    public static void forceScarceMemory() {
+        // force soft references to be broken
+        LinkedList<SoftReference<byte[]>> hog = new LinkedList<SoftReference<byte[]>>();
+        long blocks = Runtime.getRuntime().maxMemory() / 1000000;
+        logger.info("forcing scarce memory via "+blocks+" 1MB blocks");
+        for(long l = 0; l <= blocks; l++) {
+            try {
+                hog.add(new SoftReference<byte[]>(new byte[1000000]));
+            } catch (OutOfMemoryError e) {
+                hog = null;
+                logger.info("OOME triggered");
+                break;
+            }
+        }
     }
 }

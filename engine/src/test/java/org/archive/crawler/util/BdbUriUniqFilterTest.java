@@ -20,13 +20,11 @@
 package org.archive.crawler.util;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.logging.Logger;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.FileUtils;
@@ -34,20 +32,28 @@ import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.TmpDirTestCase;
 
 import com.sleepycat.je.DatabaseException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
  * Test BdbUriUniqFilter.
  * @author stack
  */
-public class BdbUriUniqFilterTest extends TmpDirTestCase
+public class BdbUriUniqFilterTest
 implements UriUniqFilter.CrawlUriReceiver {
     private Logger logger =
         Logger.getLogger(BdbUriUniqFilterTest.class.getName());
-    
+
+    @TempDir
+    Path tempDir;
+
     private UriUniqFilter filter = null;
     private File bdbDir = null;
     
@@ -55,26 +61,27 @@ implements UriUniqFilter.CrawlUriReceiver {
      * Set to true if we visited received.
      */
     private boolean received = false;
-    
+
+    @BeforeEach
 	protected void setUp() throws Exception {
-		super.setUp();
         // Remove any bdb that already exists.
-        this.bdbDir = new File(getTmpDir(), this.getClass().getName());
+        this.bdbDir = new File(tempDir.toFile(), this.getClass().getName());
         if (this.bdbDir.exists()) {
         	FileUtils.deleteDirectory(bdbDir);
         }
 		this.filter = new BdbUriUniqFilter(bdbDir, 50);
 		this.filter.setDestination(this);
     }
-    
+
+    @AfterEach
 	protected void tearDown() throws Exception {
-		super.tearDown();
         ((BdbUriUniqFilter)this.filter).close();
         // if (this.bdbDir.exists()) {
         //    FileUtils.deleteDir(bdbDir);
         // }
 	}
-    
+
+    @Test
     public void testAdding() throws URIException {
     	this.filter.add(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(this.getUri())));
@@ -83,18 +90,17 @@ implements UriUniqFilter.CrawlUriReceiver {
         this.filter.addForce(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(this.getUri())));
         // Should only have add 'this' once.
-        assertTrue("Count is off", this.filter.count() == 1);
+        assertEquals(1, this.filter.count(), "Count is off");
     }
-    
+
+    @Test
     public void testCreateKey() {
         String url = "dns:archive.org";
         long fingerprint = BdbUriUniqFilter.createKey(url);
-        assertTrue("Fingerprint wrong " + url,
-            fingerprint == 8812917769287344085L);
+        assertEquals(8812917769287344085L, fingerprint, "Fingerprint wrong " + url);
         url = "http://archive.org/index.html";
         fingerprint = BdbUriUniqFilter.createKey(url);
-        assertTrue("Fingerprint wrong " + url,
-            fingerprint == 6613237167064754714L);
+        assertEquals(6613237167064754714L, fingerprint, "Fingerprint wrong " + url);
     }
     
     /**
@@ -102,21 +108,21 @@ implements UriUniqFilter.CrawlUriReceiver {
      * the last 40bits of the composite did not sufficiently vary with certain
      * inputs, no longer collide. 
      */
+    @Test
     public void testCreateKeyCollisions() {
         HashSet<Long> fingerprints = new HashSet<Long>();
         fingerprints.add(BdbUriUniqFilter
                 .createKey("dns:mail.daps.dla.mil"));
         fingerprints.add(BdbUriUniqFilter
                 .createKey("dns:militaryreview.army.mil"));
-        assertEquals("colliding fingerprints",2,fingerprints.size());
+        assertEquals(2,fingerprints.size(),"colliding fingerprints");
     }
     
     /**
      * Time import of recovery log.
      * REMOVE
-     * @throws IOException
-     * @throws DatabaseException
      */
+    @Test
     public void testWriting()
     throws IOException, DatabaseException {
         long maxcount = 1000;
@@ -170,21 +176,23 @@ implements UriUniqFilter.CrawlUriReceiver {
         this.logger.info("Deleted random " + list.size() + " in " +
             (System.currentTimeMillis() - start));
         // Looks like delete doesn't work.
-        assertTrue("Count is off: " + this.filter.count(),
-            this.filter.count() == max);
+        assertEquals(this.filter.count(), max, "Count is off: " + this.filter.count());
     }
-    
+
+    @Test
     public void testNote() {
     	this.filter.note(this.getUri());
-        assertFalse("Receiver was called", this.received);
+        assertFalse(this.received, "Receiver was called");
     }
-    
+
+    @Test
     public void testForgetOnEmpty() throws URIException {
         this.filter.forget(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(getUri())));
-        assertEquals("Didn't forget", 0, this.filter.count());
+        assertEquals(0, this.filter.count(), "Didn't forget");
     }
-    
+
+    @Test
     public void testForgetAllSchemeAuthorityMatching() throws URIException {
         long countBefore = this.filter.count();
         
@@ -228,18 +236,5 @@ implements UriUniqFilter.CrawlUriReceiver {
 
 	public String getUri() {
 		return "http://www.archive.org";
-	}
-    
-    /**
-     * return the suite of tests for MemQueueTest
-     *
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(BdbUriUniqFilterTest.class);
-    }
-
-    public static void main(String[] args) {
-    	junit.textui.TestRunner.run(suite());
 	}
 }

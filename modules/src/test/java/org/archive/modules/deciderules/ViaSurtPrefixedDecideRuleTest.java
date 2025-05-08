@@ -10,9 +10,14 @@ import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
+    @Test
     public void testNoVia() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -22,6 +27,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
         
         assertFalse(dr.evaluate(testUri));
     }
+    @Test
     public void testNoSurts() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -30,6 +36,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertFalse(dr.evaluate(testUri));
     }
+    @Test
     public void testNullSurts() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         dr.setSurtPrefixes(null);
@@ -37,6 +44,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertFalse(dr.evaluate(testUri));
     }
+    @Test
     public void testPositiveSingleSurt() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -46,6 +54,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertTrue(dr.evaluate(testUri));
     }
+    @Test
     public void testNegativeSingleSurt() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -55,6 +64,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertFalse(dr.evaluate(testUri));
     }
+    @Test
     public void testPositiveMultipleSurts() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -66,6 +76,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertTrue(dr.evaluate(testUri));
     }
+    @Test
     public void testPositiveMultipleSurts2() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();
@@ -77,6 +88,7 @@ public class ViaSurtPrefixedDecideRuleTest extends ModuleTestBase {
 
         assertTrue(dr.evaluate(testUri));
     }
+    @Test
     public void testNegativeMultipleSurts() throws Exception {
         ViaSurtPrefixedDecideRule dr = new ViaSurtPrefixedDecideRule();
         List<String> surtPrefixes = new ArrayList<String>();

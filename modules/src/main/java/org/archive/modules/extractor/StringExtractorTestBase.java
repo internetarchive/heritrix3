@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import org.archive.modules.CrawlURI;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
 
@@ -55,6 +58,7 @@ public abstract class StringExtractorTestBase extends ContentExtractorTestBase {
      * 
      * @throws Exception   just in case
      */
+    @Test
     public void testExtraction() throws Exception {
         try {
             String[] valid = getValidTestData();

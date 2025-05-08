@@ -19,32 +19,35 @@
 
 package org.archive.util;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.lang.math.RandomUtils;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import st.ata.util.FPGenerator;
 
-public class LongToIntConsistentHashTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class LongToIntConsistentHashTest {
     protected LongToIntConsistentHash conhash;
     
-    @Override
+    @BeforeEach
     protected void setUp() throws Exception {
-        super.setUp();
         conhash = new LongToIntConsistentHash();
     }
 
+    @Test
     public void testRange() {
         for(long in = 0; in < 10000; in++) {
             long longHash = FPGenerator.std64.fp(""+in);
             int upTo = RandomUtils.nextInt(32)+1;
             int bucket = conhash.bucketFor(longHash, upTo);
-            assertTrue("bucket returned >= upTo",bucket < upTo);
-            assertTrue("bucket returned < 0: "+bucket,bucket >= 0);
+            assertTrue(bucket < upTo, "bucket returned >= upTo");
+            assertTrue(bucket >= 0, "bucket returned < 0: "+bucket);
 
         }
     }
-    
+
+    @Test
     public void testTwoWayDistribution() {
 //        SecureRandom rand = new SecureRandom("foobar".getBytes()); 
         for(int p = 0; p < 20; p++) {
@@ -56,10 +59,11 @@ public class LongToIntConsistentHashTest extends TestCase {
                 landings[conhash.bucketFor(longHash, 2)]++;
             }
 //            System.out.println(landings[0]+","+landings[1]);
-            assertTrue("excessive changes",Math.abs(landings[0]-landings[1]) < 2000); 
+            assertTrue(Math.abs(landings[0]-landings[1]) < 2000, "excessive changes");
         }
     }
-    
+
+    @Test
     public void testConsistencyUp() {
         int initialUpTo = 10;
         int changedCount = 0;
@@ -71,9 +75,10 @@ public class LongToIntConsistentHashTest extends TestCase {
                 changedCount++;
             }
         }
-        assertTrue("excessive changes: "+changedCount,changedCount < 2000); 
+        assertTrue(changedCount < 2000, "excessive changes: " + changedCount);
     }
-    
+
+    @Test
     public void testConsistencyDown() {
         int initialUpTo = 10;
         int changedCount = 0;
@@ -85,6 +90,6 @@ public class LongToIntConsistentHashTest extends TestCase {
                 changedCount++;
             }
         }
-        assertTrue("excessive changes: "+changedCount,changedCount < 2000); 
+        assertTrue(changedCount < 2000, "excessive changes: " + changedCount);
     }
 }

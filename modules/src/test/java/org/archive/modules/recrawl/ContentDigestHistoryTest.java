@@ -38,11 +38,13 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_CONTENT_DI
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_DATE;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_ORIGINAL_URL;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_RECORD_ID;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -64,17 +66,22 @@ import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Base32;
 import org.archive.util.Recorder;
-import org.archive.util.TmpDirTestCase;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.util.Callback;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-public class ContentDigestHistoryTest extends TmpDirTestCase {
+public class ContentDigestHistoryTest {
 
     private static Logger logger = Logger.getLogger(ContentDigestHistoryTest.class.getName());
-    
+
+    @TempDir
+    Path tempDir;
+
     protected BdbModule bdb;
     protected BdbContentDigestHistory historyStore;
     protected ContentDigestHistoryStorer storer;
@@ -110,7 +117,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
     protected BdbModule bdb() throws IOException {
         if (bdb == null) {
-            ConfigPath basePath = new ConfigPath("testBase",getTmpDir().getAbsolutePath());
+            ConfigPath basePath = new ConfigPath("testBase", tempDir.toAbsolutePath().toString());
             ConfigPath bdbDir = new ConfigPath("bdb","bdb"); 
             bdbDir.setBase(basePath); 
             FileUtils.deleteDirectory(bdbDir.getFile());
@@ -123,14 +130,14 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         return bdb;
     }
 
-    @Override
+    @AfterEach
     protected void tearDown() throws Exception {
     	if (bdb != null) {
     		bdb.close();
     	}
-    	super.tearDown();
     }
 
+    @Test
     public void testBasics() throws InterruptedException, IOException {
         historyStore().store.clear();
         assertTrue(historyStore().store.isEmpty());
@@ -138,7 +145,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         CrawlURI curi1 = new CrawlURI(UURIFactory.getInstance("http://example.org/1"));
         // without Recorder, CrawlURI#getContentLength() returns zero, which makes
         // loader().shoudProcess() return false.
-        Recorder rec = new Recorder(getTmpDir(), "rec");
+        Recorder rec = new Recorder(tempDir.toFile(), "rec");
         curi1.setRecorder(rec);
         // give Recorder some content so that getContentLength() returns non-zero.
         InputStream is = rec.inputWrap(new ByteArrayInputStream("HTTP/1.0 200 OK\r\n\r\ntext.".getBytes()));
@@ -164,8 +171,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         assertTrue(curi1.getContentDigestHistory().isEmpty());
 
         storer().process(curi1);
-        assertTrue("historyStore().store should be empty, but it is: " + historyStore().store,
-                historyStore().store.isEmpty());
+        assertTrue(historyStore().store.isEmpty(), "historyStore().store should be empty, but it is: " + historyStore().store);
         
         curi1.getContentDigestHistory().put(A_ORIGINAL_URL, "http://example.org/original");
         // curi1.getContentDigestHistory().put(A_WARC_RECORD_ID, "<urn:uuid:f00dface-d00d-d00d-d00d-0beefface0ff>");
@@ -206,6 +212,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
     /*
      * fetches two different urls with same content, writes warc records, checks results 
      */
+    @Test
     public void testWarcDedupe() throws Exception {
         historyStore().store.clear();
         assertTrue(historyStore().store.isEmpty());
@@ -213,7 +220,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
         Server server = newHttpServer();
 
         FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
-        WARCWriterChainProcessor warcWriter = WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor();
+        WARCWriterChainProcessor warcWriter = WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor(tempDir);
         warcWriter.setServerCache(fetcher.getServerCache());
         for (File dir: warcWriter.calcOutputDirs()) {
             /* make sure we don't have other stuff hanging around that will
@@ -353,7 +360,7 @@ public class ContentDigestHistoryTest extends TmpDirTestCase {
 
     protected Recorder getRecorder() throws IOException {
         if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
+            Recorder httpRecorder = new Recorder(tempDir.toFile(),
                     getClass().getName(), 16 * 1024, 512 * 1024);
             Recorder.setHttpRecorder(httpRecorder);
         }

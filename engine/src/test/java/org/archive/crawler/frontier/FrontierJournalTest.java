@@ -19,32 +19,36 @@
 package org.archive.crawler.frontier;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 
 /**
  * @author stack
  * @version $Date$, $Revision$
  */
-public class FrontierJournalTest extends TmpDirTestCase {
+public class FrontierJournalTest {
     private FrontierJournal rj;
+    @TempDir
+    Path tempDir;
 
+    @BeforeEach
     protected void setUp() throws Exception {
-        super.setUp();
-        this.rj = new FrontierJournal(this.getTmpDir().getAbsolutePath(),
+        this.rj = new FrontierJournal(tempDir.toAbsolutePath().toString(),
             this.getClass().getName());
     }
 
+    @AfterEach
     protected void tearDown() throws Exception {
-        super.tearDown();
         if (this.rj != null) {
             this.rj.close();
         }
     }
 
-    public static void main(String [] args) {
-        junit.textui.TestRunner.run(FrontierJournalTest.class);
-    }
-
+    @Test
     public void testAdded() throws URIException {
         /*
         CandidateURI c = new CandidateURI(UURIFactory.

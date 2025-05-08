@@ -3,6 +3,9 @@ package org.archive.modules.canonicalize;
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.canonicalize.StripSessionCFIDs;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StripSessionCFIDsTest extends ModuleTestBase {
 
@@ -28,6 +31,7 @@ public class StripSessionCFIDsTest extends ModuleTestBase {
         "http://a.b.c/boo?requestID=200608200458360%2E39414378"
     };
 
+    @Test
     public void testCanonicalize() throws URIException {
         for (int i = 0; i < INPUTS.length; i++) {
             String result = (new StripSessionCFIDs().

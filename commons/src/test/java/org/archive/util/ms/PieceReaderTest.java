@@ -27,9 +27,9 @@ import java.util.Random;
 import org.archive.io.ArraySeekInputStream;
 import org.archive.io.SafeSeekInputStream;
 import org.archive.io.SeekInputStream;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.TestCase;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for PieceReader.  Takes a quatrain of a sonnet and stores the
@@ -40,7 +40,7 @@ import junit.framework.TestCase;
  * 
  * @author pjack
  */
-public class PieceReaderTest extends TestCase {
+public class PieceReaderTest {
 
     
     final private static String[] QUATRAIN = new String[] { 
@@ -58,7 +58,8 @@ public class PieceReaderTest extends TestCase {
     final private static byte[] PIECE_TABLE;
     
     
-    
+
+    @Test
     public void testPosition() throws Exception {
         PieceTable table = makePieceTable();
         SeekInputStream asis = new ArraySeekInputStream(QUATRAIN_BYTES);

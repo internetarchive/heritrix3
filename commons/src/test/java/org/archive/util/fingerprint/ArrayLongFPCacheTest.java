@@ -18,26 +18,30 @@
  */
 package org.archive.util.fingerprint;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for ArrayLongFPCache. 
  * 
  * @author gojomo
  */
-public class ArrayLongFPCacheTest extends TestCase {
-
+public class ArrayLongFPCacheTest {
+    @Test
     public void testAdd() {
         long testVal = 123456L;
         ArrayLongFPCache cache = new ArrayLongFPCache();
-        assertFalse("contains test value pre-add",cache.contains(testVal));
-        assertFalse("contains test value pre-add",cache.contains(-testVal));
+        assertFalse(cache.contains(testVal), "contains test value pre-add");
+        assertFalse(cache.contains(-testVal), "contains test value pre-add");
         cache.add(testVal);
         cache.add(-testVal);
-        assertTrue("should contain after add",cache.contains(testVal));
-        assertTrue("should contain after add",cache.contains(-testVal));
+        assertTrue(cache.contains(testVal), "should contain after add");
+        assertTrue(cache.contains(-testVal), "should contain after add");
     }
 
+    @Test
     public void testContains() {
         long testVal1 = 123456L;
         long testVal2 = 9090909090L;
@@ -48,33 +52,34 @@ public class ArrayLongFPCacheTest extends TestCase {
         cache.add(testVal2);
         cache.add(testVal3);
         cache.add(testVal4);
-        assertTrue("should contain after add",cache.contains(testVal1));
-        assertTrue("should contain after add",cache.contains(testVal2));
-        assertTrue("should contain after add",cache.contains(testVal3));
-        assertTrue("should contain after add",cache.contains(testVal4));
+        assertTrue(cache.contains(testVal1), "should contain after add");
+        assertTrue(cache.contains(testVal2), "should contain after add");
+        assertTrue(cache.contains(testVal3), "should contain after add");
+        assertTrue(cache.contains(testVal4), "should contain after add");
     }
 
+    @Test
     public void testReplacement() {
         ArrayLongFPCache cache = new ArrayLongFPCache();
-        for(long i=0; i<=ArrayLongFPCache.DEFAULT_SMEAR; i++) {
-            cache.add(i*cache.cacheLength()+1);
+        for (long i = 0; i <= ArrayLongFPCache.DEFAULT_SMEAR; i++) {
+            cache.add(i * cache.cacheLength() + 1);
         }
-        assertFalse("contains value after overwrite",cache.contains(1L));
-        assertTrue("value not retained",cache.contains(cache.cacheLength()+1));
-
+        assertFalse(cache.contains(1L), "contains value after overwrite");
+        assertTrue(cache.contains(cache.cacheLength() + 1), "value not retained");
     }
-    
+
+    @Test
     public void testRemove() {
         long testVal = 4516500024601L;
         ArrayLongFPCache cache = new ArrayLongFPCache();
         cache.add(testVal);
         cache.add(-testVal);
-        assertTrue("should contain after add",cache.contains(testVal));
-        assertTrue("should contain after add",cache.contains(-testVal));
+        assertTrue(cache.contains(testVal), "should contain after add");
+        assertTrue(cache.contains(-testVal), "should contain after add");
         cache.remove(testVal);
         cache.remove(-testVal);
-        assertFalse("contains test value after remove",cache.contains(testVal));
-        assertFalse("contains test value after remove",cache.contains(-testVal));
+        assertFalse(cache.contains(testVal), "contains test value after remove");
+        assertFalse(cache.contains(-testVal), "contains test value after remove");
     }
 
 }

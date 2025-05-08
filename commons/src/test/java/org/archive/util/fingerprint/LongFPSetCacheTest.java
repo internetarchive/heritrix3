@@ -18,8 +18,9 @@
  */
 package org.archive.util.fingerprint;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * JUnit test suite for LongFPSetCache
@@ -28,33 +29,6 @@ import junit.framework.TestSuite;
  * @version $ Id:$
  */
 public class LongFPSetCacheTest extends LongFPSetTestCase {
-    /**
-     * Create a new LongFPSetCacheTest object
-     *
-     * @param testName the name of the test
-     */
-    public LongFPSetCacheTest(final String testName) {
-        super(testName);
-    }
-
-    /**
-     * run all the tests for LongFPSetCacheTest
-     *
-     * @param argv the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    /**
-     * return the suite of tests for LongFPSetCacheTest
-     *
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(LongFPSetCacheTest.class);
-    }
-
     protected LongFPSet makeLongFPSet() {
         return new LongFPSetCache();
     }
@@ -65,6 +39,7 @@ public class LongFPSetCacheTest extends LongFPSetTestCase {
      * from all the other LongFPSets.  We do a different test here.
      */
 
+    @Test
     public void testCount() {
         LongFPSet fpSet = new LongFPSetCache();
         // TODO: for some reason, when run in a debugger, 
@@ -75,12 +50,11 @@ public class LongFPSetCacheTest extends LongFPSetTestCase {
         final int NUM = 800; // was 1000
         final int MAX_ENTRIES = 768;
 
-        assertEquals("empty set to start", 0, fpSet.count());
+        assertEquals(0, fpSet.count(), "empty set to start");
 
         for (int i = 1; i < NUM; ++i) {
-            fpSet.add((long) i);
-            assertEquals("correct num on add",
-                    i<MAX_ENTRIES?i:MAX_ENTRIES, fpSet.count());
+            fpSet.add(i);
+            assertEquals(Math.min(i, MAX_ENTRIES), fpSet.count(), "correct num on add");
         }
     }
 

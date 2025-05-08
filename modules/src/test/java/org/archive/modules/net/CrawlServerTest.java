@@ -18,29 +18,27 @@
  */
 package org.archive.modules.net;
 
-import org.archive.modules.net.CrawlServer;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.TestUtils;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * CrawlServer class unit tests.
  */
-public class CrawlServerTest extends TestCase {
+public class CrawlServerTest {
 
-    
+    @Test
     public void testSerialization() throws Exception {
-        TestUtils.testSerialization(new CrawlServer("hi"));
+        CrawlHostTest.testSerialization(new CrawlServer("hi"));
     }
 
+    @Test
     public void testGetServerKey() throws Exception {
         UURI u1 = UURIFactory.getInstance("https://www.example.com");
-        assertEquals(
-                "bad https key",
-                "www.example.com:443",
-                CrawlServer.getServerKey(u1));
+        assertEquals("www.example.com:443", CrawlServer.getServerKey(u1));
     }
-    
+
 }

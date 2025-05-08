@@ -18,11 +18,9 @@
  */
 package org.archive.util;
 
-import org.apache.commons.httpclient.URIException;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * JUnit test suite for SURT
@@ -30,78 +28,42 @@ import junit.framework.TestSuite;
  * @author gojomo
  * @version $ Id$
  */
-public class SURTTest extends TestCase {
-    /**
-     * Create a new MemQueueTest object
-     * 
-     * @param testName
-     *            the name of the test
-     */
-    public SURTTest(final String testName) {
-        super(testName);
-    }
+public class SURTTest {
 
-    /**
-     * run all the tests for MemQueueTest
-     * 
-     * @param argv
-     *            the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
+    @Test
+    public void testMisc() {
+        assertEquals("http://(org,archive,www,)", SURT.fromURI("http://www.archive.org"));
 
-    /**
-     * return the suite of tests for MemQueueTest
-     * 
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(SURTTest.class);
-    }
-
-    public void testMisc() throws URIException {
-        assertEquals("", 
-                "http://(org,archive,www,)",
-                SURT.fromURI("http://www.archive.org"));
-
-        assertEquals("", 
-                "http://(org,archive,www,)/movies/movies.php",
+        assertEquals("http://(org,archive,www,)/movies/movies.php",
                 SURT.fromURI("http://www.archive.org/movies/movies.php"));
 
-        assertEquals("", 
-                "http://(org,archive,www,:8080)/movies/movies.php",
+        assertEquals("http://(org,archive,www,:8080)/movies/movies.php",
                 SURT.fromURI("http://www.archive.org:8080/movies/movies.php"));
 
-        assertEquals("", 
-                "http://(org,archive,www,@user:pass)/movies/movies.php",
+        assertEquals("http://(org,archive,www,@user:pass)/movies/movies.php",
                 SURT.fromURI("http://user:pass@www.archive.org/movies/movies.php"));
 
-        assertEquals("", 
-                "http://(org,archive,www,:8080@user:pass)/movies/movies.php",
+        assertEquals("http://(org,archive,www,:8080@user:pass)/movies/movies.php",
                 SURT.fromURI("http://user:pass@www.archive.org:8080/movies/movies.php"));
-        
-        assertEquals("", 
-                "http://(org,archive,www,)/movies/movies.php#top",
+
+        assertEquals("http://(org,archive,www,)/movies/movies.php#top",
                 SURT.fromURI("http://www.archive.org/movies/movies.php#top"));
     }
-    
-    public void testAtSymbolInPath() throws URIException {
-        assertEquals("@ in path",
-                "http://(com,example,www,)/foo@bar",
-                SURT.fromURI("http://www.example.com/foo@bar"));  
+
+    @Test
+    public void testAtSymbolInPath() {
+        assertEquals("http://(com,example,www,)/foo@bar",
+                SURT.fromURI("http://www.example.com/foo@bar"), "@ in path");
     }
     
     /**
      * Verify that dotted-quad numeric IP address is unreversed as per change
      * requested in: [ 1572391 ] SURTs for IP-address URIs unhelpful
-     * 
-     * @throws URIException
      */
-    public void testDottedQuadAuthority() throws URIException {
-        assertEquals("dotted-quad IP authority",
-                "http://(127.2.34.5)/foo",
-                SURT.fromURI("http://127.2.34.5/foo"));  
+    @Test
+    public void testDottedQuadAuthority() {
+        assertEquals("http://(127.2.34.5)/foo", SURT.fromURI("http://127.2.34.5/foo"),
+                "dotted-quad IP authority");
     }
 }
 

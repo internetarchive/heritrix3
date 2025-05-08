@@ -26,14 +26,16 @@ import java.util.Arrays;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for FirstNamedRobotsPolicy
  * 
  * @author gojomo
  */
-public class FirstNamedRobotsPolicyTest extends TestCase {
+public class FirstNamedRobotsPolicyTest {
     
     Robotstxt sampleRobots1() throws IOException {
         BufferedReader reader = new BufferedReader(
@@ -59,7 +61,8 @@ public class FirstNamedRobotsPolicyTest extends TestCase {
             ));
         return new Robotstxt(reader); 
     }
-    
+
+    @Test
     public void testDecisionsByListedCandidates() throws IOException {
         Robotstxt robots = sampleRobots1();
         FirstNamedRobotsPolicy policy = new FirstNamedRobotsPolicy();

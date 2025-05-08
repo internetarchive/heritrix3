@@ -18,29 +18,32 @@
  */
 package org.archive.modules.net;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test the BigMapServerCache
  * 
  * @author gojomo
  */
-public class ServerCacheTest extends TestCase {
+public class ServerCacheTest {
+    @Test
     public void testHolds() throws Exception {
         DefaultServerCache servers = new DefaultServerCache();
         String serverKey = "www.example.com:9090";
         String hostKey = "www.example.com";
         servers.getServerFor(serverKey);
         servers.getHostFor(hostKey);
-        assertTrue("cache lost server", servers.containsServer(serverKey));
-        assertTrue("cache lost host", servers.containsHost(hostKey));
+        assertTrue(servers.containsServer(serverKey), "cache lost server");
+        assertTrue(servers.containsHost(hostKey), "cache lost host");
     }
-    
+
+    @Test
     public void testCrawlURIKeys()
     throws Exception {
         DefaultServerCache servers = new DefaultServerCache();
@@ -54,9 +57,7 @@ public class ServerCacheTest extends TestCase {
         UURI uuri = UURIFactory.getInstance(uri);
         servers.getServerFor(uuri);
         servers.getHostFor(uuri);
-        assertTrue("cache lost server",
-            servers.containsServer(CrawlServer.getServerKey(uuri)));
-        assertTrue("cache lost host",
-            servers.containsHost(uuri.getHost()));
+        assertTrue(servers.containsServer(CrawlServer.getServerKey(uuri)), "cache lost server");
+        assertTrue(servers.containsHost(uuri.getHost()), "cache lost host");
     }
 }

@@ -25,19 +25,21 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Recorder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FetchHTTP2Test {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    Path tempDir;
 
     @Test
     public void test() throws Exception {
@@ -54,7 +56,9 @@ public class FetchHTTP2Test {
         server.start();
         BdbCookieStore cookieStore = new BdbCookieStore();
         BdbModule bdb = new BdbModule();
-        bdb.setDir(new ConfigPath("cookies", folder.newFolder("cookies").toString()));
+        Path cookies = tempDir.resolve("cookies");
+        Files.createDirectories(cookies);
+        bdb.setDir(new ConfigPath("cookies", cookies.toString()));
         cookieStore.setBdbModule(bdb);
         try (var serverCache = new DefaultServerCache()) {
             bdb.start();
@@ -65,7 +69,7 @@ public class FetchHTTP2Test {
             try {
                 String url = "http://" + server.getAddress().getHostString() + ":" + server.getAddress().getPort() + "/";
                 var curi = new CrawlURI(UURIFactory.getInstance(url));
-                curi.setRecorder(new Recorder(folder.getRoot(), "temp"));
+                curi.setRecorder(new Recorder(tempDir.toFile(), "temp"));
                 fetcher.innerProcess(curi);
 
                 assertEquals(200, curi.getFetchStatus());

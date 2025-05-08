@@ -19,15 +19,14 @@
 package org.archive.modules.fetcher;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,7 +39,12 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.archive.bdb.BdbModule;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPath;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests that {@link BdbCookieStore} matches behavior of
@@ -48,10 +52,12 @@ import org.archive.util.TmpDirTestCase;
  * 
  * @author nlevitt
  */
-public class CookieStoreTest extends TmpDirTestCase {
+public class CookieStoreTest {
 
     private static Logger logger = Logger.getLogger(CookieStoreTest.class.getName());
 
+    @TempDir
+    Path tempDir;
     protected BdbModule bdb;
     protected BdbCookieStore bdbCookieStore;
     protected BasicCookieStore basicCookieStore;
@@ -59,7 +65,7 @@ public class CookieStoreTest extends TmpDirTestCase {
     protected BdbModule bdb() throws IOException {
         if (bdb == null) {
             ConfigPath basePath = new ConfigPath("testBase", 
-                    getTmpDir().getAbsolutePath());
+                    tempDir.toAbsolutePath().toString());
             ConfigPath bdbDir = new ConfigPath("bdb", "bdb");
             bdbDir.setBase(basePath); 
             FileUtils.deleteDirectory(bdbDir.getFile());
@@ -75,8 +81,8 @@ public class CookieStoreTest extends TmpDirTestCase {
     protected AbstractCookieStore bdbCookieStore() throws IOException {
         if (bdbCookieStore == null) {
             bdbCookieStore = new BdbCookieStore();
-            ConfigPath basePath = new ConfigPath("testBase", 
-                    getTmpDir().getAbsolutePath());
+            ConfigPath basePath = new ConfigPath("testBase",
+                    tempDir.toAbsolutePath().toString());
             ConfigFile cookiesSaveFile = new ConfigFile("cookiesSaveFile", "cookies.txt");
             cookiesSaveFile.setBase(basePath);
             bdbCookieStore.setCookiesSaveFile(cookiesSaveFile);
@@ -93,12 +99,12 @@ public class CookieStoreTest extends TmpDirTestCase {
         return basicCookieStore;
     }
 
-    @Override
+    @AfterEach
     protected void tearDown() throws Exception {
-        super.tearDown();
         bdb.close();
     }
 
+    @Test
     public void testBasics() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -110,6 +116,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
 
+    @Test
     public void testSimpleReplace() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -127,6 +134,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
 
+    @Test
     public void testDomains() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -167,6 +175,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieStoresEquivalent(basicCookieStore(), bdbCookieStore());
     }
 
+    @Test
     public void testMaxCookieDomain() throws IOException {
         bdbCookieStore().clear();
 
@@ -185,7 +194,8 @@ public class CookieStoreTest extends TmpDirTestCase {
         bdbCookieStore().addCookie(cookie);
         assertCookieStoreCountEquals(bdbCookieStore, BdbCookieStore.MAX_COOKIES_FOR_DOMAIN);
     }
-    
+
+    @Test
     public void testPaths() throws IOException {
         bdbCookieStore().clear();
         basicCookieStore().clear();
@@ -250,6 +260,7 @@ public class CookieStoreTest extends TmpDirTestCase {
      * saveCookies() expects non-null domain, and real world cookies always have
      * a domain. And only test attributes that are saved in cookies.txt.
      */
+    @Test
     public void testSaveLoadCookies() throws IOException {
         bdbCookieStore().clear();
 
@@ -298,6 +309,7 @@ public class CookieStoreTest extends TmpDirTestCase {
         assertCookieListsEquivalent(cookiesBefore, cookiesAfter);
     }
 
+    @Test
     public void testConcurrentLoadNoDomainCookieLimitBreach() throws IOException, InterruptedException {
         bdbCookieStore().clear();
         basicCookieStore().clear();

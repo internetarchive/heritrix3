@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Selftest for figuring problems parsing URIs in a page.
  * 
@@ -49,7 +51,7 @@ public class BadURIsStopPageParsingSelfTest extends SelfTestBase
     @Override
     protected void verify() throws Exception {
         Set<String> files = filesInArcs();
-        assertEquals("URIs retrieved mismatch expected",EXPECTED,files);
+        assertEquals(EXPECTED,files,"URIs retrieved mismatch expected");
     }
 
 

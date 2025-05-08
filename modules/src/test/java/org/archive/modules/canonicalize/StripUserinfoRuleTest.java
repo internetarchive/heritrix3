@@ -19,8 +19,10 @@
 package org.archive.modules.canonicalize;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.modules.canonicalize.StripUserinfoRule;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -30,27 +32,24 @@ import org.archive.state.ModuleTestBase;
  */
 public class StripUserinfoRuleTest extends ModuleTestBase {
 
+    @Test
     public void testCanonicalize() throws URIException {
         String url = "http://WWW.aRchive.Org/index.html";
         final String expectedResult = url;
         String result = (new StripUserinfoRule()).
             canonicalize(url);
-        assertTrue("Mangled no userinfo " + result,
-            url.equals(result));
+        assertEquals(url, result, "Mangled no userinfo " + result);
         url = "http://stack:password@WWW.aRchive.Org/index.html";
         result = (new StripUserinfoRule()).
             canonicalize(url);
-        assertTrue("Didn't strip userinfo " + result,
-            expectedResult.equals(result));
+        assertEquals(expectedResult, result, "Didn't strip userinfo " + result);
         url = "http://stack:pass@@@@@@word@WWW.aRchive.Org/index.html";
         result = (new StripUserinfoRule()).
             canonicalize(url);
-        assertTrue("Didn't get to last @ " + result,
-            expectedResult.equals(result));
+        assertEquals(expectedResult, result, "Didn't get to last @ " + result);
         url = "ftp://stack:pass@@@@@@word@archive.org/index.html";
         result = (new StripUserinfoRule()).
             canonicalize(url);
-        assertTrue("Didn't get to last @ " + result,
-            "ftp://archive.org/index.html".equals(result));
+        assertEquals("ftp://archive.org/index.html", result, "Didn't get to last @ " + result);
     }
 }

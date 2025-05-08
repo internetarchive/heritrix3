@@ -27,7 +27,13 @@ import org.archive.spring.ConfigPath;
 import org.archive.util.IdentityCacheableWrapper;
 import org.archive.util.ObjectIdentityBdbManualCache;
 import org.archive.util.Supplier;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * Test BdbModule.
@@ -35,13 +41,16 @@ import org.archive.util.TmpDirTestCase;
  * @author pjack
  * @author gojomo
  */
-public class BdbModuleTest extends TmpDirTestCase {
+public class BdbModuleTest {
+    @TempDir
+    Path tempDir;
 
     @SuppressWarnings("unchecked")
-    public void testDoCheckpoint() throws Exception {
-        ConfigPath basePath = new ConfigPath("testBase",getTmpDir().getAbsolutePath());
-        ConfigPath bdbDir = new ConfigPath("bdb","bdb"); 
-        bdbDir.setBase(basePath); 
+    @Test
+    void testDoCheckpoint() throws Exception {
+        ConfigPath basePath = new ConfigPath("testBase", tempDir.toAbsolutePath().toString());
+        ConfigPath bdbDir = new ConfigPath("bdb", "bdb");
+        bdbDir.setBase(basePath);
         FileUtils.deleteDirectory(bdbDir.getFile());
 
         BdbModule bdb = new BdbModule();
@@ -50,66 +59,66 @@ public class BdbModuleTest extends TmpDirTestCase {
 
         // avoid data from prior runs being mistaken for current run
         int randomFactor = RandomUtils.nextInt();
-        
-        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> testData = 
-            bdb.getOIBCCache("testData", false,IdentityCacheableWrapper.class);
+
+        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> testData =
+                bdb.getOIBCCache("testData", false, IdentityCacheableWrapper.class);
         for (int i1 = 0; i1 < 1000; i1++) {
             String key = String.valueOf(i1);
-            final String value = String.valueOf(randomFactor*i1);
-            String cached = (String)testData.getOrUse(
-                    key, 
+            final String value = String.valueOf(randomFactor * i1);
+            String cached = (String) testData.getOrUse(
+                    key,
                     new Supplier<IdentityCacheableWrapper>(
                             new IdentityCacheableWrapper(key, value))).get();
-            assertSame("unexpected prior entry",value,cached);  
+            assertSame(value, cached, "unexpected prior entry");
         }
-        
+
         Checkpoint checkpointInProgress = new Checkpoint();
-        ConfigPath checkpointsPath = new ConfigPath("checkpoints","checkpoints");
-        checkpointsPath.setBase(basePath); 
-        checkpointInProgress.generateFrom(checkpointsPath,998);
+        ConfigPath checkpointsPath = new ConfigPath("checkpoints", "checkpoints");
+        checkpointsPath.setBase(basePath);
+        checkpointInProgress.generateFrom(checkpointsPath, 998);
 
         bdb.doCheckpoint(checkpointInProgress);
         String firstCheckpointName = checkpointInProgress.getName();
-        
+
         for (int i2 = 1000; i2 < 2000; i2++) {
             String key = String.valueOf(i2);
-            final String value = String.valueOf(randomFactor*i2);
-            String cached = (String)testData.getOrUse(
-                    key, 
+            final String value = String.valueOf(randomFactor * i2);
+            String cached = (String) testData.getOrUse(
+                    key,
                     new Supplier<IdentityCacheableWrapper>(
                             new IdentityCacheableWrapper(key, value))).get();
-            assertSame("unexpected prior entry",value,cached);  
+            assertSame(value, cached, "unexpected prior entry");
         }
 
-        checkpointInProgress = new Checkpoint(); 
-        checkpointInProgress.generateFrom(checkpointsPath,999);
+        checkpointInProgress = new Checkpoint();
+        checkpointInProgress.generateFrom(checkpointsPath, 999);
 
         bdb.doCheckpoint(checkpointInProgress);
-        
+
         bdb.stop();
         bdb.destroy();
-        
+
         BdbModule bdb2 = new BdbModule();
         bdb2.setDir(bdbDir);
-        
+
         Checkpoint recoveryCheckpoint = new Checkpoint();
-        ConfigPath recoverPath = new ConfigPath("recover",firstCheckpointName);
+        ConfigPath recoverPath = new ConfigPath("recover", firstCheckpointName);
         recoverPath.setBase(basePath);
         recoveryCheckpoint.setCheckpointDir(recoverPath);
         recoveryCheckpoint.afterPropertiesSet();
-        
+
         bdb2.setRecoveryCheckpoint(recoveryCheckpoint);
-        
+
         bdb2.start();
-        
-        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> restoreData = 
-            bdb2.getOIBCCache("testData",true,IdentityCacheableWrapper.class);
-        
-        assertEquals("unexpected size", 1000, restoreData.size());
+
+        ObjectIdentityBdbManualCache<IdentityCacheableWrapper> restoreData =
+                bdb2.getOIBCCache("testData", true, IdentityCacheableWrapper.class);
+
+        assertEquals(1000, restoreData.size(), "unexpected size");
         assertEquals(
-                "unexpected value",
-                randomFactor*999,
-                Integer.parseInt((String)restoreData.get(""+999).get()));
+                randomFactor * 999,
+                Integer.parseInt((String) restoreData.get("" + 999).get()),
+                "unexpected value");
 
         bdb2.stop();
         bdb2.destroy();

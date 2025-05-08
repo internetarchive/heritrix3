@@ -105,9 +105,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>compile</scope>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.netpreserve</groupId>
@@ -146,12 +146,18 @@
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
 			<version>1.3.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.2.24</version>
+			<version>0.2.26</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.groovy</groupId>
@@ -182,7 +188,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
+				<version>3.5.3</version>
 				<configuration>
 					<!--
 					There was a unit test, SinkHandlerTest, that required

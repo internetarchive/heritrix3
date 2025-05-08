@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * @author pjack

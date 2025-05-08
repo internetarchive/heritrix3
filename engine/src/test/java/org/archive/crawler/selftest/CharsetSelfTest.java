@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Simple test to ensure we can extract links from multibyte pages.
  *
@@ -41,7 +43,7 @@ public class CharsetSelfTest extends SelfTestBase
     @Override
     protected void verify() throws Exception {
         Set<String> files = filesInArcs();
-        assertTrue(EXPECTED.equals(files));
+        assertEquals(EXPECTED, files);
     }
     
 }

@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * Test form-based authentication
@@ -55,7 +57,7 @@ public class FormAuthSelfTest
     @Override
     protected void verify() throws Exception {
         Set<String> found = this.filesInArcs();
-        assertEquals("wrong files in ARCs",EXPECTED,found);
+        assertEquals(EXPECTED, found, "wrong files in ARCs");
     }
 
     @Override

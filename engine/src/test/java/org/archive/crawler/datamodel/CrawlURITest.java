@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Path;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
@@ -31,7 +32,12 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.LinkContext.SimpleLinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests related to CrawlURI
@@ -40,12 +46,14 @@ import org.archive.util.TmpDirTestCase;
  * @author gojomo
  * @version $Revision$, $Date$
  */
-public class CrawlURITest extends TmpDirTestCase {
+public class CrawlURITest {
 
+    @TempDir
+    Path tempDir;
     CrawlURI seed = null;
 
+    @BeforeEach
     protected void setUp() throws Exception {
-        super.setUp();
         final String url = "http://www.dh.gov.uk/Home/fs/en";
         this.seed = new CrawlURI(UURIFactory.getInstance(url));
         this.seed.setSchedulingDirective(SchedulingConstants.MEDIUM);
@@ -62,9 +70,10 @@ public class CrawlURITest extends TmpDirTestCase {
      * @throws IOException
      * @throws ClassNotFoundException
      */
+    @Test
     final public void testSerialization()
             throws IOException, ClassNotFoundException {
-        File serialize = new File(getTmpDir(),
+        File serialize = new File(tempDir.toFile(),
                 this.getClass().getName() + ".serialize");
         try {
             FileOutputStream fos = new FileOutputStream(serialize);
@@ -81,48 +90,48 @@ public class CrawlURITest extends TmpDirTestCase {
             CrawlURI deserializedCuri = (CrawlURI)ois.readObject();
             deserializedCuri = (CrawlURI)ois.readObject();
             deserializedCuri = (CrawlURI)ois.readObject();
-            assertEquals("Deserialized not equal to original",
-                    this.seed.toString(), deserializedCuri.toString());
+            assertEquals(this.seed.toString(), deserializedCuri.toString(), "Deserialized not equal to original");
             String host = this.seed.getUURI().getHost();
-            assertTrue("Deserialized host not null",
-                    host != null && host.length() >= 0);
+            assertTrue(host != null && host.length() >= 0, "Deserialized host not null");
         } finally {
             serialize.delete();
         }
     }
 
+    @Test
     public void testCandidateURIWithLoadedAList()
             throws URIException {
         UURI uuri = UURIFactory.getInstance("http://www.archive.org");
         CrawlURI curi = new CrawlURI(uuri);
         curi.setSeed(true);
         curi.getData().put("key", "value");
-        assertTrue("Didn't find AList item",
-                curi.getData().get("key").equals("value"));
+        assertEquals("value", curi.getData().get("key"), "Didn't find AList item");
     }
 
+    @Test
     public void testExtendHopsPath() {
-        assertEquals("from empty","L",CrawlURI.extendHopsPath("",'L'));
+        assertEquals("L",CrawlURI.extendHopsPath("",'L'), "from empty");
 
-        assertEquals("from one","LX",CrawlURI.extendHopsPath("L",'X'));
+        assertEquals("LX",CrawlURI.extendHopsPath("L",'X'), "from one");
 
         assertEquals(
-                "from fortynine",
                 "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
-                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'),
+                "from fortynine");
 
         assertEquals(
-                "from fifty",
                 "1+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
-                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+                CrawlURI.extendHopsPath("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'),
+                "from fifty");
 
         assertEquals(
-                "from 149",
                 "100+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLX",
-                CrawlURI.extendHopsPath("99+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'));
+                CrawlURI.extendHopsPath("99+LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",'X'),
+                "from 149");
     }
 
 
+    @Test
     public void testNullPathFromSeed() throws URIException {
         // check comparing with null
         CrawlURI a = new CrawlURI(
@@ -144,6 +153,7 @@ public class CrawlURITest extends TmpDirTestCase {
 
     }
 
+    @Test
     public void testOrdering() throws URIException {
         // check that via is highest precedence
         CrawlURI a = new CrawlURI(
