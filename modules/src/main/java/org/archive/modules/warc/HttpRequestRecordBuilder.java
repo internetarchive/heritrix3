@@ -37,6 +37,8 @@ public class HttpRequestRecordBuilder extends BaseWARCRecordBuilder {
         recordInfo.setMimetype(HTTP_REQUEST_MIMETYPE);
         recordInfo.setContentLength(curi.getRecorder().getRecordedOutput().getSize());
         recordInfo.setEnforceLength(true);
+
+        HttpResponseRecordBuilder.addWarcProtocolHeader(curi, recordInfo);
         
         ReplayInputStream 
             ris = curi.getRecorder().getRecordedOutput().getReplayInputStream();
