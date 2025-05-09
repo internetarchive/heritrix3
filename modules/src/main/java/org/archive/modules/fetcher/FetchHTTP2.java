@@ -47,6 +47,7 @@ import org.eclipse.jetty.quic.client.ClientQuicConfiguration;
 import org.eclipse.jetty.quic.quiche.jna.LibQuiche;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
@@ -77,7 +78,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE
  * Does not record the original on-the-wire HTTP messages but instead a simplified HTTP/1.1
  * representation without transfer encoding.
  */
-public class FetchHTTP2 extends Processor implements Lifecycle {
+public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean {
     private static final Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
     protected HttpClient httpClient;
     protected final ServerCache serverCache;
@@ -89,6 +90,30 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
     public FetchHTTP2(ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
         this.serverCache = serverCache;
         this.cookieStore = cookieStore;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if (useHTTP3) {
+            // Make sure the native library actually loads, as we don't ship it by default
+            // or, we may be on platform the jetty project doesn't have a binary for.
+            try {
+                LibQuiche.INSTANCE.quiche_version();
+            } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
+                String hint;
+                if (getClass().getResource(
+                        "/META-INF/maven/org.mortbay.jetty.quiche/jetty-quiche-native/pom.xml") != null) {
+                    hint = "jetty-quiche-native may not have been compiled for this platform.";
+                } else {
+                    hint = "Try downloading jetty-quiche-native and placing it in Heritrix's lib directory: " +
+                           "https://repo1.maven.org/maven2/org/mortbay/jetty/quiche/jetty-quiche-native/" +
+                           LibQuiche.EXPECTED_QUICHE_VERSION + "/jetty-quiche-native-" +
+                           LibQuiche.EXPECTED_QUICHE_VERSION + ".jar";
+                }
+                logger.log(Level.WARNING, "Failed to load LibQuiche, disabling HTTP/3. " + hint, e);
+                useHTTP3 = false;
+            }
+        }
     }
 
     protected HttpClient createHttpClient(AbstractCookieStore cookieStore) {
@@ -109,28 +134,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle {
         // HTTP/3: jetty can't auto-negotiate it, so we make it the lowest priority here
         // but later use request.version(HTTP3) for servers that have sent us an Alt-Svc header
         if (useHTTP3) {
-            // First, make sure the native library actually loads, as we don't ship it by default
-            // or we may be on platform the jetty project doesn't have a binary for.
-            try {
-                LibQuiche.INSTANCE.quiche_version();
-            } catch (UnsatisfiedLinkError e) {
-                String hint;
-                if (getClass().getResource("/META-INF/maven/org.mortbay.jetty.quiche/jetty-quiche-native/pom.xml") != null) {
-                    hint = "jetty-quiche-native may not have been compiled for this platform.";
-                } else {
-                    hint = "Try downloading jetty-quiche-native and placing it in Heritrix's lib directory: " +
-                            "https://repo1.maven.org/maven2/org/mortbay/jetty/quiche/jetty-quiche-native/" +
-                            LibQuiche.EXPECTED_QUICHE_VERSION + "/jetty-quiche-native-" +
-                            LibQuiche.EXPECTED_QUICHE_VERSION + ".jar";
-                }
-                logger.log(Level.WARNING, "Failed to load LibQuiche, disabling HTTP/3. " + hint, e);
-                useHTTP3 = false;
-            }
-            if (useHTTP3) {
-                var quicConfig = new ClientQuicConfiguration(sslContextFactory, null);
-                var http3Client = new HTTP3Client(quicConfig, connector);
-                connectionFactories.add(new ClientConnectionFactoryOverHTTP3.HTTP3(http3Client));
-            }
+            var quicConfig = new ClientQuicConfiguration(sslContextFactory, null);
+            var http3Client = new HTTP3Client(quicConfig, connector);
+            connectionFactories.add(new ClientConnectionFactoryOverHTTP3.HTTP3(http3Client));
         }
 
         var transport = new HttpClientTransportDynamic(connector, connectionFactories.toArray(new ClientConnectionFactory.Info[0]));
