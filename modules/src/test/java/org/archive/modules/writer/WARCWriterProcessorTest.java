@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,7 +46,11 @@ import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.FileUtils;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for {@link WARCWriterProcessor}.
@@ -54,6 +59,8 @@ import org.archive.util.TmpDirTestCase;
  * @author kenji
  */
 public class WARCWriterProcessorTest extends ProcessorTestBase {
+    @TempDir
+    Path tempDir;
 
     RecordIDGenerator generator = new UUIDGenerator();
     @Override
@@ -63,8 +70,8 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         return result;
     }
 
-    public static WARCWriterProcessor newTestWarcWriter(String name) throws IOException {
-        File tmp = TmpDirTestCase.tmpDir();
+    public WARCWriterProcessor newTestWarcWriter(String name) throws IOException {
+        File tmp = tempDir.toFile();
         tmp = new File(tmp, name);
         FileUtils.ensureWriteableDirectory(tmp);
 
@@ -86,6 +93,7 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
     /**
      * test if {@link WARCWriterProcessor} recovers on I/O error.
      */
+    @Test
     public void testResilientOnError() throws Exception {
         // override setupPool() to use test version of WARCWriter.
         final WARCWriterProcessor wwp = new WARCWriterProcessor() {
@@ -137,13 +145,14 @@ public class WARCWriterProcessorTest extends ProcessorTestBase {
         fail("second process() call got blocked too long");
     }
 
+    @Test
     public void testStats() throws IOException, InterruptedException {
         WARCWriterProcessor wwp = new WARCWriterProcessor();
         wwp.setMetadataProvider(new CrawlMetadata());
         DefaultServerCache serverCache = new DefaultServerCache();
         serverCache.getHostFor("test.com").setIP(InetAddress.getLoopbackAddress(), -1);
         wwp.setServerCache(serverCache);
-        File workDir = new File(TmpDirTestCase.tmpDir(), "WARCWriterProcessorTest-testStats");
+        File workDir = new File(tempDir.toFile(), "WARCWriterProcessorTest-testStats");
         org.apache.commons.io.FileUtils.deleteDirectory(workDir);
         wwp.setDirectory(new ConfigPath(null, workDir.getPath()));
         wwp.start();

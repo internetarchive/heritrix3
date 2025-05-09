@@ -7,25 +7,20 @@ import java.util.Map;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author kenji
  *
  */
-public class XmlMarshallerTest extends TestCase {
+public class XmlMarshallerTest {
 
-    /* (non-Javadoc)
-     * @see junit.framework.TestCase#setUp()
-     */
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-    
     /**
      * Map with nested Map
-     * @throws Exception
      */
+    @Test
     public void testMarshalMap() throws Exception {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("c", 1);
@@ -45,7 +40,7 @@ public class XmlMarshallerTest extends TestCase {
                 "</doc>\\s*$";
         String xml = w.toString();
         System.out.println(xml);
-        assertTrue("xml matches expected RE", xml.matches(expected));
+        assertTrue(xml.matches(expected), "xml matches expected RE");
     }
     
     @XmlRootElement
@@ -66,8 +61,8 @@ public class XmlMarshallerTest extends TestCase {
     
     /**
      * Bean with nested Bean
-     * @throws Exception
      */
+    @Test
     public void testMashalBean() throws Exception {
         Object bean = new Model();
         StringWriter w = new StringWriter();
@@ -80,13 +75,13 @@ public class XmlMarshallerTest extends TestCase {
                 "</doc>\\s*$";
         String xml = w.toString();
         System.out.println(xml);
-        assertTrue("xml matches expected RE", xml.matches(expected));
+        assertTrue(xml.matches(expected), "xml matches expected RE");
     }
 
     /**
      * Map with nested Bean
-     * @throws Exception
      */
+    @Test
     public void testMarshalBeanInMap() throws Exception {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("c", 1);
@@ -104,6 +99,6 @@ public class XmlMarshallerTest extends TestCase {
                 "</doc>\\s*$";
         String xml = w.toString();
         System.out.println(xml);
-        assertTrue("xml matches expected RE", xml.matches(expected));
+        assertTrue(xml.matches(expected), "xml matches expected RE");
     }
 }

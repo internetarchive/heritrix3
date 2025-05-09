@@ -21,6 +21,8 @@ package org.archive.crawler.selftest;
 import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.crawler.util.CrawledBytesHistotable;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class StatisticsSelfTest extends SelfTestBase {
 
     @Override
@@ -65,19 +67,19 @@ public class StatisticsSelfTest extends SelfTestBase {
         assertNull(sourceStats);
         sourceStats = stats.getSourceStats("http://127.0.0.1:7777/a.html");
         assertNotNull(sourceStats);
-        assertEquals(4, sourceStats.keySet().size());
-        assertEquals(2202l, (long) sourceStats.get("novel"));
-        assertEquals(3l, (long) sourceStats.get("novelCount"));
-        assertEquals(2202l, (long) sourceStats.get("warcNovelContentBytes"));
-        assertEquals(3l, (long) sourceStats.get("warcNovelUrls"));
+        assertEquals(4, sourceStats.size());
+        assertEquals(2202L, (long) sourceStats.get("novel"));
+        assertEquals(3L, (long) sourceStats.get("novelCount"));
+        assertEquals(2202L, (long) sourceStats.get("warcNovelContentBytes"));
+        assertEquals(3L, (long) sourceStats.get("warcNovelUrls"));
 
         sourceStats = stats.getSourceStats("http://localhost:7777/b.html");
         assertNotNull(sourceStats);
-        assertEquals(4, sourceStats.keySet().size());
-        assertEquals(5758l, (long) sourceStats.get("novel") - stats.getBytesPerHost("dns:"));
-        assertEquals(11l, (long) sourceStats.get("novelCount"));
-        assertEquals(5758l, (long) sourceStats.get("warcNovelContentBytes") - stats.getBytesPerHost("dns:"));
-        assertEquals(10l, (long) sourceStats.get("warcNovelUrls"));
+        assertEquals(4, sourceStats.size());
+        assertEquals(5758L, (long) sourceStats.get("novel") - stats.getBytesPerHost("dns:"));
+        assertEquals(11L, (long) sourceStats.get("novelCount"));
+        assertEquals(5758L, (long) sourceStats.get("warcNovelContentBytes") - stats.getBytesPerHost("dns:"));
+        assertEquals(10L, (long) sourceStats.get("warcNovelUrls"));
     }
 
 }

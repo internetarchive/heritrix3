@@ -20,13 +20,15 @@ package org.archive.modules.net;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
+import org.junit.jupiter.api.Test;
 
-public class RobotsPolicyTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
+public class RobotsPolicyTest {
+
+    @Test
     public void testClassicRobots() throws IOException {
         Robotstxt rtxt = RobotstxtTest.sampleRobots1();
         RobotsPolicy policy = RobotsPolicy.STANDARD_POLICIES.get("classic");
@@ -36,15 +38,11 @@ public class RobotsPolicyTest extends TestCase {
     
     /**
      * HER-1976: query-string disallow
-     * 
-     * @param policy
-     * @param r
-     * @throws IOException
      */
     public void evalQueryString(RobotsPolicy policy, Robotstxt rtxt) throws IOException {
         CrawlURI qs = new CrawlURI(UURIFactory.getInstance("http://example.com/ok?butno=something"));
 
-        assertFalse("ignoring query-string", policy.allows("Mozilla allowbot2 99.9", qs, rtxt));
+        assertFalse(policy.allows("Mozilla allowbot2 99.9", qs, rtxt), "ignoring query-string");
         
     }
 }

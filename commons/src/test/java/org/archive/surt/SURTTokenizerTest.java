@@ -18,9 +18,10 @@
  */
 package org.archive.surt;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.URIException;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
@@ -28,12 +29,13 @@ import org.apache.commons.httpclient.URIException;
  * @author brad
  * @version $Date$, $Revision$
  */
-public class SURTTokenizerTest extends TestCase {
+public class SURTTokenizerTest {
 
         SURTTokenizer tok;
         /**
          * Test method for 'org.archive.wayback.accesscontrol.SURTTokenizer.nextSearch()'
          */
+        @Test
         public void testSimple() {
                 tok = toSurtT("http://www.archive.org/foo");
                 assertEquals("(org,archive,www,)/foo\t",tok.nextSearch());
@@ -45,6 +47,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());
         }
         /** test */
+        @Test
         public void testSlashPath() {
                 tok = toSurtT("http://www.archive.org/");
                 assertEquals("(org,archive,www,)/\t",tok.nextSearch());
@@ -57,6 +60,7 @@ public class SURTTokenizerTest extends TestCase {
         }
 
         /** test */
+        @Test
         public void testEmptyPath() {
                 tok = toSurtT("http://www.archive.org");
                 assertEquals("(org,archive,www,)/\t",tok.nextSearch());
@@ -70,6 +74,7 @@ public class SURTTokenizerTest extends TestCase {
 
 
         /** test */
+        @Test
         public void testEmptyPathMore() {
                 tok = toSurtT("http://brad.www.archive.org");
                 assertEquals("(org,archive,www,brad,)/\t",tok.nextSearch());
@@ -82,6 +87,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());           
         }       
         /** test */
+        @Test
         public void testLongPathMore() {
                 tok = toSurtT("http://brad.www.archive.org/one/two");
                 assertEquals("(org,archive,www,brad,)/one/two\t",tok.nextSearch());
@@ -95,6 +101,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());           
         }       
         /** test */
+        @Test
         public void testShortPathHash() {
                 tok = toSurtT("http://www.archive.org/one/two#hash");
                 assertEquals("(org,archive,www,)/one/two\t",tok.nextSearch());
@@ -107,6 +114,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());           
         }
         /** test */
+        @Test
         public void testCGI1() {
                 tok = toSurtT("http://www.archive.org/cgi?foobar");
                 assertEquals("(org,archive,www,)/cgi?foobar\t",tok.nextSearch());
@@ -119,6 +127,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());           
         }
         /** test */
+        @Test
         public void testPort() {
                 tok = toSurtT("http://www.archive.org:8080/cgi?foobar");
                 assertEquals("(org,archive,www,:8080)/cgi?foobar\t",tok.nextSearch());
@@ -131,6 +140,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());
         }
         /** test */
+        @Test
         public void testLogin() {
                 tok = toSurtT("http://brad@www.archive.org/cgi?foobar");
                 assertEquals("(org,archive,www,@brad)/cgi?foobar\t",tok.nextSearch());
@@ -143,6 +153,7 @@ public class SURTTokenizerTest extends TestCase {
                 assertNull(tok.nextSearch());           
         }
         /** test */
+        @Test
         public void testLoginPass() {
                 tok = toSurtT("http://brad:pass@www.archive.org/cgi?foobar");
                 assertEquals("(org,archive,www,@brad:pass)/cgi?foobar\t",tok.nextSearch());
@@ -177,7 +188,7 @@ public class SURTTokenizerTest extends TestCase {
                         tok = new SURTTokenizer(u);
                 } catch (URIException e) {
                         e.printStackTrace();
-                        assertFalse("URL Exception " + e.getLocalizedMessage(),true);
+                        assertFalse(true, "URL Exception " + e.getLocalizedMessage());
                 }
                 return tok;
         }

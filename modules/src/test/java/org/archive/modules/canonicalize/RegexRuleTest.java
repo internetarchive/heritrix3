@@ -24,6 +24,10 @@ import javax.management.InvalidAttributeValueException;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -33,15 +37,17 @@ import org.archive.state.ModuleTestBase;
  */
 public class RegexRuleTest extends ModuleTestBase {
 
+    @Test
     public void testCanonicalize()
     throws URIException, InvalidAttributeValueException {
         final String url = "http://www.aRchive.Org/index.html";
         RegexRule rr = new RegexRule();
         rr.canonicalize(url);
         String product = rr.canonicalize(url);
-        assertTrue("Default doesn't work.",  url.equals(product));
+        assertEquals(url, product, "Default doesn't work.");
     }
 
+    @Test
     public void testSessionid()
     throws InvalidAttributeValueException {
         final String urlBase = "http://joann.com/catalog.jhtml";
@@ -52,7 +58,7 @@ public class RegexRuleTest extends ModuleTestBase {
         rr.setRegex(Pattern.compile("^(.+)(?:;\\$sessionid\\$[A-Z0-9]{32})(\\?.*)+$"));
         rr.setFormat("$1$2");
         String product = rr.canonicalize(url);
-        assertTrue("Failed " + url, urlMinusSessionid.equals(product));
+        assertEquals(urlMinusSessionid, product, "Failed " + url);
     }
     
 // This should fail -- no backrefs to nonexistent match; very easy to 

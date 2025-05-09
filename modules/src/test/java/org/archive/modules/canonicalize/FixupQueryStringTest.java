@@ -20,6 +20,9 @@ package org.archive.modules.canonicalize;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test we strip trailing question mark.
@@ -27,28 +30,22 @@ import org.archive.state.ModuleTestBase;
  * @version $Date$, $Revision$
  */
 public class FixupQueryStringTest extends ModuleTestBase {
-
+    @Test
     public void testCanonicalize() throws URIException {
         final String url = "http://WWW.aRchive.Org/index.html";
-        assertTrue("Mangled " + url,
-            url.equals((new FixupQueryString()).
-                canonicalize(url)));
-        assertTrue("Failed to strip '?' " + url,
-            url.equals((new FixupQueryString()).
-                canonicalize(url + "?")));
-        assertTrue("Failed to strip '?&' " + url,
-            url.equals((new FixupQueryString()).
-                canonicalize(url + "?&")));
-        assertTrue("Failed to strip extraneous '&' " + url,
-            (url + "?x=y").equals((new FixupQueryString()).
-                canonicalize(url + "?&x=y")));
+        assertEquals(url, new FixupQueryString().canonicalize(url),
+                "Mangled " + url);
+        assertEquals(url, new FixupQueryString().canonicalize(url + "?"),
+                "Failed to strip '?' " + url);
+        assertEquals(url, new FixupQueryString().canonicalize(url + "?&"),
+                "Failed to strip '?&' " + url);
+        assertEquals(url + "?x=y", new FixupQueryString().canonicalize(url + "?&x=y"),
+                "Failed to strip extraneous '&' " + url);
         String tmp = url + "?x=y";
-        assertTrue("Mangled x=y " + tmp,
-            tmp.equals((new FixupQueryString()).
-                canonicalize(tmp)));
+        assertEquals(tmp, new FixupQueryString().canonicalize(tmp),
+                "Mangled x=y " + tmp);
         String tmp2 = tmp + "&";
-        String fixed = new FixupQueryString().
-            canonicalize(tmp2);
-        assertTrue("Mangled " + tmp2, tmp.equals(fixed));
+        String fixed = new FixupQueryString().canonicalize(tmp2);
+        assertEquals(tmp, fixed, "Mangled " + tmp2);
     }
 }

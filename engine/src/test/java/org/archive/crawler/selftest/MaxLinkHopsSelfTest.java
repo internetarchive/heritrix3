@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -42,7 +43,7 @@ public class MaxLinkHopsSelfTest
     @Override
     protected void verify() throws Exception {
         Set<String> files = filesInArcs();
-        assertEquals("ARC contents not as expected",EXPECTED,files);
+        assertEquals(EXPECTED, files, "ARC contents not as expected");
     }
     
     @Override

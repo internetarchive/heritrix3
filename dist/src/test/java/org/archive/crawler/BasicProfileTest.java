@@ -23,8 +23,9 @@ import java.io.File;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.spring.PathSharingContext;
-import org.archive.util.TmpDirTestCase;
 import org.springframework.beans.BeansException;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Test all bundled job directories -- that they build, but have 
@@ -32,12 +33,14 @@ import org.springframework.beans.BeansException;
  * 
  * @author pjack
  */
-public class BasicProfileTest extends TmpDirTestCase {
+public class BasicProfileTest {
+    @TempDir
+    Path tempDir;
 
-    
     /**
      * Tests the default profile that gets put in the heritrix tarball.
      */
+    @Test
     public void testBundledProfiles() throws Exception {
         File srcDir = new File("src/main/conf/jobs");
         if (!srcDir.exists()) {
@@ -53,9 +56,10 @@ public class BasicProfileTest extends TmpDirTestCase {
         }
     }
 
+    @Test
     protected void testProfileDirectory(File srcDir) throws Exception {
         System.out.println("\nNow testing " + srcDir.getName());
-        File tmpDir = new File(getTmpDir(), "validatorTest");
+        File tmpDir = new File(tempDir.toFile(), "validatorTest");
         File configDir = new File(tmpDir, srcDir.getName());
         org.archive.util.FileUtils.ensureWriteableDirectory(configDir);
         FileUtils.copyDirectory(srcDir, configDir);
@@ -67,9 +71,9 @@ public class BasicProfileTest extends TmpDirTestCase {
         } catch (BeansException be){
             be.printStackTrace(System.err);
         } finally {
-            assertNotNull("profile not buildable",ac);
+            assertNotNull(ac,"profile not buildable");
             ac.validate();
-            assertEquals("did not get the expected one error",1,ac.getAllErrors().size());
+            assertEquals(1,ac.getAllErrors().size(),"did not get the expected one error");
             ac.destroy();
         }
     }

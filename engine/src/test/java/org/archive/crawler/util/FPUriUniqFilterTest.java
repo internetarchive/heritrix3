@@ -25,21 +25,23 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.fingerprint.MemLongFPSet;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
  * Test FPUriUniqFilter.
  * @author stack
  */
-public class FPUriUniqFilterTest extends TestCase
+public class FPUriUniqFilterTest
 implements UriUniqFilter.CrawlUriReceiver {
     private Logger logger =
         Logger.getLogger(FPUriUniqFilterTest.class.getName());
@@ -50,14 +52,15 @@ implements UriUniqFilter.CrawlUriReceiver {
      * Set to true if we visited received.
      */
     private boolean received = false;
-    
+
+    @BeforeEach
 	protected void setUp() throws Exception {
-		super.setUp();
         // 17 makes a MemLongFPSet of one meg of longs (64megs).
 		this.filter = new FPUriUniqFilter(new MemLongFPSet(10, 0.75f));
 		this.filter.setDestination(this);
     }
-    
+
+    @Test
     public void testAdding() throws URIException {
         this.filter.add(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(this.getUri())));
@@ -66,14 +69,13 @@ implements UriUniqFilter.CrawlUriReceiver {
         this.filter.addForce(this.getUri(),
             new CrawlURI(UURIFactory.getInstance(this.getUri())));
         // Should only have add 'this' once.
-        assertTrue("Count is off", this.filter.count() == 1);
+        assertEquals(1, this.filter.count());
     }
     
     /**
      * Test inserting and removing.
-     * @throws IOException
-     * @throws FileNotFoundException
      */
+    @Test
     public void testWriting() throws FileNotFoundException, IOException {
         long start = System.currentTimeMillis();
         ArrayList<UURI> list = new ArrayList<UURI>(1000);
@@ -106,19 +108,20 @@ implements UriUniqFilter.CrawlUriReceiver {
         this.logger.info("Deleted random " + list.size() + " in " +
             (System.currentTimeMillis() - start));
         // Looks like delete doesn't work.
-        assertTrue("Count is off: " + this.filter.count(),
-            this.filter.count() == MAX_COUNT);
+        assertEquals(MAX_COUNT, this.filter.count());
     }
-    
+
+    @Test
     public void testNote() {
     	this.filter.note(this.getUri());
-        assertFalse("Receiver was called", this.received);
+        assertFalse(this.received, "Receiver was called");
     }
-    
+
+    @Test
     public void testForget() throws URIException {
         this.filter.forget(this.getUri(),
                 new CrawlURI(UURIFactory.getInstance(this.getUri())));
-        assertTrue("Didn't forget", this.filter.count() == 0);
+        assertEquals(0, this.filter.count(), "Didn't forget");
     }
     
 	public void receive(CrawlURI item) {

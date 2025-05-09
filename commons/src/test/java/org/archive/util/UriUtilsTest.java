@@ -23,9 +23,9 @@
 
 package org.archive.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * JUnit test suite for UriUtils. 
@@ -38,25 +38,7 @@ import junit.framework.TestSuite;
  * @author gojomo
  * @version $Id: ArchiveUtilsTest.java 5052 2007-04-10 02:26:52Z gojomo $
  */
-public class UriUtilsTest extends TestCase {
-
-    public UriUtilsTest(final String testName) {
-        super(testName);
-    }
-
-    /**
-     * run all the tests for ArchiveUtilsTest
-     * 
-     * @param argv
-     *            the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    public static Test suite() {
-        return new TestSuite(UriUtilsTest.class);
-    }
+public class UriUtilsTest {
 
     /** image URIs that should be considered likely URIs **/
     static String[] urisRelativeImages = { 
@@ -66,6 +48,7 @@ public class UriUtilsTest extends TestCase {
         "images/photo.jpg", 
         "../../images/photo.jpg" };
 
+    @Test
     public void testIsDataUri() {
         assertTrue(UriUtils.isDataUri("data:,hello"));
         assertTrue(UriUtils.isDataUri("data:text/plain,hello"));
@@ -83,6 +66,7 @@ public class UriUtilsTest extends TestCase {
     }
     
     /** check that plausible relative image URIs return true with new tests */
+    @Test
     public void testNewSimpleImageRelatives() {
         tryAll(urisRelativeImages,true); 
     }
@@ -105,11 +89,13 @@ public class UriUtilsTest extends TestCase {
     };
 
     /** check that absolute URIs return true with legacy tests */
+    @Test
     public void testLegacyAbsolutes() {
         legacyTryAll(urisAbsolute,true);
     }
     
     /** check that absolute URIs return true with new tests */
+    @Test
     public void testAbsolutes() {
         tryAll(urisAbsolute,true);
     }
@@ -122,6 +108,7 @@ public class UriUtilsTest extends TestCase {
         "/wiki/%E0%B4%B8%E0%B4%B9%E0%B4%BE%E0%B4%AF%E0%B4%82:To_Read_in_Malayalam",
         "/wiki/Wikiversity:Why_create_an_account%3F",
     };
+    @Test
     public void testRelatives() {
         tryAll(urisRelative, true);
     }
@@ -133,11 +120,13 @@ public class UriUtilsTest extends TestCase {
     };
     
     /** check that path-absolute image URIs return true with legacy tests*/
+    @Test
     public void testLegacySimpleImagePathAbsolutes() {
         legacyTryAll(urisPathAbsoluteImages, true); 
     }
     
     /** check that path-absolute image URIs return true with new tests*/
+    @Test
     public void testSimpleImagePathAbsolutes() {
         tryAll(urisPathAbsoluteImages, true); 
     }
@@ -155,6 +144,7 @@ public class UriUtilsTest extends TestCase {
     }
     
     /** check that typical false-positives of the naive test are not deemed URIs */
+    @Test
     public void testNaiveFalsePositives() {
         tryAll(notUrisNaiveFalsePositives, false); 
     }
@@ -167,11 +157,13 @@ public class UriUtilsTest extends TestCase {
     };
     
     /** check that strings that fail naive test are not deemed URIs legacy tests*/
+    @Test
     public void testLegacyNaiveNotUris() {
         legacyTryAll(notUrisNaive, false); 
     }
     
     /** check that strings that fail naive test are not deemed URIs new tests*/
+    @Test
     public void testNaiveNotUris() {
         tryAll(notUrisNaive, false); 
     }
@@ -185,6 +177,7 @@ public class UriUtilsTest extends TestCase {
         "[\\x3cb\\x3e-\\x3c/b\\x3e]",
         "http://demo.example.net/panama.php?cgroup=ron728x90&pid=\"+pid+\"&uid=\"+uid+\"&rid=\"+rid+\"&kw=10&cx=10&bh=10",
     };
+    @Test
     public void testUnusualCharacterFalsePositives() {
         tryAll(unusualCharacterFalsePositives, false);
     }
@@ -208,6 +201,7 @@ public class UriUtilsTest extends TestCase {
         "video/quicktime", 
         "audio/x-pn-realaudio-plugin", 
     };
+    @Test
     public void testMimetypesFalsePositives() {
         tryAll(mimetypesFalsePositives, false);
     }
@@ -217,6 +211,7 @@ public class UriUtilsTest extends TestCase {
         ";overlay.style.width=viewport_dimensions.width+",
         "+_ti;bb.src=",
     };
+    @Test
     public void testStartsOrEndsWithPlusFalsePositives() {
         tryAll(startsOrEndsWithPlusFalsePositives, false);
     }
@@ -225,6 +220,7 @@ public class UriUtilsTest extends TestCase {
         ".//*",
         "http://example.com/monkey//foo/whatever"
     };
+    @Test
     public void testDoubleSlashFalsePositives() {
         tryAll(startsOrEndsWithPlusFalsePositives, false);
     }
@@ -238,12 +234,12 @@ public class UriUtilsTest extends TestCase {
      */
     protected void legacyTryAll(String[] candidates, boolean expected) {
         for (String candidate : candidates) {
-            assertEquals("javascript context: " + candidate, 
-                    expected, 
-                    UriUtils.isLikelyUriJavascriptContextLegacy(candidate));
-            assertEquals("html context: " + candidate, 
-                    expected, 
-                    UriUtils.isLikelyUriHtmlContextLegacy(candidate));
+            assertEquals(expected,
+                    UriUtils.isLikelyUriJavascriptContextLegacy(candidate),
+                    "javascript context: " + candidate);
+            assertEquals(expected,
+                    UriUtils.isLikelyUriHtmlContextLegacy(candidate),
+                    "html context: " + candidate);
         }
     }
     
@@ -255,7 +251,7 @@ public class UriUtilsTest extends TestCase {
      */
     protected void tryAll(String[] candidates, boolean expected) {
         for (String candidate : candidates) {
-            assertEquals(candidate, expected, UriUtils.isLikelyUri(candidate));
+            assertEquals(expected, UriUtils.isLikelyUri(candidate), candidate);
         }
     }
 }

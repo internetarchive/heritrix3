@@ -18,8 +18,10 @@
  */
 package org.archive.modules.canonicalize;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -29,10 +31,9 @@ import org.archive.state.ModuleTestBase;
  */
 public class LowercaseRuleTest extends ModuleTestBase {
 
-    public void testCanonicalize() throws URIException {
+    @Test
+    public void testCanonicalize() {
         final String url = "http://WWW.aRchive.Org/index.html";
-        assertTrue("Didn't lowercase" + url,
-            url.toLowerCase().equals((new LowercaseRule()).
-                canonicalize(url)));
+        assertEquals(url.toLowerCase(), new LowercaseRule().canonicalize(url), "Didn't lowercase" + url);
     }
 }

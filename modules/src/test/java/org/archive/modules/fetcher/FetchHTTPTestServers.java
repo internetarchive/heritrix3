@@ -20,6 +20,8 @@ package org.archive.modules.fetcher;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +30,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
 import org.archive.util.KeyTool;
-import org.archive.util.TmpDirTestCase;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
@@ -41,8 +43,9 @@ import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.util.security.Password;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FetchHTTPTestServers {
 
@@ -111,6 +114,10 @@ public class FetchHTTPTestServers {
     };
 
     protected static final byte[] EIGHTY_BYTE_LINE = "1234567890123456789012345678901234567890123456789012345678901234567890123456789\n".getBytes();
+    private static Path staticTempDir;
+
+    @TempDir
+    private Path tempDir;
 
     protected static class TestServlet extends HttpServlet {
 
@@ -251,8 +258,9 @@ public class FetchHTTPTestServers {
         server.setHandler(context);
 
         servers.put(sc.getPort(), server);
-        
-        File keystoreFile = new File(TmpDirTestCase.tmpDir(), "keystore");
+
+        staticTempDir = Files.createTempDirectory("heritrix-test-");
+        File keystoreFile = new File(staticTempDir.toFile(), "keystore");
         if (keystoreFile.exists()) {
             keystoreFile.delete();
         }
@@ -322,6 +330,10 @@ public class FetchHTTPTestServers {
                 server.destroy();
             }
             httpServers = null;
+        }
+        if (staticTempDir != null) {
+            FileUtils.deleteDirectory(staticTempDir.toFile());
+            staticTempDir = null;
         }
     }
 }

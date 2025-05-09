@@ -26,6 +26,8 @@ import java.io.FileReader;
 import org.archive.crawler.frontier.precedence.BaseUriPrecedencePolicy;
 import org.archive.util.ArchiveUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Tests that operators can create precedence groups for URIs, and that URIs
  * in one group are crawled before URIs in another group per operator preference.

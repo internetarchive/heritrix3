@@ -30,6 +30,11 @@ import org.archive.modules.ProcessorTestBase;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -49,6 +54,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
     /**
      * Sets up the {@link #extractor}.
      */
+    @BeforeEach
     final public void setUp() {
         extractor = makeExtractor();
     }
@@ -85,6 +91,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      * 
      * @throws Exception   just in case
      */
+    @Test
     public void testZeroContent() throws Exception {
         CrawlURI uri = defaultURI();
         Recorder recorder = createRecorder("");
@@ -102,6 +109,7 @@ public abstract class ContentExtractorTestBase extends ProcessorTestBase {
      * 
      * @throws Exception   just in case
      */
+    @Test
     public void testFinished() throws Exception {
         CrawlURI uri = defaultURI();
         uri.linkExtractorFinished();

@@ -37,6 +37,10 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
@@ -86,6 +90,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         return e;
     }
 
+    @Test
     public void testAllInItagPriority() throws Exception {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -99,6 +104,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(expected, testUri.getOutLinks());
     }
 
+    @Test
     public void testAllNoPriority() throws Exception {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -111,6 +117,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
     // test that only itags in the priority list are extracted, even though
     // extract limit is large
+    @Test
     public void testOnlyInItagPriorityBigLimit() throws Exception {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -125,6 +132,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
 
     // test that only itags in the priority list are extracted, even though
     // extract limit is unset
+    @Test
     public void testOnlyInItagPriorityNoLimit() throws Exception {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -138,6 +146,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
     }
 
 
+    @Test
     public void testNoPriorityWithLimit() throws InterruptedException, URIException, UnsupportedEncodingException, IOException {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -148,6 +157,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(4, testUri.getOutLinks().size());
     }
 
+    @Test
     public void testDontExtract() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
         // not a youtube watch url so shouldProcess() will return false
         CrawlURI testUri = createTestUri("http://archive.org/watch?w=blah", getTestResourceFileName());
@@ -155,6 +165,7 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(Collections.EMPTY_SET, testUri.getOutLinks());
     }
 
+    @Test
     public void testPriority() throws Exception {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 
@@ -169,15 +180,17 @@ public class ExtractorYoutubeFormatStreamTest extends ContentExtractorTestBase {
         assertEquals(expected, testUri.getOutLinks());
     }
 
+    @Test
     public void testAlternatePage() throws Exception {
         CrawlURI testUri = createTestUri("http://www.youtube.com/watch?v=OyJ3CafAM1Q","ExtractorYoutubeFormatStream2.txt");
 
         extractor().setExtractLimit(0);
         extractor.process(testUri);
 
-        assertEquals(true, testUri.getOutLinks().size()>0);
+        assertTrue(testUri.getOutLinks().size() > 0);
     }
-    
+
+    @Test
     public void testDefaultItag() throws URIException, UnsupportedEncodingException, IOException, InterruptedException {
         CrawlURI testUri = createTestUri(getTestUri(), getTestResourceFileName());
 

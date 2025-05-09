@@ -27,6 +27,9 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Tests that URLs can be assigned precedence values based on in-line analysis
  * module that prioritizes newly discovered links based on an approximate
@@ -152,10 +155,10 @@ public class Precedence3SelfTest extends SelfTestBase {
 
         // Make sure children of keyword-containing-parent were crawled before
         // children of no-keyword-containing-parent.
-        assertTrue(k1Index + " >= " + n1Index, k1Index < n1Index);
-        assertTrue(k1Index + " >= " + n2Index, k1Index < n2Index);
-        assertTrue(k2Index + " >= " + n1Index, k2Index < n1Index);
-        assertTrue(k2Index + " >= " + n1Index, k2Index < n2Index);
+        assertTrue(k1Index < n1Index, k1Index + " >= " + n1Index);
+        assertTrue(k1Index < n2Index, k1Index + " >= " + n2Index);
+        assertTrue(k2Index < n1Index, k2Index + " >= " + n1Index);
+        assertTrue(k2Index < n2Index, k2Index + " >= " + n1Index);
         
         return false;
     }

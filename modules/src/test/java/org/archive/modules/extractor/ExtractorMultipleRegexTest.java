@@ -24,6 +24,9 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
 
@@ -173,6 +176,7 @@ public class ExtractorMultipleRegexTest extends ContentExtractorTestBase {
         return e;
     }
 
+    @Test
     public void testFacebookScrollExample() throws Exception {
         UURI testUuri = UURIFactory.getInstance(TEST_URI);
         CrawlURI testUri = new CrawlURI(testUuri, null, null, LinkContext.NAVLINK_MISC);

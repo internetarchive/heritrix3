@@ -20,6 +20,7 @@
 package org.archive.settings.file;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,6 @@ import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.archive.util.PrefixFinder;
-import org.archive.util.TmpDirTestCase;
 
 import com.sleepycat.bind.tuple.StringBinding;
 import com.sleepycat.collections.StoredSortedMap;
@@ -40,13 +40,19 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for PrefixFinder.
  * 
  * @author pjack
  */
-public class PrefixFinderTest extends TmpDirTestCase {
+public class PrefixFinderTest {
+    @TempDir
+    Path tempDir;
 
     public void xtestFind() {
         for (int i = 0; i < 100; i++) {
@@ -54,32 +60,36 @@ public class PrefixFinderTest extends TmpDirTestCase {
         }
     }
 
+    @Test
     public void testNoneFoundSmallSet() {
         SortedSet<String> testData = new TreeSet<String>();
         testData.add("foo");
         List<String> result = PrefixFinder.find(testData, "baz");
         assertTrue(result.isEmpty());
     }
-    
+
+    @Test
     public void testOneFoundSmallSet() {
         SortedSet<String> testData = new TreeSet<String>();
         testData.add("foo");
         List<String> result = PrefixFinder.find(testData, "foobar");
-        assertTrue(result.size()==1);
+        assertEquals(1, result.size());
         assertTrue(result.contains("foo"));
     }
-    
+
+    @Test
     public void testSortedMap() {
         TreeMap<String,String> map = new TreeMap<String,String>();
         testUrlsNoMatch(map);
     }
-    
+
+    @Test
     public void testStoredSortedMap() throws Exception {
         EnvironmentConfig config = new EnvironmentConfig();
         config.setAllowCreate(true);      
         config.setCachePercent(5);
         
-        File f = new File(getTmpDir(), "PrefixFinderText");
+        File f = new File(tempDir.toFile(), "PrefixFinderText");
         FileUtils.deleteQuietly(f);
         org.archive.util.FileUtils.ensureWriteableDirectory(f);
         Environment bdbEnvironment = new Environment(f, config);

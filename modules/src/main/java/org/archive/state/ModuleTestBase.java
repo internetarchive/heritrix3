@@ -22,7 +22,7 @@ package org.archive.state;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.nio.file.Path;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.SerializationUtils;
@@ -30,9 +30,10 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import junit.framework.TestCase;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 
 /**
@@ -40,8 +41,9 @@ import junit.framework.TestCase;
  * 
  * @author pjack
  */
-public abstract class ModuleTestBase extends TestCase {
-
+public abstract class ModuleTestBase {
+    @TempDir
+    Path tempDir;
 
     /**
      * Magical constructor that attempts to auto-create static key field
@@ -170,6 +172,7 @@ public abstract class ModuleTestBase extends TestCase {
      * 
      * @throws Exception   if the module cannot be serialized
      */
+    @Test
     public void testSerializationIfAppropriate() throws Exception {
         Object first = makeModule();
         if(!(first instanceof Serializable)) {
@@ -217,23 +220,12 @@ public abstract class ModuleTestBase extends TestCase {
      */
     protected void verifySerialization(Object first, byte[] firstBytes, 
             Object second, byte[] secondBytes) throws Exception {
-        assertTrue(Arrays.equals(firstBytes, secondBytes));
+        assertArrayEquals(firstBytes, secondBytes);
     }
-    
-    @Override
-    protected void runTest() throws Throwable {
-        try {
-            super.runTest();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-    }
-
 
     protected Recorder getRecorder() throws IOException {
         if (Recorder.getHttpRecorder() == null) {
-            Recorder httpRecorder = new Recorder(TmpDirTestCase.tmpDir(),
+            Recorder httpRecorder = new Recorder(tempDir.toFile(),
                     getClass().getName(), 16 * 1024, 512 * 1024);
             Recorder.setHttpRecorder(httpRecorder);
         }

@@ -36,6 +36,8 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.eclipse.jetty.util.security.Password;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Test HTTP basic authentication
  *
@@ -58,7 +60,7 @@ public class HttpAuthSelfTest
     @Override
     protected void verify() throws Exception {
         Set<String> found = this.filesInArcs();
-        assertEquals("wrong files in ARCs",EXPECTED,found);
+        assertEquals(EXPECTED, found, "wrong files in ARCs");
     }
 
     @Override

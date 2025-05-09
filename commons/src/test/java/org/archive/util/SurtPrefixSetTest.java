@@ -19,18 +19,17 @@
 
 package org.archive.util;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Iterator;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 /**
  * @author gojomo
  */
-public class SurtPrefixSetTest extends TestCase {
+public class SurtPrefixSetTest {
     private static final String ARCHIVE_ORG_DOMAIN_SURT = "http://(org,archive,";
     private static final String WWW_EXAMPLE_ORG_HOST_SURT = "http://(org,example,www,)";
     private static final String HOME_EXAMPLE_ORG_PATH_SURT = "http://(org,example,home,)/pages/";
@@ -46,38 +45,8 @@ public class SurtPrefixSetTest extends TestCase {
         BOK_IS_REDUNDANT_SURT + " # is redundant\n" +
         IS_DOMAIN_SURT + "\n" +
         WWW_BOK_IS_REDUNDANT_SURT + " # is redundant\n";
-    
-    /**
-     * Create a new SurtPrefixSetTest object
-     * 
-     * @param testName
-     *            the name of the test
-     */
-    public SurtPrefixSetTest(final String testName) {
-        super(testName);
-    }
 
-    /**
-     * run all the tests for SurtPrefixSetTest
-     * 
-     * @param argv
-     *            the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    /**
-     * return the suite of tests for SurtPrefixSetTest
-     * 
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(SurtPrefixSetTest.class);
-    }
-    
-    
-    
+    @Test
     public void testMisc() throws IOException {
         SurtPrefixSet surts = new SurtPrefixSet();
         StringReader sr = new StringReader(TEST_SURT_LIST);
@@ -95,58 +64,34 @@ public class SurtPrefixSetTest extends TestCase {
         assertDoesntContainPrefix(surts,SURT.fromURI("http://home.example.org/foo"));
     }
 
-    /**
-     * @param surts
-     * @param string
-     */
     private void assertDoesntContainPrefix(SurtPrefixSet surts, String s) {
-        assertEquals(s+" is prefixed", surts.containsPrefixOf(s), false);
+        Assertions.assertFalse(surts.containsPrefixOf(s), s + " is prefixed");
     }
 
-    /**
-     * @param surts
-     * @param string
-     */
     private void assertContainsPrefix(SurtPrefixSet surts, String s) {
-        assertEquals(s+" isn't prefixed", surts.containsPrefixOf(s), true);
+        Assertions.assertTrue(surts.containsPrefixOf(s), s + " isn't prefixed");
     }
 
-    /**
-     * @param surts
-     * @param www_bok_is_redundant_surt2
-     */
     private void assertDoesntContain(SurtPrefixSet surts, String s) {
-        assertEquals(s+" is present", surts.contains(s), false);
+        Assertions.assertFalse(surts.contains(s), s + " is present");
     }
 
-    /**
-     * @param archive_org_domain_surt2
-     */
     private void assertContains(SurtPrefixSet surts, String s) {
-        assertEquals(s+" is missing", surts.contains(s), true);
+        Assertions.assertTrue(surts.contains(s), s + " is missing");
     }
-    
+
+    @Test
     public void testImportFromUris() throws IOException {
         String seed = "http://www.archive.org/index.html";
-        assertEquals("Convert failed " + seed,
-                "http://(org,archive,www,)/",
-                makeSurtPrefix(seed));
+        Assertions.assertEquals("http://(org,archive,www,)/", makeSurtPrefix(seed), "Convert failed " + seed);
         seed = "http://timmknibbs4senate.blogspot.com/";
-        assertEquals("Convert failed " + seed,
-                "http://(com,blogspot,timmknibbs4senate,)/",
-                makeSurtPrefix(seed));
+        Assertions.assertEquals("http://(com,blogspot,timmknibbs4senate,)/", makeSurtPrefix(seed), "Convert failed " + seed);
         seed = "https://one.two.three";
-        assertEquals("Convert failed " + seed,
-                "http://(three,two,one,",
-                makeSurtPrefix(seed));
+        Assertions.assertEquals("http://(three,two,one,", makeSurtPrefix(seed), "Convert failed " + seed);
         seed = "https://xone.two.three/a/b/c/";
-        assertEquals("Convert failed " + seed,
-                "http://(three,two,xone,)/a/b/c/",
-                makeSurtPrefix(seed));
+        Assertions.assertEquals("http://(three,two,xone,)/a/b/c/", makeSurtPrefix(seed), "Convert failed " + seed);
         seed = "https://yone.two.three/a/b/c";
-        assertEquals("Convert failed " + seed,
-                "http://(three,two,yone,)/a/b/",
-                makeSurtPrefix(seed));
+        Assertions.assertEquals("http://(three,two,yone,)/a/b/", makeSurtPrefix(seed), "Convert failed " + seed);
     }
     
     private String makeSurtPrefix(String seed) {

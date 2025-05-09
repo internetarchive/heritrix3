@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -30,7 +31,10 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
-import org.archive.util.TestUtils;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link ExtractorSWF}.
@@ -39,6 +43,8 @@ import org.archive.util.TestUtils;
  * @author nlevitt
  */
 public class ExtractorSWFTest extends ContentExtractorTestBase {
+    @TempDir
+    Path tempDir;
 
     private static Logger logger = Logger.getLogger(ExtractorSWFTest.class.getName());
 
@@ -69,7 +75,7 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
         InputStream in = conn.getInputStream();
 
         Recorder recorder = Recorder.wrapInputStreamWithHttpRecord(
-        		TestUtils.tmpDir(), this.getClass().getName(), in, null);
+        		tempDir.toFile(), this.getClass().getName(), in, null);
         logger.info("got recorder for " + url);
 
         curi.setContentSize(recorder.getRecordedInput().getSize());
@@ -114,8 +120,8 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
                 foundIt = foundIt || link.getURI().endsWith(testUrls.get(url));
             }
 
-            assertTrue("failed to extract link \"" + testUrls.get(url)
-                    + "\" from " + url, foundIt);
+            assertTrue(foundIt, "failed to extract link \"" + testUrls.get(url)
+                                + "\" from " + url);
         }
     }
 
@@ -173,8 +179,8 @@ public class ExtractorSWFTest extends ContentExtractorTestBase {
             if (!foundIt)
                 logger.severe("failed to extract link \"" + testUrls.get(url)
                         + "\" from " + url);
-            assertTrue("failed to extract link \"" + testUrls.get(url)
-                    + "\" from " + url, foundIt);
+            assertTrue(foundIt, "failed to extract link \"" + testUrls.get(url)
+                                + "\" from " + url);
         }
     }
 

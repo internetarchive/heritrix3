@@ -7,6 +7,8 @@ import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.format.warc.WARCConstants;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,6 +18,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ExtractorYoutubeDLTest extends ContentExtractorTestBase {
 
@@ -29,8 +34,8 @@ public class ExtractorYoutubeDLTest extends ContentExtractorTestBase {
 
     /**
      * Test that we have the expected WARC Metadata Record given a json output from yt-dlp
-     * @throws Exception
      */
+    @Test
     public void testBuildRecord() throws Exception {
         CrawlURI testUri = CrawlURI.fromHopsViaString(getTestUri());
         InputStream is = this.getClass().getClassLoader().getResourceAsStream(getTestResourceFileName());
@@ -40,21 +45,21 @@ public class ExtractorYoutubeDLTest extends ContentExtractorTestBase {
         IOUtils.write(json_results, os);
         WARCRecordInfo record = ex.buildRecord(testUri, null);
 
-        assertEquals(record.getUrl(),"youtube-dl:" + getTestUri());
-        assertEquals(record.getType(), WARCConstants.WARCRecordType.metadata);
-        assertEquals(record.getMimetype(),"application/vnd.youtube-dl_formats+json;charset=utf-8");
+        assertEquals("youtube-dl:" + getTestUri(), record.getUrl());
+        assertEquals(WARCConstants.WARCRecordType.metadata, record.getType());
+        assertEquals("application/vnd.youtube-dl_formats+json;charset=utf-8", record.getMimetype());
 
         //Test input file is the same content as the content to be written to warc
         byte[] output_array = IOUtils.toByteArray(record.getContentStream());
         long json_len = json_results.length;
         long out_len = output_array.length;
-        org.junit.Assert.assertArrayEquals(json_results, output_array);
+        assertArrayEquals(json_results, output_array);
     }
 
     /**
      * Test that the resuling log line is as expected, and the resulting hash string matches
-     * @throws Exception
      */
+    @Test
     public void testPostWrite() throws Exception {
 
         CrawlURI testUri = CrawlURI.fromHopsViaString(getTestUri());

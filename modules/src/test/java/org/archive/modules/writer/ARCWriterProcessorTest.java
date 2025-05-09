@@ -20,13 +20,14 @@
 package org.archive.modules.writer;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.ProcessorTestBase;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.io.TempDir;
 
 
 /**
@@ -35,10 +36,12 @@ import org.archive.util.TmpDirTestCase;
  * @author pjack
  */
 public class ARCWriterProcessorTest extends ProcessorTestBase {
+    @TempDir
+    Path tempDir;
 
     @Override
     protected Object makeModule() throws Exception {
-        File tmp = TmpDirTestCase.tmpDir();
+        File tmp = tempDir.toFile();
         tmp = new File(tmp, "ARCWriterProcessTest");
         FileUtils.ensureWriteableDirectory(tmp);
         

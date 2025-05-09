@@ -13,8 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import junit.framework.TestCase;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.HttpClient;
@@ -34,6 +32,9 @@ import org.archive.util.DateUtils;
 import org.easymock.EasyMock;
 
 import com.google.common.util.concurrent.ExecutionList;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * unit test for {@link WbmPersistLoadProcessor}.
@@ -46,20 +47,21 @@ import com.google.common.util.concurrent.ExecutionList;
  * @author kenji
  *
  */
-public class WbmPersistLoadProcessorTest extends TestCase {
+public class WbmPersistLoadProcessorTest {
 
+  @Test
   public void testBuildURL() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
     t.setQueryURL("http://web.archive.org/cdx/search/cdx?url=$u&startDate=$s&limit=1");
     final String URL = "http://archive.org/";
     String url = t.buildURL(URL);
     System.err.println(url);
-    assertTrue("has encode URL", Pattern.matches(".*[&?]url="+URLEncoder.encode(URL, "UTF-8")+"([&].*)?", url));
-    assertTrue("has startDate", Pattern.matches(".*[&?]startDate=\\d{14}([&].*)?", url));
-    assertTrue("has limit", Pattern.matches(".*[&?]limit=\\d+([&].*)?", url));
-    //assertTrue("has last=true", Pattern.matches(".*[&?]last=true([&].*)?", url));
+    assertTrue(Pattern.matches(".*[&?]url=" + URLEncoder.encode(URL, "UTF-8") + "([&].*)?", url), "has encode URL");
+    assertTrue(Pattern.matches(".*[&?]startDate=\\d{14}([&].*)?", url), "has startDate");
+    assertTrue(Pattern.matches(".*[&?]limit=\\d+([&].*)?", url), "has limit");
+    //assertTrue(Pattern.matches(".*[&?]last=true([&].*)?", url), "has last=true");
   }
-  
+
   /**
    * stub HttpResponse for normal case.
    * @author kenji
@@ -93,7 +95,6 @@ public class WbmPersistLoadProcessorTest extends TestCase {
 
   /**
    * this test is disabled because it talks to production CDX server.
-   * @throws Exception
    */
   public void _testInnerProcessResultSingleShotWithMock() throws Exception {
     // because AbstractHttpClient marks most execute(...) methods final, it is very tiresome to implement
@@ -130,17 +131,17 @@ public class WbmPersistLoadProcessorTest extends TestCase {
         CONTENT_DIGEST_SCHEME + Base32.encode(digestValue1));
     
     ProcessResult result = t.innerProcessResult(curi);
-    assertEquals("result is PROCEED", ProcessResult.PROCEED, result);
-    
+    assertEquals(ProcessResult.PROCEED, result, "result is PROCEED");
+
     // newly loaded history entry should fall in between two existing entries (index=1)
     Map<String, Object> history = getFetchHistory(curi, 1);
-    assertNotNull("history", history);
+    assertNotNull(history, "history");
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
-    assertEquals("CONTENT_DIGEST", CONTENT_DIGEST_SCHEME+TestNormalHttpResponse.EXPECTED_HASH, hash);
+    assertEquals(CONTENT_DIGEST_SCHEME+TestNormalHttpResponse.EXPECTED_HASH, hash, "CONTENT_DIGEST");
     
     Long ts = (Long)history.get(FetchHistoryHelper.A_TIMESTAMP);
-    assertNotNull("ts is non-null", ts);
-    assertEquals("'ts' has expected timestamp", expected_ts, ts.longValue());
+    assertNotNull(ts, "ts is non-null");
+    assertEquals(expected_ts, ts.longValue(), "'ts' has expected timestamp");
 
     // Check compatibility with FetchHistoryProcessor.
     // TODO: This is not testing WbmPersistLoadProcessor - only testing stub fetchHistory
@@ -162,13 +163,13 @@ public class WbmPersistLoadProcessorTest extends TestCase {
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.mext.go.jp/null.gif"));
     ProcessResult result = t.innerProcessResult(curi);
     Map<String, Object> history = getFetchHistory(curi, 0);
-    assertNotNull("getFetchHistory returns non-null", history);
+    assertNotNull(history, "getFetchHistory returns non-null");
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
-    assertNotNull("CONTENT_DIGEST is non-null", hash);
-    assertTrue("CONTENT_DIGEST starts with scheme", hash.startsWith(t.getContentDigestScheme()));
-    assertEquals("CONTENT_DIGEST is a String of length 32", 32, hash.substring(t.getContentDigestScheme().length()).length());
+    assertNotNull(hash, "CONTENT_DIGEST is non-null");
+    assertTrue(hash.startsWith(t.getContentDigestScheme()), "CONTENT_DIGEST starts with scheme");
+    assertEquals(32, hash.substring(t.getContentDigestScheme().length()).length(), "CONTENT_DIGEST is a String of length 32");
     
-    assertEquals("should always return PROCEED", ProcessResult.PROCEED, result);
+    assertEquals(ProcessResult.PROCEED, result, "should always return PROCEED");
   }
   
   public static class LoadTask implements Runnable {

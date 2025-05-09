@@ -30,6 +30,9 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ExtractorPDFContentTest extends ContentExtractorTestBase {
 
@@ -38,7 +41,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
    protected static final String TEST_RESOURCE_FILE_3 = "ExtractorPDFContentTest3.pdf";
    protected static final String TEST_RESOURCE_FILE_4 = "ExtractorPDFContentTest4.pdf";
 
-    
+    @Test
     public void testA() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_1);
         extractor.process(testUri);   
@@ -46,6 +49,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         Set<CrawlURI> expected = makeLinkSet(testUri, new String[]{"http://www.businessdictionary.com/definition/supervisor.html","http://management.about.com/od/policiesandprocedures/g/supervisor1.html"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
+    @Test
     public void testEndingInDot() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_2);
         extractor.process(testUri);   
@@ -55,6 +59,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
                 "http://www.opensecrets.org/pacs"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
+    @Test
     public void testUnderscoreInURL() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_3);
         extractor.process(testUri);   
@@ -62,6 +67,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         Set<CrawlURI> expected = makeLinkSet(testUri, new String[]{"http://www.dot.gov/sites/dot.dev/files/docs/2014_February_ATCR.pdf"});
         assertTrue(testUri.getOutLinks().containsAll(expected));        
     }
+    @Test
     public void testParenthesis() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_4);
         extractor.process(testUri);
@@ -69,6 +75,7 @@ public class ExtractorPDFContentTest extends ContentExtractorTestBase {
         Set<CrawlURI> expected = makeLinkSet(testUri, new String[]{"http://www.unisys.com","http://www.myserver.mycorp.com/images/exttest.jpg","http://www.adobe.com/intro?100,200","http://www.w3.org/1999/xhtml","http://www.xfa.org/schema/xfa-data/1.0","http://www.adobe.com","http://www.adobe.com/getacro.gif","http://www.example.com/testOpeningParen"});
         assertTrue(testUri.getOutLinks().containsAll(expected));
     }
+    @Test
     public void testNewlineSeparatedURIs() throws URIException, UnsupportedEncodingException, IOException, InterruptedException{
         CrawlURI testUri = createTestUri("http://www.example.com/fake.pdf", TEST_RESOURCE_FILE_4);
         extractor.process(testUri);

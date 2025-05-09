@@ -19,13 +19,16 @@
 
 package org.archive.util;
 
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+
 import java.util.Random;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 
 /**
@@ -46,8 +49,8 @@ public abstract class BloomFilterTest {
         // this is a *very* rough and *very* lenient upper bound for adds <= targetSize
         long maxTolerableDuringAdds = addCount / (1<<hashCount);
         assertTrue(
-                "excessive false positives ("+addFalsePositives+">"+maxTolerableDuringAdds+") during adds",
-                addFalsePositives<10);
+                addFalsePositives<10,
+                "excessive false positives ("+addFalsePositives+">"+maxTolerableDuringAdds+") during adds");
         
         if(containsCount==0) {
             return; 
@@ -59,11 +62,11 @@ public abstract class BloomFilterTest {
         // expect no more than 4 times the theoretical-at-saturation
         long maxTolerableDuringContains = containsCount * 4 / (1<<hashCount);
         assertTrue(
-                "excessive false positives ("+containsFalsePositives+">"+maxTolerableDuringContains+") during contains",
-                containsFalsePositives<=maxTolerableDuringContains); // no more than double expected 1-in-4mil
+                containsFalsePositives<=maxTolerableDuringContains,
+                "excessive false positives ("+containsFalsePositives+">"+maxTolerableDuringContains+") during contains"); // no more than double expected 1-in-4mil
         assertTrue(
-                "missing false positives ("+containsFalsePositives+"<"+minTolerableDuringContains+") during contains",
-                containsFalsePositives>=minTolerableDuringContains);  // should be at least a couple
+                containsFalsePositives>=minTolerableDuringContains,
+                "missing false positives ("+containsFalsePositives+"<"+minTolerableDuringContains+") during contains");  // should be at least a couple
     }
                 
     /**
@@ -75,7 +78,7 @@ public abstract class BloomFilterTest {
      * take 15+ minutes to complete.
      */
     @Test
-    @Ignore
+    @Disabled
     public void xestOversized() {
         trialWithParameters(200000000,22,200000000,32000000);
     }
@@ -88,22 +91,20 @@ public abstract class BloomFilterTest {
      * take 15+ minutes to complete.
      */
     @Test
-    @Ignore
+    @Disabled
     public void xestDefaultFull() {
         trialWithParameters(125000000,22,125000000,34000000);
     }
 
     @Test
+    @EnabledIfSystemProperty(named = "runSlowTests", matches = "true", disabledReason = "it takes about 25 seconds")
     public void testDefaultAbbreviated() {
-        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 25 seconds)",
-                "true".equals(System.getProperty("runSlowTests")));
         trialWithParameters(125000000,22,17000000,0);
     }
 
     @Test
+    @EnabledIfSystemProperty(named = "runSlowTests", matches = "true", disabledReason = "it takes about 20 seconds")
     public void testSmall() {
-        assumeTrue("use -DrunSlowTests=true to enable this test (it takes about 20 seconds)",
-                "true".equals(System.getProperty("runSlowTests")));
         trialWithParameters(10000000, 20, 10000000, 10000000);
     }
     
@@ -128,7 +129,7 @@ public abstract class BloomFilterTest {
                 falsePositives++;
             }
             assertTrue(bloom.contains(str));
-            assertFalse(str+" not present on re-add",bloom.add(str));
+            assertFalse(bloom.add(str),str+" not present on re-add");
         }
         return falsePositives;
     }
@@ -171,14 +172,14 @@ public abstract class BloomFilterTest {
         for(long i = 0; i<bitLength; i++) {
             // verify that first set bit is in first 20% of bitfield
             if(bloom.getBit(i)) {
-                assertTrue("set bits not as expected in early positions",(i/(double)bitLength)<0.1d); 
+                assertTrue((i/(double)bitLength)<0.1d,"set bits not as expected in early positions");
                 break; 
             }
         }
         for(long i = bitLength-1; i>=0; i--) {
             // verify that first set bit is in first 20% of bitfield
             if(bloom.getBit(i)) {
-                assertTrue("set bits not as expected in late positions",(i/(double)bitLength)>0.1d); 
+                assertTrue((i/(double)bitLength)>0.1d,"set bits not as expected in late positions");
                 break; 
             }
         }

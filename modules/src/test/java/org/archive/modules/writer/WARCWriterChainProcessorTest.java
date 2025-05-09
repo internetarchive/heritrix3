@@ -2,25 +2,28 @@ package org.archive.modules.writer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.spring.ConfigPath;
 import org.archive.util.FileUtils;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.io.TempDir;
 
 public class WARCWriterChainProcessorTest extends WARCWriterProcessorTest {
+    @TempDir
+    Path tempDir;
 
     @Override
     protected Object makeModule() throws Exception {
-        WARCWriterChainProcessor result = makeTestWARCWriterChainProcessor();
+        WARCWriterChainProcessor result = makeTestWARCWriterChainProcessor(tempDir);
         result.start();
         return result;
     }
 
-    public static WARCWriterChainProcessor makeTestWARCWriterChainProcessor()
+    public static WARCWriterChainProcessor makeTestWARCWriterChainProcessor(Path tempDir)
             throws IOException {
-        File tmp = TmpDirTestCase.tmpDir();
+        File tmp = tempDir.toFile();
         tmp = new File(tmp, WARCWriterChainProcessorTest.class.getSimpleName());
         FileUtils.ensureWriteableDirectory(tmp);
 

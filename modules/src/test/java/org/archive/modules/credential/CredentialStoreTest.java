@@ -23,6 +23,7 @@ package org.archive.modules.credential;
 import java.util.logging.Logger;
 
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test add, edit, delete from credential store.
@@ -34,6 +35,7 @@ public class CredentialStoreTest extends ModuleTestBase {
     protected static Logger logger =
         Logger.getLogger("org.archive.crawler.datamodel.CredentialTest");
 
+    @Test
     final public void testCredentials() throws Exception {
         if(true) return;
 //        MemorySheetManager manager = new MemorySheetManager();

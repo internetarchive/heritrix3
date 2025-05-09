@@ -27,14 +27,16 @@ import org.archive.net.UURIFactory;
 
 import com.sleepycat.je.tree.Key;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for BdbMultipleWorkQueues functionality. 
  * 
  * @author gojomo
  */
-public class BdbMultipleWorkQueuesTest extends TestCase {
+public class BdbMultipleWorkQueuesTest {
     private static Logger logger =
         Logger.getLogger(BdbMultipleWorkQueuesTest.class.getName());
 
@@ -43,9 +45,8 @@ public class BdbMultipleWorkQueuesTest extends TestCase {
      * Basic sanity checks for calculateInsertKey() -- ensure ordinal, cost,
      * and schedulingDirective have the intended effects, for ordinal values
      * up through 1/4th of the maximum (about 2^61).
-     * 
-     * @throws URIException
      */
+    @Test
     public void testCalculateInsertKey() throws URIException {
         while(Thread.interrupted()) {
             logger.warning("stray interrupt cleared");
@@ -87,17 +88,17 @@ public class BdbMultipleWorkQueuesTest extends TestCase {
                 BdbMultipleWorkQueues.calculateInsertKey(curi5).getData();
             // ensure that key1 (with lower ordinal) sorts before key2 (higher
             // ordinal)
-            assertTrue("lower ordinal sorting first (" + ordinalOrigin + ")",
-                    Key.compareKeys(key1, key2, null) < 0);
+            assertTrue(Key.compareKeys(key1, key2, null) < 0,
+                    "lower ordinal sorting first (" + ordinalOrigin + ")");
             // ensure that key3 (with HIGH scheduling) sorts before key2 (even
             // though
             // it has lower ordinal)
-            assertTrue("lower directive sorting first (" + ordinalOrigin + ")",
-                    Key.compareKeys(key3, key2, null) < 0);
+            assertTrue(Key.compareKeys(key3, key2, null) < 0,
+                    "lower directive sorting first (" + ordinalOrigin + ")");
             // ensure that key5 (with lower cost) sorts before key4 (even though 
             // key4  has lower ordinal and same default NORMAL scheduling directive)
-            assertTrue("lower cost sorting first (" + ordinalOrigin + ")", Key
-                    .compareKeys(key5, key4, null) < 0);
+            assertTrue(Key.compareKeys(key5, key4, null) < 0,
+                    "lower cost sorting first (" + ordinalOrigin + ")");
         }
     }
 }

@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +38,17 @@ import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCReaderFactory;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.util.TmpDirTestCase;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Base class for 'self tests', integrations tests formatted as unit 
@@ -55,11 +58,13 @@ import org.eclipse.jetty.util.resource.ResourceFactory;
  * @author pjack
  * @author gojomo
  */
-public abstract class SelfTestBase extends TmpDirTestCase {
-
-    final private Logger LOGGER = 
+public abstract class SelfTestBase {
+    final private Logger LOGGER =
         Logger.getLogger(SelfTestBase.class.getName());
-    
+
+    @TempDir
+    Path tempDir;
+
     protected Heritrix heritrix;
     protected Server httpServer;
     
@@ -76,7 +81,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         }
         
         // Create temporary directories for Heritrix to run in.
-        File tmpDir = new File(getTmpDir(), "selftest");
+        File tmpDir = new File(tempDir.toFile(), "selftest");
         File tmpTestDir = new File(tmpDir, name);
         
         // If we have an old job lying around from a previous run, delete it.
@@ -146,6 +151,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
         stopHeritrix();
     }
 
+    @Test
     public void testSomething() throws Exception {
         try {
             boolean fail = false;
@@ -254,7 +260,7 @@ public abstract class SelfTestBase extends TmpDirTestCase {
     
     
     protected File getCrawlDir() {
-        File tmp = getTmpDir();
+        File tmp = tempDir.toFile();
         File selftest = new File(tmp, "selftest");
         File crawl = new File(selftest, getSelfTestName());
         return crawl;

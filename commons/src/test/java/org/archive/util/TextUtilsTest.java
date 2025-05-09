@@ -18,11 +18,13 @@
  */
 package org.archive.util;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.regex.Matcher;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * JUnit test suite for TextUtils
@@ -30,94 +32,68 @@ import junit.framework.TestSuite;
  * @author gojomo
  * @version $ Id$
  */
-public class TextUtilsTest extends TestCase {
-    /**
-     * Create a new TextUtilsTest object
-     * 
-     * @param testName
-     *            the name of the test
-     */
-    public TextUtilsTest(final String testName) {
-        super(testName);
-    }
+public class TextUtilsTest {
 
-    /**
-     * run all the tests for TextUtilsTest
-     * 
-     * @param argv
-     *            the command line arguments
-     */
-    public static void main(String argv[]) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    /**
-     * return the suite of tests for MemQueueTest
-     * 
-     * @return the suite of test
-     */
-    public static Test suite() {
-        return new TestSuite(TextUtilsTest.class);
-    }
-
+    @Test
     public void testMatcherRecycling() {
         String pattern = "f.*";
         Matcher m1 = TextUtils.getMatcher(pattern,"foo");
-        assertTrue("matcher against 'foo' problem", m1.matches());
+        assertTrue(m1.matches(), "matcher against 'foo' problem");
         TextUtils.recycleMatcher(m1);
         Matcher m2 = TextUtils.getMatcher(pattern,"");
-        assertFalse("matcher against '' problem", m2.matches());
-        assertTrue("matcher not recycled",m1==m2);
+        assertFalse(m2.matches(), "matcher against '' problem");
+        assertSame(m1, m2, "matcher not recycled");
         // now verify proper behavior without recycling
         Matcher m3 = TextUtils.getMatcher(pattern,"fuggedaboutit");
-        assertTrue("matcher against 'fuggedaboutit' problem",m3.matches());
-        assertFalse("matcher was recycled",m3==m2);
+        assertTrue(m3.matches(), "matcher against 'fuggedaboutit' problem");
+        Assertions.assertNotSame(m3, m2, "matcher was recycled");
     }
-    
+
+    @Test
     public void testGetFirstWord() {
         final String firstWord = "one";
         String tmpStr = TextUtils.getFirstWord(firstWord + " two three");
-        assertTrue("Failed to get first word 1 " + tmpStr,
-            tmpStr.equals(firstWord));
+        assertEquals(firstWord, tmpStr, "Failed to get first word 1 " + tmpStr);
         tmpStr = TextUtils.getFirstWord(firstWord);
-        assertTrue("Failed to get first word 2 " + tmpStr,
-            tmpStr.equals(firstWord));       
+        assertEquals(firstWord, tmpStr, "Failed to get first word 2 " + tmpStr);
     }
-    
+
+    @Test
     public void testUnescapeHtml() {
         final String abc = "abc";
         CharSequence cs = TextUtils.unescapeHtml("abc");
-        assertEquals(cs, abc);
+        assertEquals(abc, cs);
         final String backwards = "aaa;lt&aaa";
         cs = TextUtils.unescapeHtml(backwards);
-        assertEquals(cs, backwards);
+        assertEquals(backwards, cs);
         final String ampersand = "aaa&aaa";
         cs = TextUtils.unescapeHtml(ampersand);
-        assertEquals(cs, ampersand);
+        assertEquals(ampersand, cs);
         final String encodedAmpersand = "aaa&amp;aaa";
         cs = TextUtils.unescapeHtml(encodedAmpersand);
-        assertEquals(cs, ampersand);
+        assertEquals(ampersand, cs);
         final String encodedQuote = "aaa&#39;aaa";
         cs = TextUtils.unescapeHtml(encodedQuote);
-        assertEquals(cs, "aaa'aaa");
+        assertEquals("aaa'aaa", cs);
         final String entityQuote = "aaa&quot;aaa";
         cs = TextUtils.unescapeHtml(entityQuote);
-        assertEquals(cs, "aaa\"aaa");
+        assertEquals("aaa\"aaa", cs);
         final String hexencoded = "aaa&#x000A;aaa";
         cs = TextUtils.unescapeHtml(hexencoded);
-        assertEquals(cs, "aaa\naaa");
+        assertEquals("aaa\naaa", cs);
         final String zeroPos = "&amp;aaa";
         cs = TextUtils.unescapeHtml(zeroPos);
-        assertEquals(cs, "&aaa");
+        assertEquals("&aaa", cs);
     }
-    
+
+    @Test
     public void testUnescapeHtmlWithDanglingAmpersand() {
         final String mixedEncodedAmpersand1 = "aaa&aaa&amp;aaa";
         CharSequence cs = TextUtils.unescapeHtml(mixedEncodedAmpersand1);
-        assertEquals("aaa&aaa&aaa",cs);
+        assertEquals("aaa&aaa&aaa", cs);
         final String mixedEncodedAmpersand2 = "aaa&aaa&amp;aaa&amp;aaa";
         cs = TextUtils.unescapeHtml(mixedEncodedAmpersand2);
-        assertEquals("aaa&aaa&aaa&aaa",cs);
-    } 
+        assertEquals("aaa&aaa&aaa&aaa", cs);
+    }
 }
 

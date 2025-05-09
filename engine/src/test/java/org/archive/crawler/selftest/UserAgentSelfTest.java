@@ -30,6 +30,8 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author pjack
  *

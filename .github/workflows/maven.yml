@@ -1,5 +1,8 @@
 name: Java CI with Maven
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ master ]

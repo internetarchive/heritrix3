@@ -22,6 +22,10 @@ import org.archive.crawler.event.StatSnapshotEvent;
 import org.archive.crawler.reporting.CrawlStatSnapshot;
 import org.archive.crawler.reporting.StatisticsTracker;
 import org.archive.state.ModuleTestBase;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CrawlLimitEnforcerTest extends ModuleTestBase {
 
@@ -34,6 +38,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         }
     }
 
+    @Test
     public void testMaxBytesDownload() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -73,6 +78,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertEquals(CrawlStatus.FINISHED_DATA_LIMIT, cc.stopRequestedMessage);
     }
 
+    @Test
     public void testMaxNovelBytes() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -113,6 +119,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
     }
 
 
+    @Test
     public void testMaxNovelUrls() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -152,6 +159,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertEquals(CrawlStatus.FINISHED_DOCUMENT_LIMIT, cc.stopRequestedMessage);
     }
 
+    @Test
     public void testMaxDocumentsDownload() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -191,6 +199,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertEquals(CrawlStatus.FINISHED_DOCUMENT_LIMIT, cc.stopRequestedMessage);
     }
 
+    @Test
     public void testMaxTimeSeconds() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -229,8 +238,8 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         enforcer.onApplicationEvent(new StatSnapshotEvent(stats, new CrawlStatSnapshot() {{elapsedMilliseconds = 600000;}}));
         assertEquals(CrawlStatus.FINISHED_TIME_LIMIT, cc.stopRequestedMessage);
     }
-    
 
+    @Test
     public void testMaxWarcNovelBytes() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();
@@ -270,7 +279,7 @@ public class CrawlLimitEnforcerTest extends ModuleTestBase {
         assertEquals(CrawlStatus.FINISHED_DATA_LIMIT, cc.stopRequestedMessage);
     }
 
-
+    @Test
     public void testMaxWarcNovelUrls() {
         StatisticsTracker stats = new StatisticsTracker();
         MockCrawlController cc = new MockCrawlController();

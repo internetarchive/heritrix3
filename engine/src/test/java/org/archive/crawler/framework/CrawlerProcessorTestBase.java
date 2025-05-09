@@ -29,15 +29,6 @@ import org.archive.modules.ProcessorTestBase;
  */
 public abstract class CrawlerProcessorTestBase extends ProcessorTestBase {
 
-    
-    protected CrawlController controller;
-
-
-    protected void setUp() throws Exception {
-        controller = CrawlControllerTest.makeTempCrawlController();
-    }
-
-
     @Override
     protected void verifySerialization(Object first, byte[] firstBytes, 
             Object second, byte[] secondBytes) throws Exception {

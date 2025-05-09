@@ -19,9 +19,12 @@
 
 package org.archive.modules.forms;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.httpclient.URIException;
@@ -37,6 +40,7 @@ import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPRequest;
 import org.archive.modules.fetcher.FetchHTTPTest;
 import org.archive.modules.forms.HTMLForm.NameValue;
+import org.junit.jupiter.api.Test;
 
 public class FormLoginProcessorTest extends ProcessorTestBase {
 
@@ -49,6 +53,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         }
     }
 
+    @Test
     public void testNoFormLogin() throws Exception {
         CrawlURI curi = makeCrawlURI("http://example.com/");
 
@@ -63,6 +68,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         assertEquals("WARC-Simple-Form-Province-Status: 0,0,http://(com,example,)", curi.getDataList(A_WARC_RESPONSE_HEADERS).get(0)); 
     }
 
+    @Test
     public void testFormLogin() throws Exception {
         CrawlURI curi = makeCrawlURI("http://example.com/");
 
@@ -92,14 +98,15 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         FetchHTTPRequestSpy reqSpy = new FetchHTTPRequestSpy(
                 FetchHTTPTest.newTestFetchHttp(getClass().getName()),
                 submitCuri);
-        assertTrue(reqSpy.getRequest() instanceof BasicExecutionAwareEntityEnclosingRequest);
+        assertInstanceOf(BasicExecutionAwareEntityEnclosingRequest.class, reqSpy.getRequest());
         BasicExecutionAwareEntityEnclosingRequest req = (BasicExecutionAwareEntityEnclosingRequest) reqSpy.getRequest();
-        assertTrue(req.getEntity() instanceof UrlEncodedFormEntity);
+        assertInstanceOf(UrlEncodedFormEntity.class, req.getEntity());
         assertTrue(req.toString().startsWith("POST /login"));
         assertEquals("username-form-field=jdoe&password-form-field=********&crazy%F0%9F%90%92monkey=%C3%BAh%C3%B3h",
                 EntityUtils.toString(req.getEntity()));
     }
 
+    @Test
     public void testMultipartFormLogin() throws Exception {
         CrawlURI curi = makeCrawlURI("http://example.com/");
 
@@ -130,7 +137,7 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         FetchHTTPRequestSpy reqSpy = new FetchHTTPRequestSpy(
                 FetchHTTPTest.newTestFetchHttp(getClass().getName()),
                 submitCuri);
-        assertTrue(reqSpy.getRequest() instanceof BasicExecutionAwareEntityEnclosingRequest);
+        assertInstanceOf(BasicExecutionAwareEntityEnclosingRequest.class, reqSpy.getRequest());
         BasicExecutionAwareEntityEnclosingRequest req = (BasicExecutionAwareEntityEnclosingRequest) reqSpy.getRequest();
         assertEquals("org.apache.http.entity.mime.MultipartFormEntity", req.getEntity().getClass().getName());
         assertTrue(req.toString().startsWith("POST /login"));
@@ -138,15 +145,17 @@ public class FormLoginProcessorTest extends ProcessorTestBase {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         req.getEntity().writeTo(baos);
         // --e5XWkWxQ2EXBQAEPQ7n3yyvv9bI-8YIHok\r\nContent-Disposition: form-data; name=\"username-form-field\"\r\n\r\njdoe\r\n--e5XWkWxQ2EXBQAEPQ7n3yyvv9bI-8YIHok\r\nContent-Disposition: form-data; name=\"password-form-field\"\r\n\r\n********\r\n--e5XWkWxQ2EXBQAEPQ7n3yyvv9bI-8YIHok\r\nContent-Disposition: form-data; name=\"crazy&#128018;monkey\"\r\n\r\n&#250;h&#243;h\r\n--e5XWkWxQ2EXBQAEPQ7n3yyvv9bI-8YIHok--\r\n
-        assertTrue(baos.toString("ascii").matches("--([a-zA-Z0-9_-]{30,41})\r\nContent-Disposition: form-data; name=\"username-form-field\"\r\n\r\njdoe\r\n--\\1\r\nContent-Disposition: form-data; name=\"password-form-field\"\r\n\r\n\\*\\*\\*\\*\\*\\*\\*\\*\r\n--\\1\r\nContent-Disposition: form-data; name=\"crazy&#128018;monkey\"\r\n\r\n&#250;h&#243;h\r\n--\\1--\r\n"));
+        assertTrue(baos.toString(US_ASCII).matches("--([a-zA-Z0-9_-]{30,41})\r\nContent-Disposition: form-data; name=\"username-form-field\"\r\n\r\njdoe\r\n--\\1\r\nContent-Disposition: form-data; name=\"password-form-field\"\r\n\r\n\\*\\*\\*\\*\\*\\*\\*\\*\r\n--\\1\r\nContent-Disposition: form-data; name=\"crazy&#128018;monkey\"\r\n\r\n&#250;h&#243;h\r\n--\\1--\r\n"));
     }
 
+    @Test
     public void testEscapeForMultipart() {
         assertEquals("abcd", FetchHTTPRequest.escapeForMultipart("abcd"));
         assertEquals("abcd&#233;", FetchHTTPRequest.escapeForMultipart("abcdé"));
         assertEquals("abcd&#233;&#128556;", FetchHTTPRequest.escapeForMultipart("abcdé😬"));
     }
 
+    @Test
     public void testFormLoginExtraInputs() throws Exception {
         CrawlURI curi = makeCrawlURI("http://example.com/");
 

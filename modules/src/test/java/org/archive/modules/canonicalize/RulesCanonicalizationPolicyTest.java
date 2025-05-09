@@ -20,19 +20,22 @@
 package org.archive.modules.canonicalize;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.util.TmpDirTestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test canonicalization
  * 
  * @author stack
  */
-public class RulesCanonicalizationPolicyTest extends TmpDirTestCase {
+public class RulesCanonicalizationPolicyTest {
 
     private RulesCanonicalizationPolicy policy;
-    
+
+    @BeforeEach
     protected void setUp() throws Exception {
-        super.setUp();
         policy =  new RulesCanonicalizationPolicy();
 //        this.rules = new ArrayList<CanonicalizationRule>();
 //        this.rules.add(new LowercaseRule());
@@ -41,23 +44,24 @@ public class RulesCanonicalizationPolicyTest extends TmpDirTestCase {
 //        this.rules.add(new StripSessionIDs());
 //        this.rules.add(new FixupQueryString());
     }
-    
+
+    @Test
     public void testCanonicalize() throws URIException {
         final String scheme = "http://";
         final String nonQueryStr = "archive.org/index.html";
         final String result = scheme + nonQueryStr;
-        assertTrue("Mangled original", result.equals(
-                policy.canonicalize(result)));
+        assertEquals(result, policy.canonicalize(result),
+                "Mangled original");
         String tmp = scheme + "www." + nonQueryStr;
-        assertTrue("Mangled www", result.equals(
-                policy.canonicalize(tmp)));
+        assertEquals(result, policy.canonicalize(tmp),
+                "Mangled www");
         tmp = scheme + "www." + nonQueryStr +
-            "?jsessionid=01234567890123456789012345678901";
-        assertTrue("Mangled sessionid", result.equals(
-                policy.canonicalize(tmp)));
+              "?jsessionid=01234567890123456789012345678901";
+        assertEquals(result, policy.canonicalize(tmp),
+                "Mangled sessionid");
         tmp = scheme + "www." + nonQueryStr +
-            "?jsessionid=01234567890123456789012345678901";
-        assertTrue("Mangled sessionid", result.equals(
-                policy.canonicalize(tmp)));
+              "?jsessionid=01234567890123456789012345678901";
+        assertEquals(result, policy.canonicalize(tmp),
+                "Mangled sessionid");
     }
 }
