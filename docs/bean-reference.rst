@@ -365,6 +365,11 @@ FetchHTTP
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP.java
 
+FetchHTTP2
+~~~~~~~~~~
+
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP2.java
+
 FetchSFTP
 ~~~~~~~~~
 
