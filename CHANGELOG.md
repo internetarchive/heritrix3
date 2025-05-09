@@ -2,13 +2,38 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.6.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.9.0...HEAD)
+
+## [3.9.0](https://github.com/internetarchive/heritrix3/releases/tag/3.9.0)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.9.0/heritrix-3.9.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.9.0/heritrix-3.9.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.8.0...3.9.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.9.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.9.0/pom)
+
+#### New features
+
+- **FetchHTTP2**: Added a new fetch module supporting HTTP/2 and HTTP/3. [#649](https://github.com/internetarchive/heritrix3/pull/649)
 
 #### Fixes
 
-- **Fixed HighestUriPrecedenceProvider:** Added Histotable serializer and Kryo autoregistration. #647
+- **Fixed HighestUriPrecedenceProvider:** Added Histotable serializer and Kryo autoregistration. [#647](https://github.com/internetarchive/heritrix3/pull/647)
 
-## 3.8.0
+#### Changes
+
+- **JUnit 5:** Upgraded all JUnit 3 and 4 style tests to JUnit 5. [#650](https://github.com/internetarchive/heritrix3/pull/650)
+
+#### Dependency Upgrades
+
+- **commons-io**: 2.18.0 → 2.19.0
+- **gson**: 2.12.1 → 2.13.1
+- **jetty**: 9.4.19.v20190610 → 12.0.17
+- **jsch**: 0.2.24 → 2.27.0
+- **junit**: 4.13.2 → 5.12.2
+- **pdfbox**: 3.0.4 → 3.0.5
+- **restlet**: 2.5.0 → 2.6.0-RC1
+- **spring**: 6.2.5 → 6.2.6
+
+## [3.8.0](https://github.com/internetarchive/heritrix3/releases/tag/3.8.0) (2025-04-01)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.8.0/heritrix-3.8.0-dist.tar.gz))
 
@@ -37,7 +62,7 @@
 - **slf4j**: 2.0.16 → 2.0.17
 - **spring**: 6.1.16 → 6.2.5
 
-## 3.7.0
+## [3.7.0](https://github.com/internetarchive/heritrix3/releases/tag/3.7.0) (2025-02-03)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.7.0/heritrix-3.7.0-dist.tar.gz))
 
@@ -78,7 +103,7 @@
 - spring 6.1.16
 - webarchive-commons 1.3.0
 
-## 3.6.0
+## [3.6.0](https://github.com/internetarchive/heritrix3/releases/tag/3.6.0) (2024-10-29)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.6.0/heritrix-3.6.0-dist.tar.gz))
 
@@ -125,7 +150,7 @@ This release of Heritrix **requires Java 17 or later**.
 - spring-framework 6.1.15
 - webarchive-commons 1.2.0
 
-## [3.5.0](https://github.com/internetarchive/heritrix3/releases/3.5.0) 2024-10-29
+## [3.5.0](https://github.com/internetarchive/heritrix3/releases/3.5.0) (2024-10-29)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20240909...3.5.0)
 
@@ -146,7 +171,7 @@ This release of Heritrix **requires Java 17 or later**.
 - jetty 9.4.56.v20240826
 - webarchive-commons 1.1.10
 
-## [3.4.0-20240909](https://github.com/internetarchive/heritrix3/releases/3.4.0-20240909) 2024-09-09
+## [3.4.0-20240909](https://github.com/internetarchive/heritrix3/releases/3.4.0-20240909) (2024-09-09)
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.4.0-20220727...3.4.0-20240909)
 
