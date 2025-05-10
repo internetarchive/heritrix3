@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 /**
  * A CrawlURI that's currently loaded as a page in a browser.
  */
-public record BrowserPage(CrawlURI curi,
+record BrowserPage(CrawlURI curi,
                           IdleBarrier networkActivity,
                           WebDriverBiDi webdriver,
                           BrowsingContext.Context context) implements Page {
