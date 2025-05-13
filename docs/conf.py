@@ -14,8 +14,19 @@
 #
 import os
 import sys
+import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.abspath('./_ext'))
 
+
+tree = ET.parse('../pom.xml')
+root = tree.getroot()
+ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+version_elem = root.find('m:version', ns)
+
+if version_elem is not None and version_elem.text:
+    version = version_elem.text.strip()
+else:
+    version = ''
 
 # -- Project information -----------------------------------------------------
 
@@ -23,8 +34,6 @@ project = 'Heritrix 3'
 copyright = 'Internet Archive and contributors'
 author = 'Internet Archive and contributors'
 
-# The short X.Y version
-version = '3.2.0'
 # The full version, including alpha/beta/rc tags
 release = ''
 
