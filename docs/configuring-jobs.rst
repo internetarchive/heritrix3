@@ -575,20 +575,20 @@ and added to the FetchChain:
 HTTP/2
 ~~~~~~
 
-To use HTTP/2 the `FetchHTTP` bean should replaced with `FetchHTTP2`:
+To use HTTP/2 the ``FetchHTTP`` bean should replaced with ``FetchHTTP2``:
 
 .. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP2.java
 
-`FetchHTTP2` will use HTTP/1.1 for non-https URLs and for servers that do not support HTTP/2. Requests that used HTTP/2
-will be annotated with `h2` in the crawl log and `WARC-Protocol` header.
+``FetchHTTP2`` will use HTTP/1.1 for non-https URLs and for servers that do not support HTTP/2. Requests that used HTTP/2
+will be annotated with ``h2`` in the crawl log and ``WARC-Protocol`` header.
 
-Note that `FetchHTTP2` currently only supports a limited subset of the `FetchHTTP` options.
+Note that ``FetchHTTP2`` currently only supports a limited subset of the ``FetchHTTP`` options.
 
 HTTP/3
 ~~~~~~
 
-HTTP/3 support is experimental and is not enabled by default. First replace `FetchHTTP` with `FetchHTTP2` as described
-above and then enable the `useHTTP3` property:
+HTTP/3 support is experimental and is not enabled by default. First replace ``FetchHTTP`` with ``FetchHTTP2`` as described
+above and then enable the ``useHTTP3`` property:
 
 .. code-block:: xml
 
@@ -596,12 +596,12 @@ above and then enable the `useHTTP3` property:
        <property name="useHTTP3" value="true">
     </bean>
 
-An appropriate version of the jetty-quiche-native jar also needs to be placed in Heritrix's `lib` directory. To find out
-which version you need, build a job with `useHTTP3` enabled and a warning will be logged to the job log with a download
+An appropriate version of the jetty-quiche-native jar also needs to be placed in Heritrix's ``lib`` directory. To find out
+which version you need, build a job with ``useHTTP3`` enabled and a warning will be logged to the job log with a download
 link.
 
-HTTP/3 requests will only be sent after a server first responds with an `Alt-Svc` header. Requests that used HTTP/3 will
-be annotated with `h3` in the crawl log and `WARC-Protocol` header.
+HTTP/3 requests will only be sent after a server first responds with an ``Alt-Svc`` header. Requests that used HTTP/3 will
+be annotated with ``h3`` in the crawl log and ``WARC-Protocol`` header.
 
 SFTP
 ~~~~
