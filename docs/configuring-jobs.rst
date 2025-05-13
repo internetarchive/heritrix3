@@ -577,7 +577,7 @@ HTTP/2
 
 To use HTTP/2 the `FetchHTTP` bean should replaced with `FetchHTTP2`:
 
-.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchFTP.java
+.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP2.java
 
 `FetchHTTP2` will use HTTP/1.1 for non-https URLs and for servers that do not support HTTP/2. Requests that used HTTP/2
 will be annotated with `h2` in the crawl log and `WARC-Protocol` header.
