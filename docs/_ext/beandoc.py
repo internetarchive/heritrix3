@@ -171,11 +171,15 @@ class BeanDoc(Directive):
     required_arguments = 1
 
     def run(self):
-        model = parse_java(self.arguments[0])
-        text = nodes.paragraph('', '', format_javadoc(model['doc']))
-        example = nodes.literal_block('', format_example(self.arguments[0]), language='xml')
-        properties = format_properties(model)
-        return [text, example, properties]
+        try:
+            model = parse_java(self.arguments[0])
+            text = nodes.paragraph('', '', format_javadoc(model['doc']))
+            example = nodes.literal_block('', format_example(self.arguments[0]), language='xml')
+            properties = format_properties(model)
+            return [text, example, properties]
+        except Exception as e:
+            print('Error parsing', self.arguments[0], repr(e))
+            return [nodes.literal_block('', 'Error generating documentation: ' + repr(e))]
 
 
 def setup(app):
