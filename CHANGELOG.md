@@ -4,6 +4,16 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.9.0...HEAD)
 
+#### Fixes
+
+- **Code editor:** The configuration editor and script console were upgraded to CodeMirror 6. This resolves some browser
+  incompatibilities, allowing CodeMirror’s own find function to be re-enabled for reliable text search of content far
+  outside the viewport.
+
+#### Dependency Upgrades
+
+- **codemirror**: 2.23 → 6.0.1
+
 ## [3.9.0](https://github.com/internetarchive/heritrix3/releases/tag/3.9.0)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.9.0/heritrix-3.9.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.9.0/heritrix-3.9.0-dist.tar.gz))

@@ -25,6 +25,7 @@ import java.io.StringWriter;
 
 import freemarker.template.Configuration;
 import freemarker.template.ObjectWrapper;
+import freemarker.template.TemplateModelException;
 import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
 import org.restlet.Application;
@@ -53,7 +54,7 @@ public class EngineApplication extends Application {
     protected Engine engine;
     private final Configuration templateConfiguration;
 
-    public EngineApplication(Engine engine) {
+    public EngineApplication(Engine engine) throws TemplateModelException {
         this.engine = engine;
         getMetadataService().addExtension("log", MediaType.TEXT_PLAIN );
         getMetadataService().addExtension("cxml", MediaType.APPLICATION_XML );
@@ -61,6 +62,7 @@ public class EngineApplication extends Application {
         templateConfiguration = new Configuration();
         templateConfiguration.setClassForTemplateLoading(getClass(), "");
         templateConfiguration.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
+        templateConfiguration.setSharedVariable("webJars", new WebJars());
     }
 
     @Override
@@ -78,8 +80,8 @@ public class EngineApplication extends Application {
                 engine.getJobsDir().toURI().toString());
         alljobsdir.setListingAllowed(true);
         router.attach("/engine/jobsdir",alljobsdir);
-        
-        
+
+
         EnhDirectory anypath = new EnhDirectory(
                 getContext(),
                 engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {
@@ -91,9 +93,9 @@ public class EngineApplication extends Application {
         anypath.setListingAllowed(true);
         anypath.setModifiable(true);
         anypath.setEditFilter(JobResource.EDIT_FILTER);
-        
+
         router.attach("/engine/anypath/",anypath);
-        
+
         EnhDirectory jobdir = new EnhDirectory(
                 getContext(),
                 engine.getJobsDir().toURI().toString() /*TODO: changeme*/) {
@@ -121,8 +123,11 @@ public class EngineApplication extends Application {
 
         // static files (won't serve directory, but will serve files in it)
         String resource = "clap://class/org/archive/crawler/restlet";
-        Directory staticDir = new Directory(getContext(),resource); 
+        Directory staticDir = new Directory(getContext(),resource);
         router.attach("/engine/static/",staticDir);
+
+        Directory webjarsDir = new Directory(getContext().createChildContext(), "clap://class/META-INF/resources/webjars");
+        router.attach("/engine/webjars/", webjarsDir);
 
         return router;
     }
