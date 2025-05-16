@@ -11,16 +11,54 @@
 	<script src="/engine/static/js/vendor/custom.modernizr.js"></script>
 	
 	<title>Script in ${model.crawlJobShortName}</title>
-	
-	<link rel='stylesheet' href='/engine/static/codemirror/codemirror.css'>
-	<link rel='stylesheet' href='/engine/static/codemirror/util/dialog.css'>
-	<script src='/engine/static/codemirror/codemirror.js'></script>
-	<script src='/engine/static/codemirror/mode/groovy.js'></script>
-	<script src='/engine/static/codemirror/mode/clike.js'></script>
-	<script src='/engine/static/codemirror/mode/javascript.js'></script>
-	<script src='/engine/static/codemirror/util/dialog.js'></script>
-	<script src='/engine/static/codemirror/util/searchcursor.js'></script>
-	<script src='/engine/static/codemirror/util/search.js'></script>
+
+	<script type="importmap">
+        ${webJars.importMap("
+            codemirror
+            @codemirror/autocomplete
+            @codemirror/commands
+            @codemirror/language
+            @codemirror/legacy-modes/
+            @codemirror/lint
+            @codemirror/search
+            @codemirror/state
+            @codemirror/view
+            crelt index.js
+            @lezer/common
+            @lezer/highlight
+            @lezer/lr
+            @lezer/xml
+            @marijn/find-cluster-break src/index.js
+            style-mod src/style-mod.js
+            w3c-keyname index.js")}
+    </script>
+	<script type="module">
+		import {basicSetup} from "codemirror"
+		import {StreamLanguage, indentUnit} from "@codemirror/language"
+		import {groovy} from "@codemirror/legacy-modes/mode/groovy.js"
+		import {EditorView, keymap} from "@codemirror/view"
+		import {indentWithTab} from "@codemirror/commands"
+
+		const theme = EditorView.theme({
+			"&": { height: "400px", backgroundColor: "#ffffff" },
+			".cm-scroller": {overflow: "auto"}
+		});
+		const textarea = document.getElementById('editor');
+		const editorView = new EditorView({
+			doc: textarea.value,
+			extensions: [
+				basicSetup,
+				theme,
+				keymap.of([indentWithTab]),
+				StreamLanguage.define(groovy),
+				indentUnit.of("    ")
+			]
+		});
+		textarea.parentNode.insertBefore(editorView.dom, textarea);
+		textarea.style.display = 'none';
+		textarea.form.addEventListener('submit', () => textarea.value = editorView.state.doc.toString())
+		editorView.focus();
+	</script>
 </head>
 <body>
 	<div class="contain-to-grid">
@@ -56,7 +94,7 @@
 				<div class="large-12 columns">
 					<div class="panel">
 						<#if (model.linesExecuted > 0)>
-						<span class='success'>${model.linesExecuted} ${(model.linesExecuted>1)?string("lines","line")} executed<span>
+						<span class='success'>${model.linesExecuted} ${(model.linesExecuted>1)?string("lines","line")} executed</span>
 						</#if>
 						<#if model.failure>
 						<pre style='color:red; height:150px; overflow:auto'>${model.stackTrace}
@@ -103,18 +141,6 @@
 			</ul>
 		</div>
 	</div>
-<script>
-	var modemap = {beanshell: 'text/x-java', groovy: 'groovy', js: 'javascript'};
-	var selectEngine = document.getElementById('selectEngine');
-	var editor = document.getElementById('editor');
-	var cmopts = {
-		    mode: modemap[selectEngine.value],
-	        lineNumbers: true, autofocus: true, indentUnit: 4
-		    }
-	var cm = CodeMirror.fromTextArea(editor, cmopts);
-	selectEngine.onchange = function(e) { cm.setOption('mode', modemap[selectEngine.value]); }
-</script>
-
 </body>
 </html>
 
