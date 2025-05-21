@@ -30,7 +30,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;

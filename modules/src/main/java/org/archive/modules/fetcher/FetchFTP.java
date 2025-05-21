@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 
 import javax.net.SocketFactory;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPCommand;
 import org.archive.io.RecordingInputStream;

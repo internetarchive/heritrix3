@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.crawler.event.AMQPUrlPublishedEvent;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
 import org.archive.modules.fetcher.FetchHTTP;

@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.archive.io.ArchiveFileConstants;
+import org.archive.format.ArchiveFileConstants;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.WriterPoolMember;
 import org.archive.io.arc.ARCWriter;

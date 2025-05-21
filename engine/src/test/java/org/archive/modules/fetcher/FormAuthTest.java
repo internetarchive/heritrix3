@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.prefetch.PreconditionEnforcer;
 import org.archive.modules.CrawlMetadata;

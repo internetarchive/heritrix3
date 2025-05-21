@@ -19,7 +19,7 @@
 
 package org.archive.modules.canonicalize;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

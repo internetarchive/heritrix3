@@ -4,7 +4,7 @@ package org.archive.modules.deciderules;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;

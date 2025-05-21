@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.SeekReader;

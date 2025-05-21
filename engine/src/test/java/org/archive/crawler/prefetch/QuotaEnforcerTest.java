@@ -29,7 +29,7 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.management.openmbean.CompositeData;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.crawler.framework.CrawlerProcessorTestBase;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.framework.Frontier.FrontierGroup;

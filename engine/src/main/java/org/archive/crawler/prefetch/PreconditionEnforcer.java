@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;

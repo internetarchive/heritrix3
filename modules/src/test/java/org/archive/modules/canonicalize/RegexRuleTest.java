@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 import javax.management.InvalidAttributeValueException;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.state.ModuleTestBase;
 import org.junit.jupiter.api.Test;
 

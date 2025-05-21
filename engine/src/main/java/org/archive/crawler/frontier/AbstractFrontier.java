@@ -48,8 +48,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.URIException;
+import org.apache.http.HttpStatus;
 import org.archive.crawler.datamodel.UriUniqFilter.CrawlUriReceiver;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
@@ -68,6 +67,7 @@ import org.archive.modules.seeds.SeedListener;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
+import org.archive.url.URIException;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ReportUtils;
 import org.archive.util.iterator.LineReadingIterator;

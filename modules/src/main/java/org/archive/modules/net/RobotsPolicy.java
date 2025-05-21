@@ -21,7 +21,7 @@ package org.archive.modules.net;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 
 /**

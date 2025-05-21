@@ -26,7 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.io.CrawlerJournal;
 import org.archive.modules.CrawlURI;

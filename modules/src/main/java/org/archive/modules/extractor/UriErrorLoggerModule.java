@@ -19,7 +19,7 @@
 
 package org.archive.modules.extractor;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.net.UURI;
 
 /**

@@ -26,7 +26,7 @@ import com.esotericsoftware.kryo.DefaultSerializer;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.url.UsableURI;
 
 import com.esotericsoftware.kryo.Kryo;

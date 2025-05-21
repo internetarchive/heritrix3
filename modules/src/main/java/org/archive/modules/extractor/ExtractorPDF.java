@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.io.SinkHandlerLogThread;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;

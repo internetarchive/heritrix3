@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;

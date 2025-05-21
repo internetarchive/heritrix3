@@ -18,7 +18,7 @@
  */
 package org.archive.net;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.url.UsableURI;
 import org.archive.url.UsableURIFactory;
 

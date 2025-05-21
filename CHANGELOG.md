@@ -10,9 +10,22 @@
   incompatibilities, allowing CodeMirror’s own find function to be re-enabled for reliable text search of content far
   outside the viewport.
 
+#### Removals
+
+- **Removed Apache HttpClient 3**: If you have custom Heritrix modules you may need to update the following
+  class references in your code:
+  
+  | Removed                                                   | Replacement                          |
+  |-----------------------------------------------------------|--------------------------------------|
+  | `org.apache.commons.httpclient.URIException`              | `org.archive.url.URIException`       |
+  | `org.apache.commons.httpclient.Header`                    | `org.archive.format.http.HttpHeader` |
+
+  Note that Apache HttpClient 4 (`org.apache.http`) was not removed.
+
 #### Dependency Upgrades
 
 - **codemirror**: 2.23 → 6.0.1
+- **webarchive-commons**: 1.3.0 → 2.0.1
 
 ## [3.9.0](https://github.com/internetarchive/heritrix3/releases/tag/3.9.0)
 

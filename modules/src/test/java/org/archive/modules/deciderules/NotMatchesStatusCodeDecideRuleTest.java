@@ -1,7 +1,6 @@
 package org.archive.modules.deciderules;
 
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;

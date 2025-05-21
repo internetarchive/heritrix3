@@ -30,7 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.net.whois.WhoisClient;
 import org.archive.bdb.BdbModule;
 import org.archive.modules.CoreAttributeConstants;
