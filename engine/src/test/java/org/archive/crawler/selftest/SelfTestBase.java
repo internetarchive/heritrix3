@@ -208,7 +208,7 @@ public abstract class SelfTestBase {
     protected void startHeritrix(String path) throws Exception {
         String authPassword = 
             (new BigInteger(SecureRandom.getSeed(16))).abs().toString(16);
-        String[] args = { "-j", path + "/jobs", "-a", authPassword };
+        String[] args = { "-j", path + "/jobs", "-a", authPassword, "-p", "0" };
         // TODO: add auth password? 
         heritrix = new Heritrix();
         heritrix.instanceMain(args);
