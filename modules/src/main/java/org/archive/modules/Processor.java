@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.credential.Credential;
@@ -31,6 +31,7 @@ import org.archive.modules.credential.HttpAuthenticationCredential;
 import org.archive.modules.deciderules.AcceptDecideRule;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.DecideRule;
+import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.net.UURI;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;

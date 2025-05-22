@@ -19,7 +19,7 @@
  
 package org.archive.modules;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.lang.StringUtils;
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.credential.Credential;
@@ -1708,8 +1708,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         kryo.autoregister(java.util.HashMap[].class); 
         kryo.autoregister(org.archive.modules.credential.HttpAuthenticationCredential.class);
         kryo.autoregister(org.archive.modules.credential.HtmlFormCredential.class);
-        kryo.autoregister(org.apache.commons.httpclient.NameValuePair.class);
-        kryo.autoregister(org.apache.commons.httpclient.NameValuePair[].class);
+        kryo.autoregister(org.apache.http.NameValuePair.class);
+        kryo.autoregister(org.apache.http.NameValuePair[].class);
         kryo.autoregister(FetchType.class);
     }
     

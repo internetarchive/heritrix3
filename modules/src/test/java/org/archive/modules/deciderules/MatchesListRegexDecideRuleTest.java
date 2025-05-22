@@ -1,6 +1,6 @@
 package org.archive.modules.deciderules;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 import org.junit.jupiter.api.Test;

@@ -37,7 +37,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.archive.io.arc.ARCWriter;
 import org.archive.io.arc.WriterPoolSettingsData;
-import org.archive.io.warc.WARCConstants;
+import org.archive.format.warc.WARCConstants;
 import org.archive.io.warc.WARCReader;
 import org.archive.io.warc.WARCReaderFactory;
 import org.archive.io.warc.WARCRecord;

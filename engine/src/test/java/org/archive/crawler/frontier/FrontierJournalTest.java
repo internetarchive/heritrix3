@@ -18,7 +18,7 @@
  */
 package org.archive.crawler.frontier;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

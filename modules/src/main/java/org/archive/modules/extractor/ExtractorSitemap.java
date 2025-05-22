@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;

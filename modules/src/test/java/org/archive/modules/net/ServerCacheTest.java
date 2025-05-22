@@ -18,7 +18,7 @@
  */
 package org.archive.modules.net;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;

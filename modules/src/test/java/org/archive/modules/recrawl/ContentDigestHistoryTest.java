@@ -49,7 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.FileUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;

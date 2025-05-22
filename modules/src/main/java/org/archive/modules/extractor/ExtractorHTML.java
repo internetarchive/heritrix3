@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Ascii;
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CoreAttributeConstants;

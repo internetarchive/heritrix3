@@ -39,7 +39,7 @@ import javax.net.ssl.SSLException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NoHttpResponseException;
 import org.archive.httpclient.ConfigurableX509TrustManager.TrustLevel;

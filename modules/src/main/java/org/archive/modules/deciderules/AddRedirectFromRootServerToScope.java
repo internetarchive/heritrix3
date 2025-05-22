@@ -19,7 +19,7 @@
 package org.archive.modules.deciderules;
 
 import java.util.logging.Logger;
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 

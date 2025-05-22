@@ -18,7 +18,7 @@
  */
 package org.archive.modules.fetcher;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.apache.http.client.CookieStore;
 import org.archive.modules.CrawlURI;
 

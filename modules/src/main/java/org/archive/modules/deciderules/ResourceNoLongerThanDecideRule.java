@@ -18,10 +18,8 @@
  */
 package org.archive.modules.deciderules;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.HttpMethod;
 import org.archive.modules.CrawlURI;
 
 /**

@@ -18,7 +18,7 @@
  */
 package org.archive.surt;
 
-import org.apache.commons.httpclient.URIException;
+import org.archive.url.URIException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
