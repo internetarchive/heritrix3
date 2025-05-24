@@ -56,7 +56,9 @@ import org.archive.util.KeyTool;
 import org.restlet.Component;
 import org.restlet.Context;
 import org.restlet.Server;
+import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Protocol;
+import org.restlet.security.ChallengeAuthenticator;
 import org.restlet.security.MapVerifier;
 
 
@@ -111,6 +113,13 @@ public class Heritrix {
      */
     private static final String STARTLOG = "heritrix_dmesg.log";
 
+    private enum AuthMode {
+        DIGEST, BASIC;
+
+        public String toString() {
+            return name().toLowerCase();
+        }
+    }
     
     private static void usage(PrintStream out, String[] args) {
         HelpFormatter hf = new HelpFormatter();
@@ -122,6 +131,8 @@ public class Heritrix {
     private static Options options() {
         Options options = new Options();
         options.addOption("h", "help", true, "Usage information." );
+        options.addOption(null, "web-auth", true, "Authentication mode for the" +
+                " web interface: " + Arrays.toString(AuthMode.values()));
         options.addOption("a", "web-admin", true,  "REQUIRED. Specifies the " +
                 "authorization username and password which must be supplied to " +
                 "access the web interface. This may be of the form " +
@@ -237,6 +248,7 @@ public class Heritrix {
         // DEFAULTS until changed by cmd-line options
         int port = 8443;
         Set<String> bindHosts = new HashSet<String>();
+        AuthMode authMode = AuthMode.DIGEST;
         String authLogin = "admin";
         String authPassword = null;
         String keystorePath;
@@ -330,6 +342,16 @@ public class Heritrix {
             System.setProperty("https.proxyPort", proxyPort);
         }
 
+        if (cl.hasOption("web-auth")) {
+            try {
+                authMode = AuthMode.valueOf(cl.getOptionValue("web-auth").toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Unsupported --web-auth value '" + cl.getOptionValue("web-auth") +
+                                   "' (must be one of " + Arrays.toString(AuthMode.values()) + ")");
+                System.exit(1);
+            }
+        }
+
         // Restlet will reconfigure logging according to the system property
         // so we must set it for -l to work properly
         System.setProperty("java.util.logging.config.file", properties.getPath());
@@ -373,9 +395,13 @@ public class Heritrix {
             MapVerifier verifier = new MapVerifier();
             verifier.getLocalSecrets().put(authLogin, authPassword.toCharArray());
 
-            RateLimitGuard guard = new RateLimitGuard(component.getContext().createChildContext(),
-                    "Authentication Required", UUID.randomUUID().toString());
-            guard.setWrappedVerifier(verifier);
+            Context guardContext = component.getContext().createChildContext();
+            ChallengeAuthenticator guard = switch (authMode) {
+                case BASIC -> new ChallengeAuthenticator(guardContext, false,
+                        ChallengeScheme.HTTP_BASIC, "Authentication Required", verifier);
+                case DIGEST -> new RateLimitGuard(guardContext, "Authentication Required",
+                        UUID.randomUUID().toString(), verifier);
+            };
             guard.setNext(new EngineApplication(engine));
 
             component.getDefaultHost().attach(guard);
