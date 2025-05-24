@@ -4,6 +4,12 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.9.0...HEAD)
 
+#### New features
+
+- **Basic web auth:** You can now switch the web interface from Digest authentication to Basic authentication
+  with the `--web-auth basic` command-line option. This is useful when running Heritrix behind a reverse proxy that
+  adds external authentication.
+
 #### Fixes
 
 - **Code editor:** The configuration editor and script console were upgraded to CodeMirror 6. This resolves some browser
