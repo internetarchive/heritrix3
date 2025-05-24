@@ -520,6 +520,9 @@ public class Heritrix {
         server.getContext().getParameters().add("keystorePath", keystorePath);
         server.getContext().getParameters().add("keystorePassword", keystorePassword);
         server.getContext().getParameters().add("keyPassword", keyPassword);
+
+        // This makes restarting faster. No point delaying shutdown as you can't cluster the Heritrix UI.
+        server.getContext().getParameters().add("shutdown.gracefully", "false");
     }
     
     /**
