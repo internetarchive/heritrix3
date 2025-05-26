@@ -1,8 +1,8 @@
-ARG java=11-jre
+ARG java=21-jdk-slim
 
 FROM openjdk:${java}
 
-ARG version="3.4.0-20210923"
+ARG version="3.9.0"
 ARG user="heritrix"
 ARG userid=1000
 
@@ -14,10 +14,18 @@ RUN \
     groupadd -g $userid $user && \
     useradd -r -u $userid -g $user $user
 
+# Install dependencies
+RUN \
+    apt-get update && \
+    apt-get install -y && \
+    wget && \
+    unzip && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /opt
 
 # download latest version according to:
-#   https://github.com/internetarchive/heritrix3/releases/tag/3.4.0-20210923
+#   https://github.com/internetarchive/heritrix3/releases/tag/3.9.0
 RUN \
     wget -O heritrix-${version}-dist.zip https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/${version}/heritrix-${version}-dist.zip && \
     unzip heritrix-${version}-dist.zip && \
