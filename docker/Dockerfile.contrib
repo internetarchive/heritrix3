@@ -18,9 +18,9 @@ RUN \
 RUN \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    youtube-dl && \
-    wget && \
-    unzip && \
+    youtube-dl \
+    wget \
+    tar && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
