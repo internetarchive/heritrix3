@@ -2,7 +2,9 @@ version: "3.7"
 services:
 
   heritrix:
-    image: heritrix
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: heritrix
     # TEST: keeps the container running without doing anything (for inspections)
     # entrypoint: bash -c 'while :; do :; done & kill -STOP $$! && wait $$!'

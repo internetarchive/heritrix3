@@ -1,8 +1,8 @@
-ARG java=8-jre
+ARG java=21-jdk-slim
 
 FROM openjdk:${java}
 
-ARG version="3.4.0-20210923"
+ARG version="3.9.0"
 ARG user="heritrix"
 ARG userid=1000
 
@@ -14,11 +14,13 @@ RUN \
     groupadd -g $userid $user && \
     useradd -r -u $userid -g $user $user
 
-# install other requirements (for contrib)
+# install dependencies and other requirements (for contrib)
 RUN \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    youtube-dl && \
+    youtube-dl \
+    wget \
+    tar && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
