@@ -42,6 +42,8 @@ Command-line Options
             Specifies a keystore path, keystore password, and key password for HTTPS use.  Separate the values with
             commas and do not include whitespace. By default Heritrix will generate a self-signed certificate the
             first time it is run.
+--web-auth digest|basic
+            Authentication mode for the web interface. **Default:** ``digest``
 
 Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~

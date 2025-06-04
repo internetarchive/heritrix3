@@ -22,6 +22,7 @@ import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.ext.crypto.DigestAuthenticator;
+import org.restlet.security.LocalVerifier;
 
 import java.util.logging.Logger;
 
@@ -38,8 +39,9 @@ public class RateLimitGuard extends DigestAuthenticator {
 
     protected long lastFailureTime = 0;
     
-    public RateLimitGuard(Context context, String realm, String serverKey) throws IllegalArgumentException {
+    public RateLimitGuard(Context context, String realm, String serverKey, LocalVerifier verifier) throws IllegalArgumentException {
         super(context, realm, serverKey);
+        setWrappedVerifier(verifier);
     }
 
     @Override
