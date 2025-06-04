@@ -58,7 +58,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     private static final String[] BROWSERS = new String[]{
             "firefox", "/Applications/Firefox.app/Contents/MacOS/firefox", "chromedriver"};
 
-    public LocalWebDriverBiDi(String executable, List<String> options, int proxyPort, Path profileDir)
+    public LocalWebDriverBiDi(String executable, List<String> options, Session.CapabilitiesRequest capabilities, Path profileDir)
             throws ExecutionException, InterruptedException, IOException {
         this.process = executable == null ? launchAnyBrowser(options, profileDir) : launchBrowser(executable, options, profileDir);
         Runtime.getRuntime().addShutdownHook(new Thread(this.process::destroyForcibly));
@@ -66,10 +66,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
         webSocket = HttpClient.newHttpClient().newWebSocketBuilder()
                 .buildAsync(URI.create(webSocketUrl.get() + "/session"), new Listener())
                 .get();
-        var alwaysMatch = Map.of("acceptInsecureCerts", true,
-                "proxy", new Session.ProxyConfiguration("manual",
-                        "127.0.0.1:" + proxyPort, "127.0.0.1:" + proxyPort));
-        sessionId = session().new_(new Session.CapabilitiesRequest(alwaysMatch, null)).sessionId();
+        sessionId = session().new_(capabilities).sessionId();
     }
 
     private static Process launchAnyBrowser(List<String> options, Path profileDir) throws IOException {

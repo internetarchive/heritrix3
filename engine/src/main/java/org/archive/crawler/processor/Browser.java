@@ -187,10 +187,34 @@ public class Browser extends Processor {
             Path profileDir = crawlController.getScratchDir().getFile().toPath().resolve("profile");
             Files.createDirectories(profileDir);
 
-            // Firefox: send localhost requests via the proxy too (for tests and local crawling)
-            Files.writeString(profileDir.resolve("user.js"), "user_pref('network.proxy.allow_hijacking_localhost', true);");
+            // Firefox doesn't seem to allow setting prefs via capabilities with bidi
+            // so drop them in user.js instead
+            Files.writeString(profileDir.resolve("user.js"), """
+            // send localhost requests via the proxy too (for tests and local crawling)
+            user_pref('network.proxy.allow_hijacking_localhost', true);
+            
+            // disable downloads by setting to something that can't be created as a directory
+            user_pref('browser.download.dir', '/dev/null');
+            user_pref('browser.download.folderList', 2);
+            """);
 
-            this.webdriver = new LocalWebDriverBiDi(executable, options, proxy.getPort(), profileDir);
+            int proxyPort = proxy.getPort();
+            var alwaysMatch = Map.of("acceptInsecureCerts", true,
+                    "proxy", new Session.ProxyConfiguration("manual",
+                            "127.0.0.1:" + proxyPort, "127.0.0.1:" + proxyPort));
+
+            List<Map<String,Object>> firstMatch = List.of(
+                    Map.of("browserName", "chrome",
+                            "goog:chromeOptions", Map.of(
+                                    "args", List.of("headless=new", "user-data-dir=" + profileDir),
+                                    "prefs", Map.of("download_restrictions", 3))),
+                    // Fallback for other browsers
+                    Map.of()
+            );
+            var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
+
+
+            this.webdriver = new LocalWebDriverBiDi(executable, options, capabilities, profileDir);
         } catch (Exception e) {
             logger.log(ERROR, "Error starting browser", e);
             throw new RuntimeException(e);
