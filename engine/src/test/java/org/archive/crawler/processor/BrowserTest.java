@@ -58,7 +58,11 @@ class BrowserTest {
         CrawlURI crawlURI = newCrawlURI(baseUrl + "download.bin");
         fetcher.process(crawlURI);
         assertEquals(200, crawlURI.getFetchStatus());
+        assertFalse(browser.shouldProcess(crawlURI), "content-disposition header should skip processing");
+
+        // force processing anyway to test the behavior for other download reasons (e.g. non-HTML)
         browser.innerProcess(crawlURI);
+        assertFalse(crawlURI.getAnnotations().contains("browser"), "navigation should have aborted");
     }
 
     private CrawlURI newCrawlURI(String uri) throws URIException {
@@ -106,7 +110,7 @@ class BrowserTest {
                 }
                 case "/download.bin" -> {
                     body = "sample-download-file";
-                    contentType = "application/octet-stream";
+                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=heritrix-test.bin");
                 }
                 default -> status = 404;
             }

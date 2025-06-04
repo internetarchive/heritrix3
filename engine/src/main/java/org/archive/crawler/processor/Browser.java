@@ -19,6 +19,7 @@
 
 package org.archive.crawler.processor;
 
+import org.apache.commons.lang.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
@@ -115,6 +116,9 @@ public class Browser extends Processor {
         if (!scheme.equals("https") && !scheme.equals("http")) return false;
         String mime = curi.getContentType().toLowerCase();
         if (!mime.startsWith("text/html")) return false;
+        if (StringUtils.startsWithIgnoreCase(curi.getHttpResponseHeader("Content-Disposition"), "attachment")) {
+            return false;
+        }
         return true;
     }
 
@@ -143,7 +147,16 @@ public class Browser extends Processor {
             webdriver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
                     List.of(new Network.UrlPatternPattern("pattern", "http"),
                             new Network.UrlPatternPattern("pattern", "https")));
-            var navigation = webdriver.browsingContext().navigate(tab, curi.getURI(), BrowsingContext.ReadinessState.complete);
+            BrowsingContext.NavigateResult navigation;
+
+            try {
+                navigation = webdriver.browsingContext().navigate(tab, curi.getURI(), BrowsingContext.ReadinessState.complete);
+            } catch (WebDriverException e) {
+                if (e.getMessage().equals("net::ERR_ABORTED")) return; // Chrome: probably download started
+                throw e;
+            }
+            if (navigation.url().equals("about:blank")) return; // Firefox: probably download started
+
             logger.log(System.Logger.Level.DEBUG, "Navigated to {0}", navigation);
 
             // Wait for network activity to stop
