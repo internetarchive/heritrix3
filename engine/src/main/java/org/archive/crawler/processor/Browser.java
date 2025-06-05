@@ -43,6 +43,8 @@ import org.archive.spring.KeyedProperties;
 import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.client.Result;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
@@ -57,6 +59,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -80,6 +83,7 @@ public class Browser extends Processor {
     protected final Map<String, BrowserPage> pages = new ConcurrentHashMap<>();
     protected final Map<BrowsingContext.Context, String> pageIdsByContext = new ConcurrentHashMap<>();
     protected final ProcessorChain extractorChain = new ProcessorChain();
+    protected final AtomicLong subresourcesRecorded = new AtomicLong();
     protected List<Behavior> behaviors;
     protected String executable;
     protected List<String> options = List.of("--headless");
@@ -135,6 +139,29 @@ public class Browser extends Processor {
         } finally {
             semaphore.release();
         }
+    }
+
+    @Override
+    protected JSONObject toCheckpointJson() throws JSONException {
+        return super.toCheckpointJson().put("subresourcesRecorded", subresourcesRecorded.get());
+    }
+
+    @Override
+    protected void fromCheckpointJson(JSONObject json) throws JSONException {
+        super.fromCheckpointJson(json);
+        subresourcesRecorded.set(json.getLong("subresourcesRecorded"));
+    }
+
+    @Override
+    public String report() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(super.report());
+        builder.append("  Pages visited: ").append(getURICount()).append("\n");
+        builder.append("  Subresources recorded: ").append(subresourcesRecorded.get()).append("\n");
+        for (var behavior : behaviors) {
+            builder.append(behavior.report());
+        }
+        return builder.toString();
     }
 
     private void visit(CrawlURI curi) {
@@ -398,6 +425,7 @@ public class Browser extends Processor {
                 if (recordingFailed) {
                     curi.setFetchStatus(FetchStatusCodes.S_RUNTIME_EXCEPTION);
                 } else {
+                    subresourcesRecorded.incrementAndGet();
                     curi.getOverlayNames(); // for sideeffect of creating the overlayNames list
 
                     Frontier frontier = crawlController.getFrontier();

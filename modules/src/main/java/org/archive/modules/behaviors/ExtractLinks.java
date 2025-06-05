@@ -28,8 +28,10 @@ import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ExtractLinks implements Behavior {
+    private final AtomicLong numberOfLinksExtracted = new AtomicLong(0);
     private final UriErrorLoggerModule loggerModule;
 
     public ExtractLinks(UriErrorLoggerModule loggerModule) {
@@ -56,9 +58,15 @@ public class ExtractLinks implements Behavior {
                 UURI dest = UURIFactory.getInstance(page.curi().getUURI(), url);
                 CrawlURI link = page.curi().createCrawlURI(dest, LinkContext.NAVLINK_MISC, Hop.NAVLINK);
                 page.curi().getOutLinks().add(link);
+                numberOfLinksExtracted.incrementAndGet();
             } catch (URIException e) {
                 loggerModule.logUriError(e, page.curi().getUURI(), url);
             }
         }
+    }
+
+    @Override
+    public String report() {
+        return Behavior.super.report() + "    Links extracted: " + numberOfLinksExtracted.get() + "\n";
     }
 }
