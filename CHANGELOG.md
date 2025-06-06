@@ -10,6 +10,9 @@
   with the `--web-auth basic` command-line option. This is useful when running Heritrix behind a reverse proxy that
   adds external authentication.
 
+- **Robots.txt wildcards:** The `*` and `$` wildcard rules from RFC 9309 are now supported.
+  [#656](https://github.com/internetarchive/heritrix3/pull/656)
+
 #### Fixes
 
 - **Code editor:** The configuration editor and script console were upgraded to CodeMirror 6. This resolves some browser

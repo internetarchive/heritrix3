@@ -259,4 +259,71 @@ public class RobotstxtTest {
         }
         new Robotstxt(new StringReader(builder.toString()));
     }
+
+    @Test
+    public void testWildcards() throws IOException {
+        Robotstxt rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                Disallow: *.gif$
+                Disallow: /example/
+                Allow: /publications/
+                """));
+        assertTrue(rt.getDirectivesFor("x").allows("/"));
+        assertFalse(rt.getDirectivesFor("x").allows("/example/blocked"));
+        assertFalse(rt.getDirectivesFor("x").allows("/image.gif"));
+        assertTrue(rt.getDirectivesFor("x").allows("/image.gif?size=large"));
+        assertTrue(rt.getDirectivesFor("x").allows("/publications/image.gif"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                allow: /a/*/c
+                disallow: /a/b/c
+                disallow: /a/bb/c
+                """));
+        assertTrue(rt.getDirectivesFor("x").allows("/a/b/c"));
+        assertFalse(rt.getDirectivesFor("x").allows("/a/bb/c"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                allow: /a
+                disallow: /a
+                """));
+        assertTrue(rt.getDirectivesFor("x").allows("/a/b"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                allow: /$
+                Disallow: /
+                """));
+        assertTrue(rt.getDirectivesFor("x").allows("/"));
+        assertFalse(rt.getDirectivesFor("x").allows("/a"));
+        assertFalse(rt.getDirectivesFor("x").allows("//"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                Disallow: /foo*/bar
+                """));
+        assertFalse(rt.getDirectivesFor("x").allows("/foo/bar"));
+        assertFalse(rt.getDirectivesFor("x").allows("/fooooo/bar"));
+        assertTrue(rt.getDirectivesFor("x").allows("/fox/bar"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                Disallow: /foo$/
+                Allow: /foo$
+                """));
+        assertFalse(rt.getDirectivesFor("x").allows("/foo$/"));
+        assertFalse(rt.getDirectivesFor("x").allows("/foo$/bar"));
+        assertTrue(rt.getDirectivesFor("x").allows("/foo$"));
+        assertTrue(rt.getDirectivesFor("x").allows("/foo"));
+
+        rt = new Robotstxt(new StringReader("""
+                User-Agent: *
+                Disallow: /*$
+                Allow: /*
+                """));
+        assertFalse(rt.getDirectivesFor("x").allows("/"));
+        assertFalse(rt.getDirectivesFor("x").allows("/a"));
+        assertFalse(rt.getDirectivesFor("x").allows("//"));
+    }
 }
