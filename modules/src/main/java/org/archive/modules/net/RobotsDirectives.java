@@ -19,6 +19,7 @@
 package org.archive.modules.net;
 
 import java.io.Serializable;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.archive.bdb.AutoKryo;
@@ -29,31 +30,111 @@ import org.archive.bdb.AutoKryo;
  * user-agents)
  */
 public class RobotsDirectives implements Serializable {
-    private static final long serialVersionUID = 5386542759286155383L;
+    private static final long serialVersionUID = 5386542759286155384L;
     
-    protected ConcurrentSkipListSet<String> disallows = new ConcurrentSkipListSet<String>();
-    protected ConcurrentSkipListSet<String> allows = new ConcurrentSkipListSet<String>();
-    protected float crawlDelay = -1; 
+    protected PatternSet disallows = new PatternSet();
+    protected PatternSet allows = new PatternSet();
+    protected float crawlDelay = -1;
     public transient boolean hasDirectives = false;
 
-    public boolean allows(String path) {
-        return !(longestPrefixLength(disallows, path) > longestPrefixLength(allows, path));
+    /**
+     * A set of robots.txt path patterns. Patterns without wildcards are stored in a NavigableSet for faster matching.
+     */
+    protected static class PatternSet {
+        private final NavigableSet<String> prefixes = new ConcurrentSkipListSet<>();
+        private final Set<WildcardPattern> wildcards = new HashSet<>();
+
+        public void add(String pattern) {
+            if (pattern.endsWith("$") || pattern.contains("*")) {
+                wildcards.add(new WildcardPattern(pattern));
+            } else {
+                prefixes.add(pattern);
+            }
+        }
+
+        /**
+         * Returns the length of the longest pattern matching the given path, or zero if no patterns match.
+         */
+        private int longestMatch(String path) {
+            int longestMatch = longestPrefixLength(path);
+            for (WildcardPattern pattern : wildcards) {
+                if (pattern.length > longestMatch && pattern.matches(path)) {
+                    longestMatch = pattern.length;
+                }
+            }
+            return longestMatch;
+        }
+
+        /**
+         * @return length of longest entry in {@code prefixes} that prefixes {@code str}, or zero
+         *         if no entry prefixes {@code str}
+         */
+        private int longestPrefixLength(String str) {
+            String possiblePrefix = prefixes.floor(str);
+            if (possiblePrefix != null && str.startsWith(possiblePrefix)) {
+                return possiblePrefix.length();
+            } else {
+                return 0;
+            }
+        }
+
     }
 
-    /**
-     * @param prefixSet
-     * @param str
-     * @return length of longest entry in {@code prefixSet} that prefixes {@code str}, or zero
-     *         if no entry prefixes {@code str}
-     */
-    protected int longestPrefixLength(ConcurrentSkipListSet<String> prefixSet,
-            String str) {
-        String possiblePrefix = prefixSet.floor(str);
-        if (possiblePrefix != null && str.startsWith(possiblePrefix)) {
-            return possiblePrefix.length();
-        } else {
-            return 0;
+    protected static class WildcardPattern {
+        private final String[] segments;
+        private final int length;
+        private final boolean anchored;
+
+        public WildcardPattern(String pattern) {
+            this.length = pattern.length();
+            if (pattern.endsWith("$")) {
+                pattern = pattern.substring(0, pattern.length() - 1);
+                anchored = !pattern.endsWith("*"); // *$ is effectively unanchored
+            } else {
+                anchored = false;
+            }
+            segments = pattern.split("\\*", -1);
         }
+
+        public boolean matches(String path) {
+            int position = 0;
+            if (!segments[0].isEmpty()) {
+                if (!path.startsWith(segments[0])) {
+                    return false;
+                }
+                position = segments[0].length();
+            }
+
+            for (int i = 1; i < segments.length; i++) {
+                String segment = segments[i];
+                if (segment.isEmpty()) continue;
+                int match = path.indexOf(segment, position);
+                if (match < 0) return false;
+                position = match + segment.length();
+            }
+
+            if (anchored) {
+                return position == path.length();
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object == null || getClass() != object.getClass()) return false;
+            WildcardPattern that = (WildcardPattern) object;
+            return length == that.length && anchored == that.anchored && Objects.deepEquals(segments, that.segments);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(length, Arrays.hashCode(segments), anchored);
+        }
+    }
+
+    public boolean allows(String path) {
+        return disallows.longestMatch(path) <= allows.longestMatch(path);
     }
 
     public void addDisallow(String path) {
@@ -83,6 +164,9 @@ public class RobotsDirectives implements Serializable {
     // Kryo support
     public static void autoregisterTo(AutoKryo kryo) {
         kryo.register(RobotsDirectives.class);
+        kryo.register(PatternSet.class);
+        kryo.register(WildcardPattern.class);
+        kryo.register(HashSet.class);
         kryo.useReferencesFor(RobotsDirectives.class);
         kryo.autoregister(ConcurrentSkipListSet.class); // now used instead of PrefixSet in RobotsDirectives
     }
