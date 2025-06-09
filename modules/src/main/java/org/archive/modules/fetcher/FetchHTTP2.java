@@ -62,6 +62,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -86,6 +87,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
     protected String digestAlgorithm = "sha1";
     protected boolean useHTTP2 = true;
     protected boolean useHTTP3 = false;
+    private final Map<HttpProxySettings, HttpProxy> httpProxies = new ConcurrentHashMap<>();
 
     public FetchHTTP2(@Autowired ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
         this.serverCache = serverCache;
@@ -202,7 +204,8 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             Request request = httpClient.newRequest(curi.getURI())
                     .timeout(getTimeoutSeconds(), TimeUnit.SECONDS)
                     .method(curi.getFetchType() == CrawlURI.FetchType.HTTP_POST ? HttpMethod.POST : HttpMethod.GET)
-                    .agent(getUserAgentProvider().getUserAgent());
+                    .agent(getUserAgentProvider().getUserAgent())
+                    .tag(getHttpProxy());
             if (!curi.getUURI().getScheme().equals("https")) {
                 request.version(HttpVersion.HTTP_1_1);
             } else if (useHTTP3 && curi.getFetchAttempts() == 0) {
@@ -244,6 +247,47 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             recorder.closeRecorders();
             updateCrawlURIOnCompletion(curi, recorder);
         }
+    }
+
+    public String getHttpProxyHost() {
+        return (String) kp.get("httpProxyHost");
+    }
+    /**
+     * Proxy host IP (set only if needed).
+     */
+    public void setHttpProxyHost(String host) {
+        kp.put("httpProxyHost",host);
+    }
+
+    public Integer getHttpProxyPort() {
+        return (Integer) kp.get("httpProxyPort");
+    }
+    /**
+     * Proxy port (set only if needed).
+     */
+    public void setHttpProxyPort(Integer port) {
+        kp.put("httpProxyPort", port);
+    }
+
+    private HttpProxy getHttpProxy() {
+        String host = getHttpProxyHost();
+        Integer port = getHttpProxyPort();
+        if (host == null || port == null) return null;
+        return httpProxies.computeIfAbsent(new HttpProxySettings(host, port), this::createHttpProxy);
+    }
+
+    private HttpProxy createHttpProxy(HttpProxySettings settings) {
+        HttpProxy proxy = new HttpProxy(settings.host(), settings.port()) {
+            @Override
+            public boolean matches(Origin origin) {
+                return origin.getTag() == this;
+            }
+        };
+        httpClient.getProxyConfiguration().addProxy(proxy);
+        return proxy;
+    }
+
+    private record HttpProxySettings(String host, int port) {
     }
 
     /**
@@ -450,6 +494,8 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        httpClient = null;
+        httpProxies.clear();
     }
 
     public UserAgentProvider getUserAgentProvider() {

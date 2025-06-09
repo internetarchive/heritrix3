@@ -25,27 +25,40 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Recorder;
-import org.junit.jupiter.api.Test;
+import org.eclipse.jetty.proxy.ProxyHandler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FetchHTTP2Test {
+    private static HttpServer server;
+
     @TempDir
     Path tempDir;
+    private BdbModule bdb;
+    private BdbCookieStore cookieStore;
+    private FetchHTTP2 fetcher;
+    private static String baseUrl;
+    private Recorder recorder;
 
-    @Test
-    public void test() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws IOException {
         InetAddress loopbackAddress = Inet4Address.getLoopbackAddress();
-        var server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0), -1);
+        server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0), -1);
         server.createContext("/", exchange -> {
+            if (exchange.getRequestHeaders().containsKey("Via")) {
+                exchange.getResponseHeaders().add("Used-Proxy", "true");
+            }
             exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
             exchange.getResponseHeaders().add("Set-Cookie", "foo=bar; Path=/");
             byte[] body = "Hello World!".getBytes();
@@ -54,40 +67,77 @@ public class FetchHTTP2Test {
             exchange.close();
         });
         server.start();
-        BdbCookieStore cookieStore = new BdbCookieStore();
-        BdbModule bdb = new BdbModule();
+        baseUrl = "http://" + server.getAddress().getHostString() + ":" + server.getAddress().getPort() + "/";
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        if (server != null) server.stop(0);
+    }
+
+    @BeforeEach
+    public void beforeEach() throws IOException {
+        cookieStore = new BdbCookieStore();
+        bdb = new BdbModule();
         Path cookies = tempDir.resolve("cookies");
         Files.createDirectories(cookies);
         bdb.setDir(new ConfigPath("cookies", cookies.toString()));
         cookieStore.setBdbModule(bdb);
-        try (var serverCache = new DefaultServerCache()) {
-            bdb.start();
-            cookieStore.start();
-            var fetcher = new FetchHTTP2(serverCache, cookieStore);
-            fetcher.setUserAgentProvider(new CrawlMetadata());
-            fetcher.start();
-            try {
-                String url = "http://" + server.getAddress().getHostString() + ":" + server.getAddress().getPort() + "/";
-                var curi = new CrawlURI(UURIFactory.getInstance(url));
-                curi.setRecorder(new Recorder(tempDir.toFile(), "temp"));
-                fetcher.innerProcess(curi);
+        var serverCache = new DefaultServerCache();
+        bdb.start();
+        cookieStore.start();
+        fetcher = new FetchHTTP2(serverCache, cookieStore);
+        fetcher.setUserAgentProvider(new CrawlMetadata());
+        recorder = new Recorder(tempDir.toFile(), "temp");
+    }
 
-                assertEquals(200, curi.getFetchStatus());
-                assertEquals(CrawlURI.FetchType.HTTP_GET, curi.getFetchType());
-                assertEquals(12, curi.getContentLength());
-                assertEquals("text/html; charset=UTF-8", curi.getContentType());
-                assertEquals("UTF-8", curi.getRecorder().getCharset().name());
-                assertEquals(loopbackAddress.getHostAddress(), curi.getServerIP());
-                assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
-                assertEquals("foo=bar; Path=/", curi.getHttpResponseHeader("Set-Cookie"));
-                assertTrue(curi.getFetchBeginTime() > 1);
-                assertTrue(curi.getFetchCompletedTime() >= curi.getFetchBeginTime());
-            } finally {
-                fetcher.stop();
-                server.stop(0);
-                cookieStore.stop();
-                bdb.stop();
-            }
+    @AfterEach
+    public void afterEach() {
+        fetcher.stop();
+        cookieStore.stop();
+        bdb.stop();
+        recorder.cleanup();
+    }
+
+    @Test
+    public void test() throws Exception {
+        fetcher.start();
+        var curi = new CrawlURI(UURIFactory.getInstance(baseUrl));
+        curi.setRecorder(recorder);
+        fetcher.innerProcess(curi);
+
+        assertEquals(200, curi.getFetchStatus());
+        assertEquals(CrawlURI.FetchType.HTTP_GET, curi.getFetchType());
+        assertEquals(12, curi.getContentLength());
+        assertEquals("text/html; charset=UTF-8", curi.getContentType());
+        assertEquals("UTF-8", curi.getRecorder().getCharset().name());
+        assertEquals(Inet4Address.getLoopbackAddress().getHostAddress(), curi.getServerIP());
+        assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+        assertEquals("foo=bar; Path=/", curi.getHttpResponseHeader("Set-Cookie"));
+        assertTrue(curi.getFetchBeginTime() > 1);
+        assertTrue(curi.getFetchCompletedTime() >= curi.getFetchBeginTime());
+        assertNull(curi.getHttpResponseHeader("Used-Proxy"));
+        curi.getRecorder().cleanup();
+    }
+
+    @Test
+    public void testHttpProxy() throws Exception {
+        Server proxyServer = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
+        proxyServer.setHandler(new ProxyHandler.Forward());
+        proxyServer.start();
+        try {
+            var proxyPort = ((ServerConnector) proxyServer.getConnectors()[0]).getLocalPort();
+            fetcher.setHttpProxyHost(Inet4Address.getLoopbackAddress().getHostAddress());
+            fetcher.setHttpProxyPort(proxyPort);
+            fetcher.start();
+            var curi = new CrawlURI(UURIFactory.getInstance(baseUrl));
+            curi.setRecorder(recorder);
+            fetcher.innerProcess(curi);
+            assertEquals("true", curi.getHttpResponseHeader("Used-Proxy"));
+            assertEquals(200, curi.getFetchStatus());
+            assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+        } finally {
+            proxyServer.stop();
         }
     }
 }
