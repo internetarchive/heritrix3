@@ -34,6 +34,7 @@
 #### Dependency Upgrades
 
 - **codemirror**: 2.23 → 6
+- **easmock**: 5.5.0 → removed
 - **junit**: 5.12.2 → 5.13.1
 - **spring**: 6.2.6 → 6.2.7
 - **webarchive-commons**: 1.3.0 → 2.0.1

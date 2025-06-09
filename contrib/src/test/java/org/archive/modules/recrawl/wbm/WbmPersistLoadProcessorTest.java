@@ -3,7 +3,10 @@ package org.archive.modules.recrawl.wbm;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -13,13 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.message.BasicStatusLine;
+import com.sun.net.httpserver.HttpServer;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
@@ -29,7 +26,6 @@ import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.net.UURIFactory;
 import org.archive.util.Base32;
 import org.archive.util.DateUtils;
-import org.easymock.EasyMock;
 
 import com.google.common.util.concurrent.ExecutionList;
 import org.junit.jupiter.api.Test;
@@ -48,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  */
 public class WbmPersistLoadProcessorTest {
-
   @Test
   public void testBuildURL() throws Exception {
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
@@ -62,25 +57,6 @@ public class WbmPersistLoadProcessorTest {
     //assertTrue(Pattern.matches(".*[&?]last=true([&].*)?", url), "has last=true");
   }
 
-  /**
-   * stub HttpResponse for normal case.
-   * @author kenji
-   *
-   */
-  public static class TestNormalHttpResponse extends BasicHttpResponse {
-    public static final String EXPECTED_TS = "20121101155310";
-    public static final String EXPECTED_HASH = "GHN5VKF3TBKNSEZTASOM23BJRTKFFNJK";
-    public TestNormalHttpResponse() {
-      super(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 0), 200, "OK"));
-      setEntity(new ByteArrayEntity(
-	  ("org,archive)/ "+EXPECTED_TS+" http://archive.org/ text/html 200 "+
-	      EXPECTED_HASH+" - - 6908 982548871 "+
-	      "google.es-20121101-155506/IA-FOC-google.es-20121101073708-00001.warc.gz\n"
-	  ).getBytes()
-      ));
-    }
-  }
-  
   protected Map<String, Object> getFetchHistory(CrawlURI curi, int idx) {
     Map<String, Object>[] historyArray = curi.getFetchHistory();
     assertNotNull(historyArray);
@@ -93,26 +69,33 @@ public class WbmPersistLoadProcessorTest {
       return md.digest(text.getBytes());
   }
 
-  /**
-   * this test is disabled because it talks to production CDX server.
-   */
-  public void _testInnerProcessResultSingleShotWithMock() throws Exception {
-    // because AbstractHttpClient marks most execute(...) methods final, it is very tiresome to implement
-    // a stub by implementing HttpClient interface. So I use EasyMock.
-    HttpClient client = EasyMock.createMock(HttpClient.class);
-    HttpResponse testResponse = new TestNormalHttpResponse();
-    EasyMock.expect(client.execute((HttpUriRequest)EasyMock.notNull())).andReturn(testResponse);
-    EasyMock.replay(client);
-    
+  @Test
+  public void testInnerProcessResultSingleShot() throws Exception {
+    String EXPECTED_TS = "20121101155310";
+    String EXPECTED_HASH = "GHN5VKF3TBKNSEZTASOM23BJRTKFFNJK";
+    String TEST_RESPONSE = "org,archive)/ " + EXPECTED_TS + " http://archive.org/ text/html 200 " +
+                           EXPECTED_HASH + " - - 6908 982548871 " +
+                           "google.es-20121101-155506/IA-FOC-google.es-20121101073708-00001.warc.gz\n";
+
+    String localhost = Inet4Address.getLoopbackAddress().getHostAddress();
+    var server = HttpServer.create(new InetSocketAddress(localhost, 0), 0);
+    server.createContext("/web/timemap/cdx", (httpExchange) -> {
+      byte[] response = TEST_RESPONSE.getBytes(StandardCharsets.UTF_8);
+      httpExchange.sendResponseHeaders(200, response.length);
+      httpExchange.getResponseBody().write(response);
+      httpExchange.close();
+    });
+    server.start();
+
     final String CONTENT_DIGEST_SCHEME = "sha1:";
     WbmPersistLoadProcessor t = new WbmPersistLoadProcessor();
-    t.setHttpClient(client);
+    t.setQueryURL("http://" + localhost + ":" + server.getAddress().getPort() + "/web/timemap/cdx?url=$u&limit=-1");
     t.setContentDigestScheme(CONTENT_DIGEST_SCHEME);
     CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://archive.org/"));
-    
+
     // put history entry newer than being loaded (i.e. loaded history entry will not be used for FetchHistoryProcessor
     // check below.
-    long expected_ts = DateUtils.parse14DigitDate(TestNormalHttpResponse.EXPECTED_TS).getTime();
+    long expected_ts = DateUtils.parse14DigitDate(EXPECTED_TS).getTime();
     Map<String, Object>[] fetchHistory = curi.getFetchHistory();
     if (fetchHistory == null) {
       fetchHistory = new HashMap[2];
@@ -129,7 +112,7 @@ public class WbmPersistLoadProcessorTest {
     fetchHistory[1].put(FetchHistoryHelper.A_TIMESTAMP, expected_ts - 2000);
     fetchHistory[1].put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
         CONTENT_DIGEST_SCHEME + Base32.encode(digestValue1));
-    
+
     ProcessResult result = t.innerProcessResult(curi);
     assertEquals(ProcessResult.PROCEED, result, "result is PROCEED");
 
@@ -137,8 +120,8 @@ public class WbmPersistLoadProcessorTest {
     Map<String, Object> history = getFetchHistory(curi, 1);
     assertNotNull(history, "history");
     String hash = (String)history.get(RecrawlAttributeConstants.A_CONTENT_DIGEST);
-    assertEquals(CONTENT_DIGEST_SCHEME+TestNormalHttpResponse.EXPECTED_HASH, hash, "CONTENT_DIGEST");
-    
+    assertEquals(CONTENT_DIGEST_SCHEME + EXPECTED_HASH, hash, "CONTENT_DIGEST");
+
     Long ts = (Long)history.get(FetchHistoryHelper.A_TIMESTAMP);
     assertNotNull(ts, "ts is non-null");
     assertEquals(expected_ts, ts.longValue(), "'ts' has expected timestamp");
@@ -154,6 +137,8 @@ public class WbmPersistLoadProcessorTest {
     curi.setContentDigest("sha1", digestValue0);
     FetchHistoryProcessor fhp = new FetchHistoryProcessor();
     fhp.process(curi);
+
+    server.stop(0);
   }
 
   // DISABLED: this relies on wwwb-dedup.us.archive.org which is intermittently returning 503
