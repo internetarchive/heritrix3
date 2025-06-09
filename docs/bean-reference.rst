@@ -498,23 +498,23 @@ TrapSuppressExtractor
 
 .. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/TrapSuppressExtractor.java
 
-Browser and Behaviors
----------------------
+Browser Processor
+-----------------
 
-Browser
-~~~~~~~~~~~~~~~~~
+BrowserProcessor
+~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/processor/Browser.java
+.. bean-doc:: ../engine/src/main/java/org/archive/crawler/processor/BrowserProcessor.java
 
-ExtractLinks
-~~~~~~~~~~~~
+ExtractLinksBehavior
+~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ExtractLinks.java
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ExtractLinksBehavior.java
 
-ScrollDown
-~~~~~~~~~~
+ScrollDownBehavior
+~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ScrollDown.java
+.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ScrollDownBehavior.java
 
 Post-Processors
 ---------------

@@ -25,12 +25,12 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfSystemProperty(named = "runBrowserTests", matches = "true")
-class BrowserTest {
-    private static final System.Logger logger = System.getLogger(BrowserTest.class.getName());
+class BrowserProcessorTest {
+    private static final System.Logger logger = System.getLogger(BrowserProcessorTest.class.getName());
 
     private static HttpServer httpServer;
     private static FetchHTTP2 fetcher;
-    private static Browser browser;
+    private static BrowserProcessor browserProcessor;
     private static String baseUrl;
     private static ArrayList<CrawlURI> subrequests;
     private static CrawlController crawlController;
@@ -44,7 +44,7 @@ class BrowserTest {
         CrawlURI crawlURI = newCrawlURI(baseUrl);
         fetcher.process(crawlURI);
         assertEquals(200, crawlURI.getFetchStatus());
-        browser.innerProcess(crawlURI);
+        browserProcessor.innerProcess(crawlURI);
 
         var outLinks = new ArrayList<>(crawlURI.getOutLinks());
         assertEquals("/link", outLinks.get(0).getUURI().getPath());
@@ -58,10 +58,10 @@ class BrowserTest {
         CrawlURI crawlURI = newCrawlURI(baseUrl + "download.bin");
         fetcher.process(crawlURI);
         assertEquals(200, crawlURI.getFetchStatus());
-        assertFalse(browser.shouldProcess(crawlURI), "content-disposition header should skip processing");
+        assertFalse(browserProcessor.shouldProcess(crawlURI), "content-disposition header should skip processing");
 
         // force processing anyway to test the behavior for other download reasons (e.g. non-HTML)
-        browser.innerProcess(crawlURI);
+        browserProcessor.innerProcess(crawlURI);
         assertFalse(crawlURI.getAnnotations().contains("browser"), "navigation should have aborted");
     }
 
@@ -148,14 +148,14 @@ class BrowserTest {
             }
         }));
         crawlController.setDispositionChain(dispositionChain);
-        browser = new Browser(fetcher, crawlController, event -> {}, null);
-            browser.start();
+        browserProcessor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
+            browserProcessor.start();
     }
 
     @AfterAll
     static void tearDownAll() {
         if (httpServer != null) httpServer.stop(0);
-        if (browser != null) browser.stop();
+        if (browserProcessor != null) browserProcessor.stop();
         if (fetcher != null) fetcher.stop();
     }
 

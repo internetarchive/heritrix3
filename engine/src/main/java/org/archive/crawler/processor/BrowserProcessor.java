@@ -28,9 +28,9 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.ProcessorChain;
 import org.archive.modules.behaviors.Behavior;
-import org.archive.modules.behaviors.ExtractLinks;
+import org.archive.modules.behaviors.ExtractLinksBehavior;
 import org.archive.modules.behaviors.Page;
-import org.archive.modules.behaviors.ScrollDown;
+import org.archive.modules.behaviors.ScrollDownBehavior;
 import org.archive.modules.extractor.Extractor;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
@@ -68,12 +68,12 @@ import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUC
 import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
 
 /**
- * Processor which opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior} scripts.
- * Subresources loaded by the browser are recorded using a recording proxy. Must be used in conjunction with
+ * Opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior}s to interact with the page.
+ * Subresources loaded by the browser are recorded using a HTTP proxy. Must be used in conjunction with
  * {@link FetchHTTP2}. Normally defined in the FetchChain after the link extractors.
  */
-public class Browser extends Processor {
-    private static final System.Logger logger = System.getLogger(Browser.class.getName());
+public class BrowserProcessor extends Processor {
+    private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
     protected final CrawlController crawlController;
     protected final MitmProxy proxy = new MitmProxy(this::handleProxyRequest);
@@ -90,12 +90,12 @@ public class Browser extends Processor {
     protected int concurrency = 20;
     protected Semaphore semaphore;
 
-    public Browser(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
-                   UriErrorLoggerModule uriErrorLoggerModule) {
+    public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
+                            UriErrorLoggerModule uriErrorLoggerModule) {
         this.crawlController = crawlController;
         this.fetcher = fetcher;
         this.eventPublisher = eventPublisher;
-        this.behaviors = List.of(new ScrollDown(), new ExtractLinks(uriErrorLoggerModule));
+        this.behaviors = List.of(new ScrollDownBehavior(), new ExtractLinksBehavior(uriErrorLoggerModule));
     }
 
     public void stop() {

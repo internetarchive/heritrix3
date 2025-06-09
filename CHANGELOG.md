@@ -6,7 +6,7 @@
 
 #### New features
 
-- **Browser processor:** Loads fetched pages in a local browser (Firefox/ChromeDriver), records all browser requests, 
+- **BrowserProcessor:** Loads fetched pages in a local browser (Firefox/ChromeDriver), records all browser requests, 
   and runs pluggable behaviors (e.g. scrolling, link extraction). [#653](https://github.com/internetarchive/heritrix3/pull/653)
   - Uses the [WebDriver BiDi protocol](https://www.w3.org/TR/webdriver-bidi/) for browser automation.
   - The recording proxy is built on Jetty's ProxyHandler and the FetchHTTP2 module.

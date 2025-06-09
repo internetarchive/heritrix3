@@ -315,11 +315,11 @@ http://example.example/example
  <bean id="extractorSwf" class="org.archive.modules.extractor.ExtractorSWF">
  </bean>
  <!--
- <bean id="browser" class="org.archive.crawler.processor.Browser">
+ <bean id="browser" class="org.archive.crawler.processor.BrowserProcessor">
   <property name="behaviors">
    <list>
-    <bean class="org.archive.modules.behaviors.ScrollDown" />
-    <bean class="org.archive.modules.behaviors.ExtractLinks" />
+    <bean class="org.archive.modules.behaviors.ScrollDownBehavior" />
+    <bean class="org.archive.modules.behaviors.ExtractLinksBehavior" />
    </list>
   </property>
   <property name="concurrency" value="20" />

@@ -33,11 +33,11 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Extracts navigation links from the loaded page using JavaScript.
  */
-public class ExtractLinks implements Behavior {
+public class ExtractLinksBehavior implements Behavior {
     private final AtomicLong numberOfLinksExtracted = new AtomicLong(0);
     private final UriErrorLoggerModule loggerModule;
 
-    public ExtractLinks(UriErrorLoggerModule loggerModule) {
+    public ExtractLinksBehavior(UriErrorLoggerModule loggerModule) {
         this.loggerModule = loggerModule;
     }
 

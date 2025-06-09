@@ -22,7 +22,7 @@ package org.archive.modules.behaviors;
 /**
  * Scrolls the page down until it reaches the bottom (or until a timeout is reached).
  */
-public class ScrollDown implements Behavior {
+public class ScrollDownBehavior implements Behavior {
     private long timeout = 5000;
     private int scrollInterval = 50;
 
