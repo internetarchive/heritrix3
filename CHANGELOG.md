@@ -6,9 +6,15 @@
 
 #### New features
 
+- **Browser processor:** Loads fetched pages in a local browser (Firefox/ChromeDriver), records all browser requests, 
+  and runs pluggable behaviors (e.g. scrolling, link extraction). [#653](https://github.com/internetarchive/heritrix3/pull/653)
+  - Uses the [WebDriver BiDi protocol](https://www.w3.org/TR/webdriver-bidi/) for browser automation.
+  - The recording proxy is built on Jetty's ProxyHandler and the FetchHTTP2 module.
+  - **Status:** Working for small crawls but needs more robust error handling (browser crashes, resource limits).
+
 - **Basic web auth:** You can now switch the web interface from Digest authentication to Basic authentication
   with the `--web-auth basic` command-line option. This is useful when running Heritrix behind a reverse proxy that
-  adds external authentication.
+  adds external authentication. [#654](https://github.com/internetarchive/heritrix3/pull/654)
 
 - **Robots.txt wildcards:** The `*` and `$` wildcard rules from RFC 9309 are now supported.
   [#656](https://github.com/internetarchive/heritrix3/pull/656)
@@ -17,12 +23,12 @@
 
 - **Code editor:** The configuration editor and script console were upgraded to CodeMirror 6. This resolves some browser
   incompatibilities, allowing CodeMirror’s own find function to be re-enabled for reliable text search of content far
-  outside the viewport.
+  outside the viewport. [#651](https://github.com/internetarchive/heritrix3/pull/651)
 
 #### Removals
 
 - **Removed Apache HttpClient 3**: If you have custom Heritrix modules you may need to update the following
-  class references in your code:
+  class references in your code: 
   
   | Removed                                                   | Replacement                          |
   |-----------------------------------------------------------|--------------------------------------|
@@ -30,11 +36,12 @@
   | `org.apache.commons.httpclient.Header`                    | `org.archive.format.http.HttpHeader` |
 
   Note that Apache HttpClient 4 (`org.apache.http`) was not removed.
+  [#652](https://github.com/internetarchive/heritrix3/pull/652)
 
 #### Dependency Upgrades
 
 - **codemirror**: 2.23 → 6
-- **easmock**: 5.5.0 → removed
+- **easymock**: 5.5.0 → removed
 - **junit**: 5.12.2 → 5.13.1
 - **spring**: 6.2.6 → 6.2.7
 - **webarchive-commons**: 1.3.0 → 2.0.1
