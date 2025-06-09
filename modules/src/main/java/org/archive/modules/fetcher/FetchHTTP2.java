@@ -87,7 +87,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
     protected boolean useHTTP2 = true;
     protected boolean useHTTP3 = false;
 
-    public FetchHTTP2(ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
+    public FetchHTTP2(@Autowired ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
         this.serverCache = serverCache;
         this.cookieStore = cookieStore;
     }
@@ -144,6 +144,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         httpClient.setFollowRedirects(false); // we handle redirects ourselves
         httpClient.setDestinationIdleTimeout(5 * 60 * 1000);
         httpClient.setConnectTimeout(20 * 1000);
+        httpClient.setMaxConnectionsPerDestination(6);
         if (serverCache != null) httpClient.setSocketAddressResolver(this::resolveSocketAddress);
         if (cookieStore != null) httpClient.setHttpCookieStore(new CookieStoreAdaptor(cookieStore));
         return httpClient;
@@ -219,7 +220,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             }
             request.send(listener);
             recordRequest(request, recorder);
-            Response response = listener.get(getTimeoutSeconds(), java.util.concurrent.TimeUnit.SECONDS);
+            Response response = listener.get(getTimeoutSeconds(), TimeUnit.SECONDS);
             handleAltSvcHeader(curi, response);
             updateCrawlURIWithResponseHeader(curi, response);
             recordResponse(response, recorder, listener);
@@ -326,7 +327,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
     /**
      * Reconstructs the HTTP request and records it.
      */
-    private static void recordRequest(Request request, Recorder recorder) throws IOException {
+    public static void recordRequest(Request request, Recorder recorder) throws IOException {
         String target = request.getPath();
         if (request.getQuery() != null) target += "?" + request.getQuery();
         String recordVersion = request.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
@@ -338,13 +339,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
      * Reconstructs the HTTP response and records it.
      */
     private static void recordResponse(Response response, Recorder recorder, InputStreamResponseListener listener) throws IOException {
-        // Since the transfer encoding has been decoded, we need to remove the header
-        HttpFields headers = HttpFields.build(response.getHeaders())
-                .remove(EnumSet.of(HttpHeader.TRANSFER_ENCODING));
-        String recordVersion = response.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
-        String reason = response.getReason() == null ? "" : response.getReason();
-        String header = recordVersion + " " + response.getStatus() + " " + reason + "\r\n" +
-                headers.asString();
+        String header = formatResponseHeader(response);
         ByteArrayInputStream headerStream = new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII));
         try (InputStream inputStream = listener.getInputStream()) {
             var streams = List.of(headerStream, inputStream);
@@ -353,10 +348,21 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         }
     }
 
+    public static String formatResponseHeader(Response response) {
+        // Since the transfer encoding has been decoded, we need to remove the header
+        HttpFields headers = HttpFields.build(response.getHeaders())
+                .remove(EnumSet.of(HttpHeader.TRANSFER_ENCODING));
+        String recordVersion = response.getVersion().equals(HttpVersion.HTTP_1_0) ? "HTTP/1.0" : "HTTP/1.1";
+        String reason = response.getReason() == null ? "" : response.getReason();
+        String header = recordVersion + " " + response.getStatus() + " " + reason + "\r\n" +
+                headers.asString();
+        return header;
+    }
+
     /**
      * Updates the CrawlURI with details from the HTTP response header.
      */
-    private void updateCrawlURIWithResponseHeader(CrawlURI curi, Response response) {
+    public void updateCrawlURIWithResponseHeader(CrawlURI curi, Response response) {
         // Status
         curi.setFetchStatus(response.getStatus());
 
@@ -411,7 +417,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
     /**
      * Updates the CrawlURI with details from the Recorder after it is closed.
      */
-    private void updateCrawlURIOnCompletion(CrawlURI curi, Recorder recorder) {
+    public void updateCrawlURIOnCompletion(CrawlURI curi, Recorder recorder) {
         curi.setFetchCompletedTime(System.currentTimeMillis());
         if (digestAlgorithm != null) {
             curi.setContentDigest(digestAlgorithm, recorder.getRecordedInput().getDigestValue());
@@ -527,6 +533,10 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
      */
     public void setMaxFetchKBSec(int rate) {
         kp.put("maxFetchKBSec",rate);
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
     }
 
     private record CookieAdaptor(Cookie cookie) implements HttpCookie {

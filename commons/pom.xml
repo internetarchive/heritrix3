@@ -158,6 +158,11 @@
 			<artifactId>groovy</artifactId>
 			<version>${groovy.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-proxy</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<resources>
