@@ -124,7 +124,7 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__language</artifactId>
-			<version>6.11.0</version>
+			<version>6.11.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
@@ -149,7 +149,7 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__view</artifactId>
-			<version>6.36.5</version>
+			<version>6.37.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
