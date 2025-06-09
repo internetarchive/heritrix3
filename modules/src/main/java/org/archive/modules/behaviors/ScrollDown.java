@@ -26,10 +26,16 @@ public class ScrollDown implements Behavior {
     private long timeout = 5000;
     private int scrollInterval = 50;
 
+    /**
+     * Maximum time to wait to reach the bottom of the page, in milliseconds.
+     */
     public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
 
+    /**
+     * How many milliseconds to wait between each scroll step.
+     */
     public void setScrollInterval(int scrollInterval) {
         this.scrollInterval = scrollInterval;
     }

@@ -30,6 +30,9 @@ import org.archive.net.UURIFactory;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Extracts navigation links from the loaded page using JavaScript.
+ */
 public class ExtractLinks implements Behavior {
     private final AtomicLong numberOfLinksExtracted = new AtomicLong(0);
     private final UriErrorLoggerModule loggerModule;

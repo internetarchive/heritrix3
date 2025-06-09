@@ -68,9 +68,9 @@ import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUC
 import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
 
 /**
- * Processor which opens a web page in a real web browser via WebDriver BiDi and runs {@link Behavior} scripts.
- * Subresources loaded by the browser are recorded using a MITM proxy. Must be used in conjunction with
- * {@link FetchHTTP2}.
+ * Processor which opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior} scripts.
+ * Subresources loaded by the browser are recorded using a recording proxy. Must be used in conjunction with
+ * {@link FetchHTTP2}. Normally defined in the FetchChain after the link extractors.
  */
 public class Browser extends Processor {
     private static final System.Logger logger = System.getLogger(Browser.class.getName());
@@ -297,7 +297,7 @@ public class Browser extends Processor {
     }
 
     /**
-     * Sets a list of {@link Behavior}s to run on each page.
+     * A list of {@link Behavior}s to run on each page.
      */
     public void setBehaviors(List<Behavior> behaviors) {
         this.behaviors = behaviors;
@@ -308,9 +308,9 @@ public class Browser extends Processor {
     }
 
     /**
-     * Sets the webdriver executable to launch. If null, will try several common paths.
+     * Webdriver executable to launch. If null, will try several common paths.
      * <p>
-     * Firefox can be used directly as implements WebDriver BiDI natively. To use Chrome set this to a
+     * Firefox can be used directly as it implements WebDriver BiDI natively. To use Chrome set this to a
      * <a href="https://developer.chrome.com/docs/chromedriver">ChromeDriver</a> executable.
      */
     public void setExecutable(String executable) {
@@ -325,6 +325,9 @@ public class Browser extends Processor {
         return options;
     }
 
+    /**
+     * Extra command-line options to be passed to the webdriver executable.
+     */
     public void setOptions(List<String> options) {
         this.options = options;
     }
@@ -334,7 +337,7 @@ public class Browser extends Processor {
     }
 
     /**
-     * Sets the maximum number of web pages that can be open in the browser at once.
+     * Maximum number of web pages that can be open in the browser at once.
      */
     public void setConcurrency(int concurrency) {
         this.concurrency = concurrency;
