@@ -94,15 +94,16 @@ ignore
 
 .. note::
 
-   Heritrix currently only supports wildcards (*) at the end of paths in robots.txt rules.
+   Heritrix supports RFC 9309 path wildcards (*, $) in robots.txt rules.
 
    The only supported value for robots meta tags is "nofollow" which will cause the HTML extractor to stop processing
-   and ignore all links (including embeds like images and stylesheets). Heritrix does not support "rel=nofollow" on
-   individual links.
+   and ignore all links (including embeds like images and stylesheets).
 
    .. code-block:: html
 
        <meta name="robots" content="nofollow"/>
+
+   Obeying "rel=nofollow" on individual links is configured separately as ``obeyRelNoFollow`` on ``ExtractorHTML``.
 
 Crawl Scope
 -----------
