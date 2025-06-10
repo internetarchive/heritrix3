@@ -205,7 +205,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
                     .timeout(getTimeoutSeconds(), TimeUnit.SECONDS)
                     .method(curi.getFetchType() == CrawlURI.FetchType.HTTP_POST ? HttpMethod.POST : HttpMethod.GET)
                     .agent(getUserAgentProvider().getUserAgent())
-                    .tag(getHttpProxy());
+                    .tag(getProxy());
             if (!curi.getUURI().getScheme().equals("https")) {
                 request.version(HttpVersion.HTTP_1_1);
             } else if (useHTTP3 && curi.getFetchAttempts() == 0) {
@@ -269,7 +269,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         kp.put("httpProxyPort", port);
     }
 
-    private HttpProxy getHttpProxy() {
+    public ProxyConfiguration.Proxy getProxy() {
         String host = getHttpProxyHost();
         Integer port = getHttpProxyPort();
         if (host == null || port == null) return null;
