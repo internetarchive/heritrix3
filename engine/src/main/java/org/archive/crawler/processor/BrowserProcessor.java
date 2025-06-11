@@ -64,6 +64,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
 import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
@@ -203,6 +204,8 @@ public class BrowserProcessor extends Processor {
             curi.getAnnotations().add("browser");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (WebDriverException e) {
+            logger.log(WARNING, "WebDriver exception visiting " + curi, e);
         } finally {
             pageIdsByContext.remove(tab);
             pages.remove(pageId);

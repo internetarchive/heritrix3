@@ -173,11 +173,14 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
                                     parameterizedType.getActualTypeArguments()[0] instanceof Class<?> typeClass) {
                                 yield future.thenApply(result -> BiDiJson.fromJson(result, typeClass));
                             } else {
+                                int timeout = 30;
                                 try {
-                                    yield BiDiJson.fromJson(future.get(30, TimeUnit.SECONDS), method.getReturnType());
+                                    yield BiDiJson.fromJson(future.get(timeout, TimeUnit.SECONDS), method.getReturnType());
                                 } catch (ExecutionException e) {
                                     if (e.getCause() instanceof RuntimeException re) throw re;
                                     throw e;
+                                } catch (TimeoutException e) {
+                                    throw new WebDriverTimeoutException(prefix + methodName + " took more than " + timeout + " seconds");
                                 }
                             }
                         }
