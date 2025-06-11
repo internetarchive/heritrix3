@@ -78,7 +78,7 @@ public class BrowserProcessor extends Processor {
     private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
     protected final CrawlController crawlController;
-    protected final MitmProxy proxy = new MitmProxy(this::handleProxyRequest);
+    protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
     protected LocalWebDriverBiDi webdriver;
     protected final ApplicationEventPublisher eventPublisher;
@@ -221,6 +221,10 @@ public class BrowserProcessor extends Processor {
         extractorChain.setProcessors(crawlController.getFetchChain().getProcessors().stream()
                 .filter(processor -> processor instanceof Extractor).toList());
 
+        if (proxy == null) {
+            proxy = new MitmProxy(this::handleProxyRequest,
+                    crawlController.getScratchDir().getFile().toPath().resolve("proxy.keystore").toString());
+        }
         try {
             proxy.start();
         } catch (Exception e) {
