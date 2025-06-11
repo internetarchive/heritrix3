@@ -46,6 +46,7 @@ import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.quic.client.ClientQuicConfiguration;
 import org.eclipse.jetty.quic.quiche.jna.LibQuiche;
 import org.eclipse.jetty.util.Promise;
+import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,7 +148,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         httpClient.setDestinationIdleTimeout(5 * 60 * 1000);
         httpClient.setConnectTimeout(20 * 1000);
         httpClient.setMaxConnectionsPerDestination(6);
-        if (serverCache != null) httpClient.setSocketAddressResolver(this::resolveSocketAddress);
+        if (serverCache != null) {
+            httpClient.setSocketAddressResolver(this::resolveSocketAddress);
+        }
         if (cookieStore != null) httpClient.setHttpCookieStore(new CookieStoreAdaptor(cookieStore));
         return httpClient;
     }
@@ -172,7 +175,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             }
             promise.succeeded(List.of(new InetSocketAddress(ip, port)));
         } else {
-            promise.failed(new UnknownHostException());
+            // If we don't have a cached IP address, fallback to the default async resolver.
+            new SocketAddressResolver.Async(httpClient.getExecutor(), httpClient.getScheduler(),
+                    httpClient.getAddressResolutionTimeout()).resolve(host, port, promise);
         }
     }
 
