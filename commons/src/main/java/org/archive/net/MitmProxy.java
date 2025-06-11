@@ -20,6 +20,8 @@
 package org.archive.net;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpProxy;
+import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.io.Content;
@@ -42,6 +44,7 @@ import static org.eclipse.jetty.http.HttpHeader.ACCEPT_ENCODING;
  * An HTTP proxy server which intercepts TLS and records or replays responses.
  */
 public class MitmProxy {
+    private static final String UPSTREAM_PROXY = MitmProxy.class.getName() + ".upstreamProxy";
     private final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory();
     private final Server server = new Server(0);
     private final RequestHandler requestHandler;
@@ -63,7 +66,6 @@ public class MitmProxy {
 
     public void start() throws Exception {
         sslConnectionFactory.start();
-
         server.setHandler(new Handler.Sequence(
                 new SslConnectHandler(),
                 new MitmProxyHandler()));
@@ -89,6 +91,10 @@ public class MitmProxy {
             headers.forEach((k,v) -> response.getHeaders().put(k, v));
             body.transferTo(Content.Sink.asOutputStream(response));
             callback().succeeded();
+        }
+
+        public void setUpstreamProxy(ProxyConfiguration.Proxy proxy) {
+            request.setAttribute(UPSTREAM_PROXY, proxy);
         }
     }
 
@@ -156,14 +162,29 @@ public class MitmProxy {
                 // Host header is not allowed in HTTP/2
                 headers.remove(HttpHeader.HOST);
             });
+
+            ProxyConfiguration.Proxy upstreamProxy = (HttpProxy)clientToProxyRequest.getAttribute(UPSTREAM_PROXY);
+            if (upstreamProxy != null) {
+                addUpstreamProxyIfAbsent(upstreamProxy);
+                proxyToServerRequest.tag(upstreamProxy);
+            }
+
             var listener = (ExchangeListener)clientToProxyRequest.getAttribute(ExchangeListener.class.getName());
             if (listener != null) {
+                proxyToServerRequest.onRequestBegin(listener);
                 proxyToServerRequest.onRequestHeaders(listener);
                 proxyToServerRequest.onRequestContent(listener);
                 proxyToServerRequest.onResponseHeaders(listener);
                 proxyToServerRequest.onResponseContent(listener);
                 proxyToServerRequest.onComplete(listener);
             }
+        }
+
+        private void addUpstreamProxyIfAbsent(ProxyConfiguration.Proxy proxy) {
+            for (var existingProxy : getHttpClient().getProxyConfiguration().getProxies()) {
+                if (existingProxy == proxy) return;
+            }
+            getHttpClient().getProxyConfiguration().addProxy(proxy);
         }
     }
 

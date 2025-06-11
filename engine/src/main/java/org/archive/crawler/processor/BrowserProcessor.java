@@ -42,6 +42,7 @@ import org.archive.net.webdriver.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
+import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.client.Result;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -168,7 +169,7 @@ public class BrowserProcessor extends Processor {
         String pageId = UUID.randomUUID().toString();
         var tab = webdriver.browsingContext().create(BrowsingContext.CreateType.tab).context();
         try {
-            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab);
+            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab, fetcher.getProxy());
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             webdriver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
@@ -293,6 +294,7 @@ public class BrowserProcessor extends Processor {
         } else {
             // Record exchange as a subresource
             proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
+            proxyRequest.setUpstreamProxy(page.proxy);
         }
     }
 
@@ -477,7 +479,8 @@ public class BrowserProcessor extends Processor {
     record BrowserPage(CrawlURI curi,
                        IdleBarrier networkActivity,
                        WebDriverBiDi webdriver,
-                       BrowsingContext.Context context) implements Page {
+                       BrowsingContext.Context context,
+                       ProxyConfiguration.Proxy proxy) implements Page {
 
         /**
          * Evaluates JavaScript and returns the result as simple Java objects (numbers, strings, maps, lists).

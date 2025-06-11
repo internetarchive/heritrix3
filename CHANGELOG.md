@@ -19,6 +19,8 @@
 - **Robots.txt wildcards:** The `*` and `$` wildcard rules from RFC 9309 are now supported.
   [#656](https://github.com/internetarchive/heritrix3/pull/656)
 
+- **FetchHTTP2:** Added HTTP proxy support.
+
 #### Fixes
 
 - **Code editor:** The configuration editor and script console were upgraded to CodeMirror 6. This resolves some browser
