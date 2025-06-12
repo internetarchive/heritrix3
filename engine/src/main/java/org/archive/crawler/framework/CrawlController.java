@@ -423,7 +423,8 @@ implements Serializable,
     public synchronized void requestCrawlStop() {
         if(state == State.STOPPING) {
             // second stop request; nudge the threads with interrupts
-            getToePool().cleanup();
+            if (getToePool() != null)
+                getToePool().cleanup();
         }
         requestCrawlStop(CrawlStatus.ABORTED);
     }

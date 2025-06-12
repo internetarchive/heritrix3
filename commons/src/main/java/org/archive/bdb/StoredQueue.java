@@ -93,6 +93,7 @@ public class StoredQueue<E extends Serializable> extends AbstractQueue<E>  {
     @Override
     public int size() {
         try {
+            Thread.interrupted();
             return Math.max(0, 
                     (int)(tailIndex.get() 
                           - queueMap.firstKey())); 
