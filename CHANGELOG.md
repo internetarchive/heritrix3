@@ -29,6 +29,8 @@
 
 - **BDB shutdown interrupt handling:** The thread’s interrupted flag is now cleared before some BDB interactions to reduce the likelihood of environment invalidation when requestCrawlStop() is called repeatedly. [#659](https://github.com/internetarchive/heritrix3/pull/659)
 
+- **FetchHTTP2:** Fixed gzip alert log messages by configuring HttpClient to not decode gzip encoding from response.
+
 #### Removals
 
 - **Removed Apache HttpClient 3**: If you have custom Heritrix modules you may need to update the following

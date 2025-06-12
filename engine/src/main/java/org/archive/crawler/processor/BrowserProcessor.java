@@ -254,7 +254,8 @@ public class BrowserProcessor extends Processor {
             List<Map<String,Object>> firstMatch = List.of(
                     Map.of("browserName", "chrome",
                             "goog:chromeOptions", Map.of(
-                                    "args", List.of("headless=new", "user-data-dir=" + profileDir),
+                                    "args", List.of("headless=new", "user-data-dir=" + profileDir,
+                                            "proxy-bypass-list=<-loopback>"),
                                     "prefs", Map.of("download_restrictions", 3))),
                     // Fallback for other browsers
                     Map.of()
@@ -483,7 +484,7 @@ public class BrowserProcessor extends Processor {
     /**
      * A CrawlURI that's currently loaded as a page in a browser.
      */
-    record BrowserPage(CrawlURI curi,
+    protected record BrowserPage(CrawlURI curi,
                        IdleBarrier networkActivity,
                        WebDriverBiDi webdriver,
                        BrowsingContext.Context context,

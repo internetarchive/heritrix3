@@ -37,6 +37,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +67,17 @@ public class FetchHTTP2Test {
             exchange.getResponseBody().write(body);
             exchange.close();
         });
+        server.createContext("/gzip", exchange -> {
+            exchange.getResponseHeaders().add("Content-Encoding", "gzip");
+            exchange.getResponseHeaders().add("Content-Type", "text/plain");
+            byte[] body = "Hello World!".getBytes();
+            exchange.sendResponseHeaders(200, 0);
+            try (var gzip = new GZIPOutputStream(exchange.getResponseBody())) {
+                gzip.write(body);
+            }
+            exchange.close();
+        });
+
         server.start();
         baseUrl = "http://" + server.getAddress().getHostString() + ":" + server.getAddress().getPort() + "/";
     }
@@ -139,5 +151,20 @@ public class FetchHTTP2Test {
         } finally {
             proxyServer.stop();
         }
+    }
+
+    @Test
+    public void testGzipEncoding() throws Exception {
+        fetcher.start();
+        var curi = new CrawlURI(UURIFactory.getInstance(baseUrl + "gzip"));
+        curi.setRecorder(recorder);
+        fetcher.innerProcess(curi);
+        assertEquals(200, curi.getFetchStatus());
+        assertEquals(CrawlURI.FetchType.HTTP_GET, curi.getFetchType());
+        assertEquals(32, curi.getContentLength());
+        assertEquals("text/plain", curi.getContentType());
+        assertEquals("gzip", curi.getRecorder().getContentEncoding());
+        assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+        curi.getRecorder().cleanup();
     }
 }

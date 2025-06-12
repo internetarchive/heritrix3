@@ -20,10 +20,8 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.zip.GZIPOutputStream;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,12 +36,11 @@ class BrowserProcessorTest {
     private static String baseUrl;
     private static ArrayList<CrawlURI> subrequests;
     private static CrawlController crawlController;
-    private Set<Recorder> recorders = new HashSet<>();
+    private final Set<Recorder> recorders = new HashSet<>();
     @TempDir
     Path tempDir;
 
     @Test
-    @Disabled
     public void test() throws IOException, InterruptedException {
         CrawlURI crawlURI = newCrawlURI(baseUrl);
         fetcher.process(crawlURI);
@@ -55,6 +52,14 @@ class BrowserProcessorTest {
         assertTrue(crawlURI.getAnnotations().contains("browser"));
 
         logger.log(DEBUG, "Subrequests: {0}", subrequests);
+        var subrequestByPath = new HashMap<String,CrawlURI>();
+        for (CrawlURI curi : subrequests) {
+            subrequestByPath.put(curi.getUURI().getPath(), curi);
+        }
+        CrawlURI gzip = subrequestByPath.get("/gzip");
+        assertNotNull(gzip);
+        assertEquals("gzip", gzip.getRecorder().getContentEncoding());
+        assertEquals("/*hello world*/", gzip.getRecorder().getContentReplayPrefixString(100));
     }
 
     @Test
@@ -127,14 +132,11 @@ class BrowserProcessorTest {
         httpServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), -1);
         httpServer.createContext("/", exchange -> {
             logger.log(DEBUG, "Server received request: {0} {1}",  exchange.getRequestMethod(), exchange.getRequestURI());
-
             String contentType = "text/html";
             int status = 200;
             String body = "";
             switch (exchange.getRequestURI().getPath()) {
-                case "/" -> {
-                    body = "<link href=style.css rel=stylesheet><a href=\"/link\">link</a><img src=img.jpg>";
-                }
+                case "/" -> body = "<link href=style.css rel=stylesheet><link href=gzip rel=stylesheet><a href=\"/link\">link</a><img src=img.jpg>";
                 case "/style.css" -> {
                     body = "body { color: red; background: url(bg.jpg); }";
                     contentType = "text/css";
@@ -142,6 +144,15 @@ class BrowserProcessorTest {
                 case "/download.bin" -> {
                     body = "sample-download-file";
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=heritrix-test.bin");
+                }
+                case "/gzip" -> {
+                    exchange.getResponseHeaders().add("Content-Encoding", "gzip");
+                    exchange.sendResponseHeaders(200, 0);
+                    var gzip = new GZIPOutputStream(exchange.getResponseBody());
+                    gzip.write("/*hello world*/".getBytes());
+                    gzip.close();
+                    exchange.close();
+                    return;
                 }
                 default -> status = 404;
             }
@@ -167,7 +178,7 @@ class BrowserProcessorTest {
         fetchChain.setProcessors(List.of());
         crawlController.setFetchChain(fetchChain);
 
-        subrequests = new ArrayList<CrawlURI>();
+        subrequests = new ArrayList<>();
 
         DispositionChain dispositionChain = new DispositionChain();
         dispositionChain.setProcessors(List.of(new Processor() {
@@ -177,7 +188,7 @@ class BrowserProcessorTest {
             }
 
             @Override
-            protected void innerProcess(CrawlURI uri) throws InterruptedException {
+            protected void innerProcess(CrawlURI uri) {
                 subrequests.add(uri);
             }
         }));

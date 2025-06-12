@@ -52,10 +52,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -230,6 +228,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             recordRequest(request, recorder);
             Response response = listener.get(getTimeoutSeconds(), TimeUnit.SECONDS);
             handleAltSvcHeader(curi, response);
+            curi.getRecorder().inputWrap(null);
             updateCrawlURIWithResponseHeader(curi, response);
             recordResponse(response, recorder, listener);
         } catch (RecorderTimeoutException ex) {
@@ -389,11 +388,11 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
      */
     private static void recordResponse(Response response, Recorder recorder, InputStreamResponseListener listener) throws IOException {
         String header = formatResponseHeader(response);
-        ByteArrayInputStream headerStream = new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII));
-        try (InputStream inputStream = listener.getInputStream()) {
-            var streams = List.of(headerStream, inputStream);
-            recorder.inputWrap(new SequenceInputStream(Collections.enumeration(streams)));
-            recorder.getRecordedInput().readFully();
+        try (var responseRecorder = recorder.getRecordedInput().asOutputStream()) {
+            responseRecorder.write(header.getBytes(StandardCharsets.US_ASCII));
+            try (InputStream inputStream = listener.getInputStream()) {
+                inputStream.transferTo(responseRecorder);
+            }
         }
     }
 
@@ -488,6 +487,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        // start() adds a default gzip decoder, remove it so that the client doesn't decode gzip for us
+        httpClient.getContentDecoderFactories().clear();
     }
 
     @Override
