@@ -1,10 +1,10 @@
-ARG java=21-jdk-slim
+ARG java=21
 
-FROM openjdk:${java}
+FROM eclipse-temurin:${java}
 
 ARG version="3.10.0"
 ARG user="heritrix"
-ARG userid=1000
+ARG userid=1001
 
 LABEL version=${version}
 LABEL user=${user}/$userid
