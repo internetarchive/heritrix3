@@ -2,7 +2,7 @@ ARG java=21-jdk-slim
 
 FROM openjdk:${java}
 
-ARG version="3.9.0"
+ARG version="3.10.0"
 ARG user="heritrix"
 ARG userid=1000
 
@@ -25,7 +25,7 @@ RUN \
 WORKDIR /opt
 
 # download latest version according to:
-#   https://github.com/internetarchive/heritrix3/releases/tag/3.9.0
+#   https://github.com/internetarchive/heritrix3/releases/tag/3.10.0
 RUN \
     wget -O heritrix-${version}-dist.zip https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/${version}/heritrix-${version}-dist.zip && \
     unzip heritrix-${version}-dist.zip && \
