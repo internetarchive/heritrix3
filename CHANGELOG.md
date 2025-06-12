@@ -19,7 +19,7 @@
 - **Robots.txt wildcards:** The `*` and `$` wildcard rules from RFC 9309 are now supported.
   [#656](https://github.com/internetarchive/heritrix3/pull/656)
 
-- **FetchHTTP2:** Added HTTP proxy support.
+- **FetchHTTP2:** Added HTTP proxy support. [#657](https://github.com/internetarchive/heritrix3/pull/657)
 
 #### Fixes
 
