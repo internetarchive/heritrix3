@@ -134,7 +134,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // impossible
         }
-
+        Thread.interrupted();
         if (!cookie.isExpired(new Date())) {
             cookies.put(key, cookie);
         } else {
@@ -144,7 +144,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
     
     public boolean expireCookie(Cookie cookie, Date date) {
         byte[] key = sortableKey(cookie).getBytes(StandardCharsets.UTF_8);
-
+        Thread.interrupted();
         if (cookie.isExpired(date)) {
             cookies.remove(key);
             return true;
@@ -160,6 +160,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
             char chAfterDelim = (char)(((int)';')+1); 
             byte[] endKey = (host + chAfterDelim).getBytes("UTF-8");
 
+            Thread.interrupted();
             SortedMap<byte[], Cookie> submap = cookies.subMap(startKey, endKey);
             return submap.values();
 
@@ -225,6 +226,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
 
     @Override
     public void clear() {
+        Thread.interrupted();
         cookies.clear();
     }
 
@@ -234,6 +236,7 @@ public class BdbCookieStore extends AbstractCookieStore implements
     @Override
     public List<Cookie> getCookies() {
         if (cookies != null) {
+            Thread.interrupted();
             return new RestrictedCollectionWrappedList<Cookie>(cookies.values());
         } else {
             return null;
