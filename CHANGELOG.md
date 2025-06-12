@@ -27,6 +27,8 @@
   incompatibilities, allowing CodeMirror’s own find function to be re-enabled for reliable text search of content far
   outside the viewport. [#651](https://github.com/internetarchive/heritrix3/pull/651)
 
+- **BDB shutdown interrupt handling:** The thread’s interrupted flag is now cleared before some BDB interactions to reduce the likelihood of environment invalidation when requestCrawlStop() is called repeatedly. [#659](https://github.com/internetarchive/heritrix3/pull/659)
+
 #### Removals
 
 - **Removed Apache HttpClient 3**: If you have custom Heritrix modules you may need to update the following
