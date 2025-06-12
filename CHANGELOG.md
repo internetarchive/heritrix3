@@ -48,7 +48,9 @@
 
 - **codemirror**: 2.23 → 6
 - **easymock**: 5.5.0 → removed
+- **groovy**: 4.0.26 → 4.0.27
 - **junit**: 5.12.2 → 5.13.1
+- **kafka-clients**: 3.9.0 → 3.9.1
 - **spring**: 6.2.6 → 6.2.7
 - **webarchive-commons**: 1.3.0 → 2.0.1
 
