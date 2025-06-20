@@ -32,6 +32,7 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
+import org.eclipse.jetty.alpn.client.ALPNClientConnection;
 import org.eclipse.jetty.client.*;
 import org.eclipse.jetty.client.transport.HttpClientConnectionFactory;
 import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
@@ -43,6 +44,8 @@ import org.eclipse.jetty.http3.client.HTTP3Client;
 import org.eclipse.jetty.http3.client.transport.ClientConnectionFactoryOverHTTP3;
 import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
+import org.eclipse.jetty.io.Connection;
+import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.quic.client.ClientQuicConfiguration;
 import org.eclipse.jetty.quic.quiche.jna.LibQuiche;
 import org.eclipse.jetty.util.Promise;
@@ -140,7 +143,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             connectionFactories.add(new ClientConnectionFactoryOverHTTP3.HTTP3(http3Client));
         }
 
-        var transport = new HttpClientTransportDynamic(connector, connectionFactories.toArray(new ClientConnectionFactory.Info[0]));
+        var transport = new HttpClientTransportHttp11Fallback(connector, connectionFactories.toArray(new ClientConnectionFactory.Info[0]));
         HttpClient httpClient = new HttpClient(transport);
         httpClient.setFollowRedirects(false); // we handle redirects ourselves
         httpClient.setDestinationIdleTimeout(5 * 60 * 1000);
@@ -686,6 +689,32 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         @Override
         public boolean clear() {
             return false;
+        }
+    }
+
+    /**
+     * This is a workaround for HttpClientTransportDynamic always using the first protocol when ALPN is not supported.
+     * We want to list HTTP/2 first, so it's preferred during negotiation, but if the server doesn't support ALPN, we
+     * want to fall back to HTTP/1.1.
+     */
+    private static class HttpClientTransportHttp11Fallback extends HttpClientTransportDynamic {
+        public HttpClientTransportHttp11Fallback(ClientConnector connector, ClientConnectionFactory.Info... infos) {
+            super(connector, infos);
+        }
+
+        @Override
+        protected Connection newNegotiatedConnection(EndPoint endPoint, Map<String, Object> context) throws IOException {
+            try {
+                String protocol = ((ALPNClientConnection) endPoint.getConnection()).getProtocol();
+                if (protocol == null) { // ALPN not supported
+                    return HttpClientConnectionFactory.HTTP11.getClientConnectionFactory()
+                            .newConnection(endPoint, context);
+                }
+            } catch (Throwable t) {
+                connectFailed(context, t);
+                throw t;
+            }
+            return super.newNegotiatedConnection(endPoint, context);
         }
     }
 }

@@ -4,6 +4,12 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...HEAD)
 
+#### Bug fixes
+
+- **FetchHTTP2**
+  - HTTP/1.1 is now used on servers that don't support ALPN. Fixes `IOException: frame_size_error/invalid_frame_length`
+  - Fixed NullPointerException when the server's IP address isn't available. 
+
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.zip) (
