@@ -416,7 +416,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
 
         // Server IP address
         var socketAddress = (InetSocketAddress) response.getRequest().getConnection().getRemoteSocketAddress();
-        curi.setServerIP(socketAddress.getAddress().getHostAddress());
+        if (socketAddress != null) {
+            curi.setServerIP(socketAddress.getAddress().getHostAddress());
+        }
 
         // Request method
         if (curi.getFetchType() != CrawlURI.FetchType.HTTP_POST) {
