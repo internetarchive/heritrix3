@@ -10,6 +10,10 @@
   - HTTP/1.1 is now used on servers that don't support ALPN. Fixes `IOException: frame_size_error/invalid_frame_length`
   - Fixed NullPointerException when the server's IP address isn't available. 
 
+- **Seeds report:** Redirect URIs are now recorded from the `Location` header for HTTP status codes `303 See other`, 
+ `307 Temporary Redirect` and `308 Permanent Redirect`.
+  Previously this was only done for `301 Moved Permanently` and `302 Found`. 
+
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.zip) (
