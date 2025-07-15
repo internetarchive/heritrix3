@@ -109,7 +109,7 @@ public class SeedRecord implements CoreAttributeConstants, Serializable, Identit
         }
         this.statusCode = curi.getFetchStatus();
         this.disposition = disposition;
-        if (statusCode==301 || statusCode == 302) {
+        if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307 || statusCode == 308) {
             for (CrawlURI cauri: curi.getOutLinks()) {
                 if("location:".equalsIgnoreCase(cauri.getViaContext().
                         toString())) {
