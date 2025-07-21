@@ -4,6 +4,12 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...HEAD)
 
+## [3.10.1](https://github.com/internetarchive/heritrix3/releases/tag/3.10.1)  (2025-07-21)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...3.10.1) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.10.1/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.10.1/pom)
+
 #### Bug fixes
 
 - **FetchHTTP2**
@@ -14,7 +20,10 @@
  `307 Temporary Redirect` and `308 Permanent Redirect`.
   Previously this was only done for `301 Moved Permanently` and `302 Found`. 
 
-#### Dependency Upgrades
+- **Public suffixes list:** A resource naming conflict between webarchive-commons and crawler-commons for 
+  `effective_tld_names.dat` was resolved and the list was updated to the latest version. 
+
+#### Dependency upgrades
 
 - **codemirror@state**: 6.4.0 → 6.5.11 
 - **codemirror@view**: 6.37.1 → 6.37.2
@@ -30,8 +39,7 @@
 
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
 
-[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.zip) (
-or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.tar.gz))
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.tar.gz))
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.9.0...3.10.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.10.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.10.0/pom)
 
