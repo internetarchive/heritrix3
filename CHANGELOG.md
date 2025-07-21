@@ -16,6 +16,7 @@
 
 #### Dependency Upgrades
 
+- **crawler-commons**: 1.4 → 1.5
 - **codemirror@state**: 6.4.0 → 6.5.11 
 - **codemirror@view**: 6.37.1 → 6.37.2 
 - **junit-jupiter**: 5.13.2 → 5.13.3
