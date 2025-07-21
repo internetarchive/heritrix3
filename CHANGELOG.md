@@ -18,7 +18,8 @@
 
 - **crawler-commons**: 1.4 → 1.5
 - **codemirror@state**: 6.4.0 → 6.5.11 
-- **codemirror@view**: 6.37.1 → 6.37.2 
+- **codemirror@view**: 6.37.1 → 6.37.2
+- **commons-io**: 2.19.0 → 2.20.0
 - **jsch**: 2.27.0 → 2.27.2
 - **junit-jupiter**: 5.13.2 → 5.13.3
 - **restlet**: 2.6.0-rc1 → 2.6.0
