@@ -14,6 +14,10 @@
  `307 Temporary Redirect` and `308 Permanent Redirect`.
   Previously this was only done for `301 Moved Permanently` and `302 Found`. 
 
+#### Dependency Upgrades
+
+- **restlet**: 2.6.0-rc1 → 2.6.0
+
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.0/heritrix-3.10.0-dist.zip) (
