@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.archive</groupId>
 		<artifactId>heritrix</artifactId>
-		<version>3.10.1</version>
+		<version>3.10.2-SNAPSHOT</version>
 	</parent>
 	<groupId>org.archive.heritrix</groupId>
 	<artifactId>heritrix-contrib</artifactId>
