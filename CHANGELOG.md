@@ -25,6 +25,7 @@
 - **jsch**: 2.27.0 → 2.27.2
 - **junit-jupiter**: 5.13.2 → 5.13.3
 - **restlet**: 2.6.0-rc1 → 2.6.0
+- **spring**: 6.2.7 → 6.2.9
 - **webarchive-commons**: 2.0.1 → 3.0.0
 
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
