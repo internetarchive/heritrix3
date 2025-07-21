@@ -33,9 +33,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.LongRange;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.LongRange;
 import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.util.FileUtils;
 import org.eclipse.jetty.http.HttpStatus;
@@ -116,8 +116,8 @@ public class PagedRepresentation extends CharacterRepresentation {
         // bounce against the front of the file: don't show runt (fewer
         // lines than requested) unless absolutely necessary)
         if(lines.size()<Math.abs(lineCount) 
-                && range.getMinimumLong() == 0 
-                && range.getMaximumLong()<file.length()) {
+                && range.getMinimum() == 0
+                && range.getMaximum()<file.length()) {
             this.lines = new LinkedList<String>();
             this.range = FileUtils.pagedLines(file, 0, Math.abs(lineCount), lines, 128);
         }
@@ -154,7 +154,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         pw.println("<pre>");
         emitBumper(pw, true);
         for(String line : lines) {
-            pw.println(syntaxHighlighter.apply(StringEscapeUtils.escapeHtml(line)));
+            pw.println(syntaxHighlighter.apply(StringEscapeUtils.escapeHtml4(line)));
         }
         emitBumper(pw, false);
         pw.println("</pre>");
@@ -222,11 +222,11 @@ public class PagedRepresentation extends CharacterRepresentation {
      * @param atTop boolean, true if at top of page
      */
     protected void emitBumper(PrintWriter pw, boolean atTop) {
-        if((!reversedOrder ^ atTop)&&(range.getMaximumLong()==file.length())) {
+        if((!reversedOrder ^ atTop)&&(range.getMaximum()==file.length())) {
             pw.println("<span class='endBumper' style='font-weight:bold; color:white; background-color:#400'>&laquo;EOF&raquo;</span>");
             return; 
         }
-        if((reversedOrder ^ atTop)&&(range.getMinimumLong()==0)) {
+        if((reversedOrder ^ atTop)&&(range.getMinimum()==0)) {
             pw.println("<span class='startBumper' style='font-weight:bold; color:white; background-color:#040'>&laquo;START&raquo;</span>");
         }
     }
@@ -247,18 +247,18 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("'>&laquo; end</a>");
             pw.print("<a href='");
             pw.print(getControlUri(
-                    Math.min(file.length()-1, range.getMaximumLong()),Math.abs(lineCount),reversedOrder));
+                    Math.min(file.length()-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
             pw.println("'>&lsaquo; later</a>");
             pw.println("bytes "
-                    +range.getMaximumLong()
-                    +"-"+range.getMinimumLong()
+                    +range.getMaximum()
+                    +"-"+range.getMinimum()
                     +"/"+file.length()
                     +" "
-                    +(int)(100*(range.getMaximumLong()/(float)file.length()))
+                    +(int)(100*(range.getMaximum()/(float)file.length()))
                     +"%");
             pw.print("<a href='");
             pw.print(getControlUri(
-                    Math.max(0, range.getMinimumLong()-1),-Math.abs(lineCount),reversedOrder));
+                    Math.max(0, range.getMinimum()-1),-Math.abs(lineCount),reversedOrder));
             pw.println("'>earlier &rsaquo;</a>");
             pw.print("<a href='");
             pw.print(getControlUri(0,Math.abs(lineCount),reversedOrder));
@@ -274,18 +274,18 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.print(getControlUri(0,Math.abs(lineCount),reversedOrder));
             pw.println("'>&laquo; start</a>");
             pw.print("<a href='");pw.print(getControlUri(
-                    Math.max(0, range.getMinimumLong()-1),-Math.abs(lineCount),reversedOrder));
+                    Math.max(0, range.getMinimum()-1),-Math.abs(lineCount),reversedOrder));
             pw.println("'>&lsaquo; earlier</a>");
             pw.println("bytes "
-                    +range.getMinimumLong()
-                    +"-"+range.getMaximumLong()
+                    +range.getMinimum()
+                    +"-"+range.getMaximum()
                     +"/"+file.length()
                     +" "
-                    +(int)(100*(range.getMaximumLong()/(float)file.length()))
+                    +(int)(100*(range.getMaximum()/(float)file.length()))
                     +"%");
             pw.print("<a href='");
             pw.print(getControlUri(
-                    Math.min(file.length()-1, range.getMaximumLong()),Math.abs(lineCount),reversedOrder));
+                    Math.min(file.length()-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
             pw.println("'>later &rsaquo;</a>");
             pw.print("<a href='");
             pw.print(getControlUri(file.length(),-Math.abs(lineCount),reversedOrder));

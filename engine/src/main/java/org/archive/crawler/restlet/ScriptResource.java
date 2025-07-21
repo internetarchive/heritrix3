@@ -19,7 +19,7 @@
 
 package org.archive.crawler.restlet;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.restlet.models.ScriptModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.restlet.Context;

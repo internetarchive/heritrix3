@@ -18,12 +18,14 @@
 
 - **codemirror@state**: 6.4.0 → 6.5.11 
 - **codemirror@view**: 6.37.1 → 6.37.2
+- **commons-lang**: 2.6 → 3.18.0
 - **commons-io**: 2.19.0 → 2.20.0
 - **crawler-commons**: 1.4 → 1.5
 - **jetty**: 12.0.17 → 12.0.22
 - **jsch**: 2.27.0 → 2.27.2
 - **junit-jupiter**: 5.13.2 → 5.13.3
 - **restlet**: 2.6.0-rc1 → 2.6.0
+- **webarchive-commons**: 2.0.1 → 3.0.0
 
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
 

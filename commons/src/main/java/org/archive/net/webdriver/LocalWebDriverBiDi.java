@@ -21,7 +21,7 @@ package org.archive.net.webdriver;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.io.input.CharSequenceReader;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;

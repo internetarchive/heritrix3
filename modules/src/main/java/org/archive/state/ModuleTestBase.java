@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 
 import org.archive.url.URIException;
-import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;

@@ -19,7 +19,7 @@
 
 package org.archive.crawler.processor;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;

@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.reporting.AlertThreadGroup;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Histotable;

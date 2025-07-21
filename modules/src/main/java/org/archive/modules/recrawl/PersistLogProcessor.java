@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.io.CrawlerJournal;

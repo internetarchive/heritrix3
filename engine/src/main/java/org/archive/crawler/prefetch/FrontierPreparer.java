@@ -21,7 +21,7 @@ package org.archive.crawler.prefetch;
 import static org.archive.modules.SchedulingConstants.HIGH;
 import static org.archive.modules.SchedulingConstants.MEDIUM;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.framework.Scoper;
 import org.archive.crawler.frontier.CostAssignmentPolicy;
 import org.archive.crawler.frontier.QueueAssignmentPolicy;

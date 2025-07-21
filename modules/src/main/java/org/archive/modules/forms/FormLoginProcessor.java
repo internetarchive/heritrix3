@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.url.URIException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;

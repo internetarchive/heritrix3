@@ -37,12 +37,6 @@
 			<version>7.5.11</version>
 		</dependency>
 		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.6</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>commons-net</groupId>
 			<artifactId>commons-net</artifactId>
 			<version>3.11.1</version>
@@ -145,7 +139,7 @@
 		<dependency>
 			<groupId>org.netpreserve.commons</groupId>
 			<artifactId>webarchive-commons</artifactId>
-			<version>2.0.2</version>
+			<version>3.0.0</version>
 		</dependency>
 
 		<dependency>

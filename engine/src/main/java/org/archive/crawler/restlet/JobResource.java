@@ -25,7 +25,7 @@ import java.io.Writer;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
 import org.archive.crawler.reporting.AlertHandler;

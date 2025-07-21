@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCRecordInfo;

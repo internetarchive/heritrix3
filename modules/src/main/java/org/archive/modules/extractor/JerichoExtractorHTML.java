@@ -34,8 +34,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.url.URIException;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.net.RobotsPolicy;
@@ -209,14 +209,14 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         // SRCSET
         if (((attr = attributes.get("srcset")) != null) &&
                 ((attrValue = attr.getValue()) != null)) {
-            codebase = StringEscapeUtils.unescapeHtml(attrValue);
+            codebase = StringEscapeUtils.unescapeHtml4(attrValue);
             CharSequence context = elementContext(elementName, attr.getKey());
             processEmbed(curi, codebase, context);
         }
         // CODEBASE
         if (((attr = attributes.get("codebase")) != null) &&
                  ((attrValue = attr.getValue()) != null)) {
-            codebase = StringEscapeUtils.unescapeHtml(attrValue);
+            codebase = StringEscapeUtils.unescapeHtml4(attrValue);
             CharSequence context = elementContext(elementName, attr.getKey());
             processEmbed(curi, codebase, context);
         }
@@ -299,7 +299,7 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             }
             while (iter.hasNext()) {
                 res = iter.next();
-                res = StringEscapeUtils.unescapeHtml(res);
+                res = StringEscapeUtils.unescapeHtml4(res);
                 if (codebaseURI != null) {
                     res = codebaseURI.resolve(res).toString();
                 }

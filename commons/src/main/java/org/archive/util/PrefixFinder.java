@@ -26,7 +26,7 @@ import java.util.NavigableSet;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.sleepycat.collections.StoredSortedKeySet;
 import com.sleepycat.collections.StoredSortedMap;

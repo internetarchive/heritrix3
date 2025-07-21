@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ArchiveUtils;

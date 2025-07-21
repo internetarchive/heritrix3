@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.restlet.models.BeansModel;
 import org.archive.crawler.restlet.models.ViewModel;
 import org.archive.spring.PathSharingContext;

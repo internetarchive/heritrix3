@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.FileUtils;

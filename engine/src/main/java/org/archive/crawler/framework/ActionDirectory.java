@@ -39,7 +39,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.modules.seeds.SeedModule;
 import org.archive.spring.ConfigPath;
 import org.archive.util.ArchiveUtils;

@@ -19,7 +19,7 @@
 
 package org.archive.util;
 
-import org.apache.commons.lang.math.RandomUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class LongToIntConsistentHashTest {
     public void testRange() {
         for(long in = 0; in < 10000; in++) {
             long longHash = FPGenerator.std64.fp(""+in);
-            int upTo = RandomUtils.nextInt(32)+1;
+            int upTo = RandomUtils.secure().randomInt(0, 32) + 1;
             int bucket = conhash.bucketFor(longHash, upTo);
             assertTrue(bucket < upTo, "bucket returned >= upTo");
             assertTrue(bucket >= 0, "bucket returned < 0: "+bucket);

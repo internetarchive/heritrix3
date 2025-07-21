@@ -20,7 +20,7 @@
 package org.archive.modules;
 
 import org.archive.url.URIException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.credential.HttpAuthenticationCredential;

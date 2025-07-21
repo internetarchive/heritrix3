@@ -23,7 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;

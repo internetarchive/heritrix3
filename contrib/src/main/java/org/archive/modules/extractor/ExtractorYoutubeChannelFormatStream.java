@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.util.TextUtils;
@@ -67,7 +67,7 @@ public class ExtractorYoutubeChannelFormatStream extends
         if (matcher.find()) {
              String str = matcher.group(1);
 
-             String jsonStr = StringEscapeUtils.unescapeHtml(StringEscapeUtils.unescapeHtml(str));
+             String jsonStr = StringEscapeUtils.unescapeHtml4(StringEscapeUtils.unescapeHtml4(str));
             // logger.fine("Just Extracted: "+jsonStr);
             try {
                 JSONObject json = new JSONObject(jsonStr);

@@ -20,7 +20,7 @@
 package org.archive.settings.file;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.RandomUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.spring.ConfigPath;

@@ -56,7 +56,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController.StopCompleteEvent;
 import org.archive.crawler.frontier.WorkQueue;
