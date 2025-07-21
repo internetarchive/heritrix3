@@ -16,6 +16,8 @@
 
 #### Dependency Upgrades
 
+- **codemirror@state**: 6.4.0 → 6.5.11 
+- **codemirror@view**: 6.37.1 → 6.37.2 
 - **restlet**: 2.6.0-rc1 → 2.6.0
 
 ## [3.10.0](https://github.com/internetarchive/heritrix3/releases/tag/3.10.0)  (2025-06-12)
