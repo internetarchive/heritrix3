@@ -50,6 +50,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
@@ -220,10 +221,17 @@ public class BrowserProcessor extends Processor {
         semaphore = new Semaphore(concurrency);
         extractorChain.setProcessors(crawlController.getFetchChain().getProcessors().stream()
                 .filter(processor -> processor instanceof Extractor).toList());
-
+        Path scratchDir = crawlController.getScratchDir().getFile().toPath();
+        try {
+            // if this is the first launch, scratchDir may not exist yet
+            Files.createDirectories(scratchDir);
+        } catch (IOException e) {
+            logger.log(ERROR, "Error creating scratch directory", e);
+            throw new UncheckedIOException(e);
+        }
         if (proxy == null) {
             proxy = new MitmProxy(this::handleProxyRequest,
-                    crawlController.getScratchDir().getFile().toPath().resolve("proxy.keystore").toString());
+                    scratchDir.resolve("proxy.keystore").toString());
         }
         try {
             proxy.start();
@@ -232,7 +240,7 @@ public class BrowserProcessor extends Processor {
             throw new RuntimeException(e);
         }
         try {
-            Path profileDir = crawlController.getScratchDir().getFile().toPath().resolve("profile");
+            Path profileDir = scratchDir.resolve("profile");
             Files.createDirectories(profileDir);
 
             // Firefox doesn't seem to allow setting prefs via capabilities with bidi
