@@ -30,8 +30,10 @@ import java.util.Set;
 import org.archive.url.URIException;
 import org.archive.crawler.event.AMQPUrlPublishedEvent;
 import org.archive.crawler.frontier.AMQPUrlReceiver;
+import org.archive.modules.fetcher.UserAgentProvider;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -74,6 +76,14 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
      */
     public void setClientId(String clientId) {
         kp.put("clientId", clientId);
+    }
+
+    public UserAgentProvider getUserAgentProvider() {
+        return (UserAgentProvider) kp.get("userAgentProvider");
+    }
+    @Autowired
+    public void setUserAgentProvider(UserAgentProvider provider) {
+        kp.put("userAgentProvider",provider);
     }
 
     @SuppressWarnings("unchecked")
@@ -136,6 +146,14 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
             }
         }
         metadata.put("heritableData", heritableData);
+
+        String ua = curi.getUserAgent();
+        if (ua == null) {
+            ua = getUserAgentProvider().getUserAgent();
+        }
+        if (ua != null) {
+            metadata.put("userAgent", ua);
+        }
 
         message.put("metadata", metadata);
 
