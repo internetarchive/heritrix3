@@ -134,7 +134,7 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__legacy-modes</artifactId>
-			<version>6.5.0</version>
+			<version>6.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>

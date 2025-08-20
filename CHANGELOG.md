@@ -4,6 +4,11 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...HEAD)
 
+### Dependency upgrades
+
+- **codemirror@language**: 6.11.1 → 6.11.2
+- **codemirror@legacy-modes**: 6.5.0 → 6.5.1
+
 ## [3.10.1](https://github.com/internetarchive/heritrix3/releases/tag/3.10.1)  (2025-07-21)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.tar.gz))
