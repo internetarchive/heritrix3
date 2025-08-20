@@ -4,6 +4,19 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...HEAD)
 
+### Dependency upgrades
+
+- **amqp-client**: 5.25.0 → 5.26.0
+- **codemirror@language**: 6.11.1 → 6.11.2
+- **codemirror@legacy-modes**: 6.5.0 → 6.5.1
+- **codemirror@view**: 6.37.2 → 6.38.1
+- **commons-cli**: 1.9.0 → 1.10.0
+- **commons-codec**: 1.18.0 → 1.19.0
+- **commons-net**: 3.11.1 → 3.12.0
+- **groovy**: 4.0.27 → 4.0.28
+- **junit-jupiter**: 5.13.3 → 5.13.4
+- **spring**: 6.2.9 → 6.2.10
+
 ## [3.10.1](https://github.com/internetarchive/heritrix3/releases/tag/3.10.1)  (2025-07-21)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.1/heritrix-3.10.1-dist.tar.gz))
