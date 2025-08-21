@@ -19,6 +19,12 @@
 package org.archive.modules.fetcher;
 
 import org.archive.modules.ProcessorTestBase;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.xbill.DNS.ARecord;
+import org.xbill.DNS.Name;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.TextParseException;
 
 /**
  * @author pjack
@@ -26,6 +32,16 @@ import org.archive.modules.ProcessorTestBase;
  */
 public class FetchDNSTest extends ProcessorTestBase {
 
-    // TODO TESTME!
+    @Test
+    public void testZeroAddressIsIgnored() throws TextParseException {
+        FetchDNS dns = new FetchDNS();
+        Assertions.assertNull(dns.getFirstARecord(new Record[]{
+                new ARecord(Name.fromString("example.org."), 0, 1000L, new byte[]{0, 0, 0, 0})
+        }));
+        Assertions.assertEquals("1.2.3.4", dns.getFirstARecord(new Record[]{
+                new ARecord(Name.fromString("example.org."), 0, 1000L, new byte[]{0, 0, 0, 0}),
+                new ARecord(Name.fromString("example.org."), 0, 1000L, new byte[]{1, 2, 3, 4}),
+        }).getAddress().getHostAddress());
+    }
     
 }
