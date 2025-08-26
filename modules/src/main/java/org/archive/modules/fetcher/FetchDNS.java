@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -232,7 +233,7 @@ public class FetchDNS extends Processor {
                 } catch (UnknownHostException e1) {
                     address = null;
                 }
-                if (address != null) {
+                if (address != null && isAcceptableAddress(address.getAddress())) {
                     targetHost.setIP(address, DEFAULT_TTL_FOR_NON_DNS_RESOLVES);
                     curi.setFetchStatus(S_GETBYNAME_SUCCESS);
                     curi.setContentSize(0);
@@ -260,8 +261,9 @@ public class FetchDNS extends Processor {
         // multiple, e.g. www.washington.edu) then update the CrawlServer
         ARecord arecord = getFirstARecord(rrecordSet);
         if (arecord == null) {
-            throw new NullPointerException("Got null arecord for " +
-                dnsName);
+            logger.log(Level.FINEST, "No acceptable A record for " + dnsName);
+            setUnresolvable(curi, targetHost);
+            return;
         }
         targetHost.setIP(arecord.getAddress(), arecord.getTTL());
         try {
@@ -372,26 +374,44 @@ public class FetchDNS extends Processor {
     }
     
     protected ARecord getFirstARecord(Record[] rrecordSet) {
-        ARecord arecord = null;
         if (rrecordSet == null || rrecordSet.length == 0) {
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("rrecordSet is null or zero length: " +
-                    rrecordSet);
+                              Arrays.toString(rrecordSet));
             }
-            return arecord;
+            return null;
         }
         for (int i = 0; i < rrecordSet.length; i++) {
-            if (rrecordSet[i].getType() != Type.A) {
+            Record record = rrecordSet[i];
+            if (record.getType() != Type.A || !(record instanceof ARecord aRecord)) {
                 if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("Record " + Integer.toString(i) +
-                        " is not A type but " + rrecordSet[i].getType());
+                    logger.finest("Record " + i + " is not A type but " + record.getType());
                 }
                 continue;
             }
-            arecord = (ARecord) rrecordSet[i];
-            break;
+
+            if (!isAcceptableAddress(aRecord.getAddress().getAddress())) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest("Record " + i + " has unacceptable address "
+                                  + aRecord.getAddress().getHostAddress());
+                }
+                continue;
+            }
+
+            return aRecord;
         }
-        return arecord;
+        return null;
+    }
+
+    protected boolean isAcceptableAddress(byte[] addr) {
+        if (addr == null) return false;
+
+        // Disallow 0.0.0.0
+        if (addr.length == 4 && addr[0] == 0 && addr[1] == 0 && addr[2] == 0 && addr[3] == 0) {
+            return false;
+        }
+
+        return true;
     }
 
     protected Lookup createDNSLookup(String lookupName)
