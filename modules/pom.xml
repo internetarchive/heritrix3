@@ -41,27 +41,22 @@
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-server</artifactId>
-			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-security</artifactId>
-			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-client</artifactId>
-			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty.http2</groupId>
 			<artifactId>jetty-http2-client-transport</artifactId>
-			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty.http3</groupId>
 			<artifactId>jetty-http3-client-transport</artifactId>
-			<version>${jetty.version}</version>
 			<exclusions>
 				<!-- Don't ship the quiche native library by default as it's very large and Jetty's
 				     HTTP/3 client is marked experimental and not for production use. For users who
@@ -76,13 +71,11 @@
 		<dependency>
 			<groupId>org.eclipse.jetty.ee10</groupId>
 			<artifactId>jetty-ee10-servlet</artifactId>
-			<version>${jetty.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty.ee10</groupId>
 			<artifactId>jetty-ee10-proxy</artifactId>
-			<version>${jetty.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

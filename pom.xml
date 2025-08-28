@@ -100,6 +100,20 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<artifactId>junit-jupiter</artifactId>
 				<version>5.13.4</version>
 			</dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 		</dependencies>
 	</dependencyManagement>
 
