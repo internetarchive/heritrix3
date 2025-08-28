@@ -101,6 +101,13 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 				<version>5.13.4</version>
 			</dependency>
             <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-bom</artifactId>
+                <version>4.0.28</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
                 <version>${jetty.version}</version>
@@ -403,7 +410,6 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
-		<groovy.version>4.0.28</groovy.version>
 		<jetty.version>12.0.25</jetty.version>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.source>17</maven.compiler.source>
