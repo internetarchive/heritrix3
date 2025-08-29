@@ -2,7 +2,18 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.2...HEAD)
+
+## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-07-21)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.1...3.10.2) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.10.2/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.10.2/pom)
+
+### Bug fixes
+
+- FetchDNS: DNS lookups returning `0.0.0.0` are now treated as resolution failure. [#665](https://github.com/internetarchive/heritrix3/pull/665)
+- AMQPPublishProcessor: The User-Agent string is now included in the metadata so Umbra can use it in its own requests. [#663](https://github.com/internetarchive/heritrix3/pull/663)
 
 ### Dependency upgrades
 
