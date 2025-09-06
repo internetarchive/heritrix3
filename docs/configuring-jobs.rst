@@ -585,6 +585,15 @@ will be annotated with ``h2`` in the crawl log and ``WARC-Protocol`` header.
 
 Note that ``FetchHTTP2`` currently only supports a limited subset of the ``FetchHTTP`` options.
 
+.. note::
+
+    The WARC standard (as of version 1.1) does not specify how to record HTTP/2 or 3 messages.
+    FetchHTTP2 does not record the original on-the-wire HTTP messages but instead a simplified HTTP/1.1
+    representation without transfer encoding.
+
+    If you want to stay within the bounds of the base WARC standard without extensions, or want to ensure the exact
+    bytes of the HTTP network message are recorded, you may prefer to use FetchHTTP.
+
 HTTP/3
 ~~~~~~
 

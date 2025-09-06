@@ -80,6 +80,10 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE
  * <p>
  * Does not record the original on-the-wire HTTP messages but instead a simplified HTTP/1.1
  * representation without transfer encoding.
+ * <p>
+ * <b>Note:</b> The WARC standard (as of version 1.1) does not specify how to record HTTP/2 or HTTP/3 messages.
+ * If you want to stay within the bounds of the base WARC standard without extensions, or want to ensure the exact
+ * bytes of the HTTP network message are recorded, you may prefer to use {@link FetchHTTP}.
  */
 public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean {
     private static final Logger logger = Logger.getLogger(FetchHTTP2.class.getName());
