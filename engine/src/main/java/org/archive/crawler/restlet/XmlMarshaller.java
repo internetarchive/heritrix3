@@ -196,7 +196,7 @@ public class XmlMarshaller {
         } else if (marshalAsElement(value)) {
             marshalBean(xmlWriter, key, value);
         } else {
-            xmlWriter.dataElement(key, value.toString());
+            xmlWriter.dataElement(key, stripInvalidXMLChars(value.toString()));
         }
     }
 
@@ -225,5 +225,25 @@ public class XmlMarshaller {
         } else {
             marshal(xmlWriter, "value", item);
         }
+    }
+
+    public static String stripInvalidXMLChars(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        StringBuilder sb = new StringBuilder();
+        input.codePoints().forEach(cp -> {
+            if (isValidXMLCodePoint(cp)) {
+                sb.appendCodePoint(cp);
+            }
+        });
+        return sb.toString();
+    }
+
+    protected static boolean isValidXMLCodePoint(int cp) {
+        return (cp == 0x9) || (cp == 0xA) || (cp == 0xD) ||
+                (cp >= 0x20 && cp <= 0xD7FF) ||
+                (cp >= 0xE000 && cp <= 0xFFFD) ||
+                (cp >= 0x10000 && cp <= 0x10FFFF);
     }
 }
