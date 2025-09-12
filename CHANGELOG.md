@@ -4,6 +4,10 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.2...HEAD)
 
+### Bug fixes
+
+- Invalid characters are now stripped from the XML REST API output. Log file truncation after an unclean shutdown can sometimes introduce such characters. [#667](https://github.com/internetarchive/heritrix3/pull/667)
+
 ## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-07-21)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.tar.gz))
