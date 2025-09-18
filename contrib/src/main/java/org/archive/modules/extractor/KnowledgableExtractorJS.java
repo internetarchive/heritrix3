@@ -35,7 +35,7 @@ import org.archive.util.TextUtils;
  * specific kinds of web pages. As of April 2015, the one special behavior it
  * has is for drupal generated pages. See https://webarchive.jira.com/browse/ARI-4190
  */
-public class KnowledgableExtractorJS extends ExtractorJS {
+public class KnowledgableExtractorJS extends ConfigurableExtractorJS {
 
     private static Logger LOGGER = 
             Logger.getLogger(KnowledgableExtractorJS.class.getName());
