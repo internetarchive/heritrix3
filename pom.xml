@@ -410,7 +410,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
-		<jetty.version>12.0.25</jetty.version>
+		<jetty.version>12.0.27</jetty.version>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.release>17</maven.compiler.release>
