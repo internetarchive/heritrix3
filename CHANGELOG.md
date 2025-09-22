@@ -2,17 +2,23 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.2...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.11.0...HEAD)
+
+## [3.11.0](https://github.com/internetarchive/heritrix3/releases/tag/3.11.0)  (2025-09-22)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.11.0/heritrix-3.11.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.11.0/heritrix-3.11.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.2...3.11.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.11.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.11.0/pom)
 
 ### New features
 
-- KnowledgableExtractorJS now extends ConfigurableExtractorJS for its additional options.
+- KnowledgableExtractorJS now extends ConfigurableExtractorJS for its additional options. [#668](https://github.com/internetarchive/heritrix3/pull/668)
 
 ### Bug fixes
 
 - Invalid characters are now stripped from the XML REST API output. Log file truncation after an unclean shutdown can sometimes introduce such characters. [#667](https://github.com/internetarchive/heritrix3/pull/667)
 
-### Dependency upgrdes
+### Dependency upgrades
 
 - **codemirror@language**: 6.11.2 → 6.11.3
 - **jakarta.xml.bind-api**: 4.0.2 → 4.0.4
@@ -21,7 +27,7 @@
 - **gson**: 2.13.1 → 2.13.2
 - **spring**: 6.2.10 → 6.2.11
 
-## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-07-21)
+## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-08-29)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.10.2/heritrix-3.10.2-dist.tar.gz))
 
