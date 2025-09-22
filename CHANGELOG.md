@@ -15,6 +15,7 @@
 ### Dependency upgrdes
 
 - **gson**: 2.13.1 → 2.13.2
+- **spring**: 6.2.10 → 6.2.11
 
 ## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-07-21)
 
