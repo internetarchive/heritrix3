@@ -4,9 +4,17 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.10.2...HEAD)
 
+### New features
+
+- KnowledgableExtractorJS now extends ConfigurableExtractorJS for its additional options.
+
 ### Bug fixes
 
 - Invalid characters are now stripped from the XML REST API output. Log file truncation after an unclean shutdown can sometimes introduce such characters. [#667](https://github.com/internetarchive/heritrix3/pull/667)
+
+### Dependency upgrdes
+
+- **gson**: 2.13.1 → 2.13.2
 
 ## [3.10.2](https://github.com/internetarchive/heritrix3/releases/tag/3.10.2)  (2025-07-21)
 
