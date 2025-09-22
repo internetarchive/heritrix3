@@ -14,6 +14,7 @@
 
 ### Dependency upgrdes
 
+- **codemirror@language**: 6.11.2 → 6.11.3
 - **jetty**: 12.0.25 → 12.0.27
 - **jsch**: 2.27.2 → 2.27.3
 - **gson**: 2.13.1 → 2.13.2
