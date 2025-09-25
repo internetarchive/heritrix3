@@ -354,7 +354,7 @@ public class StatisticsTracker
                 JSONObject json = recoveryCheckpoint.loadJson(beanName);
                 
                 crawlStartTime = json.getLong("crawlStartTime");
-                crawlEndTime = json.getLong("crawlEndTime");
+                // skip crawlEndTime - crawl is not ended if we're recovering
                 crawlTotalPausedTime = json.getLong("crawlTotalPausedTime");
                 crawlPauseStarted = json.getLong("crawlPauseStarted");
                 tallyCurrentPause();
