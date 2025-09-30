@@ -47,10 +47,10 @@ public class ConfigurableExtractorJS extends ExtractorJS {
 	
     /** If true, then only extract non-relative paths */
     public boolean getStrict() {
-        return (Boolean) kp.get("strictMode");
+        return (Boolean) kp.get("strict");
     }
     public void setStrict(boolean strict) {
-        kp.put("strictMode", strict);
+        kp.put("strict", strict);
     }
     {
     	setStrict(false);
