@@ -137,6 +137,10 @@ public class ExtractorJS extends ContentExtractor {
             CrawlURI curi, CharSequence cs) {
         return considerStrings(ext, curi, cs, false);
     }
+    public long considerStrings(Extractor ext,
+            CrawlURI curi, CharSequence cs, String attributeContext) {
+        return considerStrings(ext, curi, cs, false);
+    }
     
     public long considerStrings(Extractor ext, 
             CrawlURI curi, CharSequence cs, boolean handlingJSFile) {
