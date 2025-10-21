@@ -109,6 +109,7 @@ public class BdbMultipleWorkQueues {
         DatabaseEntry key = headKey;
         DatabaseEntry value = new DatabaseEntry();
         Cursor cursor = null;
+        Thread.interrupted();
         try {
             cursor = pendingUrisDB.openCursor(null, null);
             OperationStatus result = cursor.getSearchKeyRange(headKey,
@@ -165,6 +166,7 @@ public class BdbMultipleWorkQueues {
         
         Cursor cursor = null;
         OperationStatus result = null;
+        Thread.interrupted();
         try {
             cursor = pendingUrisDB.openCursor(null,null);
             result = cursor.getSearchKey(key, value, null);
@@ -217,6 +219,7 @@ public class BdbMultipleWorkQueues {
     protected DatabaseEntry getFirstKey() throws DatabaseException {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
+        Thread.interrupted();
         Cursor cursor = pendingUrisDB.openCursor(null,null);
         OperationStatus status = cursor.getNext(key,value,null);
         cursor.close();
@@ -290,6 +293,7 @@ public class BdbMultipleWorkQueues {
             DatabaseEntry result) throws DatabaseException {
         Cursor cursor = null;
         OperationStatus status;
+        Thread.interrupted();
         try {
             cursor = this.pendingUrisDB.openCursor(null, null);
             
@@ -337,6 +341,7 @@ public class BdbMultipleWorkQueues {
             tallyAverageEntrySize(curi, value);
         }
         OperationStatus status;
+        Thread.interrupted();
         if(overwriteIfPresent) {
             status = pendingUrisDB.put(null, insertKey, value);
         } else {
@@ -479,6 +484,7 @@ public class BdbMultipleWorkQueues {
      */
     public void delete(CrawlURI item) throws DatabaseException {
         OperationStatus status;
+        Thread.interrupted();
         DatabaseEntry de = (DatabaseEntry)item.getHolderKey();
         status = pendingUrisDB.delete(null, de);
         if (status != OperationStatus.SUCCESS) {
@@ -504,6 +510,7 @@ public class BdbMultipleWorkQueues {
     	if (this.pendingUrisDB == null) {
     		return;
     	}
+        Thread.interrupted();
         try {
             this.pendingUrisDB.sync();
         } catch (DatabaseException e) {
@@ -533,6 +540,7 @@ public class BdbMultipleWorkQueues {
      * @param origin key at which to insert the cap
      */
     public void addCap(byte[] origin) {
+        Thread.interrupted();
         try {
             pendingUrisDB.put(null, new DatabaseEntry(origin),
                     new DatabaseEntry(new byte[0]));
@@ -549,6 +557,7 @@ public class BdbMultipleWorkQueues {
     protected void forAllPendingDo(Closure c) throws DatabaseException {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
+        Thread.interrupted();
         Cursor cursor = pendingUrisDB.openCursor(null, null);
         while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
             if (value.getData().length == 0) {
@@ -573,6 +582,7 @@ public class BdbMultipleWorkQueues {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         long uris = 0L;
+        Thread.interrupted();
         Cursor cursor = pendingUrisDB.openCursor(null, null);
         while (cursor.getNext(key, value, null) == OperationStatus.SUCCESS) {
             if (value.getData().length == 0) {
