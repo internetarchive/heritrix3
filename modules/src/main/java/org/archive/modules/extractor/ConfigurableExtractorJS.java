@@ -126,7 +126,31 @@ public class ConfigurableExtractorJS extends ExtractorJS {
     public void addRejectRelativeIgnoreList(String ignoreString) {
 		rejectRelativeIgnoreSet.add(ignoreString);
     }
-    
+
+
+    /**
+     * List of regular expressions that will block extraction if matched against a script tag attribute.
+     * When script blocks are extracted from HTML, the tag attributes are passed as the attributeContext parameter
+     * to considerStrings. If any of the patterns on this list match the attributeContext, then the script block is not
+     * processed.
+     * This can be used to block processing of script blocks
+     */
+    private List<String> rejectScriptAttributeRegexList = new ArrayList<>();
+    private List<Pattern> rejectScriptAttributeRegexListPatterns = new ArrayList<>();
+
+    public List<String> getRejectScriptAttributeRegexList() {
+        return rejectScriptAttributeRegexList;
+    }
+    public void setRejectScriptAttributeRegexList(List<String> patterns) {
+        rejectScriptAttributeRegexList = patterns;
+        rejectScriptAttributeRegexListPatterns = new ArrayList<>();
+        for (String p : patterns) {
+            rejectScriptAttributeRegexListPatterns.add(Pattern.compile(p, Pattern.CASE_INSENSITIVE));
+        }
+    }
+    public void addRejectScriptAttributeRegex(String pattern) {
+        rejectScriptAttributeRegexListPatterns.add(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE));
+    }
     
     @Override
     protected boolean shouldAddUri(CrawlURI curi, String candidate) {
@@ -181,5 +205,14 @@ public class ConfigurableExtractorJS extends ExtractorJS {
 
 		return false;
 	}
-    
+    public long considerStrings(Extractor ext,
+                                CrawlURI curi, CharSequence cs, String attributeContext) {
+        if(!attributeContext.isEmpty())
+            for(Pattern p : rejectScriptAttributeRegexListPatterns) {
+                if(p.matcher(attributeContext).matches()) {
+                    return 0;
+                }
+            }
+        return super.considerStrings(ext, curi, cs, attributeContext);
+    }
 }

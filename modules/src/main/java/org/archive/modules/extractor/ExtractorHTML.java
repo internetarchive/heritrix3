@@ -721,7 +721,6 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
     }
 
-
     /**
      * Extract the (java)script source in the given CharSequence.
      *
@@ -732,6 +731,21 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         if (getExtractorJS() != null && getExtractJavascript()) {
             numberOfLinksExtracted.addAndGet(
                 getExtractorJS().considerStrings(this, curi, cs));
+        }
+    }
+
+    /**
+     * Extract the (java)script source in the given CharSequence.
+     *
+     * @param curi  source CrawlURI
+     * @param cs    CharSequence of javascript code
+     * @param attributeContext  attributes of the tag from which the script
+     *                          was extracted (e.g. "onload", "onclick", "data-", etc.)
+     */
+    protected void processScriptCode(CrawlURI curi, CharSequence cs, String attributeContext) {
+        if (getExtractorJS() != null && getExtractJavascript()) {
+            numberOfLinksExtracted.addAndGet(
+                    getExtractorJS().considerStrings(this, curi, cs, attributeContext));
         }
     }
 
@@ -1041,6 +1055,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
         // then, apply best-effort string-analysis heuristics
         // against any code present (false positives are OK)
+        if(endOfOpenTag > 6) {
+            String attributes = sequence.subSequence(6, endOfOpenTag).toString().strip();
+            processScriptCode(
+                    curi, sequence.subSequence(endOfOpenTag, sequence.length()), attributes);
+        }
         processScriptCode(
             curi, sequence.subSequence(endOfOpenTag, sequence.length()));
     }
