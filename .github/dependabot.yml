@@ -11,6 +11,7 @@ updates:
           - "minor"
     ignore:
       - dependency-name: "com.sleepycat:je"
+      - dependency-name: "net.htmlparser.jericho:jericho-html"
       - dependency-name: "org.eclipse.jetty:jetty-bom"
         versions: "[12.1,)"
       - dependency-name: "org.eclipse.jetty.ee10:jetty-ee10-bom"
