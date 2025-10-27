@@ -375,7 +375,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.5.4</version>
                 <configuration>
                     <argLine>-Xmx1g</argLine>
                     <systemPropertyVariables>
