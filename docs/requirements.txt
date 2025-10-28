@@ -1,6 +1,4 @@
 sphinxcontrib-httpdomain==1.7.0
-#javalang==0.13.0
-git+https://github.com/WorkOfArtiz/javalang17@1a8007a5601b20fce7fbb79c14940e6183ed96df
 beautifulsoup4==4.9.3
 sphinx==6.2.1
 sphinx-rtd-theme==1.2.2

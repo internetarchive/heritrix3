@@ -558,7 +558,7 @@ in the following format: ```ftp://sftp.example.org/directory``.
 
 The FetchFTP bean needs to be defined:
 
-.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchFTP.java
+.. bean-example:: org.archive.modules.fetcher.FetchFTP
 
 and added to the FetchChain:
 
@@ -578,7 +578,7 @@ HTTP/2
 
 To use HTTP/2 the ``FetchHTTP`` bean should replaced with ``FetchHTTP2``:
 
-.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP2.java
+.. bean-example:: org.archive.modules.fetcher.FetchHTTP2
 
 ``FetchHTTP2`` will use HTTP/1.1 for non-https URLs and for servers that do not support HTTP/2. Requests that used HTTP/2
 will be annotated with ``h2`` in the crawl log and ``WARC-Protocol`` header.
@@ -621,7 +621,7 @@ be added in the following format:``sftp://sftp.example.org/directory``.
 
 The FetchSFTP bean needs to be defined:
 
-.. bean-example:: ../modules/src/main/java/org/archive/modules/fetcher/FetchSFTP.java
+.. bean-example:: org.archive.modules.fetcher.FetchSFTP
 
 and added to the FetchChain:
 
