@@ -11,92 +11,92 @@ Core Beans
 ActionDirectory
 ~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/ActionDirectory.java
+.. bean-doc:: org.archive.crawler.framework.ActionDirectory
 
 BdbCookieStore
 ~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/BdbCookieStore.java
+.. bean-doc:: org.archive.modules.fetcher.BdbCookieStore
 
 BdbFrontier
 ~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/frontier/BdbFrontier.java
+.. bean-doc:: org.archive.crawler.frontier.BdbFrontier
 
 BdbModule
 ~~~~~~~~~
 
-.. bean-doc:: ../commons/src/main/java/org/archive/bdb/BdbModule.java
+.. bean-doc:: org.archive.bdb.BdbModule
 
 BdbServerCache
 ~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/net/BdbServerCache.java
+.. bean-doc:: org.archive.modules.net.BdbServerCache
 
 BdbUriUniqFilter
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/util/BdbUriUniqFilter.java
+.. bean-doc:: org.archive.crawler.util.BdbUriUniqFilter
 
 CheckpointService
 ~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CheckpointService.java
+.. bean-doc:: org.archive.crawler.framework.CheckpointService
 
 CrawlController
 ~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CrawlController.java
+.. bean-doc:: org.archive.crawler.framework.CrawlController
 
 CrawlerLoggerModule
 ~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/reporting/CrawlerLoggerModule.java
+.. bean-doc:: org.archive.crawler.reporting.CrawlerLoggerModule
 
 CrawlLimitEnforcer
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/framework/CrawlLimitEnforcer.java
+.. bean-doc:: org.archive.crawler.framework.CrawlLimitEnforcer
 
 CrawlMetadata
 ~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/CrawlMetadata.java
+.. bean-doc:: org.archive.modules.CrawlMetadata
 
 CredentialStore
 ~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/credential/CredentialStore.java
+.. bean-doc:: org.archive.modules.credential.CredentialStore
 
 DecideRuleSequence
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/DecideRuleSequence.java
+.. bean-doc:: org.archive.modules.deciderules.DecideRuleSequence
 
 DiskSpaceMonitor
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/monitor/DiskSpaceMonitor.java
+.. bean-doc:: org.archive.crawler.monitor.DiskSpaceMonitor
 
 RulesCanonicalizationPolicy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/canonicalize/RulesCanonicalizationPolicy.java
+.. bean-doc:: org.archive.modules.canonicalize.RulesCanonicalizationPolicy
 
 SheetOverlaysManager
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/spring/SheetOverlaysManager.java
+.. bean-doc:: org.archive.crawler.spring.SheetOverlaysManager
 
 StatisticsTracker
 ~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/reporting/StatisticsTracker.java
+.. bean-doc:: org.archive.crawler.reporting.StatisticsTracker
 
 TextSeedModule
 ~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/seeds/TextSeedModule.java
+.. bean-doc:: org.archive.modules.seeds.TextSeedModule
 
 Decide Rules
 ------------
@@ -104,222 +104,222 @@ Decide Rules
 AcceptDecideRule
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/AcceptDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.AcceptDecideRule
 
 ClassKeyMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/deciderules/ClassKeyMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.crawler.deciderules.ClassKeyMatchesRegexDecideRule
 
 ContentLengthDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentLengthDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ContentLengthDecideRule
 
 ContentTypeMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentTypeMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ContentTypeMatchesRegexDecideRule
 
 ContentTypeNotMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ContentTypeNotMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ContentTypeNotMatchesRegexDecideRule
 
 ExpressionDecideRule (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/deciderules/ExpressionDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ExpressionDecideRule
 
 ExternalGeoLocationDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ExternalGeoLocationDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ExternalGeoLocationDecideRule
 
 FetchStatusDecideRule
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.FetchStatusDecideRule
 
 FetchStatusMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.FetchStatusMatchesRegexDecideRule
 
 FetchStatusNotMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/FetchStatusNotMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.FetchStatusNotMatchesRegexDecideRule
 
 HasViaDecideRule
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HasViaDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.HasViaDecideRule
 
 HopCrossesAssignmentLevelDomainDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HopCrossesAssignmentLevelDomainDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.HopCrossesAssignmentLevelDomainDecideRule
 
 HopsPathMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/HopsPathMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule
 
 IdenticalDigestDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/recrawl/IdenticalDigestDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.recrawl.IdenticalDigestDecideRule
 
 IpAddressSetDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/IpAddressSetDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.IpAddressSetDecideRule
 
 MatchesFilePatternDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesFilePatternDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.MatchesFilePatternDecideRule
 
 MatchesListRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesListRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.MatchesListRegexDecideRule
 
 MatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.MatchesRegexDecideRule
 
 MatchesStatusCodeDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/MatchesStatusCodeDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.MatchesStatusCodeDecideRule
 
 NotMatchesFilePatternDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesFilePatternDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.NotMatchesFilePatternDecideRule
 
 NotMatchesListRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesListRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.NotMatchesListRegexDecideRule
 
 NotMatchesRegexDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesRegexDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.NotMatchesRegexDecideRule
 
 NotMatchesStatusCodeDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/NotMatchesStatusCodeDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.NotMatchesStatusCodeDecideRule
 
 NotOnDomainsDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotOnDomainsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.NotOnDomainsDecideRule
 
 NotOnHostsDecideRule
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotOnHostsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.NotOnHostsDecideRule
 
 NotSurtPrefixedDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/NotSurtPrefixedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.NotSurtPrefixedDecideRule
 
 OnDomainsDecideRule
 ~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/OnDomainsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.OnDomainsDecideRule
 
 OnHostsDecideRule
 ~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/OnHostsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.OnHostsDecideRule
 
 PathologicalPathDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PathologicalPathDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.PathologicalPathDecideRule
 
 PredicatedDecideRule
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PredicatedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.PredicatedDecideRule
 
 PrerequisiteAcceptDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/PrerequisiteAcceptDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.PrerequisiteAcceptDecideRule
 
 RejectDecideRule
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/RejectDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.RejectDecideRule
 
 ResourceLongerThanDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResourceLongerThanDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ResourceLongerThanDecideRule
 
 ResourceNoLongerThanDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResourceNoLongerThanDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ResourceNoLongerThanDecideRule
 
 ResponseContentLengthDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ResponseContentLengthDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ResponseContentLengthDecideRule
 
 SchemeNotInSetDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SchemeNotInSetDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.SchemeNotInSetDecideRule
 
 ScriptedDecideRule
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ScriptedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ScriptedDecideRule
 
 SeedAcceptDecideRule
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SeedAcceptDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.SeedAcceptDecideRule
 
 SourceSeedDecideRule
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/SourceSeedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.SourceSeedDecideRule
 
 SurtPrefixedDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/surt/SurtPrefixedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.surt.SurtPrefixedDecideRule
 
 TooManyHopsDecideRule
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TooManyHopsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.TooManyHopsDecideRule
 
 TooManyPathSegmentsDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TooManyPathSegmentsDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.TooManyPathSegmentsDecideRule
 
 TransclusionDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/TransclusionDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.TransclusionDecideRule
 
 ViaSurtPrefixedDecideRule
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/deciderules/ViaSurtPrefixedDecideRule.java
+.. bean-doc:: org.archive.modules.deciderules.ViaSurtPrefixedDecideRule
 
 Candidate Processors
 --------------------
@@ -327,12 +327,12 @@ Candidate Processors
 CandidateScoper
 ~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/CandidateScoper.java
+.. bean-doc:: org.archive.crawler.prefetch.CandidateScoper
 
 FrontierPreparer
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/FrontierPreparer.java
+.. bean-doc:: org.archive.crawler.prefetch.FrontierPreparer
 
 Pre-Fetch Processors
 --------------------
@@ -340,12 +340,12 @@ Pre-Fetch Processors
 PreconditionEnforcer
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/PreconditionEnforcer.java
+.. bean-doc:: org.archive.crawler.prefetch.PreconditionEnforcer
 
 Preselector
 ~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/prefetch/Preselector.java
+.. bean-doc:: org.archive.crawler.prefetch.Preselector
 
 Fetch Processors
 ----------------
@@ -353,32 +353,32 @@ Fetch Processors
 FetchDNS
 ~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchDNS.java
+.. bean-doc:: org.archive.modules.fetcher.FetchDNS
 
 FetchFTP
 ~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchFTP.java
+.. bean-doc:: org.archive.modules.fetcher.FetchFTP
 
 FetchHTTP
 ~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP.java
+.. bean-doc:: org.archive.modules.fetcher.FetchHTTP
 
 FetchHTTP2
 ~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchHTTP2.java
+.. bean-doc:: org.archive.modules.fetcher.FetchHTTP2
 
 FetchSFTP
 ~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchSFTP.java
+.. bean-doc:: org.archive.modules.fetcher.FetchSFTP
 
 FetchWhois
 ~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/fetcher/FetchWhois.java
+.. bean-doc:: org.archive.modules.fetcher.FetchWhois
 
 Link Extractors
 ---------------
@@ -386,117 +386,117 @@ Link Extractors
 ExtractorCSS
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorCSS.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorCSS
 
 ExtractorDOC
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorDOC.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorDOC
 
 ExtractorHTML
 ~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorHTML.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorHTML
 
 AggressiveExtractorHTML
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/AggressiveExtractorHTML.java
+.. bean-doc:: org.archive.modules.extractor.AggressiveExtractorHTML
 
 JerichoExtractorHTML
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/JerichoExtractorHTML.java
+.. bean-doc:: org.archive.modules.extractor.JerichoExtractorHTML
 
 ExtractorHTMLForms
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/forms/ExtractorHTMLForms.java
+.. bean-doc:: org.archive.modules.forms.ExtractorHTMLForms
 
 ExtractorHTTP
 ~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorHTTP.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorHTTP
 
 ExtractorImpliedURI
 ~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorImpliedURI.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorImpliedURI
 
 ExtractorJS
 ~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorJS.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorJS
 
 KnowledgableExtractorJS (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/KnowledgableExtractorJS.java
+.. bean-doc:: org.archive.modules.extractor.KnowledgableExtractorJS
 
 ExtractorMultipleRegex
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorMultipleRegex.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorMultipleRegex
 
 ExtractorPDF
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorPDF.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorPDF
 
 ExtractorPDFContent (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorPDFContent.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorPDFContent
 
 ExtractorRobotsTxt
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorRobotsTxt.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorRobotsTxt
 
 ExtractorSitemap
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorSitemap.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorSitemap
 
 ExtractorSWF
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorSWF.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorSWF
 
 ExtractorUniversal
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorUniversal.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorUniversal
 
 ExtractorURI
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorURI.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorURI
 
 ExtractorXML
 ~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/ExtractorXML.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorXML
 
 ExtractorYoutubeDL (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeDL.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorYoutubeDL
 
 ExtractorYoutubeFormatStream (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeFormatStream.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorYoutubeFormatStream
 
 ExtractorYoutubeChannelFormatStream (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../contrib/src/main/java/org/archive/modules/extractor/ExtractorYoutubeChannelFormatStream.java
+.. bean-doc:: org.archive.modules.extractor.ExtractorYoutubeChannelFormatStream
 
 TrapSuppressExtractor
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/extractor/TrapSuppressExtractor.java
+.. bean-doc:: org.archive.modules.extractor.TrapSuppressExtractor
 
 Browser Processor
 -----------------
@@ -504,17 +504,17 @@ Browser Processor
 BrowserProcessor
 ~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/processor/BrowserProcessor.java
+.. bean-doc:: org.archive.crawler.processor.BrowserProcessor
 
 ExtractLinksBehavior
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ExtractLinksBehavior.java
+.. bean-doc:: org.archive.modules.behaviors.ExtractLinksBehavior
 
 ScrollDownBehavior
 ~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/behaviors/ScrollDownBehavior.java
+.. bean-doc:: org.archive.modules.behaviors.ScrollDownBehavior
 
 Post-Processors
 ---------------
@@ -522,59 +522,59 @@ Post-Processors
 CandidatesProcessor
 ~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/CandidatesProcessor.java
+.. bean-doc:: org.archive.crawler.postprocessor.CandidatesProcessor
 
 DispositionProcessor
 ~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/DispositionProcessor.java
+.. bean-doc:: org.archive.crawler.postprocessor.DispositionProcessor
 
 ReschedulingProcessor
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../engine/src/main/java/org/archive/crawler/postprocessor/ReschedulingProcessor.java
+.. bean-doc:: org.archive.crawler.postprocessor.ReschedulingProcessor
 
 WARCWriterChainProcessor
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/writer/WARCWriterChainProcessor.java
+.. bean-doc:: org.archive.modules.writer.WARCWriterChainProcessor
 
 DnsResponseRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/DnsResponseRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.DnsResponseRecordBuilder
 
 FtpControlConversationRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/FtpControlConversationRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.FtpControlConversationRecordBuilder
 
 FtpResponseRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/FtpResponseRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.FtpResponseRecordBuilder
 
 HttpRequestRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/HttpRequestRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.HttpRequestRecordBuilder
 
 HttpResponseRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/HttpResponseRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.HttpResponseRecordBuilder
 
 MetadataRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/MetadataRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.MetadataRecordBuilder
 
 RevisitRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/RevisitRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.RevisitRecordBuilder
 
 WhoisResponseRecordBuilder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. bean-doc:: ../modules/src/main/java/org/archive/modules/warc/WhoisResponseRecordBuilder.java
+.. bean-doc:: org.archive.modules.warc.WhoisResponseRecordBuilder

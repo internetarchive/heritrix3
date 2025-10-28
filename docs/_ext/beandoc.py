@@ -6,73 +6,70 @@ import re
 from html.parser import HTMLParser
 
 import bs4
-import javalang
-import javalang.tree
+import json, traceback, sys
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from six import iteritems
 
+BEANS_FILES = [
+    "../commons/target/classes/META-INF/heritrix-beans.json",
+    "../modules/target/classes/META-INF/heritrix-beans.json",
+    "../engine/target/classes/META-INF/heritrix-beans.json",
+    "../contrib/target/classes/META-INF/heritrix-beans.json",
+]
 
-def evaluate_expression(expr):
-    if isinstance(expr, javalang.tree.Literal):
-        match = re.match("(-?[0-9]+)[Ll]", expr.value)
-        if match:
-            return match.group(1)
-        return expr.value
-    elif isinstance(expr, javalang.tree.BinaryOperation) and expr.operator == '*':
-        lhs = evaluate_expression(expr.operandl)
-        rhs = evaluate_expression(expr.operandr.value)
-        if lhs is None or rhs is None: return None
-        return int(lhs) * int(rhs)
-    else:
-        return None
+# These beans will be ignored when resolving inherited properties
+# This omits common boilerplate properties from the output (like enabled)
+NO_INHERIT_BEANS = {
+    'org.archive.modules.Processor',
+    'org.archive.modules.deciderules.DecideRule',
+}
 
+def load_beans():
+    beandoc = {}
+    for filename in BEANS_FILES:
+        with open(filename) as f:
+            beandoc.update(json.load(f))
+    return beandoc
 
-def parse_java(source_file):
+beans = load_beans()
+
+def java_value(value):
+    if value is None: return ''
+    if value is True: return 'true'
+    if value is False: return 'false'
+    return str(value)
+
+def parse_java(class_name):
+    print('Parsing', class_name)
+    bean = beans.get(class_name)
+    name = class_name.split('.')[-1]
+    print(repr(bean))
+
     model = {}
-    with open(source_file) as f:
-        tree = javalang.parse.parse(f.read())
-    clazz = tree.types[0]
-    model['class'] = tree.package.name + '.' + clazz.name
-    model['bean_id'] = clazz.name[0].lower() + clazz.name[1:]
+    model['class'] = class_name
+    model['bean_id'] = name[0].lower() + name[1:]
     model['properties'] = []
-    model['doc'] = javalang.javadoc.parse(clazz.documentation) if clazz.documentation else None
+    model['doc'] = None
 
-    property_defaults = {}
-    property_docs = {}
+    if bean:
+        model['doc'] = bean.get('description')
 
-    for member in clazz.body:
-        if (isinstance(member, list) and len(member) > 0 and
-                isinstance(member[0], javalang.tree.StatementExpression) and
-                isinstance(member[0].expression, javalang.tree.MethodInvocation) and
-                member[0].expression.member.startswith('set')):
-            value = evaluate_expression(member[0].expression.arguments[0])
-            if value is None: continue
-            setter_name = member[0].expression.member
-            property_name = setter_name[3:4].lower() + setter_name[4:]
-            property_defaults[property_name] = value
+        cur_bean = bean
+        while cur_bean is not None:
+            for name, property in iteritems(cur_bean['properties']):
+                if name == 'beanName': continue
+                model['properties'].append({
+                    'name': name,
+                    'value': java_value(property.get('default', '')),
+                    'type': property['type'],
+                    'doc': property.get('description')
+                })
+            if cur_bean.get('superclass') in NO_INHERIT_BEANS: break
+            cur_bean = beans.get(cur_bean.get('superclass'))
 
-    for field in clazz.fields:
-        if field.declarators:
-            field_name = field.declarators[0].name
-            field_value = evaluate_expression(field.declarators[0].initializer)
-            if field_value is not None:
-                property_defaults[field_name] = field_value
-            if field.documentation is not None:
-                property_docs[field_name] = field.documentation
+        model['properties'].sort(key=lambda prop: prop['name'])
 
-    for method in clazz.methods:
-        if ('public' in method.modifiers and
-                'static' not in method.modifiers and
-                method.name.startswith('set')):
-            property_name = method.name[3:4].lower() + method.name[4:]
-            value = property_defaults.get(property_name, "")
-            doc = method.documentation or property_docs.get(property_name)
-            model['properties'].append({
-                'name': property_name,
-                'value': str(value).replace('"', ''),
-                'type': method.parameters[0].type.name,
-                'doc': javalang.javadoc.parse(doc) if doc else None
-            })
     return model
 
 
@@ -118,9 +115,11 @@ def convert_html(soup):
         return nodes.inline('', '', *[convert_html(child) for child in soup.childGenerator()])
 
 
-def format_javadoc(javadoc):
-    doc = javadoc.description if javadoc else ''
+def format_javadoc(doc):
+    if doc is None: return nodes.inline('', '')
     doc = doc.replace('\n\n', '<p>').replace('<p><p>', '<p>')
+    doc = doc.replace('\n', '<br>')
+    doc = doc.replace('  ', ' &nbsp;')
     doc = re.sub(r'{@link ([^}]+)}', r'\1', doc)
     doc = re.sub(r'{@code ([^}]+)}', r'<code>\1</code>', doc)
     soup = bs4.BeautifulSoup(doc, features="html.parser")
@@ -178,8 +177,10 @@ class BeanDoc(Directive):
             properties = format_properties(model)
             return [text, example, properties]
         except Exception as e:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            stacktrace_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_tb))
             print('Error parsing', self.arguments[0], repr(e))
-            return [nodes.literal_block('', 'Error generating documentation: ' + repr(e))]
+            return [nodes.literal_block('', 'Error generating documentation: ' + repr(e) + "\n\n" + stacktrace_str)]
 
 
 def setup(app):

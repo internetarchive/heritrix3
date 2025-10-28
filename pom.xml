@@ -132,6 +132,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	</dependencyManagement>
 
 	<modules>
+        <module>docgen</module>
 		<module>commons</module>
 		<module>modules</module>
 		<module>engine</module>
@@ -354,6 +355,14 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 					<!-- Retain method parameter names. This is required for some autowiring like AbstractFrontier.setScope()
 					https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-6.1-Release-Notes#parameter-name-retention -->
 					<parameters>true</parameters>
+                    <!-- Generate heritrix-beans.json -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.archive.heritrix</groupId>
+                            <artifactId>heritrix-docgen</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
 				</configuration>
 			</plugin>
 			<plugin>
