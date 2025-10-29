@@ -16,4 +16,3 @@ updates:
         versions: "[12.1,)"
       - dependency-name: "org.eclipse.jetty.ee10:jetty-ee10-bom"
         versions: "[12.1,)"
-      - dependency-name: "org.webjars.npm:codemirror"
