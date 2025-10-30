@@ -4,6 +4,10 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.12.0...HEAD)
 
+### New features
+
+* **Config editor:** IDE-style completions for bean names and Spring XML (powered by the new bean docs generator). [#684](https://github.com/internetarchive/heritrix3/pull/684)
+
 ## [3.12.0](https://github.com/internetarchive/heritrix3/releases/tag/3.12.0)  (2025-10-30)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.12.0/heritrix-3.12.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.12.0/heritrix-3.12.0-dist.tar.gz))
@@ -13,7 +17,6 @@
 ### New features
 
 * **ConfigurableExtractorJS:** Regex rules to skip extracting `<script>` tags when their attributes match. [#672](https://github.com/internetarchive/heritrix3/pull/672)
-* **Config editor:** IDE-style completions for bean names and Spring XML (powered by the new bean docs generator). [#684](https://github.com/internetarchive/heritrix3/pull/684)
 
 ### Bug fixes
 
