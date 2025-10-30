@@ -4,6 +4,7 @@ modules/target
 engine/target
 dist/target
 contrib/target
+docgen/target
 /target
 .classpath
 .project
