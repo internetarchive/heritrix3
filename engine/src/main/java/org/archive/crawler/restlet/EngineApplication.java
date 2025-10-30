@@ -74,6 +74,7 @@ public class EngineApplication extends Application {
             .setMatchingMode(Template.MODE_EQUALS);
         router.attach("/engine/",EngineResource.class)
             .setMatchingMode(Template.MODE_EQUALS);
+        router.attach("/engine/beandoc", BeanDocResource.class);
 
         Directory alljobsdir = new Directory(
                 getContext(),

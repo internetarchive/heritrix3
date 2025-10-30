@@ -103,11 +103,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
-			<artifactId>codemirror</artifactId>
-			<version>6.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__autocomplete</artifactId>
 			<version>6.18.6</version>
 		</dependency>
