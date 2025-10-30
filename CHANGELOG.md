@@ -2,7 +2,40 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.11.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.12.0...HEAD)
+
+## [3.12.0](https://github.com/internetarchive/heritrix3/releases/tag/3.12.0)  (2025-10-30)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.12.0/heritrix-3.12.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.12.0/heritrix-3.12.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.11.0...3.12.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.12.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.12.0/pom)
+
+### New features
+
+* **ConfigurableExtractorJS:** Regex rules to skip extracting `<script>` tags when their attributes match. [#672](https://github.com/internetarchive/heritrix3/pull/672)
+* **Config editor:** IDE-style completions for bean names and Spring XML (powered by the new bean docs generator). [#684](https://github.com/internetarchive/heritrix3/pull/684)
+
+### Bug fixes
+
+* **Docs:** Switch bean docs generation to an annotation processor, fixing the bean reference broken by Java language changes. [#683](https://github.com/internetarchive/heritrix3/pull/683)
+* **StatisticsTracker:** Don’t restore `crawlEndTime` when resuming from a checkpoint. [#669](https://github.com/internetarchive/heritrix3/pull/669)
+* **ExtractorJS:** Fix overriding the `strict` setting in sheets. [#670](https://github.com/internetarchive/heritrix3/pull/670)
+* **Berkeley DB:** Handle more shutdown interrupts gracefully. [#671](https://github.com/internetarchive/heritrix3/pull/671)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.26.0 → 5.27.0
+* **groovy**: 4.0.28 → 5.0.2
+* **jaxb-runtime**: 4.0.5 → 4.0.6
+* **jetty**: 12.0.27 → 12.0.29
+* **jsch**: 2.27.3 → 2.27.4
+* **junit-jupiter**: 5.13.4 → 6.0.0
+* **kafka-clients**: 3.9.1 → 4.1.0
+* **pdfbox**: 3.0.5 → 3.0.6
+* **rethinkdb-driver**: 2.3.3 → 2.4.4
+* **spring**: 6.2.11 → 6.2.12
+* **webarchive-commons**: 3.0.0 → 3.0.1
+* **webjars-locator-lite**: 1.1.0 → 1.1.2
 
 ## [3.11.0](https://github.com/internetarchive/heritrix3/releases/tag/3.11.0)  (2025-09-22)
 
