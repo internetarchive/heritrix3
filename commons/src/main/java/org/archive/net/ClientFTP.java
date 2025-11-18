@@ -52,6 +52,8 @@ public class ClientFTP extends FTPClient implements ProtocolCommandListener {
     public ClientFTP() {
         controlConversation = new StringBuilder();
         addProtocolCommandListener(this);
+        // accept partial responses from FTP servers
+        setStrictReplyParsing(false);
     }
 
     /**
