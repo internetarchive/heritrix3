@@ -50,24 +50,27 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         CookieStore, FetchHTTPCookieStore {
 
     public static final int MAX_COOKIES_FOR_DOMAIN = 50;
-    
-    protected final Logger logger =
-            Logger.getLogger(AbstractCookieStore.class.getName());
+
+    protected final Logger logger = Logger.getLogger(AbstractCookieStore.class.getName());
 
     protected static final Comparator<Cookie> cookieComparator = new CookieIdentityComparator();
 
     protected ConfigFile cookiesLoadFile = null;
+
     public ConfigFile getCookiesLoadFile() {
         return cookiesLoadFile;
     }
+
     public void setCookiesLoadFile(ConfigFile cookiesLoadFile) {
         this.cookiesLoadFile = cookiesLoadFile;
     }
 
     protected ConfigPath cookiesSaveFile = null;
+
     public ConfigPath getCookiesSaveFile() {
         return cookiesSaveFile;
     }
+
     public void setCookiesSaveFile(ConfigPath cookiesSaveFile) {
         this.cookiesSaveFile = cookiesSaveFile;
     }
@@ -80,7 +83,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
             return;
         }
         prepare();
-        if (getCookiesLoadFile()!=null) {
+        if (getCookiesLoadFile() != null) {
             loadCookies(getCookiesLoadFile());
         }
         isRunning = true;
@@ -114,7 +117,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
     protected void loadCookies(Reader reader) {
         Collection<Cookie> loadedCookies = readCookies(reader);
-        for (Cookie cookie: loadedCookies) {
+        for (Cookie cookie : loadedCookies) {
             addCookie(cookie);
         }
     }
@@ -126,10 +129,10 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         }
 
         try (BufferedWriter out = Files.newBufferedWriter(Paths.get(saveCookiesFile))) {
-            String tab ="\t";
+            String tab = "\t";
             out.write("# Heritrix Cookie File\n");
             out.write("# This file is the Netscape cookies.txt format\n\n");
-            for (Cookie cookie: new ArrayList<Cookie>(getCookies())) {
+            for (Cookie cookie : new ArrayList<Cookie>(getCookies())) {
                 out.write(cookie.getDomain());
                 out.write(tab);
                 // XXX out.write(cookie.isDomainAttributeSpecified() ? "TRUE" : "FALSE");
@@ -174,7 +177,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
      * </ol>
      *
      * @param reader
-     *            input in the Netscape's 'cookies.txt' format.
+     *               input in the Netscape's 'cookies.txt' format.
      */
     protected Collection<Cookie> readCookies(Reader reader) {
         LinkedList<Cookie> cookies = new LinkedList<Cookie>();
@@ -189,7 +192,12 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
                         long epochSeconds = Long.parseLong(tokens[4]);
                         Date expirationDate = (epochSeconds >= 0 ? new Date(epochSeconds * 1000) : null);
                         BasicClientCookie cookie = new BasicClientCookie(tokens[5], tokens[6]);
-                        cookie.setDomain(tokens[0]);
+                        String domain = tokens[0];
+                        if (domain.startsWith(".")) {
+                            domain = domain.substring(1);
+                        }
+                        cookie.setDomain(domain);
+
                         cookie.setExpiryDate(expirationDate);
                         cookie.setSecure(Boolean.valueOf(tokens[3]).booleanValue());
                         cookie.setPath(tokens[2]);
@@ -205,7 +213,7 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
                 lineNo++;
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING,e.getMessage(), e);
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         return cookies;
     }
@@ -225,14 +233,14 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         @Override
         public boolean clearExpired(Date date) {
             int expiredCount = 0;
-            for( Cookie c : cookies) {
+            for (Cookie c : cookies) {
                 boolean expired = AbstractCookieStore.this.expireCookie(c, date);
-                if( expired ) {
+                if (expired) {
                     logger.fine("Expired cookie: " + c + " for date: " + date);
                     expiredCount++;
                 }
             }
-            if( expiredCount > 0 ) {
+            if (expiredCount > 0) {
                 logger.fine("Expired " + expiredCount + " cookies for date: " + date);
                 return true;
             } else {
@@ -283,10 +291,10 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
         String normalizedHost = normalizeHost(curi.getUURI().getHost());
         return cookieStoreFor(normalizedHost);
     }
-    
+
     public boolean isCookieCountMaxedForDomain(String domain) {
         CookieStore cookieStore = cookieStoreFor(normalizeHost(domain));
-        
+
         return (cookieStore != null && cookieStore.getCookies().size() >= MAX_COOKIES_FOR_DOMAIN);
     }
 
@@ -303,9 +311,12 @@ abstract public class AbstractCookieStore implements Lifecycle, Checkpointable,
 
         addCookieImpl(cookie);
     }
-    
+
     abstract public boolean expireCookie(Cookie cookie, Date date);
+
     abstract protected void addCookieImpl(Cookie cookie);
+
     abstract public void clear();
+
     abstract protected void prepare();
 }
