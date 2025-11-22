@@ -682,6 +682,41 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     }
 
     @Test
+    public void testExtractImgDataSrc() throws IOException 
+    {
+        String html ="<html><body>"+"<img data-src=\"http://example.com/image.jpg\"/>"+"</body></html>";
+        Set<String> extracted = extractLinks(html);
+        assertTrue("Should extract URL from data-src",extracted.contains("http://example.com/image.jpg"));
+    }
+
+    @Test
+    public void testExtractImgDataFullSrc() throws IOException 
+    {
+        String html ="<html><body>"+"<img data-full-src=\"http://example.com/full.jpg\"/>"+"</body></html>";
+        Set<String> extracted = extractLinks(html);
+        assertTrue("Should extract URL from data-full-src",extracted.contains("http://example.com/full.jpg"));
+    }
+
+    @Test
+    public void testExtractImgDataLazySrcset() throws IOException 
+    {
+        String html ="<html><body>"+"<img data-lazy-srcset=\"a.jpg 1x, b.jpg 2x\"/>"+"</body></html>";
+        Set<String> extracted = extractLinks(html);
+        assertTrue("Should extract first URL from data-lazy-srcset",extracted.contains("a.jpg"));
+        assertTrue("Should extract second URL from data-lazy-srcset",extracted.contains("b.jpg"));
+    }
+
+    @Test
+    public void testExtractImgSrcsetAdditional() throws IOException 
+    {
+        String html = "<html><body>"+"<img srcset=\"x.png 1x, y.png 2x\"/>"+"</body></html>";
+        Set<String> extracted = extractLinks(html);
+        assertTrue("Should extract first srcset URL",extracted.contains("x.png"));
+        assertTrue("Should extract second srcset URL",extracted.contains("y.png"));
+    }
+
+
+    @Test
     public void testLinkRel() throws URIException {
         CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
 
