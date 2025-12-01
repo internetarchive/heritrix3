@@ -394,17 +394,22 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     protected void processGeneralTag(CrawlURI curi, CharSequence element,CharSequence cs) {
 
         Matcher attr = TextUtils.getMatcher(eachAttributePattern, cs);
+
+        // Just in case it's an OBJECT or APPLET tag
         String codebase = null;
         ArrayList<String> resources = null;
 
+        // Just in case it's a FORM
         CharSequence action = null;
         CharSequence actionContext = null;
         CharSequence method = null;
 
+        // Just in case it's a VALUE whose interpretation depends on accompanying NAME
         CharSequence valueVal = null;
         CharSequence valueContext = null;
         CharSequence nameVal = null;
 
+        // Just in case it's an A or LINK tag
         CharSequence linkHref = null;
         CharSequence linkRel = null;
         CharSequence linkContext = null;
@@ -412,10 +417,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         final boolean framesAsEmbeds = getTreatFramesAsEmbedLinks();
         final boolean ignoreFormActions = getIgnoreFormActionUrls();
         final boolean extractValueAttributes = getExtractValueAttributes();
+
         final String elementStr = element.toString();
 
         while (attr.find()) {
-            int valueGroup = (attr.start(14) > -1) ? 14 : (attr.start(15) > -1) ? 15 : 16;
+            int valueGroup =
+                    (attr.start(14) > -1) ? 14 : (attr.start(15) > -1) ? 15 : 16;
             int start = attr.start(valueGroup);
             int end = attr.end(valueGroup);
             assert start >= 0 : "Start is: " + start + ", " + curi;
@@ -426,20 +433,22 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
             if (attr.start(2) > -1) {
                 // HREF
-                CharSequence context;
-                if ("a".equals(elementStr) && TextUtils.matches("(?i).*data-remote\\s*=\\s*([\"'])true.*\\1", cs)) {
+                String context;
+                if ("a".equalsIgnoreCase(element.toString()) &&
+                    TextUtils.matches("(?i).*data-remote\\s*=\\s*([\"'])true.*\\1", cs)) {
                     context = "a[data-remote='true']/@href";
                 } else {
-                    context = elementContext(element, attr.group(2));
+                    context = elementContext(element, attr.group(2)).toString();
                 }
 
-                if ((elementStr.equalsIgnoreCase(LINK) || elementStr.equalsIgnoreCase("a")) && linkHref == null) {
+                if ((elementStr.equalsIgnoreCase(LINK) || elementStr.equalsIgnoreCase("a"))
+                        && linkHref == null) {
                     linkHref = value;
                     linkContext = context;
-                } else if ("a[data-remote='true']/@href".contentEquals(context)) {
-                    processEmbed(curi, value.toString(), context.toString());
+                } else if ("a[data-remote='true']/@href".equals(context)) {
+                    processEmbed(curi, value.toString(), context);
                 } else {
-                    processLink(curi, value.toString(), context.toString());
+                    processLink(curi, value.toString(), context);
                 }
 
                 if (elementStr.equalsIgnoreCase(BASE) && !curi.containsDataKey(CoreAttributeConstants.A_HTML_BASE)) {
@@ -461,21 +470,22 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 processScriptCode(curi, value);
             } else if (attr.start(5) > -1) {
                 // SRC etc.
-                CharSequence context = elementContext(element, attr.group(5));
-                if (!context.toString().toLowerCase().startsWith("data:")) {
+                String context = elementContext(element, attr.group(5)).toString();
+                if (!context.toLowerCase().startsWith("data:")) {
                     final Hop hop;
-                    if (!framesAsEmbeds && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
+                    if (!framesAsEmbeds &&
+                            (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
                         hop = Hop.NAVLINK;
                     } else {
                         hop = Hop.EMBED;
                     }
-                    processEmbed(curi, value.toString(), context.toString(), hop);
+                    processEmbed(curi, value.toString(), context, hop);
                 }
             } else if (attr.start(6) > -1) {
                 // CODEBASE
                 codebase = value.toString();
-                CharSequence context = elementContext(element, attr.group(6));
-                processLink(curi, codebase, context.toString());
+                String context = elementContext(element, attr.group(6)).toString();
+                processLink(curi, codebase, context);
             } else if (attr.start(7) > -1) {
                 // CLASSID, DATA
                 if (resources == null) resources = new ArrayList<>();
@@ -488,7 +498,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             } else if (attr.start(9) > -1) {
                 // CODE
                 if (resources == null) resources = new ArrayList<>();
-                if (elementStr.equalsIgnoreCase(APPLET) && !value.toString().toLowerCase().endsWith(CLASSEXT)) {
+                if (elementStr.equalsIgnoreCase(APPLET) &&
+                    !value.toString().toLowerCase().endsWith(CLASSEXT)) {
                     resources.add(value.toString() + CLASSEXT);
                 } else {
                     resources.add(value.toString());
@@ -499,22 +510,22 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 valueContext = elementContext(element, attr.group(10));
             } else if (attr.start(11) > -1) {
                 // STYLE
-                numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(this, curi, value));
+                numberOfLinksExtracted.addAndGet(
+                        ExtractorCSS.processStyleCode(this, curi, value));
             } else if (attr.start(12) > -1) {
                 // METHOD
                 method = value;
             } else if (attr.start(13) > -1) {
-                if (Ascii.equalsIgnoreCase(attrName, "NAME")) {
-                    nameVal = value;
-                } else if (Ascii.equalsIgnoreCase(attrName, "FLASHVARS")) {
+                // NAME, REL, FLASHVARS
+                if (Ascii.equalsIgnoreCase(attrName, "NAME")) nameVal = value;
+                else if (Ascii.equalsIgnoreCase(attrName, "REL")) linkRel = value;
+                else if (Ascii.equalsIgnoreCase(attrName, "FLASHVARS")) {
                     valueContext = elementContext(element, attr.group(13));
-                    considerQueryStringValues(curi, value.toString(), valueContext.toString(), Hop.SPECULATIVE);
-                } else if (Ascii.equalsIgnoreCase(attrName, "REL")) {
-                    linkRel = value;
+                    considerQueryStringValues(curi, value.toString(), valueContext, Hop.SPECULATIVE);
                 }
 
-                // 2023 updates get img or source data attr
-                CharSequence context = elementContext(element, attr.group(13));
+                // 2023: handle data-src / data-srcset
+                String context = elementContext(element, attr.group(13)).toString();
                 String normalizedAttrName = attrName.toString().toLowerCase();
                 String urlToUse = value.toString();
 
@@ -527,13 +538,14 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     }
 
                     final Hop hop;
-                    if (!framesAsEmbeds && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
+                    if (!framesAsEmbeds &&
+                            (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
                         hop = Hop.NAVLINK;
                     } else {
                         hop = Hop.EMBED;
                     }
 
-                    processEmbed(curi, urlToUse, context.toString(), hop);
+                    processEmbed(curi, urlToUse, context, hop);
                 }
             }
         }
@@ -552,7 +564,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 while (iter.hasNext()) {
                     res = iter.next();
                     res = TextUtils.unescapeHtml(res);
-                    if (codebaseURI != null) res = codebaseURI.resolve(res).toString();
+                    if (codebaseURI != null) {
+                        res = codebaseURI.resolve(res).toString();
+                    }
                     processEmbed(curi, res, elementStr);
                 }
             } catch (URIException e) {
@@ -564,34 +578,38 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             }
         }
 
-        // finish handling LINK
+        // handle LINK now
         if (linkHref != null) {
             if (elementStr.equalsIgnoreCase(LINK)) {
                 if (linkRel != null) processLinkTagWithRel(curi, linkHref.toString(), linkRel.toString());
             } else {
-                if (linkRel != null && getObeyRelNofollow() && TextUtils.matches("(?i).*\\bnofollow\\b.*", linkRel)) {
-                    if (logger.isLoggable(Level.FINEST)) logger.finest("ignoring nofollow link: " + linkHref);
+                if (linkRel != null && getObeyRelNofollow() &&
+                    TextUtils.matches("(?i).*\\bnofollow\\b.*", linkRel)) {
+                    if (logger.isLoggable(Level.FINEST))
+                        logger.finest("ignoring nofollow link: " + linkHref);
                 } else {
                     processLink(curi, linkHref.toString(), linkContext.toString());
                 }
             }
         }
 
-        // finish handling form action
+        // handle form action
         if (action != null) {
-            if (method == null || "GET".equalsIgnoreCase(method.toString()) || !getExtractOnlyFormGets()) {
+            if (method == null || "GET".equalsIgnoreCase(method.toString())
+                    || !getExtractOnlyFormGets()) {
                 processLink(curi, action.toString(), actionContext.toString());
             }
         }
 
-        // finish handling VALUE
+        // handle VALUE
         if (valueVal != null) {
-            if ("PARAM".equalsIgnoreCase(elementStr) && nameVal != null && "flashvars".equalsIgnoreCase(nameVal.toString())) {
+            if ("PARAM".equalsIgnoreCase(elementStr) && nameVal != null
+                    && "flashvars".equalsIgnoreCase(nameVal.toString())) {
                 String queryStringLike = valueVal.toString();
-                considerQueryStringValues(curi, queryStringLike, valueContext.toString(), Hop.SPECULATIVE);
+                considerQueryStringValues(curi, queryStringLike, valueContext, Hop.SPECULATIVE);
             } else {
                 if (extractValueAttributes) {
-                    considerIfLikelyUri(curi, valueVal.toString(), valueContext.toString(), Hop.NAVLINK);
+                    considerIfLikelyUri(curi, valueVal.toString(), valueContext, Hop.NAVLINK);
                 }
             }
         }
