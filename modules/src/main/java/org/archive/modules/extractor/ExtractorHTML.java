@@ -457,7 +457,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     linkHref = value;
                     linkContext = context;
                 } else if ("a[data-remote='true']/@href".equals(context)) {
-                    processEmbed(curi, value, context);
+                    processEmbed(curi, value, context.toString(), hop);
+
                 } else {
                     processLink(curi, value, context);
                 }
@@ -767,7 +768,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 CharSequence link = value.subSequence(matcher.start(1), matcher.end(1));
                 matcher.region(matcher.end(), matcher.regionEnd());
                 logger.log(Level.FINER, "Found {0} adding to outlinks.", link);
-                addLinkFromString(curi, link, context, hop);
+                addLinkFromString(curi,link.toString(),context.toString(),hop);
                 numberOfLinksExtracted.incrementAndGet();
             }
             TextUtils.recycleMatcher(matcher);
