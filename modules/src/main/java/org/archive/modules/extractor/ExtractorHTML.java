@@ -482,12 +482,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     final Hop hop = (!framesAsEmbeds &&
                             (elementStr.equalsIgnoreCase(FRAME)
                                     || elementStr.equalsIgnoreCase(IFRAME))) ? Hop.NAVLINK : Hop.EMBED;
-                    processEmbed(curi, value, context, hop);
+                    processEmbed(curi, value.toString(), context.toString(), hop);
                 }
             } else if (attr.start(6) > -1) {
                 codebase = value;
                 String context = elementContext(elementStr, attr.group(6)).toString();
-                processLink(curi, codebase, context);
+                processLink(curi, value.toString(), context.toString());
             } else if (attr.start(7) > -1) {
                 if (resources == null)
                     resources = new ArrayList<>();
@@ -1048,7 +1048,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
         // Look for the 'robots' meta-tag
         if ("robots".equalsIgnoreCase(name) && content != null) {
-            curi.getData().put(A_META_ROBOTS, content);
+            curi.getData().put(A_META_ROBOTS, content.toString());
             RobotsPolicy policy = metadata.getRobotsPolicy();
             String contentLower = content.toLowerCase();
             if (policy.obeyMetaRobotsNofollow()
