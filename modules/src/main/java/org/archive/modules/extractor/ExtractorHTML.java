@@ -558,21 +558,21 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
 				// 2023 updates get img or source data attr
 				CharSequence context = elementContext(element, attr.group(13));
-				if (TextUtils.matches(
-						"data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-srcset|full-src)", //
-						attr.group(13).toLowerCase())) {
+                if (TextUtils.matches(
+                        "data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-src|lazy-srcset|full-src|full-srcset)", 
+                        attr.group(13).toLowerCase())) {
 
-					// true, if we expect another HTML page instead of an image etc.
-					final Hop hop;
+                    // Determine whether this should be treated as NAVLINK or EMBED
+                    final Hop hop;
+                    if (!framesAsEmbeds
+                            && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
+                        hop = Hop.NAVLINK;
+                    } else {
+                        hop = Hop.EMBED;
+                    }
+                    processEmbed(curi, value, context, hop);
+                }
 
-					if (!framesAsEmbeds
-							&& (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
-						hop = Hop.NAVLINK;
-					} else {
-						hop = Hop.EMBED;
-					}
-					processEmbed(curi, value, context, hop);
-				}
 
                 // any other attribute
                 // ignore for now
