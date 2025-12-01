@@ -682,7 +682,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     }
 
     @Test
-    public void testExtractImgDataSrc() throws IOException 
+    public void testExtractImgDataSrc() throws java.io.IOException
     {
         String html ="<html><body>"+"<img data-src=\"http://example.com/image.jpg\"/>"+"</body></html>";
         Set<String> extracted = extractLinks(html);
