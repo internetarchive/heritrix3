@@ -21,7 +21,7 @@ package org.archive.modules.extractor;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
+import java.io.IOException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.archive.url.URIException;
