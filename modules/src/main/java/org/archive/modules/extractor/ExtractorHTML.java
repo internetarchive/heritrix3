@@ -510,7 +510,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
             // 2023: handle data-src / data-srcset
             String context = elementContext(elementStr, attr.group(13)).toString();
-            String normalizedAttrName = attrName.toLowerCase();
+            String normalizedAttrName = attrName.toString().toLowerCase();
             String urlToUse = value;
 
             if (TextUtils.matches(
