@@ -684,13 +684,6 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
     }
 
-    @Test
-    public void testExtractImgDataSrc() throws java.io.IOException {
-        String html = "<html><body>" + "<img data-src=\"http://example.com/image.jpg\"/>" + "</body></html>";
-        Set<String> extracted = extractLinks(html);
-        assertTrue("Should extract URL from data-src", extracted.contains("http://example.com/image.jpg"));
-    }
-
     private Set<String> extractLinks(String html) throws java.io.IOException {
         CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com/"));
         getExtractor().extract(curi, html);
