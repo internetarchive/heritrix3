@@ -391,13 +391,23 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     }
     
 
-    protected void processGeneralTag(CrawlURI curi, CharSequence element, CharSequence cs) {
+    protected void processGeneralTag(CrawlURI curi, CharSequence element,CharSequence cs) {
+
         Matcher attr = TextUtils.getMatcher(eachAttributePattern, cs);
         String codebase = null;
         ArrayList<String> resources = null;
-        CharSequence action = null, actionContext = null, method = null;
-        CharSequence valueVal = null, valueContext = null, nameVal = null;
-        CharSequence linkHref = null, linkRel = null, linkContext = null;
+
+        CharSequence action = null;
+        CharSequence actionContext = null;
+        CharSequence method = null;
+
+        CharSequence valueVal = null;
+        CharSequence valueContext = null;
+        CharSequence nameVal = null;
+
+        CharSequence linkHref = null;
+        CharSequence linkRel = null;
+        CharSequence linkContext = null;
 
         final boolean framesAsEmbeds = getTreatFramesAsEmbedLinks();
         final boolean ignoreFormActions = getIgnoreFormActionUrls();
@@ -406,109 +416,187 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
         while (attr.find()) {
             int valueGroup = (attr.start(14) > -1) ? 14 : (attr.start(15) > -1) ? 15 : 16;
-            CharSequence value = cs.subSequence(attr.start(valueGroup), attr.end(valueGroup));
+            int start = attr.start(valueGroup);
+            int end = attr.end(valueGroup);
+            assert start >= 0 : "Start is: " + start + ", " + curi;
+            assert end >= 0 : "End is :" + end + ", " + curi;
+            CharSequence value = cs.subSequence(start, end);
             CharSequence attrName = cs.subSequence(attr.start(1), attr.end(1));
             value = TextUtils.unescapeHtml(value);
 
-            // Convert CharSequence to String once
-            String attrNameStr = attrName.toString().toLowerCase();
-            String valueStr = value.toString();
-
-            if (attr.start(5) > -1 || TextUtils.matches(
-                    "data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-src|lazy-srcset|full-src|full-srcset)",
-                    attrNameStr)) {
-
-                CharSequence context = elementContext(element, attr.group(5) != null ? attr.group(5) : attr.group(13));
-
-                // For srcset attributes, take only the first URL
-                if (attrNameStr.endsWith("srcset")) {
-                    valueStr = valueStr.split(",")[0].trim().split("\\s+")[0];
+            if (attr.start(2) > -1) {
+                // HREF
+                CharSequence context;
+                if ("a".equals(elementStr) && TextUtils.matches("(?i).*data-remote\\s*=\\s*([\"'])true.*\\1", cs)) {
+                    context = "a[data-remote='true']/@href";
+                } else {
+                    context = elementContext(element, attr.group(2));
                 }
 
-                final Hop hop = (!framesAsEmbeds
-                        && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME)))
-                        ? Hop.NAVLINK
-                        : Hop.EMBED;
+                if ((elementStr.equalsIgnoreCase(LINK) || elementStr.equalsIgnoreCase("a")) && linkHref == null) {
+                    linkHref = value;
+                    linkContext = context;
+                } else if ("a[data-remote='true']/@href".contentEquals(context)) {
+                    processEmbed(curi, value.toString(), context.toString());
+                } else {
+                    processLink(curi, value.toString(), context.toString());
+                }
 
-                processEmbed(curi, valueStr, context, hop);
-
+                if (elementStr.equalsIgnoreCase(BASE) && !curi.containsDataKey(CoreAttributeConstants.A_HTML_BASE)) {
+                    try {
+                        UURI base = UURIFactory.getInstance(curi.getUURI(), value.toString());
+                        curi.setBaseURI(base);
+                    } catch (URIException e) {
+                        logUriError(e, curi.getUURI(), value);
+                    }
+                }
             } else if (attr.start(3) > -1) {
                 // ACTION
                 if (!ignoreFormActions) {
                     action = value;
                     actionContext = elementContext(element, attr.group(3));
                 }
+            } else if (attr.start(4) > -1) {
+                // ON____
+                processScriptCode(curi, value);
+            } else if (attr.start(5) > -1) {
+                // SRC etc.
+                CharSequence context = elementContext(element, attr.group(5));
+                if (!context.toString().toLowerCase().startsWith("data:")) {
+                    final Hop hop;
+                    if (!framesAsEmbeds && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
+                        hop = Hop.NAVLINK;
+                    } else {
+                        hop = Hop.EMBED;
+                    }
+                    processEmbed(curi, value.toString(), context.toString(), hop);
+                }
             } else if (attr.start(6) > -1) {
                 // CODEBASE
-                codebase = valueStr;
-                processLink(curi, codebase, elementContext(element, attr.group(6)));
-            } else if (attr.start(7) > -1 || attr.start(8) > -1 || attr.start(9) > -1) {
+                codebase = value.toString();
+                CharSequence context = elementContext(element, attr.group(6));
+                processLink(curi, codebase, context.toString());
+            } else if (attr.start(7) > -1) {
+                // CLASSID, DATA
                 if (resources == null) resources = new ArrayList<>();
-                if (attr.start(8) > -1) {
-                    String[] multi = TextUtils.split(WHITESPACE, value);
-                    for (String s : multi) resources.add(s);
-                } else if (attr.start(9) > -1 && elementStr.equalsIgnoreCase(APPLET)
-                        && !valueStr.toLowerCase().endsWith(CLASSEXT)) {
-                    resources.add(valueStr + CLASSEXT);
+                resources.add(value.toString());
+            } else if (attr.start(8) > -1) {
+                // ARCHIVE
+                if (resources == null) resources = new ArrayList<>();
+                String[] multi = TextUtils.split(WHITESPACE, value.toString());
+                for (String res : multi) resources.add(res);
+            } else if (attr.start(9) > -1) {
+                // CODE
+                if (resources == null) resources = new ArrayList<>();
+                if (elementStr.equalsIgnoreCase(APPLET) && !value.toString().toLowerCase().endsWith(CLASSEXT)) {
+                    resources.add(value.toString() + CLASSEXT);
                 } else {
-                    resources.add(valueStr);
+                    resources.add(value.toString());
                 }
             } else if (attr.start(10) > -1) {
                 // VALUE
                 valueVal = value;
                 valueContext = elementContext(element, attr.group(10));
+            } else if (attr.start(11) > -1) {
+                // STYLE
+                numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(this, curi, value));
             } else if (attr.start(12) > -1) {
                 // METHOD
                 method = value;
             } else if (attr.start(13) > -1) {
-                // NAME, FLASHVARS, REL
-                if ("NAME".equalsIgnoreCase(attrNameStr)) nameVal = value;
-                else if ("FLASHVARS".equalsIgnoreCase(attrNameStr)) {
+                if (Ascii.equalsIgnoreCase(attrName, "NAME")) {
+                    nameVal = value;
+                } else if (Ascii.equalsIgnoreCase(attrName, "FLASHVARS")) {
                     valueContext = elementContext(element, attr.group(13));
-                    considerQueryStringValues(curi, value, valueContext, Hop.SPECULATIVE);
-                } else if ("REL".equalsIgnoreCase(attrNameStr)) linkRel = value;
+                    considerQueryStringValues(curi, value.toString(), valueContext.toString(), Hop.SPECULATIVE);
+                } else if (Ascii.equalsIgnoreCase(attrName, "REL")) {
+                    linkRel = value;
+                }
+
+                // 2023 updates get img or source data attr
+                CharSequence context = elementContext(element, attr.group(13));
+                String normalizedAttrName = attrName.toString().toLowerCase();
+                String urlToUse = value.toString();
+
+                if (TextUtils.matches(
+                        "data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-src|lazy-srcset|full-src|full-srcset)",
+                        normalizedAttrName)) {
+
+                    if (normalizedAttrName.endsWith("srcset")) {
+                        urlToUse = value.toString().split(",")[0].trim().split("\\s+")[0];
+                    }
+
+                    final Hop hop;
+                    if (!framesAsEmbeds && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
+                        hop = Hop.NAVLINK;
+                    } else {
+                        hop = Hop.EMBED;
+                    }
+
+                    processEmbed(curi, urlToUse, context.toString(), hop);
+                }
             }
         }
 
         TextUtils.recycleMatcher(attr);
 
-        // Process resources if any
+        // handle codebase/resources
         if (resources != null) {
+            Iterator<String> iter = resources.iterator();
+            UURI codebaseURI = null;
+            String res = null;
             try {
-                UURI codebaseURI = (codebase != null) ? UURIFactory.getInstance(curi.getUURI(), codebase) : null;
-                for (String res : resources) {
+                if (codebase != null) {
+                    codebaseURI = UURIFactory.getInstance(curi.getUURI(), codebase);
+                }
+                while (iter.hasNext()) {
+                    res = iter.next();
                     res = TextUtils.unescapeHtml(res);
                     if (codebaseURI != null) res = codebaseURI.resolve(res).toString();
-                    processEmbed(curi, res, element);
+                    processEmbed(curi, res, elementStr);
                 }
-            } catch (URIException | IllegalArgumentException e) {
+            } catch (URIException e) {
                 curi.getNonFatalFailures().add(e);
+            } catch (IllegalArgumentException e) {
+                DevUtils.logger.log(Level.WARNING, "processGeneralTag()\n" +
+                        "codebase=" + codebase + " res=" + res + "\n" +
+                        DevUtils.extraInfo(), e);
             }
         }
 
-        // Handle linkHref / LINK / A
+        // finish handling LINK
         if (linkHref != null) {
-            if (elementStr.equalsIgnoreCase(LINK) && linkRel != null) {
-                processLinkTagWithRel(curi, linkHref, linkRel);
-            } else if (linkRel == null || !getObeyRelNofollow() || !TextUtils.matches("(?i).*\\bnofollow\\b.*", linkRel)) {
-                processLink(curi, linkHref, linkContext);
+            if (elementStr.equalsIgnoreCase(LINK)) {
+                if (linkRel != null) processLinkTagWithRel(curi, linkHref.toString(), linkRel.toString());
+            } else {
+                if (linkRel != null && getObeyRelNofollow() && TextUtils.matches("(?i).*\\bnofollow\\b.*", linkRel)) {
+                    if (logger.isLoggable(Level.FINEST)) logger.finest("ignoring nofollow link: " + linkHref);
+                } else {
+                    processLink(curi, linkHref.toString(), linkContext.toString());
+                }
             }
         }
 
-        // Handle form ACTION
-        if (action != null && (method == null || "GET".equalsIgnoreCase(method.toString()) || !getExtractOnlyFormGets())) {
-            processLink(curi, action, actionContext);
+        // finish handling form action
+        if (action != null) {
+            if (method == null || "GET".equalsIgnoreCase(method.toString()) || !getExtractOnlyFormGets()) {
+                processLink(curi, action.toString(), actionContext.toString());
+            }
         }
 
-        // Handle VALUE attributes
+        // finish handling VALUE
         if (valueVal != null) {
             if ("PARAM".equalsIgnoreCase(elementStr) && nameVal != null && "flashvars".equalsIgnoreCase(nameVal.toString())) {
-                considerQueryStringValues(curi, valueVal.toString(), valueContext, Hop.SPECULATIVE);
-            } else if (extractValueAttributes) {
-                considerIfLikelyUri(curi, valueVal, valueContext, Hop.NAVLINK);
+                String queryStringLike = valueVal.toString();
+                considerQueryStringValues(curi, queryStringLike, valueContext.toString(), Hop.SPECULATIVE);
+            } else {
+                if (extractValueAttributes) {
+                    considerIfLikelyUri(curi, valueVal.toString(), valueContext.toString(), Hop.NAVLINK);
+                }
             }
         }
     }
+
 
 
     // see: https://html.spec.whatwg.org/multipage/links.html#linkTypes
