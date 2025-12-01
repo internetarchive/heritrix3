@@ -558,7 +558,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
 				// 2023 updates get img or source data attr
 				CharSequence context = elementContext(element, attr.group(13));
-                String normalizedAttrName = attrName.toLowerCase();
+                String normalizedAttrName = attrName.toString().toLowerCase();
                 String urlToUse = value.toString();
 
                 if (TextUtils.matches(
