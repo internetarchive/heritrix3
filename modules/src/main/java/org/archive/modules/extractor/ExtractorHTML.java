@@ -558,15 +558,15 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
 				// 2023 updates get img or source data attr
 				CharSequence context = elementContext(element, attr.group(13));
-                String attrName = attr.group(13).toLowerCase();
-                String urlToUse = value;
+                String normalizedAttrName = attrName.toLowerCase();
+                String urlToUse = value.toString();
 
                 if (TextUtils.matches(
                         "data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-src|lazy-srcset|full-src|full-srcset)", 
-                        attrName)) {
+                        normalizedAttrName)) {
 
-                    if (attrName.endsWith("srcset")) {
-                        urlToUse = value.split(",")[0].trim().split("\\s+")[0];
+                    if (normalizedAttrName.endsWith("srcset")) {
+                        urlToUse = value.toString().split(",")[0].trim().split("\\s+")[0];
                     }
 
                     final Hop hop;
@@ -579,6 +579,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
                     processEmbed(curi, urlToUse, context, hop);
                 }
+
 
 
 
