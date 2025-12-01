@@ -558,11 +558,17 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
 				// 2023 updates get img or source data attr
 				CharSequence context = elementContext(element, attr.group(13));
+                String attrName = attr.group(13).toLowerCase();
+                String urlToUse = value;
+
                 if (TextUtils.matches(
                         "data-(src|src-small|src-medium|srcset|original|original-set|lazy|lazy-src|lazy-srcset|full-src|full-srcset)", 
-                        attr.group(13).toLowerCase())) {
+                        attrName)) {
 
-                    // Determine whether this should be treated as NAVLINK or EMBED
+                    if (attrName.endsWith("srcset")) {
+                        urlToUse = value.split(",")[0].trim().split("\\s+")[0];
+                    }
+
                     final Hop hop;
                     if (!framesAsEmbeds
                             && (elementStr.equalsIgnoreCase(FRAME) || elementStr.equalsIgnoreCase(IFRAME))) {
@@ -570,8 +576,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     } else {
                         hop = Hop.EMBED;
                     }
-                    processEmbed(curi, value, context, hop);
+
+                    processEmbed(curi, urlToUse, context, hop);
                 }
+
 
 
                 // any other attribute
