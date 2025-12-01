@@ -701,23 +701,23 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
     public void testExtractImgDataFullSrc() throws java.io.IOException {
         String html = "<html><body>" + "<img data-full-src=\"http://example.com/full.jpg\"/>" + "</body></html>";
         Set<String> extracted = extractLinks(html);
-        assertTrue(extracted.contains("http://example.com/full.jpg"),"Should extract URL from data-full-src");
+        assertTrue(extracted.contains("http://example.com/full.jpg"), "Should extract URL from data-full-src");
     }
 
     @Test
     public void testExtractImgDataLazySrcset() throws java.io.IOException {
         String html = "<html><body>" + "<img data-lazy-srcset=\"a.jpg 1x, b.jpg 2x\"/>" + "</body></html>";
         Set<String> extracted = extractLinks(html);
-        assertTrue(extracted.contains("a.jpg"),"Should extract first URL from data-lazy-srcset");
-        assertTrue(extracted.contains("b.jpg"),"Should extract second URL from data-lazy-srcset");
+        assertTrue(extracted.contains("a.jpg"), "Should extract first URL from data-lazy-srcset");
+        assertTrue(extracted.contains("b.jpg"), "Should extract second URL from data-lazy-srcset");
     }
 
     @Test
     public void testExtractImgSrcsetAdditional() throws java.io.IOException {
         String html = "<html><body>" + "<img srcset=\"x.png 1x, y.png 2x\"/>" + "</body></html>";
         Set<String> extracted = extractLinks(html);
-        assertTrue("Should extract first srcset URL", extracted.contains("x.png"));
-        assertTrue("Should extract second srcset URL", extracted.contains("y.png"));
+        assertTrue(extracted.contains("x.png"), "Should extract first srcset URL");
+        assertTrue(extracted.contains("y.png"), "Should extract second srcset URL");
     }
 
     @Test
