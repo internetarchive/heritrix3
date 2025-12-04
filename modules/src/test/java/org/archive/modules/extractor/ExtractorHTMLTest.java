@@ -275,6 +275,14 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         getExtractor().extract(curi, cs);
         assertEquals(0, curi.getOutLinks().size());
     }
+
+    @Test
+    public void testTooLongUrisAreIgnored() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.example.com"));
+        CharSequence cs = "<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAPoCAIAAADCwUOzAAALcklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPBizUsAAZdSjnQAAAAASUVORK5CYII='>";
+        getExtractor().extract(curi, cs);
+        assertEquals(0, curi.getOutLinks().size());
+    }
     
     /**
      * Test that relative base href's are resolved correctly:
@@ -582,7 +590,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         CrawlURI curi_srcset_one = new CrawlURI(UURIFactory.getInstance("https://www.20minutes.fr/"));
 
         CharSequence cs_srcset_one = "<img class=\"b-lazy\" width=\"120\" height=\"78\""
-                + "data-srcset=\"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg 120w\"";
+                + "data-srcset=\"https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg 120w\" />";
 
         String[] dest_srcset_one = {
                 "https://img.20mn.fr/shn9o66FT2-UHl5dl8D38Q/120x78_illustration-avocat.jpg"};
@@ -657,7 +665,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
     @Test
     public void testDataAttributesLeMonde() throws URIException {
-        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.telerama.fr/"));
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.lemonde.fr/"));
 
         CharSequence cs = "<img data-srcset=\"http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg 198w, "+
         			"http://img.lemde.fr/2020/02/29/0/0/4818/3212/114/0/95/0/c7dda5e_5282901-01-06.jpg 114w\" "+
@@ -672,13 +680,128 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
                 "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
                 "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
-                "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg",
                 "http://img.lemde.fr/2020/02/29/0/0/4818/3212/384/0/60/0/c7dda5e_5282901-01-06.jpg"
                 
         };
 
         genericCrawl(curi, cs, dest);
         
+    }
+
+    @Test
+    public void testDataFullSrcAttributesSlate() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.slate.fr/"));
+
+        CharSequence cs = "<img data-full-src=\"/sites/default/files/styles/330x188/public/alexander-andrews-qjyxsc4xb84-unsplash.jpg\" "+
+        			"srcset=\"/resizer/opD2fzNY__8TCVlehObW4PRYsMQ=/120x75/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 120w,  "+
+        		"/resizer/xZlmD3G7rAQ1A6yHH1_YnwdL3rw=/240x150/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 240w, "+
+        		"/resizer/hIvEezJm81xiHmNW4QyYKm7_y3Q=/300x187/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 300w, "+
+        		"/resizer/Yq8wR5hGgk2noF6rFM3IpnLGCJI=/360x225/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 360w, "+
+        		"/resizer/T_8cJnL18KoYyOlLejO-2hz2YhM=/600x375/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 600w\" >";
+
+        String[] dest = {
+                "https://www.slate.fr/resizer/T_8cJnL18KoYyOlLejO-2hz2YhM=/600x375/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.slate.fr/resizer/Yq8wR5hGgk2noF6rFM3IpnLGCJI=/360x225/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.slate.fr/resizer/hIvEezJm81xiHmNW4QyYKm7_y3Q=/300x187/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.slate.fr/resizer/opD2fzNY__8TCVlehObW4PRYsMQ=/120x75/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.slate.fr/resizer/xZlmD3G7rAQ1A6yHH1_YnwdL3rw=/240x150/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.slate.fr/sites/default/files/styles/330x188/public/alexander-andrews-qjyxsc4xb84-unsplash.jpg"
+        };
+
+        genericCrawl(curi, cs, dest);
+
+    }
+
+    @Test
+    public void testDataLazyAttributes() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.lemonde.fr/"));
+
+        CharSequence cs = "<source class=\"js-media-live-srcset\" data-lazy-srcset=\"https://img.lemde.fr/2023/05/08/182/0/3543/2362/220/146/30/0/11bfa3f_1683552799386-2023-04-22-heg-manoeuvre-0318.JPG\" media=\"(min-width: 576px)\">\n"
+        		+ "<img class=\"js-media-live\" data-lazy=\"https://img.lemde.fr/2023/05/08/0/260/2834/2834/120/120/30/0/11bfa3f_1683552799386-2023-04-22-heg-manoeuvre-0318.JPG\" alt=\"\"> \n"
+        		;
+
+        String[] dest = {
+                "https://img.lemde.fr/2023/05/08/0/260/2834/2834/120/120/30/0/11bfa3f_1683552799386-2023-04-22-heg-manoeuvre-0318.JPG",
+                "https://img.lemde.fr/2023/05/08/182/0/3543/2362/220/146/30/0/11bfa3f_1683552799386-2023-04-22-heg-manoeuvre-0318.JPG"
+        };
+
+        genericCrawl(curi, cs, dest);
+
+    }
+
+    @Test
+    public void testSourceSrcsetAttributes() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.lemonde.fr/"));
+
+        CharSequence cs = "<picture>\n"
+        		+ "<source srcset=\"/fr/rimage/ftw_webp_240/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 240w\" "
+        		+ "data-srcset=\"/fr/rimage/ftw_webp_240/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 240w, "
+        		+ "/fr/rimage/ftw_webp_288/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 288w, "
+        		+ "/fr/rimage/ftw_webp_384/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 384w, "
+        		+ "/fr/rimage/ftw_webp_480/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 480w, "
+        		+ "/fr/rimage/ftw_webp_2304/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666 2304w\" "
+        		+ "data-aspectratio=\"1.7776666666667\" type=\"image/webp\" sizes=\"1vw\">\n"
+        		+ "</picture>";
+
+        String[] dest = {
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_2304/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666",
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_240/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666",
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_240/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666",
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_288/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666",
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_384/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666",
+                "https://www.lemonde.fr/fr/rimage/ftw_webp_480/image/10/1c386e7cddfbf205b9a6fb4ca7ce9666"
+        };
+
+        genericCrawl(curi, cs, dest);
+
+    }
+
+    @Test
+    public void testDataSrcAttributes() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.104.fr/"));
+
+        CharSequence cs = "<img class=\"b-lazy image-large\" \n"
+        		+ "src=\"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==\"\n"
+        		+ "data-src-small=\"http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c80-468ffd.jpg, "
+        		+ "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c233-f551d3.jpg\" \n"
+        		+ "data-src-medium=\"http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c80-af15f9.jpg, "
+        		+ "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c18029b.jpg\" \n"
+        		+ "data-src=\"http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c8f5db0.jpg, "
+        		+ "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c84eebf.jpg\" \n"
+        		+ "alt=\"\"/>";
+
+        String[] dest = {
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c18029b.jpg",
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c233-f551d3.jpg",
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c80-468ffd.jpg",
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c80-af15f9.jpg",
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c84eebf.jpg",
+                "http://www.104.fr/cache/media/visuels-generaux/bandeau-home/c8f5db0.jpg"
+        };
+
+        genericCrawl(curi, cs, dest);
+
+    }
+
+    @Test
+    public void testSrcSetAttributes() throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.parisien.fr/"));
+
+        CharSequence cs = "<div class=\"lp-image-responsive\"><img class=\"lp-image-responsive_img\" " //
+        		+ "src=\"http://cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg\" alt=\"Les Insoumis LP/Arnaud Journois\" "
+        		+ "srcset=\"/resizer/opD2fzNY_8TCVlehObW4PRYsMQ=/120x75/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 120w, "
+        		+ "/resizer/xZlmD3G7rAQ1A6yHH1_YnwdL3rw=/240x150/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 240w, "
+        		+ "/resizer/T_8cJnL18KoYyOlLejO-2hz2YhM=/600x375/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg 600w\" "
+        		+ "sizes=\"(max-width: 739px) 120px, (min-width: 740px) 300px\" loading=\"lazy\" fetchpriority=\"low\"></div>";
+        String[] dest = {
+        		"http://cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.parisien.fr/resizer/T_8cJnL18KoYyOlLejO-2hz2YhM=/600x375/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+        		"https://www.parisien.fr/resizer/opD2fzNY_8TCVlehObW4PRYsMQ=/120x75/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg",
+                "https://www.parisien.fr/resizer/xZlmD3G7rAQ1A6yHH1_YnwdL3rw=/240x150/cloudfront-eu-central-1.images.arcpublishing.com/leparisien/PSAGE45Q5NEPVI75KP4AVSZ4OE.jpg"
+        };
+        genericCrawl(curi, cs, dest);
+
+
     }
 
     @Test
@@ -746,7 +869,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
 
         CrawlURI[] links = curi.getOutLinks().toArray(new CrawlURI[0]);
         Arrays.sort(links);
-
+        assertEquals(dest.length, links.length, "number of links");
         for (int i = 0; i < links.length; i++) {
             assertEquals(dest[i], links[i].getURI(), "outlink from picture");
         }

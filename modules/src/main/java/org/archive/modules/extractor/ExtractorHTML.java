@@ -436,7 +436,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             CharSequence value = cs.subSequence(start, end);
             CharSequence attrName = cs.subSequence(attr.start(1),attr.end(1));
             value = TextUtils.unescapeHtml(value);
-            if (attr.start(2) > -1) {
+            if (value.length() == getMaxAttributeValLength() && end < cs.length()) {
+                char nextChar = cs.charAt(end);
+                // Check if it's really the end of the string
+                if (nextChar != '"' && nextChar != '\'' && !Character.isWhitespace(nextChar)) {
+                    // Do nothing, truncated value
+                    if (logger.isLoggable(Level.FINE)) {
+                         logger.fine("Truncated value: " + value);
+                    }
+                }
+            } else if (attr.start(2) > -1) {
                 CharSequence context;
                 // HREF
                 if ("a".equals(element) && TextUtils.matches("(?i).*data-remote\\s*=\\s*([\"'])true.*\\1", cs)) {
