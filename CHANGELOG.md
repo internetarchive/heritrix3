@@ -2,11 +2,39 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.12.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.13.0...HEAD)
+
+## [3.13.0](https://github.com/internetarchive/heritrix3/releases/tag/3.13.0)  (2025-12-10)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.12.0...3.13.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.13.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.13.0/pom)
 
 ### New features
 
 * **Config editor:** IDE-style completions for bean names and Spring XML (powered by the new bean docs generator). [#684](https://github.com/internetarchive/heritrix3/pull/684)
+
+### Bug fixes
+
+* **ExtractorHTML:** Fixed attribute values longer than 2048 characters causing extraction of truncated strings. [#697](https://github.com/internetarchive/heritrix3/pull/697)
+* **ClientFTP:** Fixed MalformedServerReplyException when FTP sends a response with only an error code and no message. [#694](https://github.com/internetarchive/heritrix3/pull/694)
+* **BdbMultipleWorkQueues:** Added null checks, type validation, and warning logs in BdbMultipleWorkQueues.delete() to improve frontier stability in the case of corrupted or partially persisted CrawlURIs. [#693](https://github.com/internetarchive/heritrix3/pull/693) 
+* **BeanDocProcessor:** Fixed compiler IllegalArgumentException when IntelliJ runs the annotation processor with a ProcessingEnvironment wrapper.
+
+### Dependency upgrades
+
+* **amqp-client**: 5.27.0 → 5.27.1
+* **commons-cli**: 1.10.0 → 1.11.0
+* **commons-codec**: 1.19.0 → 1.20.0
+* **commons-io**: 2.20.0 → 2.21.0
+* **jackson**: 2.20.0 → 2.20.1
+* **jetty**: 12.0.29 → 12.0.30
+* **jsch**: 2.27.4 → 2.27.7
+* **junit-jupiter**: 6.0.0 → 6.0.1
+* **kafka-clients**: 4.1.0 → 4.1.1
+* **lz4-java**: 1.8.0 → 1.8.1
+* **spring-framework**: 6.2.12 → 7.0.1
+* **webarchive-commons**: 3.0.1 → 3.0.2
 
 ## [3.12.0](https://github.com/internetarchive/heritrix3/releases/tag/3.12.0)  (2025-10-30)
 
