@@ -426,15 +426,26 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
         final String elementStr = element.toString();
 
-        while (attr.find()) {
-            int valueGroup =
-                (attr.start(14) > -1) ? 14 : (attr.start(15) > -1) ? 15 : 16;
+        int from = 0;
+        while (attr.find(from)) {
+            int valueGroup = (attr.start(14) > -1) ? 14 : (attr.start(15) > -1) ? 15 : 16;
             int start = attr.start(valueGroup);
             int end = attr.end(valueGroup);
             assert start >= 0: "Start is: " + start + ", " + curi;
             assert end >= 0: "End is :" + end + ", " + curi;
             CharSequence value = cs.subSequence(start, end);
             CharSequence attrName = cs.subSequence(attr.start(1),attr.end(1));
+            boolean truncated = value.length() == getMaxAttributeValLength() && end < cs.length() 
+                                && cs.charAt(end) != '"' && cs.charAt(end) != '\'' && !Character.isWhitespace(cs.charAt(end));
+            if (truncated) {
+                if (logger.isLoggable(Level.FINE)) {
+                     logger.fine("Truncated value: " + value);
+                }
+                // move pointer to the end of the full value
+                from = skipAfterFullValue(cs, start, end);
+                continue;
+            }
+            from = attr.end();
             value = TextUtils.unescapeHtml(value);
             if (attr.start(2) > -1) {
                 CharSequence context;
@@ -650,6 +661,30 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
             }
         }
+    }
+    
+    protected int skipAfterFullValue(CharSequence cs, int start, int end) {
+        int skipTo = end;
+        // value is truncated but can start with ' or "
+        char first = start < cs.length() ? cs.charAt(start) : '\0';
+        if (first == '"' || first == '\'') {
+           // find next closing character after 'end'
+           int q = -1;
+           for (int i = Math.max(0, end); i < cs.length(); i++) {
+               if (cs.charAt(i) == first) {
+                   q = i;
+                   break;
+               }
+           }
+           skipTo = (q >= 0) ? (q + 1) : cs.length();
+        } else {
+            // unquoted value : stop after next whitespace then skip the whitespaces
+            int i = end;
+            while (i < cs.length() && !Character.isWhitespace(cs.charAt(i))) i++;
+            while (i < cs.length() && Character.isWhitespace(cs.charAt(i))) i++;
+            skipTo = i;
+        }
+        return skipTo;
     }
 
     // see: https://html.spec.whatwg.org/multipage/links.html#linkTypes
