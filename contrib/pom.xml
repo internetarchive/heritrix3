@@ -70,6 +70,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Override for CVE‐2025‐12183. This should be removed once kafka-clients updates it. -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 	<build>
