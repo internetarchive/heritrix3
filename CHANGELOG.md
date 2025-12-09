@@ -16,6 +16,7 @@
 
 ### Bug fixes
 
+* **AbstractCookieStore:** Fixed cookies with leading dot (.example.com) being ignored [#691](https://github.com/internetarchive/heritrix3/pull/691)
 * **ExtractorHTML:** Fixed attribute values longer than 2048 characters causing extraction of truncated strings. [#697](https://github.com/internetarchive/heritrix3/pull/697)
 * **ClientFTP:** Fixed MalformedServerReplyException when FTP sends a response with only an error code and no message. [#694](https://github.com/internetarchive/heritrix3/pull/694)
 * **BdbMultipleWorkQueues:** Added null checks, type validation, and warning logs in BdbMultipleWorkQueues.delete() to improve frontier stability in the case of corrupted or partially persisted CrawlURIs. [#693](https://github.com/internetarchive/heritrix3/pull/693) 
