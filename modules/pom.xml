@@ -111,6 +111,12 @@
 			<artifactId>junit-jupiter</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.20.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
