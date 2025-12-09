@@ -38,6 +38,7 @@ import javax.tools.StandardLocation;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,7 +55,23 @@ public class BeanDocProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        this.trees = Trees.instance(processingEnv);
+        ProcessingEnvironment unwrapped = jbUnwrap(ProcessingEnvironment.class, processingEnv);
+        this.trees = Trees.instance(unwrapped);
+    }
+
+    /**
+     * Unwraps ProcessingEnvironment when running in IntelliJ IDEA.
+     * https://youtrack.jetbrains.com/issue/IDEA-274697/java-java.lang.IllegalArgumentException
+     */
+    private static <T> T jbUnwrap(Class<? extends T> iface, T wrapper) {
+        T unwrapped = null;
+        try {
+            Class<?> apiWrappers = wrapper.getClass().getClassLoader().loadClass("org.jetbrains.jps.javac.APIWrappers");
+            Method unwrapMethod = apiWrappers.getDeclaredMethod("unwrap", Class.class, Object.class);
+            unwrapped = iface.cast(unwrapMethod.invoke(null, iface, wrapper));
+        } catch (Throwable ignored) {
+        }
+        return unwrapped != null ? unwrapped : wrapper;
     }
 
     private String getDocComment(Element element) {
