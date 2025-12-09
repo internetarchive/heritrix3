@@ -32,7 +32,7 @@
 * **jsch**: 2.27.4 → 2.27.7
 * **junit-jupiter**: 6.0.0 → 6.0.1
 * **kafka-clients**: 4.1.0 → 4.1.1
-* **lz4-java**: 1.8.0 → 1.8.1
+* **lz4-java**: 1.8.0 → 1.10.1
 * **spring-framework**: 6.2.12 → 7.0.1
 * **webarchive-commons**: 3.0.1 → 3.0.2
 

@@ -33,8 +33,20 @@
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
 			<version>4.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.lz4</groupId>
+                    <artifactId>lz4-java</artifactId>
+                </exclusion>
+            </exclusions>
 		</dependency>
-		<dependency>
+        <!-- Override for CVE‐2025‐12183 and CVE-2025-66566. This should be removed once kafka-clients updates. -->
+        <dependency>
+            <groupId>at.yawk.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
+            <version>1.10.1</version>
+        </dependency>
+        <dependency>
 			<groupId>com.rethinkdb</groupId>
 			<artifactId>rethinkdb-driver</artifactId>
 			<version>2.4.4</version>
@@ -69,12 +81,6 @@
                 <version>2.20.1</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <!-- Override for CVE‐2025‐12183. This should be removed once kafka-clients updates it. -->
-            <dependency>
-                <groupId>org.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>1.8.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
