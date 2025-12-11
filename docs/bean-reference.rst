@@ -428,6 +428,11 @@ ExtractorJS
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorJS
 
+ExtractorJson
+~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ExtractorJson
+
 KnowledgableExtractorJS (contrib)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
