@@ -4,7 +4,7 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.13.0...HEAD)
 
-## [3.13.0](https://github.com/internetarchive/heritrix3/releases/tag/3.13.0)  (2025-12-10)
+## [3.13.0](https://github.com/internetarchive/heritrix3/releases/tag/3.13.0)  (2025-12-11)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.tar.gz))
 
@@ -13,6 +13,8 @@
 ### New features
 
 * **Config editor:** IDE-style completions for bean names and Spring XML (powered by the new bean docs generator). [#684](https://github.com/internetarchive/heritrix3/pull/684)
+* **Job status API:** The `sizeTotalsReport` now includes a `sizeOnDisk` value totaling the size of the files in `latest/warcs`. [#700](https://github.com/internetarchive/heritrix3/pull/700)
+* **ExtractorJson:** New extractor that extracts URI strings from JSON documents. [#701](https://github.com/internetarchive/heritrix3/pull/701)
 
 ### Bug fixes
 
