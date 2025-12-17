@@ -91,12 +91,13 @@ public class JsonMarshaller {
             ((JSONObject) value).write(writer, indentFactor, 0);
         } else if (value instanceof JSONArray) {
             ((JSONArray) value).write(writer, indentFactor, 0);
-        } else if (value == null) {
+        } else if (JSONObject.NULL.equals(value)) {
             writer.write("null");
         } else {
-            // we should usually not arrive here, I think
-            // we could alternatively just go with `value.toString()` (but this is not
-            // necessarily valid JSON)
+            // we should usually not arrive here, I think as we only use complex object
+            // arguments like maps or beans
+            // we could alternatively just go with `value.toString()` (but this will not
+            // necessarily result in valid JSON, so better to exit)
             throw new RuntimeException("Unexpected JSON marshalling result?");
         }
     }
@@ -109,16 +110,30 @@ public class JsonMarshaller {
      *         type
      * @see {@link XmlMarshaller#marshal(org.restlet.ext.xml.XmlWriter, String, Object)}
      * @see {@link JSONObject#wrap(Object)}
+     * @see {@link JSONObject#numberIsFinite(Number)}
      */
     protected static Object marshal(Object value) {
         // see JSONObject.wrap()
         // xmlWriter.dataElement(key, stripInvalidXMLChars(value.toString()));
-        if (value == null || value instanceof Byte || value instanceof Character
+        if (value == null) {
+            // explicit so we can serialize the JSON "null" instead of removing the key
+            return JSONObject.NULL;
+        }
+        if (value instanceof Byte || value instanceof Character
                 || value instanceof Short || value instanceof Integer
                 || value instanceof Long || value instanceof Boolean
                 || value instanceof Float || value instanceof Double
                 || value instanceof String || value instanceof BigInteger
                 || value instanceof BigDecimal || value instanceof Enum) {
+
+            // avoid exception from JSONObject#testValidity, JSONObject#numberIsFinite
+            // serialize Infinity/NaN to null, see JSONObject#doubleToString
+            if (value instanceof Double && (((Double) value).isInfinite() || ((Double) value).isNaN())) {
+                return JSONObject.NULL;
+            } else if (value instanceof Float && (((Float) value).isInfinite() || ((Float) value).isNaN())) {
+                return JSONObject.NULL;
+            }
+
             return value;
         }
 
@@ -197,8 +212,7 @@ public class JsonMarshaller {
                     }
                 } catch (Exception ex) {
                     // generate empty element, for now. generate comment?
-                    // TODO: generate null or ""? (Or skip completely?)
-                    object.put(prop.getName(), "");
+                    object.put(prop.getName(), JSONObject.NULL);
                 }
             }
         } catch (IntrospectionException ex) {

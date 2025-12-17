@@ -28,7 +28,6 @@ import org.restlet.Response;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
-import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
 import org.restlet.representation.WriterRepresentation;
@@ -110,10 +109,11 @@ public class ScriptResource extends JobRelatedResource {
                 }
             };
         } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
-            JsonRepresentation representation = new JsonRepresentation(makeDataModel());
-            representation.setIndenting(true);
-            representation.setIndentingSize(2);
-            return representation;
+            return new WriterRepresentation(MediaType.APPLICATION_JSON) {
+                public void write(Writer writer) throws IOException {
+                    JsonMarshaller.marshalDocument(writer, null, makeDataModel());
+                }
+            };
         } else {
             ViewModel viewModel = new ViewModel();
             viewModel.put("baseResourceRef", getRequest().getRootRef().toString() + "/engine/static/");
