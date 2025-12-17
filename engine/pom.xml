@@ -61,6 +61,11 @@
 			<version>${restlet.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.restlet</groupId>
+			<artifactId>org.restlet.ext.json</artifactId>
+			<version>${restlet.version}</version>
+		</dependency>
+		<dependency>
 			<!-- for HTTP Digest auth -->
 			<groupId>org.restlet</groupId>
 			<artifactId>org.restlet.ext.crypto</artifactId>

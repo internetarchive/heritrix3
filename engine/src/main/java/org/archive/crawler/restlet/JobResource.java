@@ -38,6 +38,7 @@ import org.restlet.Context;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
+import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.representation.EmptyRepresentation;
@@ -74,6 +75,7 @@ public class JobResource extends BaseResource {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         cj = getEngine().getJob(
                 TextUtils.urlUnescape((String) req.getAttributes().get("job")));
     }
@@ -92,6 +94,13 @@ public class JobResource extends BaseResource {
                     XmlMarshaller.marshalDocument(writer, "job", model);
                 }
             };
+        } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
+            CrawlJobModel model = makeDataModel();
+            model.put("heapReport", getEngine().heapReportData());
+            JsonRepresentation representation = new JsonRepresentation(model);
+            representation.setIndenting(true);
+            representation.setIndentingSize(2);
+            return representation;
         } else {
             ViewModel viewModel = new ViewModel();
             viewModel.put("heapReport", getEngine().heapReportData());

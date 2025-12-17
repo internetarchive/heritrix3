@@ -34,13 +34,12 @@ import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
+import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.EmptyRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
-
-import static org.restlet.data.MediaType.APPLICATION_XML;
 
 /**
  * Restlet Resource representing an Engine that may be used
@@ -56,17 +55,23 @@ public class EngineResource extends BaseResource {
     public void init(Context ctx, Request req, Response res) {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
-        getVariants().add(new Variant(APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
     }
 
     @Override
     protected Representation get(Variant variant) throws ResourceException {
-        if (variant.getMediaType() == APPLICATION_XML) {
-            return new WriterRepresentation(APPLICATION_XML) {
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "engine", makeDataModel());
                 }
             };
+        } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
+            JsonRepresentation representation = new JsonRepresentation(makeDataModel());
+            representation.setIndenting(true);
+            representation.setIndentingSize(2);
+            return representation;
         } else {
             ViewModel viewModel = new ViewModel();
             viewModel.put("fileSeparator", File.separator);
