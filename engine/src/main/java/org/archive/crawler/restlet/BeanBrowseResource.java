@@ -64,6 +64,7 @@ public class BeanBrowseResource extends JobRelatedResource {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         appCtx = cj.getJobContext();
         beanPath = (String)req.getAttributes().get("beanPath");
         if (beanPath!=null) {
@@ -127,6 +128,12 @@ public class BeanBrowseResource extends JobRelatedResource {
             return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "beans", makeDataModel());
+                }
+            };
+        } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
+            return new WriterRepresentation(MediaType.APPLICATION_JSON) {
+                public void write(Writer writer) throws IOException {
+                    JsonMarshaller.marshalDocument(writer, null, makeDataModel());
                 }
             };
         } else {
