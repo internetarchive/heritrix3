@@ -40,8 +40,6 @@ import org.restlet.representation.WriterRepresentation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
 
-import static org.restlet.data.MediaType.APPLICATION_XML;
-
 /**
  * Restlet Resource representing an Engine that may be used
  * to assemble, launch, monitor, and manage crawls. 
@@ -56,15 +54,22 @@ public class EngineResource extends BaseResource {
     public void init(Context ctx, Request req, Response res) {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
-        getVariants().add(new Variant(APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
     }
 
     @Override
     protected Representation get(Variant variant) throws ResourceException {
-        if (variant.getMediaType() == APPLICATION_XML) {
-            return new WriterRepresentation(APPLICATION_XML) {
+        if (variant.getMediaType() == MediaType.APPLICATION_XML) {
+            return new WriterRepresentation(MediaType.APPLICATION_XML) {
                 public void write(Writer writer) throws IOException {
                     XmlMarshaller.marshalDocument(writer, "engine", makeDataModel());
+                }
+            };
+        } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
+            return new WriterRepresentation(MediaType.APPLICATION_JSON) {
+                public void write(Writer writer) throws IOException {
+                    JsonMarshaller.marshalDocument(writer, null, makeDataModel());
                 }
             };
         } else {

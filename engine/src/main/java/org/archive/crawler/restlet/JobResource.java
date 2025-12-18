@@ -74,6 +74,7 @@ public class JobResource extends BaseResource {
         super.init(ctx, req, res);
         getVariants().add(new Variant(MediaType.TEXT_HTML));
         getVariants().add(new Variant(MediaType.APPLICATION_XML));
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         cj = getEngine().getJob(
                 TextUtils.urlUnescape((String) req.getAttributes().get("job")));
     }
@@ -90,6 +91,14 @@ public class JobResource extends BaseResource {
                     CrawlJobModel model = makeDataModel();
                     model.put("heapReport", getEngine().heapReportData());
                     XmlMarshaller.marshalDocument(writer, "job", model);
+                }
+            };
+        } else if (variant.getMediaType() == MediaType.APPLICATION_JSON) {
+            return new WriterRepresentation(MediaType.APPLICATION_JSON) {
+                public void write(Writer writer) throws IOException {
+                    CrawlJobModel model = makeDataModel();
+                    model.put("heapReport", getEngine().heapReportData());
+                    JsonMarshaller.marshalDocument(writer, null, model);
                 }
             };
         } else {

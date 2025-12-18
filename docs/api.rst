@@ -61,6 +61,44 @@ Get Engine Status
         </jobs>
       </engine>
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine
+
+   Response:
+
+   .. code:: json
+
+      {
+        "availableActions": [
+          "rescan",
+          "add",
+          "create"
+        ],
+        "heapReport": {
+          "usedBytes": 69529904,
+          "totalBytes": 589824000,
+          "maxBytes": 2885681152
+        },
+        "jobsDirUrl": "https://localhost:8443/engine/jobsdir/",
+        "heritrixVersion": "3.3.0-SNAPSHOT-2017-07-12T04:17:56Z",
+        "jobsDir": "/heritrix/jobs",
+        "jobs": [{
+          "isProfile": false,
+          "launchCount": 0,
+          "statusDescription": "Unbuilt",
+          "hasApplicationContext": false,
+          "shortName": "myjob",
+          "isLaunchInfoPartial": false,
+          "url": "https://localhost:8443/engine/job/myjob",
+          "key": "myjob",
+          "primaryConfig": "/heritrix/jobs/myjob/crawler-beans.cxml",
+          "primaryConfigUrl": "https://localhost:8443/engine/jobdir/crawler-beans.cxml"
+        }]
+      }
+
 Create New Job
 ~~~~~~~~~~~~~~
 
@@ -86,6 +124,13 @@ Create New Job
       curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location \
         -H "Accept: application/xml" https://localhost:8443/engine
 
+   **JSON Example:**
+
+   .. code:: bash
+
+      curl -v -d "createpath=myjob&action=create" -k -u admin:admin --anyauth --location \
+        -H "Accept: application/json" https://localhost:8443/engine
+
 Add Job Directory
 ~~~~~~~~~~~~~~~~~
 
@@ -109,6 +154,12 @@ Add Job Directory
    .. code:: bash
 
       curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
+
+   **JSON Example:**
+
+   .. code:: bash
+
+      curl -v -d "action=add&addpath=/Users/hstern/job" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine
 
 Get Job Status
 ~~~~~~~~~~~~~~
@@ -222,6 +273,112 @@ Get Job Status
         </heapReport>
       </job>
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
+
+   Response:
+
+   .. code:: json
+
+      {
+        "uriTotalsReport": {
+          "downloadedUriCount": 3920,
+          "queuedUriCount": 2,
+          "futureUriCount": 0,
+          "totalUriCount": 3920
+        },
+        "reports": [
+          {
+            "shortName": "CrawlSummary",
+            "className": "CrawlSummaryReport"
+          },
+          // ...
+        ],
+        "rateReport": {
+          "currentDocsPerSecond": 0.6354171124312226,
+          "averageKiBPerSec": 344,
+          "currentKiBPerSec": 0,
+          "averageDocsPerSecond": 0
+        },
+        "lastLaunch": "2020-04-01T02:07:42.531Z",
+        "frontierReport": {
+          "lastReachedState": "FINISH",
+          "totalQueues": 1,
+          "queueReadiedCount": 0,
+          "inProcessQueues": 0,
+          "readyQueues": 0,
+          "activeQueues": 0,
+          "inactiveQueues": 0,
+          "ineligibleQueues": 0,
+          "retiredQueues": 0,
+          "exhaustedQueues": 1,
+          "snoozedQueues": 0
+        },
+        "sizeTotalsReport": {
+          "notModifiedCount": 0,
+          "total": 2177235508,
+          "notModified": 0,
+          "dupByHashCount": 0,
+          "novelCount": 3920,
+          "sizeOnDisk": 0,
+          "totalCount": 3920,
+          "dupByHash": 0,
+          "novel": 2177235508,
+          "warcNovelContentBytes": 2177235508,
+          "warcNovelUrls": 3920
+        },
+        "checkpointFiles": [],
+        "crawlLogTail": [
+          // ...
+        ],
+        "primaryConfig": "/heritrix/jobs/myjob/crawler-beans.cxml",
+        "primaryConfigUrl": "https://localhost:8443/engine/job/myjob/jobdir/crawler-beans.cxml",
+        "crawlLogFileUrl": "jobdir/20200401020744/logs/crawl.log",
+        "heapReport": {
+          "usedBytes": 66893400,
+          "totalBytes": 589824000,
+          "maxBytes": 2885681152
+        },
+        "isRunning": false,
+        "isLaunchable": false,
+        "isLaunchInfoPartial": false,
+        "alertLogFilePath": "/heritrix/jobs/myjob/20200401020744/logs/alerts.log",
+        "alertLogFileUrl": "jobdir/20200401020744/logs/alerts.log",
+        "availableActions": ["teardown"],
+        "launchCount": 1,
+        "isProfile": false,
+        "loadReport": {
+          "totalThreads": 0,
+          "busyThreads": 0,
+          "averageQueueDepth": 0,
+          "deepestQueueDepth": 0,
+          "congestionRatio": null
+        },
+        "crawlExitStatus": "FINISHED",
+        "jobLogTail": [
+          "2020-04-01T03:50:44.708Z INFO FINISHED 20200401020744",
+          "2020-04-01T03:50:42.670Z INFO EMPTY 20200401020744",
+          "2020-04-01T03:50:42.669Z INFO STOPPING 20200401020744"
+        ],
+        "url": "https://localhost:8443/engine/job/myjob/job/myjob",
+        "elapsedReport": {
+          "elapsedPretty": "1h42m49s176ms",
+          "elapsedMilliseconds": 6169176
+        },
+        "statusDescription": "Finished: FINISHED",
+        "configFiles": [
+          // ...
+        ],
+        "hasApplicationContext": true,
+        "alertCount": 549,
+        "crawlLogFilePath": "/heritrix/jobs/myjob/20200401020744/logs/crawl.log",
+        "shortName": "myjob",
+        "crawlControllerState": "FINISHED"
+      }
+
 Build Job Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -244,6 +401,12 @@ Build Job Configuration
    .. code:: bash
 
        curl -v -d "action=build" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=build" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
 Launch Job
 ~~~~~~~~~~
@@ -270,6 +433,12 @@ Launch Job
 
        curl -v -d "action=launch" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=launch" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
+
 Rescan Job Directory
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -293,6 +462,12 @@ Rescan Job Directory
 
        curl -v -d "action=rescan" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=rescan" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine
+
 Pause Job
 ~~~~~~~~~
 
@@ -313,6 +488,12 @@ Pause Job
    .. code:: bash
 
        curl -v -d "action=pause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=pause" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
 Unpause Job
 ~~~~~~~~~~~
@@ -336,6 +517,12 @@ Unpause Job
 
        curl -v -d "action=unpause" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=unpause" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
+
 Terminate Job
 ~~~~~~~~~~~~~
 
@@ -356,6 +543,12 @@ Terminate Job
    .. code:: bash
 
        curl -v -d "action=terminate" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=terminate" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
 Teardown Job
 ~~~~~~~~~~~~
@@ -378,6 +571,12 @@ Teardown Job
    .. code:: bash
 
        curl -v -d "action=teardown" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=teardown" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
 Copy Job
 ~~~~~~~~
@@ -406,6 +605,12 @@ Copy Job
 
        curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
 
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
+
 Checkpoint Job
 ~~~~~~~~~~~~~~
 
@@ -428,6 +633,12 @@ Checkpoint Job
    .. code:: bash
 
        curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=checkpoint" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
 Execute Script in Job
 ~~~~~~~~~~~~~~~~~~~~~
@@ -453,6 +664,12 @@ Execute Script in Job
    .. code:: bash
 
        curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob/script
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob/script
 
 Submitting a CXML Job Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
