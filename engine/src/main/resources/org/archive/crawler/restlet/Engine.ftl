@@ -69,7 +69,7 @@
 	<div class="large-5 columns">
 		<div class="panel">
 			<h3>Exit Java</h3>
-			<form method='POST'>
+			<form method='POST' style="max-height:20em;overflow-y:auto">
 				<#list engine.jobs as crawlJob>
 				<#if crawlJob.hasApplicationContext>
 				<label for='ignore__${crawlJob.key}' style="color:#d9534f">
