@@ -103,7 +103,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-bom</artifactId>
-                <version>5.0.2</version>
+                <version>5.0.3</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -426,7 +426,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<doclint>none</doclint>
 		<additionalparam>-Xdoclint:none</additionalparam>
-		<jetty.version>12.0.30</jetty.version>
+		<jetty.version>12.0.31</jetty.version>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.release>17</maven.compiler.release>
@@ -448,7 +448,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-release-plugin</artifactId>
-						<version>3.2.0</version>
+						<version>3.3.1</version>
 						<configuration>
 							<arguments>-Dmaven.test.skipTests=true -Dmaven.test.skip=true</arguments>
 							<tagNameFormat>@{project.version}</tagNameFormat>
