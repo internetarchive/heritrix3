@@ -59,6 +59,14 @@
 					<li class="divider"></li>
 					<li>
 					<#if job.hasApplicationContext>
+					<a href="#" style="color:#444">Delete Job</a>
+					<#else>
+					<a href="#" data-reveal-id="deleteJobModal">Delete Job</a>
+					</#if>
+					</li>
+					<li class="divider"></li>
+					<li>
+					<#if job.hasApplicationContext>
 					<a href="script">Scripting Console</a>
 					<#else>
 					<a href="#" style="color:#444">Scripting Console</a>
@@ -344,6 +352,18 @@
 			</p>
 			<div>
 				<input class="small button" value="copy" type="submit">
+			</div>
+		</fieldset>
+	</form>
+	<a class="close-reveal-modal">&#215;</a>
+</div>
+<div id="deleteJobModal" class="reveal-modal">
+	<h2>Delete Job</h2>
+	<form method="POST">
+		<fieldset>
+			<p>Deleting the job will remove the complete job folder including configurations, logs, statistics and results! Only continue if you are sure.</p>
+			<div>
+				<input class="small button" name="action" value="delete" type="submit">
 			</div>
 		</fieldset>
 	</form>
