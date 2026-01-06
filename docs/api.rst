@@ -611,6 +611,39 @@ Copy Job
 
        curl -v -d "copyTo=mycopy&asProfile=on" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
 
+Delete Job
+~~~~~~~~~~
+
+.. http:post:: https://(heritrixhost):8443/engine/job/(jobname) [delete]
+
+   Deletes an existing job. It will remove everything related to the job
+   (configuration, statistics, logs and results) including the whole job
+   folder. Everything to keep has to be copied outside of the job folder.
+   
+   Deleting a job is only possible if no active application context for the job
+   exists which is the case for new or unbuilt jobs. If a job has been built,
+   it must first be torn down to allow deletion.
+
+   :form action: must be ``delete``
+
+   **HTML Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=delete" -k -u admin:admin --anyauth --location https://localhost:8443/engine/job/myjob
+
+   **XML Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=delete" -k -u admin:admin --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/myjob
+
+   **JSON Example:**
+
+   .. code:: bash
+
+       curl -v -d "action=delete" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob
+
 Checkpoint Job
 ~~~~~~~~~~~~~~
 

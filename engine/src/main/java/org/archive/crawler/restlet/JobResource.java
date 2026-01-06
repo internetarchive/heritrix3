@@ -162,9 +162,13 @@ public class JobResource extends BaseResource {
             copyJob(copyTo, "on".equals(form.getFirstValue("asProfile")));
             return new EmptyRepresentation();
         }
+        String action = form.getFirstValue("action");
+        if ("delete".equals(action)) {
+            deleteJob();
+            return new EmptyRepresentation();
+        }
         AlertHandler.ensureStaticInitialization();
         AlertThreadGroup.setThreadLogger(cj.getJobLogger());
-        String action = form.getFirstValue("action");
         if ("launch".equals(action)) {
             String selectedCheckpoint = form.getFirstValue("checkpoint");
             if (StringUtils.isNotEmpty(selectedCheckpoint)) {
@@ -220,6 +224,29 @@ public class JobResource extends BaseResource {
         }
         // redirect to destination job page
         getResponse().redirectSeeOther(copyTo);
+    }
+
+    protected void deleteJob() {
+        // check that job has no active application context
+        if (cj.hasApplicationContext()) {
+            Flash.addFlash(getResponse(), "Job has application context. Teardown required.",
+                    Flash.Kind.NACK);
+            getResponse().redirectSeeOther(getRequest().getOriginalRef());
+            return;
+        }
+        // delete job, should be ok
+        try {
+            getEngine().deleteJob(cj);
+        } catch (IOException e) {
+            Flash.addFlash(getResponse(), "Job not deleted: " + e.getMessage(),
+                    Flash.Kind.NACK);
+            getResponse().redirectSeeOther(getRequest().getOriginalRef());
+            return;
+        }
+        // refresh job list
+        getEngine().findJobConfigs();
+        // redirect back to engine page
+        getResponse().redirectSeeOther("/engine" /*TODO: can we use a method here to get the URI?*/);
     }
 
 }
