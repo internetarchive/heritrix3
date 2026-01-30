@@ -420,6 +420,11 @@ public class ExtractorYoutubeDL extends Extractor
      */
     protected void streamYdlOutput(InputStream in, YoutubeDLResults results) throws IOException {
         TeedInputStream tee = new TeedInputStream(in, results.jsonFile);
+        // Since we read objects a single field at a time, we can't
+        // skip the entire object in one action; this lets us track
+        // whether we should ignore subsequent fields from the same
+        // object.
+        boolean skipObject = false;
         try (JsonReader jsonReader = new JsonReader(new InputStreamReader(tee, "UTF-8"))) {
             while (true) {
                 JsonToken nextToken = jsonReader.peek();
@@ -440,6 +445,7 @@ public class ExtractorYoutubeDL extends Extractor
                     return;
                 case END_OBJECT:
                     jsonReader.endObject();
+                    skipObject = false;
                     break;
                 case NAME:
                     jsonReader.nextName();
@@ -451,8 +457,22 @@ public class ExtractorYoutubeDL extends Extractor
                     jsonReader.nextString();
                     break;
                 case STRING:
+                    if (skipObject) {
+                        break;
+                    }
+
                     String value = jsonReader.nextString();
-                    if ("$.url".equals(jsonReader.getPath())
+                    // Format IDs ending with -sr are YouTube "Super Resolution"
+                    // upscaled videos; avoid downloading these in favour of the
+                    // original files.
+                    // https://alexwlchan.net/til/2025/ignore-ai-scaled-videos/
+                    if ("$.format_id".equals(jsonReader.getPath())
+                            || jsonReader.getPath().matches("^\\$\\.entries\\[\\d+\\]\\.format_id$")) {
+                        if (value.endsWith("-sr")) {
+                            skipObject = true;
+                            break;
+                        }
+                    } else if ("$.url".equals(jsonReader.getPath())
                             || jsonReader.getPath().matches("^\\$\\.entries\\[\\d+\\]\\.url$")) {
                         results.videoUrls.add(value);
                     } else if ("$.webpage_url".equals(jsonReader.getPath())
