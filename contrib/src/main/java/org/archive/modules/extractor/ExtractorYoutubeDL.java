@@ -207,6 +207,19 @@ public class ExtractorYoutubeDL extends Extractor
         kp.put("processArguments", processArguments);
     }
 
+    {
+        setSkipSuperResolution(false);
+    }
+    public boolean getSkipSuperResolution() {
+        return (Boolean) kp.get("skipSuperResolution");
+    }
+    /**
+     * Whether or not to download Super Resolution upscaled videos.
+     */
+    public void setSkipSuperResolution(boolean skipSuperResolution) {
+        kp.put("skipSuperResolution",skipSuperResolution);
+    }
+
     @Override
     public void start() {
         if (!isRunning) {
@@ -463,12 +476,12 @@ public class ExtractorYoutubeDL extends Extractor
 
                     String value = jsonReader.nextString();
                     // Format IDs ending with -sr are YouTube "Super Resolution"
-                    // upscaled videos; avoid downloading these in favour of the
-                    // original files.
+                    // upscaled videos; if requested, avoid downloading these in
+                    // favour of the original files.
                     // https://alexwlchan.net/til/2025/ignore-ai-scaled-videos/
                     if ("$.format_id".equals(jsonReader.getPath())
                             || jsonReader.getPath().matches("^\\$\\.entries\\[\\d+\\]\\.format_id$")) {
-                        if (value.endsWith("-sr")) {
+                        if (value.endsWith("-sr") && getSkipSuperResolution()) {
                             skipObject = true;
                             break;
                         }
