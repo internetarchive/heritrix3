@@ -4,6 +4,9 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.13.0...HEAD)
 
+### New features
+* **FetchHTTP2:** SOCKS5 proxy support
+
 ## [3.13.0](https://github.com/internetarchive/heritrix3/releases/tag/3.13.0)  (2025-12-11)
 
 [Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.13.0/heritrix-3.13.0-dist.tar.gz))
