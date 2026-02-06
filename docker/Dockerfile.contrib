@@ -1,4 +1,4 @@
-ARG java=21-jdk-slim
+ARG java=25-jdk-slim
 
 FROM openjdk:${java}
 

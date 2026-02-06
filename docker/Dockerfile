@@ -1,4 +1,4 @@
-ARG java=21
+ARG java=25
 
 FROM eclipse-temurin:${java}
 
