@@ -34,6 +34,7 @@ import org.archive.modules.net.ServerCache;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.alpn.client.ALPNClientConnection;
 import org.eclipse.jetty.client.*;
+import org.eclipse.jetty.client.ProxyConfiguration.Proxy;
 import org.eclipse.jetty.client.transport.HttpClientConnectionFactory;
 import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
 import org.eclipse.jetty.http.*;
@@ -93,7 +94,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
     protected String digestAlgorithm = "sha1";
     protected boolean useHTTP2 = true;
     protected boolean useHTTP3 = false;
-    private final Map<HttpProxySettings, HttpProxy> httpProxies = new ConcurrentHashMap<>();
+    private final Map<ProxySettings, Proxy> proxies = new ConcurrentHashMap<>();
 
     public FetchHTTP2(@Autowired ServerCache serverCache, @Autowired(required = false) AbstractCookieStore cookieStore) {
         this.serverCache = serverCache;
@@ -280,25 +281,105 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         kp.put("httpProxyPort", port);
     }
 
-    public ProxyConfiguration.Proxy getProxy() {
-        String host = getHttpProxyHost();
-        Integer port = getHttpProxyPort();
-        if (host == null || port == null) return null;
-        return httpProxies.computeIfAbsent(new HttpProxySettings(host, port), this::createHttpProxy);
+    public String getSocksProxyHost() {
+        return (String) kp.get("socksProxyHost");
     }
 
-    private HttpProxy createHttpProxy(HttpProxySettings settings) {
-        HttpProxy proxy = new HttpProxy(settings.host(), settings.port()) {
-            @Override
-            public boolean matches(Origin origin) {
-                return origin.getTag() == this;
-            }
-        };
+    /**
+     * Sets a SOCKS5 proxy host to use. This will override any set HTTP proxy.
+     */
+    public void setSocksProxyHost(String socksProxyHost) {
+        kp.put("socksProxyHost", socksProxyHost);
+    }
+
+    public Integer getSocksProxyPort() {
+        return (Integer) kp.get("socksProxyPort");
+    }
+    /**
+     * Sets a SOCKS5 proxy port to use.
+     */
+    public void setSocksProxyPort(Integer socksProxyPort) {
+        kp.put("socksProxyPort", socksProxyPort);
+    }
+
+    public String getSocksProxyUsername() {
+        return (String) kp.get("socksProxyUsername");
+    }
+
+    /**
+     * Sets a SOCKS5 proxy username to use (enables username/password authentication).
+     */
+    public void setSocksProxyUsername(String socksProxyUsername) {
+        kp.put("socksProxyUsername", socksProxyUsername);
+    }
+
+    public String getSocksProxyPassword() {
+        return (String) kp.get("socksProxyPassword");
+    }
+
+    /**
+     * Sets a SOCKS5 proxy password to use (enables username/password authentication).
+     */
+    public void setSocksProxyPassword(String socksProxyPassword) {
+        kp.put("socksProxyPassword", socksProxyPassword);
+    }
+
+    public Proxy getProxy() {
+        ProxySettings settings = getProxySettings();
+        if (settings == null) return null;
+        return proxies.computeIfAbsent(settings, this::createProxy);
+    }
+
+    private ProxySettings getProxySettings() {
+        String socksHost = getSocksProxyHost();
+        Integer socksPort = getSocksProxyPort();
+        if (socksHost != null && socksPort != null) {
+            return new SocksProxySettings(socksHost, socksPort, getSocksProxyUsername(), getSocksProxyPassword());
+        }
+        String host = getHttpProxyHost();
+        Integer port = getHttpProxyPort();
+        if (host != null && port != null) {
+            return new HttpProxySettings(host, port);
+        }
+        return null;
+    }
+
+    private Proxy createProxy(ProxySettings settings) {
+        Proxy proxy = settings.createProxy();
         httpClient.getProxyConfiguration().addProxy(proxy);
         return proxy;
     }
 
-    private record HttpProxySettings(String host, int port) {
+    private interface ProxySettings {
+        Proxy createProxy();
+    }
+
+    private record HttpProxySettings(String host, int port) implements ProxySettings {
+        @Override
+        public Proxy createProxy() {
+            return new HttpProxy(host(), port()) {
+                @Override
+                public boolean matches(Origin origin) {
+                    return origin.getTag() == this;
+                }
+            };
+        }
+    }
+
+    private record SocksProxySettings(String host, int port, String username, String password) implements ProxySettings {
+        @Override
+        public Proxy createProxy() {
+            Socks5Proxy proxy = new Socks5Proxy(host(), port()) {
+                @Override
+                public boolean matches(Origin origin) {
+                    return origin.getTag() == this;
+                }
+            };
+            if (username() != null && password() != null) {
+                proxy.putAuthenticationFactory(new Socks5.UsernamePasswordAuthenticationFactory(username(), password()));
+            }
+            return proxy;
+        }
     }
 
     /**
@@ -423,7 +504,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
 
         // Server IP address
         var socketAddress = (InetSocketAddress) response.getRequest().getConnection().getRemoteSocketAddress();
-        if (socketAddress != null) {
+        if (socketAddress != null && !(response.getRequest().getTag() instanceof Proxy)) {
             curi.setServerIP(socketAddress.getAddress().getHostAddress());
         }
 
@@ -511,7 +592,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             throw new RuntimeException(e);
         }
         httpClient = null;
-        httpProxies.clear();
+        proxies.clear();
     }
 
     public UserAgentProvider getUserAgentProvider() {

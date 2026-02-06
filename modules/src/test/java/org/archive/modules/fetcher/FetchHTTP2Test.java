@@ -25,9 +25,12 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.util.Recorder;
+import org.bbottema.javasocksproxyserver.SocksServer;
+import org.bbottema.javasocksproxyserver.auth.UsernamePasswordAuthenticator;
 import org.eclipse.jetty.proxy.ProxyHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.Promise;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -35,9 +38,16 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
+
+import javax.net.ServerSocketFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -148,8 +158,86 @@ public class FetchHTTP2Test {
             assertEquals("true", curi.getHttpResponseHeader("Used-Proxy"));
             assertEquals(200, curi.getFetchStatus());
             assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+            assertNull(curi.getServerIP());
         } finally {
             proxyServer.stop();
+        }
+    }
+
+    @Test
+    public void testSocksProxy() throws Exception {
+        int socksPort;
+        try (ServerSocket socket = new ServerSocket(0, 0, Inet4Address.getLoopbackAddress())) {
+            socksPort = socket.getLocalPort();
+        }
+        SocksServer socksServer = new SocksServer(socksPort);
+        socksServer.setAuthenticator(new UsernamePasswordAuthenticator(false) {
+            @Override
+            public boolean validate(String username, String password) {
+                return "user".equals(username) && "pass".equals(password);
+            }
+        });
+
+        CompletableFuture<Void> socksServerStartedFuture = new CompletableFuture<>();
+        socksServer.setFactory(new ServerSocketFactory() {
+            final ServerSocketFactory defaultSocketFactory = ServerSocketFactory.getDefault();
+
+            @Override
+            public ServerSocket createServerSocket(int port) throws IOException {
+                return createServerSocket(port, -1);
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog) throws IOException {
+                return createServerSocket(port, backlog, null);
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException {
+                try {
+                    ServerSocket serverSocket = defaultSocketFactory.createServerSocket(port, backlog, ifAddress);
+                    socksServerStartedFuture.complete(null);
+                    return serverSocket;
+                } catch (Throwable e) {
+                    socksServerStartedFuture.completeExceptionally(e);
+                    throw e;
+                }
+            }
+        });
+        socksServer.start();
+        socksServerStartedFuture.get(30, TimeUnit.SECONDS);
+
+        try {
+            String socksHost = Inet4Address.getLoopbackAddress().getHostAddress();
+            var serverCache = new DefaultServerCache();
+            fetcher.stop();
+            fetcher = new FetchHTTP2(serverCache, cookieStore) {
+                @Override
+                protected void resolveSocketAddress(String host, int port, Promise<List<InetSocketAddress>> promise) {
+                    if (socksHost.equals(host) && socksPort == port) {
+                        promise.succeeded(List.of(new InetSocketAddress(Inet4Address.getLoopbackAddress(), port)));
+                    } else {
+                        promise.failed(new UnknownHostException("Blocked resolution for " + host + ":" + port));
+                    }
+                }
+            };
+            fetcher.setUserAgentProvider(new CrawlMetadata());
+
+            fetcher.setSocksProxyHost(socksHost);
+            fetcher.setSocksProxyPort(socksPort);
+            fetcher.setSocksProxyUsername("user");
+            fetcher.setSocksProxyPassword("pass");
+            fetcher.start();
+
+            var curi = new CrawlURI(UURIFactory.getInstance("http://localhost:" + server.getAddress().getPort() + "/"));
+            curi.setRecorder(recorder);
+            fetcher.innerProcess(curi);
+
+            assertEquals(200, curi.getFetchStatus());
+            assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+            assertNull(curi.getServerIP());
+        } finally {
+            socksServer.stop();
         }
     }
 
