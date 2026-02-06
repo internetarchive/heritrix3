@@ -12,9 +12,14 @@
 
 ### New features
 
+* **JSON API responses:** You can now request JSON responses from the REST API with a `Accept: application/json` request header. [#703](https://github.com/internetarchive/heritrix3/pull/703)
 * **Job deletion:** You can now delete jobs via both the UI and the API. [#707](https://github.com/internetarchive/heritrix3/pull/707)
 * **ExtractorYoutubeDL:** Added a new `skipSuperResolution` option to skip upscaled YouTube videos. [#709](https://github.com/internetarchive/heritrix3/pull/709)
 * **FetchHTTP2:** Added SOCKS5 proxy support. [#710](https://github.com/internetarchive/heritrix3/pull/710)
+
+### Bug fixes
+
+* Improved usability of the engine page when many jobs are active by making the "Exit Java" joblist scrollable. [#704](https://github.com/internetarchive/heritrix3/pull/704)
 
 ### Dependency upgrades
 
