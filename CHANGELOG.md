@@ -2,10 +2,44 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.13.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.14.0...HEAD)
+
+## [3.14.0](https://github.com/internetarchive/heritrix3/releases/tag/3.14.0)  (2025-02-06)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.14.0/heritrix-3.14.0-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.14.0/heritrix-3.14.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.13.0...3.14.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.14.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.14.0/pom)
 
 ### New features
-* **FetchHTTP2:** SOCKS5 proxy support
+
+* **Job deletion:** You can now delete jobs via both the UI and the API. [#707](https://github.com/internetarchive/heritrix3/pull/707)
+* **ExtractorYoutubeDL:** Added a new `skipSuperResolution` option to skip upscaled YouTube videos. [#709](https://github.com/internetarchive/heritrix3/pull/709)
+* **FetchHTTP2:** Added SOCKS5 proxy support. [#710](https://github.com/internetarchive/heritrix3/pull/710)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.27.1 → 5.28.0
+* **codemirror__autocomplete**: 6.18.6 → 6.20.0
+* **codemirror__commands**: 6.8.1 → 6.10.1
+* **codemirror__language**: 6.11.3 → 6.12.1
+* **codemirror__lint**: 6.8.5 → 6.9.2
+* **codemirror__state**: 6.5.2 → 6.5.4
+* **codemirror__view**: 6.38.1 → 6.39.11
+* **commons-codec**: 1.20.0 → 1.21.0
+* **crawler-commons**: 1.5 → 1.6
+* **dnsjava**: 3.6.3 → 3.6.4
+* **groovy-bom**: 5.0.2 → 5.0.4
+* **jackson-bom**: 2.20.1 → 2.21.0
+* **jetty** (jetty-bom, jetty-ee10-bom): 12.0.30 → 12.0.32
+* **junit-jupiter**: 6.0.1 → 6.0.2
+* **lezer__common**: 1.2.3 → 1.5.0
+* **lezer__highlight**: 1.2.1 → 1.2.3
+* **lezer__lr**: 1.4.2 → 1.4.7
+* **lz4-java**: 1.10.1 → 1.10.3
+* **spring** (spring-beans, spring-context, spring-core, spring-expression): 7.0.1 → 7.0.3
+* **style-mod**: 4.1.2 → 4.1.3
+* **webarchive-commons:** 3.0.2 → 3.0.3
+* **webjars-locator-lite**: 1.1.2 → 1.1.3
 
 ## [3.13.0](https://github.com/internetarchive/heritrix3/releases/tag/3.13.0)  (2025-12-11)
 
