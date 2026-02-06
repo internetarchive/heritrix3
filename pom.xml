@@ -443,6 +443,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 						<extensions>true</extensions>
 						<configuration>
 							<publishingServerId>central</publishingServerId>
+							<autoPublish>true</autoPublish>
 						</configuration>
 					</plugin>
 					<plugin>
