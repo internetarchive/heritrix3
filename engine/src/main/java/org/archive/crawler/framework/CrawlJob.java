@@ -69,6 +69,7 @@ import org.archive.spring.PathSharingContext;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.ObjectIdentityCache;
 import org.archive.util.TextUtils;
+import org.archive.util.XmlUtils;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -278,7 +279,7 @@ public class CrawlJob implements Comparable<CrawlJob>, ApplicationListener<Appli
      */
     protected Document getDomDocument(File f) {
         try {
-            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docBuilderFactory = XmlUtils.newXxeSafeDocumentBuilderFactory();
             DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
             return docBuilder.parse(f);
         } catch (ParserConfigurationException e) {
