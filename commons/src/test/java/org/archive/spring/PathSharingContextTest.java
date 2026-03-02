@@ -1,7 +1,14 @@
 package org.archive.spring;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.BeanDefinitionStoreException;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,6 +34,39 @@ public class PathSharingContextTest {
             assertNotNull(bean2, "bean2 should not be null");
             assertEquals(name, bean1.name, "bean1.name should be set");
             assertEquals(bean1, bean2.bean1, "bean1 should be autowired into bean2");
+        }
+    }
+
+    /**
+     * Test that XXE attacks with parameter entity declarations are blocked
+     */
+    @Test
+    public void testXxeProtectionBlocksParameterEntity(@TempDir Path tempDir) throws IOException {
+        String maliciousXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE beans [
+                  <!ENTITY % xxe SYSTEM "file:///dev/null">
+                  %xxe;
+                ]>
+                <beans xmlns="http://www.springframework.org/schema/beans"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+                    <bean id="bean1" class="org.archive.spring.PathSharingContextTest$Bean1">
+                        <property name="name" value="test"/>
+                    </bean>
+                </beans>
+                """;
+
+        File maliciousFile = tempDir.resolve("malicious_param.cxml").toFile();
+        Files.writeString(maliciousFile.toPath(), maliciousXml);
+
+        try {
+            new PathSharingContext("file:" + maliciousFile.getAbsolutePath()).close();
+            fail("XXE parameter entity attack should be blocked");
+        } catch (BeanDefinitionStoreException e) {
+            if (!e.getCause().getMessage().contains("DOCTYPE is disallowed")) {
+                fail("XXE parameter entity attack should be blocked");
+            }
         }
     }
 
