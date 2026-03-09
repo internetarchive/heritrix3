@@ -87,6 +87,23 @@ public class FetchHTTP2Test {
             }
             exchange.close();
         });
+        server.createContext("/auth-large", exchange -> {
+            byte[] body = "x".repeat(32999).getBytes();
+            exchange.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"Test\"");
+            exchange.sendResponseHeaders(401, body.length);
+            try (var stream = exchange.getResponseBody()) {
+                stream.write(body);
+            }
+            exchange.close();
+        });
+        server.createContext("/auth-status-without-header", exchange -> {
+            byte[] body = "hello".getBytes();
+            exchange.sendResponseHeaders(401, body.length);
+            try (var stream = exchange.getResponseBody()) {
+                stream.write(body);
+            }
+            exchange.close();
+        });
 
         server.start();
         baseUrl = "http://" + server.getAddress().getHostString() + ":" + server.getAddress().getPort() + "/";
@@ -253,6 +270,28 @@ public class FetchHTTP2Test {
         assertEquals("text/plain", curi.getContentType());
         assertEquals("gzip", curi.getRecorder().getContentEncoding());
         assertEquals("Hello World!", curi.getRecorder().getContentReplayPrefixString(100));
+        curi.getRecorder().cleanup();
+    }
+
+    // #714 org.eclipse.jetty.client.HttpResponseException: HTTP protocol violation: Authentication challenge without WWW-Authenticate header
+    @Test
+    public void testAuthStatusWithoutWwwAuthenticateHeader() throws Exception {
+        fetcher.start();
+        var curi = new CrawlURI(UURIFactory.getInstance(baseUrl + "auth-status-without-header"));
+        curi.setRecorder(recorder);
+        fetcher.innerProcess(curi);
+        assertEquals(401, curi.getFetchStatus());
+        curi.getRecorder().cleanup();
+    }
+
+    // #717 java.lang.IllegalArgumentException: Buffering capacity 16384 exceeded
+    @Test
+    public void testAuthLargeBody() throws Exception {
+        fetcher.start();
+        var curi = new CrawlURI(UURIFactory.getInstance(baseUrl + "auth-large"));
+        curi.setRecorder(recorder);
+        fetcher.innerProcess(curi);
+        assertEquals(401, curi.getFetchStatus());
         curi.getRecorder().cleanup();
     }
 }

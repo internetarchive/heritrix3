@@ -580,6 +580,13 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
 
         // start() adds a default gzip decoder, remove it so that the client doesn't decode gzip for us
         httpClient.getContentDecoderFactories().clear();
+
+        // Remove default auth protocol handlers because they throw exceptions when:
+        // - 401 or 407 response has more than 16,384 bytes of content
+        // - 401 response is missing the WWW-Authenticate header
+        // - 407 response is missing the Proxy-Authenticate header
+        httpClient.getProtocolHandlers().remove(ProxyAuthenticationProtocolHandler.NAME);
+        httpClient.getProtocolHandlers().remove(WWWAuthenticationProtocolHandler.NAME);
     }
 
     @Override
