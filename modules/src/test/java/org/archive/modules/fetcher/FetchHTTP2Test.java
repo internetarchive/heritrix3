@@ -132,10 +132,18 @@ public class FetchHTTP2Test {
 
     @AfterEach
     public void afterEach() {
-        fetcher.stop();
-        cookieStore.stop();
-        bdb.stop();
-        recorder.cleanup();
+        if (fetcher != null) {
+            fetcher.stop();
+        }
+        if (cookieStore != null) {
+            cookieStore.stop();
+        }
+        if (bdb != null) {
+            bdb.close();
+        }
+        if (recorder != null) {
+            recorder.cleanup();
+        }
     }
 
     @Test
