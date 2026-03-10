@@ -55,6 +55,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -165,6 +166,22 @@ public class CookieFetchHTTPIntegrationTest extends ProcessorTestBase {
         server.stop();
         server.destroy();
         FileUtils.deleteDirectory(staticTempDir.toFile());
+    }
+
+    @AfterEach
+    protected void afterEach() throws Exception {
+        if (fetcher != null) {
+            fetcher.stop();
+        }
+        if (bdbCookieStore != null) {
+            bdbCookieStore.stop();
+        }
+        if (simpleCookieStore != null) {
+            simpleCookieStore.stop();
+        }
+        if (bdb != null) {
+            bdb.close();
+        }
     }
 
     public static class AlwaysLocalhostServerCache extends ServerCache {
