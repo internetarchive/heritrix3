@@ -294,4 +294,15 @@ public class FetchHTTP2Test {
         assertEquals(401, curi.getFetchStatus());
         curi.getRecorder().cleanup();
     }
+
+    // #718 java.lang.IllegalArgumentException: Invalid URI host: null (authority: doesnotexist_a_b.example.com)
+    @Test
+    public void testUnderscoreHost() throws Exception {
+        fetcher.start();
+        var curi = new CrawlURI(UURIFactory.getInstance("http://doesnotexist_a_b.example.com/"));
+        curi.setRecorder(recorder);
+        fetcher.innerProcess(curi);
+        assertEquals(-2, curi.getFetchStatus());
+        curi.getRecorder().cleanup();
+    }
 }
