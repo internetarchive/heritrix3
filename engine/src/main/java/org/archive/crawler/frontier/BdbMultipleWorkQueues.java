@@ -434,7 +434,13 @@ public class BdbMultipleWorkQueues {
         keyData[len] = 0;
         long ordinalPlus = curi.getOrdinal() & 0x0000FFFFFFFFFFFFL;
         ordinalPlus = ((long) curi.getSchedulingDirective() << 56) | ordinalPlus;
-        long precedence = Math.min(curi.getPrecedence(), 127);
+        long rawPrecedence = curi.getPrecedence();
+        if (rawPrecedence > 127) {
+            LOGGER.warning("URI precedence " + rawPrecedence
+                    + " exceeds maximum 127 and will be clipped"
+                    + " for queue ordering: " + curi);
+        }
+        long precedence = Math.min(rawPrecedence, 127);
         ordinalPlus = (((precedence) & 0xFFL) << 48) | ordinalPlus;
         ArchiveUtils.longIntoByteArray(ordinalPlus, keyData, len + 1);
         return new DatabaseEntry(keyData);
