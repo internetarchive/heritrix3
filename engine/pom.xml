@@ -80,7 +80,7 @@
 		<dependency>
 			<groupId>org.glassfish.jaxb</groupId>
 			<artifactId>jaxb-runtime</artifactId>
-			<version>4.0.6</version>
+			<version>4.0.7</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
@@ -109,17 +109,17 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__autocomplete</artifactId>
-			<version>6.20.0</version>
+			<version>6.20.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__commands</artifactId>
-			<version>6.10.1</version>
+			<version>6.10.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__language</artifactId>
-			<version>6.12.1</version>
+			<version>6.12.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
@@ -144,12 +144,12 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__view</artifactId>
-			<version>6.39.11</version>
+			<version>6.39.16</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__lint</artifactId>
-			<version>6.9.2</version>
+			<version>6.9.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
@@ -164,12 +164,12 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>lezer__common</artifactId>
-			<version>1.5.0</version>
+			<version>1.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>lezer__lr</artifactId>
-			<version>1.4.7</version>
+			<version>1.4.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
