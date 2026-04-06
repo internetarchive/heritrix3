@@ -18,6 +18,7 @@
  */
 package org.archive.modules.fetcher;
 
+import org.archive.net.UURI;
 import org.archive.url.URIException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -212,22 +213,29 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         curi.setFetchBeginTime(System.currentTimeMillis());
 
         try {
-            Request request = httpClient.newRequest(curi.getURI())
+            UURI uuri = curi.getUURI();
+            // newRequest() calls Java's URI.create() which rejects some UURIs, so instead pass a dummy value
+            // and then override all the components
+            Request request = httpClient.newRequest("http://dummy")
+                    .scheme(uuri.getScheme())
+                    .host(uuri.getHost())
+                    .port(HttpClient.normalizePort(uuri.getScheme(), uuri.getPort()))
+                    .path(new String(uuri.getRawPathQuery()))
                     .timeout(getTimeoutSeconds(), TimeUnit.SECONDS)
                     .method(curi.getFetchType() == CrawlURI.FetchType.HTTP_POST ? HttpMethod.POST : HttpMethod.GET)
                     .agent(getUserAgentProvider().getUserAgent())
                     .tag(getProxy());
-            if (!curi.getUURI().getScheme().equals("https")) {
+            if (!uuri.getScheme().equals("https")) {
                 request.version(HttpVersion.HTTP_1_1);
             } else if (useHTTP3 && curi.getFetchAttempts() == 0) {
                 // use HTTP/3 if we've seen an Alt-Svc header
-                CrawlServer crawlServer = serverCache.getServerFor(curi.getUURI());
+                CrawlServer crawlServer = serverCache.getServerFor(uuri);
                 int http3Port = crawlServer.getHttp3AltSvcPort();
                 if (http3Port > 0) {
                     // TODO: Support alternate Alt-Svc ports for HTTP/3.
                     //   Tricky to do because we need to preserve the original request URI.
                     //   Maybe changing the port in resolveSocketAddress() would work?
-                    if (http3Port == curi.getUURI().getPort() || (curi.getUURI().getPort() == -1 && http3Port == 443)) {
+                    if (http3Port == uuri.getPort() || (uuri.getPort() == -1 && http3Port == 443)) {
                         request.version(HttpVersion.HTTP_3);
                     }
                 }
@@ -580,6 +588,13 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
 
         // start() adds a default gzip decoder, remove it so that the client doesn't decode gzip for us
         httpClient.getContentDecoderFactories().clear();
+
+        // Remove default auth protocol handlers because they throw exceptions when:
+        // - 401 or 407 response has more than 16,384 bytes of content
+        // - 401 response is missing the WWW-Authenticate header
+        // - 407 response is missing the Proxy-Authenticate header
+        httpClient.getProtocolHandlers().remove(ProxyAuthenticationProtocolHandler.NAME);
+        httpClient.getProtocolHandlers().remove(WWWAuthenticationProtocolHandler.NAME);
     }
 
     @Override
@@ -760,7 +775,9 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
 
         @Override
         public List<HttpCookie> match(URI uri) {
-            CookieStore hostCookieStore = cookieStore.cookieStoreFor(uri.getHost());
+            String host = uri.getHost();
+            if (host == null) host = uri.getAuthority(); // workaround for hosts containing underscores
+            CookieStore hostCookieStore = cookieStore.cookieStoreFor(host);
             if (hostCookieStore == null) return Collections.emptyList();
             return hostCookieStore.getCookies().stream()
                     .map(c -> (HttpCookie) new CookieAdaptor(c)).toList();
