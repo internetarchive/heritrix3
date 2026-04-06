@@ -31,12 +31,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.FileUtils;
 import org.archive.util.ArchiveUtils;
+import org.archive.util.XmlUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
+import org.springframework.beans.factory.xml.DefaultDocumentLoader;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigUtils;
@@ -230,6 +235,16 @@ public class PathSharingContext extends FileSystemXmlApplicationContext {
         // This is essentially <context:annotation-config/>
         // By doing it here we don't need to include it in every crawl config.
         AnnotationConfigUtils.registerAnnotationConfigProcessors(xmlReader.getRegistry());
+
+        // Configure XXE protection
+        xmlReader.setDocumentLoader(new DefaultDocumentLoader() {
+            @Override
+            protected DocumentBuilderFactory createDocumentBuilderFactory(int validationMode, boolean namespaceAware) throws ParserConfigurationException {
+                DocumentBuilderFactory factory = super.createDocumentBuilderFactory(validationMode, namespaceAware);
+                XmlUtils.enableXxeProtection(factory);
+                return factory;
+            }
+        });
 
         GroovyBeanDefinitionReader groovyReader = new GroovyBeanDefinitionReader(xmlReader.getRegistry()) {
             // By default, the Groovy reader loads XML from .xml and Groovy for everything else, but

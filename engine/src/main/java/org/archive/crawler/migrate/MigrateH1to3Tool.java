@@ -40,6 +40,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.archive.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -65,7 +66,7 @@ public class MigrateH1to3Tool {
 
     static {
         try {
-            DOCUMENT_BUILDER = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DOCUMENT_BUILDER = XmlUtils.newXxeSafeDocumentBuilderFactory().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
