@@ -997,7 +997,7 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     }
 
     /** spot for an integer cost to be placed by external facility (frontier).
-     *  cost is truncated to 8 bits at times, so should not exceed 255 */
+     *  cost is truncated to 7 bits at times, so should not exceed 127 */
     protected int holderCost = UNCALCULATED;
     /**
      * Return the 'holderCost' for convenience of external facility (frontier)
