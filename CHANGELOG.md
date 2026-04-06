@@ -2,7 +2,43 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.14.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.14.1...HEAD)
+
+## [3.14.1](https://github.com/internetarchive/heritrix3/releases/tag/3.14.1)  (2025-04-06)
+
+[Download distribution zip](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.14.1/heritrix-3.14.1-dist.zip) (or [tar.gz](https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/3.14.1/heritrix-3.14.1-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.14.0...3.14.1) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.14.1/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.14.1/pom)
+
+### Bug fixes
+
+* **FetchHTTP2:** Fixed an `IllegalArgumentException` when the host contains underscores. [#718](https://github.com/internetarchive/heritrix3/issues/718)
+* **FetchHTTP2:** Removed HttpClient default authentication protocol handlers to avoid failures on `401`/`407` responses with large response bodies or missing `*-Authenticate` headers. [#719](https://github.com/internetarchive/heritrix3/pull/719)
+* **Crawl job XML parsing:** Enabled XXE protection when parsing crawl job XML. [#713](https://github.com/internetarchive/heritrix3/pull/713)
+* **URI precedence warnings:** Heritrix now logs a warning when URI precedence exceeds the maximum supported value of `127` and is clipped. [#721](https://github.com/internetarchive/heritrix3/pull/721)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.28.0 → 5.29.0
+* **codemirror__autocomplete**: 6.20.0 → 6.20.1
+* **codemirror__commands**: 6.10.1 → 6.10.2
+* **codemirror__language**: 6.12.1 → 6.12.2
+* **codemirror__lint**: 6.9.2 → 6.9.5
+* **codemirror__view**: 6.39.11 → 6.39.16
+* **commons-net**: 3.12.0 → 3.13.0
+* **groovy-bom**: 5.0.4 → 5.0.5
+* **jackson-bom**: 2.21.0 → 2.21.2
+* **jakarta.xml.bind-api**: 4.0.4 → 4.0.5
+* **jaxb-runtime**: 4.0.6 → 4.0.7
+* **jetty** (jetty-bom, jetty-ee10-bom): 12.0.32 → 12.0.34
+* **jsch**: 2.27.7 → 2.28.0
+* **junit-jupiter**: 6.0.2 → 6.0.3
+* **kafka-clients**: 4.1.1 → 4.2.0
+* **lezer__common**: 1.5.0 → 1.5.1
+* **lezer__lr**: 1.4.7 → 1.4.8
+* **lz4-java**: 1.10.3 → 1.10.4
+* **pdfbox**: 3.0.6 → 3.0.7
+* **spring** (spring-beans, spring-context, spring-core, spring-expression): 7.0.3 → 7.0.6
 
 ## [3.14.0](https://github.com/internetarchive/heritrix3/releases/tag/3.14.0)  (2025-02-06)
 
