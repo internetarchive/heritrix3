@@ -38,13 +38,25 @@ maxTimeSeconds
 
 To set these values modify the CrawlLimitEnforcer bean.
 
-.. code-block:: xml
+.. tab:: XML
 
-   <bean id="crawlLimitEnforcer" class="org.archive.crawler.framework.CrawlLimitEnforcer">
-     <property name="maxBytesDownload" value="100000000" />
-     <property name="maxDocumentsDownload" value="100" />
-     <property name="maxTimeSeconds" value="10000" />
-   </bean>
+   .. code-block:: xml
+
+      <bean id="crawlLimitEnforcer" class="org.archive.crawler.framework.CrawlLimitEnforcer">
+        <property name="maxBytesDownload" value="100000000" />
+        <property name="maxDocumentsDownload" value="100" />
+        <property name="maxTimeSeconds" value="10000" />
+      </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+      crawlLimitEnforcer(CrawlLimitEnforcer) {
+          maxBytesDownload = 100000000
+          maxDocumentsDownload = 100
+          maxTimeSeconds = 10000
+      }
 
 .. note::
 
@@ -59,11 +71,21 @@ The maximum number of toe threads to run.
 If running a domain crawl smaller than 100 hosts, a value approximately twice the number of hosts should be enough.
 Values larger then 150-200 are rarely worthwhile unless running on machines with exceptional resources.
 
-.. code-block:: xml
+.. tab:: XML
 
-   <bean id="crawlController" class="org.archive.crawler.framework.CrawlController">
-     <property name="maxToeThreads" value="50" />
-   </bean>
+   .. code-block:: xml
+
+      <bean id="crawlController" class="org.archive.crawler.framework.CrawlController">
+        <property name="maxToeThreads" value="50" />
+      </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+      crawlController(CrawlController) {
+          maxToeThreads = 50
+      }
 
 metadata.operatorContactUrl
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,17 +93,31 @@ metadata.operatorContactUrl
 The URI of the crawl initiator. This setting gives the administrator of a crawled host a URI to refer to in case of
 problems.
 
-.. code-block:: xml
+.. tab:: XML
 
-   <bean id="simpleOverrides" class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
-     <property name="properties">
-       <value>
-         metadata.operatorContactUrl=http://www.archive.org
-         metadata.jobName=basic
-         metadata.description=Basic crawl starting with useful defaults
-       </value>
-     </property>
-   </bean>
+   .. code-block:: xml
+
+      <bean id="simpleOverrides" class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+        <property name="properties">
+          <value>
+            metadata.operatorContactUrl=http://www.archive.org
+            metadata.jobName=basic
+            metadata.description=Basic crawl starting with useful defaults
+          </value>
+        </property>
+      </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+      simpleOverrides(PropertyOverrideConfigurer) {
+          properties = '''
+      metadata.operatorContactUrl=http://www.archive.org
+      metadata.jobName=basic
+      metadata.description=Basic crawl starting with useful defaults
+      '''
+      }
 
 Robots.txt Honoring Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,13 +133,26 @@ robotsTxtOnly
 ignore
     Ignore robots.txt directives and robots meta tags
 
-.. code-block:: xml
+.. tab:: XML
 
-   <bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
-   ...
-       <property name="robotsPolicyName" value="obey"/>
-   ...
-   </bean>
+   .. code-block:: xml
+
+      <bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
+      ...
+          <property name="robotsPolicyName" value="obey"/>
+      ...
+      </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+      metadata(CrawlMetadata) { bean ->
+          bean.autowire = 'byName'
+          // ...
+          robotsPolicyName = 'obey'
+          // ...
+      }
 
 .. note::
 
@@ -279,13 +328,25 @@ minDelayMs
     generates a 20 millisecond wait, the value of ``minDelayMs`` will override it and the URI fetch will be delayed for
     100 milliseconds.
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
-      <property name="delayFactor" value="5.0" />
-      <property name="maxDelayMs" value="30000" />
-      <property name="minDelayMs" value="3000" />
-    </bean>
+   .. code-block:: xml
+
+       <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
+         <property name="delayFactor" value="5.0" />
+         <property name="maxDelayMs" value="30000" />
+         <property name="minDelayMs" value="3000" />
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       disposition(DispositionProcessor) {
+           delayFactor = 5.0
+           maxDelayMs = 30000
+           minDelayMs = 3000
+       }
 
 Retry Policy
 ~~~~~~~~~~~~
@@ -298,12 +359,23 @@ maxRetries
 retryDelaySeconds
     This setting determines how long the wait period is between retries.
 
-.. code-block:: xml
+.. tab:: XML
 
-   <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
-     <property name="retryDelaySeconds" value="900" />
-     <property name="maxRetries" value="30" />
-   </bean>
+   .. code-block:: xml
+
+      <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
+        <property name="retryDelaySeconds" value="900" />
+        <property name="maxRetries" value="30" />
+      </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+      frontier(BdbFrontier) {
+          retryDelaySeconds = 900
+          maxRetries = 30
+      }
 
 Bandwidth Limits
 ~~~~~~~~~~~~~~~~
@@ -316,11 +388,21 @@ maxPerHostBandwidthUsageKbSec
     This setting limits the maximum bandwidth to use for any host. This setting limits the load placed by Heritrix on the
     host. It is therefore a politeness setting.
 
-    .. code-block:: xml
+    .. tab:: XML
 
-       <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
-         <property name="maxPerHostBandwidthUsageKbSec" value="500" />
-       </bean>
+       .. code-block:: xml
+
+          <bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
+            <property name="maxPerHostBandwidthUsageKbSec" value="500" />
+          </bean>
+
+    .. tab:: Groovy
+
+       .. code-block:: groovy
+
+          disposition(DispositionProcessor) {
+              maxPerHostBandwidthUsageKbSec = 500
+          }
 
 Extractor Parameters
 ~~~~~~~~~~~~~~~~~~~~
@@ -331,22 +413,42 @@ extract404s
     This setting allows the operator to avoid extracting links from 404 (Not Found) pages. The default is true, which
     maintains the pre-3.1 behavior of extracting links from 404 pages.
 
-    .. code-block:: xml
+    .. tab:: XML
 
-       <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
-       <property name="extract404s" value="true" />
-       </bean>
+       .. code-block:: xml
+
+          <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
+            <property name="extract404s" value="true" />
+          </bean>
+
+    .. tab:: Groovy
+
+       .. code-block:: groovy
+
+          frontier(BdbFrontier) {
+              extract404s = true
+          }
 
 extractIndependently
     This setting encourages extractor processors to always perform their best-effort extraction, even if a previous
     extractor has marked a URI as already-handled. Set the value to true for best-effort extraction. The default is
     false, which maintains the pre-3.1 behavior.
 
-    .. code-block:: xml
+    .. tab:: XML
 
-       <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
-          <property name="extractIndependently" value="false" />
-       </bean>
+       .. code-block:: xml
+
+          <bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
+             <property name="extractIndependently" value="false" />
+          </bean>
+
+    .. tab:: Groovy
+
+       .. code-block:: groovy
+
+          frontier(BdbFrontier) {
+              extractIndependently = false
+          }
 
 Sheets (Site-specific Settings)
 -------------------------------
@@ -381,35 +483,64 @@ requests.
     Finally, even with permission, be sure your crawler's User-Agent string includes a link to valid crawl-operator
     contact information so you can be alerted to, and correct, any unintended side-effects.
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
-    </bean>
+   .. code-block:: xml
 
-    <bean class='org.archive.crawler.spring.SurtPrefixesSheetAssociation'>
-      <property name='surtPrefixes'>
-        <list>
-          <value>http://(com,example,www,)/</value>
-          <value>http://(com,example1,www,)/</value>
-        </list>
-      </property>
-      <property name='targetSheetNames'>
-        <list>
-          <value>lessPolite</value>
-        </list>
-      </property>
-    </bean>
+       <bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
+       </bean>
 
-    <bean id='lessPolite' class='org.archive.spring.Sheet'>
-      <property name='map'>
-        <map>
-          <entry key='disposition.delayFactor' value='0.0'/>
-          <entry key='disposition.maxDelayMs' value='0'/>
-          <entry key='disposition.minDelayMs' value='0'/>
-          <entry key='queueAssignmentPolicy.parallelQueues' value='5'/>
-        </map>
-      </property>
-    </bean>
+       <bean class='org.archive.crawler.spring.SurtPrefixesSheetAssociation'>
+         <property name='surtPrefixes'>
+           <list>
+             <value>http://(com,example,www,)/</value>
+             <value>http://(com,example1,www,)/</value>
+           </list>
+         </property>
+         <property name='targetSheetNames'>
+           <list>
+             <value>lessPolite</value>
+           </list>
+         </property>
+       </bean>
+
+       <bean id='lessPolite' class='org.archive.spring.Sheet'>
+         <property name='map'>
+           <map>
+             <entry key='disposition.delayFactor' value='0.0'/>
+             <entry key='disposition.maxDelayMs' value='0'/>
+             <entry key='disposition.minDelayMs' value='0'/>
+             <entry key='queueAssignmentPolicy.parallelQueues' value='5'/>
+           </map>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       sheetOverlaysManager(SheetOverlaysManager) { bean ->
+           bean.autowire = 'byType'
+       }
+
+       lessPoliteAssociation(SurtPrefixesSheetAssociation) {
+           surtPrefixes = [
+               'http://(com,example,www,)/',
+               'http://(com,example1,www,)/',
+           ]
+           targetSheetNames = [
+               'lessPolite',
+           ]
+       }
+
+       lessPolite(Sheet) {
+           map = [
+               'disposition.delayFactor': '0.0',
+               'disposition.maxDelayMs': '0',
+               'disposition.minDelayMs': '0',
+               'queueAssignmentPolicy.parallelQueues': '5',
+           ]
+       }
 
 Authentication and Cookies
 --------------------------
@@ -422,16 +553,29 @@ Credential Store
 Credentials can be added so that Heritrix can gain access to areas of web sites requiring authentication. Credentials
 need to listed in a CredentialStore.
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="credentialStore" class="org.archive.modules.credential.CredentialStore">
-      <property name="credentials">
-        <map>
-          <entry key="exampleHttpCredential" value-ref="exampleHttpCredential"/>
-          <entry key="exampleFormCredential" value-ref="exampleFormCredential"/>
-        </map>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="credentialStore" class="org.archive.modules.credential.CredentialStore">
+         <property name="credentials">
+           <map>
+             <entry key="exampleHttpCredential" value-ref="exampleHttpCredential"/>
+             <entry key="exampleFormCredential" value-ref="exampleFormCredential"/>
+           </map>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       credentialStore(CredentialStore) {
+           credentials = [
+               exampleHttpCredential: ref('exampleHttpCredential'),
+               exampleFormCredential: ref('exampleFormCredential'),
+           ]
+       }
 
 To enable text console logging of authentication interactions, set the FetchHTTP and PreconditionEnforcer log levels to
 fine in ``conf/logging.properties``:
@@ -456,33 +600,62 @@ retried.
 The configured domain should be of the form "hostname:port" unless the port is 80 in which case it must be omitted. For
 HTTPS URLs without an explicit port use port 443.
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="exampleHttpCredential" class="org.archive.modules.credential.HttpAuthenticationCredential">
-      <property name="domain" value="www.example.org:443"/>
-      <property name="realm" value="myrealm"/>
-      <property name="login" value="user"/>
-      <property name="password" value="secret"/>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="exampleHttpCredential" class="org.archive.modules.credential.HttpAuthenticationCredential">
+         <property name="domain" value="www.example.org:443"/>
+         <property name="realm" value="myrealm"/>
+         <property name="login" value="user"/>
+         <property name="password" value="secret"/>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       exampleHttpCredential(HttpAuthenticationCredential) {
+           domain = 'www.example.org:443'
+           realm = 'myrealm'
+           login = 'user'
+           password = 'secret'
+       }
 
 HTML Form Authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Heritrix can be configured to submit credentials to a HTML form using a GET or POST request.
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="exampleFormCredential" class="org.archive.modules.credential.HtmlFormCredential">
-      <property name="domain" value="example.com"/>
-      <property name="loginUri" value="http://example.com/login"/>
-      <property name="formItems">
-        <map>
-          <entry key="login" value="user"/>
-          <entry key="password" value="secret"/>
-          <entry key="submit" value="submit"/>
-        </map>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="exampleFormCredential" class="org.archive.modules.credential.HtmlFormCredential">
+         <property name="domain" value="example.com"/>
+         <property name="loginUri" value="http://example.com/login"/>
+         <property name="formItems">
+           <map>
+             <entry key="login" value="user"/>
+             <entry key="password" value="secret"/>
+             <entry key="submit" value="submit"/>
+           </map>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       exampleFormCredential(HtmlFormCredential) {
+           domain = 'example.com'
+           loginUri = 'http://example.com/login'
+           formItems = [
+               login: 'user',
+               password: 'secret',
+               submit: 'submit',
+           ]
+       }
 
 domain
     The domain should be of the form "hostname:port" unless the port is 80 in which case it must be omitted. For
@@ -519,15 +692,25 @@ a login form by manually logging in through the browser and then copying the ses
 
 To enable loading of cookies set the cookiesLoadFile property of the BdbCookieStore bean to a ConfigFile:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="cookieStore" class="org.archive.modules.fetcher.BdbCookieStore">
-      <property name="cookiesLoadFile">
-         <bean class="org.archive.spring.ConfigFile">
-           <property name="path" value="cookies.txt" />
-         </bean>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="cookieStore" class="org.archive.modules.fetcher.BdbCookieStore">
+         <property name="cookiesLoadFile">
+            <bean class="org.archive.spring.ConfigFile">
+              <property name="path" value="cookies.txt" />
+            </bean>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       cookieStore(BdbCookieStore) {
+           cookiesLoadFile = new ConfigFile(path: 'cookies.txt')
+       }
 
 The cookies.txt should be in the 7-field tab-separated Netscape cookie file format. An entry might look like::
 
@@ -575,16 +758,30 @@ The FetchFTP bean needs to be defined:
 
 and added to the FetchChain:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
-      <property name="processors">
-        <list>...
-        <ref bean="fetchFTP"/>
-        ...
-       </list>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+         <property name="processors">
+           <list>...
+           <ref bean="fetchFTP"/>
+           ...
+          </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchProcessors(FetchChain) {
+           processors = [
+               // ...
+               ref('fetchFTP'),
+               // ...
+           ]
+       }
 
 HTTP/2
 ~~~~~~
@@ -613,11 +810,21 @@ HTTP/3
 HTTP/3 support is experimental and is not enabled by default. First replace ``FetchHTTP`` with ``FetchHTTP2`` as described
 above and then enable the ``useHTTP3`` property:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="fetchHttp2" class="org.archive.modules.fetcher.FetchHTTP2">
-       <property name="useHTTP3" value="true">
-    </bean>
+   .. code-block:: xml
+
+       <bean id="fetchHttp2" class="org.archive.modules.fetcher.FetchHTTP2">
+          <property name="useHTTP3" value="true">
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchHttp2(FetchHTTP2) {
+           useHTTP3 = true
+       }
 
 An appropriate version of the jetty-quiche-native jar also needs to be placed in Heritrix's ``lib`` directory. To find out
 which version you need, build a job with ``useHTTP3`` enabled and a warning will be logged to the job log with a download
@@ -638,17 +845,31 @@ The FetchSFTP bean needs to be defined:
 
 and added to the FetchChain:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
-      <property name="processors">
-        <list>
-          ...
-          <ref bean="fetchSFTP"/>
-          ...
-        </list>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+         <property name="processors">
+           <list>
+             ...
+             <ref bean="fetchSFTP"/>
+             ...
+           </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchProcessors(FetchChain) {
+           processors = [
+               // ...
+               ref('fetchSFTP'),
+               // ...
+           ]
+       }
 
 WHOIS
 ~~~~~
@@ -659,31 +880,59 @@ scheme URI.
 
 Define the fetchWhois bean:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="fetchWhois" class="org.archive.modules.fetcher.FetchWhois">
-      <property name="specialQueryTemplates">
-        <map>
-          <entry key="whois.verisign-grs.com" value="domain %s" />
-          <entry key="whois.arin.net" value="z + %s" />
-          <entry key="whois.denic.de" value="-T dn %s" />
-        </map>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="fetchWhois" class="org.archive.modules.fetcher.FetchWhois">
+         <property name="specialQueryTemplates">
+           <map>
+             <entry key="whois.verisign-grs.com" value="domain %s" />
+             <entry key="whois.arin.net" value="z + %s" />
+             <entry key="whois.denic.de" value="-T dn %s" />
+           </map>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchWhois(FetchWhois) {
+           specialQueryTemplates = [
+               'whois.verisign-grs.com': 'domain %s',
+               'whois.arin.net': 'z + %s',
+               'whois.denic.de': '-T dn %s',
+           ]
+       }
 
 and add it to the FetchChain:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
-      <property name="processors">
-        <list>
-          ...
-          <ref bean="fetchWhois"/>
-          ...
-        </list>
-      </property>
-    </bean>
+   .. code-block:: xml
+
+       <bean id="fetchProcessors" class="org.archive.modules.FetchChain">
+         <property name="processors">
+           <list>
+             ...
+             <ref bean="fetchWhois"/>
+             ...
+           </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchProcessors(FetchChain) {
+           processors = [
+               // ...
+               ref('fetchWhois'),
+               // ...
+           ]
+       }
 
 To configure a whois seed, enter the seed in the following format: ``whois://hostname/path``.  For example,
 ``whois://archive.org``.  The whois fetcher will attempt to resolve each host that the crawl encounters using the
@@ -753,13 +1002,25 @@ An optional configuration value to route Heritrix crawler traffic through a SOCK
 HTTP proxy configuration. It is facilitated by extending the `org.archive.modules.fetcher.FetchHTTP` bean with
 `socksProxyHost` and `socksProxyPort` values, as in the example below:
 
-.. code-block:: xml
+.. tab:: XML
 
-    <bean class="org.archive.modules.fetcher.FetchHTTP" id="fetchHttp">
-        <!--  ... -->
-        <property name="socksProxyHost" value="127.0.0.1"/>
-        <property name="socksProxyPort" value="24000"/>
-    </bean>
+   .. code-block:: xml
+
+       <bean class="org.archive.modules.fetcher.FetchHTTP" id="fetchHttp">
+           <!--  ... -->
+           <property name="socksProxyHost" value="127.0.0.1"/>
+           <property name="socksProxyPort" value="24000"/>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       fetchHttp(FetchHTTP) {
+           // ...
+           socksProxyHost = '127.0.0.1'
+           socksProxyPort = 24000
+       }
 
 Configuring DNS over HTTP (DoH)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

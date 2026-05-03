@@ -9,6 +9,7 @@ import bs4
 import json, traceback, sys
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from docutils.statemachine import ViewList
 from six import iteritems
 
 BEANS_FILES = [
@@ -126,7 +127,7 @@ def format_javadoc(doc):
     return convert_html(soup)
 
 
-def format_example(source_file):
+def format_example_xml(source_file):
     model = parse_java(source_file)
     code = '<bean id="' + model['bean_id'] + '" class="' + model['class'] + '">\n'
     for prop in model['properties']:
@@ -135,13 +136,72 @@ def format_example(source_file):
     return code
 
 
+# Java types that should render as bare numeric Groovy literals.
+NUMERIC_TYPES = {
+    'byte', 'short', 'int', 'long', 'float', 'double',
+    'java.lang.Byte', 'java.lang.Short', 'java.lang.Integer',
+    'java.lang.Long', 'java.lang.Float', 'java.lang.Double',
+    'java.math.BigDecimal', 'java.math.BigInteger', 'java.lang.Number',
+}
+
+BOOLEAN_TYPES = {'boolean', 'java.lang.Boolean'}
+
+
+def groovy_value(value, type_):
+    """Render a property default as a Groovy literal."""
+    if type_ in BOOLEAN_TYPES:
+        # value already normalised to 'true'/'false'/'' by java_value
+        return value if value in ('true', 'false') else 'false'
+    if type_ in NUMERIC_TYPES:
+        return value if value != '' else '0'
+    escaped = value.replace('\\', '\\\\').replace("'", "\\'")
+    return "'" + escaped + "'"
+
+
+def format_example_groovy(source_file):
+    model = parse_java(source_file)
+    short_class = model['class'].split('.')[-1]
+    lines = []
+    lines.append('import ' + model['class'])
+    lines.append('')
+    lines.append(model['bean_id'] + '(' + short_class + ') {')
+    for prop in model['properties']:
+        lines.append('    // ' + prop['name'] + ' = ' +
+                     groovy_value(prop['value'], prop['type']))
+    lines.append('}')
+    return '\n'.join(lines)
+
+
+def emit_tab_pair(directive, xml_code, groovy_code):
+    """Emit a sphinx-inline-tabs XML/Groovy pair as docutils nodes."""
+    lines = []
+    lines.append('.. tab:: XML')
+    lines.append('')
+    lines.append('   .. code-block:: xml')
+    lines.append('')
+    for line in xml_code.splitlines():
+        lines.append('      ' + line)
+    lines.append('')
+    lines.append('.. tab:: Groovy')
+    lines.append('')
+    lines.append('   .. code-block:: groovy')
+    lines.append('')
+    for line in groovy_code.splitlines():
+        lines.append('      ' + line)
+
+    vl = ViewList(lines, source='<beandoc>')
+    container = nodes.container()
+    directive.state.nested_parse(vl, directive.content_offset, container)
+    return container.children
+
+
 class BeanExample(Directive):
     required_arguments = 1
 
     def run(self):
-        code = format_example(self.arguments[0])
-        literal = nodes.literal_block(code, code, language='xml')
-        return [literal]
+        xml_code = format_example_xml(self.arguments[0])
+        groovy_code = format_example_groovy(self.arguments[0])
+        return list(emit_tab_pair(self, xml_code, groovy_code))
 
 
 def format_properties(model):
@@ -173,9 +233,11 @@ class BeanDoc(Directive):
         try:
             model = parse_java(self.arguments[0])
             text = nodes.paragraph('', '', format_javadoc(model['doc']))
-            example = nodes.literal_block('', format_example(self.arguments[0]), language='xml')
+            xml_code = format_example_xml(self.arguments[0])
+            groovy_code = format_example_groovy(self.arguments[0])
+            example_nodes = list(emit_tab_pair(self, xml_code, groovy_code))
             properties = format_properties(model)
-            return [text, example, properties]
+            return [text] + example_nodes + [properties]
         except Exception as e:
             exc_type, exc_value, exc_tb = sys.exc_info()
             stacktrace_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_tb))
@@ -197,4 +259,8 @@ def setup(app):
 if __name__ == '__main__':
     import sys
 
-    format_example(sys.argv[1])
+    print('--- XML ---')
+    print(format_example_xml(sys.argv[1]))
+    print()
+    print('--- Groovy ---')
+    print(format_example_groovy(sys.argv[1]))
