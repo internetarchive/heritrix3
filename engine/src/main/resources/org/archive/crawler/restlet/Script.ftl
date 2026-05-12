@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<!--[if IE 8]> <html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
-<html>
+<html class="no-js" lang="en">
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width" />
 	<link rel="stylesheet" href="/engine/static/css/normalize.css" />
 	<link rel="stylesheet" href="/engine/static/css/foundation.min.css" />
 	<link rel="stylesheet" href="/engine/static/css/heritrix.css" />
-	<script src="/engine/static/js/vendor/custom.modernizr.js"></script>
 	
 	<title>Script in ${model.crawlJobShortName}</title>
 
@@ -143,4 +140,3 @@
 	</div>
 </body>
 </html>
-

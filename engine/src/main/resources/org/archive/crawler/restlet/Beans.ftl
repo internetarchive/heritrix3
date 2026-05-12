@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width" />
 	<link rel="stylesheet" href="/engine/static/css/normalize.css" />
 	<link rel="stylesheet" href="/engine/static/css/foundation.min.css" />
 	<link rel="stylesheet" href="/engine/static/css/heritrix.css" />
-	<script src="/engine/static/js/vendor/custom.modernizr.js"></script>
 	
 	<title>Crawl beans in ${model.crawlJobShortName}</title>
 	

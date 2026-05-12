@@ -73,3 +73,67 @@ th {
 .contain-to-grid ul {
 	background-color:#000 !important;
 }
+.top-bar-section ul li > button.nav-command {
+    border: 0;
+    color: white;
+    display: block;
+    font-size: 0.8125em;
+    font-weight: bold;
+    height: 45px;
+    margin: 0;
+    width: 100%;
+}
+dialog.heritrix-dialog {
+    background-color: #fff;
+    border: solid 1px #666;
+    color: #222;
+    max-width: calc(100% - 2rem);
+    padding: 1.25em;
+    width: 80%;
+}
+dialog.heritrix-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+dialog.heritrix-dialog > :first-child {
+    margin-top: 0;
+}
+dialog.heritrix-dialog > :last-child:not(.dialog-close) {
+    margin-bottom: 0;
+}
+.dialog-close {
+    background: transparent;
+    border: 0;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 1.375em;
+    font-weight: bold;
+    line-height: 1;
+    padding: 0;
+    position: absolute;
+    right: 0.6875em;
+    top: 0.5em;
+}
+@media only screen and (min-width: 48em) {
+    dialog.heritrix-dialog {
+        padding: 1.875em;
+        width: 40%;
+    }
+}
+@media only screen and (min-width: 58.75em) {
+    .top-bar-section button.nav-command {
+        background: #111;
+        line-height: 45px;
+        padding: 0 15px;
+    }
+    .top-bar-section button.nav-command:hover,
+    .top-bar-section button.nav-command:focus {
+        background: black;
+    }
+}
+@media only screen and (max-width: 58.75em) {
+    .top-bar-section .has-dropdown.open > .dropdown {
+        left: 0;
+        position: static;
+        visibility: visible;
+    }
+}

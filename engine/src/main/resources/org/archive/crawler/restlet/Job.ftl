@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<!--[if IE 8]> <html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="no-js" lang="en">
 <head>
 	<meta charset="utf-8" />
   	<meta name="viewport" content="width=device-width" />
- 	<link rel="stylesheet" href="/engine/static/css/normalize.css" />
+  	<link rel="stylesheet" href="/engine/static/css/normalize.css" />
   	<link rel="stylesheet" href="/engine/static/css/foundation.min.css" />
   	<link rel="stylesheet" href="/engine/static/css/heritrix.css" />
-  	<script src="/engine/static/js/vendor/custom.modernizr.js"></script>
   
 	<title>${job.shortName} - ${job.statusDescription} - Job main page</title>
 	<base href='${baseRef}'/>
@@ -55,13 +53,13 @@
 					<li class="divider"></li>
 					<li ><a href="/engine/job/${job.shortName}/jobdir/${job.configurationFilePath.name}?format=textedit">Configuration</a></li>
 					<li class="divider"></li>
-					<li ><a href="#" data-reveal-id="copyJobModal">Copy Job</a></li>
+					<li><button type="button" class="nav-command" commandfor="copyJobModal" command="show-modal">Copy Job</button></li>
 					<li class="divider"></li>
 					<li>
 					<#if job.hasApplicationContext>
 					<a href="#" style="color:#444">Delete Job</a>
 					<#else>
-					<a href="#" data-reveal-id="deleteJobModal">Delete Job</a>
+					<button type="button" class="nav-command" commandfor="deleteJobModal" command="show-modal">Delete Job</button>
 					</#if>
 					</li>
 					<li class="divider"></li>
@@ -328,17 +326,8 @@
 	</div>
 </div>
 	
-<script>
-  document.write('<script src=' +
-  ('__proto__' in {} ? '/engine/static/js/vendor/zepto' : 'js/vendor/jquery') +
-  '.js><\/script>')
-</script>
-  
-<script src="/engine/static/js/foundation.min.js"></script>
-<script>
-  $(document).foundation();
-</script>
-<div id="copyJobModal" class="reveal-modal">
+<script src="/engine/static/js/heritrix-ui.js"></script>
+<dialog id="copyJobModal" class="heritrix-dialog">
 	<h2>Copy Job</h2>
 	<form method="POST">
 		<fieldset>
@@ -355,9 +344,9 @@
 			</div>
 		</fieldset>
 	</form>
-	<a class="close-reveal-modal">&#215;</a>
-</div>
-<div id="deleteJobModal" class="reveal-modal">
+	<button type="button" class="dialog-close" commandfor="copyJobModal" command="close" aria-label="Close">&#215;</button>
+</dialog>
+<dialog id="deleteJobModal" class="heritrix-dialog">
 	<h2>Delete Job</h2>
 	<form method="POST">
 		<fieldset>
@@ -367,9 +356,7 @@
 			</div>
 		</fieldset>
 	</form>
-	<a class="close-reveal-modal">&#215;</a>
-</div>
+	<button type="button" class="dialog-close" commandfor="deleteJobModal" command="close" aria-label="Close">&#215;</button>
+</dialog>
 </body>
 </html>
-
-
