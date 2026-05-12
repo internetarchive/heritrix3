@@ -50,6 +50,7 @@ release = ''
 extensions = [
     'sphinxcontrib.httpdomain',
     'sphinx.ext.extlinks',
+    'sphinx_inline_tabs',
     'beandoc'
 ]
 
