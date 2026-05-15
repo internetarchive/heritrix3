@@ -197,7 +197,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // matched by the above. attributes known to be URIs of various
     // sorts are matched specially
     static final String EACH_ATTRIBUTE_EXTRACTOR =
-      "(?is)\\s?((href|(?:cite))|(action)|(on\\w*)" // 1, 2, 3, 4
+      "(?is)\\s?((href|(?:cite))|(action)|(on\\w{0,"+MAX_ATTR_NAME_REPLACE+"})" // 1, 2, 3, 4
      +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)" // ...
      +"|(?:longdesc)|(?:usemap)|(?:profile)|(?:datasrc)" // ...
      +"|(?:data-src)|(?:data-srcset)|(?:data-original)|(?:data-original-set))" // 5
