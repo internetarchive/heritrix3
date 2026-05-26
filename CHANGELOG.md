@@ -4,13 +4,28 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.14.1...HEAD)
 
+## [3.15.0](https://github.com/internetarchive/heritrix3/releases/tag/3.15.0)  (2026-05-26)
+
 ### New features
 
 * **Profile selector:** You can now select a profile from a dropdown list when creating a new job.
+  [#725](https://github.com/internetarchive/heritrix3/pull/725)
+* **Groovy config editor:** The job config editor now supports Groovy job configs. This includes auto-completion
+  with documentation hints for bean and property names (but not for arbitrary Groovy code). Accepting completion of
+  bean class names inserts imports statements if needed. [#728](https://github.com/internetarchive/heritrix3/pull/728)
 
 ### Bug fixes
 
 * **Groovy profiles:** Fixed discovery of job directories containing `profile-crawler-beans.groovy`
+* **ExtractorHTML:** Capped dynamic attribute-name scanning to avoid pathological regex behavior on pages with extremely 
+ large attribute values. [#733](https://github.com/internetarchive/heritrix3/pull/733)
+
+### Changes
+
+* Removed obsolete vendored JavaScript libraries from the UI [#732](https://github.com/internetarchive/heritrix3/pull/732)
+  - Replaced Foundation JS with native HTML dialogs and simple vanilla JS click handlers.
+  - Removed jQuery and Zepto as they were only used by Foundation JS.
+  - Removed Internet Explorer compatibility shims (modernizr and IE conditional comments).
 
 ## [3.14.1](https://github.com/internetarchive/heritrix3/releases/tag/3.14.1)  (2026-04-06)
 
