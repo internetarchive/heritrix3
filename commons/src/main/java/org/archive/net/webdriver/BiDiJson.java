@@ -50,7 +50,11 @@ class BiDiJson {
         if (value instanceof Boolean) return value;
         if (value instanceof JSONObject) return value;
         if (value instanceof Identifier identifier) return identifier.id();
-        if (value instanceof Enum<?> enumValue) return enumValue.name();
+        if (value instanceof Enum<?> enumValue) {
+            // "default" is a reserved word in Java so it's represented as default_
+            if (enumValue.name().equals("default_")) return "default";
+            return enumValue.name();
+        }
         if (value instanceof Map<?, ?>) {
             var map = new JSONObject();
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
@@ -133,6 +137,8 @@ class BiDiJson {
                 return (T) array.toList();
             }
             if (type.isEnum() && value instanceof String string) {
+                // "default" is a reserved word in Java so it's represented as default_
+                if (string.equals("default")) string = "default_";
                 return (T) Enum.valueOf((Class<Enum>) type, string);
             }
             if (type.isRecord()) {

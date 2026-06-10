@@ -2,6 +2,7 @@ bin
 commons/target
 modules/target
 engine/target
+engine/scratch
 dist/target
 contrib/target
 docgen/target

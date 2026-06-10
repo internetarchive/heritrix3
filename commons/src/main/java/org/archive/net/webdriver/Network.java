@@ -89,7 +89,7 @@ public interface Network extends BiDiModule {
     ) {
     }
 
-    enum SameSite {strict, lax, none}
+    enum SameSite {strict, lax, none, default_}
 
     interface UrlPattern {
         String type();
