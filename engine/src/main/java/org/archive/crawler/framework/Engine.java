@@ -406,7 +406,7 @@ public class Engine {
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"failed to create new job: "
-                    + newJobDir.getAbsolutePath());
+                    + newJobDir.getAbsolutePath(), e);
             return false;
         }
     }
