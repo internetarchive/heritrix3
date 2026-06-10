@@ -126,7 +126,6 @@ http://example.example/example
 # http://www.example.edu/path1/
 # +http://(org,example,
             ''')
-        }
         */
     }
 
