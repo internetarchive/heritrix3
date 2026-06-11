@@ -3,6 +3,7 @@ package org.archive.crawler.processor;
 import com.sun.net.httpserver.HttpServer;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.*;
+import org.archive.modules.behaviors.PaginationBehavior;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.modules.fetcher.FetchHTTP2;
 import org.archive.net.UURIFactory;
@@ -60,6 +61,27 @@ class BrowserProcessorTest {
         assertNotNull(gzip);
         assertEquals("gzip", gzip.getRecorder().getContentEncoding());
         assertEquals("/*hello world*/", gzip.getRecorder().getContentReplayPrefixString(100));
+    }
+
+    @Test
+    public void testPaginationBehavior() throws IOException, InterruptedException {
+        var defaultBehaviors = browserProcessor.getBehaviors();
+        browserProcessor.setBehaviors(List.of(new PaginationBehavior(null)));
+        try {
+            CrawlURI crawlURI = newCrawlURI(baseUrl + "paginated");
+            fetcher.process(crawlURI);
+            assertEquals(200, crawlURI.getFetchStatus());
+            browserProcessor.innerProcess(crawlURI);
+
+            var paths = new HashSet<String>();
+            for (CrawlURI link : crawlURI.getOutLinks()) {
+                paths.add(link.getUURI().getPath());
+            }
+            assertEquals(Set.of("/item1", "/item2", "/item3"), paths,
+                    "should have extracted the links from every page of the pagination");
+        } finally {
+            browserProcessor.setBehaviors(defaultBehaviors);
+        }
     }
 
     @Test
@@ -143,6 +165,18 @@ class BrowserProcessorTest {
                     body = "body { color: red; background: url(bg.jpg); }";
                     contentType = "text/css";
                 }
+                case "/paginated" -> body = """
+                        <div id=items><a href="/item1">item</a></div>
+                        <button id=next title="Next" onclick="nextPage()">Next</button>
+                        <script>
+                            let page = 1;
+                            function nextPage() {
+                                page++;
+                                document.getElementById('items').innerHTML =
+                                    '<a href="/item' + page + '">item</a>';
+                                if (page >= 3) document.getElementById('next').disabled = true;
+                            }
+                        </script>""";
                 case "/download.bin" -> {
                     body = "sample-download-file";
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=heritrix-test.bin");

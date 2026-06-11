@@ -185,10 +185,13 @@ class BiDiJson {
     }
 
     private static Class<?> getSubclassByTypeName(Class<?> type, String typeName) {
+        Class<?> fallback = null;
         for (Class<?> subclass : type.getPermittedSubclasses()) {
             TypeName annotation = subclass.getDeclaredAnnotation(TypeName.class);
             if (annotation != null && annotation.value().equals(typeName)) return subclass;
+            if (subclass.getDeclaredAnnotation(UnknownTypeFallback.class) != null) fallback = subclass;
         }
+        if (fallback != null) return fallback;
         throw new UnsupportedOperationException("Unsupported 'type' for " + type + ": " + typeName);
     }
 
@@ -206,6 +209,14 @@ class BiDiJson {
     @Target(ElementType.TYPE)
     @interface TypeName {
         String value();
+    }
+
+    /**
+     * Marks the subclass to deserialize into when the 'type' field matches no other permitted subclass.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    @interface UnknownTypeFallback {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
