@@ -58,6 +58,8 @@ public interface Script extends BiDiModule {
     sealed interface LocalValue {
         static LocalValue from(Object object) {
             if (object instanceof Number number) return new NumberValue(number);
+            if (object instanceof String string) return new StringValue(string);
+            if (object instanceof Boolean bool) return new BooleanValue(bool);
             throw new IllegalArgumentException("Unsupported local value type: " + object.getClass());
         }
     }
@@ -78,6 +80,34 @@ public interface Script extends BiDiModule {
     record StringValue(String value) implements RemoteValue, LocalValue {
         @Override
         public String javaValue() {
+            return value;
+        }
+    }
+
+    @BiDiJson.TypeName("boolean")
+    record BooleanValue(boolean value) implements RemoteValue, LocalValue {
+        @Override
+        public Boolean javaValue() {
+            return value;
+        }
+    }
+
+    @BiDiJson.TypeName("null")
+    record NullValue() implements RemoteValue, LocalValue {
+        @Override
+        public Object javaValue() {
+            return null;
+        }
+    }
+
+    /**
+     * Catch-all for RemoteValue types that aren't modelled here, as page scripts can return any
+     * type the protocol defines. The value is the raw JSON 'value' field, if there was one.
+     */
+    @BiDiJson.UnknownTypeFallback
+    record UnknownValue(String type, Object value) implements RemoteValue {
+        @Override
+        public Object javaValue() {
             return value;
         }
     }
