@@ -209,6 +209,18 @@ public class MitmProxy {
         }
 
         @Override
+        protected org.eclipse.jetty.client.Request.Content newProxyToServerRequestContent(
+                org.eclipse.jetty.server.Request clientToProxyRequest,
+                Response proxyToClientResponse,
+                org.eclipse.jetty.client.Request proxyToServerRequest) {
+            var listener = (ExchangeListener)clientToProxyRequest.getAttribute(ExchangeListener.class.getName());
+            if (listener != null) {
+                return new RecordingProxyRequestContent(clientToProxyRequest, proxyToServerRequest, listener);
+            }
+            return super.newProxyToServerRequestContent(clientToProxyRequest, proxyToClientResponse, proxyToServerRequest);
+        }
+
+        @Override
         protected void addProxyHeaders(org.eclipse.jetty.server.Request clientToProxyRequest, org.eclipse.jetty.client.Request proxyToServerRequest) {
             proxyToServerRequest.headers(headers -> {
                 // Ensure we only get the encodings we support
@@ -228,7 +240,10 @@ public class MitmProxy {
             if (listener != null) {
                 proxyToServerRequest.onRequestBegin(listener);
                 proxyToServerRequest.onRequestHeaders(listener);
-                proxyToServerRequest.onRequestContent(listener);
+                // Note: We don't use proxyToServerRequest.onRequestContent(listener)
+                // because it's quirky and the buffer it passes doesn't have the limit
+                // set and includes browser-to-proxy bytes not proxy-to-server. So we
+                // use RecordingProxyRequestContent to tap the request body instead.
                 proxyToServerRequest.onResponseHeaders(listener);
                 proxyToServerRequest.onResponseContent(listener);
                 proxyToServerRequest.onComplete(listener);
@@ -240,6 +255,28 @@ public class MitmProxy {
                 if (existingProxy == proxy) return;
             }
             getHttpClient().getProxyConfiguration().addProxy(proxy);
+        }
+
+        private class RecordingProxyRequestContent extends ProxyRequestContent {
+            private final org.eclipse.jetty.client.Request proxyToServerRequest;
+            private final ExchangeListener listener;
+
+            public RecordingProxyRequestContent(org.eclipse.jetty.server.Request clientToProxyRequest,
+                                                org.eclipse.jetty.client.Request proxyToServerRequest,
+                                                ExchangeListener listener) {
+                super(clientToProxyRequest);
+                this.proxyToServerRequest = proxyToServerRequest;
+                this.listener = listener;
+            }
+
+            @Override
+            public Content.Chunk read() {
+                Content.Chunk chunk = super.read();
+                if (chunk != null && !Content.Chunk.isFailure(chunk) && chunk.hasRemaining()) {
+                    listener.onContent(proxyToServerRequest, chunk.getByteBuffer().asReadOnlyBuffer());
+                }
+                return chunk;
+            }
         }
     }
 
