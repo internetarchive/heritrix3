@@ -63,6 +63,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -469,6 +470,11 @@ public class BrowserProcessor extends Processor {
 
                 if (recordingFailed) {
                     curi.setFetchStatus(FetchStatusCodes.S_RUNTIME_EXCEPTION);
+                } else if (result.isFailed() && !truncated) {
+                    Throwable failure = result.getFailure();
+                    if (failure != null) curi.getNonFatalFailures().add(failure);
+                    curi.setFetchStatus(failure instanceof TimeoutException
+                            ? FetchStatusCodes.S_TIMEOUT : FetchStatusCodes.S_CONNECT_FAILED);
                 } else {
                     subresourcesRecorded.incrementAndGet();
                     curi.getOverlayNames(); // for sideeffect of creating the overlayNames list
