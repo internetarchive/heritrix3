@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfSystemProperty(named = "runBrowserTests", matches = "true")
 class BrowserProcessorTest {
     private static final System.Logger logger = System.getLogger(BrowserProcessorTest.class.getName());
+    private static final String JSON_POST_BODY = "{\"event\":\"browser-subresource\",\"count\":3}";
 
     private static HttpServer httpServer;
     private static FetchHTTP2 fetcher;
@@ -61,6 +63,13 @@ class BrowserProcessorTest {
         assertNotNull(gzip);
         assertEquals("gzip", gzip.getRecorder().getContentEncoding());
         assertEquals("/*hello world*/", gzip.getRecorder().getContentReplayPrefixString(100));
+
+        CrawlURI postJson = subrequestByPath.get("/post-json");
+        assertNotNull(postJson);
+        String postRequest = httpRequestString(postJson);
+        assertTrue(postRequest.startsWith("POST /post-json HTTP/1.1\r\n"), postRequest);
+        assertTrue(postRequest.toLowerCase(Locale.ROOT).contains("content-type: application/json\r\n"), postRequest);
+        assertTrue(postRequest.endsWith("\r\n\r\n" + JSON_POST_BODY), postRequest);
     }
 
     @Test
@@ -115,7 +124,11 @@ class BrowserProcessorTest {
             assertEquals("/link", outLinks.get(0).getUURI().getPath());
             assertTrue(crawlURI.getAnnotations().contains("browser"));
             assertEquals("true", crawlURI.getHttpResponseHeader("Used-Proxy"));
-            assertEquals("true", subrequests.get(0).getHttpResponseHeader("Used-Proxy"));
+            var subrequestByPath = new HashMap<String,CrawlURI>();
+            for (CrawlURI curi : subrequests) {
+                subrequestByPath.put(curi.getUURI().getPath(), curi);
+            }
+            assertEquals("true", subrequestByPath.get("/style.css").getHttpResponseHeader("Used-Proxy"));
 
             logger.log(DEBUG, "Subrequests: {0}", subrequests);
         } finally {
@@ -131,6 +144,11 @@ class BrowserProcessorTest {
         recorders.add(recorder);
         curi.setRecorder(recorder);
         return curi;
+    }
+
+    private static String httpRequestString(CrawlURI curi) throws IOException {
+        return new String(curi.getRecorder().getRecordedOutput().getReplayInputStream().readAllBytes(),
+                StandardCharsets.UTF_8);
     }
 
     @BeforeEach
@@ -160,10 +178,29 @@ class BrowserProcessorTest {
             int status = 200;
             String body = "";
             switch (exchange.getRequestURI().getPath()) {
-                case "/" -> body = "<link href=style.css rel=stylesheet><link href=gzip rel=stylesheet><a href=\"/link\">link</a><img src=img.jpg>";
+                case "/" -> body = """
+                        <link href=style.css rel=stylesheet>
+                        <link href=gzip rel=stylesheet>
+                        <a href="/link">link</a>
+                        <img src=img.jpg>
+                        <script>
+                            fetch('/post-json', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: '%s'
+                            });
+                        </script>
+                        """.formatted(JSON_POST_BODY);
                 case "/style.css" -> {
                     body = "body { color: red; background: url(bg.jpg); }";
                     contentType = "text/css";
+                }
+                case "/post-json" -> {
+                    assertEquals("POST", exchange.getRequestMethod());
+                    assertEquals(JSON_POST_BODY, new String(exchange.getRequestBody().readAllBytes(),
+                            StandardCharsets.UTF_8));
+                    body = "{\"ok\":true}";
+                    contentType = "application/json";
                 }
                 case "/paginated" -> body = """
                         <div id=items><a href="/item1">item</a></div>
