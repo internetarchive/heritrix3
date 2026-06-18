@@ -31,8 +31,10 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
+    - name: Show Firefox version
+      run: firefox --version
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B package --file pom.xml -DrunBrowserTests=true
       env:
         # Apparently Azure kills idle http connections after 4 minutes which can cause the build to fail
         # with a timeout error. Limit the connection ttl to 2 minutes to workaround this as per
