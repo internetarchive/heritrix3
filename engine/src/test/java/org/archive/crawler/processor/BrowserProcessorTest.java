@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfSystemProperty(named = "runBrowserTests", matches = "true")
@@ -109,6 +110,30 @@ class BrowserProcessorTest {
         // force processing anyway to test the behavior for other download reasons (e.g. non-HTML)
         browserProcessor.innerProcess(crawlURI);
         assertFalse(crawlURI.getAnnotations().contains("browser"), "navigation should have aborted");
+    }
+
+    @Test
+    public void testTruncation() throws IOException, InterruptedException {
+        fetcher.setMaxLengthBytes(10_000);
+        try {
+            CrawlURI crawlURI = newCrawlURI(baseUrl + "truncation");
+            fetcher.process(crawlURI);
+            assertEquals(200, crawlURI.getFetchStatus());
+            browserProcessor.innerProcess(crawlURI);
+
+            var subrequestByPath = new HashMap<String,CrawlURI>();
+            for (CrawlURI curi : subrequests) {
+                subrequestByPath.put(curi.getUURI().getPath(), curi);
+            }
+            CrawlURI large = subrequestByPath.get("/large.bin");
+            assertNotNull(large, "oversized subresource should still have been recorded");
+            assertTrue(large.getAnnotations().contains(LENGTH_TRUNC),
+                    "oversized subresource should be annotated as length-truncated: " + large.getAnnotations());
+            assertTrue(large.isSuccess(),
+                    "truncated subresource should still be a successful fetch, was status " + large.getFetchStatus());
+        } finally {
+            fetcher.setMaxLengthBytes(0L); // restore default (no limit)
+        }
     }
 
     @Test
@@ -225,6 +250,11 @@ class BrowserProcessorTest {
                 case "/download.bin" -> {
                     body = "sample-download-file";
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=heritrix-test.bin");
+                }
+                case "/truncation" -> body = "<img src=large.bin>";
+                case "/large.bin" -> {
+                    body = "x".repeat(100_000);
+                    contentType = "application/octet-stream";
                 }
                 case "/gzip" -> {
                     exchange.getResponseHeaders().add("Content-Encoding", "gzip");

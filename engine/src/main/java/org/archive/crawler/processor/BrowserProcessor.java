@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
+import org.archive.io.RecorderLengthExceededException;
+import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecordingInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -69,6 +71,8 @@ import static java.lang.System.Logger.Level.WARNING;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
 import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
+import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
+import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 
 /**
  * Opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior}s to interact with the page.
@@ -383,6 +387,7 @@ public class BrowserProcessor extends Processor {
         private final BrowserPage page;
         private String method;
         private boolean recordingFailed;
+        private boolean truncated;
 
         public SubresourceRecorder(BrowserPage page, String url) throws IOException {
             this.page = page;
@@ -441,8 +446,15 @@ public class BrowserProcessor extends Processor {
 
         @Override
         public void onContent(org.eclipse.jetty.client.Response response, ByteBuffer content) {
+            if (truncated) return; // already hit a limit; stop recording but treat as success
             try {
                 responseRecorder.write(content.duplicate());
+            } catch (RecorderLengthExceededException e) {
+                curi.getAnnotations().add(LENGTH_TRUNC);
+                truncated = true;
+            } catch (RecorderTimeoutException e) {
+                curi.getAnnotations().add(TIMER_TRUNC);
+                truncated = true;
             } catch (Exception e) {
                 logger.log(ERROR, "Error recording response body of " + curi, e);
                 recordingFailed = true;
