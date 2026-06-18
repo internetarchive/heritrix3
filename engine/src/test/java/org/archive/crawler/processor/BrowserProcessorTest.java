@@ -50,9 +50,12 @@ class BrowserProcessorTest {
         assertEquals(200, crawlURI.getFetchStatus());
         browserProcessor.innerProcess(crawlURI);
 
+        String expectedUserAgent = fetcher.getUserAgentProvider().getUserAgent();
+
         var outLinks = new ArrayList<>(crawlURI.getOutLinks());
         assertEquals("/link", outLinks.get(0).getUURI().getPath());
         assertTrue(crawlURI.getAnnotations().contains("browser"));
+        assertEquals(expectedUserAgent, crawlURI.getHttpResponseHeader("Reflected-User-Agent"));
 
         logger.log(DEBUG, "Subrequests: {0}", subrequests);
         var subrequestByPath = new HashMap<String,CrawlURI>();
@@ -70,6 +73,7 @@ class BrowserProcessorTest {
         assertTrue(postRequest.startsWith("POST /post-json HTTP/1.1\r\n"), postRequest);
         assertTrue(postRequest.toLowerCase(Locale.ROOT).contains("content-type: application/json\r\n"), postRequest);
         assertTrue(postRequest.endsWith("\r\n\r\n" + JSON_POST_BODY), postRequest);
+        assertEquals(expectedUserAgent, postJson.getHttpResponseHeader("Reflected-User-Agent"));
     }
 
     @Test
@@ -174,6 +178,8 @@ class BrowserProcessorTest {
         httpServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), -1);
         httpServer.createContext("/", exchange -> {
             logger.log(DEBUG, "Server received request: {0} {1}",  exchange.getRequestMethod(), exchange.getRequestURI());
+            String userAgent = exchange.getRequestHeaders().getFirst("User-Agent");
+            if (userAgent != null) exchange.getResponseHeaders().add("Reflected-User-Agent", userAgent);
             String contentType = "text/html";
             int status = 200;
             String body = "";

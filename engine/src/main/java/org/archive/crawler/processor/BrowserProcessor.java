@@ -171,7 +171,9 @@ public class BrowserProcessor extends Processor {
         String pageId = UUID.randomUUID().toString();
         var tab = webdriver.browsingContext().create(BrowsingContext.CreateType.tab).context();
         try {
-            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab, fetcher.getProxy());
+            String userAgent = curi.getUserAgent();
+            if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
+            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab, fetcher.getProxy(), userAgent);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             webdriver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
@@ -285,7 +287,17 @@ public class BrowserProcessor extends Processor {
         if (event.request().url().startsWith("data:") || !event.isBlocked()) return;
         List<Network.Header> requestHeaders = event.request().headers();
         String pageId = pageIdsByContext.get(event.context());
-        if (pageId != null) requestHeaders.add(new Network.Header(PAGE_ID_HEADER, pageId));
+        if (pageId != null) {
+            requestHeaders.add(new Network.Header(PAGE_ID_HEADER, pageId));
+            BrowserPage page = pages.get(pageId);
+            if (page != null) {
+                String userAgent = page.userAgent();
+                if (userAgent != null) {
+                    requestHeaders.removeIf(header -> header.name().equalsIgnoreCase("User-Agent"));
+                    requestHeaders.add(new Network.Header("User-Agent", userAgent));
+                }
+            }
+        }
         webdriver.network().continueRequestAsync(event.request().request(), requestHeaders);
     }
 
@@ -492,11 +504,14 @@ public class BrowserProcessor extends Processor {
     /**
      * A CrawlURI that's currently loaded as a page in a browser.
      */
-    protected record BrowserPage(CrawlURI curi,
-                       IdleBarrier networkActivity,
-                       WebDriverBiDi webdriver,
-                       BrowsingContext.Context context,
-                       ProxyConfiguration.Proxy proxy) implements Page {
+    protected record BrowserPage(
+            CrawlURI curi,
+            IdleBarrier networkActivity,
+            WebDriverBiDi webdriver,
+            BrowsingContext.Context context,
+            ProxyConfiguration.Proxy proxy,
+            String userAgent
+    ) implements Page {
 
         /**
          * Evaluates JavaScript and returns the result as simple Java objects (numbers, strings, maps, lists).
