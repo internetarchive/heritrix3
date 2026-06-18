@@ -56,6 +56,7 @@ class BrowserProcessorTest {
         assertEquals("/link", outLinks.get(0).getUURI().getPath());
         assertTrue(crawlURI.getAnnotations().contains("browser"));
         assertEquals(expectedUserAgent, crawlURI.getHttpResponseHeader("Reflected-User-Agent"));
+        assertNotNull(crawlURI.getContentDigest());
 
         logger.log(DEBUG, "Subrequests: {0}", subrequests);
         var subrequestByPath = new HashMap<String,CrawlURI>();
@@ -74,6 +75,7 @@ class BrowserProcessorTest {
         assertTrue(postRequest.toLowerCase(Locale.ROOT).contains("content-type: application/json\r\n"), postRequest);
         assertTrue(postRequest.endsWith("\r\n\r\n" + JSON_POST_BODY), postRequest);
         assertEquals(expectedUserAgent, postJson.getHttpResponseHeader("Reflected-User-Agent"));
+        assertNotNull(postJson.getContentDigest());
     }
 
     @Test

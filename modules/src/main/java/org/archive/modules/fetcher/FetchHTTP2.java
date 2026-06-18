@@ -207,10 +207,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         var listener = new InputStreamResponseListener();
 
         var recorder = curi.getRecorder();
-        if (digestAlgorithm != null) recorder.getRecordedInput().setDigest(digestAlgorithm);
-        recorder.getRecordedInput().setLimits(getMaxLengthBytes(),
-                1000L * (long) getTimeoutSeconds(), getMaxFetchKBSec());
-        curi.setFetchBeginTime(System.currentTimeMillis());
+        beginRecording(curi, recorder);
 
         try {
             UURI uuri = curi.getUURI();
@@ -558,6 +555,17 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
         } else if (response.getVersion().equals(HttpVersion.HTTP_3)) {
             curi.getAnnotations().add("h3");
         }
+    }
+
+    /**
+     * Prepares the Recorder before a fetch begins: enables content digesting and applies the
+     * length, time and rate limits. Also records the fetch begin time on the CrawlURI.
+     */
+    public void beginRecording(CrawlURI curi, Recorder recorder) {
+        if (digestAlgorithm != null) recorder.getRecordedInput().setDigest(digestAlgorithm);
+        recorder.getRecordedInput().setLimits(getMaxLengthBytes(),
+                1000L * (long) getTimeoutSeconds(), getMaxFetchKBSec());
+        curi.setFetchBeginTime(System.currentTimeMillis());
     }
 
     /**

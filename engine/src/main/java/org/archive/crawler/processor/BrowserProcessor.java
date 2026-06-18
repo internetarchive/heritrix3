@@ -393,7 +393,7 @@ public class BrowserProcessor extends Processor {
                     crawlController.getRecorderOutBufferBytes(),
                     crawlController.getRecorderInBufferBytes());
             this.curi.setRecorder(recorder);
-            this.curi.setFetchBeginTime(System.currentTimeMillis());
+            fetcher.beginRecording(curi, recorder);
             this.curi.getAnnotations().add("subresource");
             this.requestRecorder = Channels.newChannel(recorder.outputWrap(null));
             //noinspection resource
