@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfSystemProperty(named = "runBrowserTests", matches = "true")
@@ -50,9 +51,13 @@ class BrowserProcessorTest {
         assertEquals(200, crawlURI.getFetchStatus());
         browserProcessor.innerProcess(crawlURI);
 
+        String expectedUserAgent = fetcher.getUserAgentProvider().getUserAgent();
+
         var outLinks = new ArrayList<>(crawlURI.getOutLinks());
         assertEquals("/link", outLinks.get(0).getUURI().getPath());
         assertTrue(crawlURI.getAnnotations().contains("browser"));
+        assertEquals(expectedUserAgent, crawlURI.getHttpResponseHeader("Reflected-User-Agent"));
+        assertNotNull(crawlURI.getContentDigest());
 
         logger.log(DEBUG, "Subrequests: {0}", subrequests);
         var subrequestByPath = new HashMap<String,CrawlURI>();
@@ -70,6 +75,8 @@ class BrowserProcessorTest {
         assertTrue(postRequest.startsWith("POST /post-json HTTP/1.1\r\n"), postRequest);
         assertTrue(postRequest.toLowerCase(Locale.ROOT).contains("content-type: application/json\r\n"), postRequest);
         assertTrue(postRequest.endsWith("\r\n\r\n" + JSON_POST_BODY), postRequest);
+        assertEquals(expectedUserAgent, postJson.getHttpResponseHeader("Reflected-User-Agent"));
+        assertNotNull(postJson.getContentDigest());
     }
 
     @Test
@@ -103,6 +110,30 @@ class BrowserProcessorTest {
         // force processing anyway to test the behavior for other download reasons (e.g. non-HTML)
         browserProcessor.innerProcess(crawlURI);
         assertFalse(crawlURI.getAnnotations().contains("browser"), "navigation should have aborted");
+    }
+
+    @Test
+    public void testTruncation() throws IOException, InterruptedException {
+        fetcher.setMaxLengthBytes(10_000);
+        try {
+            CrawlURI crawlURI = newCrawlURI(baseUrl + "truncation");
+            fetcher.process(crawlURI);
+            assertEquals(200, crawlURI.getFetchStatus());
+            browserProcessor.innerProcess(crawlURI);
+
+            var subrequestByPath = new HashMap<String,CrawlURI>();
+            for (CrawlURI curi : subrequests) {
+                subrequestByPath.put(curi.getUURI().getPath(), curi);
+            }
+            CrawlURI large = subrequestByPath.get("/large.bin");
+            assertNotNull(large, "oversized subresource should still have been recorded");
+            assertTrue(large.getAnnotations().contains(LENGTH_TRUNC),
+                    "oversized subresource should be annotated as length-truncated: " + large.getAnnotations());
+            assertTrue(large.isSuccess(),
+                    "truncated subresource should still be a successful fetch, was status " + large.getFetchStatus());
+        } finally {
+            fetcher.setMaxLengthBytes(0L); // restore default (no limit)
+        }
     }
 
     @Test
@@ -174,6 +205,8 @@ class BrowserProcessorTest {
         httpServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), -1);
         httpServer.createContext("/", exchange -> {
             logger.log(DEBUG, "Server received request: {0} {1}",  exchange.getRequestMethod(), exchange.getRequestURI());
+            String userAgent = exchange.getRequestHeaders().getFirst("User-Agent");
+            if (userAgent != null) exchange.getResponseHeaders().add("Reflected-User-Agent", userAgent);
             String contentType = "text/html";
             int status = 200;
             String body = "";
@@ -217,6 +250,11 @@ class BrowserProcessorTest {
                 case "/download.bin" -> {
                     body = "sample-download-file";
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=heritrix-test.bin");
+                }
+                case "/truncation" -> body = "<img src=large.bin>";
+                case "/large.bin" -> {
+                    body = "x".repeat(100_000);
+                    contentType = "application/octet-stream";
                 }
                 case "/gzip" -> {
                     exchange.getResponseHeaders().add("Content-Encoding", "gzip");

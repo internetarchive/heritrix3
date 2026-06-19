@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
+import org.archive.io.RecorderLengthExceededException;
+import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecordingInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -61,6 +63,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -69,6 +72,8 @@ import static java.lang.System.Logger.Level.WARNING;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.FAILED;
 import static org.archive.crawler.event.CrawlURIDispositionEvent.Disposition.SUCCEEDED;
 import static org.archive.modules.CoreAttributeConstants.A_HTTP_RESPONSE_HEADERS;
+import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
+import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 
 /**
  * Opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior}s to interact with the page.
@@ -171,7 +176,9 @@ public class BrowserProcessor extends Processor {
         String pageId = UUID.randomUUID().toString();
         var tab = webdriver.browsingContext().create(BrowsingContext.CreateType.tab).context();
         try {
-            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab, fetcher.getProxy());
+            String userAgent = curi.getUserAgent();
+            if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
+            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), webdriver, tab, fetcher.getProxy(), userAgent);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             webdriver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
@@ -285,7 +292,17 @@ public class BrowserProcessor extends Processor {
         if (event.request().url().startsWith("data:") || !event.isBlocked()) return;
         List<Network.Header> requestHeaders = event.request().headers();
         String pageId = pageIdsByContext.get(event.context());
-        if (pageId != null) requestHeaders.add(new Network.Header(PAGE_ID_HEADER, pageId));
+        if (pageId != null) {
+            requestHeaders.add(new Network.Header(PAGE_ID_HEADER, pageId));
+            BrowserPage page = pages.get(pageId);
+            if (page != null) {
+                String userAgent = page.userAgent();
+                if (userAgent != null) {
+                    requestHeaders.removeIf(header -> header.name().equalsIgnoreCase("User-Agent"));
+                    requestHeaders.add(new Network.Header("User-Agent", userAgent));
+                }
+            }
+        }
         webdriver.network().continueRequestAsync(event.request().request(), requestHeaders);
     }
 
@@ -371,6 +388,7 @@ public class BrowserProcessor extends Processor {
         private final BrowserPage page;
         private String method;
         private boolean recordingFailed;
+        private boolean truncated;
 
         public SubresourceRecorder(BrowserPage page, String url) throws IOException {
             this.page = page;
@@ -381,7 +399,7 @@ public class BrowserProcessor extends Processor {
                     crawlController.getRecorderOutBufferBytes(),
                     crawlController.getRecorderInBufferBytes());
             this.curi.setRecorder(recorder);
-            this.curi.setFetchBeginTime(System.currentTimeMillis());
+            fetcher.beginRecording(curi, recorder);
             this.curi.getAnnotations().add("subresource");
             this.requestRecorder = Channels.newChannel(recorder.outputWrap(null));
             //noinspection resource
@@ -429,8 +447,15 @@ public class BrowserProcessor extends Processor {
 
         @Override
         public void onContent(org.eclipse.jetty.client.Response response, ByteBuffer content) {
+            if (truncated) return; // already hit a limit; stop recording but treat as success
             try {
                 responseRecorder.write(content.duplicate());
+            } catch (RecorderLengthExceededException e) {
+                curi.getAnnotations().add(LENGTH_TRUNC);
+                truncated = true;
+            } catch (RecorderTimeoutException e) {
+                curi.getAnnotations().add(TIMER_TRUNC);
+                truncated = true;
             } catch (Exception e) {
                 logger.log(ERROR, "Error recording response body of " + curi, e);
                 recordingFailed = true;
@@ -445,6 +470,11 @@ public class BrowserProcessor extends Processor {
 
                 if (recordingFailed) {
                     curi.setFetchStatus(FetchStatusCodes.S_RUNTIME_EXCEPTION);
+                } else if (result.isFailed() && !truncated) {
+                    Throwable failure = result.getFailure();
+                    if (failure != null) curi.getNonFatalFailures().add(failure);
+                    curi.setFetchStatus(failure instanceof TimeoutException
+                            ? FetchStatusCodes.S_TIMEOUT : FetchStatusCodes.S_CONNECT_FAILED);
                 } else {
                     subresourcesRecorded.incrementAndGet();
                     curi.getOverlayNames(); // for sideeffect of creating the overlayNames list
@@ -492,11 +522,14 @@ public class BrowserProcessor extends Processor {
     /**
      * A CrawlURI that's currently loaded as a page in a browser.
      */
-    protected record BrowserPage(CrawlURI curi,
-                       IdleBarrier networkActivity,
-                       WebDriverBiDi webdriver,
-                       BrowsingContext.Context context,
-                       ProxyConfiguration.Proxy proxy) implements Page {
+    protected record BrowserPage(
+            CrawlURI curi,
+            IdleBarrier networkActivity,
+            WebDriverBiDi webdriver,
+            BrowsingContext.Context context,
+            ProxyConfiguration.Proxy proxy,
+            String userAgent
+    ) implements Page {
 
         /**
          * Evaluates JavaScript and returns the result as simple Java objects (numbers, strings, maps, lists).
