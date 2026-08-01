@@ -98,13 +98,13 @@
 		<dependency>
 			<groupId>com.github.bbottema</groupId>
 			<artifactId>java-socks-proxy-server</artifactId>
-			<version>4.1.2</version>
+			<version>4.2.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>3.0.7</version>
+			<version>3.0.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
