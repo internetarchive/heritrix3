@@ -104,12 +104,12 @@
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>webjars-locator-lite</artifactId>
-			<version>1.1.3</version>
+			<version>1.1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__autocomplete</artifactId>
-			<version>6.20.1</version>
+			<version>6.20.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
@@ -119,7 +119,7 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__language</artifactId>
-			<version>6.12.2</version>
+			<version>6.12.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
@@ -139,37 +139,37 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__state</artifactId>
-			<version>6.5.4</version>
+			<version>6.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__view</artifactId>
-			<version>6.39.16</version>
+			<version>6.43.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__lint</artifactId>
-			<version>6.9.5</version>
+			<version>6.9.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>crelt</artifactId>
-			<version>1.0.6</version>
+			<version>1.0.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>marijn__find-cluster-break</artifactId>
-			<version>1.0.2</version>
+			<version>1.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>lezer__common</artifactId>
-			<version>1.5.1</version>
+			<version>1.5.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>lezer__lr</artifactId>
-			<version>1.4.8</version>
+			<version>1.4.10</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
