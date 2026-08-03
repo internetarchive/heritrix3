@@ -787,14 +787,20 @@ public class StatisticsTracker
     
     public void crawledURINeedRetry(CrawlURI curi) {
         handleSeed(curi,"Failed to crawl seed, will retry");
+        // Save status codes
+        incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
     }
 
     public void crawledURIDisregard(CrawlURI curi) {
         handleSeed(curi,"Seed was disregarded");
+        // Save status codes
+        incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
     }
 
     public void crawledURIFailure(CrawlURI curi) {
         handleSeed(curi,"Failed to crawl seed");
+        // Save status codes
+        incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
     }
     
     /**
