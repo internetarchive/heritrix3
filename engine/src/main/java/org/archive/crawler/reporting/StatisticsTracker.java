@@ -188,7 +188,7 @@ public class StatisticsTracker
     /**
      * Messages from the StatisticsTracker.
      */
-    private final static Logger logger =
+    private static final Logger logger =
         Logger.getLogger(StatisticsTracker.class.getName());
 
     /**
@@ -288,6 +288,11 @@ public class StatisticsTracker
     protected ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> sourceHostDistribution = 
         new ConcurrentHashMap<String, ConcurrentMap<String,AtomicLong>>(); 
     
+    /** Keep track of URL counts per status code per host per seed */
+    // TODO: restore spill-to-disk, like with processedSeedsRecords
+    protected ConcurrentHashMap<String, ConcurrentMap<String, ConcurrentMap<String, AtomicLong>>> sourceHostStatusDistribution = 
+            new ConcurrentHashMap<>(); 
+    
     /** Keep track of crawled bytes stats per seed */
     // TODO: spill-to-disk (requires bdb replacement for Histotable, or some
     // other refactoring)
@@ -369,14 +374,33 @@ public class StatisticsTracker
                     statusCodeDistribution,
                     json.getJSONObject("statusCodeDistribution"));
           
-
-                JSONObject shd = json.getJSONObject("sourceHostDistribution");
-                Iterator<String> keyIter = shd.keys();
-                for(; keyIter.hasNext();) {
-                    String source = keyIter.next();
-                    ConcurrentHashMap<String, AtomicLong> hostUriCount = new ConcurrentHashMap<String, AtomicLong>();
-                    JSONUtils.putAllAtomicLongs(hostUriCount,shd.getJSONObject(source));
-                    sourceHostDistribution.put(source, hostUriCount);
+                SourceTagsReport str = getReport(SourceTagsReport.class);
+                Iterator<String> keyIter;
+                if (str.isIncludeResCode()) {
+                    JSONObject shsd = json.getJSONObject("sourceHostStatusDistribution");
+                    keyIter = shsd.keys();
+                    for (; keyIter.hasNext();) {
+                        String source = keyIter.next();
+                        ConcurrentHashMap<String, ConcurrentMap<String, AtomicLong>> hostStatusUriCount = new ConcurrentHashMap<>();
+                        JSONObject hostMap = shsd.getJSONObject(source);
+                        Iterator<String> hostKeys = hostMap.keys();
+                        for (; hostKeys.hasNext();) {
+                            String host = hostKeys.next();
+                            ConcurrentHashMap<String, AtomicLong> statusUriCount = new ConcurrentHashMap<>();
+                            JSONUtils.putAllAtomicLongs(statusUriCount, hostMap.getJSONObject(host));
+                            hostStatusUriCount.put(host, statusUriCount);
+                        }
+                        sourceHostStatusDistribution.put(source, hostStatusUriCount);
+                    }
+                } else {
+                    JSONObject shd = json.getJSONObject("sourceHostDistribution");
+                    keyIter = shd.keys();
+                    for (; keyIter.hasNext();) {
+                        String source = keyIter.next();
+                        ConcurrentHashMap<String, AtomicLong> hostUriCount = new ConcurrentHashMap<String, AtomicLong>();
+                        JSONUtils.putAllAtomicLongs(hostUriCount, shd.getJSONObject(source));
+                        sourceHostDistribution.put(source, hostUriCount);
+                    }
                 }
                 
                 // optional so we can still recover checkpoints from earlier versions of heritrix
@@ -740,6 +764,15 @@ public class StatisticsTracker
             }
         } // else ignore
     }
+    
+    public <T extends Report> T getReport(Class<T> reportClass) {
+        for (Report r : getReports()) {
+            if (reportClass.isInstance(r)) {
+                return reportClass.cast(r);
+            }
+        }
+        return null;
+    }
 
     public void crawledURISuccessful(CrawlURI curi) {
         handleSeed(curi,"Seed successfully crawled");
@@ -757,12 +790,33 @@ public class StatisticsTracker
 
         ServerCache sc = serverCache;
         if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
-        	saveSourceStats(curi.getSourceTag(), 
-        	        sc.getHostFor(curi.getUURI()).getHostName());
-        	tallySourceStats(curi);
+            SourceTagsReport str = getReport(SourceTagsReport.class);
+            if (str.isIncludeResCode()) {
+                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName(), String.valueOf(curi.getFetchStatus()));
+            }
+            saveSourceStats(curi.getSourceTag(), 
+            sc.getHostFor(curi.getUURI()).getHostName());
+            tallySourceStats(curi);
         }
     }
          
+    protected void saveSourceStats(String source, String hostname, String statuscode) {
+        ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> hostStatusUriCount = sourceHostStatusDistribution.get(source); 
+        if (hostStatusUriCount == null) {
+            hostStatusUriCount = new ConcurrentHashMap<>();
+        }
+        ConcurrentMap<String, AtomicLong> statusUriCount = hostStatusUriCount.get(hostname); 
+        if (statusUriCount == null) {
+            statusUriCount = new ConcurrentHashMap<>();
+            ConcurrentMap<String, AtomicLong> prevVal = hostStatusUriCount.putIfAbsent(hostname, statusUriCount);
+            if (prevVal != null) {
+                statusUriCount = prevVal;
+            }
+        }
+        incrementMapCount(statusUriCount, statuscode);
+        sourceHostStatusDistribution.putIfAbsent(source, hostStatusUriCount);
+    }
+
     protected void saveSourceStats(String source, String hostname) {
         ConcurrentMap<String,AtomicLong> hostUriCount = sourceHostDistribution.get(source); 
         if(hostUriCount == null) {
@@ -1072,7 +1126,13 @@ public class StatisticsTracker
             json.put("mimeTypeBytes", mimeTypeBytes);
             json.put("statusCodeDistribution", statusCodeDistribution);
 
-            json.put("sourceHostDistribution", sourceHostDistribution);
+            SourceTagsReport str = getReport(SourceTagsReport.class);
+            if (str.isIncludeResCode()) {
+                json.put("sourceHostStatusDistribution", sourceHostStatusDistribution);
+            } else {
+                json.put("sourceHostDistribution", sourceHostDistribution);
+            }
+            
             json.put("statsBySource", statsBySource);
             
             json.put("crawledBytes", crawledBytes);

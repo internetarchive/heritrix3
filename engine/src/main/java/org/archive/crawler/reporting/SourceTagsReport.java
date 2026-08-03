@@ -21,6 +21,7 @@ package org.archive.crawler.reporting;
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.archive.bdb.DisposableStoredSortedMap;
@@ -32,6 +33,16 @@ import org.archive.bdb.DisposableStoredSortedMap;
  */
 public class SourceTagsReport extends Report {
 
+    private boolean includeResCode = false;
+
+    public boolean isIncludeResCode() {
+        return includeResCode;
+    }
+
+    public void setIncludeResCode(boolean includeResCode) {
+        this.includeResCode = includeResCode;
+    }
+
     @Override
     public void write(PrintWriter writer, StatisticsTracker stats) {
 
@@ -41,25 +52,49 @@ public class SourceTagsReport extends Report {
             writer.println("No source tag information. (Is 'sourceTagSeeds' enabled?)");
             return; 
         }
-        
-        writer.print("[source] [host] [#urls]\n");
-        // for each source
-        for (String sourceKey : sourceTags) {
-            Map<String,AtomicLong> hostCounts = 
-                (Map<String,AtomicLong>)stats.sourceHostDistribution.get(sourceKey);
-            // sort hosts by #urls
-            DisposableStoredSortedMap<Long,String> sortedHostCounts = 
-                stats.getReverseSortedHostCounts(hostCounts);
-            // for each host
-            for (Map.Entry<Long, String> entry : sortedHostCounts.entrySet()) {
-                writer.print(sourceKey.toString());
-                writer.print(" ");
-                writer.print(entry.getValue());
-                writer.print(" ");
-                writer.print(Math.abs(entry.getKey()));
-                writer.print("\n");
+
+        if (isIncludeResCode()) {
+            writer.print("[source] [host] [rescode] [#urls]\n");
+            // for each source
+            for (String sourceKey : sourceTags) {
+                Map<String, ConcurrentMap<String, AtomicLong>> hostCounts = stats.sourceHostStatusDistribution.get(sourceKey);
+                if (hostCounts != null) {
+                    // For each sorted host
+                    for (Map.Entry<String, ConcurrentMap<String, AtomicLong>> entry : hostCounts.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
+                        Map<String, AtomicLong> map = entry.getValue();
+                        // Sort status code by #urls
+                        DisposableStoredSortedMap<Long,String> sortedHostCounts = stats.getReverseSortedHostCounts(map);
+                        for (Map.Entry<Long, String> entry2 : sortedHostCounts.entrySet()) {
+                            writer.print(sourceKey.toString());
+                            writer.print(" ");
+                            writer.print(entry.getKey());
+                            writer.print(" ");
+                            writer.print(entry2.getValue());
+                            writer.print(" ");
+                            writer.print(Math.abs(entry2.getKey()));
+                            writer.print("\n");
+                        }
+                    }
+                }
             }
-            sortedHostCounts.dispose();
+        } else {
+            writer.print("[source] [host] [#urls]\n");
+            // for each source
+            for (String sourceKey : sourceTags) {
+                Map<String, AtomicLong> hostCounts = (Map<String, AtomicLong>) stats.sourceHostDistribution.get(sourceKey);
+                // sort hosts by #urls
+                DisposableStoredSortedMap<Long, String> sortedHostCounts = stats.getReverseSortedHostCounts(hostCounts);
+                // for each host
+                for (Map.Entry<Long, String> entry : sortedHostCounts.entrySet()) {
+                    writer.print(sourceKey.toString());
+                    writer.print(" ");
+                    writer.print(entry.getValue());
+                    writer.print(" ");
+                    writer.print(Math.abs(entry.getKey()));
+                    writer.print("\n");
+                }
+                sortedHostCounts.dispose();
+            }
         }
     }
 
