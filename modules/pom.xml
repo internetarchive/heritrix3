@@ -90,6 +90,13 @@
 			<version>1.2.1</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- for ftpserver-core -->
+		<dependency>
+			<groupId>org.apache.mina</groupId>
+			<artifactId>mina-core</artifactId>
+			<version>2.2.9</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>com.github.crawler-commons</groupId>
 			<artifactId>crawler-commons</artifactId>
