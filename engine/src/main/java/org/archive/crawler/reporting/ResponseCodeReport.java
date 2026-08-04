@@ -32,6 +32,10 @@ public class ResponseCodeReport extends Report {
 
     @Override
     public void write(PrintWriter writer, StatisticsTracker stats) {
+        if (!stats.bdb.isRunning()) {
+            writer.println("bdb not started");
+            return;
+        }
         // header
         writer.print("[#urls] [rescode]\n");
         
