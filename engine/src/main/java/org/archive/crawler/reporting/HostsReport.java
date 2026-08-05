@@ -76,6 +76,10 @@ public class HostsReport extends Report {
 	
 	@Override
     public void write(final PrintWriter writer, StatisticsTracker stats) {
+            if (!stats.bdb.isRunning()) {
+                writer.println("bdb not started");
+                return;
+            }
     	Collection<String> keys = null;
     	DisposableStoredSortedMap<Long, String> hd = null;
     	if (maxSortSize<0 || maxSortSize>stats.serverCache.hostKeys().size()) {

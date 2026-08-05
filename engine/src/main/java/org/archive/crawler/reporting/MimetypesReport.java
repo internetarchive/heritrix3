@@ -33,6 +33,10 @@ public class MimetypesReport extends Report {
 
     @Override
     public void write(PrintWriter writer, StatisticsTracker stats) {
+        if (!stats.bdb.isRunning()) {
+            writer.println("bdb not started");
+            return;
+        }
         // header
         writer.print("[#urls] [#bytes] [mime-types]\n");
         DisposableStoredSortedMap<Long,String> fd = stats.getReverseSortedCopy(stats.getFileDistribution());

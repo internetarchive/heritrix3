@@ -36,6 +36,11 @@ public class SeedsReport extends Report {
 
     @Override
     public void write(PrintWriter writer, StatisticsTracker stats) {
+        if (!stats.bdb.isRunning()) {
+            writer.println("bdb not started");
+            return;
+        }
+
         // Build header.
         writer.print("[code] [status] [seed] [redirect]\n");
 
