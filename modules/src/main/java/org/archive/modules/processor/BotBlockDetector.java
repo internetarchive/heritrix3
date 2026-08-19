@@ -105,14 +105,14 @@ public class BotBlockDetector extends Processor {
     }
 
     private static boolean detectCloudflare(CrawlURI curi) {
-        if ("cloudflare".equalsIgnoreCase(curi.getHttpResponseHeader("server")))  {
-            if ("challenge".equalsIgnoreCase(curi.getHttpResponseHeader("cf-mitigated"))) {
-                return true;
-            }
-            return curi.getFetchStatus() == 403 &&
-                   bodyContainsHtml(curi, "<h1 data-translate=\"block_headline\">Sorry, you have been blocked</h1>");
+        // challenge page
+        if ("challenge".equalsIgnoreCase(curi.getHttpResponseHeader("cf-mitigated"))) {
+            return true;
         }
-        return false;
+        // block page
+        return curi.getFetchStatus() == 403 &&
+               "cloudflare".equalsIgnoreCase(curi.getHttpResponseHeader("server")) &&
+               bodyContainsHtml(curi, "<h1 data-translate=\"block_headline\">Sorry, you have been blocked</h1>");
     }
 
     private static boolean detectDataDome(CrawlURI curi) {
