@@ -82,6 +82,18 @@ class BotBlockDetectorTest {
     }
 
     @Test
+    void detectsDatadomeBlock() throws Exception {
+        CrawlURI curi = curi(403);
+        // some sites use both Cloudflare and DataDome
+        curi.putHttpResponseHeader("server", "cloudflare");
+        curi.putHttpResponseHeader("cf-ray", "1111111111111111-SJC");
+        curi.putHttpResponseHeader("x-datadome", "protected");
+        curi.putHttpResponseHeader("x-dd-b", "2");
+        curi.putHttpResponseHeader("x-datadome-cid", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==");
+        assertBlocked(curi, "datadome");
+    }
+
+    @Test
     void detectsIncapsulaChallenge() throws Exception {
         CrawlURI curi = curi(404);
         curi.putHttpResponseHeader("x-iinfo", "foo");

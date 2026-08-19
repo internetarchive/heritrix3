@@ -82,6 +82,7 @@ public class BotBlockDetector extends Processor {
         if (detectAkamai(curi)) return "akamai";
         if (detectAnubis(curi)) return "anubis";
         if (detectCloudflare(curi)) return "cloudflare";
+        if (detectDataDome(curi)) return "datadome";
         if (detectIncapsula(curi)) return "incapsula";
         return null;
     }
@@ -112,6 +113,11 @@ public class BotBlockDetector extends Processor {
                    bodyContainsHtml(curi, "<h1 data-translate=\"block_headline\">Sorry, you have been blocked</h1>");
         }
         return false;
+    }
+
+    private static boolean detectDataDome(CrawlURI curi) {
+        return curi.getHttpResponseHeader("x-dd-b") != null &&
+               "protected".equalsIgnoreCase(curi.getHttpResponseHeader("x-datadome"));
     }
 
     private static boolean detectIncapsula(CrawlURI curi) {
