@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual 
- *  contributors. 
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
@@ -72,8 +73,8 @@ import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.je.DatabaseException;
 
 /**
- * A common Frontier base using several queues to hold pending URIs. 
- * 
+ * A common Frontier base using several queues to hold pending URIs.
+ *
  * Uses in-memory map of all known 'queues' inside a single database.
  * Round-robins between all queues.
  *
@@ -81,8 +82,8 @@ import com.sleepycat.je.DatabaseException;
  * @author Christian Kohlschuetter
  */
 public abstract class WorkQueueFrontier extends AbstractFrontier
-implements Closeable, 
-           ApplicationContextAware {
+        implements Closeable,
+        ApplicationContextAware {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 570384305871965843L;
 
@@ -91,29 +92,80 @@ implements Closeable,
      * we can avoid using a disk-based BigMap.
      * This only works efficiently if the WorkQueue does not hold its
      * entries in memory as well.
-     */ 
+     */
     private static final int MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY = 3000;
 
     /**
      * When a snooze target for a queue is longer than this amount, the queue
      * will be "long snoozed" instead of "short snoozed".  A "long snoozed"
-     * queue may be swapped to disk because it's not needed soon.  
+     * queue may be swapped to disk because it's not needed soon.
      */
-    protected long snoozeLongMs = 5L*60L*1000L; 
+    protected long snoozeLongMs = 5L*60L*1000L;
     public long getSnoozeLongMs() {
         return snoozeLongMs;
     }
     public void setSnoozeLongMs(long snooze) {
         this.snoozeLongMs = snooze;
     }
-    
+
     private static final Logger logger =
-        Logger.getLogger(WorkQueueFrontier.class.getName());
-    
+            Logger.getLogger(WorkQueueFrontier.class.getName());
+
     // ApplicationContextAware implementation, for eventing
     protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
+    }
+
+    /**
+     * Optional queue-group manager (issue #754). Entirely opt-in: if no
+     * {@code queueGroups} bean is declared in the crawl beans, this stays
+     * {@code null} and the frontier behaves exactly as before.
+     */
+    @Autowired(required=false)
+    protected QueueGroupManager queueGroupManager;
+
+    public QueueGroupManager getQueueGroupManager() {
+        return queueGroupManager;
+    }
+    public void setQueueGroupManager(QueueGroupManager queueGroupManager) {
+        this.queueGroupManager = queueGroupManager;
+    }
+
+    /**
+     * @return the {@link QueueGroup} the given queue belongs to, or
+     *         {@code null} if there is no manager or the queue is ungrouped.
+     */
+    protected QueueGroup groupFor(WorkQueue wq) {
+        if (queueGroupManager == null || wq == null) {
+            return null;
+        }
+        return queueGroupManager.groupFor(wq.getClassKey());
+    }
+
+    /**
+     * @return true if the given member classKey is currently ready to be
+     *         emitted, i.e. actually present in {@link #readyClassQueues}. This
+     *         guarantees the round-robin never waits forever for a member that
+     *         is snoozed/empty/in-process.
+     */
+    protected boolean isMemberReady(String classKey) {
+        return classKey != null && readyClassQueues.contains(classKey);
+    }
+
+    /**
+     * Release the shared group slot held by the given queue and arm the shared
+     * cool-down. No-op when the queue is not grouped or there is no manager.
+     *
+     * @param wq       the finished queue
+     * @param now      current epoch-ms
+     * @param delay_ms the per-URI politeness delay just computed
+     */
+    protected void releaseGroup(WorkQueue wq, long now, long delay_ms) {
+        QueueGroup group = groupFor(wq);
+        if (group != null) {
+            group.release(now, delay_ms);
+        }
     }
 
     {
@@ -149,7 +201,7 @@ implements Closeable,
     public void setQueueTotalBudget(long budget) {
         kp.put("queueTotalBudget",budget);
     }
-    
+
     {
         setQueuePrecedencePolicy(new BaseQueuePrecedencePolicy());
     }
@@ -162,7 +214,7 @@ implements Closeable,
     }
 
     /** precedence rank at or below which queues are not crawled */
-    protected int precedenceFloor = 255; 
+    protected int precedenceFloor = 255;
     public int getPrecedenceFloor() {
         return this.precedenceFloor;
     }
@@ -171,7 +223,7 @@ implements Closeable,
     }
 
     /** truncate reporting of queues at this large but not unbounded number */
-    protected int maxQueuesPerReportCategory = 2000; 
+    protected int maxQueuesPerReportCategory = 2000;
     public int getMaxQueuesPerReportCategory() {
         return this.maxQueuesPerReportCategory;
     }
@@ -181,7 +233,7 @@ implements Closeable,
 
     /** All known queues.
      */
-    protected ObjectIdentityCache<WorkQueue> allQueues = null; 
+    protected ObjectIdentityCache<WorkQueue> allQueues = null;
     // of classKey -> ClassKeyQueue
 
     /**
@@ -189,26 +241,26 @@ implements Closeable,
      * Linked-list of keys for the queues.
      */
     protected BlockingQueue<String> readyClassQueues;
-    
+
     /** all per-class queues from whom a URI is outstanding */
-    protected Set<WorkQueue> inProcessQueues = 
-        Collections.newSetFromMap(new ConcurrentHashMap<WorkQueue, Boolean>()); // of ClassKeyQueue
-    
+    protected Set<WorkQueue> inProcessQueues =
+            Collections.newSetFromMap(new ConcurrentHashMap<WorkQueue, Boolean>()); // of ClassKeyQueue
+
     /**
      * All per-class queues held in snoozed state, sorted by wake time.
      */
     transient protected DelayQueue<DelayedWorkQueue> snoozedClassQueues;
-    protected StoredSortedMap<Long,DelayedWorkQueue> snoozedOverflow; 
-    protected AtomicInteger snoozedOverflowCount = new AtomicInteger(0); 
-    protected static int MAX_SNOOZED_IN_MEMORY = 10000; 
-    
+    protected StoredSortedMap<Long,DelayedWorkQueue> snoozedOverflow;
+    protected AtomicInteger snoozedOverflowCount = new AtomicInteger(0);
+    protected static int MAX_SNOOZED_IN_MEMORY = 10000;
+
     /** URIs scheduled to be re-enqueued at future date */
-    protected StoredSortedMap<Long, CrawlURI> futureUris; 
-    
+    protected StoredSortedMap<Long, CrawlURI> futureUris;
+
     /** remember keys of small number of largest queues for reporting */
     transient protected TopNSet largestQueues = new TopNSet(20);
     /** remember this many largest queues for reporting's sake; actual tracking
-     *  can be somewhat approximate when some queues shrink before others' 
+     *  can be somewhat approximate when some queues shrink before others'
      *  sizes are again noted, or if the size is adjusted mid-crawl. */
     public int getLargestQueuesCount() {
         return largestQueues.getMaxSize();
@@ -216,11 +268,11 @@ implements Closeable,
     public void setLargestQueuesCount(int count) {
         largestQueues.setMaxSize(count);
     }
-    
+
     protected int highestPrecedenceWaiting = Integer.MAX_VALUE;
 
-    /** The UriUniqFilter to use, tracking those UURIs which are 
-     * already in-process (or processed), and thus should not be 
+    /** The UriUniqFilter to use, tracking those UURIs which are
+     * already in-process (or processed), and thus should not be
      * rescheduled. Also known as the 'alreadyIncluded' or
      * 'alreadySeen' structure */
     protected UriUniqFilter uriUniqFilter;
@@ -238,10 +290,10 @@ implements Closeable,
     public WorkQueueFrontier() {
         super();
     }
-    
+
     public void start() {
         if(isRunning()) {
-            return; 
+            return;
         }
         uriUniqFilter.setDestination(this);
         super.start();
@@ -257,34 +309,34 @@ implements Closeable,
      * Initializes internal queues.  May decide to keep all queues in memory based on
      * {@link QueueAssignmentPolicy#maximumNumberOfKeys}.  Otherwise invokes
      * {@link #initAllQueues()} to actually set up the queues.
-     * 
-     * Subclasses should invoke this method with recycle set to "true" in 
+     *
+     * Subclasses should invoke this method with recycle set to "true" in
      * a private readObject method, to restore queues after a checkpoint.
-     * 
+     *
      * @throws IOException
      * @throws DatabaseException
      */
-    protected void initInternalQueues() 
-    throws IOException, DatabaseException {
+    protected void initInternalQueues()
+            throws IOException, DatabaseException {
         this.initOtherQueues();
         if (workQueueDataOnDisk()
                 && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() >= 0
-                && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() <= 
-                    MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY) {
-            this.allQueues = 
-                new ObjectIdentityMemCache<WorkQueue>(701, .9f, 100);
+                && preparer.getQueueAssignmentPolicy().maximumNumberOfKeys() <=
+                MAX_QUEUES_TO_HOLD_ALLQUEUES_IN_MEMORY) {
+            this.allQueues =
+                    new ObjectIdentityMemCache<WorkQueue>(701, .9f, 100);
         } else {
             this.initAllQueues();
         }
     }
-    
+
     /**
      * Initialize the allQueues field in an implementation-appropriate
      * way.
      * @throws DatabaseException
      */
     protected abstract void initAllQueues() throws DatabaseException;
-    
+
     /**
      * Initialize all other internal queues in an implementation-appropriate
      * way.
@@ -292,8 +344,8 @@ implements Closeable,
      */
     protected abstract void initOtherQueues() throws DatabaseException;
 
-    
-    
+
+
     /* (non-Javadoc)
      * @see org.archive.crawler.frontier.AbstractFrontier#stop()
      */
@@ -301,45 +353,45 @@ implements Closeable,
     public void stop() {
         super.stop();
     }
-    
+
     public void destroy() {
         // release resources and trigger end-of-frontier actions
         close();
     }
-    
+
     /**
      * Release resources only needed when running
      */
     public void close() {
-        ArchiveUtils.closeQuietly(uriUniqFilter);     
+        ArchiveUtils.closeQuietly(uriUniqFilter);
         ArchiveUtils.closeQuietly(allQueues);
     }
-    
+
     /**
      * Accept the given CrawlURI for scheduling, as it has
-     * passed the alreadyIncluded filter. 
-     * 
+     * passed the alreadyIncluded filter.
+     *
      * Choose a per-classKey queue and enqueue it. If this
-     * item has made an unready queue ready, place that 
-     * queue on the readyClassQueues queue. 
+     * item has made an unready queue ready, place that
+     * queue on the readyClassQueues queue.
      * @param curi CrawlURI.
      */
     protected void processScheduleAlways(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        assert KeyedProperties.overridesActiveFrom(curi); 
-        
+        assert KeyedProperties.overridesActiveFrom(curi);
+
         prepForFrontier(curi);
         sendToQueue(curi);
     }
-    
-    
+
+
     /**
      * Arrange for the given CrawlURI to be visited, if it is not
-     * already enqueued/completed. 
-     * 
-     * Differs from superclass in that it operates in calling thread, rather 
+     * already enqueued/completed.
+     *
+     * Differs from superclass in that it operates in calling thread, rather
      * than deferring operations via in-queue to managerThread. TODO: settle
-     * on either defer or in-thread approach after testing. 
+     * on either defer or in-thread approach after testing.
      *
      * @see org.archive.crawler.framework.Frontier#schedule(org.archive.modules.CrawlURI)
      */
@@ -354,7 +406,7 @@ implements Closeable,
             }
             processScheduleIfUnique(curi);
         } finally {
-            KeyedProperties.clearOverridesFrom(curi); 
+            KeyedProperties.clearOverridesFrom(curi);
         }
     }
 
@@ -366,8 +418,8 @@ implements Closeable,
      */
     protected void processScheduleIfUnique(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        assert KeyedProperties.overridesActiveFrom(curi); 
-        
+        assert KeyedProperties.overridesActiveFrom(curi);
+
         // Canonicalization may set forceFetch flag.  See
         // #canonicalization(CrawlURI) javadoc for circumstance.
         String canon = curi.getCanonicalString();
@@ -380,12 +432,12 @@ implements Closeable,
 
     /**
      * Send a CrawlURI to the appropriate subqueue.
-     * 
+     *
      * @param curi
      */
     protected void sendToQueue(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        
+
         WorkQueue wq = getQueueFor(curi.getClassKey());
         synchronized(wq) {
             int originalPrecedence = wq.getPrecedence();
@@ -394,7 +446,7 @@ implements Closeable,
             // (whose overlay settings should be active here)
             wq.setSessionBudget(getBalanceReplenishAmount());
             wq.setTotalBudget(getQueueTotalBudget());
-            
+
             if(!wq.isRetired()) {
                 incrementQueuedUriCount();
                 int currentPrecedence = wq.getPrecedence();
@@ -427,7 +479,7 @@ implements Closeable,
         } catch (InterruptedException e) {
             e.printStackTrace();
             System.err.println("unable to ready queue "+wq);
-            // propagate interrupt up 
+            // propagate interrupt up
             throw new RuntimeException(e);
         }
     }
@@ -455,21 +507,21 @@ implements Closeable,
 
             if(logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
-                        "queue deactivated to p" + precedence 
-                        + ": " + wq.getClassKey());
+                        "queue deactivated to p" + precedence
+                                + ": " + wq.getClassKey());
             }
         }
     }
-    
+
     /**
-     * Get the queue of inactive uri-queue names at the given precedence. 
-     * 
+     * Get the queue of inactive uri-queue names at the given precedence.
+     *
      * @param precedence
      * @return queue of inacti
      */
     protected Queue<String> getInactiveQueuesForPrecedence(int precedence) {
-        Map<Integer,Queue<String>> inactiveQueuesByPrecedence = 
-            getInactiveQueuesByPrecedence();
+        Map<Integer,Queue<String>> inactiveQueuesByPrecedence =
+                getInactiveQueuesByPrecedence();
         Queue<String> candidate = inactiveQueuesByPrecedence.get(precedence);
         if(candidate==null) {
             candidate = createInactiveQueueForPrecedence(precedence);
@@ -507,19 +559,19 @@ implements Closeable,
                     "queue retired: " + wq.getClassKey());
         }
     }
-    
+
     /**
      * Return queue of all retired queue names.
-     * 
+     *
      * @return Queue&lt;String&gt; of retired queue names
      */
     protected abstract Queue<String> getRetiredQueues();
 
-    /** 
+    /**
      * Accommodate any changes in retirement-determining settings (like
-     * total-budget or force-retire changes/overlays. 
-     * 
-     * (Essentially, exists to be called from tools like the UI 
+     * total-budget or force-retire changes/overlays.
+     *
+     * (Essentially, exists to be called from tools like the UI
      * Scripting Console when the operator knows it's necessary.)
      */
     public void reconsiderRetiredQueues() {
@@ -529,9 +581,9 @@ implements Closeable,
         // as retired/overbudget next time they come up, they'll
         // be re-retired; if not, they'll get a chance to become
         // active under the new rules.
-        
+
         // TODO: Do this automatically, only when necessary.
-        
+
         String key = getRetiredQueues().poll();
         while (key != null) {
             WorkQueue q = (WorkQueue)this.allQueues.get(key);
@@ -545,69 +597,69 @@ implements Closeable,
         }
     }
     /**
-     * Restore a retired queue to the 'inactive' state. 
-     * 
+     * Restore a retired queue to the 'inactive' state.
+     *
      * @param q
      */
     private void unretireQueue(WorkQueue q) {
 //        assert Thread.currentThread() == managerThread;
 
         deactivateQueue(q);
-        q.setRetired(false); 
+        q.setRetired(false);
         incrementQueuedUriCount(q.getCount());
     }
 
     /**
      * Return the work queue for the given classKey, or null
      * if no such queue exists.
-     * 
+     *
      * @param classKey key to look for
      * @return the found WorkQueue
      */
     protected abstract WorkQueue getQueueFor(String classKey);
-    
- 
+
+
     /**
      * Return the next CrawlURI eligible to be processed (and presumably
      * visited/fetched) by a a worker thread.
      *
      * Relies on the readyClassQueues having been loaded with
-     * any work queues that are eligible to provide a URI. 
+     * any work queues that are eligible to provide a URI.
      *
      * @return next CrawlURI eligible to be processed, or null if none available
      *
      * @see org.archive.crawler.framework.Frontier#next()
      */
     protected CrawlURI findEligibleURI() {
-            // wake any snoozed queues
-            wakeQueues();
-            // consider rescheduled URIS
-            checkFutures();
-                   
-            // find a non-empty ready queue, if any 
-            // TODO: refactor to untangle these loops, early-exits, etc!
-            WorkQueue readyQ = null;
-            findauri: while(true) {
-                findaqueue: do {
-                    String key = readyClassQueues.poll();
-                    if(key==null) {
-                        // no ready queues; try to activate one
-                        if(!getInactiveQueuesByPrecedence().isEmpty() 
+        // wake any snoozed queues
+        wakeQueues();
+        // consider rescheduled URIS
+        checkFutures();
+
+        // find a non-empty ready queue, if any
+        // TODO: refactor to untangle these loops, early-exits, etc!
+        WorkQueue readyQ = null;
+        findauri: while(true) {
+            findaqueue: do {
+                String key = readyClassQueues.poll();
+                if(key==null) {
+                    // no ready queues; try to activate one
+                    if(!getInactiveQueuesByPrecedence().isEmpty()
                             && highestPrecedenceWaiting < getPrecedenceFloor()) {
-                            activateInactiveQueue();
-                            continue findaqueue;
-                        } else {
-                            // nothing ready or readyable
-                            break findaqueue;
-                        }
-                    }
-                    readyQ = getQueueFor(key);
-                    if (readyQ == null) {
-                        // readyQ key wasn't in all queues: unexpected
-                        logger.severe("Key " + key
-                                + " in readyClassQueues but not allQueues");
+                        activateInactiveQueue();
+                        continue findaqueue;
+                    } else {
+                        // nothing ready or readyable
                         break findaqueue;
                     }
+                }
+                readyQ = getQueueFor(key);
+                if (readyQ == null) {
+                    // readyQ key wasn't in all queues: unexpected
+                    logger.severe("Key " + key
+                            + " in readyClassQueues but not allQueues");
+                    break findaqueue;
+                }
                 synchronized (readyQ) {
                     if (readyQ.getCount() == 0) {
                         // readyQ is empty and ready: it's exhausted
@@ -652,89 +704,123 @@ implements Closeable,
                         readyQ.makeDirty();
                         readyQ = null;
                         continue;
+                    }
+                }
+            } while (readyQ == null);
+
+            if (readyQ == null) {
+                // no queues left in ready or readiable
+                break findauri;
+            }
+
+            returnauri: while(true) { // loop left by explicit return or break on empty
+                CrawlURI curi = null;
+                curi = readyQ.peek(this);
+                if(curi == null) {
+                    // should not reach
+                    logger.severe("No CrawlURI from ready non-empty queue "
+                            + readyQ.classKey + "\n"
+                            + readyQ.shortReportLegend() + "\n"
+                            + readyQ.shortReportLine() + "\n");
+                    break returnauri;
+                }
+
+                // from queues, override names persist but not map source
+                curi.setOverlayMapsSource(sheetOverlaysManager);
+                // TODO: consider optimizations avoiding this recalc of
+                // overrides when not necessary
+                sheetOverlaysManager.applyOverlaysTo(curi);
+                // check if curi belongs in different queue
+                String currentQueueKey;
+                try {
+                    KeyedProperties.loadOverridesFrom(curi);
+                    currentQueueKey = getClassKey(curi);
+                } finally {
+                    KeyedProperties.clearOverridesFrom(curi);
+                }
+                if (currentQueueKey.equals(curi.getClassKey())) {
+                    // curi was in right queue; apply queue-group gating and
+                    // round-robin (issue #754) if it belongs to a group,
+                    // otherwise emit exactly as before.
+                    QueueGroup group = groupFor(readyQ);
+                    if (group != null) {
+                        String memberKey = readyQ.getClassKey();
+                        long now = System.currentTimeMillis();
+                        synchronized (group) {
+                            // (a) shared gate closed: at concurrency ceiling
+                            // or in cool-down. Park the queue (snooze until
+                            // the group re-opens) and serve another queue.
+                            if (!group.canProceed(now)) {
+                                inProcessQueues.remove(readyQ);
+                                long until = Math.max(group.getWakeTime(), now + 1);
+                                snoozeQueue(readyQ, now, until - now);
+                                readyQ.makeDirty();
+                                readyQ = null;
+                                continue findauri;
+                            }
+                            // (b) not this member's turn: another member is
+                            // ahead in the rotation and ready. Requeue and
+                            // retry so the expected member gets served next.
+                            if (!group.isTurn(this::isMemberReady, memberKey)) {
+                                inProcessQueues.remove(readyQ);
+                                readyQueue(readyQ);
+                                readyQ.makeDirty();
+                                readyQ = null;
+                                continue findauri;
+                            }
+                            // (c) its turn and gate open: reserve a shared
+                            // slot, advance the rotation, and emit.
+                            group.acquire();
+                            group.advanceRotation(memberKey);
                         }
                     }
-                } while (readyQ == null);
-                
-                if (readyQ == null) {
-                    // no queues left in ready or readiable
-                    break findauri; 
+                    noteAboutToEmit(curi, readyQ);
+                    return curi;
                 }
-           
-                returnauri: while(true) { // loop left by explicit return or break on empty
-                    CrawlURI curi = null;
-                    curi = readyQ.peek(this);   
-                    if(curi == null) {
-                        // should not reach
-                        logger.severe("No CrawlURI from ready non-empty queue "
-                                + readyQ.classKey + "\n" 
-                                + readyQ.shortReportLegend() + "\n"
-                                + readyQ.shortReportLine() + "\n");
-                        break returnauri;
-                    }
-                    
-                    // from queues, override names persist but not map source
-                    curi.setOverlayMapsSource(sheetOverlaysManager);
-                    // TODO: consider optimizations avoiding this recalc of
-                    // overrides when not necessary
-                    sheetOverlaysManager.applyOverlaysTo(curi);
-                    // check if curi belongs in different queue
-                    String currentQueueKey;
-                    try {
-                        KeyedProperties.loadOverridesFrom(curi);
-                        currentQueueKey = getClassKey(curi);
-                    } finally {
-                        KeyedProperties.clearOverridesFrom(curi); 
-                    }
-                    if (currentQueueKey.equals(curi.getClassKey())) {
-                        // curi was in right queue, emit
-                        noteAboutToEmit(curi, readyQ);
-                        return curi;
-                    }
-                    // URI's assigned queue has changed since it
-                    // was queued (eg because its IP has become
-                    // known). Requeue to new queue.
-                    // TODO: consider synchronization on readyQ
-                    readyQ.dequeue(this,curi);
-                    doJournalRelocated(curi);
-                    curi.setClassKey(currentQueueKey);
-                    decrementQueuedCount(1);
-                    curi.setHolderKey(null);
-                    sendToQueue(curi);
-                    if(readyQ.getCount()==0) {
-                        // readyQ is empty and ready: it's exhausted
-                        // release held status, allowing any subsequent 
-                        // enqueues to again put queue in ready
-                        // FIXME: tiny window here where queue could 
-                        // receive new URI, be readied, fail not-in-process?
-                        inProcessQueues.remove(readyQ);
-                        readyQ.noteExhausted();
-                        readyQ.makeDirty();
-                        readyQ = null;
-                        continue findauri;
-                    }
+                // URI's assigned queue has changed since it
+                // was queued (eg because its IP has become
+                // known). Requeue to new queue.
+                // TODO: consider synchronization on readyQ
+                readyQ.dequeue(this,curi);
+                doJournalRelocated(curi);
+                curi.setClassKey(currentQueueKey);
+                decrementQueuedCount(1);
+                curi.setHolderKey(null);
+                sendToQueue(curi);
+                if(readyQ.getCount()==0) {
+                    // readyQ is empty and ready: it's exhausted
+                    // release held status, allowing any subsequent
+                    // enqueues to again put queue in ready
+                    // FIXME: tiny window here where queue could
+                    // receive new URI, be readied, fail not-in-process?
+                    inProcessQueues.remove(readyQ);
+                    readyQ.noteExhausted();
+                    readyQ.makeDirty();
+                    readyQ = null;
+                    continue findauri;
                 }
             }
-                
-            if(inProcessQueues.size()==0) {
-                // Nothing was ready or in progress or imminent to wake; ensure 
-                // any piled-up pending-scheduled URIs are considered
-                uriUniqFilter.requestFlush();
+        }
+
+        if(inProcessQueues.size()==0) {
+            // Nothing was ready or in progress or imminent to wake; ensure
+            // any piled-up pending-scheduled URIs are considered
+            uriUniqFilter.requestFlush();
+        }
+
+        // if truly nothing ready, wait a moment before returning null
+        // so that loop in surrounding next() has a chance of getting something
+        // next time
+        if(getTotalEligibleInactiveQueues()==0) {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                //
             }
-            
-            // if truly nothing ready, wait a moment before returning null
-            // so that loop in surrounding next() has a chance of getting something
-            // next time
-            if(getTotalEligibleInactiveQueues()==0) {
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    // 
-                } 
-            }
-            
-            // nothing eligible
-            return null; 
+        }
+
+        // nothing eligible
+        return null;
     }
 
     /**
@@ -745,9 +831,9 @@ implements Closeable,
         // TODO: consider only checking this every set interval
         if(!futureUris.isEmpty()) {
             synchronized(futureUris) {
-                Iterator<CrawlURI> iter = 
-                    futureUris.headMap(System.currentTimeMillis())
-                        .values().iterator();
+                Iterator<CrawlURI> iter =
+                        futureUris.headMap(System.currentTimeMillis())
+                                .values().iterator();
                 while(iter.hasNext()) {
                     CrawlURI curi = iter.next();
                     curi.setRescheduleTime(-1); // unless again set elsewhere
@@ -758,9 +844,9 @@ implements Closeable,
             }
         }
     }
-    
+
     /**
-     * Activate an inactive queue, if any are available. 
+     * Activate an inactive queue, if any are available.
      */
     protected boolean activateInactiveQueue() {
         for (Entry<Integer, Queue<String>> entry: getInactiveQueuesByPrecedence().entrySet()) {
@@ -802,8 +888,8 @@ implements Closeable,
 
     /**
      * Recalculate the value of thehighest-precedence queue waiting
-     * among inactive queues. 
-     * 
+     * among inactive queues.
+     *
      * @param startFrom start looking at this precedence value
      */
     protected void updateHighestWaiting(int startFrom) {
@@ -821,23 +907,23 @@ implements Closeable,
     /**
      * Enqueue the given queue to either readyClassQueues or inactiveQueues,
      * as appropriate.
-     * 
+     *
      * @param wq
      */
-    protected void reenqueueQueue(WorkQueue wq) { 
+    protected void reenqueueQueue(WorkQueue wq) {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("queue reenqueued: " +
-                wq.getClassKey());
+                    wq.getClassKey());
         }
-        if(highestPrecedenceWaiting < wq.getPrecedence() 
-            || wq.getPrecedence() >= getPrecedenceFloor()) {
+        if(highestPrecedenceWaiting < wq.getPrecedence()
+                || wq.getPrecedence() >= getPrecedenceFloor()) {
             // if still over budget, deactivate
             deactivateQueue(wq);
         } else {
             readyQueue(wq);
         }
     }
-    
+
     /* (non-Javadoc)
      * @see org.archive.crawler.frontier.AbstractFrontier#getMaxInWait()
      */
@@ -850,7 +936,7 @@ implements Closeable,
     /**
      * Utility method for advanced users/experimentation: force wake all snoozed
      * queues -- for example to kick a crawl where connectivity problems have
-     * put all queues in slow-retry-snoozes back to busy-ness. 
+     * put all queues in slow-retry-snoozes back to busy-ness.
      */
     public void forceWakeQueues() {
         Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
@@ -861,7 +947,7 @@ implements Closeable,
                 reenqueueQueue(queue);
                 queue.makeDirty();
             }
-            iterSnoozed.remove(); 
+            iterSnoozed.remove();
         }
         Iterator<DelayedWorkQueue> iterOverflow = snoozedOverflow.values().iterator();
         while(iterOverflow.hasNext()) {
@@ -871,16 +957,16 @@ implements Closeable,
                 reenqueueQueue(queue);
                 queue.makeDirty();
             }
-            iterOverflow.remove(); 
+            iterOverflow.remove();
             snoozedOverflowCount.decrementAndGet();
         }
     }
-    
+
     /**
      * Wake any queues sitting in the snoozed queue whose time has come.
      */
     protected void wakeQueues() {
-        DelayedWorkQueue waked; 
+        DelayedWorkQueue waked;
         while((waked = snoozedClassQueues.poll())!=null) {
             WorkQueue queue = waked.getWorkQueue(this);
             synchronized(queue) {
@@ -892,8 +978,8 @@ implements Closeable,
         // also consider overflow (usually empty)
         if(!snoozedOverflow.isEmpty()) {
             synchronized(snoozedOverflow) {
-                Iterator<DelayedWorkQueue> iter = 
-                    snoozedOverflow.headMap(System.currentTimeMillis()).values().iterator();
+                Iterator<DelayedWorkQueue> iter =
+                        snoozedOverflow.headMap(System.currentTimeMillis()).values().iterator();
                 while(iter.hasNext()) {
                     DelayedWorkQueue dq = iter.next();
                     iter.remove();
@@ -908,7 +994,7 @@ implements Closeable,
             }
         }
     }
-    
+
     /**
      * Note that the previously emitted CrawlURI has completed
      * its processing (for now).
@@ -918,20 +1004,20 @@ implements Closeable,
      * via the next next() call, as a result of finished().
      *
      * TODO: make as many decisions about what happens to the CrawlURI
-     * (success, failure, retry) and queue (retire, snooze, ready) as 
+     * (success, failure, retry) and queue (retire, snooze, ready) as
      * possible elsewhere, such as in DispositionProcessor. Then, break
-     * this into simple branches or focused methods for each case. 
-     *  
+     * this into simple branches or focused methods for each case.
+     *
      * @see org.archive.crawler.framework.Frontier#finished(org.archive.modules.CrawlURI)
      */
     protected void processFinish(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        
+
         long now = System.currentTimeMillis();
 
         curi.incrementFetchAttempts();
         logNonfatalErrors(curi);
-        
+
         WorkQueue wq = (WorkQueue) curi.getHolder();
         synchronized (wq) {
 
@@ -952,9 +1038,10 @@ implements Closeable,
                 }
                 long delay_ms = retryDelayFor(curi) * 1000;
                 curi.processingCleanup(); // lose state that shouldn't burden
-                                          // retry
+                // retry
                 wq.unpeek(curi);
                 wq.update(this, curi); // rewrite any changes
+                releaseGroup(wq, now, delay_ms);
                 handleQueue(wq, curi.includesRetireDirective(), now, delay_ms);
                 appCtx.publishEvent(new CrawlURIDispositionEvent(this, curi,
                         DEFERRED_FOR_RETRY));
@@ -1012,26 +1099,27 @@ implements Closeable,
             wq.expend(holderCost); // successes & failures charge cost to queue
 
             long delay_ms = curi.getPolitenessDelay();
+            releaseGroup(wq, now, delay_ms);
             handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
             wq.makeDirty();
         }
-        
+
         if(curi.getRescheduleTime()>0) {
             // marked up for forced-revisit at a set time
             curi.processingCleanup();
-            curi.resetForRescheduling(); 
+            curi.resetForRescheduling();
             futureUris.put(curi.getRescheduleTime(),curi);
-            futureUriCount.incrementAndGet(); 
+            futureUriCount.incrementAndGet();
         } else {
             curi.stripToMinimal();
             curi.processingCleanup();
         }
     }
-    
+
     /**
-     * Send an active queue to its next state, based on the supplied 
+     * Send an active queue to its next state, based on the supplied
      * parameters.
-     * 
+     *
      * @param wq
      * @param forceRetire
      * @param now
@@ -1051,10 +1139,10 @@ implements Closeable,
 
     /**
      * Place the given queue into 'snoozed' state, ineligible to
-     * supply any URIs for crawling, for the given amount of time. 
-     * 
-     * @param wq queue to snooze 
-     * @param now time now in ms 
+     * supply any URIs for crawling, for the given amount of time.
+     *
+     * @param wq queue to snooze
+     * @param now time now in ms
      * @param delay_ms time to snooze in ms
      */
     protected void snoozeQueue(WorkQueue wq, long now, long delay_ms) {
@@ -1120,14 +1208,14 @@ implements Closeable,
     //
     // Reporter implementation
     //
-    
-    
+
+
     @Override
     public Map<String, Object> shortReportMap() {
         if (this.allQueues == null) {
             return null;
         }
-        
+
         int allCount = allQueues.size();
         int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
@@ -1160,7 +1248,7 @@ implements Closeable,
     @Override
     public void shortReportLineTo(PrintWriter w) {
         if (!isRunning()) return; //???
-        
+
         if (this.allQueues == null) {
             return;
         }
@@ -1172,8 +1260,8 @@ implements Closeable,
         int inactiveCount = getTotalEligibleInactiveQueues();
         int ineligibleCount = getTotalIneligibleInactiveQueues();
         int retiredCount = getRetiredQueues().size();
-        int exhaustedCount = 
-            allCount - activeCount - inactiveCount - retiredCount;
+        int exhaustedCount =
+                allCount - activeCount - inactiveCount - retiredCount;
         State last = lastReachedState;
         w.print(last);
         w.print(" - ");
@@ -1194,30 +1282,30 @@ implements Closeable,
         w.print(retiredCount);
         w.print(" retired; ");
         w.print(exhaustedCount);
-        w.print(" exhausted");        
+        w.print(" exhausted");
         w.flush();
     }
 
     /**
      * Total of all URIs in inactive queues at all precedences
-     * @return int total 
+     * @return int total
      */
     protected int getTotalInactiveQueues() {
         return tallyInactiveTotals(getInactiveQueuesByPrecedence());
     }
-    
+
     /**
      * Total of all URIs in inactive queues at precedences above the floor
-     * @return int total 
+     * @return int total
      */
     protected int getTotalEligibleInactiveQueues() {
         return tallyInactiveTotals(
                 getInactiveQueuesByPrecedence().headMap(getPrecedenceFloor()));
     }
-    
+
     /**
      * Total of all URIs in inactive queues at precedences at or below the floor
-     * @return int total 
+     * @return int total
      */
     protected int getTotalIneligibleInactiveQueues() {
         return tallyInactiveTotals(
@@ -1225,13 +1313,13 @@ implements Closeable,
     }
 
     private int tallyInactiveTotals(SortedMap<Integer,Queue<String>> iqueues) {
-        int inactiveCount = 0; 
+        int inactiveCount = 0;
         for(Queue<String> q : iqueues.values()) {
             inactiveCount += q.size();
         }
         return inactiveCount;
     }
-    
+
     /* (non-Javadoc)
      * @see org.archive.util.Reporter#singleLineLegend()
      */
@@ -1254,9 +1342,9 @@ implements Closeable,
         int activeCount = inProcessCount + readyCount + snoozedCount;
         int inactiveCount = getTotalInactiveQueues();
         int retiredCount = getRetiredQueues().size();
-        int exhaustedCount = 
-            allCount - activeCount - inactiveCount - retiredCount;
-        
+        int exhaustedCount =
+                allCount - activeCount - inactiveCount - retiredCount;
+
         writer.print("Frontier report - ");
         writer.print(ArchiveUtils.get12DigitDate());
         writer.print("\n");
@@ -1308,7 +1396,7 @@ implements Closeable,
         writer.print(inactiveCount);
         writer.print(" (");
         Map<Integer,Queue<String>> inactives = getInactiveQueuesByPrecedence();
-        boolean betwixt = false; 
+        boolean betwixt = false;
         for(Integer k : inactives.keySet()) {
             if(betwixt) {
                 writer.print("; ");
@@ -1317,7 +1405,7 @@ implements Closeable,
             writer.print(k);
             writer.print(": ");
             writer.print(inactives.get(k).size());
-            betwixt = true; 
+            betwixt = true;
         }
         writer.print(")\n");
         writer.print("            Retired queues: ");
@@ -1326,31 +1414,31 @@ implements Closeable,
         writer.print("          Exhausted queues: ");
         writer.print(exhaustedCount);
         writer.print("\n");
-        
+
         State last = lastReachedState;
-        writer.print("\n             Last state: "+last);        
-        
+        writer.print("\n             Last state: "+last);
+
         writer.print("\n -----===== MANAGER THREAD =====-----\n");
         ToeThread.reportThread(managerThread, writer);
-        
+
         writer.print("\n -----===== "+largestQueues.size()+" LONGEST QUEUES =====-----\n");
         appendQueueReports(writer, "LONGEST", largestQueues.getEntriesDescending().iterator(), largestQueues.size(), largestQueues.size());
-        
+
         writer.print("\n -----===== IN-PROCESS QUEUES =====-----\n");
         Collection<WorkQueue> inProcess = inProcessQueues;
         ArrayList<WorkQueue> copy = extractSome(inProcess, maxQueuesPerReportCategory);
         appendQueueReports(writer, "IN-PROCESS", copy.iterator(), copy.size(), maxQueuesPerReportCategory);
-        
+
         writer.print("\n -----===== READY QUEUES =====-----\n");
         appendQueueReports(writer, "READY", this.readyClassQueues.iterator(),
-            this.readyClassQueues.size(), maxQueuesPerReportCategory);
-        
+                this.readyClassQueues.size(), maxQueuesPerReportCategory);
+
         writer.print("\n -----===== SNOOZED QUEUES =====-----\n");
         Object[] objs = snoozedClassQueues.toArray();
         DelayedWorkQueue[] qs = Arrays.copyOf(objs,objs.length,DelayedWorkQueue[].class);
         Arrays.sort(qs);
         appendQueueReports(writer, "SNOOZED", new ObjectArrayIterator(qs), getSnoozedCount(), maxQueuesPerReportCategory);
-        
+
         writer.print("\n -----===== INACTIVE QUEUES =====-----\n");
         SortedMap<Integer,Queue<String>> sortedInactives = getInactiveQueuesByPrecedence();
         for(Integer prec : sortedInactives.keySet()) {
@@ -1358,22 +1446,75 @@ implements Closeable,
             appendQueueReports(writer, "INACTIVE-p"+prec, inactiveQueues.iterator(),
                     inactiveQueues.size(), maxQueuesPerReportCategory);
         }
-        
+
         writer.print("\n -----===== RETIRED QUEUES =====-----\n");
         appendQueueReports(writer, "RETIRED", getRetiredQueues().iterator(),
-            getRetiredQueues().size(), maxQueuesPerReportCategory);
-        
+                getRetiredQueues().size(), maxQueuesPerReportCategory);
+
+        appendQueueGroupReport(writer);
+
         writer.flush();
     }
-    
+
+    /**
+     * Append a QUEUE GROUPS section describing the state of each configured
+     * {@link QueueGroup} (issue #754). Returns immediately (leaving the report
+     * byte-for-byte unchanged) when no {@link QueueGroupManager} is declared or
+     * it holds no groups, preserving the opt-in guarantee.
+     *
+     * @param writer report writer
+     */
+    protected void appendQueueGroupReport(PrintWriter writer) {
+        if (queueGroupManager == null) {
+            return;
+        }
+        List<QueueGroup> groups = queueGroupManager.getGroups();
+        if (groups == null || groups.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        writer.print("\n -----===== QUEUE GROUPS =====-----\n");
+        for (QueueGroup group : groups) {
+            writer.print(" Group: ");
+            writer.print(group.getName());
+            writer.print("\n");
+            writer.print("   maxParallelInGroup: ");
+            writer.print(group.getMaxParallelInGroup());
+            writer.print("   groupMinDelayMs: ");
+            writer.print(group.getGroupMinDelayMs());
+            writer.print("\n");
+            long cooldownRemaining = Math.max(0, group.getWakeTime() - now);
+            writer.print("   active (in-process): ");
+            writer.print(group.getActiveCount());
+            writer.print("   cooldown remaining (ms): ");
+            writer.print(cooldownRemaining);
+            writer.print("\n");
+            writer.print("   configured members by host: ");
+            writer.print(group.getGroupMembersByHost());
+            writer.print("\n");
+            writer.print("   configured members by regex: ");
+            writer.print(group.getGroupMembersByRegex());
+            writer.print("\n");
+            writer.print("   configured members by surt: ");
+            writer.print(group.getGroupMembersBySurt());
+            writer.print("\n");
+            List<String> discovered = group.memberKeys();
+            writer.print("   discovered queues (");
+            writer.print(discovered.size());
+            writer.print("): ");
+            writer.print(discovered);
+            writer.print("\n");
+        }
+    }
+
     /** Compact report of all nonempty queues (one queue per line)
-     * 
+     *
      * @param writer
      */
     public void allNonemptyReportTo(PrintWriter writer) {
         ArrayList<WorkQueue> inProcessQueuesCopy;
         synchronized(this.inProcessQueues) {
-            // grab a copy that will be stable against mods for report duration 
+            // grab a copy that will be stable against mods for report duration
             Collection<WorkQueue> inProcess = this.inProcessQueues;
             inProcessQueuesCopy = new ArrayList<WorkQueue>(inProcess);
         }
@@ -1386,28 +1527,28 @@ implements Closeable,
         writer.print("\n -----===== SNOOZED QUEUES =====-----\n");
         queueSingleLinesTo(writer, this.snoozedClassQueues.iterator());
         queueSingleLinesTo(writer, this.snoozedOverflow.values().iterator());
-        
+
         writer.print("\n -----===== INACTIVE QUEUES =====-----\n");
         for(Queue<String> inactiveQueues : getInactiveQueuesByPrecedence().values()) {
             queueSingleLinesTo(writer, inactiveQueues.iterator());
         }
-        
+
         writer.print("\n -----===== RETIRED QUEUES =====-----\n");
         queueSingleLinesTo(writer, getRetiredQueues().iterator());
     }
 
     /** Compact report of all nonempty queues (one queue per line)
-     * 
+     *
      * @param writer
      */
     public void allQueuesReportTo(PrintWriter writer) {
         queueSingleLinesTo(writer, allQueues.keySet().iterator());
     }
-    
+
     /**
      * Writer the single-line reports of all queues in the
-     * iterator to the writer 
-     * 
+     * iterator to the writer
+     *
      * @param writer to receive report
      * @param iterator over queues of interest.
      */
@@ -1429,7 +1570,7 @@ implements Closeable,
                     q = this.allQueues.get((String)obj);
                 } catch (ClassCastException cce) {
                     logger.log(Level.SEVERE,"not convertible to workqueue:"+obj,cce);
-                    q = null; 
+                    q = null;
                 }
             }
 
@@ -1442,7 +1583,7 @@ implements Closeable,
             } else {
                 writer.print(" ERROR: "+obj);
             }
-        }       
+        }
     }
 
     /**
@@ -1450,7 +1591,7 @@ implements Closeable,
      * ArrayList.  This method synchronizes on the given collection's
      * monitor.  The returned list will never contain more than the
      * specified maximum number of elements.
-     * 
+     *
      * @param c    the collection whose elements to extract
      * @param max  the maximum number of elements to extract
      * @return  the extraction
@@ -1475,13 +1616,13 @@ implements Closeable,
     /**
      * Append queue report to general Frontier report.
      * @param w StringBuffer to append to.
-     * @param iterator An iterator over 
+     * @param iterator An iterator over
      * @param total
      * @param max
      */
     @SuppressWarnings("rawtypes")
     protected void appendQueueReports(PrintWriter w, String label, Iterator<?> iterator,
-            int total, int max) {
+                                      int total, int max) {
         Object obj;
         WorkQueue q;
         int count;
@@ -1501,7 +1642,8 @@ implements Closeable,
             }
             if(q != null) {
                 w.println(label+"#"+count+":");
-                q.reportTo(w);
+                QueueGroup group = groupFor(q);
+                q.reportTo(group != null ? group.getName() : null, w);
             } else {
                 w.print("WARNING: No report for queue "+obj);
             }
@@ -1514,17 +1656,28 @@ implements Closeable,
 
     /**
      * Force logging, etc. of operator- deleted CrawlURIs
-     * 
+     *
      * @see org.archive.crawler.framework.Frontier#deleted(org.archive.modules.CrawlURI)
      */
     public void deleted(CrawlURI curi) {
         //treat as disregarded
         appCtx.publishEvent(
-            new CrawlURIDispositionEvent(this,curi,DISREGARDED));
+                new CrawlURIDispositionEvent(this,curi,DISREGARDED));
         log(curi);
         incrementDisregardedUriCount();
         curi.stripToMinimal();
         curi.processingCleanup();
+    }
+
+    @Override
+    protected void log(CrawlURI curi) {
+        if (queueGroupManager != null) {
+            QueueGroup group = queueGroupManager.groupFor(curi.getClassKey());
+            if (group != null) {
+                curi.getAnnotations().add("queueGroup:" + group.getName());
+            }
+        }
+        super.log(curi);
     }
 
     public void considerIncluded(CrawlURI curi) {
@@ -1543,25 +1696,25 @@ implements Closeable,
                 wq.makeDirty();
             }
         } finally {
-            KeyedProperties.clearOverridesFrom(curi); 
+            KeyedProperties.clearOverridesFrom(curi);
         }
     }
-    
+
     /**
      * Returns <code>true</code> if the WorkQueue implementation of this
      * Frontier stores its workload on disk instead of relying
      * on serialization mechanisms.
-     * 
+     *
      * TODO: rename! (this is a very misleading name) or kill (don't
      * see any implementations that return false)
-     * 
+     *
      * @return a constant boolean value for this class/instance
      */
     protected abstract boolean workQueueDataOnDisk();
 
     public long averageDepth() {
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
-            return 0; 
+            return 0;
         }
         int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
@@ -1571,14 +1724,14 @@ implements Closeable,
         int totalQueueCount = (activeCount+inactiveCount);
         return (totalQueueCount == 0) ? 0 : queuedUriCount.get() / totalQueueCount;
     }
-    
+
     protected int getSnoozedCount() {
         return snoozedClassQueues.size() + snoozedOverflowCount.get();
     }
-    
+
     public float congestionRatio() {
         if(inProcessQueues==null || readyClassQueues==null || snoozedClassQueues==null) {
-            return 0; 
+            return 0;
         }
         int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
@@ -1590,17 +1743,17 @@ implements Closeable,
     public long deepestUri() {
         return largestQueues.getTopSet().size()==0 ? -1 : largestQueues.getTopSet().get(largestQueues.getLargest());
     }
-    
-    /** 
+
+    /**
      * Return whether frontier is exhausted: all crawlable URIs done (none
      * waiting or pending). Only gives precise answer inside managerThread.
-     * 
+     *
      * @see org.archive.crawler.framework.Frontier#isEmpty()
      */
     public boolean isEmpty() {
-        return queuedUriCount.get() == 0 
-            && (uriUniqFilter == null || uriUniqFilter.pending() == 0)
-            && futureUriCount.get() == 0;
+        return queuedUriCount.get() == 0
+                && (uriUniqFilter == null || uriUniqFilter.pending() == 0)
+                && futureUriCount.get() == 0;
     }
 
     /* (non-Javadoc)
@@ -1610,5 +1763,5 @@ implements Closeable,
     protected int getInProcessCount() {
         return inProcessQueues.size();
     }
-    
+
 } // TODO: slim class! Suspect it should be < 800 lines, shedding budgeting/reporting

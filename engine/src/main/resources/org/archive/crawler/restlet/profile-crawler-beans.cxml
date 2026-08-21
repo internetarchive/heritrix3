@@ -469,7 +469,45 @@ http://example.example/example
   <!-- <property name="dumpPendingAtClose" value="false" /> -->
  </bean>
  
- <!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
+ <!-- QUEUE GROUPS (issue #754): OPTIONAL, opt-in. When this bean is absent
+      (as by default, being commented out below), the frontier behaves
+      exactly as before. Uncomment and adapt to group several per-host queues
+      so they share a single politeness gate (shared concurrency + shared
+      cool-down) and are served round-robin, like a single visitor toward one
+      web server. See docs/QUEUE_GROUPS.md. -->
+ <!--
+ <bean id="queueGroups" class="org.archive.crawler.frontier.QueueGroupManager">
+  <property name="groups">
+   <list>
+    <bean class="org.archive.crawler.frontier.QueueGroup">
+     <property name="name" value="europa_eu" />
+     <property name="maxParallelInGroup" value="1" />
+     <property name="groupMinDelayMs" value="4000" />
+     <property name="groupMembersByHost">
+      <list>
+       <value>european-union.europa.eu</value>
+       <value>commission.europa.eu</value>
+       <value>data.europa.eu</value>
+       <value>op.europa.eu</value>
+      </list>
+     </property>
+     <property name="groupMembersByRegex">
+      <list>
+       <value>.*\.europa\.eu</value>
+      </list>
+     </property>
+     <property name="groupMembersBySurt">
+      <list>
+       <value>http://(eu,europa,</value>
+      </list>
+     </property>
+    </bean>
+   </list>
+  </property>
+ </bean>
+ -->
+
+ <!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs -->
  <bean id="uriUniqFilter" 
    class="org.archive.crawler.util.BdbUriUniqFilter">
  </bean>
