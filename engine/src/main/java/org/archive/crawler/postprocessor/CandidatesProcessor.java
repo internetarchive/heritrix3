@@ -123,7 +123,7 @@ public class CandidatesProcessor extends Processor {
         return (Boolean) kp.get("processErrorOutlinks");
     }
     /**
-     * If true, outlinks from status codes <200 and >=400
+     * If true, outlinks from status codes &lt;200 and &gt;=400
      * will be sent through candidates processing. Default is
      * false.
      */

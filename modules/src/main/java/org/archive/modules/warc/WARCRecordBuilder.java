@@ -35,7 +35,7 @@ public interface WARCRecordBuilder {
      * @param concurrentTo implementations should do this:
      * <pre>    if (concurrentTo != null) {
      *        recordInfo.addExtraHeader(HEADER_KEY_CONCURRENT_TO,
-     *                "<" + concurrentTo + ">");
+     *                "&lt;" + concurrentTo + "&gt;");
      *    }</pre>
      * @return the freshly built warc record
      * @throws IOException
