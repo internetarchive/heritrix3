@@ -4,6 +4,56 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.16.0...HEAD)
 
+## [3.17.0](https://github.com/internetarchive/heritrix3/releases/tag/3.17.0)  (2026-08-25)
+
+[Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.17.0/heritrix-3.17.0-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.17.0/heritrix-3.17.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.16.0...3.17.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.17.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.17.0/pom)
+
+### New features
+
+* **SourceTagsReport**: Added an `includeResCode` property to include HTTP response codes in the report. [#758](https://github.com/internetarchive/heritrix3/pull/758)
+* **ResponseCodeReport**: Heritrix error codes (negative response codes) are now included in the report. [#757](https://github.com/internetarchive/heritrix3/pull/757)
+* **BotBlockDetector**: Added a new processor that detects responses from common bot-blocking services (Akamai, Anubis, Cloudflare, DataDome, and Incapsula) and annotates affected URIs with `botblock:<service>`. [#760](https://github.com/internetarchive/heritrix3/pull/760)
+
+### Bug fixes
+
+* **BrowserProcessor and LocalWebDriverBiDi**: [#750](https://github.com/internetarchive/heritrix3/pull/750)
+  * Automatically restart the browser if it crashes during a visit.
+  * Added null checks and improved error handling when closing tabs and continuing intercepted requests.
+  * Fixed `UnsupportedOperationException` when mapping `Void` results in `BiDiJson`.
+  * Serialized WebSocket sends to prevent `IllegalStateException` from concurrent `sendText` calls.
+  * Added timeout and cleanup logic when the browser fails to start.
+  * Ensured `close()` reliably terminates the browser process and fails pending commands when the connection is lost.
+* **MetadataRecordBuilder**: Added a null check for `curi.getVia()` to prevent `NullPointerException` during WARC metadata generation. [#751](https://github.com/internetarchive/heritrix3/pull/751)
+* **Reports**: Report generation now returns a clear message instead of failing when BDB is not running. [#759](https://github.com/internetarchive/heritrix3/pull/759)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.33.0 → 5.35.0
+* **codemirror__autocomplete**: 6.20.1 → 6.20.3
+* **codemirror__commands**: 6.10.2 → 6.10.4
+* **codemirror__language**: 6.12.2 → 6.12.4
+* **codemirror__lint**: 6.9.5 → 6.9.7
+* **codemirror__state**: 6.5.4 → 6.7.1
+* **codemirror__view**: 6.39.16 → 6.43.7
+* **commons-codec**: 1.22.0 → 1.22.1
+* **crelt**: 1.0.6 → 1.0.7
+* **groovy-bom**: 5.0.6 → 5.1.0
+* **jackson-bom**: 2.22.0 → 2.22.2
+* **java-socks-proxy-server**: 4.1.2 → 4.2.0
+* **jetty** (jetty-bom, jetty-ee10-bom): 12.0.36 → 12.0.38
+* **jsch**: 2.28.3 → 2.28.7
+* **junit-jupiter**: 6.1.1 → 6.1.3
+* **lezer__common**: 1.5.1 → 1.5.2
+* **lezer__lr**: 1.4.8 → 1.4.10
+* **lz4-java**: 1.11.0 → 1.11.2
+* **marijn__find-cluster-break**: 1.0.2 → 1.0.3
+* **pdfbox**: 3.0.7 → 3.0.8
+* **spring** (spring-beans, spring-context, spring-core, spring-expression): 7.0.8 → 7.0.9
+* **webarchive-commons**: 3.0.4 → 3.0.5 
+* **webjars-locator-lite**: 1.1.3 → 1.1.4
+
 ## [3.16.0](https://github.com/internetarchive/heritrix3/releases/tag/3.16.0)  (2026-07-03)
 
 [Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.16.0/heritrix-3.16.0-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.16.0/heritrix-3.16.0-dist.tar.gz))

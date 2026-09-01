@@ -521,6 +521,24 @@ ScrollDownBehavior
 
 .. bean-doc:: org.archive.modules.behaviors.ScrollDownBehavior
 
+Miscellaneous Processors
+------------------------
+
+BotBlockDetector
+~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.processor.BotBlockDetector
+
+HashCrawlMapper
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.processor.HashCrawlMapper
+
+LexicalCrawlMapper
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.processor.LexicalCrawlMapper
+
 Post-Processors
 ---------------
 

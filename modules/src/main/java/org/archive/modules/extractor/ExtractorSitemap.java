@@ -23,7 +23,7 @@ import crawlercommons.sitemaps.UnknownFormatException;
 
 /**
  * 
- * @author Andrew Jackson <Andrew.Jackson@bl.uk>
+ * @author Andrew Jackson &lt;Andrew.Jackson@bl.uk&gt;
  *
  */
 public class ExtractorSitemap extends ContentExtractor {

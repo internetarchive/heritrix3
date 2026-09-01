@@ -46,15 +46,15 @@
         such essentials as the CandidateURI and CrawlURI classes that wrap the 
         discovered URIs for processing.
 
-    <h3>admin</h3>
+    <h3>restlet</h3>
     <p>
-        {@link org.archive.crawler.admin org.archive.crawler.admin}
+        {@link org.archive.crawler.restlet org.archive.crawler.restlet}
     <p>
-        The <tt>admin</tt> package contains classes that are used by the Web UI.
-        This includes some core classes and a specific implementation of the 
-        <tt>Statistics Tracking</tt> interface found in the <tt>framework</tt>
-        package that is designed to provide the UI with information about 
-        ongoing crawls.
+        The <tt>restlet</tt> package implements the Web UI and REST API. Its
+        resources provide access to the crawl engine, jobs, configuration,
+        scripts, and reports. The
+        {@link org.archive.crawler.reporting.StatisticsTracker StatisticsTracker}
+        supplies progress information and reports for ongoing crawls.
 
     <h2>Pluggable modules</h2>
     <p>
@@ -96,7 +96,7 @@
             <li>Post-processing chain
         </ol>
         Each of these chains contain any number of <tt>processors</tt>. The processors
-        all inherit from a generic {@link org.archive.crawler.framework.Processor
+        all inherit from a generic {@link org.archive.modules.Processor
         Processor}. While the processors are divided into the five categories above that
         is strictly a high level configuration and any processor can be in any chain
         (although doing link extraction before fetching a document is clearly of no
@@ -105,12 +105,12 @@
         Numerous processors are provided with Heritrix in the following packages:<br>
         {@link org.archive.crawler.prefetch org.archive.crawler.prefetch} package
         contains processors run before the URI is fetched from the Internet.<br>
-        {@link org.archive.crawler.fetcher org.archive.crawler.fetcher} package
+        {@link org.archive.modules.fetcher org.archive.modules.fetcher} package
         contains processors that fetch URI from the Internet. Typically each
         processor handles a different protocol.<br>
-        {@link org.archive.crawler.extractor org.archive.crawler.extractor} package
+        {@link org.archive.modules.extractor org.archive.modules.extractor} package
         contains processors that perform link extractions on various document types.<br>
-        {@link org.archive.crawler.writer org.archive.crawler.writer} package contains
+        {@link org.archive.modules.writer org.archive.modules.writer} package contains
         a processor that writes an ARC file with the fetched document.<br>
         {@link org.archive.crawler.postprocessor org.archive.crawler.postprocessor}
         package contain processors that do wrapup on the processing, reporting links
@@ -131,10 +131,10 @@
         of a crawl can be more easily achived using one of the existing scopes and
         modifying it with appropriate filters.
     <p>
-        {@link org.archive.crawler.framework.CrawlScope CrawlScope} - Base class for
-        scopes.<br>
-        {@link org.archive.crawler.scope org.archive.crawler.scope} package. Contains 
-        provided scopes.
+        {@link org.archive.modules.deciderules.DecideRule DecideRule} is the base
+        class for rules used to define scope. The
+        {@link org.archive.modules.deciderules org.archive.modules.deciderules}
+        package contains the provided rules.
         
     <h3>Statistics Tracking</h3>
     <p>
@@ -143,16 +143,12 @@
     <p>
         These modules can both interrogate the <tt>Frontier</tt> for what sparse
         date it exposes but they can also subscribe to 
-        {@link org.archive.crawler.event.CrawlURIDispositionListener Crawled URI
+        {@link org.archive.crawler.event.CrawlURIDispositionEvent Crawled URI
         Disposition} events to monitor the completion of each URI that is processed.
     <p>
-        An interface for {@link org.archive.crawler.framework.StatisticsTracking
-        statistics tracking} is provided as well as a partial implementation 
-        ({@link org.archive.crawler.framework.AbstractTracker AbstractTracker}) 
-        that does much of the work common to most statistics tracking modules.
-    <p>
-        Furthermore the <tt>admin</tt> package implements a statistics tracking
-        module ({@link org.archive.crawler.admin.StatisticsTracker StatisticsTracker})
+        The {@link org.archive.crawler.reporting org.archive.crawler.reporting}
+        package provides a statistics tracking module
+        ({@link org.archive.crawler.reporting.StatisticsTracker StatisticsTracker})
         that generates a log of the crawlers progress as well as providing information
         that the UI uses. It also compiles end-of-crawl reports that contain all of the
         information it has gathered in the course of the crawl.<br>
