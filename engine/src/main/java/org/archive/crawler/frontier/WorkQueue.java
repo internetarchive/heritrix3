@@ -1,8 +1,8 @@
 /*
  *  This file is part of the Heritrix web crawler (crawler.archive.org).
  *
- *  Licensed to the Internet Archive (IA) by one or more individual
- *  contributors.
+ *  Licensed to the Internet Archive (IA) by one or more individual 
+ *  contributors. 
  *
  *  The IA licenses this file to You under the Apache License, Version 2.0
  *  (the "License"); you may not use this file except in compliance with
@@ -18,7 +18,7 @@
  */
 
 package org.archive.crawler.frontier;
-
+ 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -45,7 +45,7 @@ import org.archive.util.Reporter;
 /**
  * A single queue of related URIs to visit, grouped by a classKey
  * (typically "hostname:port" or similar) 
- *
+ * 
  * @author gojomo
  * @author Christian Kohlschuetter 
  */
@@ -53,8 +53,8 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         Serializable, Reporter, Delayed, IdentityCacheable {
     private static final long serialVersionUID = -3199666138837266341L;
     private static final Logger logger =
-            Logger.getLogger(WorkQueue.class.getName());
-
+        Logger.getLogger(WorkQueue.class.getName());
+    
     /** The classKey */
     protected final String classKey;
 
@@ -66,7 +66,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /** Total number of items ever enqueued */
     protected long enqueueCount = 0;
-
+    
     /** Whether queue is already in lifecycle stage */
     protected boolean isManaged = false;
 
@@ -75,7 +75,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /** assigned precedence */
     protected PrecedenceProvider precedenceProvider = new SimplePrecedenceProvider(1);
-
+            
     /** Per-session 'budget' controlling activity duration */
     protected int sessionBudget = 0;
 
@@ -91,7 +91,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /** Record of expenditures at last activation (session start) */
     protected long expenditureAtLastActivation = 0;
-
+    
     /** Total to spend on this queue over its lifetime */
     protected long totalBudget = 0;
 
@@ -104,12 +104,12 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /** Last URI peeked */
     protected String lastPeeked;
 
-    /** time of last dequeue (disposition of some URI) **/
+    /** time of last dequeue (disposition of some URI) **/ 
     protected long lastDequeueTime;
-
+    
     /** count of errors encountered */
     protected long errorCount = 0;
-
+    
     /** Substats for all CrawlURIs in this group */
     protected FetchStats substats = new FetchStats();
 
@@ -140,12 +140,12 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Add the given CrawlURI, noting its addition in running count. (It
      * should not already be present.)
-     *
+     * 
      * @param frontier Work queues manager.
      * @param curi CrawlURI to insert.
      */
     protected synchronized long enqueue(final WorkQueueFrontier frontier,
-                                        CrawlURI curi) {
+        CrawlURI curi) {
         try {
             insert(frontier, curi, false);
         } catch (IOException e) {
@@ -162,10 +162,10 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * Return the topmost queue item -- and remember it,
      * such that even later higher-priority inserts don't
      * change it. 
-     *
+     * 
      * TODO: evaluate if this is really necessary
      * @param frontier Work queues manager
-     *
+     * 
      * @return topmost queue item, or null
      */
     public synchronized CrawlURI peek(final WorkQueueFrontier frontier) {
@@ -187,7 +187,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /**
      * Remove the peekItem from the queue and adjusts the count.
-     *
+     * 
      * @param frontier  Work queues manager.
      */
     protected synchronized void dequeue(final WorkQueueFrontier frontier, CrawlURI expected) {
@@ -209,7 +209,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * here by operator will not persist. Instead, change the 'balanceReplenishAmount' 
      * (or overlay its value with a URI/queue-specific value) to affect this
      * value.
-     *
+     * 
      * @param budget to use
      */
     protected void setSessionBudget(int budget) {
@@ -218,7 +218,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /**
      * Return current session 'activity budget balance' 
-     *
+     * 
      * @return session balance
      */
     public int getSessionBudget() {
@@ -232,21 +232,21 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      */
     public synchronized void considerActive() {
         if(active) {
-            return;
+            return; 
         }
-        active=true;
+        active=true; 
         expenditureAtLastActivation = totalExpenditure;
     }
-
+    
     /**
      * Set the total expenditure level allowable before queue is 
      * considered inherently 'over-budget'. 
-     *
+     * 
      * Automatically reset continually as new CrawlURIs are enqueued; a direct change
      * here by operator will not persist. Instead, change the 'queueTotalBudget' 
      * (or overlay its value with a URI/queue-specific value) to affect this
      * value.
-     *
+     * 
      * @param budget
      */
     protected void setTotalBudget(long budget) {
@@ -255,7 +255,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /**
      * Check whether queue has temporarily (session) exceeded its budget.
-     *
+     * 
      * @return true if queue is over either of its set budget(s)
      */
     public boolean isOverSessionBudget() {
@@ -266,7 +266,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     /**
      * Check whether queue has permanently (total) exceeded its budget.
-     *
+     * 
      * @return true if queue is over either of its set budget(s)
      */
     public boolean isOverTotalBudget() {
@@ -274,10 +274,10 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         // or totalExpenditure exceeds totalBudget
         return (this.totalBudget >= 0 && this.totalExpenditure >= this.totalBudget);
     }
-
+    
     /**
      * Return the tally of all expenditures on this queue
-     *
+     * 
      * @return total amount expended on this queue
      */
     public long getTotalExpenditure() {
@@ -287,7 +287,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Decrease the internal running budget by the given amount. (Use
      * negative value to effect 'refund'/undo.)
-     *
+     * 
      * @param amount tp decrement
      */
     public void expend(int amount) {
@@ -296,11 +296,11 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
             this.lastCost = amount;
             this.costCount++;
         } else {
-            this.costCount--;
+            this.costCount--; 
         }
     }
 
-
+    
     /**
      * Note an error and assess an extra penalty. 
      * @param penalty additional amount to deduct
@@ -309,7 +309,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         this.totalExpenditure = this.totalExpenditure + penalty;
         errorCount++;
     }
-
+    
     /**
      * @param l
      */
@@ -334,7 +334,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Forgive the peek, allowing a subsequent peek to 
      * return a different item. 
-     *
+     * 
      */
     public synchronized void unpeek(CrawlURI expected) {
         assert expected == peekItem : "unexpected peekItem";
@@ -369,7 +369,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Update the given CrawlURI, which should already be present. (This
      * is not checked.) Equivalent to an enqueue without affecting the count.
-     *
+     * 
      * @param frontier Work queues manager.
      * @param curi CrawlURI to update.
      */
@@ -384,7 +384,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Count of URIs in this queue. Only precise if called within frontier's
      * manager thread. 
-     *
+     * 
      * @return Returns the count.
      */
     public synchronized long getCount() {
@@ -398,8 +398,8 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @throws IOException
      */
     private void insert(final WorkQueueFrontier frontier, CrawlURI curi,
-                        boolean overwriteIfPresent)
-            throws IOException {
+            boolean overwriteIfPresent)
+        throws IOException {
         insertItem(frontier, curi, overwriteIfPresent);
         lastQueued = curi.toString();
     }
@@ -407,13 +407,13 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /**
      * Insert the given curi, whether it is already present or not.
      * Hook for subclasses. 
-     *
+     * 
      * @param frontier WorkQueueFrontier.
      * @param curi CrawlURI to insert.
      * @throws IOException  if there was a problem while inserting the item
      */
     protected abstract void insertItem(final WorkQueueFrontier frontier,
-                                       CrawlURI curi, boolean overwriteIfPresent) throws IOException;
+        CrawlURI curi, boolean overwriteIfPresent) throws IOException;
 
     /**
      * Delete URIs matching the given pattern from this queue. 
@@ -423,29 +423,29 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * @throws IOException  if there was a problem while deleting
      */
     protected abstract long deleteMatchingFromQueue(
-            final WorkQueueFrontier frontier, final String match)
-            throws IOException;
+        final WorkQueueFrontier frontier, final String match)
+        throws IOException;
 
     /**
      * Removes the given item from the queue.
-     *
+     * 
      * This is only used to remove the first item in the queue,
      * so it is not necessary to implement a random-access queue.
-     *
+     * 
      * @param frontier  Work queues manager.
      * @throws IOException  if there was a problem while deleting the item
      */
     protected abstract void deleteItem(final WorkQueueFrontier frontier,
-                                       final CrawlURI item) throws IOException;
+        final CrawlURI item) throws IOException;
 
     /**
      * Returns first item from queue (does not delete)
-     *
+     * 
      * @return The peeked item, or null
      * @throws IOException  if there was a problem while peeking
      */
     protected abstract CrawlURI peekItem(final WorkQueueFrontier frontier)
-            throws IOException;
+        throws IOException;
 
     // 
     // Reporter
@@ -504,7 +504,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print(lastCost);
         writer.print("(");
         writer.print(ArchiveUtils.doubleToString(
-                ((double) totalExpenditure / costCount), 1));
+                    ((double) totalExpenditure / costCount), 1));
         writer.print(")");
         writer.print(" ");
         // last dequeue time, if any, or '-'
@@ -539,11 +539,11 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
                 "lastCost (averageCost) lastDequeueTime wakeTime " +
                 "totalSpend/totalBudget errorCount lastPeekUri lastQueuedUri";
     }
-
+    
     public String shortReportLine() {
         return ReportUtils.shortReportLine(this);
     }
-
+    
     @Override
     public synchronized void reportTo(PrintWriter writer) {
         reportTo(null, writer);
@@ -583,7 +583,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print(lastCost);
         writer.print("(");
         writer.print(ArchiveUtils.doubleToString(
-                ((double) totalExpenditure / costCount), 1));
+                    ((double) totalExpenditure / costCount), 1));
         writer.print(")\n   ");
         writer.print(getSubstats().shortReportLegend());
         writer.print("\n   ");
@@ -594,20 +594,20 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         writer.print(getPrecedenceProvider().shortReportLine());
         writer.print("\n\n");
     }
-
+    
     public FetchStats getSubstats() {
         return substats;
     }
 
     /**
      * Set the retired status of this queue.
-     *
+     * 
      * @param b new value for retired status
      */
     protected void setRetired(boolean b) {
         this.retired = b;
     }
-
+    
     public boolean isRetired() {
         return retired;
     }
@@ -625,7 +625,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     public void setPrecedenceProvider(PrecedenceProvider precedenceProvider) {
         this.precedenceProvider = precedenceProvider;
     }
-
+    
     /**
      * @return the precedence
      */
@@ -647,17 +647,17 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      */
     public synchronized void noteDeactivated() {
         active = false;
-        isManaged = true;
+        isManaged = true; 
         makeDirty();
     }
-
+    
     /**
      * Update queue state to recognize it has been completely exhausted,
      * and is no longer on any of the ready/inactive queues-of-queues
      */
     public synchronized void noteExhausted() {
         active = false;
-        isManaged = false;
+        isManaged = false; 
         makeDirty();
     }
 
@@ -665,13 +665,13 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      * Whether the queue is already in a lifecycle stage --
      * such as ready, in-progress, snoozed -- and thus should
      * not be redundantly inserted to readyClassQueues
-     *
+     * 
      * @return isManaged
      */
     public boolean isManaged() {
         return isManaged;
     }
-
+    
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -679,7 +679,7 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return super.toString()+"("+getClassKey()+")";
     }
 
-
+    
     //
     // IdentityCacheable support
     //
@@ -696,6 +696,6 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
 
     @Override
     public void setIdentityCache(ObjectIdentityCache<?> cache) {
-        this.cache = cache;
-    }
+        this.cache = cache; 
+    } 
 }
