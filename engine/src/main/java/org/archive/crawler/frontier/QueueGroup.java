@@ -209,10 +209,7 @@ public class QueueGroup implements Serializable {
                 || classKey.startsWith(value + "+")) {
             return true;
         }
-        // SURT-prefix member (ends with a comma), e.g. "eu,europa,"
-        if (value.endsWith(",") && classKey.startsWith(value)) {
-            return true;
-        }
+        
         return false;
     }
 
