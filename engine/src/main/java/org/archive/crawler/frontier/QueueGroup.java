@@ -21,11 +21,7 @@ package org.archive.crawler.frontier;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * A "queue group": a set of otherwise-independent per-host work queues
@@ -67,9 +63,6 @@ import java.util.regex.PatternSyntaxException;
 public class QueueGroup implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final Logger logger =
-            Logger.getLogger(QueueGroup.class.getName());
-
     /** Human-readable, unique name of the group (e.g. "europa_eu"). */
     protected String name;
 
@@ -77,7 +70,7 @@ public class QueueGroup implements Serializable {
     protected List<String> groupMembersByHost = new ArrayList<String>();
 
     /** Regex member matchers, matched against the host part of the classKey. */
-    protected List<String> groupMembersByRegex = new ArrayList<String>();
+    protected List<Pattern> groupMembersByRegex = new ArrayList<Pattern>();
 
     /** SURT-prefix member matchers, matched against the classKey. */
     protected List<String> groupMembersBySurt = new ArrayList<String>();
@@ -108,10 +101,6 @@ public class QueueGroup implements Serializable {
     protected transient java.util.LinkedHashSet<String> discoveredMembers =
             new java.util.LinkedHashSet<String>();
 
-    /** Cache of compiled regex patterns, keyed by the raw member string. */
-    protected transient ConcurrentHashMap<String, Pattern> regexCache =
-            new ConcurrentHashMap<String, Pattern>();
-
     public QueueGroup() {
     }
 
@@ -137,14 +126,14 @@ public class QueueGroup implements Serializable {
                 : new ArrayList<String>();
     }
 
-    public List<String> getGroupMembersByRegex() {
+    public List<Pattern> getGroupMembersByRegex() {
         return groupMembersByRegex;
     }
 
-    public void setGroupMembersByRegex(List<String> groupMembersByRegex) {
+    public void setGroupMembersByRegex(List<Pattern> groupMembersByRegex) {
         this.groupMembersByRegex = (groupMembersByRegex != null)
-                ? new ArrayList<String>(groupMembersByRegex)
-                : new ArrayList<String>();
+                ? new ArrayList<Pattern>(groupMembersByRegex)
+                : new ArrayList<Pattern>();
     }
 
     public List<String> getGroupMembersBySurt() {
@@ -228,18 +217,14 @@ public class QueueGroup implements Serializable {
     }
 
     /**
-     * @return true if the given regex value matches the host part of classKey.
+     * @return true if the given regex pattern matches the host part of classKey.
      */
-    protected boolean matchesRegex(String value, String classKey) {
-        if (value == null || value.isEmpty() || classKey == null) {
-            return false;
-        }
-        Pattern p = regexPattern(value);
-        if (p == null) {
+    protected boolean matchesRegex(Pattern pattern, String classKey) {
+        if (pattern == null || classKey == null) {
             return false;
         }
         String host = hostPart(classKey);
-        return host != null && p.matcher(host).matches();
+        return host != null && pattern.matcher(host).matches();
     }
 
     /**
@@ -250,29 +235,6 @@ public class QueueGroup implements Serializable {
             return false;
         }
         return classKey.startsWith(value);
-    }
-
-    /**
-     * Compile (and cache) the regex for a regex member. Returns null if the
-     * pattern is invalid (a warning is logged once per member).
-     */
-    protected Pattern regexPattern(String value) {
-        if (regexCache == null) {
-            regexCache = new ConcurrentHashMap<String, Pattern>();
-        }
-        Pattern cached = regexCache.get(value);
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            Pattern p = Pattern.compile(value);
-            regexCache.put(value, p);
-            return p;
-        } catch (PatternSyntaxException e) {
-            logger.log(Level.WARNING, "invalid regex member '" + value
-                    + "' in queue group '" + name + "': " + e.getMessage());
-            return null;
-        }
     }
 
     /**
@@ -290,8 +252,8 @@ public class QueueGroup implements Serializable {
             }
         }
         if (groupMembersByRegex != null) {
-            for (String value : groupMembersByRegex) {
-                if (matchesRegex(value, classKey)) {
+            for (Pattern pattern : groupMembersByRegex) {
+                if (matchesRegex(pattern, classKey)) {
                     return true;
                 }
             }

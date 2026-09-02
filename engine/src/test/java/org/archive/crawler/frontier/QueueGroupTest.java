@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,7 +42,7 @@ public class QueueGroupTest {
                 "european-union.europa.eu",           // exact host
                 "commission.europa.eu"));             // exact host
         g.setGroupMembersByRegex(Arrays.asList(
-                ".*\\.example\\.org"));                // regex on host part
+                Pattern.compile(".*\\.example\\.org")));  // regex on host part
         g.setGroupMembersBySurt(Arrays.asList(
                 "http://(eu,europa,"));                // surt prefix
         return g;
@@ -76,11 +77,10 @@ public class QueueGroupTest {
     }
 
     @Test
-    public void testInvalidRegexIsIgnored() {
+    public void testRegexOnlyMatchesConfiguredPattern() {
         QueueGroup g = new QueueGroup("bad");
-        g.setGroupMembersByRegex(Arrays.asList("[unclosed"));
+        g.setGroupMembersByRegex(Arrays.asList(Pattern.compile("good\\..*")));
         g.setGroupMembersByHost(Arrays.asList("good.host"));
-        // invalid regex never throws, and does not match
         assertFalse(g.matches("anything"));
         assertTrue(g.matches("good.host"));
     }

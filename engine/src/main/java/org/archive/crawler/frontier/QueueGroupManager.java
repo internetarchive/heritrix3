@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Optional bean holding the configured {@link QueueGroup}s and resolving a
@@ -142,7 +143,7 @@ public class QueueGroupManager implements Serializable {
     public synchronized boolean addRegexMember(String groupName, String member) {
         for (QueueGroup g : groups) {
             if (g.getName() != null && g.getName().equals(groupName)) {
-                g.getGroupMembersByRegex().add(member);
+                g.getGroupMembersByRegex().add(Pattern.compile(member));
                 clearCache();
                 return true;
             }
