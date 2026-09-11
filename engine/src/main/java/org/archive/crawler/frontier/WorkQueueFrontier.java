@@ -1041,7 +1041,7 @@ implements Closeable,
                                           // retry
                 wq.unpeek(curi);
                 wq.update(this, curi); // rewrite any changes
-                releaseGroup(wq, now, delay_ms);
+                releaseGroup(wq, now, 0);
                 handleQueue(wq, curi.includesRetireDirective(), now, delay_ms);
                 appCtx.publishEvent(new CrawlURIDispositionEvent(this, curi,
                         DEFERRED_FOR_RETRY));
