@@ -167,6 +167,109 @@ public class QueueGroupTest {
         assertTrue(g.isTurn(readyChecker, "c"));
     }
 
+    // ---- anti-starvation (fairness) ----
+
+    /**
+     * Anti-starvation test: a very prolific host ("a", always ready) shares a
+     * single group slot with two quieter hosts ("b" and "c", also ready). This
+     * simulates what the frontier's serving loop does at each opening of the
+     * shared gate: among the ready members, only the one for which
+     * {@link QueueGroup#isTurn} returns true is emitted, then
+     * {@link QueueGroup#advanceRotation} moves the pointer forward.
+     *
+     * <p>Without the intra-group round-robin, a prolific "a" (always at the head
+     * of the global FIFO because it keeps re-filling) could keep grabbing the
+     * shared slot and starve "b" and "c". With the rotation, each member gets a
+     * roughly equal share of the gate openings.</p>
+     */
+    @Test
+    public void testProlificHostDoesNotStarveOthers() {
+        QueueGroup g = new QueueGroup("g");
+        g.setMaxParallelInGroup(1);
+        g.noteMember("a"); // prolific host, always ready
+        g.noteMember("b"); // quieter host
+        g.noteMember("c"); // quieter host
+
+        // All three members are always ready to be served.
+        Predicate<String> allReady = k -> true;
+        java.util.List<String> members = g.memberKeys();
+
+        java.util.Map<String, Integer> served =
+                new java.util.HashMap<String, Integer>();
+
+        int openings = 30; // number of times the shared gate opens
+        for (int i = 0; i < openings; i++) {
+            // Emulate the frontier: find which member's turn it is now and
+            // serve exactly that one, then advance the rotation.
+            String servedKey = null;
+            for (String member : members) {
+                if (g.isTurn(allReady, member)) {
+                    servedKey = member;
+                    break;
+                }
+            }
+            assertNotNull(servedKey, "some ready member must win the turn");
+            served.merge(servedKey, 1, Integer::sum);
+            g.advanceRotation(servedKey);
+        }
+
+        // Deterministic round-robin: each of the 3 members served exactly 10
+        // times out of 30 openings. The prolific "a" cannot monopolize.
+        assertEquals(Integer.valueOf(10), served.get("a"));
+        assertEquals(Integer.valueOf(10), served.get("b"));
+        assertEquals(Integer.valueOf(10), served.get("c"));
+    }
+
+    /**
+     * Anti-starvation with quiet hosts occasionally unavailable: the prolific
+     * host "a" is always ready, while "b" and "c" are only intermittently
+     * ready. The rotation must still hand the slot to "b"/"c" whenever they are
+     * ready (they must not be permanently starved by "a"), while never blocking
+     * the group when they are not.
+     */
+    @Test
+    public void testProlificHostYieldsWheneverQuietHostsAreReady() {
+        QueueGroup g = new QueueGroup("g");
+        g.setMaxParallelInGroup(1);
+        g.noteMember("a");
+        g.noteMember("b");
+        g.noteMember("c");
+        java.util.List<String> members = g.memberKeys();
+
+        java.util.Map<String, Integer> served =
+                new java.util.HashMap<String, Integer>();
+
+        int openings = 60;
+        for (int i = 0; i < openings; i++) {
+            final int tick = i;
+            // "a" always ready; "b" ready every 3rd tick; "c" every 5th tick.
+            Predicate<String> readyChecker = k -> {
+                if (k.equals("a")) return true;
+                if (k.equals("b")) return tick % 3 == 0;
+                if (k.equals("c")) return tick % 5 == 0;
+                return false;
+            };
+            String servedKey = null;
+            for (String member : members) {
+                if (readyChecker.test(member) && g.isTurn(readyChecker, member)) {
+                    servedKey = member;
+                    break;
+                }
+            }
+            assertNotNull(servedKey);
+            served.merge(servedKey, 1, Integer::sum);
+            g.advanceRotation(servedKey);
+        }
+
+        // The quiet hosts get served whenever they were ready: they are not
+        // starved by the prolific "a".
+        assertTrue(served.getOrDefault("b", 0) > 0, "b must not be starved");
+        assertTrue(served.getOrDefault("c", 0) > 0, "c must not be starved");
+        // "a" fills the remaining openings but does not take them all.
+        assertTrue(served.getOrDefault("a", 0) < openings,
+                "a must not monopolize the group");
+    }
+
     // ---- manager resolution and caching ----
 
     @Test

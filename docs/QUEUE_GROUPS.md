@@ -195,6 +195,26 @@ You can declare several groups, and combine member lists within a group.
 </bean>
 ```
 
+## Limitation: precedence is not arbitrated within a group
+
+Queue **precedence** is only honored *upstream*, when an inactive queue is
+promoted to ready (`activateInactiveQueue()` walks the inactive queues in
+precedence order). The group logic — the shared politeness gate and the
+round-robin rotation — operates **only on queues that are already ready** and is
+**precedence-agnostic**:
+
+- the rotation cycles over the group's member queues in their *discovery*
+  (first-seen) order, not in precedence order;
+- the readiness check used by the rotation only tests whether a member queue is
+  currently ready, never its precedence.
+
+As a consequence, **mixing queues that are meant to have different precedences
+in the same group is not supported**: within a group, a lower-precedence member
+may be served before a higher-precedence one, because the round-robin treats all
+members as equivalent. If you rely on precedence to prioritize some hosts over
+others, keep those hosts in **separate** groups (or outside any group) rather
+than grouping queues of differing precedence together.
+
 ## Choosing the matcher style
 
 | Matcher                | Matches against         | Use when the queueAssignmentPolicy is ...                |

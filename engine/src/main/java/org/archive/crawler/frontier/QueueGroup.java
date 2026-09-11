@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /**
  * A "queue group": a set of otherwise-independent per-host work queues
  * that a crawler should treat as sharing a single web server for the
- * purposes of politeness and scheduling (issue #754, "option 1").
+ * purposes of politeness and scheduling.
  *
  * <p>The URLs are <b>not</b> merged into a single queue: each host keeps its
  * own {@link WorkQueue} (its own {@code classKey}). The group only adds, on
@@ -49,6 +49,14 @@ import java.util.regex.Pattern;
  * <p>All rotation/gate state is transient and simply reset on
  * restart/checkpoint.</p>
  *
+ * <p><b>Limitation — precedence:</b> the group logic (shared gate and
+ * round-robin rotation) operates only on queues that are already ready and is
+ * precedence-agnostic: the rotation cycles over members in discovery order, not
+ * in precedence order. Queue precedence is only honored upstream, when inactive
+ * queues are promoted to ready. Therefore mixing queues meant to have different
+ * precedences in the same group is <b>not supported</b>: within a group the
+ * rotation treats all members as equivalent regardless of their precedence.</p>
+ *
  * <p>Members are matched against a queue's {@code classKey}. A member can be
  * declared in three separate, dedicated lists:</p>
  * <ul>
@@ -56,7 +64,7 @@ import java.util.regex.Pattern;
  *       exact host match;</li>
  *   <li><b>{@link #groupMembersByRegex}</b> (e.g. {@code .*\.europa\.eu}): full
  *       match on the host part of the classKey;</li>
- *   <li><b>{@link #groupMembersBySurt}</b> (e.g. {@code http://(eu,europa,}):
+ *   <li><b>{@link #groupMembersBySurt}</b> (e.g. {@code eu,europa,}):
  *       classKey starts with the given SURT prefix.</li>
  * </ul>
  */
