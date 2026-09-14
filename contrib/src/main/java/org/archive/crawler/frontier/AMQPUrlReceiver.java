@@ -32,6 +32,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
+
 import org.archive.url.URIException;
 import org.archive.crawler.event.AMQPUrlReceivedEvent;
 import org.archive.crawler.event.CrawlStateEvent;
@@ -441,22 +443,50 @@ public class AMQPUrlReceiver
         }
 
         // set the heritable data from the parent url, passed back to us via amqp
-        // XXX brittle, only goes one level deep, and only handles strings and arrays, the latter of which it converts to a Set.
+        // XXX brittle, only goes one level deep.
         // 'heritableData': {'source': 'https://facebook.com/whitehouse/', 'heritable': ['source', 'heritable']}
+        //
+        // Values must be strings, apart from the
+        // A_HERITABLE_KEYS list.
         @SuppressWarnings("unchecked")
         protected void populateHeritableMetadata(CrawlURI curi, JSONObject parentUrlMetadata) {
             JSONObject heritableData = parentUrlMetadata.getJSONObject("heritableData");
             for (String key: (Set<String>) heritableData.keySet()) {
                 Object value = heritableData.get(key);
-                if (value instanceof JSONArray) {
-                    Set<String> valueSet = new HashSet<String>();
-                    JSONArray arr = ((JSONArray) value);
-                    for (int i = 0; i < arr.length(); i++) {
-                        valueSet.add(arr.getString(i));
+
+                if (A_HERITABLE_KEYS.equals(key)) {
+                    // the set of key names to pass on to descendants; must stay a
+                    // HashSet<String>, which is what CrawlURI casts it to
+                    if (!(value instanceof JSONArray)) {
+                        logger.warning("ignoring non-array '" + A_HERITABLE_KEYS
+                                + "' received via AMQP: " + value);
+                        continue;
                     }
-                    curi.getData().put(key, valueSet);
+                    JSONArray arr = (JSONArray) value;
+                    HashSet<String> keyNames = new HashSet<String>();
+                    for (int i = 0; i < arr.length(); i++) {
+                        Object element = arr.get(i);
+                        if (element instanceof String) {
+                            keyNames.add((String) element);
+                        } else {
+                            logger.fine("skipping non-string element in '"
+                                    + A_HERITABLE_KEYS + "' received via AMQP: "
+                                    + element);
+                        }
+                    }
+                    // Don't store an empty set. CrawlURI.makeHeritable() only
+                    // self-registers A_HERITABLE_KEYS when it creates the set, so
+                    // an empty one left in place would later yield a set that
+                    // doesn't name itself -- inheritance would then stop after a
+                    // single hop.
+                    if (!keyNames.isEmpty()) {
+                        curi.getData().put(key, keyNames);
+                    }
+                } else if (value instanceof String) {
+                    curi.getData().put(key, value);
                 } else {
-                    curi.getData().put(key, heritableData.get(key));
+                    logger.fine("skipping non-string value received via AMQP: "
+                            + key + "=" + value);
                 }
             }
         }
