@@ -25,6 +25,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_SSL_ERROR;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
@@ -42,9 +43,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 
-import org.archive.url.URIException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
@@ -82,6 +83,7 @@ import org.archive.modules.deciderules.DecideRule;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
+import org.archive.url.URIException;
 import org.archive.util.Recorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -680,6 +682,9 @@ public class FetchHTTP extends Processor implements Lifecycle {
             addResponseContent(response, curi);
         } catch (ClientProtocolException e) {
             failedExecuteCleanup(curi, e);
+            return;
+        } catch (SSLHandshakeException e) {
+            cleanup(curi, e, "executeMethod", S_SSL_ERROR);
             return;
         } catch (IOException e) {
             if ("handshake alert:  unrecognized_name".equals(e.getMessage())) {

@@ -728,7 +728,7 @@ public class FetchHTTPTest {
         fetcher().process(curi);
         assertEquals(1, curi.getNonFatalFailures().size());
         assertTrue(curi.getNonFatalFailures().toArray()[0] instanceof SSLException);
-        assertEquals(FetchStatusCodes.S_CONNECT_FAILED, curi.getFetchStatus());
+        assertEquals(FetchStatusCodes.S_SSL_ERROR, curi.getFetchStatus());
         assertEquals(0, curi.getFetchCompletedTime());
     }
 

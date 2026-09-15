@@ -622,7 +622,7 @@ public class StatisticsTracker
      */
     protected static void incrementMapCount(ConcurrentMap<String,AtomicLong> map, 
             String key) {
-    	incrementMapCount(map,key,1);
+        incrementMapCount(map,key,1);
     }
     
     /**
@@ -788,16 +788,8 @@ public class StatisticsTracker
         incrementMapCount(mimeTypeDistribution, mime);
         incrementMapCount(mimeTypeBytes, mime, curi.getContentSize());
 
-        ServerCache sc = serverCache;
-        if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
-            SourceTagsReport str = getReport(SourceTagsReport.class);
-            if (str.isIncludeResCode()) {
-                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName(), String.valueOf(curi.getFetchStatus()));
-            }
-            saveSourceStats(curi.getSourceTag(), 
-            sc.getHostFor(curi.getUURI()).getHostName());
-            tallySourceStats(curi);
-        }
+        // Source tags
+        manageSourceStats(curi, true);
     }
          
     protected void saveSourceStats(String source, String hostname, String statuscode) {
@@ -839,22 +831,47 @@ public class StatisticsTracker
         sourceStats.accumulate(curi);
     }
     
+    protected void manageSourceStats(CrawlURI curi, boolean isCrawlOK) {
+        ServerCache sc = serverCache;
+        if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
+            boolean tally = false;
+            SourceTagsReport str = getReport(SourceTagsReport.class);
+            if (str != null && str.isIncludeResCode()) {
+                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName(), String.valueOf(curi.getFetchStatus()));
+                tally = isCrawlOK;
+            }
+            if (isCrawlOK) {
+                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName());
+                tally = true;
+            }
+            if (tally) {
+                tallySourceStats(curi);
+            }
+        }
+    }
+    
     public void crawledURINeedRetry(CrawlURI curi) {
         handleSeed(curi,"Failed to crawl seed, will retry");
         // Save status codes
         incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
+        // Source tags
+        manageSourceStats(curi, false);
     }
 
     public void crawledURIDisregard(CrawlURI curi) {
         handleSeed(curi,"Seed was disregarded");
         // Save status codes
         incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
+        // Source tags
+        manageSourceStats(curi, false);
     }
 
     public void crawledURIFailure(CrawlURI curi) {
         handleSeed(curi,"Failed to crawl seed");
         // Save status codes
         incrementMapCount(statusCodeDistribution, Integer.toString(curi.getFetchStatus()));
+        // Source tags
+        manageSourceStats(curi, false);
     }
     
     /**
@@ -942,7 +959,7 @@ public class StatisticsTracker
         File f = new File(getReportsDir().getFile(), report.getFilename());
         
         if(f.exists() && !controller.isRunning() && controller.hasStarted() && !force
-        	&& !(report instanceof CrawlSummaryReport)) {
+                && !(report instanceof CrawlSummaryReport)) {
             // controller already started and stopped 
             // and file exists
             // and force not requested

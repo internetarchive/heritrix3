@@ -18,7 +18,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
 	<groupId>org.archive</groupId>
 	<!--This project is parent to all under 'projects' subdirectory-->
 	<artifactId>heritrix</artifactId>
-	<version>3.17.1-SNAPSHOT</version>
+	<version>3.17.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Heritrix 3</name>
 	<description>
@@ -103,7 +103,7 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
             <dependency>
                 <groupId>org.apache.groovy</groupId>
                 <artifactId>groovy-bom</artifactId>
-                <version>5.1.0</version>
+                <version>5.1.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

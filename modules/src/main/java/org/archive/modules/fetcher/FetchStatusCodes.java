@@ -49,6 +49,8 @@ public interface FetchStatusCodes {
     public static final int S_UNFETCHABLE_URI = -7;      //
     /** multiple retries all failed */
     public static final int S_TOO_MANY_RETRIES = -8;     //
+    /** SSL error such as SSL handshake failure */
+    public static final int S_SSL_ERROR = -9;     //
 
     /** temporary status assigned URIs awaiting preconditions; appearance in
      *  logs is a bug */
