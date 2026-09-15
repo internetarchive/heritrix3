@@ -396,6 +396,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
             case S_PROCESSING_THREAD_KILLED:
                 return "Heritrix(" + S_PROCESSING_THREAD_KILLED + ")-" +
                     "Processing thread killed";
+            case S_SSL_ERROR:
+                return "Heritrix(" + S_SSL_ERROR + ")-SSL error";
             // Unknown return code
             default : return Integer.toString(code);
         }

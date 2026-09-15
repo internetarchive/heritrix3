@@ -2,7 +2,23 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.16.0...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.17.1...HEAD)
+
+## [3.17.1](https://github.com/internetarchive/heritrix3/releases/tag/3.17.1)  (2026-09-10)
+
+[Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.17.1/heritrix-3.17.1-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.17.1/heritrix-3.17.1-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.17.0...3.17.1) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.17.1/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.17.1/pom)
+
+### Bug fixes
+
+* **FetchHTTP**: SSL handshake failures now use the dedicated `S_SSL_ERROR` (`-9`) fetch status instead of `S_CONNECT_FAILED`, reducing unlikely retries. [#765](https://github.com/internetarchive/heritrix3/pull/765)
+* **SourceTagsReport**: Extended reports now include Heritrix status codes for failed, retried, and disregarded URIs. [#766](https://github.com/internetarchive/heritrix3/pull/766)
+
+### Dependency upgrades
+
+* **freemarker**: 2.3.34 → 2.3.35
+* **groovy-bom**: 5.1.0 → 5.1.1
 
 ## [3.17.0](https://github.com/internetarchive/heritrix3/releases/tag/3.17.0)  (2026-08-25)
 
