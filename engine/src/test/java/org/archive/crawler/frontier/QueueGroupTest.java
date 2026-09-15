@@ -307,4 +307,91 @@ public class QueueGroupTest {
         assertTrue(mgr.removeGroup("g1"));
         assertNull(mgr.groupFor("a.example.com"));
     }
+
+    // ---- waiting list (members parked at the concurrency ceiling) ----
+
+    @Test
+    public void testParkIsIdempotentAndUnpark() {
+        QueueGroup g = new QueueGroup("g");
+        assertEquals(0, g.getWaitingCount());
+        assertNull(g.pollWaiting());
+
+        g.park("a");
+        g.park("a");
+        assertEquals(1, g.getWaitingCount());
+        assertTrue(g.isWaiting("a"));
+
+        assertTrue(g.unpark("a"));
+        assertFalse(g.unpark("a"));
+        assertEquals(0, g.getWaitingCount());
+        assertFalse(g.isWaiting("a"));
+        g.park(null);
+        assertEquals(0, g.getWaitingCount());
+    }
+
+    @Test
+    public void testPollWaitingFollowsRotation() {
+        QueueGroup g = new QueueGroup("g");
+        g.noteMember("a");
+        g.noteMember("b");
+        g.noteMember("c");
+        // "a" was just served: rotation pointer now on "b"
+        g.advanceRotation("a");
+
+        g.park("a");
+        g.park("c");
+        g.park("b");
+
+        assertEquals("b", g.pollWaiting());
+        assertEquals("c", g.pollWaiting());
+        assertEquals("a", g.pollWaiting());
+        assertNull(g.pollWaiting());
+        assertEquals(0, g.getWaitingCount());
+    }
+
+    @Test
+    public void testPollWaitingUnknownKeysServedLast() {
+        QueueGroup g = new QueueGroup("g");
+        g.noteMember("a");
+        g.park("zzz-unknown");
+        g.park("a");
+        assertEquals("a", g.pollWaiting());
+        assertEquals("zzz-unknown", g.pollWaiting());
+        assertNull(g.pollWaiting());
+    }
+
+    @Test
+    public void testDrainWaiting() {
+        QueueGroup g = new QueueGroup("g");
+        assertTrue(g.drainWaiting().isEmpty());
+        g.park("a");
+        g.park("b");
+        assertEquals(Arrays.asList("a", "b"), g.drainWaiting());
+        assertEquals(0, g.getWaitingCount());
+        assertTrue(g.drainWaiting().isEmpty());
+    }
+
+    @Test
+    public void testParkedQueueHandedBackAfterRelease() {
+        // simulate the frontier's gate: one slot, no cool-down
+        QueueGroup g = new QueueGroup("g");
+        g.setMaxParallelInGroup(1);
+        g.setGroupMinDelayMs(0);
+        g.noteMember("a");
+        g.noteMember("b");
+        long now = 1_000_000L;
+
+        assertTrue(g.canProceed(now));
+        g.acquire();
+        // second member arrives while slot busy: gate closed, wakeTime in past
+        assertFalse(g.canProceed(now));
+        assertTrue(g.getWakeTime() <= now);
+        g.park("b");
+
+        // slot released: frontier pops the parked member
+        g.release(now, 0);
+        assertEquals("b", g.pollWaiting());
+        assertTrue(g.canProceed(now));
+        assertNull(g.pollWaiting());
+    }
 }

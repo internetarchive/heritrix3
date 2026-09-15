@@ -109,6 +109,18 @@ public class QueueGroup implements Serializable {
     protected transient java.util.LinkedHashSet<String> discoveredMembers =
             new java.util.LinkedHashSet<String>();
 
+    /**
+     * Member queue keys currently <i>parked</i> because the shared gate was
+     * closed (concurrency ceiling reached and/or cool-down). Parked queues are
+     * neither ready nor snoozed nor in-process: they are simply waiting for a
+     * slot to be released via {@link #release(long, long)}, at which point the
+     * frontier pops one of them (see {@link #pollWaiting()}) and re-readies
+     * it. This replaces a polling snooze/ready cycle with an event-driven
+     * wake-up. Transient: reset on restart/checkpoint.
+     */
+    protected transient java.util.LinkedHashSet<String> waitingMembers =
+            new java.util.LinkedHashSet<String>();
+
     public QueueGroup() {
     }
 
@@ -176,6 +188,14 @@ public class QueueGroup implements Serializable {
 
     public int getActiveCount() {
         return activeCount;
+    }
+
+    /**
+     * @return the number of member queues currently parked on this group's
+     *         waiting list (see {@link #park(String)}).
+     */
+    public synchronized int getWaitingCount() {
+        return waitingMembers == null ? 0 : waitingMembers.size();
     }
 
     // ---- membership matching ----
@@ -308,6 +328,88 @@ public class QueueGroup implements Serializable {
         if (candidate > wakeTime) {
             wakeTime = candidate;
         }
+    }
+
+    // ---- waiting list for members blocked by the shared gate ----
+
+    /**
+     * Park a member queue key on this group's waiting list because the shared
+     * gate is currently closed. Idempotent. The queue will be handed back to
+     * the frontier by {@link #pollWaiting()} once a slot is released.
+     *
+     * @param classKey the member key to park
+     */
+    public synchronized void park(String classKey) {
+        if (classKey != null) {
+            if (waitingMembers == null) {
+                waitingMembers = new java.util.LinkedHashSet<String>();
+            }
+            waitingMembers.add(classKey);
+        }
+    }
+
+    /**
+     * Remove a member key from the waiting list without serving it (e.g. the
+     * queue was retired or relocated while parked).
+     *
+     * @return true if the key was parked
+     */
+    public synchronized boolean unpark(String classKey) {
+        return classKey != null && waitingMembers != null
+                && waitingMembers.remove(classKey);
+    }
+
+    /**
+     * @return true if the given member key is currently parked
+     */
+    public synchronized boolean isWaiting(String classKey) {
+        return classKey != null && waitingMembers != null
+                && waitingMembers.contains(classKey);
+    }
+
+    /**
+     * Pop the next parked member queue, honoring the round-robin rotation:
+     * scanning from the rotation pointer over the discovered members, the
+     * first one that is parked wins. Parked keys unknown to the rotation (should
+     * not happen) are served last, in parking order.
+     *
+     * @return the popped member key, or {@code null} if nothing is parked
+     */
+    public synchronized String pollWaiting() {
+        if (waitingMembers == null || waitingMembers.isEmpty()) {
+            return null;
+        }
+        if (discoveredMembers != null && !discoveredMembers.isEmpty()) {
+            List<String> ordered = new ArrayList<String>(discoveredMembers);
+            int n = ordered.size();
+            if (rotationIndex >= n) {
+                rotationIndex = 0;
+            }
+            for (int i = 0; i < n; i++) {
+                String candidate = ordered.get((rotationIndex + i) % n);
+                if (waitingMembers.remove(candidate)) {
+                    return candidate;
+                }
+            }
+        }
+        java.util.Iterator<String> iter = waitingMembers.iterator();
+        String first = iter.next();
+        iter.remove();
+        return first;
+    }
+
+    /**
+     * Drain the whole waiting list (e.g. operator-forced wake of all queues).
+     *
+     * @return the parked member keys, in parking order (possibly empty)
+     */
+    public synchronized List<String> drainWaiting() {
+        if (waitingMembers == null || waitingMembers.isEmpty()) {
+            return new ArrayList<String>();
+        }
+        List<String> drained = new ArrayList<String>(waitingMembers);
+        waitingMembers.clear();
+        return drained;
     }
 
     // ---- round-robin rotation over members ----

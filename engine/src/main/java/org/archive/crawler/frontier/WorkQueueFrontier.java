@@ -155,7 +155,10 @@ implements Closeable,
 
     /**
      * Release the shared group slot held by the given queue and arm the shared
-     * cool-down. No-op when the queue is not grouped or there is no manager.
+     * cool-down. Then, if member queues are parked on the group's waiting list
+     * (blocked by the concurrency ceiling), hand the next one in rotation back
+     * to the scheduler (see {@link #unparkOne(QueueGroup, long)}). No-op when
+     * the queue is not grouped or there is no manager.
      *
      * @param wq       the finished queue
      * @param now      current epoch-ms
@@ -165,7 +168,78 @@ implements Closeable,
         QueueGroup group = groupFor(wq);
         if (group != null) {
             group.release(now, delay_ms);
+            unparkOne(group, now);
         }
+    }
+
+    /**
+     * Pop one parked member queue from the group's waiting list (if any) and
+     * put it back in circulation: snoozed until the group's shared cool-down
+     * expires when one is armed, otherwise readied immediately.
+     *
+     * <p>Lock ordering: {@link #findEligibleURI()} locks a queue then its
+     * group, so this method must never lock a queue while holding the group
+     * lock. The pop is atomic on the group by itself; the parked queue is then
+     * handled outside any group lock.</p>
+     *
+     * @return true if a queue was unparked
+     */
+    protected boolean unparkOne(QueueGroup group, long now) {
+        String key = group.pollWaiting();
+        if (key == null) {
+            return false;
+        }
+        WorkQueue parked = getQueueFor(key);
+        if (parked == null) {
+            logger.warning("parked key " + key + " of group "
+                    + group.getName() + " not in allQueues");
+            return true;
+        }
+        long wake = group.getWakeTime();
+        synchronized (parked) {
+            if (wake > now) {
+                snoozeQueue(parked, now, wake - now);
+            } else {
+                readyQueue(parked);
+            }
+            parked.makeDirty();
+        }
+        return true;
+    }
+
+    /**
+     * Safety net against lost wake-ups: for every group that has parked
+     * members while its gate is actually open, put parked queues back in
+     * circulation. Cheap (groups are few) and normally a no-op, since
+     * {@link #releaseGroup} already unparks on each slot release.
+     */
+    protected void wakeParkedGroupQueues(long now) {
+        if (queueGroupManager == null) {
+            return;
+        }
+        for (QueueGroup group : queueGroupManager.getGroups()) {
+            // one queue at a time: each one readied will itself acquire a
+            // slot, and each release unparks the next; if snoozed (cool-down)
+            // it comes back through readyClassQueues on its own.
+            if (group.getWaitingCount() > 0
+                    && group.getActiveCount() < group.getMaxParallelInGroup()) {
+                unparkOne(group, now);
+            }
+        }
+    }
+
+    /**
+     * @return the total number of member queues parked on group waiting lists
+     */
+    protected int getGroupWaitingCount() {
+        if (queueGroupManager == null) {
+            return 0;
+        }
+        int total = 0;
+        for (QueueGroup group : queueGroupManager.getGroups()) {
+            total += group.getWaitingCount();
+        }
+        return total;
     }
 
     {
@@ -551,6 +625,10 @@ implements Closeable,
 //        assert Thread.currentThread() == managerThread;
 
         inProcessQueues.remove(wq);
+        QueueGroup group = groupFor(wq);
+        if (group != null) {
+            group.unpark(wq.getClassKey());
+        }
         getRetiredQueues().add(wq.getClassKey());
         decrementQueuedCount(wq.getCount());
         wq.setRetired(true);
@@ -747,13 +825,22 @@ implements Closeable,
                             String memberKey = readyQ.getClassKey();
                             long now = System.currentTimeMillis();
                             synchronized (group) {
-                                // (a) shared gate closed: at concurrency ceiling
-                                // or in cool-down. Park the queue (snooze until
-                                // the group re-opens) and serve another queue.
+                                // (a) shared gate closed. Two sub-cases:
+                                //  - in cool-down: snooze until the shared
+                                //    wake time (a real, future date);
+                                //  - at concurrency ceiling: no natural wake
+                                //    date, so park on the group's waiting
+                                //    list; releaseGroup() will hand it back
+                                //    when a slot is released (event-driven,
+                                //    no snooze/ready polling cycle).
                                 if (!group.canProceed(now)) {
                                     inProcessQueues.remove(readyQ);
-                                    long until = Math.max(group.getWakeTime(), now + 1);
-                                    snoozeQueue(readyQ, now, until - now);
+                                    long wake = group.getWakeTime();
+                                    if (wake > now) {
+                                        snoozeQueue(readyQ, now, wake - now);
+                                    } else {
+                                        group.park(memberKey);
+                                    }
                                     readyQ.makeDirty();
                                     readyQ = null;
                                     continue findauri;
@@ -939,6 +1026,20 @@ implements Closeable,
      * put all queues in slow-retry-snoozes back to busy-ness. 
      */
     public void forceWakeQueues() {
+        if (queueGroupManager != null) {
+            for (QueueGroup group : queueGroupManager.getGroups()) {
+                for (String key : group.drainWaiting()) {
+                    WorkQueue queue = getQueueFor(key);
+                    if (queue != null) {
+                        synchronized (queue) {
+                            queue.setWakeTime(0);
+                            reenqueueQueue(queue);
+                            queue.makeDirty();
+                        }
+                    }
+                }
+            }
+        }
         Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
         while(iterSnoozed.hasNext()) {
             WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
@@ -966,6 +1067,7 @@ implements Closeable,
      * Wake any queues sitting in the snoozed queue whose time has come.
      */
     protected void wakeQueues() {
+        wakeParkedGroupQueues(System.currentTimeMillis());
         DelayedWorkQueue waked; 
         while((waked = snoozedClassQueues.poll())!=null) {
             WorkQueue queue = waked.getWorkQueue(this);
@@ -1220,7 +1322,9 @@ implements Closeable,
         int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
-        int activeCount = inProcessCount + readyCount + snoozedCount;
+        int groupWaitingCount = getGroupWaitingCount();
+        int activeCount = inProcessCount + readyCount + snoozedCount
+                + groupWaitingCount;
         int inactiveCount = getTotalEligibleInactiveQueues();
         int ineligibleCount = getTotalIneligibleInactiveQueues();
         int retiredCount = getRetiredQueues().size();
@@ -1231,6 +1335,7 @@ implements Closeable,
         map.put("inProcessQueues", inProcessCount);
         map.put("readyQueues", readyCount);
         map.put("snoozedQueues", snoozedCount);
+        map.put("groupWaitingQueues", groupWaitingCount);
         map.put("activeQueues", activeCount);
         map.put("inactiveQueues", inactiveCount);
         map.put("ineligibleQueues", ineligibleCount);
