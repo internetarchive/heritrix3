@@ -765,6 +765,7 @@ public class FetchHTTPTest {
         //        logger.info("\n----- messageBodyString -----\n" + messageBodyString(curi));
         
         assertEquals("chunked", curi.getHttpResponseHeader("transfer-encoding"));
+        assertEquals("sha1:TQ5R6YVOZLTQENRIIENVGXHOPX3YCRNJ", curi.getContentDigestSchemeString());
         assertEquals("25\r\n" + DEFAULT_PAYLOAD_STRING + "\r\n0\r\n\r\n", messageBodyString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, entityString(curi));
         assertEquals(DEFAULT_PAYLOAD_STRING, contentString(curi));
