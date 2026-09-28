@@ -60,17 +60,18 @@ public class ExtractorJson extends ContentExtractor {
 
     protected List<String> parse(JsonNode rootNode, List<String> links) {
         for (Map.Entry<String, JsonNode> field : rootNode.properties()) {
-            if (field.getValue().textValue() != null
-                    && UriUtils.isVeryLikelyUri(field.getValue().textValue())) {
-                links.add(field.getValue().textValue());
-            } else if (field.getValue().isObject()) {
-                parse(field.getValue(), links);
-            } else if (field.getValue().isArray()) {
-                field.getValue()
-                        .propertyStream()
-                        .forEach(fieldValue -> parse(fieldValue.getValue(), links));
-            }
+            parseValue(field.getValue(), links);
         }
         return links;
+    }
+
+    private void parseValue(JsonNode value, List<String> links) {
+        if (value.textValue() != null && UriUtils.isVeryLikelyUri(value.textValue())) {
+            links.add(value.textValue());
+        } else if (value.isObject()) {
+            parse(value, links);
+        } else if (value.isArray()) {
+            value.valueStream().forEach(element -> parseValue(element, links));
+        }
     }
 }
