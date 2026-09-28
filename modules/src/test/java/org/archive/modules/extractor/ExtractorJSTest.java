@@ -21,11 +21,20 @@ package org.archive.modules.extractor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link ExtractorJS}.
@@ -34,6 +43,53 @@ import org.archive.util.Recorder;
  * @author nlevitt
  */
 public class ExtractorJSTest extends StringExtractorTestBase {
+
+    static Stream<Arguments> unicodeEscapeUrls() {
+        return Stream.of(
+                Arguments.of("\\u{61}.html", "a.html"),
+                Arguments.of("\\u{79F}.html", "\u079f.html"),
+                Arguments.of("\\u{1f600}.html", "\ud83d\ude00.html"),
+                Arguments.of("\\u{000000000061}.html", "a.html"),
+                Arguments.of("\\u{61}\\u002f\\u{62}.html", "a/b.html"),
+                Arguments.of("\\u0061.html", "a.html"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("unicodeEscapeUrls")
+    void extractsUnicodeEscapeUrls(String escaped, String decoded) throws Exception {
+        for (TestData data : makeData("var url = 'http://example.com/" + escaped + "';",
+                "http://example.com/" + decoded)) {
+            data.uri.setFetchStatus(200);
+            extractor.process(data.uri);
+            assertEquals(Set.of(data.expectedResult), data.uri.getOutLinks());
+            assertNoSideEffects(data.uri);
+        }
+    }
+
+    static Stream<Arguments> escapedBackslashes() {
+        return Stream.of(
+                Arguments.of("\\\\u{61}", "\\u{61}"),
+                Arguments.of("\\\\\\u{61}", "\\a"),
+                Arguments.of("\\u{5c}u{61}", "\\u{61}"),
+                Arguments.of("\\u005cu{61}", "\\u{61}"),
+                Arguments.of("\\u{0}", "\0"),
+                Arguments.of("\\u{10FFFF}", "\udbff\udfff"),
+                Arguments.of("\\u{D800}", "\ud800"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("escapedBackslashes")
+    void preservesEscapeBoundaries(String escaped, String decoded) {
+        assertEquals(decoded, ExtractorJS.UNESCAPE_JAVASCRIPT.translate(escaped));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\\u{}", "\\u{61", "\\u{xyz}", "\\u{110000}",
+            "\\u{ffffffffffffffff}", "\\u{+61}", "\\u{6_1}"})
+    void rejectsInvalidCodePointEscapes(String escaped) {
+        assertThrows(IllegalArgumentException.class,
+                () -> ExtractorJS.UNESCAPE_JAVASCRIPT.translate(escaped));
+    }
 
     final public static String[] VALID_TEST_DATA = new String[] {
         "var foo = \"http://www.example.com/outlink\";",

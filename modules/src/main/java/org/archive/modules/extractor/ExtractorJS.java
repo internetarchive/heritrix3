@@ -22,12 +22,16 @@ import static org.archive.modules.extractor.Hop.SPECULATIVE;
 import static org.archive.modules.extractor.LinkContext.JS_MISC;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.archive.url.URIException;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.text.translate.AggregateTranslator;
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
@@ -61,6 +65,30 @@ public class ExtractorJS extends ContentExtractor {
 
     private static Logger LOGGER = 
             Logger.getLogger(ExtractorJS.class.getName());
+
+    private static final Pattern CODE_POINT_ESCAPE = Pattern.compile("\\\\u\\{([0-9a-fA-F]+)\\}");
+
+    // Translate in one pass so an escaped backslash cannot introduce a second escape.
+    static final CharSequenceTranslator UNESCAPE_JAVASCRIPT = new AggregateTranslator(
+            new CharSequenceTranslator() {
+                @Override
+                public int translate(CharSequence input, int index, Writer out) throws IOException {
+                    if (input.charAt(index) != '\\') {
+                        return 0;
+                    }
+                    Matcher matcher = CODE_POINT_ESCAPE.matcher(input).region(index, input.length());
+                    if (!matcher.lookingAt()) {
+                        return 0;
+                    }
+                    int codePoint = Integer.parseInt(matcher.group(1), 16);
+                    if (!Character.isValidCodePoint(codePoint)) {
+                        throw new IllegalArgumentException("Invalid JavaScript Unicode code point: "
+                                + matcher.group(1));
+                    }
+                    out.write(Character.toChars(codePoint));
+                    return matcher.end() - index;
+                }
+            }, StringEscapeUtils.UNESCAPE_ECMASCRIPT);
 
     // finds strings in Javascript
     // (areas between paired ' or " characters, possibly backslash-quoted
@@ -170,7 +198,7 @@ public class ExtractorJS extends ContentExtractor {
     protected boolean considerString(Extractor ext, CrawlURI curi,
             boolean handlingJSFile, String candidate) {
         try {
-            candidate = StringEscapeUtils.unescapeEcmaScript(candidate);
+            candidate = UNESCAPE_JAVASCRIPT.translate(candidate);
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "problem unescaping some javascript", e);
         }

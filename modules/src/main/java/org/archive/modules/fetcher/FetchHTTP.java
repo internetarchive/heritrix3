@@ -29,8 +29,10 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_SSL_ERROR;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -756,8 +758,18 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
 
         if (digestContent) {
-            curi.setContentDigest(algorithm, 
-                rec.getRecordedInput().getDigestValue());
+            byte[] digest = rec.getRecordedInput().getDigestValue();
+            // If chunked encoding was used, the recorder's digest will include
+            // the chunk headers so recalculate the digest over the decoded entity.
+            if (response.getEntity() != null && response.getEntity().isChunked()) {
+                try {
+                    digest = digestEntity(rec, algorithm);
+                } catch (IOException e) {
+                    curi.getNonFatalFailures().add(e);
+                    digest = null;
+                }
+            }
+            curi.setContentDigest(algorithm, digest);
         }
 
         if (logger.isLoggable(Level.FINE)) {
@@ -794,6 +806,24 @@ public class FetchHTTP extends Processor implements Lifecycle {
         }
     }
 
+    /**
+     * Calculates a digest over the transfer-decoded entity while preserving
+     * any content encoding (for example, gzip).
+     */
+    protected byte[] digestEntity(Recorder recorder, String algorithm) throws IOException {
+        try (InputStream entity = recorder.getEntityReplayInputStream()) {
+            MessageDigest digest = MessageDigest.getInstance(algorithm);
+            byte[] buffer = new byte[8192];
+            while (true) {
+                int n = entity.read(buffer);
+                if (n == -1) break;
+                digest.update(buffer, 0, n);
+            }
+            return digest.digest();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException("Unsupported digest algorithm: " + algorithm, e);
+        }
+    }
 
     /**
      * Promote successful credential to the server.
