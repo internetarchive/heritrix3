@@ -98,6 +98,14 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
     /** The next item to be returned */
     transient protected CrawlURI peekItem = null;
 
+    /**
+     * The {@link QueueGroup} whose shared slot was actually acquired for the
+     * URI currently in process (if any). Remembered at acquire time so the
+     * matching release always targets the very same group, even if the group
+     * configuration changes at runtime while the URI is being processed.
+     */
+    transient protected QueueGroup acquiredGroup = null;
+
     /** Last URI enqueued */
     protected String lastQueued;
 
@@ -329,6 +337,23 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
      */
     public String getClassKey() {
         return this.classKey;
+    }
+
+    /**
+     * @return the {@link QueueGroup} whose shared slot is currently held on
+     *         behalf of the in-process URI, or {@code null} if none was
+     *         acquired.
+     */
+    public QueueGroup getAcquiredGroup() {
+        return acquiredGroup;
+    }
+
+    /**
+     * Remember the group whose shared slot was acquired for the URI now in
+     * process, so the matching release targets the exact same group.
+     */
+    public void setAcquiredGroup(QueueGroup group) {
+        this.acquiredGroup = group;
     }
 
     /**

@@ -165,7 +165,13 @@ implements Closeable,
      * @param delay_ms the per-URI politeness delay just computed
      */
     protected void releaseGroup(WorkQueue wq, long now, long delay_ms) {
-        QueueGroup group = groupFor(wq);
+        if (wq == null) {
+            return;
+        }
+        // Release the exact group whose slot was acquired for the in-process
+        // URI (remembered at acquire time)
+        QueueGroup group = wq.getAcquiredGroup();
+        wq.setAcquiredGroup(null);
         if (group != null) {
             group.release(now, delay_ms);
             unparkOne(group, now);
@@ -859,6 +865,11 @@ implements Closeable,
                                 // slot, advance the rotation, and emit.
                                 group.acquire();
                                 group.advanceRotation(memberKey);
+                                // remember the exact group whose slot we hold,
+                                // so releaseGroup() releases the same one even
+                                // if group membership changes at runtime while
+                                // this URI is being processed.
+                                readyQ.setAcquiredGroup(group);
                             }
                         }
                         noteAboutToEmit(curi, readyQ);

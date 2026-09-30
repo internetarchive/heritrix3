@@ -301,7 +301,7 @@ public class QueueGroupTest {
         mgr.addGroup(g);
         assertSame(g, mgr.groupFor("a.example.com"));
 
-        assertTrue(mgr.addMember("g1", "b.example.com"));
+        assertTrue(mgr.addHostMember("g1", "b.example.com"));
         assertSame(g, mgr.groupFor("b.example.com"));
 
         assertTrue(mgr.removeGroup("g1"));
