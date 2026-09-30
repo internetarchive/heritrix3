@@ -124,11 +124,7 @@ public class QueueGroupManager implements Serializable {
         }
         return removed;
     }
-
-    public synchronized boolean addMember(String groupName, String member) {
-        return addHostMember(groupName, member);
-    }
-
+    
     public synchronized boolean addHostMember(String groupName, String member) {
         for (QueueGroup g : groups) {
             if (g.getName() != null && g.getName().equals(groupName)) {

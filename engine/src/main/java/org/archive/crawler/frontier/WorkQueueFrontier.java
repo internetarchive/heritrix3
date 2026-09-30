@@ -818,7 +818,7 @@ implements Closeable,
                     }
                     if (currentQueueKey.equals(curi.getClassKey())) {
                         // curi was in right queue; apply queue-group gating and
-                        // round-robin (issue #754) if it belongs to a group,
+                        // round-robin if it belongs to a group,
                         // otherwise emit exactly as before.
                         QueueGroup group = groupFor(readyQ);
                         if (group != null) {
