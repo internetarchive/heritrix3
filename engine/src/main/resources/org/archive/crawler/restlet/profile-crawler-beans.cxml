@@ -289,6 +289,8 @@ http://example.example/example
   <!-- <property name="digestContent" value="true" /> -->
   <!-- <property name="digestAlgorithm" value="sha1" /> -->
  </bean>
+ <bean id="botBlockDetector" class="org.archive.modules.processor.BotBlockDetector">
+ </bean>
  <bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
  </bean>
  <bean id="extractorRobotsTxt" class="org.archive.modules.extractor.ExtractorRobotsTxt">
@@ -344,6 +346,8 @@ http://example.example/example
     <!-- <ref bean="fetchWhois"/> -->
     <!-- ...fetch if HTTP URI... -->
     <ref bean="fetchHttp"/>
+    <!-- ...annotate responses from bot-blocking services... -->
+    <ref bean="botBlockDetector"/>
     <!-- ...extract outlinks from HTTP headers... -->
     <ref bean="extractorHttp"/>
     <!-- ...extract sitemap urls from robots.txt... -->
