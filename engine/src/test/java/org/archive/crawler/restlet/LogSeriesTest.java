@@ -101,10 +101,11 @@ public class LogSeriesTest {
         File active = write("crawl.log", "b3\na3\n");
         try (LogSeries series = LogSeries.all(active)) {
             FilteredLineScanner.Result r = FilteredLineScanner.scan(series, 0,
-                    10, s -> s.startsWith("a"));
+                    10, s -> s.startsWith("a"), Long.MAX_VALUE, null);
             assertEquals(List.of("a1", "a2", "a3"), r.lines);
             assertEquals(List.of(0L, 6L, 12L), r.lineStarts);
-            r = FilteredLineScanner.scan(series, -1, -2, s -> true);
+            r = FilteredLineScanner.scan(series, -1, -2, s -> true,
+                    Long.MAX_VALUE, null);
             assertEquals(List.of("b3", "a3"), r.lines);
             assertEquals(9, r.range.getMinimum());
         }

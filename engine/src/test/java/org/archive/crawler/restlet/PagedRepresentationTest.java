@@ -29,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.restlet.Request;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
+import org.restlet.data.Reference;
 import org.restlet.representation.FileRepresentation;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,8 +50,97 @@ public class PagedRepresentationTest {
     @TempDir
     File tempDir;
 
+    String render(String fileName, String pos, String lines, String reverse,
+            String q) throws Exception {
+        File f = new File(tempDir, fileName);
+        Files.write(f.toPath(), LOG.getBytes(StandardCharsets.UTF_8));
+        EnhDirectoryResource resource = new EnhDirectoryResource();
+        Request request = new Request(Method.GET,
+                "http://localhost:8443/engine/job/j/jobdir/logs/" + fileName
+                + "?format=paged&q=" + (q == null ? "" : Reference.encode(q)));
+        request.setOriginalRef(request.getResourceRef());
+        resource.setRequest(request);
+        PagedRepresentation rep = new PagedRepresentation(
+                new FileRepresentation(f, MediaType.TEXT_PLAIN), resource,
+                pos, lines, reverse, q, null);
+        StringWriter w = new StringWriter();
+        rep.write(w);
+        return w.toString();
+    }
+
+    @Test
+    public void testUnfiltered() throws Exception {
+        String html = render("crawl.log", null, null, null, null);
+        assertTrue(html.contains("<abbr class='status-2xx' title='OK'>200</abbr>"), html);
+        assertTrue(html.contains("a=1&amp;b=&lt;2&gt;"), html);
+        assertFalse(html.contains("<mark>"));
+        assertFalse(html.contains("searchSummary"));
+        // codes unknown to both FetchStatusCodes and Jetty don't break rendering
+        assertTrue(html.contains("<abbr class='' title='999'>999</abbr>"), html);
+        assertTrue(html.contains("<abbr class='status-neg' title='-9999'>-9999</abbr>"), html);
+        assertTrue(html.contains("&laquo;EOF&raquo;"), html);
+    }
+
+    @Test
+    public void testFiltered() throws Exception {
+        String html = render("crawl.log", null, null, null, "status:404 host:example.com b=<2");
+        assertTrue(html.contains("1 matching lines in bytes 0-"), html);
+        assertFalse(html.contains("a.pdf"));
+        assertFalse(html.contains("other.org"));
+        // only the bare word is highlighted, html escaped
+        assertTrue(html.contains("<abbr class='status-4xx' title='S_NOT_FOUND'>404</abbr>"), html);
+        assertTrue(html.contains("http://example.com/x?a=1&amp;<mark>b=&lt;2</mark>&gt;"), html);
+        // query is echoed escaped and carried in navigation links
+        assertTrue(html.contains("value='status:404 host:example.com b=&lt;2'"), html);
+        assertTrue(html.contains("q=status%3A404"), html);
+        assertTrue(html.contains("'>clear</a>"), html);
+    }
+
+    @Test
+    public void testHighlightAcrossStatus() throws Exception {
+        // a match spanning the status column is split around the abbr
+        String html = render("crawl.log", null, null, null, "line~\"Z +404 +5\"");
+        assertTrue(html.contains("2024-01-15T12:00:01.000<mark>Z   </mark>"
+                + "<abbr class='status-4xx' title='S_NOT_FOUND'><mark>404</mark></abbr>"
+                + "<mark>        5</mark>12 "), html);
+    }
+
+    @Test
+    public void testFilteredReversed() throws Exception {
+        String html = render("crawl.log", "-1", "-128", "y", "status:404");
+        int other = html.indexOf("other.org");
+        int example = html.indexOf("x?a=1");
+        assertTrue(other > 0 && example > 0 && other < example, html);
+        assertTrue(html.contains("2 matching lines"), html);
+        assertTrue(html.contains("name='reverse' value='y'"), html);
+    }
+
+    @Test
+    public void testInvalidQuery() throws Exception {
+        String html = render("crawl.log", null, null, null, "url~(<b>");
+        assertTrue(html.contains("Invalid search:</b> invalid regex '(&lt;b&gt;'"), html);
+        assertFalse(html.contains("a.pdf"));
+    }
+
+    @Test
+    public void testUnknownField() throws Exception {
+        // searched for as text, without a warning
+        String html = render("crawl.log", null, null, null, "stauts:404");
+        assertTrue(html.contains("0 matching lines"), html);
+    }
+
+    @Test
+    public void testFilteredLongLine() throws Exception {
+        File f = new File(tempDir, "big.log");
+        Files.write(f.toPath(), ("short\n" + "y".repeat(
+                FilteredLineScanner.MAX_LINE_LENGTH + 10) + "\n")
+                .getBytes(StandardCharsets.UTF_8));
+        String html = renderFile(f, null, null, null, "y", null);
+        assertTrue(html.contains("1 matching lines"), html);
+    }
+
     String renderFile(File f, String pos, String lines, String reverse,
-            String all) throws Exception {
+            String q, String all) throws Exception {
         EnhDirectoryResource resource = new EnhDirectoryResource();
         Request request = new Request(Method.GET,
                 "http://localhost:8443/engine/job/j/jobdir/logs/" + f.getName()
@@ -59,33 +149,8 @@ public class PagedRepresentationTest {
         resource.setRequest(request);
         StringWriter w = new StringWriter();
         new PagedRepresentation(new FileRepresentation(f, MediaType.TEXT_PLAIN),
-                resource, pos, lines, reverse, all).write(w);
+                resource, pos, lines, reverse, q, all).write(w);
         return w.toString();
-    }
-
-    String render(String fileName) throws Exception {
-        File f = new File(tempDir, fileName);
-        Files.write(f.toPath(), LOG.getBytes(StandardCharsets.UTF_8));
-        return renderFile(f, null, null, null, null);
-    }
-
-    @Test
-    public void testCrawlLog() throws Exception {
-        String html = render("crawl.log");
-        assertTrue(html.contains("<abbr class='status-2xx' title='OK'>200</abbr>"), html);
-        assertTrue(html.contains("a=1&amp;b=&lt;2&gt;"), html);
-        // codes unknown to both FetchStatusCodes and Jetty don't break rendering
-        assertTrue(html.contains("<abbr class='' title='999'>999</abbr>"), html);
-        assertTrue(html.contains("<abbr class='status-neg' title='-9999'>-9999</abbr>"), html);
-        assertTrue(html.contains("&laquo;EOF&raquo;"), html);
-        assertFalse(html.contains("seriesInfo"));
-    }
-
-    @Test
-    public void testOtherLog() throws Exception {
-        String html = render("alerts.log");
-        assertTrue(html.contains("a=1&amp;b=&lt;2&gt;"), html);
-        assertFalse(html.contains("<abbr"));
     }
 
     @Test
@@ -93,8 +158,10 @@ public class PagedRepresentationTest {
         File f = new File(tempDir, "crawl.log");
         Files.write(f.toPath(), "2024-01-15T12:00:00.123Z 99999999999 x\n"
                 .getBytes(StandardCharsets.UTF_8));
-        String html = renderFile(f, null, null, null, null);
+        String html = renderFile(f, null, null, null, null, null);
         assertTrue(html.contains("2024-01-15T12:00:00.123Z 99999999999 x"), html);
+        html = renderFile(f, null, null, null, "x", null);
+        assertTrue(html.contains("2024-01-15T12:00:00.123Z 99999999999 <mark>x</mark>"), html);
     }
 
     @Test
@@ -109,14 +176,14 @@ public class PagedRepresentationTest {
         long cpLength = cp1.length() + cp2.length();
 
         // single file view offers the toggle, carrying the position over
-        String html = renderFile(active, "5", null, null, null);
+        String html = renderFile(active, "5", null, null, null, null);
         assertTrue(html.contains("all=y'>include 2 checkpoint logs</a>"), html);
         assertTrue(html.contains("pos=" + (cpLength + 5) + "&amp;all=y"), html);
         assertFalse(html.contains("fileMarker"));
         assertFalse(html.contains("a.pdf"));
 
         // combined view: all lines, each run labelled with its file
-        html = renderFile(active, null, null, null, "y");
+        html = renderFile(active, null, null, null, null, "y");
         assertTrue(html.contains("Including all 3 generations of this log:"), html);
         int m1 = html.indexOf("&#x2500;&#x2500; crawl.log.cp00001-20240115120000");
         int pdf = html.indexOf("a.pdf");
@@ -128,23 +195,37 @@ public class PagedRepresentationTest {
                 && m3 < last, html);
         assertTrue(html.contains("bytes 0-" + (cpLength + active.length())), html);
         assertTrue(html.contains("'>view this file only</a>"), html);
-        // navigation keeps the combined view
-        assertTrue(html.contains("&amp;lines=-128&amp;all=y'>&laquo; end</a>")
-                || html.contains("lines=-128&amp;all=y'>end &raquo;</a>"), html);
+        assertTrue(html.contains("name='all' value='y'"), html);
+
+        // search spans the files; links keep the combined view
+        html = renderFile(active, null, null, null, "status:404", "y");
+        assertTrue(html.contains("2 matching lines"), html);
+        assertTrue(html.contains("x?a=1") && html.contains("other.org"), html);
+        assertTrue(html.contains("q=status%3A404&amp;all=y"), html);
 
         // reversed, newest first, still labelled
-        html = renderFile(active, "-1", "-128", "y", "y");
+        html = renderFile(active, "-1", "-128", "y", null, "y");
         assertTrue(html.indexOf("example.com/w") < html.indexOf("a.pdf"), html);
         assertTrue(html.indexOf("&#x2500;&#x2500; crawl.log &#x2500;")
                 < html.indexOf("&#x2500;&#x2500; crawl.log.cp00001"), html);
 
         // back to the single file, the position is converted back
-        html = renderFile(active, Long.toString(cpLength + 5), null, null, "y");
+        html = renderFile(active, Long.toString(cpLength + 5), null, null, null, "y");
         assertTrue(html.contains("?format=paged&amp;pos=5'>view this file only</a>"), html);
 
         // a rotated crawl.log is still treated as a crawl.log
-        html = renderFile(cp1, null, null, null, null);
+        html = renderFile(cp1, null, null, null, "status:200", null);
         assertTrue(html.contains("<abbr class='status-2xx' title='OK'>200</abbr>"), html);
         assertTrue(html.contains("include 2 checkpoint logs"), html);
+    }
+
+    @Test
+    public void testOtherLog() throws Exception {
+        String html = render("alerts.log", null, null, null, "other");
+        assertTrue(html.contains("1 matching lines"), html);
+        assertTrue(html.contains("http://<mark>other</mark>.org/y"), html);
+        assertFalse(html.contains("<abbr"));
+        String error = render("alerts.log", null, null, null, "status:404");
+        assertTrue(error.contains("only available when viewing crawl.log"), error);
     }
 }

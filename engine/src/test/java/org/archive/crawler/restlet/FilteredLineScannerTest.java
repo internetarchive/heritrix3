@@ -20,6 +20,7 @@
 package org.archive.crawler.restlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FilteredLineScannerTest {
+    static final long NO_DEADLINE = Long.MAX_VALUE;
     static final Predicate<String> ALL = s -> true;
 
     @TempDir
@@ -45,8 +47,20 @@ public class FilteredLineScannerTest {
 
     static FilteredLineScanner.Result scan(File f, long pos, int count,
             Predicate<String> filter) throws Exception {
+        return scan(f, pos, count, filter, System.nanoTime() + 10_000_000_000L);
+    }
+
+    static FilteredLineScanner.Result scan(File f, long pos, int count,
+            Predicate<String> filter, long deadlineNanos) throws IOException {
+        return scan(f, pos, count, filter, deadlineNanos, null);
+    }
+
+    static FilteredLineScanner.Result scan(File f, long pos, int count,
+            Predicate<String> filter, long deadlineNanos,
+            FilteredLineScanner.ProgressListener listener) throws IOException {
         try (LogSeries source = LogSeries.single(f)) {
-            return FilteredLineScanner.scan(source, pos, count, filter);
+            return FilteredLineScanner.scan(source, pos, count, filter,
+                    deadlineNanos, listener);
         }
     }
 
@@ -57,6 +71,7 @@ public class FilteredLineScannerTest {
         assertEquals(List.of("a1", "a3"), r.lines);
         assertEquals(0, r.range.getMinimum());
         assertEquals(9, r.range.getMaximum());
+        assertFalse(r.budgetExhausted);
 
         // continue from the end of the previous range
         r = scan(f, r.range.getMaximum(), 2, s -> s.startsWith("a"));
@@ -175,5 +190,92 @@ public class FilteredLineScannerTest {
         r = scan(f, -1, -10, ALL);
         assertEquals(1, r.lines.size());
         assertEquals(0, r.range.getMinimum());
+    }
+
+    @Test
+    public void testBudgetExhausted() throws Exception {
+        File f = write("a1\nb2\na3\n");
+        FilteredLineScanner.Result r = scan(f, 0, 10, ALL,
+                System.nanoTime() - 1);
+        assertTrue(r.budgetExhausted);
+        assertTrue(r.lines.isEmpty());
+        assertEquals(0, r.range.getMinimum());
+        assertEquals(0, r.range.getMaximum());
+    }
+
+    @Test
+    public void testOverallDeadlineDuringLine() throws Exception {
+        File f = write("a1\nb2\na3\n");
+        long deadline = System.nanoTime() + 1_000_000_000L;
+        FilteredLineScanner.Result r = scan(f, 0, 10, s -> {
+            if (s.equals("b2")) {
+                while (System.nanoTime() <= deadline) {
+                    Thread.onSpinWait();
+                }
+                throw new LogQuery.DeadlineExceededException();
+            }
+            return true;
+        }, deadline);
+        assertTrue(r.budgetExhausted);
+        assertEquals(List.of("a1"), r.lines);
+        // b2 wasn't fully examined, so continuing starts there
+        assertEquals(3, r.range.getMaximum());
+    }
+
+    @Test
+    public void testProgress() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            sb.append("line ").append(i).append('\n');
+        }
+        File f = write(sb.toString());
+        List<long[]> updates = new ArrayList<>();
+        Predicate<String> slow = s -> {
+            try {
+                Thread.sleep(30);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            return s.endsWith("5");
+        };
+        FilteredLineScanner.Result r = scan(f, 0, 100, slow,
+                NO_DEADLINE, (scanned, total, matches) ->
+                        updates.add(new long[] {scanned, total, matches}));
+        assertEquals(List.of("line 5", "line 15"), r.lines);
+        assertTrue(updates.size() >= 1, "got progress updates");
+        long[] last = updates.get(updates.size() - 1);
+        assertEquals(f.length(), last[1]);
+        assertTrue(last[0] > 0 && last[0] < f.length());
+        assertTrue(last[2] >= 1);
+
+        // backward: total is the distance back to the start of the file
+        updates.clear();
+        scan(f, -1, -100, slow, NO_DEADLINE,
+                (scanned, total, matches) ->
+                        updates.add(new long[] {scanned, total, matches}));
+        assertEquals(f.length(), updates.get(0)[1]);
+    }
+
+    @Test
+    public void testProgressListenerAborts() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            sb.append("line ").append(i).append('\n');
+        }
+        File f = write(sb.toString());
+        Predicate<String> slow = s -> {
+            try {
+                Thread.sleep(30);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            return true;
+        };
+        IOException e = assertThrows(IOException.class, () ->
+                scan(f, 0, 100, slow, NO_DEADLINE,
+                        (scanned, total, matches) -> {
+                            throw new IOException("client disconnected");
+                        }));
+        assertEquals("client disconnected", e.getMessage());
     }
 }

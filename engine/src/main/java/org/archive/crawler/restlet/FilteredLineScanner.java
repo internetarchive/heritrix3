@@ -30,11 +30,12 @@ import org.apache.commons.lang3.LongRange;
 
 /**
  * Scans a file forwards or backwards from a byte position, collecting lines
- * that match a filter, until enough matches are found or the start/end of
- * the file is reached.
+ * that match a filter, until enough matches are found, the start/end of the
+ * file is reached, or a time budget runs out.
  *
- * This keeps no state between requests: the caller continues by scanning
- * again from the edge of the returned range.
+ * Unlike an index-based search this keeps no state between requests: the
+ * caller continues a search by scanning again from the edge of the returned
+ * range.
  */
 public class FilteredLineScanner {
     protected static final int CHUNK_SIZE = 64 * 1024;
@@ -43,6 +44,20 @@ public class FilteredLineScanner {
      * file with few or no newlines can't exhaust the heap
      */
     protected static final int MAX_LINE_LENGTH = 256 * 1024;
+    protected static final long PROGRESS_INTERVAL_NANOS = 250_000_000L;
+
+    /** Receives periodic progress updates during a scan. */
+    public interface ProgressListener {
+        /**
+         * @param bytesScanned bytes examined so far
+         * @param bytesToScan bytes between the starting point and the end
+         *        (or start) of the file
+         * @param matches matching lines found so far
+         * @throws IOException to abort the scan, e.g. if the client has gone
+         */
+        void progress(long bytesScanned, long bytesToScan, int matches)
+                throws IOException;
+    }
 
     /** Result of a scan. */
     public static class Result {
@@ -52,11 +67,15 @@ public class FilteredLineScanner {
         public final List<Long> lineStarts;
         /** byte range [start-of-first-line, past-end-of-last-line] scanned */
         public final LongRange range;
+        /** true if the scan stopped because the time budget ran out */
+        public final boolean budgetExhausted;
 
-        Result(List<String> lines, List<Long> lineStarts, LongRange range) {
+        Result(List<String> lines, List<Long> lineStarts, LongRange range,
+                boolean budgetExhausted) {
             this.lines = lines;
             this.lineStarts = lineStarts;
             this.range = range;
+            this.budgetExhausted = budgetExhausted;
         }
     }
 
@@ -67,13 +86,19 @@ public class FilteredLineScanner {
     protected int bufLen = 0;
 
     protected final Predicate<String> filter;
+    protected final long deadlineNanos;
+    protected final ProgressListener listener;
+    protected long lastProgressNanos = System.nanoTime();
     protected final List<String> matches = new ArrayList<>();
     protected final List<Long> matchStarts = new ArrayList<>();
 
-    protected FilteredLineScanner(LogSeries source, Predicate<String> filter) {
+    protected FilteredLineScanner(LogSeries source, Predicate<String> filter,
+            long deadlineNanos, ProgressListener listener) {
         this.source = source;
         this.length = source.length();
         this.filter = filter;
+        this.deadlineNanos = deadlineNanos;
+        this.listener = listener;
     }
 
     /**
@@ -86,11 +111,17 @@ public class FilteredLineScanner {
      *        line containing it. Negative means end of file.
      * @param lineCount number of matching lines wanted; positive to scan
      *        forward, negative to scan backward
-     * @param filter returns true for lines to include
+     * @param filter returns true for lines to include. If it throws
+     *        {@link LogQuery.DeadlineExceededException} the scan ends as if
+     *        the deadline had passed.
+     * @param deadlineNanos {@link System#nanoTime()} after which to stop
+     * @param listener receives progress updates; may be null
      */
     public static Result scan(LogSeries source, long position, int lineCount,
-            Predicate<String> filter) throws IOException {
-        FilteredLineScanner scanner = new FilteredLineScanner(source, filter);
+            Predicate<String> filter, long deadlineNanos,
+            ProgressListener listener) throws IOException {
+        FilteredLineScanner scanner = new FilteredLineScanner(source, filter,
+                deadlineNanos, listener);
         if (lineCount >= 0) {
             return scanner.forward(position, lineCount);
         } else {
@@ -104,38 +135,83 @@ public class FilteredLineScanner {
         }
         long start = lineStart(position);
         long pos = start;
+        boolean exhausted = false;
         while (pos < length && matches.size() < wanted) {
+            if (outOfTime(pos - start, length - start)) {
+                exhausted = true;
+                break;
+            }
             long end = lineEnd(pos);
-            test(readLine(pos, end), pos);
+            if (!test(readLine(pos, end), pos)) {
+                exhausted = true;
+                break;
+            }
             pos = end;
         }
-        return new Result(matches, matchStarts, LongRange.of(start, pos));
+        return new Result(matches, matchStarts, LongRange.of(start, pos),
+                exhausted);
     }
 
     protected Result backward(long position, int wanted) throws IOException {
         if (length == 0) {
-            return new Result(matches, matchStarts, LongRange.of(0L, 0L));
+            return new Result(matches, matchStarts, LongRange.of(0L, 0L), false);
         }
         if (position < 0 || position >= length) {
             position = length - 1;
         }
         long end = lineEnd(position);
         long pos = end;
+        boolean exhausted = false;
         while (pos > 0 && matches.size() < wanted) {
+            if (outOfTime(end - pos, end)) {
+                exhausted = true;
+                break;
+            }
             long start = lineStart(pos - 1);
-            test(readLine(start, pos), start);
+            if (!test(readLine(start, pos), start)) {
+                exhausted = true;
+                break;
+            }
             pos = start;
         }
         Collections.reverse(matches);
         Collections.reverse(matchStarts);
-        return new Result(matches, matchStarts, LongRange.of(pos, end));
+        return new Result(matches, matchStarts, LongRange.of(pos, end),
+                exhausted);
     }
 
-    /** Applies the filter to a line, adding it to the matches if it passes. */
-    protected void test(String line, long lineStart) {
-        if (filter.test(line)) {
-            matches.add(line);
-            matchStarts.add(lineStart);
+    /**
+     * Checks the deadline and sends progress updates if due.
+     *
+     * @return true if the deadline has passed
+     */
+    protected boolean outOfTime(long bytesScanned, long bytesToScan)
+            throws IOException {
+        long now = System.nanoTime();
+        if (now > deadlineNanos) {
+            return true;
+        }
+        if (listener != null && now - lastProgressNanos > PROGRESS_INTERVAL_NANOS) {
+            listener.progress(bytesScanned, bytesToScan, matches.size());
+            lastProgressNanos = now;
+        }
+        return false;
+    }
+
+    /**
+     * Applies the filter to a line, adding it to the matches if it passes.
+     *
+     * @return false if the line could not be examined before the deadline
+     */
+    protected boolean test(String line, long lineStart) {
+        try {
+            if (filter.test(line)) {
+                matches.add(line);
+                matchStarts.add(lineStart);
+            }
+            return true;
+        } catch (LogQuery.DeadlineExceededException e) {
+            return false;
         }
     }
 

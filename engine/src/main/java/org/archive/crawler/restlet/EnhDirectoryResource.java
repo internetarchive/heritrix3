@@ -105,6 +105,7 @@ public class EnhDirectoryResource extends DirectoryServerResource {
                                 f.getFirstValue("pos"),
                                 f.getFirstValue("lines"),
                                 f.getFirstValue("reverse"),
+                                f.getFirstValue("q"),
                                 f.getFirstValue("all")));
                     };
                 }

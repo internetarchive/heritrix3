@@ -37,12 +37,12 @@ import java.util.regex.Pattern;
  * A log file and, optionally, the earlier generations of it rotated off at
  * checkpoints, read as one virtual file with the generations laid end to end
  * in time order.
- *
+ * <p>
  * Checkpointing renames the active log in place (crawl.log becomes
  * crawl.log.cp00001-20240115120000) and starts a new one, so a byte position
  * in the virtual file stays valid across checkpoints: the renamed file keeps
  * its place, and the new log continues after it.
- *
+ * <p>
  * All files are opened, and their lengths fixed, when the series is created,
  * so a rotation or append while reading doesn't change what is read. They
  * are opened with NIO because, unlike java.io, it lets an open file be
