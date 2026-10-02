@@ -29,7 +29,6 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +36,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.LongRange;
 import org.archive.modules.fetcher.FetchStatusCodes;
-import org.archive.util.FileUtils;
 import org.eclipse.jetty.http.HttpStatus;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
@@ -65,6 +63,8 @@ public class PagedRepresentation extends CharacterRepresentation {
     protected int lineCount;
     /** whether to display lines in reversed order (latest first) **/
     protected boolean reversedOrder; 
+    /** whether to include the generations of the log rotated at checkpoints **/
+    protected boolean includeRotated;
     
     // created when file is scanned
     /** text lines **/
@@ -73,6 +73,12 @@ public class PagedRepresentation extends CharacterRepresentation {
     protected LongRange range;
     /** File **/ 
     protected File file; 
+    /** the file, or all its generations if includeRotated **/
+    protected LogSeries series;
+    /** length of the series when it was opened **/
+    protected long seriesLength;
+    /** position in the series of the start of each line, in display order **/
+    protected List<Long> lineStarts;
     // TODO: maybe, freeze length for more consistent display of growing files
     // (now, as length/%/bumper are written after lines retrieved, they 
     // sometimes are indicative the file has grown before the page is 
@@ -80,7 +86,7 @@ public class PagedRepresentation extends CharacterRepresentation {
     
     public PagedRepresentation(FileRepresentation representation,
             EnhDirectoryResource resource, String pos, String lines,
-            String reverse) {
+            String reverse, String all) {
         super(MediaType.TEXT_HTML);
         fileRepresentation = representation;
         dirResource = resource; 
@@ -88,6 +94,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         position = StringUtils.isBlank(pos) ? 0 : Long.parseLong(pos);
         lineCount = StringUtils.isBlank(lines) ? 128 : Integer.parseInt(lines);
         reversedOrder = "y".equals(reverse);
+        includeRotated = "y".equals(all);
         
         // TODO: remove if not necessary in future?
         setCharacterSet(CharacterSet.UTF_8);
@@ -110,22 +117,29 @@ public class PagedRepresentation extends CharacterRepresentation {
      * @throws IOException
      */
     protected void loadLines() throws IOException {
-        this.file = fileRepresentation.getFile();
-        this.lines = new LinkedList<String>();
-        this.range = FileUtils.pagedLines(file, position, lineCount, lines, 128);
+        FilteredLineScanner.Result result = FilteredLineScanner.scan(
+                series, position, lineCount, line -> true);
         // bounce against the front of the file: don't show runt (fewer
-        // lines than requested) unless absolutely necessary)
-        if(lines.size()<Math.abs(lineCount) 
-                && range.getMinimum() == 0
-                && range.getMaximum()<file.length()) {
-            this.lines = new LinkedList<String>();
-            this.range = FileUtils.pagedLines(file, 0, Math.abs(lineCount), lines, 128);
+        // lines than requested) unless absolutely necessary
+        if (result.lines.size() < Math.abs(lineCount)
+                && result.range.getMinimum() == 0
+                && result.range.getMaximum() < seriesLength) {
+            result = FilteredLineScanner.scan(series, 0, Math.abs(lineCount),
+                    line -> true);
         }
-        if(reversedOrder) {
+        this.lines = new ArrayList<>(result.lines);
+        this.lineStarts = new ArrayList<>(result.lineStarts);
+        this.range = result.range;
+        if (reversedOrder) {
             Collections.reverse(lines);
+            Collections.reverse(lineStarts);
         }
     }
-    
+
+    protected boolean isCrawlLog() {
+        return LogSeries.baseName(file.getName()).equals("crawl.log");
+    }
+
     /** 
      * Write the paged HTML. 
      * 
@@ -133,14 +147,25 @@ public class PagedRepresentation extends CharacterRepresentation {
      */
     @Override
     public void write(Writer writer) throws IOException {
-        loadLines();
+        this.file = fileRepresentation.getFile();
         
         PrintWriter pw = new PrintWriter(writer); 
-        pw.println("<b>Paged view:</b> "+file);
+        pw.println("<b>Paged view:</b> "+StringEscapeUtils.escapeHtml4(file.toString()));
+        series = includeRotated ? LogSeries.all(file) : LogSeries.single(file);
+        try {
+            seriesLength = series.length();
+            emitSeriesInfo(pw);
+            writeBody(pw);
+        } finally {
+            series.close();
+        }
+    }
+
+    protected void writeBody(PrintWriter pw) throws IOException {
+        loadLines();
         emitControls(pw);
 
-        Function<String, String> syntaxHighlighter = Function.identity();
-        if (file.getName().equals("crawl.log")) {
+        if (isCrawlLog()) {
             pw.println("<style>\n" +
                     ".status-neg { color: #777; }\n" +
                     ".status-2xx { color: #070; }\n" +
@@ -148,18 +173,108 @@ public class PagedRepresentation extends CharacterRepresentation {
                     ".status-4xx { color: #770; }\n" +
                     ".status-5xx { color: #770; }\n" +
                     "</style>");
-            syntaxHighlighter = this::highlightCrawlLogLine;
         }
 
         pw.println("<pre>");
         emitBumper(pw, true);
-        for(String line : lines) {
-            pw.println(syntaxHighlighter.apply(StringEscapeUtils.escapeHtml4(line)));
+        int fileIndex = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            if (series.getFiles().size() > 1) {
+                // label each run of lines with the file they come from
+                int index = series.fileIndexAt(lineStarts.get(i));
+                if (index != fileIndex) {
+                    emitFileMarker(pw, series.getFiles().get(index));
+                    fileIndex = index;
+                }
+            }
+            pw.println(renderLine(lines.get(i)));
         }
         emitBumper(pw, false);
         pw.println("</pre>");
         
         emitControls(pw); 
+    }
+
+    /**
+     * Emit the files included in the view, with a link to toggle including
+     * the generations of the log rotated at checkpoints.
+     */
+    protected void emitSeriesInfo(PrintWriter pw) {
+        if (includeRotated) {
+            List<File> files = series.getFiles();
+            pw.print("<div class='seriesInfo'>Including all " + files.size()
+                    + " generations of this log:");
+            for (File f : files) {
+                pw.print(" <code>" + StringEscapeUtils.escapeHtml4(f.getName())
+                        + "</code>");
+            }
+            pw.println(". <a href='" + getControlUri(toFilePosition(position),
+                    lineCount, reversedOrder, false)
+                    + "'>view this file only</a></div>");
+        } else {
+            int rotated = LogSeries.countRotated(file);
+            if (rotated > 0) {
+                pw.println("<div class='seriesInfo'><a href='"
+                        + getControlUri(toSeriesPosition(position), lineCount,
+                                reversedOrder, true)
+                        + "'>include " + rotated + " checkpoint "
+                        + (rotated == 1 ? "log" : "logs") + "</a></div>");
+            }
+        }
+    }
+
+    /**
+     * Converts a position in the file to the corresponding position in the
+     * series of all its generations.
+     */
+    protected long toSeriesPosition(long pos) {
+        if (pos < 0) {
+            return pos;
+        }
+        long start = LogSeries.startOfInAll(file);
+        return start < 0 ? 0 : start + pos;
+    }
+
+    /**
+     * Converts a position in the series to the corresponding position in
+     * the file, clamped to the file.
+     */
+    protected long toFilePosition(long pos) {
+        if (pos < 0) {
+            return pos;
+        }
+        long start = LogSeries.startOfInAll(file);
+        if (start < 0) {
+            return 0;
+        }
+        return Math.max(0, pos - start);
+    }
+
+    /** Emit a label for the lines that follow, naming their file. */
+    protected void emitFileMarker(PrintWriter pw, File f) {
+        // a block element already ends the line, so no newline after it
+        pw.print("<span class='fileMarker' style='display:block;"
+                + " background:#eee; color:#444; border-top:1px solid #aaa'>"
+                + "&#x2500;&#x2500; " + StringEscapeUtils.escapeHtml4(f.getName())
+                + " &#x2500;&#x2500;</span>");
+    }
+
+    /**
+     * Render a line as HTML, highlighting the fetch status for crawl.log.
+     */
+    protected String renderLine(String line) {
+        Matcher m = CRAWL_LOG_PATTERN.matcher(line);
+        if (isCrawlLog() && m.matches()) {
+            try {
+                String statusTag = statusAbbrTag(Integer.parseInt(m.group(2)));
+                return StringEscapeUtils.escapeHtml4(m.group(1)) + statusTag
+                        + m.group(2) + "</abbr>"
+                        + StringEscapeUtils.escapeHtml4(m.group(3));
+            } catch (NumberFormatException e) {
+                // too long to be a status
+            }
+        }
+        return StringEscapeUtils.escapeHtml4(line);
     }
 
     /**
@@ -182,36 +297,30 @@ public class PagedRepresentation extends CharacterRepresentation {
     private static final Pattern CRAWL_LOG_PATTERN = Pattern.compile("([^ ]+ +)(-?[0-9]+)( +.*)");
 
     /**
-     * Performs basic syntax highlighting of a crawl log line. Assumes the line is already HTML escaped.
+     * @return opening abbr tag for a crawl.log status code, with a class for
+     *         coloring and the status name as its title
      */
-    public String highlightCrawlLogLine(String line) {
-        Matcher m = CRAWL_LOG_PATTERN.matcher(line);
-        if (m.matches()) {
-            String date = m.group(1);
-            String status = m.group(2);
-            String rest = m.group(3);
-
-            int code = Integer.parseInt(status);
-            String clazz = "";
-            if (code < 0) {
-                clazz = "status-neg";
-            } else if (code >= 200 && code <= 299) {
-                clazz = "status-2xx";
-            } else if (code >= 300 && code <= 399) {
-                clazz = "status-3xx";
-            } else if (code >= 400 && code <= 499) {
-                clazz = "status-4xx";
-            } else if (code >= 500 && code <= 599) {
-                clazz = "status-5xx";
-            }
-
-            String reason = FETCH_STATUS_NAMES.get(code);
-            if (reason == null) reason = HttpStatus.getMessage(code);
-
-            return date + "<abbr class='" + clazz + "' title='" + reason + "'>" + status + "</abbr>" + rest;
-        } else {
-            return line;
+    protected String statusAbbrTag(int code) {
+        String clazz = "";
+        if (code < 0) {
+            clazz = "status-neg";
+        } else if (code >= 200 && code <= 299) {
+            clazz = "status-2xx";
+        } else if (code >= 300 && code <= 399) {
+            clazz = "status-3xx";
+        } else if (code >= 400 && code <= 499) {
+            clazz = "status-4xx";
+        } else if (code >= 500 && code <= 599) {
+            clazz = "status-5xx";
         }
+
+        String reason = FETCH_STATUS_NAMES.get(code);
+        // HttpStatus throws for codes outside its table, e.g. 999
+        if (reason == null) reason = code >= 0 && code <= HttpStatus.MAX_CODE
+                ? HttpStatus.getMessage(code) : Integer.toString(code);
+
+        return "<abbr class='" + clazz + "' title='"
+                + StringEscapeUtils.escapeHtml4(reason) + "'>";
     }
 
     /**
@@ -222,7 +331,7 @@ public class PagedRepresentation extends CharacterRepresentation {
      * @param atTop boolean, true if at top of page
      */
     protected void emitBumper(PrintWriter pw, boolean atTop) {
-        if((!reversedOrder ^ atTop)&&(range.getMaximum()==file.length())) {
+        if((!reversedOrder ^ atTop)&&(range.getMaximum()==seriesLength)) {
             pw.println("<span class='endBumper' style='font-weight:bold; color:white; background-color:#400'>&laquo;EOF&raquo;</span>");
             return; 
         }
@@ -247,14 +356,14 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("'>&laquo; end</a>");
             pw.print("<a href='");
             pw.print(getControlUri(
-                    Math.min(file.length()-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
+                    Math.min(seriesLength-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
             pw.println("'>&lsaquo; later</a>");
             pw.println("bytes "
                     +range.getMaximum()
                     +"-"+range.getMinimum()
-                    +"/"+file.length()
+                    +"/"+seriesLength
                     +" "
-                    +(int)(100*(range.getMaximum()/(float)file.length()))
+                    +(int)(100*(range.getMaximum()/(float)seriesLength))
                     +"%");
             pw.print("<a href='");
             pw.print(getControlUri(
@@ -279,16 +388,16 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("bytes "
                     +range.getMinimum()
                     +"-"+range.getMaximum()
-                    +"/"+file.length()
+                    +"/"+seriesLength
                     +" "
-                    +(int)(100*(range.getMaximum()/(float)file.length()))
+                    +(int)(100*(range.getMaximum()/(float)seriesLength))
                     +"%");
             pw.print("<a href='");
             pw.print(getControlUri(
-                    Math.min(file.length()-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
+                    Math.min(seriesLength-1, range.getMaximum()),Math.abs(lineCount),reversedOrder));
             pw.println("'>later &rsaquo;</a>");
             pw.print("<a href='");
-            pw.print(getControlUri(file.length(),-Math.abs(lineCount),reversedOrder));
+            pw.print(getControlUri(seriesLength,-Math.abs(lineCount),reversedOrder));
             pw.println("'>end &raquo;</a>");
             pw.println("</td>");
             
@@ -312,9 +421,19 @@ public class PagedRepresentation extends CharacterRepresentation {
      * @param pos desired position in file
      * @param lines desired signed line count
      * @param reverse if line ordering should be displayed in reverse
-     * @return String URI appropriate to navigate to desired view
+     * @return String URI appropriate to navigate to desired view, HTML escaped
      */
     protected String getControlUri(long pos, int lines, boolean reverse) {
+        return getControlUri(pos, lines, reverse, includeRotated);
+    }
+
+    /**
+     * Construct navigational URI for given parameters.
+     *
+     * @param all whether to include the rotated generations of the log
+     */
+    protected String getControlUri(long pos, int lines, boolean reverse,
+            boolean all) {
         Form query = new Form(); 
         query.add("format","paged");
         if(pos!=0) {
@@ -329,9 +448,12 @@ public class PagedRepresentation extends CharacterRepresentation {
         if(reverse) {
             query.add("reverse","y");
         }
+        if(all) {
+            query.add("all", "y");
+        }
         Reference viewRef = dirResource.getRequest().getOriginalRef().clone(); 
         viewRef.setQuery(query.getQueryString());
         
-        return viewRef.toString(); 
+        return StringEscapeUtils.escapeHtml4(viewRef.toString()); 
     }
 }
