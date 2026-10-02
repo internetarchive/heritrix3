@@ -1596,12 +1596,14 @@ implements Closeable,
             writer.print("\n");
             writer.print("   maxParallelInGroup: ");
             writer.print(group.getMaxParallelInGroup());
+            writer.print("\n");
             writer.print("   groupMinDelayMs: ");
             writer.print(group.getGroupMinDelayMs());
             writer.print("\n");
             long cooldownRemaining = Math.max(0, group.getWakeTime() - now);
             writer.print("   active (in-process): ");
             writer.print(group.getActiveCount());
+            writer.print("\n");
             writer.print("   cooldown remaining (ms): ");
             writer.print(cooldownRemaining);
             writer.print("\n");
