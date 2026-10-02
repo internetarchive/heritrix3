@@ -1590,7 +1590,11 @@ implements Closeable,
         }
         long now = System.currentTimeMillis();
         writer.print("\n -----===== QUEUE GROUPS =====-----\n");
-        for (QueueGroup group : groups) {
+        for (int i = 0; i < groups.size(); i++) {
+            if (i > 0) {
+                writer.print("\n");
+            }
+            QueueGroup group = groups.get(i);
             writer.print(" Group: ");
             writer.print(group.getName());
             writer.print("\n");
