@@ -469,7 +469,41 @@ http://example.example/example
   <!-- <property name="dumpPendingAtClose" value="false" /> -->
  </bean>
  
- <!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
+ <!-- QUEUE GROUPS : OPTIONAL. When this bean is absent
+      (as by default, being commented out below), the frontier behaves
+      exactly as before. Uncomment and adapt to group several per-host queues
+      so they share a single politeness gate (shared concurrency + shared
+      cool-down) and are served round-robin, like a single visitor toward one
+      web server. See docs/QUEUE_GROUPS.md.
+
+      IMPORTANT: group members are matched against the frontier's queue
+      classKey, whose format depends on the configured queueAssignmentPolicy
+      (see below). The default is SurtAuthorityQueueAssignmentPolicy, which
+      produces SURT-form authority classKeys such as "eu,europa,commission,".
+      Therefore, with the default policy, use groupMembersBySurt with a
+      SURT-authority prefix. The groupMembersByHost and groupMembersByRegex
+      forms match plain hostnames and are only appropriate when a host-based
+      queueAssignmentPolicy (e.g. HostnameQueueAssignmentPolicy) is used. -->
+ <!--
+ <bean id="queueGroups" class="org.archive.crawler.frontier.QueueGroupManager">
+  <property name="groups">
+   <list>
+    <bean class="org.archive.crawler.frontier.QueueGroup">
+     <property name="name" value="example_com" />
+     <property name="maxParallelInGroup" value="1" />
+     <property name="groupMinDelayMs" value="4000" />
+     <property name="groupMembersBySurt">
+      <list>
+       <value>com,example,</value>
+      </list>
+     </property>
+    </bean>
+   </list>
+  </property>
+ </bean>
+ -->
+
+ <!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs -->
  <bean id="uriUniqFilter" 
    class="org.archive.crawler.util.BdbUriUniqFilter">
  </bean>

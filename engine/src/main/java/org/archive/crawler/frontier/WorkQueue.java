@@ -544,17 +544,23 @@ public abstract class WorkQueue implements Frontier.FrontierGroup,
         return ReportUtils.shortReportLine(this);
     }
     
-    /**
-     * @param writer
-     */
     @Override
     public synchronized void reportTo(PrintWriter writer) {
+        reportTo(null, writer);
+    }
+
+    public synchronized void reportTo(String groupName, PrintWriter writer) {
         // name is ignored: only one kind of report for now
         writer.print("Queue ");
         writer.print(classKey);
         writer.print(" (p");
         writer.print(getPrecedence());
-        writer.print(")\n");
+        writer.print(")");
+        if (groupName != null) {
+            writer.print(" in queueGroup ");
+            writer.print(groupName);
+        }
+        writer.print("\n");
         writer.print("  ");
         writer.print(Long.toString(count));
         writer.print(" items");
