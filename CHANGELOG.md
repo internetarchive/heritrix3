@@ -2,7 +2,66 @@
 
 ## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.17.1...HEAD)
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.18.0...HEAD)
+
+## [3.18.0](https://github.com/internetarchive/heritrix3/releases/tag/3.18.0)  (2026-10-06)
+
+[Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.18.0/heritrix-3.18.0-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.18.0/heritrix-3.18.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.17.1...3.18.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.18.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.18.0/pom)
+
+### Security
+
+* **Web UI:** Added protection against cross-site request forgery (CSRF). POST, PUT and DELETE requests that a
+  browser sends on behalf of another site are now rejected, based on the `Sec-Fetch-Site` header. To allow requests
+  from another site, list its origin in the `heritrix.trustedOrigins` system property, e.g.
+  `-Dheritrix.trustedOrigins=https://dashboard.example.org`.
+* **Web UI:** Template output is now HTML-escaped by default, fixing cases where values were included in pages without
+  escaping. [#780](https://github.com/internetarchive/heritrix3/pull/780)
+
+### New features
+
+* **Paged log viewer:** [#780](https://github.com/internetarchive/heritrix3/pull/780)
+  * Added a search box for filtering log lines, using a small query language, e.g.
+    `status:4xx host:example.com -type:image size>1MB`. Any log can be searched for text; crawl.log also supports
+    fields such as `status`, `size`, `duration`, `depth`, `hops`, `url`, `host`, `via`, `type` and `annot`. Matches
+    are highlighted, and a progress bar is shown while searching large logs.
+  * Added an "include checkpoint logs" link to view a log together with the generations of it rotated at each
+    checkpoint, as if they were one file.
+* **BotBlockDetector:** Added detection of AWS WAF, Kasada, Nginx Lua Anti-DDoS and PerimeterX. BotBlockDetector is
+  now enabled in the default job profiles. [#778](https://github.com/internetarchive/heritrix3/pull/778)
+
+### Bug fixes
+
+* **FetchHTTP:** The payload digest of chunked responses is now calculated after transfer decoding, so it no longer
+  includes the chunk framing. [#770](https://github.com/internetarchive/heritrix3/pull/770)
+* **ExtractorJson:** URIs nested inside JSON arrays are now extracted. [#771](https://github.com/internetarchive/heritrix3/pull/771)
+* **ExtractorJS:** JavaScript Unicode code-point escapes (`\u{...}`) in extracted URLs are now decoded. [#772](https://github.com/internetarchive/heritrix3/pull/772)
+* **AMQPUrlReceiver:** Improved parsing of URL messages that contain null values. [#767](https://github.com/internetarchive/heritrix3/pull/767)
+* **Web UI:** The copy job and delete job dialogs now work in browsers without support for invoker commands, such as
+  Firefox ESR. [#773](https://github.com/internetarchive/heritrix3/issues/773)
+* **Paged log viewer:** Rotated crawl.log files now get status code highlighting, and unusual status codes no longer
+  cause an error. [#780](https://github.com/internetarchive/heritrix3/pull/780)
+
+### Changes
+
+* **Startup:** `heritrix_dmesg.log` is now only written when Heritrix is started in the background by `bin/heritrix`,
+  making it possible to run with a read-only `$HERITRIX_HOME`. The path can be set with the `heritrix.dmesg` system
+  property. [#779](https://github.com/internetarchive/heritrix3/pull/779)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.35.0 → 5.36.0
+* **codemirror__commands**: 6.10.4 → 6.11.0
+* **codemirror__state**: 6.7.1 → 6.7.4
+* **codemirror__view**: 6.43.7 → 6.43.11
+* **groovy-bom**: 5.1.1 → 6.0.0
+* **jackson-bom**: 2.22.2 → 2.22.3
+* **jetty** (jetty-bom, jetty-ee10-bom): 12.0.38 → 12.0.39
+* **lz4-java**: 1.11.2 → 1.12.0
+* **marijn__find-cluster-break**: 1.0.3 → 1.0.4
+* **slf4j-bom**: 2.0.18 → 2.0.20
+* **webjars-locator-lite**: 1.1.4 → 1.1.5
 
 ## [3.17.1](https://github.com/internetarchive/heritrix3/releases/tag/3.17.1)  (2026-09-10)
 
