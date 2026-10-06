@@ -22,6 +22,8 @@ package org.archive.crawler.restlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
@@ -139,7 +141,18 @@ public class EngineApplication extends Application {
         Directory webjarsDir = new Directory(getContext().createChildContext(), "clap://class/META-INF/resources/webjars");
         router.attach("/engine/webjars/", webjarsDir);
 
-        return router;
+        // comma separated origins, e.g. https://example.org, allowed to send
+        // cross-site requests
+        List<String> trustedOrigins = new ArrayList<>();
+        for (String origin : System.getProperty("heritrix.trustedOrigins", "").split(",")) {
+            if (!origin.isBlank()) {
+                trustedOrigins.add(origin.trim());
+            }
+        }
+        CrossSiteRequestFilter crossSiteFilter =
+                new CrossSiteRequestFilter(getContext(), trustedOrigins);
+        crossSiteFilter.setNext(router);
+        return crossSiteFilter;
     }
 
     public Engine getEngine() {
