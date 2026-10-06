@@ -71,7 +71,9 @@ import org.restlet.security.MapVerifier;
  * stderr show on the console, this class prints usage or startup output
  * such as where the web UI can be found, etc., to a STARTLOG that the shell
  * script is waiting on.  As soon as the shell script sees output in this file,
- * it prints its content and breaks out of its wait.
+ * it prints its content and breaks out of its wait.  The STARTLOG is only
+ * written if its path is given by the <code>heritrix.dmesg</code> system
+ * property.
  * See ${HERITRIX_HOME}/bin/heritrix.
  * 
  * <p>Heritrix can also be embedded or launched by webapp initialization or
@@ -106,12 +108,11 @@ public class Heritrix {
     /**
      * Heritrix start log file.
      *
-     * This file contains standard out produced by this main class for startup
-     * only.  Used by heritrix shell script.  Name here MUST match that in the
-     * <code>bin/heritrix</code> shell script.  This is a DEPENDENCY the shell
-     * wrapper has on this here java heritrix.
+     * System property naming a file to receive a copy of standard out produced
+     * by this main class for startup only.  Set by the <code>bin/heritrix</code>
+     * shell script when backgrounding heritrix.  If unset, no file is written.
      */
-    private static final String STARTLOG = "heritrix_dmesg.log";
+    private static final String STARTLOG_PROPERTY = "heritrix.dmesg";
 
     private enum AuthMode {
         DIGEST, BASIC;
@@ -227,15 +228,19 @@ public class Heritrix {
         }
         
         
-        BufferedOutputStream startupOutStream = 
-            new BufferedOutputStream(
-                new FileOutputStream(
-                    new File(getHeritrixHome(), STARTLOG)),16384);
-        PrintStream startupOut = 
-            new PrintStream(
-                new TeeOutputStream(
-                    System.out,
-                    startupOutStream));
+        String startLog = System.getProperty(STARTLOG_PROPERTY);
+        BufferedOutputStream startupOutStream = null;
+        PrintStream startupOut = System.out;
+        if (startLog != null) {
+            startupOutStream =
+                new BufferedOutputStream(
+                    new FileOutputStream(startLog),16384);
+            startupOut =
+                new PrintStream(
+                    new TeeOutputStream(
+                        System.out,
+                        startupOutStream));
+        }
 
         CommandLine cl = getCommandLine(startupOut, args);
         if (cl == null) return;
@@ -448,7 +453,9 @@ public class Heritrix {
         } finally {
             startupOut.flush();
             // stop writing to side startup file
-            startupOutStream.close();
+            if (startupOutStream != null) {
+                startupOutStream.close();
+            }
             System.out.println("Heritrix version: " +
                     ArchiveUtils.VERSION);
         }
