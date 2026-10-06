@@ -118,7 +118,7 @@ public class PagedRepresentationTest {
     @Test
     public void testInvalidQuery() throws Exception {
         String html = render("crawl.log", null, null, null, "url~(<b>");
-        assertTrue(html.contains("Invalid search:</b> invalid regex '(&lt;b&gt;'"), html);
+        assertTrue(html.contains("Invalid search:</b> invalid regex &#39;(&lt;b&gt;&#39;"), html);
         assertFalse(html.contains("a.pdf"));
     }
 
@@ -217,6 +217,14 @@ public class PagedRepresentationTest {
         html = renderFile(cp1, null, null, null, "status:200", null);
         assertTrue(html.contains("<abbr class='status-2xx' title='OK'>200</abbr>"), html);
         assertTrue(html.contains("include 2 checkpoint logs"), html);
+    }
+
+    @Test
+    public void testQuotesEscaped() throws Exception {
+        // a quote in the query can't break out of the search box's value
+        String html = render("crawl.log", null, null, null, "' autofocus onfocus=alert(1) x='");
+        assertTrue(html.contains("value='&#39; autofocus onfocus=alert(1) x=&#39;'"), html);
+        assertFalse(html.contains("' autofocus"), html);
     }
 
     @Test

@@ -179,6 +179,14 @@ public class PagedRepresentation extends CharacterRepresentation {
         return LogSeries.baseName(file.getName()).equals("crawl.log");
     }
 
+    /**
+     * HTML escapes text, including single quotes, which escapeHtml4 leaves
+     * alone, so that it's safe in the single-quoted attributes used here.
+     */
+    protected static String escapeHtml(String s) {
+        return StringEscapeUtils.escapeHtml4(s).replace("'", "&#39;");
+    }
+
     /** 
      * Write the paged HTML. 
      * 
@@ -189,7 +197,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         this.file = fileRepresentation.getFile();
         
         PrintWriter pw = new PrintWriter(writer); 
-        pw.println("<b>Paged view:</b> "+StringEscapeUtils.escapeHtml4(file.toString()));
+        pw.println("<b>Paged view:</b> "+escapeHtml(file.toString()));
         series = includeRotated ? LogSeries.all(file) : LogSeries.single(file);
         try {
             seriesLength = series.length();
@@ -207,7 +215,7 @@ public class PagedRepresentation extends CharacterRepresentation {
                 query = LogQuery.parse(queryText, isCrawlLog());
             } catch (LogQuery.QueryException e) {
                 pw.println("<p class='queryError' style='color:#a00'><b>Invalid search:</b> "
-                        + StringEscapeUtils.escapeHtml4(e.getMessage()) + "</p>");
+                        + escapeHtml(e.getMessage()) + "</p>");
                 return;
             }
             SearchProgress progress = new SearchProgress(pw);
@@ -262,7 +270,7 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.print("<div class='seriesInfo'>Including all " + files.size()
                     + " generations of this log:");
             for (File f : files) {
-                pw.print(" <code>" + StringEscapeUtils.escapeHtml4(f.getName())
+                pw.print(" <code>" + escapeHtml(f.getName())
                         + "</code>");
             }
             pw.println(". <a href='" + getControlUri(toFilePosition(position),
@@ -312,7 +320,7 @@ public class PagedRepresentation extends CharacterRepresentation {
         // a block element already ends the line, so no newline after it
         pw.print("<span class='fileMarker' style='display:block;"
                 + " background:#eee; color:#444; border-top:1px solid #aaa'>"
-                + "&#x2500;&#x2500; " + StringEscapeUtils.escapeHtml4(f.getName())
+                + "&#x2500;&#x2500; " + escapeHtml(f.getName())
                 + " &#x2500;&#x2500;</span>");
     }
 
@@ -326,7 +334,7 @@ public class PagedRepresentation extends CharacterRepresentation {
                 ? "status:4xx host:example.com -type:image"
                 : "text to find";
         pw.println("<form id='search' method='get' style='position:relative' action='"
-                + StringEscapeUtils.escapeHtml4(action.toString()) + "'>");
+                + escapeHtml(action.toString()) + "'>");
         pw.println("<input type='hidden' name='format' value='paged'>");
         if (includeRotated) {
             pw.println("<input type='hidden' name='all' value='y'>");
@@ -341,8 +349,8 @@ public class PagedRepresentation extends CharacterRepresentation {
             pw.println("<input type='hidden' name='lines' value='" + absLines + "'>");
         }
         pw.println("<input type='search' name='q' size='60' placeholder='"
-                + StringEscapeUtils.escapeHtml4(placeholder) + "' value='"
-                + StringEscapeUtils.escapeHtml4(queryText == null ? "" : queryText)
+                + escapeHtml(placeholder) + "' value='"
+                + escapeHtml(queryText == null ? "" : queryText)
                 + "'>");
         pw.println("<input type='submit' value='Filter'>");
         if (queryText != null) {
@@ -514,14 +522,14 @@ public class PagedRepresentation extends CharacterRepresentation {
             int start = Math.max(mark[0], pos);
             int end = Math.min(mark[1], to);
             if (start < end) {
-                sb.append(StringEscapeUtils.escapeHtml4(line.substring(pos, start)))
+                sb.append(escapeHtml(line.substring(pos, start)))
                         .append("<mark>")
-                        .append(StringEscapeUtils.escapeHtml4(line.substring(start, end)))
+                        .append(escapeHtml(line.substring(start, end)))
                         .append("</mark>");
                 pos = end;
             }
         }
-        sb.append(StringEscapeUtils.escapeHtml4(line.substring(pos, to)));
+        sb.append(escapeHtml(line.substring(pos, to)));
     }
 
     /**
@@ -567,7 +575,7 @@ public class PagedRepresentation extends CharacterRepresentation {
                 ? HttpStatus.getMessage(code) : Integer.toString(code);
 
         return "<abbr class='" + clazz + "' title='"
-                + StringEscapeUtils.escapeHtml4(reason) + "'>";
+                + escapeHtml(reason) + "'>";
     }
 
     /**
@@ -715,6 +723,6 @@ public class PagedRepresentation extends CharacterRepresentation {
         Reference viewRef = dirResource.getRequest().getOriginalRef().clone(); 
         viewRef.setQuery(query.getQueryString());
         
-        return StringEscapeUtils.escapeHtml4(viewRef.toString()); 
+        return escapeHtml(viewRef.toString()); 
     }
 }
