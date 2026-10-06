@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -56,6 +57,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -164,7 +166,11 @@ public class AMQPUrlReceiver
     private transient Lock lock = new ReentrantLock(true);
 
     private transient boolean pauseConsumer = false;
-    private transient String consumerTag = null;
+    /**
+     * Written by StarterRestarter under {@link #lock}, cleared by
+     * handleShutdownSignal on an AMQP client thread that must not take it.
+     */
+    private transient AtomicReference<String> consumerTag = new AtomicReference<String>();
 
     private class StarterRestarter extends Thread {
 
@@ -177,9 +183,10 @@ public class AMQPUrlReceiver
             while (!Thread.interrupted()) {
                 try {
                     lock.lockInterruptibly();
-                    logger.finest("Checking consumerTag=" + consumerTag + " and pauseConsumer=" + pauseConsumer);
+                    String tag = consumerTag.get();
+                    logger.finest("Checking consumerTag=" + tag + " and pauseConsumer=" + pauseConsumer);
                     try {
-                        if (consumerTag == null && !pauseConsumer) {
+                        if (tag == null && !pauseConsumer) {
                             // start up again
                             try {
                                 startConsumer();
@@ -188,14 +195,12 @@ public class AMQPUrlReceiver
                             }
                         }
 
-                        if (consumerTag != null && pauseConsumer) {
+                        if (tag != null && pauseConsumer) {
                             try {
-                                if (consumerTag != null) {
-                                    logger.info("Attempting to cancel URLConsumer with consumerTag=" + consumerTag);
-                                    channel().basicCancel(consumerTag);
-                                    consumerTag = null;
-                                    logger.info("Cancelled URLConsumer.");
-                                }
+                                logger.info("Attempting to cancel URLConsumer with consumerTag=" + tag);
+                                channel().basicCancel(tag);
+                                consumerTag.compareAndSet(tag, null);
+                                logger.info("Cancelled URLConsumer.");
                             } catch (IOException | TimeoutException e) {
                                 logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 10 seconds)", e);
                             }
@@ -220,8 +225,9 @@ public class AMQPUrlReceiver
             channel().queueBind(getQueueName(), getExchange(), getQueueName());
             if (prefetchCount != null)
                 channel().basicQos(prefetchCount);
-            consumerTag = channel().basicConsume(getQueueName(), false, consumer);
-            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + consumerTag);
+            String tag = channel().basicConsume(getQueueName(), false, consumer);
+            consumerTag.set(tag);
+            logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + tag);
         }
     }
 
@@ -286,6 +292,9 @@ public class AMQPUrlReceiver
         try {
             if (connection != null && !connection.isOpen()) {
                 logger.warning("connection is closed, creating a new one");
+                // Abort, don't just drop the reference: an unaborted connection
+                // stays live and keeps consuming, invisible to this bean.
+                connection.abort();
                 connection = null;
             }
 
@@ -296,6 +305,9 @@ public class AMQPUrlReceiver
                 } catch (Exception e) {
                     throw new IOException("problem with AMQP uri " + getAmqpUri(), e);
                 }
+                // StarterRestarter owns reconnection. The client's own recovery
+                // would race it and re-register consumers behind its back.
+                factory.setAutomaticRecoveryEnabled(false);
                 connection = factory.newConnection();
             }
 
@@ -310,6 +322,11 @@ public class AMQPUrlReceiver
         try {
             if (channel != null && !channel.isOpen()) {
                 logger.warning("channel is not open, creating a new one");
+                try {
+                    channel.abort();
+                } catch (IOException e) {
+                    logger.log(Level.FINE, "ignoring error aborting dead channel", e);
+                }
                 channel = null;
             }
 
@@ -346,34 +363,40 @@ public class AMQPUrlReceiver
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // can't happen
             }
-            JSONObject jo = new JSONObject(decodedBody);
+            try {
+                JSONObject jo = new JSONObject(decodedBody);
 
-            if ("GET".equals(jo.getString("method"))) {
-                try {
+                if ("GET".equals(jo.optString("method"))) {
                     CrawlURI curi = makeCrawlUri(jo);
                     KeyedProperties.clearAllOverrideContexts();
                     candidates.runCandidateChain(curi, null);
                     appCtx.publishEvent(new AMQPUrlReceivedEvent(AMQPUrlReceiver.this, curi));
-                } catch (URIException e) {
-                    logger.log(Level.WARNING,
-                            "problem creating CrawlURI from json received via AMQP "
-                                    + decodedBody, e);
-                } catch (JSONException e) {
-                    logger.log(Level.SEVERE,
-                            "problem creating CrawlURI from json received via AMQP "
-                                    + decodedBody, e);
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE,
-                            "Unanticipated problem creating CrawlURI from json received via AMQP "
-                                    + decodedBody, e);
+                } else {
+                    logger.info("ignoring url with method other than GET - "
+                            + decodedBody);
                 }
-            } else {
-                logger.info("ignoring url with method other than GET - "
-                        + decodedBody);
+            } catch (URIException e) {
+                logger.log(Level.WARNING,
+                        "problem creating CrawlURI from json received via AMQP "
+                                + decodedBody, e);
+            } catch (JSONException e) {
+                logger.log(Level.SEVERE,
+                        "problem creating CrawlURI from json received via AMQP "
+                                + decodedBody, e);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE,
+                        "Unanticipated problem creating CrawlURI from json received via AMQP "
+                                + decodedBody, e);
             }
 
             logger.finest("Now ACKing: " + decodedBody);
-            this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+            try {
+                this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+            } catch (AlreadyClosedException | IOException e) {
+                // The channel died under us; the broker will redeliver.
+                logger.log(Level.FINE, "could not ACK on a closed channel, "
+                        + "delivery will be redelivered: " + decodedBody, e);
+            }
         }
 
         @Override
@@ -384,7 +407,8 @@ public class AMQPUrlReceiver
             } else {
                 logger.info("amqp channel/connection shut down consumerTag=" + consumerTag);
             }
-            AMQPUrlReceiver.this.consumerTag = null;
+            // Only if it is still ours: a newer consumer may already be installed.
+            AMQPUrlReceiver.this.consumerTag.compareAndSet(consumerTag, null);
         }
 
         // {
