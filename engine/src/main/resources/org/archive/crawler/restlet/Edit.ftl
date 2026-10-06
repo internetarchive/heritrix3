@@ -44,7 +44,7 @@
             @lezer/xml
             @marijn/find-cluster-break src/index.js
             style-mod src/style-mod.js
-            w3c-keyname index.js")}
+            w3c-keyname index.js")?no_esc}
     </script>
     <script type="module">
         import {keymap, highlightSpecialChars, drawSelection, highlightActiveLine, dropCursor,
@@ -161,7 +161,7 @@
     ${file}
     <a href="${viewRef}">view</a>
     <#list flashes as flash>
-        <div class="flash${flash.kind}">${flash.message}</div>
+        <div class="flash${flash.kind}">${flash.message?no_esc}</div>
     </#list>
 </footer>
 </body>

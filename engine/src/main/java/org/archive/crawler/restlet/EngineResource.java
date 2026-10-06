@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freemarker.template.ObjectWrapper;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.restlet.models.EngineModel;
 import org.archive.crawler.restlet.models.ViewModel;
@@ -96,16 +97,16 @@ public class EngineResource extends BaseResource {
                 String jobName = jobFile.getName();
                 if (!jobFile.isDirectory()) {
                     Flash.addFlash(getResponse(), "Cannot add non-directory: <i>" 
-                            + path + "</i>", Flash.Kind.NACK);
+                            + StringEscapeUtils.escapeHtml4(path) + "</i>", Flash.Kind.NACK);
                 } else if (getEngine().getJobConfigs().containsKey(jobName)) {
                     Flash.addFlash(getResponse(), "Job exists: <i>" 
-                            + jobName + "</i>", Flash.Kind.NACK);
+                            + StringEscapeUtils.escapeHtml4(jobName) + "</i>", Flash.Kind.NACK);
                 } else if (getEngine().addJobDirectory(new File(path))) {
                     Flash.addFlash(getResponse(), "Added crawl job: "
-                            + "'" + path + "'", Flash.Kind.ACK);
+                            + "'" + StringEscapeUtils.escapeHtml4(path) + "'", Flash.Kind.ACK);
                 } else {
                     Flash.addFlash(getResponse(), "Could not add job: "
-                            + "'" + path + "'", Flash.Kind.NACK);
+                            + "'" + StringEscapeUtils.escapeHtml4(path) + "'", Flash.Kind.NACK);
                 }
             }
         } else if ("create".equals(action)) {
@@ -118,10 +119,10 @@ public class EngineResource extends BaseResource {
         	} else if (path.indexOf(File.separatorChar) != -1) {
         	    // prevent specifying sub-directories
         		Flash.addFlash(getResponse(), "Sub-directories disallowed: "
-        		        + "<i>" + path + "</i>", Flash.Kind.NACK);
+        		        + "<i>" + StringEscapeUtils.escapeHtml4(path) + "</i>", Flash.Kind.NACK);
         	} else if (getEngine().getJobConfigs().containsKey(path)) {
         	    // protect existing jobs
-        		Flash.addFlash(getResponse(), "Job exists: <i>" + path + "</i>", 
+        		Flash.addFlash(getResponse(), "Job exists: <i>" + StringEscapeUtils.escapeHtml4(path) + "</i>", 
         		        Flash.Kind.NACK);
         	} else {
         	    // try to create new job dir
@@ -129,20 +130,20 @@ public class EngineResource extends BaseResource {
         	    if (newJobDir.exists()) {
                     // protect existing directories
                     Flash.addFlash(getResponse(), "Directory exists: "
-                            + "<i>" + path + "</i>", Flash.Kind.NACK);
+                            + "<i>" + StringEscapeUtils.escapeHtml4(path) + "</i>", Flash.Kind.NACK);
         	    } else {
                     try {
                         if (getEngine().createNewJobWithDefaults(newJobDir, profile)) {
                             Flash.addFlash(getResponse(), "Created new crawl job: "
-                                                          + "<i>" + path + "</i>", Flash.Kind.ACK);
+                                                          + "<i>" + StringEscapeUtils.escapeHtml4(path) + "</i>", Flash.Kind.ACK);
                             getEngine().findJobConfigs();
                         } else {
                             Flash.addFlash(getResponse(), "Failed to create new job: "
-                                                          + "<i>" + path + "</i>", Flash.Kind.NACK);
+                                                          + "<i>" + StringEscapeUtils.escapeHtml4(path) + "</i>", Flash.Kind.NACK);
                         }
                     } catch (IllegalArgumentException e) {
                         Flash.addFlash(getResponse(), "Cannot create job from profile: "
-                                                      + "<i>" + profile + "</i>", Flash.Kind.NACK);
+                                                      + "<i>" + StringEscapeUtils.escapeHtml4(profile) + "</i>", Flash.Kind.NACK);
                     }
         	    }
         	}
@@ -159,8 +160,8 @@ public class EngineResource extends BaseResource {
                 if(!"on".equals(form.getFirstValue("ignore__"+entry.getKey()))) {
                     Flash.addFlash(
                             getResponse(),
-                            "Job '"+entry.getKey()+"' still &laquo;"
-                                +entry.getValue().getJobStatusDescription()
+                            "Job '"+StringEscapeUtils.escapeHtml4(entry.getKey())+"' still &laquo;"
+                                +StringEscapeUtils.escapeHtml4(entry.getValue().getJobStatusDescription())
                                 +"&raquo;", 
                             Flash.Kind.NACK);
                     cancel = true; 
