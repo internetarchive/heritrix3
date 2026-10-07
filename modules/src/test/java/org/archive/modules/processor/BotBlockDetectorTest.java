@@ -84,6 +84,18 @@ class BotBlockDetectorTest {
     }
 
     @Test
+    void detectsAzureWafJsChallenge() throws Exception {
+        CrawlURI curi = curi(403);
+        curi.putHttpResponseHeader("x-azure-ref", "20000101T000000Z-AAAAAAAAAAAAAAAAAAAAAAAAAA0000000000000000000000");
+        curi.putHttpResponseHeader("x-cache", "CONFIG_NOCACHE");
+        recordResponse(curi, "<!doctype html><html><head><meta charset=\"utf-8\"/>"
+                + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
+                + "<meta name=\"description\" content=\"Azure WAF JS Challenge\"/><title>Azure WAF</title>");
+
+        assertBlocked(curi, "azure-waf");
+    }
+
+    @Test
     void ordinaryResponseDoesNotMatch() throws Exception {
         CrawlURI curi = curi(200);
 
@@ -161,6 +173,16 @@ class BotBlockDetectorTest {
                 + "<title>Access to this page has been denied</title>");
 
         assertBlocked(curi, "perimeterx");
+    }
+
+    @Test
+    void detectsVercelChallenge() throws Exception {
+        CrawlURI curi = curi(429);
+        curi.putHttpResponseHeader("server", "Vercel");
+        curi.putHttpResponseHeader("x-vercel-id", "syd1::0000000000-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        curi.putHttpResponseHeader("x-vercel-mitigated", "challenge");
+
+        assertBlocked(curi, "vercel");
     }
 
     @Test
