@@ -29,7 +29,7 @@ and extent of the crawl with the following settings:
 maxBytesDownload
     Stop the crawl after a fixed number of bytes have been downloaded. Zero means unlimited.
 
-maxDocumentDownload
+maxDocumentsDownload
     Stop the crawl after downloading a fixed number of documents. Zero means unlimited.
 
 maxTimeSeconds
@@ -156,7 +156,7 @@ ignore
 
 .. note::
 
-   Heritrix supports RFC 9309 path wildcards (*, $) in robots.txt rules.
+   Heritrix supports RFC 9309 path wildcards (``*`` and ``$``) in robots.txt rules.
 
    The only supported value for robots meta tags is "nofollow" which will cause the HTML extractor to stop processing
    and ignore all links (including embeds like images and stylesheets).
@@ -165,7 +165,7 @@ ignore
 
        <meta name="robots" content="nofollow"/>
 
-   Obeying "rel=nofollow" on individual links is configured separately as ``obeyRelNoFollow`` on ``ExtractorHTML``.
+   Obeying "rel=nofollow" on individual links is configured separately as ``obeyRelNofollow`` on ``ExtractorHTML``.
 
 Crawl Scope
 -----------
@@ -207,12 +207,12 @@ Decide Rules
 :deciderule:`ExternalGeoLocationDecideRule`
     This DecideRule accepts a URI if it is located in a particular country.
 :deciderule:`FetchStatusDecideRule`
-    This DecideRule applies the configured decision to any URI that has a fetch staus equal to the "target-status" setting.
+    This DecideRule applies the configured decision to any URI that has a fetch status equal to the "target-status" setting.
 :deciderule:`HasViaDecideRule`
     This DecideRule applies the configured decision to any URI that has a "via."  A via is any URI that is a seed or some kind of mid-crawl addition.
 :deciderule:`HopCrossesAssignmentLevelDomainDecideRule`
     This DecideRule applies the configured decision to any URI that differs in the portion of its hostname/domain that is assigned/sold by registrars.  The portion is referred to as the "assignment-level-domain" (ALD).
-:deciderule:`IdenticalDigestDecideRule`
+:deciderule:`IdenticalDigestDecideRule <recrawl/IdenticalDigestDecideRule>`
     This DecideRule applies the configured decision to any URI whose prior-history content-digest matches the latest fetch.
 :deciderule:`MatchesListRegexDecideRule`
     This DecideRule applies the configured decision to any URI that matches the supplied regular expressions.
@@ -220,7 +220,7 @@ Decide Rules
     This DecideRule applies the configured decision to any URI that does not match the supplied regular expressions.
 :deciderule:`MatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI that matches the supplied regular expression.
-:deciderule:`ClassKeyMatchesRegexDecideRule`
+`ClassKeyMatchesRegexDecideRule <https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/latest/org/archive/crawler/deciderules/ClassKeyMatchesRegexDecideRule.html>`_
     This DecideRule applies the configured decision to any URI class key that matches the supplied regular expression.  A URI class key is a string that specifies the name of the Frontier queue into which a URI should be placed.
 :deciderule:`ContentTypeMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI whose content-type is present and matches the supplied regular expression. The regular expression must match the full content-type sequence. Ex.: ``s/application/javascript;charset=UTF-8/^application\/javascript.*$/g``; ``s/text/html/^.*\/html.*$/g``
@@ -229,7 +229,7 @@ Decide Rules
 :deciderule:`FetchStatusMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI that has a fetch status that matches the supplied regular expression.
 :deciderule:`FetchStatusNotMatchesRegexDecideRule`
-    This DecideRule applies the configured decision to any URI that has a fetch status that does not match the suppllied regular expression.
+    This DecideRule applies the configured decision to any URI that has a fetch status that does not match the supplied regular expression.
 :deciderule:`HopsPathMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI whose "hops-path" matches the supplied regular expression.  The hops-path is a string that consists of characters representing the path that was taken to access the URI.  An example of a hops-path is "LLXE".
 :deciderule:`MatchesFilePatternDecideRule`
@@ -238,11 +238,11 @@ Decide Rules
     This DecideRule applies the configured decision to any URI whose suffix does not match the supplied regular expression.
 :deciderule:`NotMatchesRegexDecideRule`
     This DecideRule applies the configured decision to any URI that does not match the supplied regular expression.
-:deciderule:`NotExceedsDocumentLengthThresholdDecideRule`
-    This DecideRule applies the configured decision to any URI whose content-length does not exceed the configured threshold.  The content-length comes from either the HTTP header or the actual downloaded content length of the URI.  As of Heritrix 3.1, this rule has been renamed to ResourceNoLongerThanDecideRule.
-:deciderule:`ExceedsDocumentLengthThresholdDecideRule`
-    This DecideRule applies the configured decision to any URI whose content length exceeds the configured threshold.  The content-length comes from either the HTTP header or the actual downloaded content length of the URI.  As of Heritrix 3.1, this rule has been renamed to ResourceLongerThanDecideRule.
-:deciderule:`SurtPrefixedDecideRule`
+:deciderule:`ResourceNoLongerThanDecideRule`
+    This DecideRule applies the configured decision to any URI whose content-length does not exceed the configured threshold.  The content-length comes from either the HTTP header or the actual downloaded content length of the URI.  (Formerly named NotExceedsDocumentLengthThresholdDecideRule.)
+:deciderule:`ResourceLongerThanDecideRule`
+    This DecideRule applies the configured decision to any URI whose content length exceeds the configured threshold.  The content-length comes from either the HTTP header or the actual downloaded content length of the URI.  (Formerly named ExceedsDocumentLengthThresholdDecideRule.)
+:deciderule:`SurtPrefixedDecideRule <surt/SurtPrefixedDecideRule>`
     This DecideRule applies the configured decision to any URI (expressed in SURT form) that begins with one of the
     prefixes in the configured set. This DecideRule returns true when the prefix of a given URI matches any of the
     listed SURTs. The list of SURTs may be configured in different ways: the surtsSourceFile parameter specifies a file
@@ -251,18 +251,16 @@ Decide Rules
     consider Via URIs in the match.
     As of Heritrix 3.1, the "surtsSource" parameter may be any ReadSource, such as a ConfigFile or a ConfigString.
     This gives the SurtPrefixedDecideRule the flexibility of the TextSeedModule bean's "textSource" property.
-:deciderule:`NotSurtPrefixedDecideRule`
+:deciderule:`NotSurtPrefixedDecideRule <surt/NotSurtPrefixedDecideRule>`
     This DecideRule applies the configured decision to any URI (expressed in SURT form) that does not begin with one of the prefixes in the configured set.
-:deciderule:`OnDomainsDecideRule`
+:deciderule:`OnDomainsDecideRule <surt/OnDomainsDecideRule>`
     This DecideRule applies the configured decision to any URI that is in one of the domains of the configured set.
-:deciderule:`NotOnDomainsDecideRule`
+:deciderule:`NotOnDomainsDecideRule <surt/NotOnDomainsDecideRule>`
     This DecideRule applies the configured decision to any URI that is not in one of the domains of the configured set.
-:deciderule:`OnHostsDecideRule`
+:deciderule:`OnHostsDecideRule <surt/OnHostsDecideRule>`
     This DecideRule applies the configured decision to any URI that is in one of the hosts of the configured set.
-:deciderule:`NotOnHostsDecideRule`
+:deciderule:`NotOnHostsDecideRule <surt/NotOnHostsDecideRule>`
     This DecideRule applies the configured decision to any URI that is not in one of the hosts of the configured set.
-:deciderule:`ScopePlusOneDecideRule`
-    This DecideRule applies the configured decision to any URI that is one level beyond the configured scope.
 :deciderule:`TooManyHopsDecideRule`
     This DecideRule rejects any URI whose total number of hops is over the configured threshold.
 :deciderule:`TooManyPathSegmentsDecideRule`
@@ -279,9 +277,9 @@ Decide Rules
     This DecideRule rejects any URI.
 :deciderule:`ScriptedDecideRule`
     This DecideRule applies the configured decision to any URI that passes the rules test of a JSR-223 script.  The
-    script source must be a one-argument function called decisionFor."  The function returns the appropriate
+    script source must be a one-argument function called "decisionFor."  The function returns the appropriate
     DecideResult. Variables available to the script include object (the object to be evaluated, such as a URI),
-    "self" (the ScriptDecideRule instance), and context (the crawl's ApplicationContext, from which all named crawl
+    "self" (the ScriptedDecideRule instance), and context (the crawl's ApplicationContext, from which all named crawl
     beans are reachable).
 :deciderule:`SeedAcceptDecideRule`
     This DecideRule accepts all "seed" URIs (those for which isSeed is true).
@@ -289,18 +287,15 @@ Decide Rules
 DecideRuleSequence Logging
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Enable ``FINEST`` logging on the class ``org.archive.crawler.deciderules.DecideRuleSequence`` to watch each
-DecideRule's evaluation of the processed URI. This can be done in the ``logging.properties`` file:
+Enable ``FINEST`` logging on the class ``org.archive.modules.deciderules.DecideRuleSequence`` to watch each
+DecideRule's evaluation of the processed URI. This can be done in the ``$HERITRIX_HOME/conf/logging.properties`` file:
 
 .. code-block:: bash
 
    org.archive.modules.deciderules.DecideRuleSequence.level = FINEST
 
-in conjunction with the ``-Dsysprop`` VM argument,
-
-.. code-block::
-
-   -Djava.util.logging.config.file=/path/to/heritrix3/dist/src/main/conf/logging.properties
+The ``bin/heritrix`` launch script reads this file by default. To use a different file, pass its path with the
+``-l`` command-line option.
 
 Frontier
 --------
@@ -461,8 +456,8 @@ beanName in a BeanFactory.
 Sheets allow settings to be overlaid with new values that apply by top level domains (com, net, org, etc), by
 second-level domains (yahoo.com, archive.org, etc.), by subdomains (crawler.archive.org, tech.groups.yahoo.com, etc.)
 , and leading URI paths (directory.google.com/Top/Computers/, etc.). There is no limit for how long the domain/path
-prefix which specifies overlays can go; the `SURT Prefix <Glossary_5735753.html#Glossary-Glossary-SURTPrefix>`_
-syntax is used.
+prefix which specifies overlays can go; the SURT prefix syntax (see :doc:`glossary`)
+is used.
 
 Creating a new sheet involves configuring the ``crawler-beans.cxml`` file, which contains the Spring configuration of
 a job.
@@ -582,7 +577,7 @@ fine in ``conf/logging.properties``:
 
 .. code-block::
 
-    org.archive.crawler.fetcher.FetchHTTP.level = FINE
+    org.archive.modules.fetcher.FetchHTTP.level = FINE
     org.archive.crawler.prefetch.PreconditionEnforcer.level = FINE
 
 HTTP Basic and Digest Authentication
@@ -743,14 +738,14 @@ The cookies.txt should be in the 7-field tab-separated Netscape cookie file form
 Other Protocols
 ---------------
 
-In addition to HTTP/1.0 Heritrix can be configured to fetch resources using several other internet protocols.
+In addition to HTTP Heritrix can be configured to fetch resources using several other internet protocols.
 
 
 FTP
 ~~~
 
 Heritrix supports crawling `FTP <https://en.wikipedia.org/wiki/File_Transfer_Protocol>`_ sites.  Seeds should be added
-in the following format: ```ftp://sftp.example.org/directory``.
+in the following format: ``ftp://ftp.example.org/directory``.
 
 The FetchFTP bean needs to be defined:
 
@@ -815,7 +810,7 @@ above and then enable the ``useHTTP3`` property:
    .. code-block:: xml
 
        <bean id="fetchHttp2" class="org.archive.modules.fetcher.FetchHTTP2">
-          <property name="useHTTP3" value="true">
+          <property name="useHTTP3" value="true"/>
        </bean>
 
 .. tab:: Groovy
@@ -837,7 +832,7 @@ SFTP
 ~~~~
 
 An optional fetcher for `SFTP <https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol>`_ is provided.  Seeds should
-be added in the following format:``sftp://sftp.example.org/directory``.
+be added in the following format: ``sftp://sftp.example.org/directory``.
 
 The FetchSFTP bean needs to be defined:
 
@@ -977,6 +972,8 @@ Scripting Console
 `Heritrix3 Useful Scripts <https://github.com/internetarchive/heritrix3/wiki/Heritrix3%20Useful%20Scripts>`_ wiki page.]
 
 
+.. _configuring-http-proxies:
+
 Configuring HTTP Proxies
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -987,7 +984,7 @@ If only the ``--proxy-host`` option is given, a default value of 8000 is used fo
 These proxy settings are also used when connecting to a "DNS-over-HTTP" server
 (see the `section on DNS-over-HTTP <#configuring-dns-over-http-doh>`_ below).
 
-Alternatively one can define a per-job proxy via a the ``httpProxyHost`` and ``httpProxyPort`` properties of the
+Alternatively one can define a per-job proxy via the ``httpProxyHost`` and ``httpProxyPort`` properties of the
 ``fetchHttp`` bean. These settings, if both defined, will overwrite the global options. These setting also allow for
 a user and password in the ``httpProxyUser`` and ``httpProxyPassword`` properties, which the global options do not
 support, due to incompatibilities of the different supported Java versions.
@@ -1038,15 +1035,9 @@ username and password information for the proxy are not supported. Also any per-
 As the implementation relies on the corresponding client in the "dnsjava" library, which is currently labeled as
 experimental, this option comes with some limitations:
 
-* If you use Java 11 then due to a `well known bug <https://bugs.openjdk.java.net/browse/JDK-8221395>`_ it will not
-  close connections to the DoH server unless Heritrix shuts down.
-  As the DoH server might not accept new connections after some limits while these connections are still open, it is
-  not recommended to use this feature when running Heritrix with Java 11.
-* For other Java versions, the connection to the DoH server will be closed when the garbage collector runs.
+* The connection to the DoH server will be closed when the garbage collector runs.
   Depending on the garbage collector used this will cause a delay of anything between a few seconds and several
-  minutes before closing the connection. Also note that if the garbage collector is explicitely triggered via the
-  Heritrix UI one needs to add the ``-XX:-DisableExplicitGC`` option in the ``JAVA_OPTS`` for Java versions 13 and up
-  as otherwise this action has no effect.
+  minutes before closing the connection.
 
 Without making a recommendation the following DoH servers have been tested with the DoH feature:
 
