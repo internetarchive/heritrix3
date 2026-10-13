@@ -56,7 +56,7 @@ Discovered URIs
     scope definition.
 
     Note: Since the same URI can be fetched multiple times (at least in most
-    Frontiers), the number of discovered URIs may be somewhat lower then the
+    Frontiers), the number of discovered URIs may be somewhat lower than the
     combined queued, in process, and finished items. This is due to
     duplicate URIs being queued and processed. The variance is likely to be
     especially high in Frontiers implementing "revisit" strategies.
@@ -92,7 +92,7 @@ Host
     A host can serve multiple domains or a domain can be served by multiple
     hosts. For our purposes, a host is the same as the hostname in a URI.
     DNS is not considered because it is volatile and may be unavailable.
-    For example, if multiple URIs point to the same ip address, they are
+    For example, if three hostnames resolve to the same IP address, they are
     considered three different logical hosts (at the same level of the
     URI/HTTP protocol).
 
@@ -100,7 +100,7 @@ Host
     and a IP address interchangeable.
 
     This is not ideal for politeness because it applies politeness rules to
-    the physical host rather than the logical host.
+    the logical host rather than the physical host.
 
 Crawl Job
     In order to run a crawl, a configuration must be created. In Heritrix
@@ -165,7 +165,7 @@ Queue States
        * - ineligible
          - Inactive queues where the queue precedence exceeds the precedence floor.
        * - retired
-         - Disabled for some reason, e.g. that queue has hit it's allocated quota.
+         - Disabled for some reason, e.g. that queue has hit its allocated quota.
        * - exhausted
          - Queues that are now empty.
 
@@ -182,7 +182,8 @@ Regular Expressions
     ``java.util.regex.Pattern`` class.
 
 SHA1
-    The Secure Hash Algorithm (SHA) used by Heritrix to encrypt files.
+    The Secure Hash Algorithm (SHA-1) used by Heritrix to compute content digests. These digests appear in the
+    crawl log and WARC records and are used to detect duplicate content.
 
 Server
     A server is a service on a host. There may be more than one service on
@@ -223,11 +224,11 @@ SURT
 SURT Prefix
     A URI in SURT form, especially if truncated, may be of use as a "SURT
     prefix," a shared prefix string of all SURT form URIs in the same area
-    of interest. For example, the prefix ``http://(is.,`` will be shared by all
+    of interest. For example, the prefix ``http://(is,`` will be shared by all
     SURT form URIs in the ``.is`` top-level domain. The prefix
-    ``http://(org,archive.www,)/movies`` will be shared by all URIs at
+    ``http://(org,archive,www,)/movies`` will be shared by all URIs at
     www.archive.org with a path beginning with /movies.
-    ``http://(org,archive.www,)/movies`` is also a valid full SURT form URI.
+    ``http://(org,archive,www,)/movies`` is also a valid full SURT form URI.
 
     A collection of sorted SURT prefixes is an efficient way to specify a
     desired crawl scope. For example, any URI whose SURT form starts with
@@ -242,8 +243,8 @@ SURT Prefix
        everything after the last slash. For example,
        ``http://(org,example,www,)/main/subsection/`` is unchanged.
        ``http://(org,example,www,)/main/subsection`` is truncated to
-       ``http://(org,example,www,)/main/.`` ``http://(org.example,www,)/`` is
-       unchanged and ``http://(org,example,www)`` is unchanged.
+       ``http://(org,example,www,)/main/``. ``http://(org,example,www,)/`` is
+       unchanged and ``http://(org,example,www,)`` is unchanged.
     #. If the resulting form ends in an off-parenthesis (")"), remove the
        off-parenthesis. Each of the above examples except the last one is
        unchanged. The last one ``http://(org,example,www,)`` becomes
@@ -256,7 +257,7 @@ SURT Prefix
     included.
 
     For example, seed ``http://www.archive.org/`` will become SURT form and
-    supplied SURT prefix ``http://(org,archive,www,)/,`` and is the prefix of
+    supplied SURT prefix ``http://(org,archive,www,)/``, and is the prefix of
     all SURT form URIs on www.archive.org. However, any subdomain URI like
     ``http://homepages.www.archive.org/directory`` would be ruled out because
     its SURT form ``http://(org,archive,www,homepages,)/directory`` does not
@@ -279,9 +280,8 @@ Each crawled URI gets a status code.  This code (or number) indicates
 the result of a URI fetch in Heritrix.
 
 Codes ranging from 200 to 599 are standard HTTP response codes and
-information about their meanings is available at the `World Wide Web
-consortium's Web
-page <http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html>`_.
+information about their meanings is available in
+`RFC 9110 <https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes>`_.
 
 Other Heritrix status codes are listed below.
 
@@ -290,6 +290,12 @@ Other Heritrix status codes are listed below.
 
     * - 1
       - Successful DNS lookup
+    * - 1001
+      - Successful DNS lookup using the system resolver (``InetAddress.getByName``)
+    * - 2001
+      - Successful WHOIS lookup
+    * - 2002
+      - Finished all fetches for a server-less WHOIS URI (such as ``whois:example.org``)
     * - 0
       - Fetch never tried (perhaps protocol unsupported or illegal URI)
     * - -1
@@ -304,11 +310,13 @@ Other Heritrix status codes are listed below.
       - Unexpected runtime exception.  See runtime-errors.log.
     * - -6
       - Prerequisite domain-lookup failed, precluding fetch attempt.
-        (the main pre-requisite is WHOIS lookup. If you see this it's likely the domain doesn't exist anymore)
+        (the main prerequisite is the DNS lookup. If you see this it's likely the domain doesn't exist anymore)
     * - -7
       - URI recognized as unsupported or illegal.
     * - -8
       - Multiple retries failed, retry limit reached.
+    * - -9
+      - SSL/TLS error, such as a handshake failure.
     * - -50
       - Temporary status assigned to URIs awaiting preconditions.  Appearance in logs may be a bug.
     * - -60
@@ -322,7 +330,7 @@ Other Heritrix status codes are listed below.
     * - -404
       - Empty HTTP response interpreted as a 404.
     * - -3000
-      - Severe Java Error condition occured such as OutOfMemoryError or StackOverflowError during URI processing.
+      - Severe Java Error condition occurred such as OutOfMemoryError or StackOverflowError during URI processing.
     * - -4000
       - "Chaff" detection of traps/content with negligible value applied.
     * - -4001

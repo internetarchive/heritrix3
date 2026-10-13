@@ -27,13 +27,19 @@ Command-line Options
 -b, --web-bind-hosts HOST
             Specifies a comma-separated list of hostnames/IP-addresses to bind to the Web UI. You may use '/' as a
             shorthand for 'all addresses'.  **Default**: ``localhost/127.0.0.1``
- -c,--checkpoint ARG
+-c, --checkpoint ARG
             Recovers from the given checkpoint. May only be used with the --run-job option. The special value 'latest'
             will recover the last checkpoint or if none exist will launch a new crawl.
--j, --job-dirs PATH
-            Sets the directory Heritrix stores jobs in. **Default:** ``$HERITRIX_HOME/jobs``
+-j, --jobs-dir PATH
+            Sets the directory Heritrix stores jobs in. **Default:** ``./jobs`` relative to the working directory.
+            The ``bin/heritrix`` launch script changes to ``$HERITRIX_HOME`` first, so this is normally
+            ``$HERITRIX_HOME/jobs``.
 -l, --logging-properties PATH
             Reads logging configuration from a file. **Default:** ``$HERITRIX_HOME/conf/logging.properties``
+--proxy-host HOST
+            Global HTTP(S) proxy host to use for crawling. See :ref:`configuring-http-proxies`.
+--proxy-port PORT
+            Global HTTP(S) proxy port to use for crawling. **Default:** ``8000`` (if ``--proxy-host`` is given)
 -p, --web-port PORT
             Sets the port the Web UI will listen on. **Default:** ``8443``
 -r, --run-job JOBNAME
@@ -42,8 +48,11 @@ Command-line Options
             Specifies a keystore path, keystore password, and key password for HTTPS use.  Separate the values with
             commas and do not include whitespace. By default Heritrix will generate a self-signed certificate the
             first time it is run.
---web-auth digest|basic
-            Authentication mode for the web interface. **Default:** ``digest``
+--sni-host-check
+            Validates the SNI hostname sent by Web UI clients against the Web UI's SSL certificate. Disabled by
+            default for compatibility with the self-signed certificate.
+--web-auth MODE
+            Authentication mode for the web interface: ``digest`` or ``basic``. **Default:** ``digest``
 
 Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~
@@ -150,7 +159,7 @@ her local machine:
 
    ssh -L localhost:9999:localhost:8443 crawloperator@crawler.example.com -N
 
-This tells SSH to open a tunnel which forwards conections to
+This tells SSH to open a tunnel which forwards connections to
 "localhost:9999" (on the local machine) to the remote machines' own idea
 of "localhost:8443". As a result, the crawler's Web UI will be available
 via "https://localhost:9999/" for as long as the tunnel exists (until
@@ -183,10 +192,7 @@ against unauthorized access. For best security, you should be sure to:
    password on the command-line may result in their values being
    visible to other users of the crawling machine – for example, via
    the output of a tool like 'ps' that shows the command-lines used to
-   launch processes. Additionally, note that these values are echoed in
-   plain text in the ``heritrix_out.log`` for operator reference. As of
-   Heritrix 3.1, the administrative username and password are no longer
-   echoed to ``heritrix_out.log``. Also, if the
+   launch processes. However, if the
    parameter supplied to the -a command line option is a string
    beginning with "@", the rest of the string is interpreted as a local
    file name containing the operator login and password. Thus, the
@@ -255,7 +261,7 @@ Field 8. Worker Thread ID
     The id of the worker thread that downloaded the document.
 Field 9. Fetch Timestamp
     The timestamp in RFC2550/ARC condensed digits-only format indicating when the network fetch was started. If
-    appropriate the millisecond duration of the fetch is appended to the timestamp with a ";" character as
+    appropriate the millisecond duration of the fetch is appended to the timestamp with a "+" character as
     separator.
 Field 10. SHA1 Digest
     The SHA1 digest of the content only (headers are not digested).
@@ -263,12 +269,12 @@ Field 11. Source Tag
     The source tag inherited by the URI, if source tagging is enabled.
 Field 12. Annotations
     If an annotation has been set, it will be displayed. Possible annotations include: the number of times the URI
-    was tried, the literal "lenTrunc"; if the download was truncanted due to exceeding configured size limits,
+    was tried, the literal "lenTrunc"; if the download was truncated due to exceeding configured size limits,
     the literal "timeTrunc"; if the download was truncated due to exceeding configured time limits or
     "midFetchTrunc"; if a midfetch filter determined the download should be truncated.
 Field 13. WARC Filename
     The name of the WARC/ARC file to which the crawled content is written. This value will only be written if
-    thelogExtraInfo property of the loggerModule bean is set to true. This logged information will be written in
+    the ``logExtraInfo`` property of the ``loggerModule`` bean is set to true. This logged information will be written in
     JSON format.
 
 progress-statistics.log
@@ -285,30 +291,30 @@ Field 2. discovered
     Number of URIs discovered to date.
 Field 3. queued
     Number of URIs currently queued.
-Field 3. downloaded
+Field 4. downloaded
     Number of URIs downloaded to date.
-Field 4. doc/s(avg)
+Field 5. doc/s(avg)
     Number of document downloaded per second since the last snapshot. The value in parenthesis is measured since the
     crawl began.
-Field 5. KB/s(avg)
+Field 6. KB/s(avg)
     Amount in kilobytes downloaded per second since the last snapshot. The value in parenthesis is measured since the
     crawl began.
-Field 6. dl-failures
+Field 7. dl-failures
     Number of URIs that Heritrix has failed to download.
-Field 7. busy-thread
+Field 8. busy-thread
     Number of toe threads busy processing a URI.
-Field 8. mem-use-KB
+Field 9. mem-use-KB
     Amount of memory in use by the Java Virtual Machine.
-Field 9. heap-size-KB
+Field 10. heap-size-KB
     The current heap size of the Java Virtual Machine.
-Field 10. congestion
+Field 11. congestion
     The congestion ratio is a rough estimate of how much initial capacity, as a multiple of current capacity, would
     be necessary to crawl the current workload at the maximum rate available given politeness settings. This value is
     calculated by comparing the number of internal queues that are progressing against those that are waiting for a
     thread to become available.
-Field 11. max-depth
+Field 12. max-depth
     The size of the Frontier queue with the largest number of queued URIs.
-Field 12. avg-depth
+Field 13. avg-depth
     The average size of all the Frontier queues.
 
 runtime-errors.log
@@ -468,7 +474,7 @@ Note that the SourceTags report will only be generated if the
 .. code-block:: xml
 
    <bean id="seeds" class="org.archive.modules.seeds.TextSeedModule">
-     <property name="sourceTagsSeeds" value="true" />
+     <property name="sourceTagSeeds" value="true" />
    </bean>
 
 Mimetypes (mimetype-report.txt)
@@ -629,8 +635,8 @@ to schedule a URL::
 
     F+ http://example.com
 
-In order to use the action directory, the ``ActionDirectory`` bean must be
-configured in the ``crawler-beans.cxml`` file as illustrated below.
+The action directory is provided by the ``ActionDirectory`` bean, which is included in the default
+``crawler-beans.cxml`` profile. Its location and polling intervals can be changed as illustrated below.
 
 .. code-block:: xml
 
@@ -670,15 +676,15 @@ NOT copied to the checkpoint directory.  They are left under the logs directory 
 suffix is the checkpoint name.  For example, for checkpoint cp00001-20220930061713 the crawl log would be named
 crawl.log.cp00001-20220930061713.
 
-To make checkpointing faster and reduce disk space usage, hardlinks on systems that support them to collect the
-BerkeleyDB-JE files required to reproduce the crawler's state.
+To make checkpointing faster and reduce disk space usage, Heritrix uses hardlinks, on systems that support them, to
+collect the BerkeleyDB-JE files required to reproduce the crawler's state.
 
 To run a checkpoint, click the checkpoint button on the job page of the WUI or invoke the checkpoint functionality
 through the REST API. While checkpointing, the crawl status will show as CHECKPOINTING.  When the checkpoint has
 completed, the crawler will resume crawling, unless it was in the paused state when the checkpoint was invoked.
 In this case, the crawler will re-enter the paused state.
 
-Recovery from a checkpoint has much in common with the recovery of a crawl using the frontier.recovery.log.
+Recovery from a checkpoint has much in common with the recovery of a crawl using the ``frontier.recover.gz`` log.
 
 Automated Checkpointing
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -700,7 +706,7 @@ gracefully shutdown. Note that if Heritrix is killed, crashes or the server it i
 power the shutdown checkpoint will not be created. Consequently it may be ideal to enable both shutdown and interval
 checkpoints together.
 
-Setting ``forgetAllButLatest``` will ensure only the latest checkpoint is kept.
+Setting ``forgetAllButLatest`` will ensure only the latest checkpoint is kept.
 
 
 Restarting from a Checkpoint
@@ -729,7 +735,7 @@ Crawl Recovery
 
 During normal operation, the Heritrix Frontier keeps a journal. The
 journal is kept in the logs directory. It is named
-``frontier.recovery.gz``. If a crash occurs during a crawl, the
+``frontier.recover.gz``. If a crash occurs during a crawl, the
 ``frontier.recover.gz`` journal can be used to recreate the approximate
 status of the crawler at the time of the crash. In some cases, recovery
 may take an extended period of time, but it is usually much quicker than
@@ -738,7 +744,7 @@ repeating the crashed crawl.
 If using this process, you are starting an all-new crawl, with your same
 (or modified) configuration, but this new crawl will take an extended
 detour at the beginning where it uses the prior crawl's
-frontier-recover.gz output(s) to simulate the frontier status
+``frontier.recover.gz`` output(s) to simulate the frontier status
 (discovered-URIs, enqueued-URIs) of the previous crawl. You would move
 aside all ARC/WARCs, logs, and checkpoints from the earlier crawl,
 retaining the logs and ARC/WARCs as a record of the crawl so far.
@@ -780,7 +786,7 @@ frontier-recovery file-processing is finished may an accurate checkpoint
 occur. Also, unpausing the crawl in this manner may result in some URIs
 being rediscovered via new paths before the original discovery is
 replayed via the recovery process. (Many crawls may not mind this slight
-deviation from the recovered' crawls state, but if your scoping is very
+deviation from the recovered crawl's state, but if your scoping is very
 path- or hop- dependent it could make a difference in what is
 scope-included.)
 
@@ -817,8 +823,7 @@ To run the alternate recovery process:
 #. Build and launch the previously failed job (with the same or
    adjusted configuration). The job will now be paused.
 #. Move the ``frontier.include.gz`` file(s) into the action directory.
-   The ``action`` directory is located at the same level in the file
-   structure hierarchy as the ``bin`` directory. (If you have many, you
+   The ``action`` directory is located inside the job directory. (If you have many, you
    may move them all in at once, or in small batches to better monitor
    their progress. At any point when all previously-presented files are
    processed – that is, moved to the 'done' directory – it is possible
@@ -836,7 +841,7 @@ You **may** drop all ``.include`` and ``.schedule`` files into the action
 directory before launch, if you are confident that the lexicographic
 ordering of their names will do the right thing (present all
 ``.include`` files first, and the ``.schedule`` files in the same order as the
-original crawl). But, that leave little opportunity to adjust/checkpoint
+original crawl). But, that leaves little opportunity to adjust/checkpoint
 the process: the action directory will discover them all and process
 them all in one tight loop.
 

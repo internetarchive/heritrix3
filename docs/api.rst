@@ -113,6 +113,7 @@ Create New Job
    supplied, ``Defaults (XML)`` is used. Built-in profiles include
    ``Defaults (XML)`` and ``Defaults (Groovy)``. Existing job profiles may
    also be selected by passing the profile job's short name.
+
    :form action: must be ``create``
    :form createpath: the name of the new job
    :form profile: optional profile name. Existing profiles use their job
@@ -302,7 +303,7 @@ Get Job Status
       {
         "uriTotalsReport": {
           "downloadedUriCount": 3920,
-          "queuedUriCount": 2,
+          "queuedUriCount": 0,
           "futureUriCount": 0,
           "totalUriCount": 3920
         },
@@ -314,10 +315,10 @@ Get Job Status
           // ...
         ],
         "rateReport": {
-          "currentDocsPerSecond": 0.6354171124312226,
+          "currentDocsPerSecond": 0,
           "averageKiBPerSec": 344,
           "currentKiBPerSec": 0,
-          "averageDocsPerSecond": 0
+          "averageDocsPerSecond": 0.6354171124312226
         },
         "lastLaunch": "2020-04-01T02:07:42.531Z",
         "frontierReport": {
@@ -695,11 +696,11 @@ Execute Script in Job
 
 .. http:post:: https://(heritrixhost):8443/engine/job/(jobname)/script
 
-   Executes a script. The script can be written as Beanshell, ECMAScript,
-   Groovy, or AppleScript.
+   Executes a script. Any JSR-223 script engine available on the classpath
+   may be used. Heritrix includes Groovy and BeanShell.
 
-   :form engine: the script engine to use. One of ``beanshell``, ``js``,
-     ``groovy`` or ``AppleScriptEngine``.
+   :form engine: the name of the script engine to use, such as ``groovy`` or
+     ``beanshell``.
 
    :form script: the script code to execute
 
@@ -751,7 +752,7 @@ The following curl parameters are used when invoking the API.
 |                                   | standard out.                     |
 +-----------------------------------+-----------------------------------+
 | -d                                | Data. These are the name/value    |
-|                                   | pairs that are send in the body   |
+|                                   | pairs that are sent in the body   |
 |                                   | of a POST.                        |
 +-----------------------------------+-----------------------------------+
 | -k                                | Insecure. Allows connections to   |
