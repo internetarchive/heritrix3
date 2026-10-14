@@ -196,14 +196,7 @@ public class AMQPUrlReceiver
                         }
 
                         if (tag != null && pauseConsumer) {
-                            try {
-                                logger.info("Attempting to cancel URLConsumer with consumerTag=" + tag);
-                                channel().basicCancel(tag);
-                                consumerTag.compareAndSet(tag, null);
-                                logger.info("Cancelled URLConsumer.");
-                            } catch (IOException | TimeoutException e) {
-                                logger.log(Level.SEVERE, "problem cancelling AMQP consumer (will try again after 10 seconds)", e);
-                            }
+                            cancelConsumer(tag);
                         }
 
                     } finally {
@@ -228,6 +221,24 @@ public class AMQPUrlReceiver
             String tag = channel().basicConsume(getQueueName(), false, consumer);
             consumerTag.set(tag);
             logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + tag);
+        }
+    }
+
+    /**
+     * Cancel the consumer, clearing the tag whether or not the broker accepted
+     * it. Retaining a tag we failed to cancel strands the receiver: the restart
+     * after an unpause only runs for a null tag.
+     */
+    protected void cancelConsumer(String tag) {
+        try {
+            logger.info("Attempting to cancel URLConsumer with consumerTag=" + tag);
+            channel().basicCancel(tag);
+            logger.info("Cancelled URLConsumer.");
+        } catch (IOException | TimeoutException e) {
+            logger.log(Level.WARNING,
+                    "problem cancelling AMQP consumer, clearing consumerTag anyway", e);
+        } finally {
+            consumerTag.compareAndSet(tag, null);
         }
     }
 
@@ -408,6 +419,17 @@ public class AMQPUrlReceiver
                 logger.info("amqp channel/connection shut down consumerTag=" + consumerTag);
             }
             // Only if it is still ours: a newer consumer may already be installed.
+            AMQPUrlReceiver.this.consumerTag.compareAndSet(consumerTag, null);
+        }
+
+        /**
+         * The broker cancels a consumer when its queue is deleted or becomes
+         * unavailable. The channel stays open, so no shutdown signal follows and
+         * only this tells us the subscription is gone.
+         */
+        @Override
+        public void handleCancel(String consumerTag) throws IOException {
+            logger.warning("amqp consumer cancelled by the broker consumerTag=" + consumerTag);
             AMQPUrlReceiver.this.consumerTag.compareAndSet(consumerTag, null);
         }
 

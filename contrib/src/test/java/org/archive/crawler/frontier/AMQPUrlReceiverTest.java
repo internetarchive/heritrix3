@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -320,6 +321,83 @@ public class AMQPUrlReceiverTest {
         ShutdownSignalException sig = new ShutdownSignalException(false, true, null, null);
         receiver.new UrlConsumer(null).handleShutdownSignal("amq.ctag-live", sig);
 
+        assertNull(tag.get());
+    }
+
+    /**
+     * A broker-side cancel arrives on an open channel, so no shutdown signal
+     * follows it. Leaving the tag in place strands the receiver: StarterRestarter
+     * reads a non-null tag and never rebuilds the subscription.
+     */
+    @Test
+    public void testBrokerCancelClearsConsumerTag() throws Exception {
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-live");
+
+        receiver.new UrlConsumer(null).handleCancel("amq.ctag-live");
+
+        assertNull(tag.get());
+    }
+
+    /** ...but not a tag belonging to a consumer that has since replaced it. */
+    @Test
+    public void testBrokerCancelLeavesANewerConsumerTagAlone() throws Exception {
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-new");
+
+        receiver.new UrlConsumer(null).handleCancel("amq.ctag-old");
+
+        assertEquals("amq.ctag-new", tag.get());
+    }
+
+    /**
+     * basicCancel rejects a tag the client has already forgotten, which is what
+     * a broker-side cancel leaves behind. Keeping the tag after that failure
+     * strands the receiver for good: the cancel branch retries forever while
+     * paused, and the restart branch is unreachable once unpaused.
+     */
+    @Test
+    public void testFailedCancelStillClearsConsumerTag() throws Exception {
+        Channel channel = channelProxy((proxy, method, args) -> {
+            switch (method.getName()) {
+            case "isOpen": return true;
+            case "basicCancel": throw new IOException("Unknown consumerTag");
+            default: return defaultValue(method);
+            }
+        });
+
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        receiver.channel = channel;
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-gone");
+
+        receiver.cancelConsumer("amq.ctag-gone");
+
+        assertNull(tag.get(), "a rejected cancel must not strand the tag");
+    }
+
+    /** The ordinary case still clears it. */
+    @Test
+    public void testSuccessfulCancelClearsConsumerTag() throws Exception {
+        AtomicBoolean cancelled = new AtomicBoolean();
+        Channel channel = channelProxy((proxy, method, args) -> {
+            switch (method.getName()) {
+            case "isOpen": return true;
+            case "basicCancel": cancelled.set(true); return null;
+            default: return defaultValue(method);
+            }
+        });
+
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        receiver.channel = channel;
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-live");
+
+        receiver.cancelConsumer("amq.ctag-live");
+
+        assertTrue(cancelled.get());
         assertNull(tag.get());
     }
 
