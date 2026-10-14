@@ -46,8 +46,16 @@ public class AMQPProducer {
             new ThreadLocal<Channel>();
 
     protected synchronized Channel channel() throws IOException {
-        if (threadChannel.get() != null && !threadChannel.get().isOpen()) {
-            threadChannel.set(null);
+        Channel existing = threadChannel.get();
+        if (existing != null && !existing.isOpen()) {
+            try {
+                // Abort, don't just drop: an unaborted channel stays registered
+                // on the connection and recovery keeps restoring it.
+                existing.abort();
+            } catch (IOException e) {
+                logger.log(Level.FINE, "ignoring error aborting dead channel", e);
+            }
+            threadChannel.remove();
         }
 
         if (threadChannel.get() == null) {
@@ -68,6 +76,13 @@ public class AMQPProducer {
 
     private AtomicBoolean serverLooksDown = new AtomicBoolean(false);
     private synchronized void connect() throws IOException {
+        if (connection != null) {
+            // Overwriting the field would leave the old connection open and
+            // recovering, consuming resources this producer can no longer see.
+            connection.abort();
+            connection = null;
+        }
+
         ConnectionFactory factory = new ConnectionFactory();
         try {
             factory.setUri(amqpUri);
@@ -84,13 +99,21 @@ public class AMQPProducer {
     }
 
     synchronized public void stop() {
+        if (connection == null) {
+            return;
+        }
         try {
-            if (connection != null && connection.isOpen()) {
+            if (connection.isOpen()) {
                 connection.close();
-                connection = null;
             }
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Attempting to close AMQP connection failed!", e);
+        } finally {
+            // Unconditionally, including when it was already closed: a
+            // connection left unaborted goes on recovering after the crawl has
+            // stopped. A no-op once close() has succeeded.
+            connection.abort();
+            connection = null;
         }
     }
 
