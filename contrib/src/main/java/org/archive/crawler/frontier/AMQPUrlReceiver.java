@@ -157,11 +157,15 @@ public class AMQPUrlReceiver
     }
 
     /**
-     * The maximum prefetch count to use, meaning the maximum number of messages
-     * to be consumed without being acknowledged. Using 'null' would specify
-     * there should be no upper limit (the default).
+     * The maximum number of messages the broker may deliver without being
+     * acknowledged. Null applies no limit, letting the broker push the whole
+     * queue at a single consumer.
+     *
+     * Deliveries are dispatched serially per channel, so a window wider than
+     * the consumer can work through buys no throughput; it only widens what is
+     * redelivered when a connection drops.
      */
-    private Integer prefetchCount = 1000;
+    private Integer prefetchCount = 100;
 
     private transient Lock lock = new ReentrantLock(true);
 
@@ -183,7 +187,7 @@ public class AMQPUrlReceiver
             while (!Thread.interrupted()) {
                 try {
                     lock.lockInterruptibly();
-                    String tag = consumerTag.get();
+                    String tag = clearTagIfTransportDead(consumerTag.get());
                     logger.finest("Checking consumerTag=" + tag + " and pauseConsumer=" + pauseConsumer);
                     try {
                         if (tag == null && !pauseConsumer) {
@@ -222,6 +226,28 @@ public class AMQPUrlReceiver
             consumerTag.set(tag);
             logger.info("started AMQP consumer uri=" + getAmqpUri() + " exchange=" + getExchange() + " queueName=" + getQueueName() + " consumerTag=" + tag);
         }
+    }
+
+    /**
+     * Clear a consumerTag whose transport has already died, returning the tag
+     * that remains in effect. The client does not reliably deliver a shutdown
+     * or cancel callback, so a tag can outlive the consumer it names, and the
+     * restart is only attempted for a null tag.
+     *
+     * Reads the fields rather than connection() and channel(), which would
+     * rebuild what this is trying to inspect.
+     */
+    protected String clearTagIfTransportDead(String tag) {
+        if (tag == null) {
+            return null;
+        }
+        if (connection != null && connection.isOpen()
+                && channel != null && channel.isOpen()) {
+            return tag;
+        }
+        logger.warning("consumerTag " + tag + " refers to a dead connection, clearing");
+        consumerTag.compareAndSet(tag, null);
+        return null;
     }
 
     /**

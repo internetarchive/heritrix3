@@ -378,6 +378,69 @@ public class AMQPUrlReceiverTest {
         assertNull(tag.get(), "a rejected cancel must not strand the tag");
     }
 
+    /**
+     * A shutdown or cancel callback is not reliably delivered -- a tag has been
+     * observed still registered in the client's own consumer map on a channel
+     * that was already closed. StarterRestarter has to notice the transport is
+     * gone for itself, or it waits on a tag that names nothing.
+     */
+    @Test
+    public void testStaleTagIsClearedWhenTheConnectionIsDead() throws Exception {
+        AtomicBoolean rebuilt = new AtomicBoolean();
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        receiver.connection = connectionProxy((proxy, method, args) -> {
+            switch (method.getName()) {
+            case "isOpen": return false;
+            case "createChannel": rebuilt.set(true); return null;
+            default: return defaultValue(method);
+            }
+        });
+        receiver.channel = channelProxy((proxy, method, args) ->
+                "isOpen".equals(method.getName()) ? true : defaultValue(method));
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-stale");
+
+        assertNull(receiver.clearTagIfTransportDead("amq.ctag-stale"));
+        assertNull(tag.get());
+        assertFalse(rebuilt.get(), "the liveness check must not rebuild the transport");
+    }
+
+    /** A live connection is no help if the channel underneath it is gone. */
+    @Test
+    public void testStaleTagIsClearedWhenTheChannelIsDead() throws Exception {
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        receiver.connection = connectionProxy((proxy, method, args) ->
+                "isOpen".equals(method.getName()) ? true : defaultValue(method));
+        receiver.channel = channelProxy((proxy, method, args) ->
+                "isOpen".equals(method.getName()) ? false : defaultValue(method));
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-stale");
+
+        assertNull(receiver.clearTagIfTransportDead("amq.ctag-stale"));
+        assertNull(tag.get());
+    }
+
+    /** An intact transport must leave a working consumer alone. */
+    @Test
+    public void testLiveTagSurvivesAnOpenTransport() throws Exception {
+        AMQPUrlReceiver receiver = new AMQPUrlReceiver();
+        receiver.connection = connectionProxy((proxy, method, args) ->
+                "isOpen".equals(method.getName()) ? true : defaultValue(method));
+        receiver.channel = channelProxy((proxy, method, args) ->
+                "isOpen".equals(method.getName()) ? true : defaultValue(method));
+        AtomicReference<String> tag = consumerTagOf(receiver);
+        tag.set("amq.ctag-live");
+
+        assertEquals("amq.ctag-live", receiver.clearTagIfTransportDead("amq.ctag-live"));
+        assertEquals("amq.ctag-live", tag.get());
+    }
+
+    /** Before the first startConsumer there is no tag and no transport. */
+    @Test
+    public void testNoTagIsHandledBeforeAnythingIsConnected() {
+        assertNull(new AMQPUrlReceiver().clearTagIfTransportDead(null));
+    }
+
     /** The ordinary case still clears it. */
     @Test
     public void testSuccessfulCancelClearsConsumerTag() throws Exception {
