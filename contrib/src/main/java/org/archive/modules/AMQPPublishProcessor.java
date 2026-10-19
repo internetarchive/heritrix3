@@ -176,8 +176,28 @@ public class AMQPPublishProcessor extends AMQPProducerProcessor implements Seria
         appCtx.publishEvent(new AMQPUrlPublishedEvent(AMQPPublishProcessor.this, curi));
     }
 
-    protected BasicProperties props = new AMQP.BasicProperties.Builder().
+    protected static final BasicProperties TRANSIENT = new AMQP.BasicProperties.Builder().
             contentType("application/json").build();
+
+    protected static final BasicProperties PERSISTENT = new AMQP.BasicProperties.Builder().
+            contentType("application/json").deliveryMode(2).build();
+
+    protected BasicProperties props = TRANSIENT;
+
+    private boolean persistentMessages = false;
+    public boolean getPersistentMessages() {
+        return persistentMessages;
+    }
+    /**
+     * Publish with delivery mode 2, so queued messages survive a broker
+     * restart rather than being discarded with the rest of the queue's
+     * contents. Costs the broker an eager write per message, and lengthens its
+     * recovery on restart in proportion to the backlog.
+     */
+    public void setPersistentMessages(boolean persistentMessages) {
+        this.persistentMessages = persistentMessages;
+        this.props = persistentMessages ? PERSISTENT : TRANSIENT;
+    }
 
     @Override
     protected BasicProperties amqpMessageProperties() {
