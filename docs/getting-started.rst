@@ -11,7 +11,7 @@ date builds of OpenJDK for several platforms are available from `Adoptium <https
 
 The default Java heap for Heritrix is 256MB RAM, which is usually suitable for crawls that range over hundreds of
 hosts.  Assign more of your available RAM to the heap if you are crawling thousands of hosts or experience Java
-out-of-memory problems.  You can use the JAVA_OPTS variable to configure memory
+out-of-memory problems.  You can use the JAVA_OPTS variable to configure memory.
 
 Installation
 ^^^^^^^^^^^^
@@ -37,15 +37,15 @@ Environment Variables
 
    .. code-block:: bash
 
-      export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
 #. Set the ``HERITRIX_HOME`` environment variable. The value should be set to the path where Heritrix is installed.
 
    .. code-block:: bash
 
-      export HERITRIX_HOME=/home/user/heritrix3.1
+      export HERITRIX_HOME=/home/user/heritrix-3.x.y
 
-#. Set execute permission on the Heritirix startup file.
+#. Set execute permission on the Heritrix startup file.
 
    .. code-block:: bash
 
@@ -117,9 +117,7 @@ Your First Crawl
 
    #. When done click "save changes" at the top of the page.
 
-   For more detailed information on configuring
-   jobs see `Configuring Jobs and Profiles <https://github
-   .com/internetarchive/heritrix3/wiki/Configuring%20Jobs%20and%20Profiles>`__
+   For more detailed information on configuring jobs see :doc:`configuring-jobs`.
 
 #. From the job screen, click "build." This command will validate the job configuration and load it into memory. In
    the Job Log the following message will display: "INFO JOB instantiated."

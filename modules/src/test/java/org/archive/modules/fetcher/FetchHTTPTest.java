@@ -578,6 +578,8 @@ public class FetchHTTPTest {
         fetcher().setMaxLengthBytes(50000);
         fetcher().process(curi);
         assertEquals(50001, curi.getRecordedSize());
+        assertEquals(200, curi.getFetchStatus());
+        assertFalse(curi.getAnnotations().contains("midFetchAbort"));
     }
 
     @Test
@@ -661,7 +663,8 @@ public class FetchHTTPTest {
         assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
-        assertEquals(200, curi.getFetchStatus());
+        assertEquals(FetchStatusCodes.S_MIDFETCH_ABORTED, curi.getFetchStatus());
+        assertFalse(curi.isSuccess());
         assertSame(curi.getFetchType(), FetchType.HTTP_GET);
         
         assertEquals(1, curi.getAnnotations().size());
@@ -675,6 +678,44 @@ public class FetchHTTPTest {
     }
 
     @Test
+    public void testShouldFetchBodyRuleAccept() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        fetcher().process(curi);
+
+        assertEquals(200, curi.getFetchStatus());
+        assertTrue(curi.isSuccess());
+        assertFalse(messageBodyString(curi).isEmpty());
+        assertFalse(curi.getAnnotations().contains("midFetchAbort"));
+    }
+
+    @Test
+    public void testShouldFetchBodyRuleNone() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        RejectDecideRule rule = new RejectDecideRule();
+        rule.setEnabled(false);
+        fetcher().setShouldFetchBodyRule(rule);
+        fetcher().process(curi);
+
+        assertEquals(200, curi.getFetchStatus());
+        assertTrue(curi.isSuccess());
+        assertFalse(messageBodyString(curi).isEmpty());
+        assertFalse(curi.getAnnotations().contains("midFetchAbort"));
+    }
+
+    @Test
+    public void testShouldFetchBodyRulePrerequisite() throws Exception {
+        CrawlURI curi = makeCrawlURI("http://localhost:7777/200k");
+        curi.setPrerequisite(true);
+        fetcher().setShouldFetchBodyRule(new RejectDecideRule());
+        fetcher().process(curi);
+
+        assertEquals(200, curi.getFetchStatus());
+        assertTrue(curi.isSuccess());
+        assertFalse(messageBodyString(curi).isEmpty());
+        assertFalse(curi.getAnnotations().contains("midFetchAbort"));
+    }
+
+    @Test
     public void testFetchTimeout() throws Exception {
         CrawlURI curi = makeCrawlURI("http://localhost:7777/slow.txt");
         fetcher().setTimeoutSeconds(2);
@@ -682,6 +723,8 @@ public class FetchHTTPTest {
         
         // logger.info('\n' + httpRequestString(curi) + "\n\n" + rawResponseString(curi));
         assertTrue(curi.getAnnotations().contains("timeTrunc"));
+        assertEquals(200, curi.getFetchStatus());
+        assertFalse(curi.getAnnotations().contains("midFetchAbort"));
         assertTrue(curi.getFetchDuration() >= 2000 && curi.getFetchDuration() < 2200);
     }
 

@@ -29,6 +29,7 @@ import org.restlet.Context;
 import org.restlet.data.Reference;
 import org.restlet.Request;
 import org.restlet.Response;
+import org.restlet.data.CacheDirective;
 import org.restlet.data.Status;
 import org.restlet.resource.Directory;
 import org.restlet.resource.ServerResource;
@@ -72,6 +73,14 @@ public abstract class EnhDirectory extends Directory {
             if (response.getStatus() == Status.SUCCESS_NO_CONTENT) {
                 response.setStatus(Status.SUCCESS_OK);
             }
+
+            // Job files (logs, reports, configs) change constantly, so replace Restlet's default
+            // 10 minute expiry with revalidation against Last-Modified. Otherwise the config editor
+            // can load a stale copy and saving it silently reverts newer changes.
+            if (response.getEntity() != null) {
+                response.getEntity().setExpirationDate(null);
+            }
+            response.getCacheDirectives().add(CacheDirective.noCache());
         }
     }
 

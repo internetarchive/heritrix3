@@ -153,7 +153,7 @@ if not "%1"=="BGR" (
 ) else (
     title Heritrix
     :: adding  ">>%stdouterrlog% 2>&1" causes an access denied error as heritrix writes also to this file	
-    %JAVACMD% "-Dheritrix.home=%HERITRIX_HOME%" -Djava.protocol.handler.pkgs=org.archive.net "-Dheritrix.out=%HERITRIX_OUT%" %JAVA_OPTS% %CLASS_MAIN% %HERITRIX_CMDLINE%	
+    %JAVACMD% "-Dheritrix.home=%HERITRIX_HOME%" -Djava.protocol.handler.pkgs=org.archive.net "-Dheritrix.out=%HERITRIX_OUT%" "-Dheritrix.dmesg=%startMessage%" %JAVA_OPTS% %CLASS_MAIN% %HERITRIX_CMDLINE%
     if errorlevel 130 goto :end
     if errorlevel 1 echo.!ERRORLEVEL! >"%HERITRIX_HOME%\heritrix_launch_problems"
 	pause

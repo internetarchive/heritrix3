@@ -74,6 +74,7 @@ public class SourceTagsReport extends Report {
                             writer.print(Math.abs(entry2.getKey()));
                             writer.print("\n");
                         }
+                        sortedHostCounts.dispose();
                     }
                 }
             }

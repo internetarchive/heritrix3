@@ -24,6 +24,7 @@ import org.archive.modules.deciderules.surt.SurtPrefixedDecideRule
 import org.archive.modules.extractor.*
 import org.archive.modules.fetcher.*
 import org.archive.modules.net.BdbServerCache
+import org.archive.modules.processor.BotBlockDetector
 import org.archive.modules.seeds.TextSeedModule
 import org.archive.modules.writer.WARCWriterChainProcessor
 import org.springframework.beans.factory.config.PropertyOverrideConfigurer
@@ -267,6 +268,7 @@ http://example.example/example
         // digestContent = true
         // digestAlgorithm = 'sha1'
     }
+    botBlockDetector(BotBlockDetector)
     extractorHttp(ExtractorHTTP)
     extractorRobotsTxt(ExtractorRobotsTxt)
     extractorSitemap(ExtractorSitemap)
@@ -297,6 +299,8 @@ http://example.example/example
                 // ref('fetchWhois'),
                 // ...fetch if HTTP URI...
                 ref('fetchHttp'),
+                // ...annotate responses from bot-blocking services...
+                ref('botBlockDetector'),
                 // ...extract outlinks from HTTP headers...
                 ref('extractorHttp'),
                 // ...extract sitemap urls from robots.txt...

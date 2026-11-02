@@ -22,10 +22,16 @@ package org.archive.crawler.restlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
+import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
 import freemarker.template.ObjectWrapper;
+import freemarker.template.TemplateExceptionHandler;
 import freemarker.template.TemplateModelException;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.archive.crawler.framework.Engine;
 import org.archive.util.TextUtils;
 import org.restlet.Application;
@@ -60,7 +66,11 @@ public class EngineApplication extends Application {
         getMetadataService().addExtension("cxml", MediaType.APPLICATION_XML );
         getMetadataService().addExtension("groovy", MediaType.TEXT_PLAIN);
         setStatusService(new EngineStatusService());
-        templateConfiguration = new Configuration();
+        templateConfiguration = new Configuration(Configuration.VERSION_2_3_34);
+        // escape ${...} in templates; use ?no_esc for values that are markup
+        templateConfiguration.setOutputFormat(HTMLOutputFormat.INSTANCE);
+        // show template errors in the page, HTML escaped
+        templateConfiguration.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
         templateConfiguration.setClassForTemplateLoading(getClass(), "");
         templateConfiguration.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
         templateConfiguration.setSharedVariable("webJars", new WebJars());
@@ -131,7 +141,18 @@ public class EngineApplication extends Application {
         Directory webjarsDir = new Directory(getContext().createChildContext(), "clap://class/META-INF/resources/webjars");
         router.attach("/engine/webjars/", webjarsDir);
 
-        return router;
+        // comma separated origins, e.g. https://example.org, allowed to send
+        // cross-site requests
+        List<String> trustedOrigins = new ArrayList<>();
+        for (String origin : System.getProperty("heritrix.trustedOrigins", "").split(",")) {
+            if (!origin.isBlank()) {
+                trustedOrigins.add(origin.trim());
+            }
+        }
+        CrossSiteRequestFilter crossSiteFilter =
+                new CrossSiteRequestFilter(getContext(), trustedOrigins);
+        crossSiteFilter.setNext(router);
+        return crossSiteFilter;
     }
 
     public Engine getEngine() {
@@ -161,9 +182,10 @@ public class EngineApplication extends Application {
                 "<a href='javascript:history.back();void(0);'>back</a>.\n");
                 if(status.getThrowable()!=null) {
                     pw.append("<h2>Cause: "+
-                            status.getThrowable().toString()+"</h2>\n");
+                            StringEscapeUtils.escapeHtml4(status.getThrowable().toString())+"</h2>\n");
                     pw.append("<pre>");
-                    status.getThrowable().printStackTrace(pw);
+                    pw.append(StringEscapeUtils.escapeHtml4(
+                            ExceptionUtils.getStackTrace(status.getThrowable())));
                     pw.append("</pre>");
                 }
             }

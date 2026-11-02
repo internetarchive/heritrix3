@@ -42,7 +42,7 @@ class BrowserProcessorTest {
     private static CrawlController crawlController;
     private final Set<Recorder> recorders = new HashSet<>();
     @TempDir
-    Path tempDir;
+    static Path tempDir;
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -198,11 +198,6 @@ class BrowserProcessorTest {
                 StandardCharsets.UTF_8);
     }
 
-    @BeforeEach
-    void setUp() {
-        crawlController.getScratchDir().setPath(tempDir.toString());
-    }
-
     @AfterEach
     void tearDown() {
         subrequests.clear();
@@ -301,6 +296,7 @@ class BrowserProcessorTest {
         fetcher.setUserAgentProvider(new CrawlMetadata());
         fetcher.start();
         crawlController = new CrawlController();
+        crawlController.getScratchDir().setPath(tempDir.toString());
         FetchChain fetchChain = new FetchChain();
         fetchChain.setProcessors(List.of());
         crawlController.setFetchChain(fetchChain);

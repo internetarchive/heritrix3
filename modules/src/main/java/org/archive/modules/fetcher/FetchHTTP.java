@@ -24,6 +24,7 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_FAILED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_PREREQUISITE_FAILURE;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_MIDFETCH_ABORTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_UNFETCHABLE_URI;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_SSL_ERROR;
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_REFERENCE_LENGTH;
@@ -465,9 +466,12 @@ public class FetchHTTP extends Processor implements Lifecycle {
     }
     /**
      * DecideRules applied after receipt of HTTP response headers but before we
-     * start to download the body. If any filter returns FALSE, the fetch is
-     * aborted. Prerequisites such as robots.txt by-pass filtering (i.e. they
-     * cannot be midfetch aborted.
+     * start to download the body. If the rule returns REJECT, the fetch is
+     * aborted and the URI is marked {@link FetchStatusCodes#S_MIDFETCH_ABORTED}.
+     * This makes {@link CrawlURI#isSuccess()} false, skips extraction and WARC
+     * writing (including header-only captures), and causes the frontier to
+     * disregard the URI without a queue-budget charge or retry. Prerequisites
+     * such as robots.txt bypass filtering and cannot be midfetch aborted.
      */
     public void setShouldFetchBodyRule(DecideRule rule) {
         kp.put("shouldFetchBodyRule", rule);
@@ -641,6 +645,7 @@ public class FetchHTTP extends Processor implements Lifecycle {
     protected boolean maybeMidfetchAbort(CrawlURI curi, AbstractExecutionAwareRequest request) {
         if (checkMidfetchAbort(curi)) {
             doAbort(curi, request, "midFetchAbort");
+            curi.setFetchStatus(S_MIDFETCH_ABORTED);
             curi.getRecorder().getRecordedInput().chopAtMessageBodyBegin();
             return true;
         } else {

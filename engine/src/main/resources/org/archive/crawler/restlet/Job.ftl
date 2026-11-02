@@ -30,19 +30,19 @@
 						<a href="#">Crawl Actions</a>
 						<ul class="button-group dropdown even-2">
 							<li class="divider"></li>
-							<li><div><button class="button" type='submit' name='action' value='build' ${(!job.hasApplicationContext)?string("", "disabled=\"disabled\"")} >build</button></div></li>
+							<li><div><button class="button" type='submit' name='action' value='build' ${(!job.hasApplicationContext)?string("", "disabled=\"disabled\"")?no_esc} >build</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" type='submit' name='action' value='launch' ${((!job.isProfile) && job.availableActions?seq_contains("launch"))?string("", "disabled=\"disabled\"")} ${(!job.isProfile)?string("","title=\"profiles cannot be launched\"")}>launch</button></div></li>
+							<li><div><button class="button" type='submit' name='action' value='launch' ${((!job.isProfile) && job.availableActions?seq_contains("launch"))?string("", "disabled=\"disabled\"")?no_esc} ${(!job.isProfile)?string("","title=\"profiles cannot be launched\"")?no_esc}>launch</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" ${job.availableActions?seq_contains("pause")?string("", "disabled=\"disabled\"")} type='submit' name='action' value='pause'>pause</button></div></li>
+							<li><div><button class="button" ${job.availableActions?seq_contains("pause")?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='pause'>pause</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" ${job.availableActions?seq_contains("unpause")?string("", "disabled=\"disabled\"")} type='submit' name='action' value='unpause'>unpause</button></div></li>
+							<li><div><button class="button" ${job.availableActions?seq_contains("unpause")?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='unpause'>unpause</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" ${job.isRunning?string("", "disabled=\"disabled\"")}  type='submit' name='action' value='checkpoint'>checkpoint</button></div></li>
+							<li><div><button class="button" ${job.isRunning?string("", "disabled=\"disabled\"")?no_esc}  type='submit' name='action' value='checkpoint'>checkpoint</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" ${job.isRunning?string("", "disabled=\"disabled\"")} type='submit' name='action' value='terminate'>terminate</button></div></li>
+							<li><div><button class="button" ${job.isRunning?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='terminate'>terminate</button></div></li>
 							<li class="divider"></li>
-							<li><div><button class="button" type='submit' name='action' value='teardown' ${(job.hasApplicationContext)?string("", "disabled=\"disabled\" title=\"no instance\"")}>teardown</button></div></li>
+							<li><div><button class="button" type='submit' name='action' value='teardown' ${(job.hasApplicationContext)?string("", "disabled=\"disabled\" title=\"no instance\"")?no_esc}>teardown</button></div></li>
 							<li class="divider"></li>
 						</ul>
 					</li>
@@ -93,17 +93,17 @@
 			<div class="button-bar show-for-medium-up">
 			
 			<ul class=" button-group">
-					<li><button class="small button" type='submit' name='action' value='build' ${(!job.hasApplicationContext)?string("", "disabled=\"disabled\"")}>build</button></li>
-					<li><button class="small button" type='submit' name='action' value='launch' ${((!job.isProfile) && job.availableActions?seq_contains("launch"))?string("", "disabled=\"disabled\"")} ${(!job.isProfile)?string("","title=\"profiles cannot be launched\"")}>launch</button></li>
+					<li><button class="small button" type='submit' name='action' value='build' ${(!job.hasApplicationContext)?string("", "disabled=\"disabled\"")?no_esc}>build</button></li>
+					<li><button class="small button" type='submit' name='action' value='launch' ${((!job.isProfile) && job.availableActions?seq_contains("launch"))?string("", "disabled=\"disabled\"")?no_esc} ${(!job.isProfile)?string("","title=\"profiles cannot be launched\"")?no_esc}>launch</button></li>
 				</ul>
 				<ul class=" button-group">
-					<li><button class="small button" ${job.availableActions?seq_contains("pause")?string("", "disabled=\"disabled\"")} type='submit' name='action' value='pause'>pause</button></li>
-					<li><button class="small button" ${job.availableActions?seq_contains("unpause")?string("", "disabled=\"disabled\"")} type='submit' name='action' value='unpause'>unpause</button></li>
-					<li><button class="small button" ${job.isRunning?string("", "disabled=\"disabled\"")} type='submit' name='action' value='checkpoint'>checkpoint</button></li>
+					<li><button class="small button" ${job.availableActions?seq_contains("pause")?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='pause'>pause</button></li>
+					<li><button class="small button" ${job.availableActions?seq_contains("unpause")?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='unpause'>unpause</button></li>
+					<li><button class="small button" ${job.isRunning?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='checkpoint'>checkpoint</button></li>
 				</ul>
 				<ul class=" button-group">
-					<li><button class="small button" ${job.isRunning?string("", "disabled=\"disabled\"")} type='submit' name='action' value='terminate'>terminate</button></li>
-					<li><button class="small button" type='submit' name='action' value='teardown' ${(job.hasApplicationContext)?string("", "disabled=\"disabled\" title=\"no instance\"")} >teardown</button></li>
+					<li><button class="small button" ${job.isRunning?string("", "disabled=\"disabled\"")?no_esc} type='submit' name='action' value='terminate'>terminate</button></li>
+					<li><button class="small button" type='submit' name='action' value='teardown' ${(job.hasApplicationContext)?string("", "disabled=\"disabled\" title=\"no instance\"")?no_esc} >teardown</button></li>
 			</ul>
 			</div>
 			<div class="row">
@@ -129,7 +129,7 @@
 	<div class="large-12 columns">
 		<#list flashes as flash>
 		<div data-alert class="alert-box ${(flash.kind=='ACK')?string('success', 'alert')}">
-			${flash.message} <a href="#" class="close">&times;</a>
+			${flash.message?no_esc} <a href="#" class="close">&times;</a>
 		</div>
 		</#list>
 		<#if job.isProfile>
@@ -149,7 +149,7 @@
 				<div class="log-viewer">
 					<ul class="no-bullet scroll_y monospace">
 						<#list job.jobLogTail as line>
-						<li>${line?html}</li>
+						<li>${line}</li>
 						</#list>
 					</ul>
 				</div>
@@ -284,7 +284,7 @@
 				<div class="log-viewer" >
 					<ul class="no-bullet scroll_y monospace">
 					<#list job.crawlLogTail as line>
-						<li>${line?html}</li>
+						<li>${line}</li>
 					</#list>
 					</ul>
 				</div>

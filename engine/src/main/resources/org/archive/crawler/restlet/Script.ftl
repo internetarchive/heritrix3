@@ -27,7 +27,7 @@
             @lezer/xml
             @marijn/find-cluster-break src/index.js
             style-mod src/style-mod.js
-            w3c-keyname index.js")}
+            w3c-keyname index.js")?no_esc}
     </script>
 	<script type="module">
 		import {basicSetup} from "codemirror"
@@ -100,7 +100,7 @@
 						<#assign htmlOutput=model.htmlOutput>
 						<#if (htmlOutput?length > 0)>
 						<fieldset><legend>htmlOut</legend>
-						${htmlOutput}
+						${htmlOutput?no_esc}
 						</fieldset>
 						</#if>
 						<#assign rawOutput=model.rawOutput>
@@ -133,7 +133,7 @@
 			The script will be executed in an engine preloaded with (global) variables:
 			<ul class="no-bullet">
 				<#list model.availableGlobalVariables as v>
-				<li style="line-height:1"><code>${v.variable}</code>: ${v.description?html}</li>
+				<li style="line-height:1"><code>${v.variable}</code>: ${v.description}</li>
 				</#list>
 			</ul>
 		</div>

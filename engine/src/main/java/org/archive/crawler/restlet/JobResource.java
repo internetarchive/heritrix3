@@ -25,6 +25,7 @@ import java.io.Writer;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.framework.CrawlJob;
 import org.archive.crawler.framework.Engine;
@@ -194,7 +195,7 @@ public class JobResource extends BaseResource {
         } else if ("checkpoint".equals(action)) {
             String cp = cj.getCheckpointService().requestCrawlCheckpoint();
             if (StringUtils.isNotEmpty(cp)) {
-                Flash.addFlash(getResponse(), "Checkpoint <i>" + cp
+                Flash.addFlash(getResponse(), "Checkpoint <i>" + StringEscapeUtils.escapeHtml4(cp)
                         + "</i> saved", Flash.Kind.ACK);
             } else {
                 Flash.addFlash(
@@ -217,7 +218,7 @@ public class JobResource extends BaseResource {
         try {
             getEngine().copy(cj, copyTo, asProfile);
         } catch (IOException e) {
-            Flash.addFlash(getResponse(), "Job not copied: " + e.getMessage(),
+            Flash.addFlash(getResponse(), "Job not copied: " + StringEscapeUtils.escapeHtml4(e.getMessage()),
                     Flash.Kind.NACK);
             getResponse().redirectSeeOther(getRequest().getOriginalRef());
             return;
@@ -238,7 +239,7 @@ public class JobResource extends BaseResource {
         try {
             getEngine().deleteJob(cj);
         } catch (IOException e) {
-            Flash.addFlash(getResponse(), "Job not deleted: " + e.getMessage(),
+            Flash.addFlash(getResponse(), "Job not deleted: " + StringEscapeUtils.escapeHtml4(e.getMessage()),
                     Flash.Kind.NACK);
             getResponse().redirectSeeOther(getRequest().getOriginalRef());
             return;

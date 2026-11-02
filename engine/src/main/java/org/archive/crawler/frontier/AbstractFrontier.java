@@ -27,6 +27,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DELETED_BY_USER;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DOMAIN_UNRESOLVABLE;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_MIDFETCH_ABORTED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_ROBOTS_PRECLUDED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_TOO_MANY_EMBED_HOPS;
@@ -1072,6 +1073,7 @@ public abstract class AbstractFrontier
         case S_BLOCKED_BY_CUSTOM_PROCESSOR:
         case S_OUT_OF_SCOPE: // filtered out by scope
         case S_BLOCKED_BY_USER: // filtered out by user
+        case S_MIDFETCH_ABORTED: // rejected by shouldFetchBodyRule
         case S_TOO_MANY_EMBED_HOPS: // too far from last true link
         case S_TOO_MANY_LINK_HOPS: // too far from seeds
         case S_DELETED_BY_USER: // user deleted

@@ -202,16 +202,23 @@ implements Reporter, ProgressStatisticsReporter,
         } catch (OutOfMemoryError err) {
             seriousError(err);
         } finally {
-            synchronized (this) {
-                if (currentCuri != null) {
-                    logger.log(Level.WARNING,"Leaving with unfinished CrawlURI " + getName() +
-                            " - attempting to finish");
-                    currentCuri.setFetchStatus(S_PROCESSING_THREAD_KILLED);
-                    controller.getFrontier().finished(currentCuri);
-                    setCurrentCuri(null);
+            try {
+                synchronized (this) {
+                    if (currentCuri != null) {
+                        logger.log(Level.WARNING,"Leaving with unfinished CrawlURI " + getName() +
+                                " - attempting to finish");
+                        currentCuri.setFetchStatus(S_PROCESSING_THREAD_KILLED);
+                        try {
+                            controller.getFrontier().finished(currentCuri);
+                        } catch (RuntimeException e) {
+                            logger.log(Level.SEVERE, "Unable to finish " + currentCuri + " in " + getName(), e);
+                        }
+                        setCurrentCuri(null);
+                    }
                 }
+            } finally {
+                controller.getFrontier().endDisposition();
             }
-            controller.getFrontier().endDisposition();
         }
 
         setCurrentCuri(null);

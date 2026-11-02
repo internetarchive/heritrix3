@@ -38,7 +38,7 @@
 		<!--flashed message -->
 		<#list flashes as flash>
 		<div data-alert class="alert-box ${(flash.kind=='ACK')?string('success', 'alert')}">
-			${flash.message} <a href="#" class="close">&times;</a>
+			${flash.message?no_esc} <a href="#" class="close">&times;</a>
 		</div>
 		</#list>
 	</div>
@@ -110,7 +110,7 @@
 					<input style="display:inline;margin:0;width:50%" name='createpath' type="text" placeholder="myJob"/>
 					<select name="profile" style="display:inline; margin:0; width:auto; vertical-align:middle">
 						<#list engine.profiles as profile>
-						<option value="${profile?html}">${profile?html}</option>
+						<option value="${profile}">${profile}</option>
 						</#list>
 					</select>
 					<input class="small inline button" type='submit' name='action' value='create'>

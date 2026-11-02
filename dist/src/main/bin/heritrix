@@ -114,7 +114,7 @@ startMessage="${HERITRIX_HOME}/heritrix_dmesg.log"
 # Remove any file that may have been left over from previous starts.
 if [ -f $startMessage ]
 then
-    rm -f $startmessage
+    rm -f $startMessage
 fi
 # Run heritrix as daemon.  Redirect stdout and stderr to a file.
 # Print start message with date, java version, java opts, ulimit, and uname.
@@ -139,7 +139,8 @@ then
 else
     CLASSPATH=${CP} nohup $JAVACMD -Dheritrix.home=${HERITRIX_HOME} \
         -Djava.protocol.handler.pkgs=org.archive.net \
-        -Dheritrix.out=${HERITRIX_OUT} ${JAVA_OPTS} ${JMX_OPTS} \
+        -Dheritrix.out=${HERITRIX_OUT} -Dheritrix.dmesg=${startMessage} \
+        ${JAVA_OPTS} ${JMX_OPTS} \
         $CLASS_MAIN $@ >> ${stdouterrlog} 2>&1 &
     HERITRIX_PID=$!
 
