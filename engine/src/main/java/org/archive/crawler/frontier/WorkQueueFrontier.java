@@ -517,7 +517,14 @@ implements Closeable,
      */
     protected void sendToQueue(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        
+
+        // Resolve queue-group membership with the real CrawlURI available, so
+        // that DecideRule-based membership can be evaluated; the result is
+        // cached per classKey for subsequent classKey-only lookups.
+        if (queueGroupManager != null) {
+            queueGroupManager.groupFor(curi);
+        }
+
         WorkQueue wq = getQueueFor(curi.getClassKey());
         synchronized(wq) {
             int originalPrecedence = wq.getPrecedence();

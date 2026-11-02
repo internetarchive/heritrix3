@@ -18,12 +18,17 @@
  */
 package org.archive.crawler.frontier;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+
+import org.archive.modules.CrawlURI;
 
 /**
  * Optional bean holding the configured {@link QueueGroup}s and resolving a
@@ -50,6 +55,19 @@ public class QueueGroupManager implements Serializable {
     protected transient ConcurrentHashMap<String, QueueGroup> cache =
             new ConcurrentHashMap<String, QueueGroup>();
 
+    /**
+     * Durable classKey -&gt; group <i>name</i> mapping. Unlike {@link #cache}
+     * (which holds live {@link QueueGroup} references and is transient), this
+     * map is serialized with the checkpoint so that DecideRule-based
+     * membership (resolved only from a real {@link CrawlURI} at enqueue time)
+     * survives a restore: on deserialization it is re-bound to the
+     * Spring-reconstructed {@link QueueGroup} instances by name, repopulating
+     * both {@link #cache} and each group's discovered members. The {@link #NONE}
+     * sentinel is never stored here (only positive matches are persisted).
+     */
+    protected ConcurrentHashMap<String, String> persistedMembership =
+            new ConcurrentHashMap<String, String>();
+
     public QueueGroupManager() {
     }
 
@@ -72,6 +90,64 @@ public class QueueGroupManager implements Serializable {
 
     public void clearCache() {
         cache().clear();
+        if (persistedMembership != null) {
+            persistedMembership.clear();
+        }
+    }
+
+    protected ConcurrentHashMap<String, String> persistedMembership() {
+        if (persistedMembership == null) {
+            persistedMembership = new ConcurrentHashMap<String, String>();
+        }
+        return persistedMembership;
+    }
+
+    /** @return the group with the given name among {@link #groups}, or null. */
+    protected QueueGroup findGroupByName(String name) {
+        if (name == null || groups == null) {
+            return null;
+        }
+        for (QueueGroup g : groups) {
+            if (name.equals(g.getName())) {
+                return g;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Re-bind the persisted {@code classKey -> group name} mapping to the live
+     * {@link QueueGroup} instances after deserialization, rebuilding the
+     * in-memory {@link #cache} and restoring each group's discovered members so
+     * the round-robin rotation starts complete. Entries whose group name no
+     * longer exists (group renamed/removed in the config since the checkpoint)
+     * are dropped defensively.
+     */
+    protected void rebindPersistedMembership() {
+        if (persistedMembership == null || persistedMembership.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> e : persistedMembership.entrySet()) {
+            String classKey = e.getKey();
+            QueueGroup g = findGroupByName(e.getValue());
+            if (g != null) {
+                cache().put(classKey, g);
+                g.noteMember(classKey);
+            } else {
+                // stale entry: group no longer configured, drop it
+                persistedMembership.remove(classKey);
+            }
+        }
+    }
+
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        cache = new ConcurrentHashMap<String, QueueGroup>();
+        if (persistedMembership == null) {
+            persistedMembership = new ConcurrentHashMap<String, String>();
+        }
+        rebindPersistedMembership();
     }
 
     /**
@@ -97,8 +173,54 @@ public class QueueGroupManager implements Serializable {
         cache().put(classKey, found == null ? NONE : found);
         if (found != null) {
             found.noteMember(classKey);
+            persistedMembership().put(classKey, found.getName());
         }
         return found;
+    }
+
+    /**
+     * Resolve the group of a URI using the real {@link CrawlURI}, so that
+     * {@link QueueGroup#groupMembersByDecideRule DecideRule-based} membership
+     * (which needs a {@code CrawlURI}, not a bare classKey) can be evaluated.
+     *
+     * <p>The resolution is cached per {@code classKey} (just like
+     * {@link #groupFor(String)}), so subsequent classKey-only lookups keep
+     * returning the same group. This method is meant to be called once, when a
+     * URI is first enqueued and its classKey is known. A positive match
+     * overrides a previously-cached {@link #NONE} (e.g. if a classKey-only
+     * lookup happened first and found nothing).</p>
+     *
+     * @return the group the URI belongs to, or {@code null} if none.
+     */
+    public QueueGroup groupFor(CrawlURI curi) {
+        if (curi == null || groups == null || groups.isEmpty()) {
+            return null;
+        }
+        String classKey = curi.getClassKey();
+        if (classKey == null) {
+            return null;
+        }
+        QueueGroup cached = cache().get(classKey);
+        if (cached != null && cached != NONE) {
+            return cached;
+        }
+        QueueGroup found = null;
+        for (QueueGroup g : groups) {
+            if (g.matches(curi)) {
+                found = g;
+                break;
+            }
+        }
+        if (found != null) {
+            // override any previously-cached NONE with the URI-based match
+            cache().put(classKey, found);
+            found.noteMember(classKey);
+            persistedMembership().put(classKey, found.getName());
+            return found;
+        }
+        // no URI-based match: fall back to the classKey-only resolution, which
+        // also populates the cache (with the group or NONE).
+        return groupFor(classKey);
     }
 
     // ---- runtime CRUD (scripting console) ----

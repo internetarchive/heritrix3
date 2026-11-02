@@ -483,25 +483,41 @@ http://example.example/example
       Therefore, with the default policy, use groupMembersBySurt with a
       SURT-authority prefix. The groupMembersByHost and groupMembersByRegex
       forms match plain hostnames and are only appropriate when a host-based
-      queueAssignmentPolicy (e.g. HostnameQueueAssignmentPolicy) is used. -->
- <!--
- <bean id="queueGroups" class="org.archive.crawler.frontier.QueueGroupManager">
-  <property name="groups">
-   <list>
-    <bean class="org.archive.crawler.frontier.QueueGroup">
-     <property name="name" value="example_com" />
-     <property name="maxParallelInGroup" value="1" />
-     <property name="groupMinDelayMs" value="4000" />
-     <property name="groupMembersBySurt">
-      <list>
-       <value>com,example,</value>
-      </list>
-     </property>
-    </bean>
-   </list>
-  </property>
- </bean>
- -->
+      queueAssignmentPolicy (e.g. HostnameQueueAssignmentPolicy) is used.
+
+      A fourth form, groupMembersByDecideRule, lets any DecideRule decide
+      membership: the rule is evaluated against the real CrawlURI when it is
+      first enqueued (returning ACCEPT makes the URI's queue a member), and the
+      result is cached per queue classKey. This is independent of the
+      queueAssignmentPolicy and can express arbitrary conditions. -->
+<!--
+<bean id="queueGroups" class="org.archive.crawler.frontier.QueueGroupManager">
+ <property name="groups">
+  <list>
+   <bean class="org.archive.crawler.frontier.QueueGroup">
+    <property name="name" value="example_com" />
+    <property name="maxParallelInGroup" value="1" />
+    <property name="groupMinDelayMs" value="4000" />
+    <property name="groupMembersBySurt">
+     <list>
+      <value>com,example,</value>
+     </list>
+    </property>
+   </bean>
+   <bean class="org.archive.crawler.frontier.QueueGroup">
+    <property name="name" value="by_decide_rule" />
+    <property name="maxParallelInGroup" value="1" />
+    <property name="groupMinDelayMs" value="4000" />
+    <property name="groupMembersByDecideRule">
+     <bean class="org.archive.modules.deciderules.MatchesRegexDecideRule">
+      <property name="regex" value="https?://([^/]+\.)?example\.com/.*" />
+     </bean>
+    </property>
+   </bean>
+  </list>
+ </property>
+</bean>
+-->
 
  <!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs -->
  <bean id="uriUniqFilter" 

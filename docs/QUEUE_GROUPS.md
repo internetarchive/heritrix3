@@ -23,6 +23,111 @@ slot.
 Queue groups are **optional**. When the `queueGroups` bean is absent (as by
 default), the frontier behaves exactly as before.
 
+## How the queueing system works
+
+This section explains the machinery the `WorkQueueFrontier` uses to schedule
+work, and how a queue group hooks into it. Understanding the queue *states* is
+key to understanding what a group actually changes.
+
+### Per-host work queues
+
+Every URI is assigned a `classKey` by the configured `queueAssignmentPolicy`
+(see below), and all URIs sharing a `classKey` land in the same `WorkQueue`.
+With the default policy there is essentially one queue per host authority. The
+frontier never merges these queues; a queue group only coordinates *when* each
+member queue is allowed to run.
+
+### Queue states
+
+At any moment a `WorkQueue` is in exactly one of the following states, and the
+frontier moves queues between them:
+
+- **inactive** — the queue holds URIs but is not currently competing for a
+  fetch slot. Inactive queues are ordered by **precedence**; the highest
+  precedence ones are promoted (`activateInactiveQueue()`) into the ready set.
+- **ready** — the queue is eligible to be fetched next. Ready queues live in
+  `readyClassQueues`.
+- **in-process** — one of the queue's URIs is currently being fetched. A queue
+  is placed in `inProcessQueues` while its URI is out with a processor thread.
+- **snoozed** — the queue is waiting for a **real, future wake time** (its
+  per-host politeness delay, a retry delay, or a group cool-down). Snoozed
+  queues sit in `snoozedClassQueues`, ordered by wake time, and `wakeQueues()`
+  returns them to *ready* once their time has come.
+- **parked (group waiting list)** — a group member that is ready in itself but
+  is held back **only** because the group's concurrency ceiling
+  (`maxParallelInGroup`) is currently full. Parked queues are neither ready nor
+  snoozed; they wait on their `QueueGroup`'s waiting list until a sibling
+  releases a slot (see below).
+- **retired** — the queue is out of the crawl (e.g. budget exhausted).
+
+### The main scheduling loop
+
+`findEligibleURI()` runs on the frontier's manager thread and repeatedly:
+
+1. pulls the next **ready** queue from `readyClassQueues`;
+2. if the queue belongs to a group, checks the group's **shared gate**
+   (`QueueGroup.canProceed(now)`), which is open only when both:
+   - the group is below its concurrency ceiling
+     (`activeCount < maxParallelInGroup`), **and**
+   - the group's shared cool-down has elapsed (`now >= wakeTime`);
+3. if the gate is open, hands out a URI from the queue, moves the queue to
+   *in-process*, and calls `QueueGroup.acquire()` plus `advanceRotation()` so
+   the round-robin pointer moves to the next member;
+4. when the fetch finishes, `releaseGroup()` calls `QueueGroup.release()`,
+   which frees the slot and arms the shared cool-down (`wakeTime = now +
+   groupMinDelayMs`).
+
+Queues that are not part of any group skip steps 2–4 entirely and follow the
+classic per-host politeness path unchanged.
+
+### Gate closed: snooze vs. park
+
+When the shared gate is **closed** in step 2, the reason matters, and the
+frontier reacts differently:
+
+- **Cool-down active** (`wakeTime` is in the future): the queue is **snoozed**
+  until that real wake time. This is a genuine time-based wait, so
+  `snoozedClassQueues` is exactly the right place for it.
+- **Concurrency ceiling only** (`wakeTime` already in the past, but
+  `activeCount == maxParallelInGroup`): there is *no* natural wake time — what
+  will unblock the queue is not the clock but a **sibling releasing a slot**.
+  Snoozing "for 1 ms" here would create a busy `snoozed ↔ ready` polling cycle.
+  Instead the queue is **parked** on the group's waiting list
+  (`QueueGroup.park()`), and no arbitrary snooze is scheduled.
+
+### Event-driven wake-up from the waiting list
+
+The waiting list turns slot contention into an **event-driven** mechanism
+instead of polling:
+
+- When a member finishes, `releaseGroup()` frees the slot and then calls
+  `unparkOne()`, which pops the next parked member (via
+  `QueueGroup.pollWaiting()`, honoring the round-robin rotation from
+  `rotationIndex`) and puts it back in circulation:
+  - if a cool-down is now armed, the popped queue is **snoozed** until
+    `wakeTime` (a real date), never busy-looped;
+  - otherwise it is returned to **ready** immediately.
+- **Lock ordering:** `findEligibleURI()` locks a queue and then its group, so
+  `unparkOne()` must never lock a queue while holding the group lock. The pop
+  is atomic on the group alone; the popped queue is then handled outside any
+  group lock.
+- **Safety nets against lost wake-ups:** `wakeQueues()` also calls
+  `wakeParkedGroupQueues()`, which unparks one queue per group whose gate is
+  actually open, and the operator action `forceWakeQueues()` drains every
+  group's waiting list. A queue that is retired or relocated while parked is
+  removed from the list (`QueueGroup.unpark()` in `retireQueue()`).
+
+The waiting list is **transient**: like the rotation state, it is not persisted
+and is rebuilt naturally after a restart or checkpoint.
+
+### Reporting
+
+The frontier's short report exposes the parked queues under the
+`groupWaitingQueues` key, and includes them in the `activeQueues` total
+(`inProcessQueues + readyQueues + snoozedQueues + groupWaitingQueues`), so
+queues held back by a group's concurrency ceiling remain visible and accounted
+for.
+
 ## How members are matched: the `classKey`
 
 Group members are matched against the frontier's queue **`classKey`**, whose
@@ -60,6 +165,7 @@ Each `QueueGroup` supports the following properties:
 | `groupMembersByHost`   | List<String>   | empty   | Exact host match (host-based policies only).                            |
 | `groupMembersByRegex`  | List<Pattern>  | empty   | Full regex match against the host part of the classKey.                 |
 | `groupMembersBySurt`   | List<String>   | empty   | classKey starts with the given SURT-authority prefix (default policy).  |
+| `groupMembersByDecideRule` | DecideRule | none    | A `DecideRule` evaluated against the real `CrawlURI`; `ACCEPT` means member (policy-independent). |
 
 A queue belongs to
 the group if it matches **any** member declaration.
@@ -158,7 +264,48 @@ any `#` or `+`).
 </bean>
 ```
 
-### Example 4 — Multiple groups and combined matchers
+### Example 4 — By DecideRule (any queueAssignmentPolicy)
+
+Use `groupMembersByDecideRule` to let an arbitrary `DecideRule` decide
+membership. Unlike the three matchers above, the rule is evaluated against the
+real `CrawlURI` (not the bare `classKey`), so it works regardless of the
+configured `queueAssignmentPolicy`. Membership is resolved when a URI is first
+enqueued and then **cached per `classKey`**, so all subsequent URIs of that
+queue keep the same group. A URI is a member when the rule returns `ACCEPT`.
+
+```xml
+<bean id="queueGroups" class="org.archive.crawler.frontier.QueueGroupManager">
+ <property name="groups">
+  <list>
+   <bean class="org.archive.crawler.frontier.QueueGroup">
+    <property name="name" value="example_org_by_rule" />
+    <property name="maxParallelInGroup" value="1" />
+    <property name="groupMinDelayMs" value="4000" />
+    <property name="groupMembersByDecideRule">
+     <bean class="org.archive.modules.deciderules.MatchesRegexDecideRule">
+      <property name="regex" value="https?://([^/]+\.)?example\.org/.*" />
+     </bean>
+    </property>
+   </bean>
+  </list>
+ </property>
+</bean>
+```
+
+You may also compose richer conditions with a `DecideRuleSequence`. Because the
+rule needs a `CrawlURI`, prefer this form when host/SURT/regex matching on the
+`classKey` is not expressive enough for your needs.
+
+**Checkpoint persistence.** Because DecideRule-based membership can only be
+resolved from a real `CrawlURI` (and not from the bare `classKey`), the
+resolved `classKey → group` mapping is **persisted with the checkpoint** and
+re-bound to the configured groups on restore (by group name). This means a
+restored queue keeps its group coordination (shared concurrency, shared delay,
+round-robin) even if no new URI of that queue is enqueued after the restore.
+Entries whose group was renamed or removed in the configuration since the
+checkpoint are dropped on restore.
+
+### Example 5 — Multiple groups and combined matchers
 
 You can declare several groups, and combine member lists within a group.
 
@@ -222,6 +369,8 @@ than grouping queues of differing precedence together.
 | `groupMembersBySurt`   | whole `classKey` (prefix)| `SurtAuthorityQueueAssignmentPolicy` (default)          |
 | `groupMembersByHost`   | host part (exact)       | host-based (e.g. `HostnameQueueAssignmentPolicy`)         |
 | `groupMembersByRegex`  | host part (full match)  | host-based (e.g. `HostnameQueueAssignmentPolicy`)         |
+| `groupMembersByDecideRule` | the real `CrawlURI`  | any policy (resolved at enqueue, cached per classKey)    |
 
 If a member declaration never matches, check that its style is consistent with
-the classKey format produced by your active `queueAssignmentPolicy`.
+the classKey format produced by your active `queueAssignmentPolicy`
+(`groupMembersByDecideRule` is exempt, since it matches the URI itself).

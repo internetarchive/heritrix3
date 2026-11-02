@@ -20,6 +20,11 @@ package org.archive.crawler.frontier;
 
 import org.junit.jupiter.api.Test;
 
+import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideRule;
+import org.archive.modules.deciderules.MatchesRegexDecideRule;
+import org.archive.net.UURIFactory;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,10 +46,8 @@ public class QueueGroupTest {
         g.setGroupMembersByHost(Arrays.asList(
                 "european-union.europa.eu",           // exact host
                 "commission.europa.eu"));             // exact host
-        g.setGroupMembersByRegex(Arrays.asList(
-                Pattern.compile(".*\\.example\\.org")));  // regex on host part
-        g.setGroupMembersBySurt(Arrays.asList(
-                "http://(eu,europa,"));                // surt prefix
+        g.setGroupMembersByRegex(Arrays.asList(Pattern.compile(".*\\.ec\\.europa\\.eu")));  // regex on host part
+        g.setGroupMembersBySurt(Arrays.asList("eu,europa,"));      // surt prefix (authority form, no scheme)
         return g;
     }
 
@@ -64,25 +67,158 @@ public class QueueGroupTest {
     @Test
     public void testRegexMatchOnHostPart() {
         QueueGroup g = europa();
-        assertTrue(g.matches("www.example.org"));
-        assertTrue(g.matches("www.example.org#80"));
+        assertTrue(g.matches("digital-strategy.ec.europa.eu"));
+        assertTrue(g.matches("digital-strategy.ec.europa.eu#80"));
         assertFalse(g.matches("www.example.com"));
+        assertFalse(g.matches("www.example.org"));
     }
 
     @Test
     public void testSurtPrefixMatch() {
         QueueGroup g = europa();
-        assertTrue(g.matches("http://(eu,europa,commission,"));
-        assertFalse(g.matches("http://(com,example,"));
+        // real classKeys produced by SurtAuthorityQueueAssignmentPolicy: the
+        // authority part of the SURT, without scheme prefix or parentheses
+        assertTrue(g.matches("eu,europa,commission,"));
+        assertTrue(g.matches("eu,europa,digital-strategy,"));
+        // non-default port: ':' is replaced by '#'
+        assertTrue(g.matches("eu,europa,commission,#8080"));
+        assertFalse(g.matches("com,example,"));
+        assertFalse(g.matches("eu,other,"));
+        // a scheme-prefixed SURT is never a real classKey and must not match
+        assertFalse(g.matches("http://(eu,europa,commission,"));
     }
 
     @Test
     public void testRegexOnlyMatchesConfiguredPattern() {
-        QueueGroup g = new QueueGroup("bad");
+        QueueGroup g = new QueueGroup("good");
         g.setGroupMembersByRegex(Arrays.asList(Pattern.compile("good\\..*")));
         g.setGroupMembersByHost(Arrays.asList("good.host"));
         assertFalse(g.matches("anything"));
         assertTrue(g.matches("good.host"));
+    }
+
+    // ---- DecideRule-based membership (evaluated against the real CrawlURI) ----
+
+    private static DecideRule matchesUriRegex(String regex) {
+        MatchesRegexDecideRule rule = new MatchesRegexDecideRule();
+        rule.setRegex(Pattern.compile(regex));
+        return rule;
+    }
+
+    private static CrawlURI curi(String uri, String classKey) throws Exception {
+        CrawlURI c = new CrawlURI(UURIFactory.getInstance(uri));
+        c.setClassKey(classKey);
+        return c;
+    }
+
+    @Test
+    public void testDecideRuleMembershipOnCrawlURI() throws Exception {
+        QueueGroup g = new QueueGroup("byRule");
+        g.setGroupMembersByDecideRule(matchesUriRegex("https?://.*\\.example\\.net/.*"));
+
+        // the DecideRule accepts this URI -> member, regardless of classKey
+        assertTrue(g.matches(curi("http://news.example.net/story", "whatever-key")));
+        // non-matching URI -> not a member (no classKey matcher configured)
+        assertFalse(g.matches(curi("http://news.example.com/story", "whatever-key")));
+        // bare classKey lookup cannot use the rule
+        assertFalse(g.matches("news.example.net"));
+    }
+
+    @Test
+    public void testDecideRuleFallsBackToClassKeyMatchers() throws Exception {
+        QueueGroup g = new QueueGroup("mixed");
+        g.setGroupMembersByDecideRule(matchesUriRegex(".*\\.special\\.example/.*"));
+        g.setGroupMembersByHost(Arrays.asList("plain.example"));
+
+        // matched via the classKey host matcher even though the rule rejects it
+        assertTrue(g.matches(curi("http://plain.example/x", "plain.example")));
+        // matched via the DecideRule
+        assertTrue(g.matches(curi("http://a.special.example/y", "a.special.example")));
+    }
+
+    @Test
+    public void testManagerGroupForCrawlURICachesByClassKey() throws Exception {
+        QueueGroupManager mgr = new QueueGroupManager();
+        QueueGroup g = new QueueGroup("byRule");
+        g.setGroupMembersByDecideRule(matchesUriRegex("https?://.*\\.example\\.net/.*"));
+        mgr.setGroups(Arrays.asList(g));
+
+        String classKey = "news.example.net";
+        // a bare classKey lookup cannot resolve a DecideRule-only group
+        assertNull(mgr.groupFor(classKey));
+
+        // resolving with the real URI finds the group and caches it
+        assertSame(g, mgr.groupFor(curi("http://news.example.net/story", classKey)));
+        assertTrue(g.memberKeys().contains(classKey));
+
+        // subsequent classKey-only lookups now return the cached group,
+        // overriding the earlier NONE
+        assertSame(g, mgr.groupFor(classKey));
+    }
+
+    @Test
+    public void testDecideRuleMembershipSurvivesCheckpoint() throws Exception {
+        QueueGroupManager mgr = new QueueGroupManager();
+        QueueGroup g = new QueueGroup("byRule");
+        g.setGroupMembersByDecideRule(matchesUriRegex("https?://.*\\.example\\.net/.*"));
+        mgr.setGroups(Arrays.asList(g));
+
+        String classKey = "news.example.net";
+        // resolve membership once, with the real URI (as sendToQueue does)
+        assertSame(g, mgr.groupFor(curi("http://news.example.net/story", classKey)));
+
+        // serialize + deserialize the manager (simulating a checkpoint cycle,
+        // which resets the transient cache and discovered members)
+        QueueGroupManager restored = roundTrip(mgr);
+
+        // after restore, a bare classKey lookup still resolves the group even
+        // though no new URI has been enqueued and the DecideRule cannot be
+        // re-evaluated from the classKey alone
+        QueueGroup rg = restored.groupFor(classKey);
+        assertNotNull(rg);
+        assertEquals("byRule", rg.getName());
+        // the discovered members (round-robin rotation) have been restored too
+        assertTrue(rg.memberKeys().contains(classKey));
+    }
+
+    @Test
+    public void testStalePersistedMembershipDroppedOnRebind() {
+        // emulate a checkpoint whose persisted mapping references a group name
+        // that no longer exists in the (reconfigured) set of groups
+        QueueGroupManager mgr = new QueueGroupManager();
+        mgr.groups = new java.util.concurrent.CopyOnWriteArrayList<QueueGroup>(
+                Arrays.asList(new QueueGroup("current")));
+        mgr.persistedMembership = new java.util.concurrent.ConcurrentHashMap<String, String>();
+        mgr.persistedMembership.put("stale.host", "removed-group");
+        mgr.persistedMembership.put("live.host", "current");
+
+        mgr.rebindPersistedMembership();
+
+        // the stale entry (group no longer configured) is dropped defensively
+        assertFalse(mgr.persistedMembership.containsKey("stale.host"));
+        // the valid entry survives and is re-bound to the live group instance
+        assertTrue(mgr.persistedMembership.containsKey("live.host"));
+        assertEquals("current", mgr.groupFor("live.host").getName());
+    }
+
+    private static byte[] serialize(Object o) throws Exception {
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(bos)) {
+            oos.writeObject(o);
+        }
+        return bos.toByteArray();
+    }
+
+    private static QueueGroupManager deserialize(byte[] bytes) throws Exception {
+        try (java.io.ObjectInputStream ois = new java.io.ObjectInputStream(
+                new java.io.ByteArrayInputStream(bytes))) {
+            return (QueueGroupManager) ois.readObject();
+        }
+    }
+
+    private static QueueGroupManager roundTrip(QueueGroupManager mgr)
+            throws Exception {
+        return deserialize(serialize(mgr));
     }
 
     // ---- shared politeness gate ----

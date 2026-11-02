@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideRule;
+
 /**
  * A "queue group": a set of otherwise-independent per-host work queues
  * that a crawler should treat as sharing a single web server for the
@@ -66,6 +69,14 @@ import java.util.regex.Pattern;
  *       match on the host part of the classKey;</li>
  *   <li><b>{@link #groupMembersBySurt}</b> (e.g. {@code eu,europa,}):
  *       classKey starts with the given SURT prefix.</li>
+ *   <li><b>{@link #groupMembersByDecideRule}</b>: an arbitrary
+ *       {@link DecideRule} evaluated against the real {@link CrawlURI} when
+ *       one is available (see
+ *       {@link QueueGroupManager#groupFor(CrawlURI)}). A URI is a member when
+ *       the rule returns {@code ACCEPT}. Because a DecideRule needs a
+ *       {@code CrawlURI} (not a bare {@code classKey}), membership is resolved
+ *       at enqueue time and then cached per {@code classKey}, so later
+ *       classKey-only lookups keep returning the same group.</li>
  * </ul>
  */
 public class QueueGroup implements Serializable {
@@ -82,6 +93,13 @@ public class QueueGroup implements Serializable {
 
     /** SURT-prefix member matchers, matched against the classKey. */
     protected List<String> groupMembersBySurt = new ArrayList<String>();
+
+    /**
+     * Optional DecideRule member matcher, evaluated against the real
+     * {@link CrawlURI}. A URI is a member of this group when the rule returns
+     * {@link org.archive.modules.deciderules.DecideResult#ACCEPT}.
+     */
+    protected DecideRule groupMembersByDecideRule;
 
     /** Max member queues collected simultaneously (shared concurrency). */
     protected int maxParallelInGroup = 1;
@@ -124,6 +142,17 @@ public class QueueGroup implements Serializable {
     public QueueGroup() {
     }
 
+    /**
+     * Re-initialize the transient scheduling state, which is left null/zero by
+     * Java deserialization (field initializers are not run).
+     */
+    private void readObject(java.io.ObjectInputStream in)
+            throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        discoveredMembers = new java.util.LinkedHashSet<String>();
+        waitingMembers = new java.util.LinkedHashSet<String>();
+    }
+
     public QueueGroup(String name) {
         this.name = name;
     }
@@ -164,6 +193,14 @@ public class QueueGroup implements Serializable {
         this.groupMembersBySurt = (groupMembersBySurt != null)
                 ? new ArrayList<String>(groupMembersBySurt)
                 : new ArrayList<String>();
+    }
+
+    public DecideRule getGroupMembersByDecideRule() {
+        return groupMembersByDecideRule;
+    }
+
+    public void setGroupMembersByDecideRule(DecideRule groupMembersByDecideRule) {
+        this.groupMembersByDecideRule = groupMembersByDecideRule;
     }
 
     public int getMaxParallelInGroup() {
@@ -263,7 +300,26 @@ public class QueueGroup implements Serializable {
     }
 
     /**
-     * @return true if any member of this group matches the given classKey.
+     * @return true if any member of this group matches the given
+     *         {@link CrawlURI}. In addition to the classKey-based matchers
+     *         (see {@link #matches(String)}), the optional
+     *         {@link #groupMembersByDecideRule} is evaluated against the real
+     *         URI: the URI is a member when the rule returns {@code ACCEPT}.
+     */
+    public boolean matches(CrawlURI curi) {
+        if (curi == null) {
+            return false;
+        }
+        if (groupMembersByDecideRule != null
+                && groupMembersByDecideRule.accepts(curi)) {
+            return true;
+        }
+        return matches(curi.getClassKey());
+    }
+
+    /**
+     * @return true if any classKey-based member of this group matches the
+     *         given classKey.
      */
     public boolean matches(String classKey) {
         if (classKey == null) {
@@ -419,7 +475,10 @@ public class QueueGroup implements Serializable {
      * participates in the round-robin rotation. Idempotent.
      */
     public synchronized void noteMember(String classKey) {
-        if (classKey != null && discoveredMembers != null) {
+        if (classKey != null) {
+            if (discoveredMembers == null) {
+                discoveredMembers = new java.util.LinkedHashSet<String>();
+            }
             discoveredMembers.add(classKey);
         }
     }
@@ -428,6 +487,9 @@ public class QueueGroup implements Serializable {
      * @return a stable snapshot of the concrete member keys seen so far.
      */
     public synchronized List<String> memberKeys() {
+        if (discoveredMembers == null) {
+            return new ArrayList<String>();
+        }
         return new ArrayList<String>(discoveredMembers);
     }
 
