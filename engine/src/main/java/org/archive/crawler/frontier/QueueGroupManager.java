@@ -279,4 +279,66 @@ public class QueueGroupManager implements Serializable {
         }
         return false;
     }
+
+    // ---- runtime removal of members (scripting console) ----
+
+    /**
+     * Remove an exact-host matcher from the named group, at runtime.
+     *
+     * @return true if the matcher was present and removed
+     */
+    public synchronized boolean removeHostMember(String groupName, String member) {
+        QueueGroup g = findGroupByName(groupName);
+        if (g == null || member == null
+                || !g.getGroupMembersByHost().remove(member)) {
+            return false;
+        }
+        afterMemberRemoval(g);
+        return true;
+    }
+
+    /**
+     * Remove a regex matcher (identified by its pattern string) from the named
+     * group, at runtime.
+     *
+     * @return true if the matcher was present and removed
+     */
+    public synchronized boolean removeRegexMember(String groupName, String member) {
+        QueueGroup g = findGroupByName(groupName);
+        if (g == null || member == null
+                || !g.getGroupMembersByRegex()
+                        .removeIf(p -> member.equals(p.pattern()))) {
+            return false;
+        }
+        afterMemberRemoval(g);
+        return true;
+    }
+
+    /**
+     * Remove a SURT-prefix matcher from the named group, at runtime.
+     *
+     * @return true if the matcher was present and removed
+     */
+    public synchronized boolean removeSurtMember(String groupName, String member) {
+        QueueGroup g = findGroupByName(groupName);
+        if (g == null || member == null
+                || !g.getGroupMembersBySurt().remove(member)) {
+            return false;
+        }
+        afterMemberRemoval(g);
+        return true;
+    }
+
+    /**
+     * After a matcher was removed: invalidate cached lookups so the affected
+     * queues are resolved again (and become ungrouped if nothing else matches
+     * them), and drop discovered members that no longer match so the
+     * round-robin never waits on a queue that has left the group. Queues
+     * currently in process release the group they actually acquired, and
+     * queues parked on the group are put back in circulation by the frontier.
+     */
+    protected void afterMemberRemoval(QueueGroup group) {
+        clearCache();
+        group.pruneStaleMembers();
+    }
 }

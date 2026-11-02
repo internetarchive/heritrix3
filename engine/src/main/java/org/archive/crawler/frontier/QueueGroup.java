@@ -484,6 +484,42 @@ public class QueueGroup implements Serializable {
     }
 
     /**
+     * Forget a concrete member queue key (e.g. after a matcher was removed at
+     * runtime), so it no longer takes part in the round-robin rotation.
+     * Idempotent. A key parked on the waiting list is left there: the
+     * frontier hands it back to circulation on the next slot release.
+     *
+     * @return true if the key was known
+     */
+    public synchronized boolean forgetMember(String classKey) {
+        if (classKey == null || discoveredMembers == null) {
+            return false;
+        }
+        boolean removed = discoveredMembers.remove(classKey);
+        if (removed && rotationIndex >= discoveredMembers.size()) {
+            rotationIndex = 0;
+        }
+        return removed;
+    }
+
+    /**
+     * Drop every discovered member key that no longer matches any of this
+     * group's classKey-based matchers.
+     *
+     * @return the keys that were dropped
+     */
+    public synchronized List<String> pruneStaleMembers() {
+        List<String> dropped = new ArrayList<String>();
+        for (String key : memberKeys()) {
+            if (!matches(key)) {
+                forgetMember(key);
+                dropped.add(key);
+            }
+        }
+        return dropped;
+    }
+
+    /**
      * @return a stable snapshot of the concrete member keys seen so far.
      */
     public synchronized List<String> memberKeys() {

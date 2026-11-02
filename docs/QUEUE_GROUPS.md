@@ -342,6 +342,78 @@ You can declare several groups, and combine member lists within a group.
 </bean>
 ```
 
+## Changing members at runtime (scripting console)
+
+Group members can be added **and removed while the crawl is running**, from the
+Heritrix scripting console, through the `QueueGroupManager` bean:
+
+| Method                                        | Effect                                                   |
+|-----------------------------------------------|----------------------------------------------------------|
+| `addHostMember(group, host)`                  | adds an exact-host matcher to the group                  |
+| `addRegexMember(group, regex)`                | adds a regex matcher to the group                        |
+| `addSurtMember(group, surtPrefix)`            | adds a SURT-prefix matcher to the group                  |
+| `removeHostMember(group, host)`               | removes an exact-host matcher from the group             |
+| `removeRegexMember(group, regex)`             | removes a regex matcher, identified by its pattern string |
+| `removeSurtMember(group, surtPrefix)`         | removes a SURT-prefix matcher from the group             |
+
+Each method returns `true` if the group exists (and, for `remove*`, if the
+matcher was actually present), and `false` otherwise (unknown group, unknown
+matcher or `null` value: nothing is changed).
+
+```groovy
+def mgr = appCtx.getBean("queueGroups")
+
+// stop treating data.europa.eu as part of the "europa_eu_sites" group
+println mgr.removeSurtMember("europa_eu_sites", "eu,europa,data,")
+```
+
+For `removeRegexMember`, pass exactly the same pattern string as the one that was
+declared (e.g. `.*\.europa\.eu`).
+
+### What happens when a member is removed
+
+What is removed is a **matcher**, so every queue that matched it (and no other
+matcher of the group) leaves the group:
+
+1. **Cache invalidation** — the cached `classKey → group` resolutions (and the
+   mapping persisted for checkpoints) are cleared, so each queue is resolved
+   again on its next lookup. A queue that no longer matches any group becomes
+   **ungrouped** and follows the classic per-host politeness path.
+2. **Rotation clean-up** — the discovered members that no longer match any
+   classKey-based matcher of the group are dropped from the round-robin rotation
+   (the rotation pointer is brought back in range if needed), so the rotation
+   never waits for a queue that has left the group. Queues that still match
+   another matcher of the group are kept.
+3. **Queue currently in process** — it keeps the shared slot it acquired. When
+   its URI finishes, `releaseGroup()` releases **the group it actually
+   acquired**, not the one it now resolves to, so the group's `activeCount`
+   never leaks and never goes out of sync, and the shared cool-down is armed as
+   usual for that last fetch.
+4. **Queue parked on the group's waiting list** — it is not lost: the existing
+   mechanisms (`unparkOne()` on the next slot release, and the
+   `wakeParkedGroupQueues()` safety net run by `wakeQueues()`) pop it from the
+   waiting list and put it back in circulation. Once back in `findEligibleURI()`
+   it is no longer grouped and is emitted without group gating.
+5. **Other queues (ready, snoozed, inactive)** — they are not touched; they
+   simply continue as ungrouped queues the next time they are handled.
+
+A removal never deletes any URI and never touches the `WorkQueue` itself; only
+its group membership changes.
+
+> **Limitations**
+>
+> - Runtime changes are **not persisted in the crawl configuration**: they
+>   apply to the running job only. After a restart, the groups are rebuilt from
+>   the `queueGroups` bean as declared in the crawler beans file (edit it to make
+>   a change permanent).
+> - `groupMembersByDecideRule` cannot be edited this way. Membership obtained
+>   through a `DecideRule` is re-evaluated against a real `CrawlURI`, so after a
+>   cache invalidation it is only re-established the next time a URI of that
+>   queue is enqueued. The same applies, after any group modification (addition
+>   or removal), to queues matched by a `DecideRule`. In the meantime, such
+>   queues are also absent from the rotation clean-up check (step 2), which only
+>   considers classKey-based matchers.
+
 ## Limitation: precedence is not arbitrated within a group
 
 Queue **precedence** is only honored *upstream*, when an inactive queue is

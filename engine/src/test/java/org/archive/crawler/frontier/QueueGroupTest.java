@@ -444,6 +444,62 @@ public class QueueGroupTest {
         assertNull(mgr.groupFor("a.example.com"));
     }
 
+    @Test
+    public void testManagerRemoveHostMember() {
+        QueueGroupManager mgr = new QueueGroupManager();
+        QueueGroup g = new QueueGroup("g1");
+        g.setGroupMembersByHost(Arrays.asList("a.example.com", "b.example.com"));
+        mgr.addGroup(g);
+        assertSame(g, mgr.groupFor("a.example.com"));
+        assertSame(g, mgr.groupFor("b.example.com"));
+        assertEquals(2, g.memberKeys().size());
+
+        assertTrue(mgr.removeHostMember("g1", "b.example.com"));
+        assertNull(mgr.groupFor("b.example.com"));
+        assertSame(g, mgr.groupFor("a.example.com"));
+        // left the rotation too
+        assertEquals(Arrays.asList("a.example.com"), g.memberKeys());
+
+        // unknown member / group
+        assertFalse(mgr.removeHostMember("g1", "b.example.com"));
+        assertFalse(mgr.removeHostMember("nope", "a.example.com"));
+        assertFalse(mgr.removeHostMember("g1", null));
+    }
+
+    @Test
+    public void testManagerRemoveRegexAndSurtMember() {
+        QueueGroupManager mgr = new QueueGroupManager();
+        QueueGroup g = new QueueGroup("g1");
+        mgr.addGroup(g);
+        assertTrue(mgr.addRegexMember("g1", ".*\\.example\\.com"));
+        assertTrue(mgr.addSurtMember("g1", "eu,europa,"));
+        assertSame(g, mgr.groupFor("www.example.com"));
+        assertSame(g, mgr.groupFor("eu,europa,commission"));
+
+        assertTrue(mgr.removeRegexMember("g1", ".*\\.example\\.com"));
+        assertFalse(mgr.removeRegexMember("g1", ".*\\.example\\.com"));
+        assertNull(mgr.groupFor("www.example.com"));
+        assertSame(g, mgr.groupFor("eu,europa,commission"));
+
+        assertTrue(mgr.removeSurtMember("g1", "eu,europa,"));
+        assertFalse(mgr.removeSurtMember("g1", "eu,europa,"));
+        assertNull(mgr.groupFor("eu,europa,commission"));
+        assertTrue(g.memberKeys().isEmpty());
+    }
+
+    @Test
+    public void testForgetMemberResetsRotation() {
+        QueueGroup g = new QueueGroup("g");
+        g.noteMember("a");
+        g.noteMember("b");
+        g.advanceRotation("b"); // pointer wraps to 0
+        g.advanceRotation("a"); // pointer on "b" (index 1)
+        assertTrue(g.forgetMember("b"));
+        assertFalse(g.forgetMember("b"));
+        // pointer must not be out of range
+        assertTrue(g.isTurn(k -> true, "a"));
+    }
+
     // ---- waiting list (members parked at the concurrency ceiling) ----
 
     @Test
