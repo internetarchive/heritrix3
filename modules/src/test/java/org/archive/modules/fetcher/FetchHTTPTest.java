@@ -663,7 +663,7 @@ public class FetchHTTPTest {
         assertEquals("text/plain;charset=US-ASCII", curi.getContentType());
         assertTrue(curi.getCredentials().isEmpty());
         assertTrue(curi.getFetchDuration() >= 0);
-        assertEquals(FetchStatusCodes.S_OUT_OF_SCOPE, curi.getFetchStatus());
+        assertEquals(FetchStatusCodes.S_MIDFETCH_ABORTED, curi.getFetchStatus());
         assertFalse(curi.isSuccess());
         assertSame(curi.getFetchType(), FetchType.HTTP_GET);
         

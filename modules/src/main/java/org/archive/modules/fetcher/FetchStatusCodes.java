@@ -102,6 +102,11 @@ public interface FetchStatusCodes {
      * TODO: Add to documentation and help page.
      */
     public static final int S_BLOCKED_BY_RUNTIME_LIMIT = -5004;
+    /**
+     * Fetch aborted after the response headers were received, because the
+     * response was rejected by FetchHTTP's shouldFetchBodyRule.
+     */
+    public static final int S_MIDFETCH_ABORTED = -5005;
     /** deleted from frontier by user */
     public static final int S_DELETED_BY_USER = -6000;
 

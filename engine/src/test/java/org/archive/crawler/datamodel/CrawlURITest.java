@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
+import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.modules.extractor.LinkContext.SimpleLinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -106,6 +107,12 @@ public class CrawlURITest {
         curi.setSeed(true);
         curi.getData().put("key", "value");
         assertEquals("value", curi.getData().get("key"), "Didn't find AList item");
+    }
+
+    @Test
+    public void testMidfetchAbortedStatusString() {
+        assertEquals("Heritrix(-5005)-Midfetch aborted",
+                CrawlURI.fetchStatusCodesToString(FetchStatusCodes.S_MIDFETCH_ABORTED));
     }
 
     @Test

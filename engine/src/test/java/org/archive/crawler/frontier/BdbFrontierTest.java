@@ -19,7 +19,13 @@
 
 package org.archive.crawler.frontier;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.archive.crawler.framework.CrawlerProcessorTestBase;
+import org.archive.modules.CrawlURI;
+import org.archive.modules.fetcher.FetchStatusCodes;
+import org.archive.net.UURIFactory;
+import org.junit.jupiter.api.Test;
 
 
 /**
@@ -29,6 +35,13 @@ import org.archive.crawler.framework.CrawlerProcessorTestBase;
 public class BdbFrontierTest extends CrawlerProcessorTestBase {
 
     // TODO TESTME
+
+    @Test
+    public void testMidfetchAbortIsDisregarded() throws Exception {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://example.com/"));
+        curi.setFetchStatus(FetchStatusCodes.S_MIDFETCH_ABORTED);
+        assertTrue(new BdbFrontier().isDisregarded(curi));
+    }
 
 }
 

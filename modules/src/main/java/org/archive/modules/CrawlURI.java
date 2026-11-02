@@ -360,6 +360,8 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
                         + ")-Domain unresolvable";
             case S_OUT_OF_SCOPE:
                 return "Heritrix(" + S_OUT_OF_SCOPE + ")-Out of scope";
+            case S_MIDFETCH_ABORTED:
+                return "Heritrix(" + S_MIDFETCH_ABORTED + ")-Midfetch aborted";
             case S_DOMAIN_PREREQUISITE_FAILURE:
                 return "Heritrix(" + S_DOMAIN_PREREQUISITE_FAILURE
                         + ")-Domain prerequisite failure";

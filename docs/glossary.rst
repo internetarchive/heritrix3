@@ -347,6 +347,8 @@ Other Heritrix status codes are listed below.
       - Blocked due to exceeding an established quota.
     * - -5004
       - Blocked due to exceeding an established runtime
+    * - -5005
+      - The fetch was aborted after receiving the response headers because the response was rejected by ``shouldFetchBodyRule``.
     * - -6000
       - Deleted from Frontier by user.
     * - -7000
