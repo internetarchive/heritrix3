@@ -1538,6 +1538,24 @@ implements Closeable,
         writer.print(exhaustedCount);
         writer.print("\n");
         
+        if (queueGroupManager != null) {
+            int queueGroupCount = 0;
+            int groupedQueueCount = 0;
+            List<QueueGroup> groups = queueGroupManager.getGroups();
+            if (groups != null) {
+                queueGroupCount = groups.size();
+                for (QueueGroup group : groups) {
+                    groupedQueueCount += group.memberKeys().size();
+                }
+            }
+            writer.print("\n              Queue groups: ");
+            writer.print(queueGroupCount);
+            writer.print("\n");
+            writer.print("            Grouped queues: ");
+            writer.print(groupedQueueCount);
+            writer.print("\n");
+        }
+        
         State last = lastReachedState;
         writer.print("\n             Last state: "+last);        
         
