@@ -198,7 +198,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.6.0</version>
+				<version>3.6.1</version>
 				<configuration>
 					<excludes>
 						<exclude>**/TestAll.java</exclude>
@@ -210,6 +210,6 @@
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<restlet.version>2.6.0</restlet.version>
+		<restlet.version>2.6.1</restlet.version>
 	</properties>
 </project>
