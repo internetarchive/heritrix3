@@ -1623,12 +1623,6 @@ implements Closeable,
             writer.print(" Group: ");
             writer.print(group.getName());
             writer.print("\n");
-            writer.print("   maxParallelInGroup: ");
-            writer.print(group.getMaxParallelInGroup());
-            writer.print("\n");
-            writer.print("   groupMinDelayMs: ");
-            writer.print(group.getGroupMinDelayMs());
-            writer.print("\n");
             long cooldownRemaining = Math.max(0, group.getWakeTime() - now);
             writer.print("   active (in-process): ");
             writer.print(group.getActiveCount());
@@ -1636,21 +1630,15 @@ implements Closeable,
             writer.print("   cooldown remaining (ms): ");
             writer.print(cooldownRemaining);
             writer.print("\n");
-            writer.print("   configured members by host: ");
-            writer.print(group.getGroupMembersByHost());
-            writer.print("\n");
-            writer.print("   configured members by regex: ");
-            writer.print(group.getGroupMembersByRegex());
-            writer.print("\n");
-            writer.print("   configured members by surt: ");
-            writer.print(group.getGroupMembersBySurt());
-            writer.print("\n");
             List<String> discovered = group.memberKeys();
             writer.print("   discovered queues (");
             writer.print(discovered.size());
-            writer.print("): ");
-            writer.print(discovered);
-            writer.print("\n");
+            writer.print("):\n");
+            for (String queueKey : discovered) {
+                writer.print("     - ");
+                writer.print(queueKey);
+                writer.print("\n");
+            }
         }
     }
     
