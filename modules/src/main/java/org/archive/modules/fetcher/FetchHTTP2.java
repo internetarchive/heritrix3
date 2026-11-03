@@ -391,7 +391,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
      * Handles the Alt-Svc HTTP header to enable HTTP/3 alternative service.
      * Does nothing if useHTTP3 is disabled.
      */
-    private void handleAltSvcHeader(CrawlURI curi, Response response) {
+    void handleAltSvcHeader(CrawlURI curi, Response response) {
         if (!useHTTP3) return;
         if (!curi.getUURI().getScheme().equals("https")) return;
 
@@ -449,7 +449,7 @@ public class FetchHTTP2 extends Processor implements Lifecycle, InitializingBean
             if (port < 1 || port >= 1024) continue;
 
             // Calculate the expiry time (default 24 hours)
-            long maxAgeSeconds = 0;
+            long maxAgeSeconds = 24 * 60 * 60;
             String maParameter = parameters.get("ma");
             if (maParameter != null) {
                 try {

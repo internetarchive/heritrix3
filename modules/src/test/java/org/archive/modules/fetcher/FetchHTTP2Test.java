@@ -27,6 +27,8 @@ import org.archive.spring.ConfigPath;
 import org.archive.util.Recorder;
 import org.bbottema.javasocksproxyserver.SocksServer;
 import org.bbottema.javasocksproxyserver.auth.UsernamePasswordAuthenticator;
+import org.eclipse.jetty.client.transport.HttpResponse;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.proxy.ProxyHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -312,5 +314,17 @@ public class FetchHTTP2Test {
         fetcher.innerProcess(curi);
         assertEquals(-2, curi.getFetchStatus());
         curi.getRecorder().cleanup();
+    }
+
+    @Test
+    public void testAltSvcWithoutMaxAgeDefaultsTo24Hours() throws Exception {
+        fetcher.start();
+        fetcher.setUseHTTP3(true);
+        var curi = new CrawlURI(UURIFactory.getInstance("https://example.com/"));
+        var response = new HttpResponse(fetcher.httpClient.newRequest("https://example.com/"));
+        response.headers(headers -> headers.put(HttpHeader.ALT_SVC, "h3=\":443\""));
+        fetcher.handleAltSvcHeader(curi, response);
+        Thread.sleep(10); // an entry that expires immediately would be gone by now
+        assertEquals(443, fetcher.serverCache.getServerFor(curi.getUURI()).getHttp3AltSvcPort());
     }
 }
