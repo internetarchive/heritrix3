@@ -478,6 +478,17 @@ ExtractorURI
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorURI
 
+ExtractorWebManifest
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ExtractorWebManifest
+
+Extracts ``start_url``, ``icons[].src``, ``screenshots[].src``,
+``shortcuts[].url`` and ``shortcuts[].icons[].src``. Relative links resolve
+against the manifest URL. App pages are navigation links and images are embeds.
+The default XML and Groovy profiles run this before generic content extraction.
+Existing jobs can add this bean before ``extractorJs`` in their fetch chain.
+
 ExtractorXML
 ~~~~~~~~~~~~
 

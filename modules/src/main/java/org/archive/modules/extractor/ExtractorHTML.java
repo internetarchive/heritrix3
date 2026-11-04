@@ -694,6 +694,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             String linkType = keyword.toLowerCase(Locale.ROOT);
             switch (linkType) {
                 case "icon":
+                case "manifest":
                 case "stylesheet":
                 case "modulepreload":
                 case "prefetch":
