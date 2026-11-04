@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
@@ -114,6 +115,137 @@ implements Closeable,
     protected AbstractApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = (AbstractApplicationContext)applicationContext;
+    }
+
+    /**
+     * Optional queue-group manager (issue #754). Entirely opt-in: if no
+     * {@code queueGroups} bean is declared in the crawl beans, this stays
+     * {@code null} and the frontier behaves exactly as before.
+     */
+    @Autowired(required=false)
+    protected QueueGroupManager queueGroupManager;
+
+    public QueueGroupManager getQueueGroupManager() {
+        return queueGroupManager;
+    }
+    public void setQueueGroupManager(QueueGroupManager queueGroupManager) {
+        this.queueGroupManager = queueGroupManager;
+    }
+
+    /**
+     * @return the {@link QueueGroup} the given queue belongs to, or
+     *         {@code null} if there is no manager or the queue is ungrouped.
+     */
+    protected QueueGroup groupFor(WorkQueue wq) {
+        if (queueGroupManager == null || wq == null) {
+            return null;
+        }
+        return queueGroupManager.groupFor(wq.getClassKey());
+    }
+
+    /**
+     * @return true if the given member classKey is currently ready to be
+     *         emitted, i.e. actually present in {@link #readyClassQueues}. This
+     *         guarantees the round-robin never waits forever for a member that
+     *         is snoozed/empty/in-process.
+     */
+    protected boolean isMemberReady(String classKey) {
+        return classKey != null && readyClassQueues.contains(classKey);
+    }
+
+    /**
+     * Release the shared group slot held by the given queue and arm the shared
+     * cool-down. Then, if member queues are parked on the group's waiting list
+     * (blocked by the concurrency ceiling), hand the next one in rotation back
+     * to the scheduler (see {@link #unparkOne(QueueGroup, long)}). No-op when
+     * the queue is not grouped or there is no manager.
+     *
+     * @param wq       the finished queue
+     * @param now      current epoch-ms
+     * @param delay_ms the per-URI politeness delay just computed
+     */
+    protected void releaseGroup(WorkQueue wq, long now, long delay_ms) {
+        if (wq == null) {
+            return;
+        }
+        // Release the exact group whose slot was acquired for the in-process
+        // URI (remembered at acquire time)
+        QueueGroup group = wq.getAcquiredGroup();
+        wq.setAcquiredGroup(null);
+        if (group != null) {
+            group.release(now, delay_ms);
+            unparkOne(group, now);
+        }
+    }
+
+    /**
+     * Pop one parked member queue from the group's waiting list (if any) and
+     * put it back in circulation: snoozed until the group's shared cool-down
+     * expires when one is armed, otherwise readied immediately.
+     *
+     * <p>Lock ordering: {@link #findEligibleURI()} locks a queue then its
+     * group, so this method must never lock a queue while holding the group
+     * lock. The pop is atomic on the group by itself; the parked queue is then
+     * handled outside any group lock.</p>
+     *
+     * @return true if a queue was unparked
+     */
+    protected boolean unparkOne(QueueGroup group, long now) {
+        String key = group.pollWaiting();
+        if (key == null) {
+            return false;
+        }
+        WorkQueue parked = getQueueFor(key);
+        if (parked == null) {
+            logger.warning("parked key " + key + " of group "
+                    + group.getName() + " not in allQueues");
+            return true;
+        }
+        long wake = group.getWakeTime();
+        synchronized (parked) {
+            if (wake > now) {
+                snoozeQueue(parked, now, wake - now);
+            } else {
+                readyQueue(parked);
+            }
+            parked.makeDirty();
+        }
+        return true;
+    }
+
+    /**
+     * Safety net against lost wake-ups: for every group that has parked
+     * members while its gate is actually open, put parked queues back in
+     * circulation. Cheap (groups are few) and normally a no-op, since
+     * {@link #releaseGroup} already unparks on each slot release.
+     */
+    protected void wakeParkedGroupQueues(long now) {
+        if (queueGroupManager == null) {
+            return;
+        }
+        for (QueueGroup group : queueGroupManager.getGroups()) {
+            // one queue at a time: each one readied will itself acquire a
+            // slot, and each release unparks the next; if snoozed (cool-down)
+            // it comes back through readyClassQueues on its own.
+            if (group.getWaitingCount() > 0
+                    && group.getActiveCount() < group.getMaxParallelInGroup()) {
+                unparkOne(group, now);
+            }
+        }
+    }
+
+    /**
+     * @return the total number of member queues parked on group waiting lists
+     */
+    protected int getGroupWaitingCount() {
+        if (queueGroupManager == null) {
+            return 0;
+        }
+        int total = 0;
+        for (QueueGroup group : queueGroupManager.getGroups()) {
+            total += group.getWaitingCount();
+        }
+        return total;
     }
 
     {
@@ -385,7 +517,14 @@ implements Closeable,
      */
     protected void sendToQueue(CrawlURI curi) {
 //        assert Thread.currentThread() == managerThread;
-        
+
+        // Resolve queue-group membership with the real CrawlURI available, so
+        // that DecideRule-based membership can be evaluated; the result is
+        // cached per classKey for subsequent classKey-only lookups.
+        if (queueGroupManager != null) {
+            queueGroupManager.groupFor(curi);
+        }
+
         WorkQueue wq = getQueueFor(curi.getClassKey());
         synchronized(wq) {
             int originalPrecedence = wq.getPrecedence();
@@ -499,6 +638,10 @@ implements Closeable,
 //        assert Thread.currentThread() == managerThread;
 
         inProcessQueues.remove(wq);
+        QueueGroup group = groupFor(wq);
+        if (group != null) {
+            group.unpark(wq.getClassKey());
+        }
         getRetiredQueues().add(wq.getClassKey());
         decrementQueuedCount(wq.getCount());
         wq.setRetired(true);
@@ -687,7 +830,55 @@ implements Closeable,
                         KeyedProperties.clearOverridesFrom(curi); 
                     }
                     if (currentQueueKey.equals(curi.getClassKey())) {
-                        // curi was in right queue, emit
+                        // curi was in right queue; apply queue-group gating and
+                        // round-robin if it belongs to a group,
+                        // otherwise emit exactly as before.
+                        QueueGroup group = groupFor(readyQ);
+                        if (group != null) {
+                            String memberKey = readyQ.getClassKey();
+                            long now = System.currentTimeMillis();
+                            synchronized (group) {
+                                // (a) shared gate closed. Two sub-cases:
+                                //  - in cool-down: snooze until the shared
+                                //    wake time (a real, future date);
+                                //  - at concurrency ceiling: no natural wake
+                                //    date, so park on the group's waiting
+                                //    list; releaseGroup() will hand it back
+                                //    when a slot is released (event-driven,
+                                //    no snooze/ready polling cycle).
+                                if (!group.canProceed(now)) {
+                                    inProcessQueues.remove(readyQ);
+                                    long wake = group.getWakeTime();
+                                    if (wake > now) {
+                                        snoozeQueue(readyQ, now, wake - now);
+                                    } else {
+                                        group.park(memberKey);
+                                    }
+                                    readyQ.makeDirty();
+                                    readyQ = null;
+                                    continue findauri;
+                                }
+                                // (b) not this member's turn: another member is
+                                // ahead in the rotation and ready. Requeue and
+                                // retry so the expected member gets served next.
+                                if (!group.isTurn(this::isMemberReady, memberKey)) {
+                                    inProcessQueues.remove(readyQ);
+                                    readyQueue(readyQ);
+                                    readyQ.makeDirty();
+                                    readyQ = null;
+                                    continue findauri;
+                                }
+                                // (c) its turn and gate open: reserve a shared
+                                // slot, advance the rotation, and emit.
+                                group.acquire();
+                                group.advanceRotation(memberKey);
+                                // remember the exact group whose slot we hold,
+                                // so releaseGroup() releases the same one even
+                                // if group membership changes at runtime while
+                                // this URI is being processed.
+                                readyQ.setAcquiredGroup(group);
+                            }
+                        }
                         noteAboutToEmit(curi, readyQ);
                         return curi;
                     }
@@ -853,6 +1044,20 @@ implements Closeable,
      * put all queues in slow-retry-snoozes back to busy-ness. 
      */
     public void forceWakeQueues() {
+        if (queueGroupManager != null) {
+            for (QueueGroup group : queueGroupManager.getGroups()) {
+                for (String key : group.drainWaiting()) {
+                    WorkQueue queue = getQueueFor(key);
+                    if (queue != null) {
+                        synchronized (queue) {
+                            queue.setWakeTime(0);
+                            reenqueueQueue(queue);
+                            queue.makeDirty();
+                        }
+                    }
+                }
+            }
+        }
         Iterator<DelayedWorkQueue> iterSnoozed = snoozedClassQueues.iterator();
         while(iterSnoozed.hasNext()) {
             WorkQueue queue = iterSnoozed.next().getWorkQueue(WorkQueueFrontier.this);
@@ -880,6 +1085,7 @@ implements Closeable,
      * Wake any queues sitting in the snoozed queue whose time has come.
      */
     protected void wakeQueues() {
+        wakeParkedGroupQueues(System.currentTimeMillis());
         DelayedWorkQueue waked; 
         while((waked = snoozedClassQueues.poll())!=null) {
             WorkQueue queue = waked.getWorkQueue(this);
@@ -955,6 +1161,7 @@ implements Closeable,
                                           // retry
                 wq.unpeek(curi);
                 wq.update(this, curi); // rewrite any changes
+                releaseGroup(wq, now, 0);
                 handleQueue(wq, curi.includesRetireDirective(), now, delay_ms);
                 appCtx.publishEvent(new CrawlURIDispositionEvent(this, curi,
                         DEFERRED_FOR_RETRY));
@@ -1012,6 +1219,7 @@ implements Closeable,
             wq.expend(holderCost); // successes & failures charge cost to queue
 
             long delay_ms = curi.getPolitenessDelay();
+            releaseGroup(wq, now, delay_ms);
             handleQueue(wq,curi.includesRetireDirective(),now,delay_ms);
             wq.makeDirty();
         }
@@ -1132,7 +1340,9 @@ implements Closeable,
         int inProcessCount = inProcessQueues.size();
         int readyCount = readyClassQueues.size();
         int snoozedCount = getSnoozedCount();
-        int activeCount = inProcessCount + readyCount + snoozedCount;
+        int groupWaitingCount = getGroupWaitingCount();
+        int activeCount = inProcessCount + readyCount + snoozedCount
+                + groupWaitingCount;
         int inactiveCount = getTotalEligibleInactiveQueues();
         int ineligibleCount = getTotalIneligibleInactiveQueues();
         int retiredCount = getRetiredQueues().size();
@@ -1143,6 +1353,7 @@ implements Closeable,
         map.put("inProcessQueues", inProcessCount);
         map.put("readyQueues", readyCount);
         map.put("snoozedQueues", snoozedCount);
+        map.put("groupWaitingQueues", groupWaitingCount);
         map.put("activeQueues", activeCount);
         map.put("inactiveQueues", inactiveCount);
         map.put("ineligibleQueues", ineligibleCount);
@@ -1327,6 +1538,24 @@ implements Closeable,
         writer.print(exhaustedCount);
         writer.print("\n");
         
+        if (queueGroupManager != null) {
+            int queueGroupCount = 0;
+            int groupedQueueCount = 0;
+            List<QueueGroup> groups = queueGroupManager.getGroups();
+            if (groups != null) {
+                queueGroupCount = groups.size();
+                for (QueueGroup group : groups) {
+                    groupedQueueCount += group.memberKeys().size();
+                }
+            }
+            writer.print("\n              Queue groups: ");
+            writer.print(queueGroupCount);
+            writer.print("\n");
+            writer.print("            Grouped queues: ");
+            writer.print(groupedQueueCount);
+            writer.print("\n");
+        }
+        
         State last = lastReachedState;
         writer.print("\n             Last state: "+last);        
         
@@ -1363,7 +1592,54 @@ implements Closeable,
         appendQueueReports(writer, "RETIRED", getRetiredQueues().iterator(),
             getRetiredQueues().size(), maxQueuesPerReportCategory);
         
+        appendQueueGroupReport(writer);
+
         writer.flush();
+    }
+
+    /**
+     * Append a QUEUE GROUPS section describing the state of each configured
+     * {@link QueueGroup} (issue #754). Returns immediately (leaving the report
+     * byte-for-byte unchanged) when no {@link QueueGroupManager} is declared or
+     * it holds no groups, preserving the opt-in guarantee.
+     *
+     * @param writer report writer
+     */
+    protected void appendQueueGroupReport(PrintWriter writer) {
+        if (queueGroupManager == null) {
+            return;
+        }
+        List<QueueGroup> groups = queueGroupManager.getGroups();
+        if (groups == null || groups.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        writer.print("\n -----===== QUEUE GROUPS =====-----\n");
+        for (int i = 0; i < groups.size(); i++) {
+            if (i > 0) {
+                writer.print("\n");
+            }
+            QueueGroup group = groups.get(i);
+            writer.print(" Group: ");
+            writer.print(group.getName());
+            writer.print("\n");
+            long cooldownRemaining = Math.max(0, group.getWakeTime() - now);
+            writer.print("   active (in-process): ");
+            writer.print(group.getActiveCount());
+            writer.print("\n");
+            writer.print("   cooldown remaining (ms): ");
+            writer.print(cooldownRemaining);
+            writer.print("\n");
+            List<String> discovered = group.memberKeys();
+            writer.print("   discovered queues (");
+            writer.print(discovered.size());
+            writer.print("):\n");
+            for (String queueKey : discovered) {
+                writer.print("     - ");
+                writer.print(queueKey);
+                writer.print("\n");
+            }
+        }
     }
     
     /** Compact report of all nonempty queues (one queue per line)
@@ -1501,7 +1777,8 @@ implements Closeable,
             }
             if(q != null) {
                 w.println(label+"#"+count+":");
-                q.reportTo(w);
+                QueueGroup group = groupFor(q);
+                q.reportTo(group != null ? group.getName() : null, w);
             } else {
                 w.print("WARNING: No report for queue "+obj);
             }
@@ -1525,6 +1802,17 @@ implements Closeable,
         incrementDisregardedUriCount();
         curi.stripToMinimal();
         curi.processingCleanup();
+    }
+
+    @Override
+    protected void log(CrawlURI curi) {
+        if (queueGroupManager != null) {
+            QueueGroup group = queueGroupManager.groupFor(curi.getClassKey());
+            if (group != null) {
+                curi.getAnnotations().add("queueGroup:" + group.getName());
+            }
+        }
+        super.log(curi);
     }
 
     public void considerIncluded(CrawlURI curi) {
