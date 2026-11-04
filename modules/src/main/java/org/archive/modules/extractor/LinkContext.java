@@ -55,6 +55,10 @@ public abstract class LinkContext implements Serializable {
     final public static LinkContext JS_MISC
      = new SimpleLinkContext("=JS_MISC");
     
+    /** ES module imports discovered in JavaScript. */
+    final public static LinkContext JS_IMPORT
+     = new SimpleLinkContext("=JS_IMPORT");
+
     /** Stand-in value for navlink urls without other context. */
     final public static LinkContext NAVLINK_MISC
      = new SimpleLinkContext("=NAVLINK_MISC");

@@ -91,6 +91,79 @@ public class ExtractorJSTest extends StringExtractorTestBase {
                 () -> ExtractorJS.UNESCAPE_JAVASCRIPT.translate(escaped));
     }
 
+    static Stream<Arguments> moduleRelativeUrls() {
+        String dir = "http://example.com/themes/node_modules/@pf/pfe-modal/dist/";
+        String parent = "http://example.com/themes/node_modules/@pf/";
+        String via = "http://example.com/";
+        return Stream.of(
+                // static import, minified
+                Arguments.of("import e from\"../../pfelement/dist/pfelement.min.js\";",
+                        parent + "pfelement/dist/pfelement.min.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                // absolute and protocol-relative specifiers
+                Arguments.of("import x from 'https://cdn.example.org/x.js';", "https://cdn.example.org/x.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                Arguments.of("import('//cdn.example.org/y.js')", "http://cdn.example.org/y.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                // side-effect import
+                Arguments.of("}import\"./side.js\";", dir + "side.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                // re-export
+                Arguments.of("export{default as c}from\"./reexport.js\"", dir + "reexport.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                // dynamic import
+                Arguments.of("import (\n  './lazy.js')", dir + "lazy.js", LinkContext.JS_IMPORT, Hop.EMBED),
+                Arguments.of("import('./data.json', {with: {type: 'json'}})", dir + "data.json", LinkContext.JS_IMPORT, Hop.EMBED),
+                // concatenated, so only a prefix: still resolved against the via
+                Arguments.of("import('./locale/' + lang)", via + "locale/", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                // import.meta.resolve doesn't necessarily load it
+                Arguments.of("import.meta.resolve('./resolved.js')", dir + "resolved.js", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                // new URL relative to the module
+                Arguments.of("new URL('assets/logo.png', import.meta.url)", dir + "assets/logo.png", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                // not module specifiers: still resolved against the via
+                Arguments.of("var u = './not-an-import.js';", via + "not-an-import.js", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                Arguments.of("foo.import('./method.js')", via + "method.js", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                Arguments.of("var s = \"import(\\\"./quoted.js\\\")\";", via + "quoted.js", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                Arguments.of("new URL('./doc.js', document.baseURI)", via + "doc.js", LinkContext.JS_MISC, Hop.SPECULATIVE),
+                Arguments.of("fetch('./data.json', import.meta.url)", via + "data.json", LinkContext.JS_MISC, Hop.SPECULATIVE));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "import x from 'lodash/fp.js';",
+            "import('lodash/fp.js')",
+            "import.meta.resolve('lodash/fp.js')"})
+    void ignoresBareModuleSpecifiers(String content) throws Exception {
+        UURI via = UURIFactory.getInstance("http://example.com/");
+        UURI src = UURIFactory.getInstance("http://example.com/dist/app.js");
+        CrawlURI curi = new CrawlURI(src, "E", via, LinkContext.EMBED_MISC);
+        curi.setContentType("text/javascript");
+        curi.setRecorder(createRecorder(content, "UTF-8"));
+        curi.setContentSize(content.length());
+        curi.setFetchStatus(200);
+
+        extractor.process(curi);
+
+        assertEquals(Set.of(), curi.getOutLinks());
+    }
+
+    @ParameterizedTest
+    @MethodSource("moduleRelativeUrls")
+    void resolvesModuleSpecifiersAgainstScriptUrl(String content, String expected,
+            LinkContext expectedContext, Hop expectedHop) throws Exception {
+        UURI via = UURIFactory.getInstance("http://example.com/");
+        UURI src = UURIFactory.getInstance(
+                "http://example.com/themes/node_modules/@pf/pfe-modal/dist/pfe-modal.min.js");
+        CrawlURI curi = new CrawlURI(src, "E", via, LinkContext.EMBED_MISC);
+        curi.setContentType("text/javascript");
+        curi.setRecorder(createRecorder(content, "UTF-8"));
+        curi.setContentSize(content.length());
+        curi.setFetchStatus(200);
+
+        extractor.process(curi);
+
+        assertEquals(1, curi.getOutLinks().size());
+        CrawlURI link = curi.getOutLinks().iterator().next();
+        assertEquals(expected, link.getURI());
+        assertEquals(expectedContext, link.getViaContext());
+        assertEquals(expectedHop.getHopString(), link.getLastHop());
+    }
+
     final public static String[] VALID_TEST_DATA = new String[] {
         "var foo = \"http://www.example.com/outlink\";",
         "http://www.example.com/outlink",
