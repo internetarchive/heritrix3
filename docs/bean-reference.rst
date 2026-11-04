@@ -393,6 +393,19 @@ ExtractorDOC
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorDOC
 
+ExtractorHLS
+~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ExtractorHLS
+
+Extracts media segments, nested playlists and quoted ``URI`` attributes from
+RFC 8216 HLS playlists. Recognizes HLS MIME types and ``.m3u8``/``.m3u`` paths,
+and requires the ``#EXTM3U`` header. Relative URLs use the playlist URL; links
+are embeds and obey the shared outlink limit. Enabled in both default profiles.
+Existing jobs can add this bean before ``extractorJs`` in their fetch chain.
+This extracts the fetched playlist snapshot; it does not schedule live reloads
+or expand HLS variable references.
+
 ExtractorHTML
 ~~~~~~~~~~~~~
 

@@ -285,6 +285,7 @@ http://example.example/example
         // obeyRelNofollow = false
     }
     extractorCss(ExtractorCSS)
+    extractorHls(ExtractorHLS)
     extractorJs(ExtractorJS)
     extractorSwf(ExtractorSWF)
     // now, processors are assembled into ordered FetchChain bean
@@ -311,6 +312,8 @@ http://example.example/example
                 ref('extractorHtml'),
                 // ...extract outlinks from CSS content...
                 ref('extractorCss'),
+                // ...extract media resources from HLS playlists...
+                ref('extractorHls'),
                 // ...extract outlinks from Javascript content...
                 ref('extractorJs'),
                 // ...extract outlinks from Flash content...
