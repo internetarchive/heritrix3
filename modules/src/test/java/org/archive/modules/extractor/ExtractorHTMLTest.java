@@ -921,6 +921,18 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 .collect(Collectors.toList());
     }
 
+    @Test
+    public void testGreaterThanInQuotedAttribute() throws URIException {
+        String html = "<a title=\"a > b\" href=/after-title>x</a>" +
+                "<a onclick='if (a > b) return' href=/after-onclick>x</a>" +
+                "<img alt=O'Reilly src=/unpaired-quote.png>";
+        assertEquals(List.of(
+                        "E https://www.example.org/unpaired-quote.png img/@src",
+                        "L https://www.example.org/after-onclick a/@href",
+                        "L https://www.example.org/after-title a/@href"),
+                extractLinks(html));
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.
