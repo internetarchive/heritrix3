@@ -872,6 +872,14 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 extractLinks("<video poster='/poster.jpg' src=/movie.mp4></video>"));
     }
 
+    @Test
+    public void testLinkImageSrcset() throws URIException {
+        List<String> links = extractLinks("<link rel=preload as=image href=/wolf.jpg " +
+                "imagesrcset='/wolf_400px.jpg 400w, /wolf_800px.jpg 800w' imagesizes='50vw'>");
+        assertTrue(links.contains("E https://www.example.org/wolf_400px.jpg link/@imagesrcset"), links.toString());
+        assertTrue(links.contains("E https://www.example.org/wolf_800px.jpg link/@imagesrcset"), links.toString());
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.

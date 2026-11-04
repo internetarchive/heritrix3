@@ -201,7 +201,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
      +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)" // ...
      +"|(?:longdesc)|(?:usemap)|(?:profile)|(?:datasrc)" // ...
      +"|(?:data-src)|(?:data-srcset)|(?:data-original)|(?:data-original-set)" // ...
-     +"|(?:poster))" // 5
+     +"|(?:poster)|(?:imagesrcset))" // 5
      +"|(codebase)|((?:classid)|(?:data))|(archive)|(code)" // 6, 7, 8, 9
      +"|(value)|(style)|(method)" // 10, 11, 12
      +"|([-\\w]{1,"+MAX_ATTR_NAME_REPLACE+"}))" // 13
@@ -216,7 +216,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // 4: ON[WHATEVER] - script handler
     // 5: SRC,SRCSET,LOWSRC,BACKGROUND,LONGDESC,USEMAP,PROFILE,POSTER or
     //    DATA-SRC, DATA-ORIGINAL single URI relative to doc base
-    //    DATA-SRCSET, DATA-ORIGINAL-SET multi URI relative to doc base
+    //    DATA-SRCSET, DATA-ORIGINAL-SET, IMAGESRCSET multi URI relative to doc base
     // 6: CODEBASE - a single URI relative to doc base, affecting other
     //    attributes
     // 7: CLASSID, DATA - a single URI relative to CODEBASE (if supplied)
