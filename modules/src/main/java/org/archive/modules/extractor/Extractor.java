@@ -221,7 +221,19 @@ public abstract class Extractor extends Processor {
             }
             relTo = uri.getBaseURI();
         }
-        UURI dest = UURIFactory.getInstance(relTo, newUri);
+        return addRelativeTo(uri, max, relTo, newUri, context, hop);
+    }
+
+    /**
+     * Adds an outlink to uri relative to the given base.
+     * @return the new outlink or null if the outlink was ignored
+     */
+    public static CrawlURI addRelativeTo(CrawlURI uri, int max, UURI base,
+            String newUri, LinkContext context, Hop hop) throws URIException {
+        if (UriUtils.isDataUri(newUri)) {
+            return null;
+        }
+        UURI dest = UURIFactory.getInstance(base, newUri);
         return add2(uri, max, dest, context, hop);
     }
 

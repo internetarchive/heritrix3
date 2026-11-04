@@ -18,7 +18,9 @@
  */
 package org.archive.modules.extractor;
 
+import static org.archive.modules.extractor.Hop.EMBED;
 import static org.archive.modules.extractor.Hop.SPECULATIVE;
+import static org.archive.modules.extractor.LinkContext.JS_IMPORT;
 import static org.archive.modules.extractor.LinkContext.JS_MISC;
 
 import java.io.IOException;
@@ -34,6 +36,7 @@ import org.apache.commons.lang3.text.translate.AggregateTranslator;
 import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
 import org.archive.io.ReplayCharSequence;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.extractor.LinkContext.SimpleLinkContext;
 import org.archive.net.UURI;
 import org.archive.util.DevUtils;
 import org.archive.util.TextUtils;
@@ -99,6 +102,44 @@ public class ExtractorJS extends ContentExtractor {
     // GROUPS:
     // (G1) ' or " with optional leading backslashes
     // (G2) whitespace-free string delimited on boths ends by G1
+
+    // text before a string that makes it a static module specifier:
+    // import "x", import ... from "x", export ... from "x"
+    private static final Pattern STATIC_IMPORT_BEFORE =
+            Pattern.compile("(?<![\\w$.])(?:import|from)\\s*$");
+
+    // text before and after a string that makes it a dynamic module
+    // specifier: import("x") or import("x", options), but not
+    // import("x" + y)
+    private static final Pattern DYNAMIC_IMPORT_BEFORE =
+            Pattern.compile("(?<![\\w$.])import\\s*\\(\\s*$");
+    private static final Pattern WHOLE_ARGUMENT_AFTER =
+            Pattern.compile("^\\s*[,)]");
+
+    // a module specifier that is a URL rather than a bare name like "lodash":
+    // relative ("/x", "./x", "../x") or with a scheme ("https://...")
+    private static final Pattern URL_LIKE_SPECIFIER =
+            Pattern.compile("\\.{0,2}/|[a-zA-Z][a-zA-Z0-9+.-]*:");
+
+    // text before a string that makes it relative to the module:
+    // import.meta.resolve("x")
+    private static final Pattern IMPORT_META_RESOLVE_BEFORE =
+            Pattern.compile("(?<![\\w$.])import\\.meta\\.resolve\\s*\\(\\s*$");
+
+    // text before and after a string that makes it relative to the module:
+    // new URL("x", import.meta.url)
+    private static final Pattern NEW_URL_BEFORE =
+            Pattern.compile("(?<![\\w$.])new\\s+URL\\s*\\(\\s*$");
+    private static final Pattern IMPORT_META_URL_AFTER =
+            Pattern.compile("^\\s*,\\s*import\\.meta\\.url\\b");
+
+    // how far around a string to look for import syntax
+    private static final int IMPORT_LOOKBEHIND = 64;
+
+    // returned by scriptRelativeContext() for bare module specifiers like
+    // "lodash", which can only be resolved with the page's import map
+    private static final LinkContext BARE_SPECIFIER =
+            new SimpleLinkContext("=BARE_SPECIFIER");
 
     protected long numberOfCURIsHandled = 0;
 
@@ -183,7 +224,11 @@ public class ExtractorJS extends ContentExtractor {
             		cs.subSequence(strings.start(2), strings.end(2));
             
             if (UriUtils.isPossibleUri(subsequence)) {
-                if (considerString(ext, curi, handlingJSFile, subsequence.toString())) {
+                LinkContext scriptRelativeContext = handlingJSFile
+                        ? scriptRelativeContext(cs, strings) : null;
+                if (scriptRelativeContext != BARE_SPECIFIER
+                        && considerString(ext, curi, handlingJSFile,
+                                scriptRelativeContext, subsequence.toString())) {
                     foundLinks++;
                 }
             }
@@ -195,8 +240,64 @@ public class ExtractorJS extends ContentExtractor {
     }
 
 
+    /**
+     * Checks whether the string literal just matched by {@code strings} is one
+     * that browsers resolve against the URL of the script itself rather than
+     * the page that included it.
+     *
+     * @return {@link LinkContext#JS_IMPORT} for a relative static or dynamic
+     *         import, {@link LinkContext#JS_MISC} for
+     *         {@code import.meta.resolve("./x")} or
+     *         {@code new URL("x", import.meta.url)}, which don't necessarily
+     *         load the URL, {@link #BARE_SPECIFIER} for an import of a bare
+     *         specifier like "lodash", which should be ignored, or null if it
+     *         is none of these
+     */
+    private static LinkContext scriptRelativeContext(CharSequence cs, Matcher strings) {
+        if (strings.group(1).length() != 1) {
+            // escaped quotes: this is a string inside another string
+            return null;
+        }
+        String specifier = strings.group(2);
+        int start = strings.start(1);
+        int end = strings.end();
+
+        int lookbehindStart = Math.max(0, start - IMPORT_LOOKBEHIND);
+        int lookaheadEnd = Math.min(cs.length(), end + IMPORT_LOOKBEHIND);
+        if (matches(NEW_URL_BEFORE, cs, lookbehindStart, start)
+                && matches(IMPORT_META_URL_AFTER, cs, end, lookaheadEnd)) {
+            return JS_MISC;
+        }
+
+        boolean urlLike = URL_LIKE_SPECIFIER.matcher(specifier).lookingAt();
+        if (matches(STATIC_IMPORT_BEFORE, cs, lookbehindStart, start)
+                || (matches(DYNAMIC_IMPORT_BEFORE, cs, lookbehindStart, start)
+                    && matches(WHOLE_ARGUMENT_AFTER, cs, end, lookaheadEnd))) {
+            return urlLike ? JS_IMPORT : BARE_SPECIFIER;
+        }
+        if (matches(IMPORT_META_RESOLVE_BEFORE, cs, lookbehindStart, start)) {
+            return urlLike ? JS_MISC : BARE_SPECIFIER;
+        }
+        return null;
+    }
+
+    private static boolean matches(Pattern pattern, CharSequence cs, int from, int to) {
+        return pattern.matcher(cs).region(from, to).useTransparentBounds(true).find();
+    }
+
     protected boolean considerString(Extractor ext, CrawlURI curi,
             boolean handlingJSFile, String candidate) {
+        return considerString(ext, curi, handlingJSFile, null, candidate);
+    }
+
+    /**
+     * @param scriptRelativeContext if not null, resolve the candidate against
+     *        the URL of curi itself, rather than its via or base, as browsers
+     *        do for module imports, and add it with this context
+     */
+    protected boolean considerString(Extractor ext, CrawlURI curi,
+            boolean handlingJSFile, LinkContext scriptRelativeContext,
+            String candidate) {
         try {
             candidate = UNESCAPE_JAVASCRIPT.translate(candidate);
         } catch (Exception e) {
@@ -207,7 +308,11 @@ public class ExtractorJS extends ContentExtractor {
         if (shouldAddUri(curi, candidate)) {
             try {
                 int max = ext.getExtractorParameters().getMaxOutlinks();
-                if (handlingJSFile) {
+                if (scriptRelativeContext != null) {
+                    addRelativeTo(curi, max, curi.getUURI(), candidate, scriptRelativeContext,
+                            scriptRelativeContext == JS_IMPORT ? EMBED : SPECULATIVE);
+                    return true;
+                } else if (handlingJSFile) {
                     addRelativeToVia(curi, max, candidate, JS_MISC, 
                             SPECULATIVE);
                     return true;
