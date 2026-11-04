@@ -27,10 +27,13 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.util.UriUtils;
 
 
 /**
  * Extracts URIs from HTTP response headers.
+ * Includes source maps advertised by SourceMap or the deprecated X-SourceMap
+ * header, resolved relative to the fetched resource rather than its referring page.
  * @author gojomo
  */
 public class ExtractorHTTP extends Extractor {
@@ -87,6 +90,7 @@ public class ExtractorHTTP extends Extractor {
         addHeaderLink(curi, "Location");
         addContentLocationHeaderLink(curi, "Content-Location");
         addRefreshHeaderLink(curi, "Refresh");
+        addSourceMapHeaderLink(curi);
 
         // try /favicon.ico for every HTTP(S) URI
         addOutlink(curi, "/favicon.ico", LinkContext.INFERRED_MISC, Hop.INFERRED);
@@ -95,6 +99,20 @@ public class ExtractorHTTP extends Extractor {
         }
         for (String inferPath : getInferPaths()) {
             addOutlink(curi, inferPath, LinkContext.INFERRED_MISC, Hop.INFERRED);
+        }
+    }
+
+    protected void addSourceMapHeaderLink(CrawlURI curi) {
+        String headerName = "SourceMap";
+        String url = curi.getHttpResponseHeader(headerName);
+        if (url == null) {
+            headerName = "X-SourceMap";
+            url = curi.getHttpResponseHeader(headerName);
+        }
+        // A standard header takes precedence, even if it does not contain a
+        // crawlable URL. Inline data maps have no external resource to fetch.
+        if (url != null && !url.isBlank() && !UriUtils.isDataUri(url)) {
+            addHeaderLink(curi, headerName, url.trim());
         }
     }
 
