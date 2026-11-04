@@ -864,6 +864,29 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "https://www.example.org/normal"), links);
     }
 
+    @Test
+    public void testVideoPoster() throws URIException {
+        assertEquals(List.of(
+                        "E https://www.example.org/movie.mp4 video/@src",
+                        "E https://www.example.org/poster.jpg video/@poster"),
+                extractLinks("<video poster='/poster.jpg' src=/movie.mp4></video>"));
+    }
+
+    /**
+     * Runs the extractor over the given HTML and returns the outlinks
+     * formatted as "hop uri context", sorted.
+     */
+    private List<String> extractLinks(String html) throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().extract(curi, html);
+        List<String> links = new ArrayList<>();
+        for (CrawlURI link : curi.getOutLinks()) {
+            links.add(link.getLastHop() + " " + link.getURI() + " " + link.getViaContext());
+        }
+        Collections.sort(links);
+        return links;
+    }
+
     private void genericCrawl(CrawlURI curi, CharSequence cs,String[] dest){
         getExtractor().extract(curi, cs);
 

@@ -206,6 +206,12 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
             processEmbed(curi, attrValue, context, hopType);
         }
+        // POSTER
+        if (((attr = attributes.get("poster")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            CharSequence context = elementContext(elementName, attr.getKey());
+            processEmbed(curi, attrValue, context);
+        }
         // SRCSET
         if (((attr = attributes.get("srcset")) != null) &&
                 ((attrValue = attr.getValue()) != null)) {
