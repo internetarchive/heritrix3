@@ -23,6 +23,8 @@ import static org.archive.modules.extractor.LinkContext.JS_MISC;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -95,6 +97,31 @@ public class ExtractorJS extends ContentExtractor {
     // on the ends, but not in the middle)
     protected static final String JAVASCRIPT_STRING_EXTRACTOR =
     		"(\\\\{0,8}+(?:['\"]|u002[27]))([^'\"]{0,"+UURI.MAX_URL_LENGTH+"})(?:\\1)";
+
+    private static final String JS_COMMENT = "/\\*[^*]*+(?:\\*(?!/)[^*]*+)*+\\*/|//[^\\r\\n]*";
+    private static final String JS_SPACE = "(?:\\s++|" + JS_COMMENT + ")*+";
+    private static final Pattern JS_TRIVIA = Pattern.compile(JS_SPACE);
+    private static final String JS_STRING =
+            "\"[^\"\\\\\\r\\n]*+(?:\\\\.[^\"\\\\\\r\\n]*+)*+\""
+            + "|'[^'\\\\\\r\\n]*+(?:\\\\.[^'\\\\\\r\\n]*+)*+'";
+    private static final String MODULE_BINDINGS =
+            "(?:\\{[^}]*\\}|\\*" + JS_SPACE + "(?:as\\b" + JS_SPACE + "[\\w$]+)?"
+            + "|[\\w$]+(?:" + JS_SPACE + "," + JS_SPACE
+            + "(?:\\{[^}]*\\}|\\*" + JS_SPACE + "as\\b" + JS_SPACE + "[\\w$]+))?)";
+
+    // Identify literal module references before the speculative string scan. Skip ordinary
+    // strings and comments so text containing JavaScript is not mistaken for an import.
+    private static final Pattern MODULE_REFERENCES = Pattern.compile(
+            JS_COMMENT + "|(?<![\\w$.])(?:"
+            + "(?:import\\b" + JS_SPACE + "(?:(?<dynamic>\\()" + JS_SPACE + "|"
+            + MODULE_BINDINGS + JS_SPACE + "from\\b" + JS_SPACE + ")?"
+            + "|export\\b" + JS_SPACE + MODULE_BINDINGS + JS_SPACE + "from\\b" + JS_SPACE + ")"
+            + "(?<specifier>" + JS_STRING + ")"
+            + "|new\\b" + JS_SPACE + "URL\\b" + JS_SPACE + "\\(" + JS_SPACE
+            + "(?<asset>" + JS_STRING + ")" + JS_SPACE + "," + JS_SPACE
+            + "import\\s*\\.\\s*meta\\s*\\.\\s*url\\b" + JS_SPACE + "\\))"
+            + "|" + JS_STRING + "|`[^`\\\\]*+(?:\\\\.[^`\\\\]*+)*+`",
+            Pattern.DOTALL);
     
     // GROUPS:
     // (G1) ' or " with optional leading backslashes
@@ -173,6 +200,25 @@ public class ExtractorJS extends ContentExtractor {
     public long considerStrings(Extractor ext, 
             CrawlURI curi, CharSequence cs, boolean handlingJSFile) {
         long foundLinks = 0;
+        Set<Integer> moduleReferences = new HashSet<>();
+        if (handlingJSFile) {
+            Matcher modules = MODULE_REFERENCES.matcher(cs);
+            while (modules.find()) {
+                if (modules.start("specifier") >= 0) {
+                    if (modules.start("dynamic") >= 0) {
+                        Matcher tail = JS_TRIVIA.matcher(cs).region(modules.end(), cs.length());
+                        tail.lookingAt();
+                        int next = tail.end();
+                        if (next == cs.length() || (cs.charAt(next) != ')' && cs.charAt(next) != ',')) {
+                            continue;
+                        }
+                    }
+                    moduleReferences.add(modules.start("specifier"));
+                } else if (modules.start("asset") >= 0) {
+                    moduleReferences.add(modules.start("asset"));
+                }
+            }
+        }
         
         Matcher strings =
             TextUtils.getMatcher(JAVASCRIPT_STRING_EXTRACTOR, cs);
@@ -183,7 +229,10 @@ public class ExtractorJS extends ContentExtractor {
             		cs.subSequence(strings.start(2), strings.end(2));
             
             if (UriUtils.isPossibleUri(subsequence)) {
-                if (considerString(ext, curi, handlingJSFile, subsequence.toString())) {
+                // Module specifiers use the script URL, while other speculative links
+                // in external scripts retain the historical resolution against via.
+                boolean relativeToVia = handlingJSFile && !moduleReferences.contains(strings.start(1));
+                if (considerString(ext, curi, relativeToVia, subsequence.toString())) {
                     foundLinks++;
                 }
             }

@@ -20,6 +20,7 @@ package org.archive.modules.extractor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,6 +45,89 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author nlevitt
  */
 public class ExtractorJSTest extends StringExtractorTestBase {
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "import value from './dependency.js';",
+            "import{value}from'./dependency.js';",
+            "import * as values from './dependency.js';",
+            "import value, {other} from './dependency.js';",
+            "import './dependency.js';",
+            "export {value} from './dependency.js';",
+            "export*from'./dependency.js';",
+            "export * as values from './dependency.js';",
+            "import('./dependency.js');",
+            "import('./dependency.js', {with: {type: 'json'}});",
+            "import /* comment */ ('./dependency.js' /* comment */);",
+            "new URL('./dependency.js', import.meta.url);",
+            "import\n{value}\nfrom\n'./dependency.js';",
+            "import /* comment */ value from /* comment */ './dependency.js';"
+    })
+    void resolvesModuleReferencesAgainstScript(String content) throws Exception {
+        assertScriptOutlinks(content, "https://cdn.example.org/modules/dependency.js");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "const path = './dependency.js';",
+            "fetch('./dependency.js');",
+            "object.import('./dependency.js');",
+            "import('./dependency.js' + version);",
+            "new URL('./dependency.js', document.baseURI);",
+            "// import './dependency.js';",
+            "/* import './dependency.js'; */",
+            "const text = \"import './dependency.js';\";"
+    })
+    void preservesPageRelativeResolutionForOtherStrings(String content) throws Exception {
+        assertScriptOutlinks(content, "https://www.example.org/pages/dependency.js");
+    }
+
+    @Test
+    void resolvesIssue793Example() throws Exception {
+        assertScriptOutlinksFrom(
+                "https://opensource.com/themes/osdc/node_modules/@patternfly/pfe-modal/dist/pfe-modal.min.js",
+                "import e from\"../../pfelement/dist/pfelement.min.js\";",
+                "https://opensource.com/themes/osdc/node_modules/@patternfly/pfelement/dist/pfelement.min.js");
+    }
+
+    @Test
+    void keepsBothModuleAndPageRelativeUsesOfTheSameString() throws Exception {
+        assertScriptOutlinks("import './dependency.js'; fetch('./dependency.js');",
+                "https://cdn.example.org/modules/dependency.js",
+                "https://www.example.org/pages/dependency.js");
+    }
+
+    @Test
+    void resolvesInlineImportsAgainstDocumentBase() throws Exception {
+        UURI page = UURIFactory.getInstance("https://www.example.org/pages/index.html");
+        CrawlURI curi = new CrawlURI(page);
+        curi.setBaseURI(UURIFactory.getInstance("https://www.example.org/base/"));
+        ((ExtractorJS) extractor).considerStrings(extractor, curi, "import './dependency.js';");
+        assertEquals(Set.of(curi.createCrawlURI(
+                UURIFactory.getInstance("https://www.example.org/base/dependency.js"),
+                LinkContext.JS_MISC, Hop.SPECULATIVE)), curi.getOutLinks());
+    }
+
+    private void assertScriptOutlinks(String content, String... expected) throws Exception {
+        assertScriptOutlinksFrom("https://cdn.example.org/modules/main.js", content, expected);
+    }
+
+    private void assertScriptOutlinksFrom(String scriptUrl, String content, String... expected) throws Exception {
+        UURI script = UURIFactory.getInstance(scriptUrl);
+        UURI page = UURIFactory.getInstance("https://www.example.org/pages/index.html");
+        CrawlURI curi = new CrawlURI(script, null, page, LinkContext.JS_MISC);
+        curi.setRecorder(createRecorder(content, "UTF-8"));
+        curi.setContentType("text/javascript");
+        curi.setContentSize(content.length());
+        curi.setFetchStatus(200);
+        extractor.process(curi);
+        Set<CrawlURI> links = new HashSet<>();
+        for (String url : expected) {
+            links.add(curi.createCrawlURI(UURIFactory.getInstance(url), LinkContext.JS_MISC, Hop.SPECULATIVE));
+        }
+        assertEquals(links, curi.getOutLinks());
+        assertNoSideEffects(curi);
+    }
 
     static Stream<Arguments> unicodeEscapeUrls() {
         return Stream.of(
