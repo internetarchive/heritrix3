@@ -933,6 +933,18 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 extractLinks(html));
     }
 
+    @Test
+    public void testTagInsideAttributeValue() throws URIException {
+        // markup inside a quoted attribute value is just text, not tags
+        String html = "<a title=\"<img src=/inside.png>\" href=/real>x</a>" +
+                "<p title='<meta name=robots content=nofollow>'>" +
+                "<a href=/after>y</a>";
+        assertEquals(List.of(
+                        "L https://www.example.org/after a/@href",
+                        "L https://www.example.org/real a/@href"),
+                extractLinks(html));
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.

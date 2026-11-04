@@ -465,6 +465,9 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      */
     protected void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
+        // parse tags in document order, so markup inside attribute values
+        // isn't mistaken for tags
+        source.fullSequentialParse();
         List<Element> elements = source.findAllElements(StartTagType.NORMAL);
         for (Element element : elements) {
             String elementName = element.getName();
