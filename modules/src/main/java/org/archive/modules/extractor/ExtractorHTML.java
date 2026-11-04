@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -583,6 +584,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 } else if (Ascii.equalsIgnoreCase(attrName, "FORMMETHOD")) {
                     // BUTTON/INPUT override of the form's METHOD
                     formMethod = value;
+                } else if (Ascii.equalsIgnoreCase(attrName, "SRCDOC")
+                        && elementStr.equalsIgnoreCase(IFRAME)) {
+                    // embedded HTML document
+                    processSrcdoc(curi, value);
                 }
 
 				// 2023 updates get img or source data attr
@@ -690,6 +695,41 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
     }
     
+    /**
+     * Extract links from the HTML document embedded in an iframe's SRCDOC
+     * attribute. The embedded document inherits the base URI of the
+     * containing document, but its own &lt;base&gt;, robots meta tag and
+     * forms do not affect the containing document.
+     *
+     * @param curi source CrawlURI
+     * @param html the (already unescaped) value of the SRCDOC attribute
+     */
+    protected void processSrcdoc(CrawlURI curi, CharSequence html) {
+        boolean hadBase = curi.containsDataKey(CoreAttributeConstants.A_HTML_BASE);
+        Object metaRobots = curi.getData().get(A_META_ROBOTS);
+        boolean hadFormOffsets = curi.containsDataKey(A_FORM_OFFSETS);
+        int formOffsetCount = hadFormOffsets ? curi.getDataList(A_FORM_OFFSETS).size() : 0;
+        try {
+            extract(curi, html.toString());
+        } finally {
+            if (!hadBase) {
+                curi.getData().remove(CoreAttributeConstants.A_HTML_BASE);
+            }
+            if (metaRobots == null) {
+                curi.getData().remove(A_META_ROBOTS);
+            } else {
+                curi.getData().put(A_META_ROBOTS, metaRobots);
+            }
+            // offsets of forms within the srcdoc don't point into the content
+            if (!hadFormOffsets) {
+                curi.getData().remove(A_FORM_OFFSETS);
+            } else {
+                List<Object> formOffsets = curi.getDataList(A_FORM_OFFSETS);
+                formOffsets.subList(formOffsetCount, formOffsets.size()).clear();
+            }
+        }
+    }
+
     protected int skipAfterFullValue(CharSequence cs, int start, int end) {
         int skipTo = end;
         // value is truncated but can start with ' or "

@@ -238,6 +238,12 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             CharSequence context = elementContext(elementName, attr.getKey());
             processEmbed(curi, StringEscapeUtils.unescapeHtml4(attrValue), context);
         }
+        // SRCDOC (embedded HTML document)
+        if ("iframe".equals(elementName) &&
+                ((attr = attributes.get("srcdoc")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            processSrcdoc(curi, attrValue);
+        }
         // CODEBASE
         if (((attr = attributes.get("codebase")) != null) &&
                  ((attrValue = attr.getValue()) != null)) {

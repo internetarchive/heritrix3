@@ -945,6 +945,35 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 extractLinks(html));
     }
 
+    @Test
+    public void testIframeSrcdoc() throws URIException {
+        String html = "<iframe srcdoc=\"<p>Hello <img src=&quot;/inner.png&quot;> " +
+                "<a href='/inner-link'>x</a></p>\" src=/fallback.html></iframe>" +
+                "<a href=\"/after\">after</a>";
+        assertEquals(List.of(
+                        "E https://www.example.org/fallback.html iframe/@src",
+                        "E https://www.example.org/inner.png img/@src",
+                        "L https://www.example.org/after a/@href",
+                        "L https://www.example.org/inner-link a/@href"),
+                extractLinks(html));
+    }
+
+    @Test
+    public void testIframeSrcdocDoesNotAffectContainingDocument() throws URIException {
+        String html = "<iframe srcdoc='<base href=\"/sub/\"><img src=a.png>" +
+                "<form action=inner-form><meta name=robots content=nofollow>'></iframe>" +
+                "<img src=b.png>";
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().extract(curi, html);
+        Set<String> links = curi.getOutLinks().stream().map(CrawlURI::getURI).collect(Collectors.toSet());
+        assertEquals(Set.of("https://www.example.org/sub/", // the base href itself
+                "https://www.example.org/sub/a.png",
+                "https://www.example.org/sub/inner-form",
+                "https://www.example.org/b.png"), links);
+        assertTrue(!curi.containsDataKey(ExtractorHTML.A_FORM_OFFSETS), "form offsets");
+        assertTrue(!curi.containsDataKey(ExtractorHTML.A_META_ROBOTS), "meta robots");
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.
