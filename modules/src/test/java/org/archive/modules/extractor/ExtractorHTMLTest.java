@@ -880,6 +880,47 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         assertTrue(links.contains("E https://www.example.org/wolf_800px.jpg link/@imagesrcset"), links.toString());
     }
 
+    private static final String FORM_ACTION_HTML =
+            "<form method=post action=/post-action>" +
+            "<button formaction=/post-inherited>x</button>" +
+            "<button formaction=/get-override formmethod=get>x</button>" +
+            "</form>" +
+            "<form action=/get-action>" +
+            "<input type=submit formaction=/get-inherited>" +
+            "<input type=submit formaction=/post-override formmethod=POST>" +
+            "</form>";
+
+    @Test
+    public void testFormAction() throws URIException {
+        // only an explicit formmethod=get is extracted by default
+        assertEquals(List.of(
+                        "L https://www.example.org/get-override button/@formaction"),
+                extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    @Test
+    public void testFormActionAllMethods() throws URIException {
+        getExtractor().setExtractOnlyFormGets(false);
+        assertEquals(List.of(
+                        "L https://www.example.org/get-inherited input/@formaction",
+                        "L https://www.example.org/get-override button/@formaction",
+                        "L https://www.example.org/post-inherited button/@formaction",
+                        "L https://www.example.org/post-override input/@formaction"),
+                extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    @Test
+    public void testIgnoreFormAction() throws URIException {
+        getExtractor().setIgnoreFormActionUrls(true);
+        assertEquals(List.of(), extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    private List<String> extractFormActionLinks(String html) throws URIException {
+        return extractLinks(html).stream()
+                .filter(link -> link.endsWith("/@formaction"))
+                .collect(Collectors.toList());
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.

@@ -173,6 +173,19 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                 processLink(curi, attrValue, context);
             }
         }
+        // FORMACTION (BUTTON/INPUT override of the form's ACTION)
+        if (((attr = attributes.get("formaction")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            if (!ignoreFormActions) {
+                // without a formmethod the form's own method applies, which
+                // isn't considered here (consistent with ExtractorHTML)
+                String method = attributes.getValue("formmethod");
+                if ("GET".equalsIgnoreCase(method) || !getExtractOnlyFormGets()) {
+                    CharSequence context = elementContext(elementName, attr.getKey());
+                    processLink(curi, attrValue, context);
+                }
+            }
+        }
         // ON_
         if ((attrList = findOnAttributes(attributes)).size() != 0) {
             for (Iterator<Attribute> attrIter = attrList.iterator(); attrIter.hasNext();) {

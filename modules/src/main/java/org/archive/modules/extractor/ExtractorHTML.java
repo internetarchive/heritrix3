@@ -406,6 +406,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         CharSequence actionContext = null;
         CharSequence method = null; 
         
+        // Just in case it's a BUTTON or INPUT overriding the form's action
+        CharSequence formAction = null;
+        CharSequence formActionContext = null;
+        CharSequence formMethod = null;
+
         // Just in case it's a VALUE whose interpretation depends on accompanying NAME
         CharSequence valueVal = null; 
         CharSequence valueContext = null;
@@ -566,6 +571,16 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 } else if (Ascii.equalsIgnoreCase(attrName, "REL")) {
                     // remember 'rel' for end-analysis
                     linkRel = value;
+                } else if (Ascii.equalsIgnoreCase(attrName, "FORMACTION")) {
+                    // BUTTON/INPUT override of the form's ACTION
+                    if (!ignoreFormActions) {
+                        formAction = value;
+                        formActionContext = elementContext(element, attr.group(13));
+                        // handling finished only at end (after FORMMETHOD also collected)
+                    }
+                } else if (Ascii.equalsIgnoreCase(attrName, "FORMMETHOD")) {
+                    // BUTTON/INPUT override of the form's METHOD
+                    formMethod = value;
                 }
 
 				// 2023 updates get img or source data attr
@@ -644,6 +659,15 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             if(method == null || "GET".equalsIgnoreCase(method.toString()) 
                         || ! getExtractOnlyFormGets()) {
                 processLink(curi, action, actionContext);
+            }
+        }
+
+        // finish handling FORMACTION, now FORMMETHOD is available. Without a
+        // FORMMETHOD the form's own method applies, which we don't know here.
+        if (formAction != null) {
+            if ((formMethod != null && "GET".equalsIgnoreCase(formMethod.toString()))
+                    || !getExtractOnlyFormGets()) {
+                processLink(curi, formAction, formActionContext);
             }
         }
         
