@@ -173,6 +173,19 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                 processLink(curi, attrValue, context);
             }
         }
+        // FORMACTION (BUTTON/INPUT override of the form's ACTION)
+        if (((attr = attributes.get("formaction")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            if (!ignoreFormActions) {
+                // without a formmethod the form's own method applies, which
+                // isn't considered here (consistent with ExtractorHTML)
+                String method = attributes.getValue("formmethod");
+                if ("GET".equalsIgnoreCase(method) || !getExtractOnlyFormGets()) {
+                    CharSequence context = elementContext(elementName, attr.getKey());
+                    processLink(curi, attrValue, context);
+                }
+            }
+        }
         // ON_
         if ((attrList = findOnAttributes(attributes)).size() != 0) {
             for (Iterator<Attribute> attrIter = attrList.iterator(); attrIter.hasNext();) {
@@ -206,12 +219,30 @@ public class JerichoExtractorHTML extends ExtractorHTML {
 
             processEmbed(curi, attrValue, context, hopType);
         }
+        // POSTER
+        if (((attr = attributes.get("poster")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            CharSequence context = elementContext(elementName, attr.getKey());
+            processEmbed(curi, attrValue, context);
+        }
         // SRCSET
         if (((attr = attributes.get("srcset")) != null) &&
                 ((attrValue = attr.getValue()) != null)) {
             codebase = StringEscapeUtils.unescapeHtml4(attrValue);
             CharSequence context = elementContext(elementName, attr.getKey());
             processEmbed(curi, codebase, context);
+        }
+        // IMAGESRCSET
+        if (((attr = attributes.get("imagesrcset")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            CharSequence context = elementContext(elementName, attr.getKey());
+            processEmbed(curi, StringEscapeUtils.unescapeHtml4(attrValue), context);
+        }
+        // SRCDOC (embedded HTML document)
+        if ("iframe".equals(elementName) &&
+                ((attr = attributes.get("srcdoc")) != null) &&
+                ((attrValue = attr.getValue()) != null)) {
+            processSrcdoc(curi, attrValue);
         }
         // CODEBASE
         if (((attr = attributes.get("codebase")) != null) &&
@@ -440,6 +471,9 @@ public class JerichoExtractorHTML extends ExtractorHTML {
      */
     protected void extract(CrawlURI curi, CharSequence cs) {
         Source source = new Source(cs);
+        // parse tags in document order, so markup inside attribute values
+        // isn't mistaken for tags
+        source.fullSequentialParse();
         List<Element> elements = source.findAllElements(StartTagType.NORMAL);
         for (Element element : elements) {
             String elementName = element.getName();

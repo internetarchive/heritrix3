@@ -864,6 +864,131 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "https://www.example.org/normal"), links);
     }
 
+    @Test
+    public void testVideoPoster() throws URIException {
+        assertEquals(List.of(
+                        "E https://www.example.org/movie.mp4 video/@src",
+                        "E https://www.example.org/poster.jpg video/@poster"),
+                extractLinks("<video poster='/poster.jpg' src=/movie.mp4></video>"));
+    }
+
+    @Test
+    public void testLinkImageSrcset() throws URIException {
+        List<String> links = extractLinks("<link rel=preload as=image href=/wolf.jpg " +
+                "imagesrcset='/wolf_400px.jpg 400w, /wolf_800px.jpg 800w' imagesizes='50vw'>");
+        assertTrue(links.contains("E https://www.example.org/wolf_400px.jpg link/@imagesrcset"), links.toString());
+        assertTrue(links.contains("E https://www.example.org/wolf_800px.jpg link/@imagesrcset"), links.toString());
+    }
+
+    private static final String FORM_ACTION_HTML =
+            "<form method=post action=/post-action>" +
+            "<button formaction=/post-inherited>x</button>" +
+            "<button formaction=/get-override formmethod=get>x</button>" +
+            "</form>" +
+            "<form action=/get-action>" +
+            "<input type=submit formaction=/get-inherited>" +
+            "<input type=submit formaction=/post-override formmethod=POST>" +
+            "</form>";
+
+    @Test
+    public void testFormAction() throws URIException {
+        // only an explicit formmethod=get is extracted by default
+        assertEquals(List.of(
+                        "L https://www.example.org/get-override button/@formaction"),
+                extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    @Test
+    public void testFormActionAllMethods() throws URIException {
+        getExtractor().setExtractOnlyFormGets(false);
+        assertEquals(List.of(
+                        "L https://www.example.org/get-inherited input/@formaction",
+                        "L https://www.example.org/get-override button/@formaction",
+                        "L https://www.example.org/post-inherited button/@formaction",
+                        "L https://www.example.org/post-override input/@formaction"),
+                extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    @Test
+    public void testIgnoreFormAction() throws URIException {
+        getExtractor().setIgnoreFormActionUrls(true);
+        assertEquals(List.of(), extractFormActionLinks(FORM_ACTION_HTML));
+    }
+
+    private List<String> extractFormActionLinks(String html) throws URIException {
+        return extractLinks(html).stream()
+                .filter(link -> link.endsWith("/@formaction"))
+                .collect(Collectors.toList());
+    }
+
+    @Test
+    public void testGreaterThanInQuotedAttribute() throws URIException {
+        String html = "<a title=\"a > b\" href=/after-title>x</a>" +
+                "<a onclick='if (a > b) return' href=/after-onclick>x</a>" +
+                "<img alt=O'Reilly src=/unpaired-quote.png>";
+        assertEquals(List.of(
+                        "E https://www.example.org/unpaired-quote.png img/@src",
+                        "L https://www.example.org/after-onclick a/@href",
+                        "L https://www.example.org/after-title a/@href"),
+                extractLinks(html));
+    }
+
+    @Test
+    public void testTagInsideAttributeValue() throws URIException {
+        // markup inside a quoted attribute value is just text, not tags
+        String html = "<a title=\"<img src=/inside.png>\" href=/real>x</a>" +
+                "<p title='<meta name=robots content=nofollow>'>" +
+                "<a href=/after>y</a>";
+        assertEquals(List.of(
+                        "L https://www.example.org/after a/@href",
+                        "L https://www.example.org/real a/@href"),
+                extractLinks(html));
+    }
+
+    @Test
+    public void testIframeSrcdoc() throws URIException {
+        String html = "<iframe srcdoc=\"<p>Hello <img src=&quot;/inner.png&quot;> " +
+                "<a href='/inner-link'>x</a></p>\" src=/fallback.html></iframe>" +
+                "<a href=\"/after\">after</a>";
+        assertEquals(List.of(
+                        "E https://www.example.org/fallback.html iframe/@src",
+                        "E https://www.example.org/inner.png img/@src",
+                        "L https://www.example.org/after a/@href",
+                        "L https://www.example.org/inner-link a/@href"),
+                extractLinks(html));
+    }
+
+    @Test
+    public void testIframeSrcdocDoesNotAffectContainingDocument() throws URIException {
+        String html = "<iframe srcdoc='<base href=\"/sub/\"><img src=a.png>" +
+                "<form action=inner-form><meta name=robots content=nofollow>'></iframe>" +
+                "<img src=b.png>";
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().extract(curi, html);
+        Set<String> links = curi.getOutLinks().stream().map(CrawlURI::getURI).collect(Collectors.toSet());
+        assertEquals(Set.of("https://www.example.org/sub/", // the base href itself
+                "https://www.example.org/sub/a.png",
+                "https://www.example.org/sub/inner-form",
+                "https://www.example.org/b.png"), links);
+        assertTrue(!curi.containsDataKey(ExtractorHTML.A_FORM_OFFSETS), "form offsets");
+        assertTrue(!curi.containsDataKey(ExtractorHTML.A_META_ROBOTS), "meta robots");
+    }
+
+    /**
+     * Runs the extractor over the given HTML and returns the outlinks
+     * formatted as "hop uri context", sorted.
+     */
+    private List<String> extractLinks(String html) throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://www.example.org/"));
+        getExtractor().extract(curi, html);
+        List<String> links = new ArrayList<>();
+        for (CrawlURI link : curi.getOutLinks()) {
+            links.add(link.getLastHop() + " " + link.getURI() + " " + link.getViaContext());
+        }
+        Collections.sort(links);
+        return links;
+    }
+
     private void genericCrawl(CrawlURI curi, CharSequence cs,String[] dest){
         getExtractor().extract(curi, cs);
 

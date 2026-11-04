@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -148,7 +149,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     static final String RELEVANT_TAG_EXTRACTOR =
       "(?is)<(?:((script[^>]*+)>.*?</script)" + // 1, 2
       "|((style[^>]*+)>.*?</style)" + // 3, 4
-      "|(((meta)|(?:\\w{1,"+MAX_ELEMENT_REPLACE+"}))\\s+[^>]*+)" + // 5, 6, 7
+      "|(((meta)|(?:\\w{1,"+MAX_ELEMENT_REPLACE+"}))\\s+" + // 5, 6, 7
+      // attributes: a '>' inside a quoted value doesn't end the tag
+      "(?:[^>=]++|=\\s*+(?:\"[^\"]*+\"|'[^']*+'|))*+)" +
       "|(!--(?!\\[if|>).*?--))>"; // 8 
 
 //    version w/ problems with unclosed script tags 
@@ -200,7 +203,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
       "(?is)\\s?((href|(?:cite))|(action)|(on\\w{0,"+MAX_ATTR_NAME_REPLACE+"})" // 1, 2, 3, 4
      +"|((?:src)|(?:srcset)|(?:lowsrc)|(?:background)" // ...
      +"|(?:longdesc)|(?:usemap)|(?:profile)|(?:datasrc)" // ...
-     +"|(?:data-src)|(?:data-srcset)|(?:data-original)|(?:data-original-set))" // 5
+     +"|(?:data-src)|(?:data-srcset)|(?:data-original)|(?:data-original-set)" // ...
+     +"|(?:poster)|(?:imagesrcset))" // 5
      +"|(codebase)|((?:classid)|(?:data))|(archive)|(code)" // 6, 7, 8, 9
      +"|(value)|(style)|(method)" // 10, 11, 12
      +"|([-\\w]{1,"+MAX_ATTR_NAME_REPLACE+"}))" // 13
@@ -213,9 +217,9 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     // 2: HREF, CITE - single URI relative to doc base, or occasionally javascript:
     // 3: ACTION - single URI relative to doc base, or occasionally javascript:
     // 4: ON[WHATEVER] - script handler
-    // 5: SRC,SRCSET,LOWSRC,BACKGROUND,LONGDESC,USEMAP,PROFILE, or
+    // 5: SRC,SRCSET,LOWSRC,BACKGROUND,LONGDESC,USEMAP,PROFILE,POSTER or
     //    DATA-SRC, DATA-ORIGINAL single URI relative to doc base
-    //    DATA-SRCSET, DATA-ORIGINAL-SET multi URI relative to doc base
+    //    DATA-SRCSET, DATA-ORIGINAL-SET, IMAGESRCSET multi URI relative to doc base
     // 6: CODEBASE - a single URI relative to doc base, affecting other
     //    attributes
     // 7: CLASSID, DATA - a single URI relative to CODEBASE (if supplied)
@@ -405,6 +409,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         CharSequence actionContext = null;
         CharSequence method = null; 
         
+        // Just in case it's a BUTTON or INPUT overriding the form's action
+        CharSequence formAction = null;
+        CharSequence formActionContext = null;
+        CharSequence formMethod = null;
+
         // Just in case it's a VALUE whose interpretation depends on accompanying NAME
         CharSequence valueVal = null; 
         CharSequence valueContext = null;
@@ -565,6 +574,20 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 } else if (Ascii.equalsIgnoreCase(attrName, "REL")) {
                     // remember 'rel' for end-analysis
                     linkRel = value;
+                } else if (Ascii.equalsIgnoreCase(attrName, "FORMACTION")) {
+                    // BUTTON/INPUT override of the form's ACTION
+                    if (!ignoreFormActions) {
+                        formAction = value;
+                        formActionContext = elementContext(element, attr.group(13));
+                        // handling finished only at end (after FORMMETHOD also collected)
+                    }
+                } else if (Ascii.equalsIgnoreCase(attrName, "FORMMETHOD")) {
+                    // BUTTON/INPUT override of the form's METHOD
+                    formMethod = value;
+                } else if (Ascii.equalsIgnoreCase(attrName, "SRCDOC")
+                        && elementStr.equalsIgnoreCase(IFRAME)) {
+                    // embedded HTML document
+                    processSrcdoc(curi, value);
                 }
 
 				// 2023 updates get img or source data attr
@@ -645,6 +668,15 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 processLink(curi, action, actionContext);
             }
         }
+
+        // finish handling FORMACTION, now FORMMETHOD is available. Without a
+        // FORMMETHOD the form's own method applies, which we don't know here.
+        if (formAction != null) {
+            if ((formMethod != null && "GET".equalsIgnoreCase(formMethod.toString()))
+                    || !getExtractOnlyFormGets()) {
+                processLink(curi, formAction, formActionContext);
+            }
+        }
         
         // finish handling VALUE
         if(valueVal != null) {
@@ -663,6 +695,41 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
         }
     }
     
+    /**
+     * Extract links from the HTML document embedded in an iframe's SRCDOC
+     * attribute. The embedded document inherits the base URI of the
+     * containing document, but its own &lt;base&gt;, robots meta tag and
+     * forms do not affect the containing document.
+     *
+     * @param curi source CrawlURI
+     * @param html the (already unescaped) value of the SRCDOC attribute
+     */
+    protected void processSrcdoc(CrawlURI curi, CharSequence html) {
+        boolean hadBase = curi.containsDataKey(CoreAttributeConstants.A_HTML_BASE);
+        Object metaRobots = curi.getData().get(A_META_ROBOTS);
+        boolean hadFormOffsets = curi.containsDataKey(A_FORM_OFFSETS);
+        int formOffsetCount = hadFormOffsets ? curi.getDataList(A_FORM_OFFSETS).size() : 0;
+        try {
+            extract(curi, html.toString());
+        } finally {
+            if (!hadBase) {
+                curi.getData().remove(CoreAttributeConstants.A_HTML_BASE);
+            }
+            if (metaRobots == null) {
+                curi.getData().remove(A_META_ROBOTS);
+            } else {
+                curi.getData().put(A_META_ROBOTS, metaRobots);
+            }
+            // offsets of forms within the srcdoc don't point into the content
+            if (!hadFormOffsets) {
+                curi.getData().remove(A_FORM_OFFSETS);
+            } else {
+                List<Object> formOffsets = curi.getDataList(A_FORM_OFFSETS);
+                formOffsets.subList(formOffsetCount, formOffsets.size()).clear();
+            }
+        }
+    }
+
     protected int skipAfterFullValue(CharSequence cs, int start, int end) {
         int skipTo = end;
         // value is truncated but can start with ' or "
