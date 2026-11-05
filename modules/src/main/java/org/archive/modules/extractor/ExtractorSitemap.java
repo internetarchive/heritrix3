@@ -70,8 +70,8 @@ public class ExtractorSitemap extends ContentExtractor {
         String mimeType = uri.getContentType();
         if (mimeType != null ) {
             // Looks like XML:
-            if (mimeType.toLowerCase().startsWith("text/xml")
-                    || mimeType.toLowerCase().startsWith("application/xml")) {
+            if (uri.hasContentType("text/xml")
+                    || uri.hasContentType("application/xml")) {
 
                 // check if content starts with xml preamble "<?xml" and does
                 // contain "<urlset " or "<sitemapindex" early in the content

@@ -113,7 +113,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         
         euri = new CrawlURI(src, null, null, LinkContext.NAVLINK_MISC);
         recorder = createRecorder(content, "UTF-8");
-        euri.setContentType("application/xhtml");
+        euri.setContentType("application/xhtml+xml");
         euri.setRecorder(recorder);
         euri.setContentSize(content.length());
         result.add(new TestData(euri, link));

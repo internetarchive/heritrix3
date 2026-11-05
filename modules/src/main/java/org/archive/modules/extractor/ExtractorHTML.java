@@ -944,12 +944,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             }
         }
 
-        String mime = uri.getContentType().toLowerCase();
-        if (mime.startsWith("text/html")
-                || mime.startsWith("application/xhtml")
-                || mime.startsWith("text/vnd.wap.wml")
-                || mime.startsWith("application/vnd.wap.wml")
-                || mime.startsWith("application/vnd.wap.xhtml")) {
+        if (uri.hasContentType("text/html")
+                || uri.hasContentType("application/xhtml+xml")
+                || uri.hasContentType("text/vnd.wap.wml")
+                || uri.hasContentType("application/vnd.wap.wml")
+                || uri.hasContentType("application/vnd.wap.xhtml+xml")) {
             return true;
         }
 

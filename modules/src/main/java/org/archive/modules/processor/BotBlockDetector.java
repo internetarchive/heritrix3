@@ -184,20 +184,8 @@ public class BotBlockDetector extends Processor {
     }
 
     private static boolean hasHtmlContentType(CrawlURI curi) {
-        String type = curi.getContentType();
-        return type == null ||
-               matchesMediaType(type, "text/html") ||
-               matchesMediaType(type, "application/xhtml+xml");
-    }
-
-    private static boolean matchesMediaType(String value, String expected) {
-        if (!value.regionMatches(true, 0, expected, 0, expected.length())) {
-            return false;
-        }
-        int i = expected.length();
-        while (i < value.length() && Character.isWhitespace(value.charAt(i))) {
-            i++;
-        }
-        return i == value.length() || value.charAt(i) == ';';
+        return curi.getContentType() == null ||
+               curi.hasContentType("text/html") ||
+               curi.hasContentType("application/xhtml+xml");
     }
 }

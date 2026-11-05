@@ -68,8 +68,7 @@ public class ExtractorPDF extends ContentExtractor {
             return false;
         }
 
-        String ct = uri.getContentType();
-        return (ct != null) && (ct.startsWith("application/pdf"));
+        return uri.hasContentType("application/pdf");
     }
     
     

@@ -160,7 +160,7 @@ public class ExtractorJS extends ContentExtractor {
             return true;
         }
 
-        if (contentType.startsWith("application/json")) {
+        if (uri.hasContentType("application/json")) {
             return true;
         }
         
