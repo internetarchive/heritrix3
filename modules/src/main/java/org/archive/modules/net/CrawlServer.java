@@ -83,10 +83,8 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 
     /** Soft 404 detection state, maintained by Soft404Detector. */
     protected boolean soft404ProbeScheduled;
-    protected long soft404Fingerprint;
-    protected long soft404ContentLength;
     /** Non-null only if the probe found a soft 404. */
-    protected String soft404ContentType;
+    protected Soft404Fingerprint soft404Fingerprint;
 
     /**
      * Creates a new CrawlServer object.
@@ -275,32 +273,28 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     }
 
     /**
-     * @return true if a request for a nonexistent URL got a page with a success status
+     * @return the fingerprint of the page returned with a success status for a nonexistent URL,
+     *         or null if there is none
      */
-    public synchronized boolean hasSoft404Fingerprint() {
-        return soft404ContentType != null;
-    }
-
-    /**
-     * Records the fingerprint of the page returned with a success status for a nonexistent URL.
-     */
-    public synchronized void setSoft404Fingerprint(long fingerprint, long contentLength,
-                                                   String contentType) {
-        soft404Fingerprint = fingerprint;
-        soft404ContentLength = contentLength;
-        soft404ContentType = contentType;
-    }
-
-    public synchronized long getSoft404Fingerprint() {
+    public synchronized Soft404Fingerprint getSoft404Fingerprint() {
         return soft404Fingerprint;
     }
 
-    public synchronized long getSoft404ContentLength() {
-        return soft404ContentLength;
+    /**
+     * Records the fingerprint of the page returned with a success status for a nonexistent URL,
+     * unless one was already recorded.
+     * @return true if the fingerprint was recorded
+     */
+    public synchronized boolean setSoft404FingerprintIfAbsent(Soft404Fingerprint fingerprint) {
+        if (soft404Fingerprint != null) return false;
+        soft404Fingerprint = fingerprint;
+        return true;
     }
 
-    public synchronized String getSoft404ContentType() {
-        return soft404ContentType;
+    /**
+     * Fingerprint of a soft 404 page, as computed by Soft404Detector.
+     */
+    public record Soft404Fingerprint(long hash, long contentLength) {
     }
 
     public synchronized void clearAltSvc() {
@@ -404,6 +398,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
         kryo.register(CrawlServer.class);
         kryo.autoregister(FetchStats.class); 
         kryo.autoregister(Robotstxt.class);
+        kryo.register(Soft404Fingerprint.class);
     }
     
     //

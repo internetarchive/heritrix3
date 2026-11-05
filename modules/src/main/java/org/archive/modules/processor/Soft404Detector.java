@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,6 +40,7 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlServer;
+import org.archive.modules.net.CrawlServer.Soft404Fingerprint;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -57,10 +57,10 @@ import com.google.common.hash.Hashing;
  * return the same page.
  * <p>
  * For each server, the detector requests one made-up URL (starting with
- * {@code /heritrix-soft404-probe-}). If the server responds with 200, later 200 responses from that
- * server with the same content are treated as soft 404s. Parts of a page that typically change
- * from request to request, such as nonces, timestamps and the page's own URL, are ignored when
- * comparing content.
+ * {@code /heritrix-soft404-probe-}). If the server responds with a 200 HTML page, later 200 HTML
+ * responses from that server with the same content are treated as soft 404s. Parts of a page that
+ * typically change from request to request, such as nonces, timestamps and the page's own URL, are
+ * ignored when comparing content.
  * <p>
  * Soft 404s are annotated "soft404" in the crawl log, and the probe "soft404:probe". If
  * {@code skipExtraction} is enabled (the default) the rest of the fetch chain is skipped for
@@ -97,6 +97,9 @@ public class Soft404Detector extends Processor {
     /** Minimum length of a path for its echoes in the content to be removed. */
     private static final int MIN_ECHO_LENGTH = 4;
 
+    /** Path requested from every server for the rest of the crawl. Saved in checkpoints. */
+    protected String probePath = randomProbePath();
+
     protected final AtomicLong probesScheduled = new AtomicLong();
     protected final AtomicLong serversWithSoft404s = new AtomicLong();
     protected final AtomicLong soft404sDetected = new AtomicLong();
@@ -109,8 +112,8 @@ public class Soft404Detector extends Processor {
     }
     /**
      * Whether to skip the rest of the fetch chain, including link extraction and the browser
-     * processor, for soft 404 pages (including the probe). If disabled, soft 404s are only
-     * annotated and counted.
+     * processor, for soft 404 pages. If disabled, soft 404s are only annotated and counted. The
+     * probe itself is always skipped, unless it's a redirect.
      */
     public void setSkipExtraction(boolean skipExtraction) {
         kp.put("skipExtraction", skipExtraction);
@@ -130,7 +133,8 @@ public class Soft404Detector extends Processor {
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
         return curi.isHttpTransaction() &&
-               curi.getFetchStatus() > 0;
+               curi.getFetchStatus() > 0 &&
+               (isProbe(curi) || isHtml(curi));
     }
 
     @Override
@@ -148,34 +152,34 @@ public class Soft404Detector extends Processor {
         CrawlServer server = serverCache.getServerFor(curi.getUURI());
         if (server == null) return ProcessResult.PROCEED;
 
-        boolean soft404;
         if (isProbe(curi)) {
             recordProbeResult(curi, server);
-            // a redirected probe must continue so its Location gets extracted
-            soft404 = curi.getFetchStatus() == 200;
-        } else if (!server.hasSoft404Fingerprint()) {
-            scheduleProbe(curi, server);
-            soft404 = false;
-        } else {
-            soft404 = !isExempt(curi) && matchesProbe(curi, server);
-            if (soft404) {
-                curi.getAnnotations().add(ANNOTATION);
-                soft404sDetected.incrementAndGet();
-            }
+            // A redirected probe must continue so its Location gets extracted. Otherwise there's
+            // nothing worth extracting from a made-up URL.
+            int status = curi.getFetchStatus();
+            return status >= 300 && status < 400 ? ProcessResult.PROCEED : ProcessResult.FINISH;
         }
-        return soft404 && getSkipExtraction() ? ProcessResult.FINISH : ProcessResult.PROCEED;
+        Soft404Fingerprint fingerprint = server.getSoft404Fingerprint();
+        if (fingerprint == null) {
+            scheduleProbe(curi, server);
+            return ProcessResult.PROCEED;
+        }
+        if (isExempt(curi) || !matchesProbe(curi, fingerprint)) return ProcessResult.PROCEED;
+        curi.getAnnotations().add(ANNOTATION);
+        soft404sDetected.incrementAndGet();
+        return getSkipExtraction() ? ProcessResult.FINISH : ProcessResult.PROCEED;
     }
 
     protected void scheduleProbe(CrawlURI curi, CrawlServer server) {
-        // Outlinks of error responses are discarded by default, so wait for a successful response
-        // (e.g. robots.txt is often a 404) before scheduling the probe.
         int status = curi.getFetchStatus();
         if (status < 200 || status >= 400) return;
+        // Don't probe servers that are only being fetched from for embeds (e.g. CDNs).
+        if (Hop.EMBED.getHopString().equals(curi.getLastHop())) return;
         if (!server.startSoft404Probe()) return;
         server.makeDirty();
         try {
-            UURI probeUri = UURIFactory.getInstance(curi.getUURI(), randomProbePath());
-            CrawlURI probe = curi.createCrawlURI(probeUri, LinkContext.PREREQ_MISC, Hop.PREREQ);
+            UURI probeUri = UURIFactory.getInstance(curi.getUURI(), probePath);
+            CrawlURI probe = curi.createCrawlURI(probeUri, LinkContext.INFERRED_MISC, Hop.INFERRED);
             probe.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.getOutLinks().add(probe);
             probesScheduled.incrementAndGet();
@@ -186,32 +190,34 @@ public class Soft404Detector extends Processor {
 
     protected void recordProbeResult(CrawlURI curi, CrawlServer server) {
         curi.getAnnotations().add(PROBE_ANNOTATION);
-        if (curi.getFetchStatus() == 200 && curi.getContentLength() > 0) {
-            server.setSoft404Fingerprint(fingerprint(curi), curi.getContentLength(),
-                    mediaType(curi.getContentType()));
-            server.makeDirty();
-            serversWithSoft404s.incrementAndGet();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Soft 404s detected on " + server);
-            }
+        if (curi.getFetchStatus() != 200 || curi.getContentLength() <= 0 || !isHtml(curi)) return;
+        // The probe may be redirected to another server that has already recorded its own.
+        if (!server.setSoft404FingerprintIfAbsent(new Soft404Fingerprint(fingerprint(curi),
+                curi.getContentLength()))) return;
+        server.makeDirty();
+        serversWithSoft404s.incrementAndGet();
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine("Soft 404s detected on " + server);
         }
     }
 
-    protected boolean matchesProbe(CrawlURI curi, CrawlServer server) {
+    protected boolean matchesProbe(CrawlURI curi, Soft404Fingerprint probe) {
         if (curi.getFetchStatus() != 200) return false;
-        if (!mediaType(curi.getContentType()).equals(server.getSoft404ContentType())) return false;
-        long probeLength = server.getSoft404ContentLength();
-        long tolerance = Math.max(1024, probeLength / 10);
-        if (Math.abs(curi.getContentLength() - probeLength) > tolerance) return false;
-        return fingerprint(curi) == server.getSoft404Fingerprint();
+        long tolerance = Math.max(1024, probe.contentLength() / 10);
+        if (Math.abs(curi.getContentLength() - probe.contentLength()) > tolerance) return false;
+        return fingerprint(curi) == probe.hash();
     }
 
-    protected static boolean isProbe(CrawlURI curi) {
-        // contains rather than startsWith so a redirect that keeps the path (e.g. adding a locale
-        // prefix or trailing slash) counts as the probe. Redirects that discard the path don't
-        // need following up, as they can't produce an endless series of URLs.
+    protected boolean isProbe(CrawlURI curi) {
+        // endsWith so a redirect that keeps the path (e.g. adding a locale prefix or trailing
+        // slash) counts as the probe. Redirects that discard the path don't need following up, as
+        // they can't produce an endless series of URLs.
         String path = curi.getUURI().getEscapedPath();
-        return path != null && path.contains(PROBE_PATH_PREFIX);
+        return path != null && (path.endsWith(probePath) || path.endsWith(probePath + "/"));
+    }
+
+    private static boolean isHtml(CrawlURI curi) {
+        return curi.hasContentType("text/html") || curi.hasContentType("application/xhtml+xml");
     }
 
     protected static boolean isExempt(CrawlURI curi) {
@@ -324,11 +330,8 @@ public class Soft404Detector extends Processor {
         return c == '"' || c == '\'' || c == '<' || c == '>';
     }
 
-    private static String mediaType(String contentType) {
-        if (contentType == null) return "";
-        int semicolon = contentType.indexOf(';');
-        if (semicolon >= 0) contentType = contentType.substring(0, semicolon);
-        return contentType.trim().toLowerCase(Locale.ROOT);
+    public String getProbePath() {
+        return probePath;
     }
 
     public long getProbesScheduled() {
@@ -349,6 +352,7 @@ public class Soft404Detector extends Processor {
         json.put("probesScheduled", probesScheduled.get());
         json.put("serversWithSoft404s", serversWithSoft404s.get());
         json.put("soft404sDetected", soft404sDetected.get());
+        json.put("probePath", probePath);
         return json;
     }
 
@@ -358,6 +362,7 @@ public class Soft404Detector extends Processor {
         probesScheduled.set(json.optLong("probesScheduled"));
         serversWithSoft404s.set(json.optLong("serversWithSoft404s"));
         soft404sDetected.set(json.optLong("soft404sDetected"));
+        probePath = json.optString("probePath", probePath);
     }
 
     @Override
