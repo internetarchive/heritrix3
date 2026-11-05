@@ -101,6 +101,26 @@ public class ExtractorSVGTest extends ContentExtractorTestBase {
     }
 
     @Test
+    public void testObeyRelNofollow() throws Exception {
+        String svg = SVG_START +
+                "<a href='followed.html' rel='noopener'><text>x</text></a>" +
+                "<a href='nofollow.html' rel='author NoFollow'><text>y</text></a>" +
+                "<image rel='nofollow' href='image.png'/>" +
+                "</svg>";
+        assertEquals(List.of(
+                        "E https://example.org/image.png image/@href",
+                        "L https://example.org/followed.html a/@href",
+                        "L https://example.org/nofollow.html a/@href"),
+                extract(svg));
+
+        ((ExtractorSVG) extractor).getExtractorHTML().setObeyRelNofollow(true);
+        assertEquals(List.of(
+                        "E https://example.org/image.png image/@href",
+                        "L https://example.org/followed.html a/@href"),
+                extract(svg));
+    }
+
+    @Test
     public void testHrefOnOtherElementsIgnored() throws Exception {
         // href isn't an attribute of <rect>, and other namespaces aren't xlink
         assertEquals(List.of(),

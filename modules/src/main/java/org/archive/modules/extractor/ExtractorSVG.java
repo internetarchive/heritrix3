@@ -86,6 +86,10 @@ public class ExtractorSVG extends ContentExtractor {
     private static final Pattern PSEUDO_ATTRIBUTE_HREF =
             Pattern.compile("(?:^|\\s)href\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')");
 
+    /** rel is a set of space-separated, case-insensitive tokens */
+    private static final Pattern REL_NOFOLLOW =
+            Pattern.compile("(?i)(?:^|\\s)nofollow(?:\\s|$)");
+
     private static final XMLInputFactory INPUT_FACTORY = newInputFactory();
     private static final XMLOutputFactory OUTPUT_FACTORY = XMLOutputFactory.newFactory();
 
@@ -131,7 +135,8 @@ public class ExtractorSVG extends ContentExtractor {
 
     /**
      * HTML extractor to use to process the content of foreignObject elements. Autowired if
-     * available. If null, links will not be extracted from foreignObject elements.
+     * available. If null, links will not be extracted from foreignObject elements. Its
+     * obeyRelNofollow setting also applies to {@code <a>} links in the SVG.
      */
     transient protected ExtractorHTML extractorHTML;
     public ExtractorHTML getExtractorHTML() {
@@ -283,7 +288,9 @@ public class ExtractorSVG extends ContentExtractor {
             if (name.equals("href") && (noNamespace || namespace.equals(XLINK_NS))) {
                 String context = noNamespace ? "href" : "xlink:href";
                 if (elementLC.equals("a")) {
-                    addLink(curi, value, elementLC, context, Hop.NAVLINK);
+                    if (!obeyRelNofollow() || !isNofollow(reader.getAttributeValue(null, "rel"))) {
+                        addLink(curi, value, elementLC, context, Hop.NAVLINK);
+                    }
                 } else if (EMBED_HREF_ELEMENTS.contains(elementLC)) {
                     addLink(curi, value, elementLC, context, Hop.EMBED);
                 }
@@ -308,6 +315,18 @@ public class ExtractorSVG extends ContentExtractor {
                 }
             }
         }
+    }
+
+    /**
+     * Follows the ExtractorHTML bean's obeyRelNofollow setting, if there is one.
+     */
+    private boolean obeyRelNofollow() {
+        ExtractorHTML html = getExtractorHTML();
+        return html != null && html.getObeyRelNofollow();
+    }
+
+    private static boolean isNofollow(String rel) {
+        return rel != null && REL_NOFOLLOW.matcher(rel).find();
     }
 
     protected void processXmlStylesheet(CrawlURI curi, String data) {
