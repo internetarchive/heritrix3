@@ -1741,7 +1741,40 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
         
         return caUri;
     }
-    
+
+    /**
+     * Tests whether this URI's content type is the given media type, ignoring
+     * case and any parameters. For example, a content type of
+     * {@code "Text/HTML; charset=utf-8"} has the media type
+     * {@code "text/html"} but not {@code "text/htm"}.
+     *
+     * @param mediaType a type/subtype pair, e.g. "image/svg+xml"
+     * @return true if the content type is that media type, false if it's
+     *         another media type or there's no content type
+     */
+    public boolean hasContentType(String mediaType) {
+        String contentType = getContentType();
+        if (contentType == null) {
+            return false;
+        }
+        int start = 0;
+        while (start < contentType.length() && isHttpWhitespace(contentType.charAt(start))) {
+            start++;
+        }
+        if (!contentType.regionMatches(true, start, mediaType, 0, mediaType.length())) {
+            return false;
+        }
+        int end = start + mediaType.length();
+        while (end < contentType.length() && isHttpWhitespace(contentType.charAt(end))) {
+            end++;
+        }
+        return end == contentType.length() || contentType.charAt(end) == ';';
+    }
+
+    private static boolean isHttpWhitespace(char c) {
+        return c == ' ' || c == '\t';
+    }
+
     public boolean containsContentTypeCharsetDeclaration() {
         // TODO can this regex be improved? should the test consider if its legal? 
         return getContentType().matches("(?i).*charset=.*");

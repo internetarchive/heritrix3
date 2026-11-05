@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -231,5 +232,27 @@ public class CrawlURITest {
                 new SimpleLinkContext("1")); // a == b
         assertEquals(0, a.compareTo(b));
         assertEquals(0, b.compareTo(a));
+    }
+
+    @Test
+    public void testHasContentType() throws Exception {
+        assertTrue(withContentType("image/svg+xml").hasContentType("image/svg+xml"));
+        assertTrue(withContentType("Image/SVG+XML").hasContentType("image/svg+xml"));
+        assertTrue(withContentType("image/svg+xml;charset=utf-8").hasContentType("image/svg+xml"));
+        assertTrue(withContentType(" image/svg+xml ; charset=utf-8").hasContentType("image/svg+xml"));
+
+        assertFalse(withContentType("image/svg+xmlfoo").hasContentType("image/svg+xml"));
+        assertFalse(withContentType("image/svg").hasContentType("image/svg+xml"));
+        assertFalse(withContentType("text/html").hasContentType("text/htm"));
+        assertFalse(withContentType("application/xml").hasContentType("text/xml"));
+        assertFalse(withContentType(null).hasContentType("text/html"));
+        assertFalse(new CrawlURI(UURIFactory.getInstance("https://example.org/"))
+                .hasContentType("text/html"));
+    }
+
+    private static CrawlURI withContentType(String contentType) throws URIException {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("https://example.org/"));
+        curi.setContentType(contentType);
+        return curi;
     }
 }
