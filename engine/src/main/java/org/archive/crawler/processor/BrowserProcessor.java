@@ -131,8 +131,7 @@ public class BrowserProcessor extends Processor {
         if (curi.getFetchStatus() != 200) return false;
         String scheme = curi.getUURI().getScheme();
         if (!scheme.equals("https") && !scheme.equals("http")) return false;
-        String mime = curi.getContentType().toLowerCase();
-        if (!mime.startsWith("text/html")) return false;
+        if (!curi.hasContentType("text/html")) return false;
         if (StringUtils.startsWithIgnoreCase(curi.getHttpResponseHeader("Content-Disposition"), "attachment")) {
             return false;
         }

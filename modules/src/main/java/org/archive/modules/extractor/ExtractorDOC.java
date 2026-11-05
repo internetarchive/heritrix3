@@ -56,11 +56,7 @@ public class ExtractorDOC extends ContentExtractor {
     
     @Override
     protected boolean shouldExtract(CrawlURI uri) {
-        String mimeType = uri.getContentType();
-        if (mimeType == null) {
-            return false;
-        }
-        return mimeType.toLowerCase().startsWith("application/msword");
+        return uri.hasContentType("application/msword");
     }
     
     
