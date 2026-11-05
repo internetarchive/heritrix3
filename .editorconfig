@@ -1,0 +1,21 @@
+# https://editorconfig.org
+#
+# Line endings and trailing whitespace are deliberately left unset: many existing files have CRLF
+# line endings or trailing whitespace, and enforcing either would rewrite whole files on save.
+
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+[*.java]
+max_line_length = 100
+
+[{pom.xml,*.ftl}]
+indent_style = tab
+
+[*.cxml]
+indent_size = 1
