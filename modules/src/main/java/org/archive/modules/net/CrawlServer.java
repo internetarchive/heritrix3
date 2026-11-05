@@ -81,6 +81,13 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     protected int http3Port;
     protected long http3Expiry;
 
+    /** Soft 404 detection state, maintained by Soft404Detector. */
+    protected boolean soft404ProbeScheduled;
+    protected long soft404Fingerprint;
+    protected long soft404ContentLength;
+    /** Non-null only if the probe found a soft 404. */
+    protected String soft404ContentType;
+
     /**
      * Creates a new CrawlServer object.
      *
@@ -252,6 +259,49 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 	public synchronized boolean isValidRobots() {
 		return validRobots;
 	}
+
+    /**
+     * Marks the soft 404 probe as scheduled, unless it already was.
+     * @return true if the caller should schedule a probe
+     */
+    public synchronized boolean startSoft404Probe() {
+        if (soft404ProbeScheduled) return false;
+        soft404ProbeScheduled = true;
+        return true;
+    }
+
+    public synchronized boolean isSoft404ProbeScheduled() {
+        return soft404ProbeScheduled;
+    }
+
+    /**
+     * @return true if a request for a nonexistent URL got a page with a success status
+     */
+    public synchronized boolean hasSoft404Fingerprint() {
+        return soft404ContentType != null;
+    }
+
+    /**
+     * Records the fingerprint of the page returned with a success status for a nonexistent URL.
+     */
+    public synchronized void setSoft404Fingerprint(long fingerprint, long contentLength,
+                                                   String contentType) {
+        soft404Fingerprint = fingerprint;
+        soft404ContentLength = contentLength;
+        soft404ContentType = contentType;
+    }
+
+    public synchronized long getSoft404Fingerprint() {
+        return soft404Fingerprint;
+    }
+
+    public synchronized long getSoft404ContentLength() {
+        return soft404ContentLength;
+    }
+
+    public synchronized String getSoft404ContentType() {
+        return soft404ContentType;
+    }
 
     public synchronized void clearAltSvc() {
         http3Port = 0;
