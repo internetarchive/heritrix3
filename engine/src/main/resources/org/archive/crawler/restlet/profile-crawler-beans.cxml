@@ -314,6 +314,8 @@ http://example.example/example
  </bean>
  <bean id="extractorCss" class="org.archive.modules.extractor.ExtractorCSS">
  </bean> 
+ <bean id="extractorHls" class="org.archive.modules.extractor.ExtractorHLS">
+ </bean>
  <bean id="extractorJs" class="org.archive.modules.extractor.ExtractorJS">
  </bean>
  <bean id="extractorSwf" class="org.archive.modules.extractor.ExtractorSWF">
@@ -362,6 +364,8 @@ http://example.example/example
     <ref bean="extractorHtml"/>
     <!-- ...extract outlinks from CSS content... -->
     <ref bean="extractorCss"/>
+    <!-- ...extract media resources from HLS playlists... -->
+    <ref bean="extractorHls"/>
     <!-- ...extract outlinks from Javascript content... -->
     <ref bean="extractorJs"/>
     <!-- ...extract outlinks from Flash content... -->
