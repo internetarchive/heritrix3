@@ -133,6 +133,11 @@ public class ExtractorCSS extends ContentExtractor {
                 // Remove backslashes when used as escape character in CSS URL
                 cssUri = TextUtils.replaceAll(CSS_BACKSLASH_ESCAPE, cssUri,
                         "$1");
+                if (cssUri.startsWith("#")) {
+                    // a reference to an element in the document itself,
+                    // e.g. an SVG gradient: fill: url(#gradient)
+                    continue;
+                }
                 foundLinks++;
                 int max = ext.getExtractorParameters().getMaxOutlinks();
                 try {

@@ -131,8 +131,9 @@ public class JerichoExtractorHTML extends ExtractorHTML {
         
         final boolean overlyEagerLinkDetection = getExtractValueAttributes();
 
-        // HREF
-        if (((attr = attributes.get("href")) != null) &&
+        // HREF (or XLINK:HREF in inline SVG)
+        if ((((attr = attributes.get("href")) != null)
+                || ((attr = attributes.get("xlink:href")) != null)) &&
             ((attrValue = attr.getValue()) != null)) {
             CharSequence context = elementContext(elementName, attr
                     .getKey());
@@ -148,6 +149,11 @@ public class JerichoExtractorHTML extends ExtractorHTML {
                     if (logger.isLoggable(Level.FINEST)) logger.finest("ignoring nofollow link: " + attrValue);
                 } else {
                     processLink(curi, attrValue, context);
+                }
+            } else if (ExtractorSVG.EMBED_HREF_ELEMENTS.contains(elementName)) {
+                // inline SVG resources such as <image href> and <use href>
+                if (!attrValue.startsWith("#")) {
+                    processEmbed(curi, attrValue, context);
                 }
             } else {
                 // other HREFs treated as links
@@ -307,7 +313,16 @@ public class JerichoExtractorHTML extends ExtractorHTML {
             numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
                     this, curi, attrValue));
         }
-        
+
+        // inline SVG presentation attributes, e.g. fill="url(...)"
+        for (String name : ExtractorSVG.URL_PRESENTATION_ATTRIBUTES) {
+            if (((attr = attributes.get(name)) != null) &&
+                    ((attrValue = attr.getValue()) != null)) {
+                numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
+                        this, curi, attrValue));
+            }
+        }
+
         // FLASHVARS
         if (((attr = attributes.get("flashvars")) != null) &&
                 ((attrValue = attr.getValue()) != null)) {

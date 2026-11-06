@@ -974,6 +974,30 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
         assertTrue(!curi.containsDataKey(ExtractorHTML.A_META_ROBOTS), "meta robots");
     }
 
+    @Test
+    public void testInlineSvg() throws URIException {
+        String html = "<svg><image href=/image.png /><use xlink:href='/icons.svg#a'/>" +
+                "<use href='#local'/>" +
+                "<filter><feImage href=\"/fe.png\"/></filter>" +
+                "<rect fill='URL(/fill.svg#g)' stroke='url(#local)'/>" +
+                "<a href=/page.html><text>x</text></a></svg>";
+        assertEquals(List.of(
+                        "E https://www.example.org/fe.png feimage/@href",
+                        "E https://www.example.org/fill.svg " + LinkContext.EMBED_MISC,
+                        "E https://www.example.org/icons.svg use/@" + xlinkHrefAttributeContext(),
+                        "E https://www.example.org/image.png image/@href",
+                        "L https://www.example.org/page.html a/@href"),
+                extractLinks(html));
+    }
+
+    /**
+     * The attribute name in the context of links from xlink:href attributes. ExtractorHTML's
+     * regex matches only the 'href' part.
+     */
+    protected String xlinkHrefAttributeContext() {
+        return "href";
+    }
+
     /**
      * Runs the extractor over the given HTML and returns the outlinks
      * formatted as "hop uri context", sorted.

@@ -22,6 +22,8 @@ package org.archive.modules.extractor;
 import static org.archive.modules.extractor.LinkContext.EMBED_MISC;
 import static org.archive.modules.extractor.LinkContext.NAVLINK_MISC;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Collection;
 import java.util.Collections;
 
@@ -29,6 +31,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
+import org.junit.jupiter.api.Test;
 
 
 /**
@@ -87,6 +90,16 @@ public class ExtractorCSSTest extends StringExtractorTestBase {
     @Override
     public String[] getValidTestData() {
         return VALID_TEST_DATA;
+    }
+
+    @Test
+    public void testSameDocumentReferenceIgnored() throws Exception {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance("http://www.archive.org/start/"));
+        long found = ExtractorCSS.processStyleCode(makeExtractor(), curi,
+                "rect { fill: url(#gradient) } p { background: url(bg.png) }");
+        assertEquals(1, found);
+        assertEquals("http://www.archive.org/start/bg.png",
+                curi.getOutLinks().iterator().next().getURI());
     }
 
 }

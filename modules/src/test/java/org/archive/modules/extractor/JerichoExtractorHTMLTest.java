@@ -257,4 +257,9 @@ public class JerichoExtractorHTMLTest extends ExtractorHTMLTest {
     protected JerichoExtractorHTML getExtractor() {
         return (JerichoExtractorHTML) extractor;
     }
+
+    @Override
+    protected String xlinkHrefAttributeContext() {
+        return "xlink:href";
+    }
 }

@@ -463,6 +463,11 @@ ExtractorSitemap
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorSitemap
 
+ExtractorSVG
+~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ExtractorSVG
+
 ExtractorSWF
 ~~~~~~~~~~~~
 

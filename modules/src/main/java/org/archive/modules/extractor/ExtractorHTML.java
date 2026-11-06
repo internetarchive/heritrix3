@@ -473,6 +473,12 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                     linkContext = context;
                 } else if ("a[data-remote='true']/@href".equals(context)) {
                     processEmbed(curi, value, context);
+                } else if (ExtractorSVG.EMBED_HREF_ELEMENTS.contains(
+                            elementStr.toLowerCase(Locale.ROOT))) {
+                    // inline SVG resources such as <image href> and <use href>
+                    if (!value.toString().startsWith("#")) {
+                        processEmbed(curi, value, context);
+                    }
                 } else {
                     // other HREFs treated as links
                     processLink(curi, value, context);
@@ -588,6 +594,11 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                         && elementStr.equalsIgnoreCase(IFRAME)) {
                     // embedded HTML document
                     processSrcdoc(curi, value);
+                } else if (ExtractorSVG.URL_PRESENTATION_ATTRIBUTES.contains(
+                            attrName.toString().toLowerCase(Locale.ROOT))) {
+                    // inline SVG presentation attribute, e.g. fill="url(...)"
+                    numberOfLinksExtracted.addAndGet(ExtractorCSS.processStyleCode(
+                            this, curi, value));
                 }
 
 				// 2023 updates get img or source data attr

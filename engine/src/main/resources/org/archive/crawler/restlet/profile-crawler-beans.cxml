@@ -298,6 +298,8 @@ http://example.example/example
  <bean id="extractorSitemap" class="org.archive.modules.extractor.ExtractorSitemap">
  </bean>
  
+ <bean id="extractorSvg" class="org.archive.modules.extractor.ExtractorSVG">
+ </bean>
  <bean id="extractorHtml" class="org.archive.modules.extractor.ExtractorHTML">
   <!-- <property name="extractJavascript" value="true" /> -->
   <!-- <property name="extractValueAttributes" value="true" /> -->
@@ -354,6 +356,8 @@ http://example.example/example
     <ref bean="extractorRobotsTxt"/>
     <!-- ...extract links from sitemaps... -->
     <ref bean="extractorSitemap"/>
+    <!-- ...extract outlinks from SVG content... -->
+    <ref bean="extractorSvg"/>
     <!-- ...extract outlinks from HTML content... -->
     <ref bean="extractorHtml"/>
     <!-- ...extract outlinks from CSS content... -->

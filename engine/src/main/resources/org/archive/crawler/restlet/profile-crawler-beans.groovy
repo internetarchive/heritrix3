@@ -272,6 +272,7 @@ http://example.example/example
     extractorHttp(ExtractorHTTP)
     extractorRobotsTxt(ExtractorRobotsTxt)
     extractorSitemap(ExtractorSitemap)
+    extractorSvg(ExtractorSVG)
     extractorHtml(ExtractorHTML) {
         // extractJavascript = true
         // extractValueAttributes = true
@@ -307,6 +308,8 @@ http://example.example/example
                 ref('extractorRobotsTxt'),
                 // ...extract links from sitemaps...
                 ref('extractorSitemap'),
+                // ...extract outlinks from SVG content...
+                ref('extractorSvg'),
                 // ...extract outlinks from HTML content...
                 ref('extractorHtml'),
                 // ...extract outlinks from CSS content...
