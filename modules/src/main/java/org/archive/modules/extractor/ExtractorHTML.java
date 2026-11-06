@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -75,6 +76,14 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
 
     private static Logger logger =
         Logger.getLogger(ExtractorHTML.class.getName());
+
+    // These fields describe text, not resources. Domain-like names otherwise
+    // become spurious relative outlinks on every page that repeats the metadata.
+    private static final Set<String> TEXTUAL_META_FIELDS = Set.of(
+            "og:site_name", "og:title", "og:description", "og:type", "og:locale",
+            "og:locale:alternate", "og:determiner", "twitter:domain", "twitter:title",
+            "twitter:description", "twitter:card", "twitter:site", "twitter:creator",
+            "author", "publisher", "description", "keywords", "generator", "application-name");
 
     private final static String MAX_ELEMENT_REPLACE = "MAX_ELEMENT";
     
@@ -1187,6 +1196,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
     protected boolean processMeta(CrawlURI curi, CharSequence cs) {
         Matcher attr = TextUtils.getMatcher(eachAttributePattern,cs);
         String name = null;
+        String property = null;
         String httpEquiv = null;
         String content = null;
         while (attr.find()) {
@@ -1197,6 +1207,8 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             value = TextUtils.unescapeHtml(value);
             if (attr.group(1).equalsIgnoreCase("name")) {
                 name = value.toString();
+            } else if (attr.group(1).equalsIgnoreCase("property")) {
+                property = value.toString();
             } else if (attr.group(1).equalsIgnoreCase("http-equiv")) {
                 httpEquiv = value.toString();
             } else if (attr.group(1).equalsIgnoreCase("content")) {
@@ -1234,7 +1246,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
                 }
             }
         }
-        else if (content != null) {
+        else if (content != null && !isTextualMetaField(name) && !isTextualMetaField(property)) {
             //look for likely urls in 'content' attribute
             try {
                 if (UriUtils.isVeryLikelyUri(UriUtils.speculativeFixup(content, curi.getUURI()))) {
@@ -1247,6 +1259,10 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             }
         }        
         return false;
+    }
+
+    private static boolean isTextualMetaField(String field) {
+        return field != null && TEXTUAL_META_FIELDS.contains(field.trim().toLowerCase(Locale.ROOT));
     }
 
     /**
