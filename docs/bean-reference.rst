@@ -337,6 +337,11 @@ FrontierPreparer
 Pre-Fetch Processors
 --------------------
 
+HostQuotaEnforcer (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.prefetch.HostQuotaEnforcer
+
 PreconditionEnforcer
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -346,6 +351,21 @@ Preselector
 ~~~~~~~~~~~
 
 .. bean-doc:: org.archive.crawler.prefetch.Preselector
+
+QuotaEnforcer
+~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.prefetch.QuotaEnforcer
+
+RuntimeLimitEnforcer
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.prefetch.RuntimeLimitEnforcer
+
+SourceQuotaEnforcer (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.prefetch.SourceQuotaEnforcer
 
 Fetch Processors
 ----------------
@@ -413,6 +433,11 @@ ExtractorHTMLForms
 
 .. bean-doc:: org.archive.modules.forms.ExtractorHTMLForms
 
+FormLoginProcessor
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.forms.FormLoginProcessor
+
 ExtractorHTTP
 ~~~~~~~~~~~~~
 
@@ -427,6 +452,11 @@ ExtractorJS
 ~~~~~~~~~~~
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorJS
+
+ConfigurableExtractorJS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ConfigurableExtractorJS
 
 ExtractorJson
 ~~~~~~~~~~~~~
@@ -539,13 +569,76 @@ HashCrawlMapper
 
 .. bean-doc:: org.archive.crawler.processor.HashCrawlMapper
 
+HTTPContentDigest
+~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.HTTPContentDigest
+
 LexicalCrawlMapper
 ~~~~~~~~~~~~~~~~~~
 
 .. bean-doc:: org.archive.crawler.processor.LexicalCrawlMapper
 
+ScriptedProcessor
+~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.ScriptedProcessor
+
+Recrawl Processors
+------------------
+
+ContentDigestHistoryLoader
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.ContentDigestHistoryLoader
+
+ContentDigestHistoryStorer
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.ContentDigestHistoryStorer
+
+FetchHistoryProcessor
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.FetchHistoryProcessor
+
+PersistLoadProcessor
+~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.PersistLoadProcessor
+
+PersistLogProcessor
+~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.PersistLogProcessor
+
+PersistStoreProcessor
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.PersistStoreProcessor
+
+WbmPersistLoadProcessor (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.recrawl.wbm.WbmPersistLoadProcessor
+
 Post-Processors
 ---------------
+
+AMQPCrawlLogFeed (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.postprocessor.AMQPCrawlLogFeed
+
+AMQPPublishProcessor (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.AMQPPublishProcessor
+
+ARCWriterProcessor
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.writer.ARCWriterProcessor
 
 CandidatesProcessor
 ~~~~~~~~~~~~~~~~~~~
@@ -557,10 +650,40 @@ DispositionProcessor
 
 .. bean-doc:: org.archive.crawler.postprocessor.DispositionProcessor
 
+KafkaCrawlLogFeed (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.postprocessor.KafkaCrawlLogFeed
+
+Kw3WriterProcessor
+~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.writer.Kw3WriterProcessor
+
+MirrorWriterProcessor
+~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.writer.MirrorWriterProcessor
+
 ReschedulingProcessor
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. bean-doc:: org.archive.crawler.postprocessor.ReschedulingProcessor
+
+SupplementaryLinksScoper
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.postprocessor.SupplementaryLinksScoper
+
+TroughCrawlLogFeed (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.postprocessor.TroughCrawlLogFeed
+
+WARCLimitEnforcer (contrib)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.postprocessor.WARCLimitEnforcer
 
 WARCWriterChainProcessor
 ~~~~~~~~~~~~~~~~~~~~~~~~
