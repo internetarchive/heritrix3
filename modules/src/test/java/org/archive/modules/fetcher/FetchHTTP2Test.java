@@ -323,8 +323,10 @@ public class FetchHTTP2Test {
         var curi = new CrawlURI(UURIFactory.getInstance("https://example.com/"));
         var response = new HttpResponse(fetcher.httpClient.newRequest("https://example.com/"));
         response.headers(headers -> headers.put(HttpHeader.ALT_SVC, "h3=\":443\""));
+        long before = System.currentTimeMillis();
         fetcher.handleAltSvcHeader(curi, response);
-        Thread.sleep(10); // an entry that expires immediately would be gone by now
-        assertEquals(443, fetcher.serverCache.getServerFor(curi.getUURI()).getHttp3AltSvcPort());
+        var crawlServer = fetcher.serverCache.getServerFor(curi.getUURI());
+        assertEquals(443, crawlServer.getHttp3AltSvcPort());
+        assertTrue(crawlServer.getHttp3AltSvcExpiry() >= before + 24 * 60 * 60 * 1000L);
     }
 }
