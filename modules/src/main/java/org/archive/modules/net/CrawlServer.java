@@ -285,6 +285,14 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     }
 
     /**
+     * @return time in milliseconds since epoch to stop using the HTTP/3
+     *         alt-svc port, or 0 if none is set.
+     */
+    public synchronized long getHttp3AltSvcExpiry() {
+        return http3Expiry;
+    }
+
+    /**
      * Get key to use doing lookup on server instances.
      * 
      * @return String to use as server key.
