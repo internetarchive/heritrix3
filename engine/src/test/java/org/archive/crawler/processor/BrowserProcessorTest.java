@@ -232,6 +232,14 @@ class BrowserProcessorTest {
         assertFalse(processor.isRunning());
     }
 
+    @Test
+    public void testRejectsUnsupportedBrowser() {
+        for (String browser : List.of("remote", "ssh:host", "http://host")) {
+            var processor = newBrowserProcessor("unsupported", List.of(browser));
+            assertThrows(IllegalArgumentException.class, processor::start, browser);
+        }
+    }
+
     private static void awaitUp(BrowserProcessor processor, int browserId) throws InterruptedException {
         synchronized (processor.tabsLock) {
             while (processor.pool.get(browserId).state != BrowserProcessor.Browser.State.UP) {

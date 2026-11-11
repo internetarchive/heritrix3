@@ -54,6 +54,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
@@ -82,13 +84,23 @@ import static org.archive.modules.fetcher.FetchErrors.LENGTH_TRUNC;
 import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 
 /**
- * Opens a web page in a local web browser via WebDriver BiDi and runs {@link Behavior}s to interact with the page.
+ * Opens a web page in a web browser via WebDriver BiDi and runs {@link Behavior}s to interact with the page.
  * Subresources loaded by the browser are recorded using a HTTP proxy. Must be used in conjunction with
  * {@link FetchHTTP2}. Normally defined in the FetchChain after the link extractors.
  */
 public class BrowserProcessor extends Processor {
     private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
+    // Firefox doesn't seem to allow setting prefs via capabilities with bidi
+    // so drop them in user.js instead
+    private static final String USER_JS = """
+            // send localhost requests via the proxy too (for tests and local crawling)
+            user_pref('network.proxy.allow_hijacking_localhost', true);
+
+            // disable downloads by setting to something that can't be created as a directory
+            user_pref('browser.download.dir', '/dev/null');
+            user_pref('browser.download.folderList', 2);
+            """;
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
@@ -248,7 +260,7 @@ public class BrowserProcessor extends Processor {
         return builder.toString();
     }
 
-    private void visit(CrawlURI curi, LocalWebDriverBiDi driver) throws InterruptedException {
+    private void visit(CrawlURI curi, WebDriverBiDi driver) throws InterruptedException {
         String pageId = UUID.randomUUID().toString();
         var tab = driver.browsingContext().create(BrowsingContext.CreateType.tab).context();
         try {
@@ -303,11 +315,7 @@ public class BrowserProcessor extends Processor {
     public void start() {
         if (isRunning) return;
         if (browsers.isEmpty()) throw new IllegalArgumentException("browsers must not be empty");
-        for (String browser : browsers) {
-            if (!browser.equals("local")) {
-                throw new IllegalArgumentException("Unsupported browser '" + browser + "': only 'local' is supported");
-            }
-        }
+        List<URI> sshUris = browsers.stream().map(BrowserProcessor::parseBrowser).toList();
         if (minBrowsers > browsers.size()) {
             throw new IllegalArgumentException("minBrowsers is " + minBrowsers + " but only " + browsers.size()
                     + " browsers are configured");
@@ -338,7 +346,7 @@ public class BrowserProcessor extends Processor {
                 .setNameFormat("BrowserProcessor-launcher-%d").setDaemon(true).build());
         pool.clear();
         for (int i = 0; i < browsers.size(); i++) {
-            pool.add(new Browser(i));
+            pool.add(new Browser(i, sshUris.get(i)));
         }
         CompletableFuture.allOf(pool.stream()
                 .map(browser -> CompletableFuture.runAsync(browser::launch, launcher))
@@ -356,7 +364,23 @@ public class BrowserProcessor extends Processor {
         }
     }
 
-    private void handleBeforeRequestSent(LocalWebDriverBiDi driver, Network.BeforeRequestSent event) {
+    /**
+     * Returns the ssh URI of a {@link #setBrowsers browsers} entry, or null for a local browser.
+     */
+    private static URI parseBrowser(String browser) {
+        if (browser.equals("local")) return null;
+        try {
+            URI uri = new URI(browser);
+            SshBrowserProcess.checkUri(uri);
+            return uri;
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            // fall through
+        }
+        throw new IllegalArgumentException("Unsupported browser '" + browser +
+                "': expected 'local' or 'ssh://[user@]host[:port]'");
+    }
+
+    private void handleBeforeRequestSent(WebDriverBiDi driver, Network.BeforeRequestSent event) {
         if (event.request().url().startsWith("data:") || !event.isBlocked()) return;
         List<Network.Header> requestHeaders = event.request().headers();
         String pageId = pageIdsByContext.get(event.context());
@@ -415,7 +439,8 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
-     * Webdriver executable to launch. If null, will try several common paths.
+     * Webdriver executable to launch. If null, will try several common paths, or on a remote machine firefox and
+     * then chromedriver on the PATH.
      * <p>
      * Firefox can be used directly as it implements WebDriver BiDI natively. To use Chrome set this to a
      * <a href="https://developer.chrome.com/docs/chromedriver">ChromeDriver</a> executable.
@@ -479,9 +504,18 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
-     * Browsers to open pages in, one per entry. The only supported value is currently {@code local}, which
-     * launches {@link #setExecutable(String) executable} on this machine. Pages from the same queue are opened in
-     * the same browser while it has a free tab, so that a site keeps one browser's cookies and cache.
+     * Browsers to open pages in, one per entry. Pages from the same queue are opened in the same browser while it
+     * has a free tab, so that a site keeps one browser's cookies and cache.
+     * <ul>
+     * <li>{@code local} launches {@link #setExecutable(String) executable} on this machine.</li>
+     * <li>{@code ssh://[user@]host[:port]} launches it on another machine using the ssh command, which carries the
+     * WebDriver BiDi connection and the browser's requests to the recording proxy. The remote machine needs sshd, a
+     * POSIX login shell and the browser on the PATH of a non-interactive login (or {@code executable} set). Login must
+     * work without a prompt, for example with a key in ssh-agent, and the host key must already be known. Settings in
+     * ~/.ssh/config apply. The browser gets a fresh profile directory under ~/.cache/heritrix-browser on the remote
+     * machine, removed when it exits. The remote machine can't be this one, as the WebDriver BiDi port is forwarded to
+     * the same port number here.</li>
+     * </ul>
      */
     public void setBrowsers(List<String> browsers) {
         this.browsers = browsers;
@@ -637,6 +671,7 @@ public class BrowserProcessor extends Processor {
         private static final long MAX_RETRY_DELAY_SECONDS = 600;
         protected enum State { UP, IDLE, WAKING, DOWN }
         protected final int id;
+        private final URI sshUri; // null for a local browser
         protected volatile LocalWebDriverBiDi driver;
         protected volatile State state = State.DOWN;
         protected volatile String lastFailure;
@@ -646,8 +681,9 @@ public class BrowserProcessor extends Processor {
         private volatile long idleSince;
         private long retryDelaySeconds = INITIAL_RETRY_DELAY_SECONDS; // guarded by this
 
-        Browser(int id) {
+        Browser(int id, URI sshUri) {
             this.id = id;
+            this.sshUri = sshUri;
         }
 
         private boolean hasFreeTabSlot() {
@@ -734,22 +770,25 @@ public class BrowserProcessor extends Processor {
         }
 
         private LocalWebDriverBiDi createWebDriver() throws Exception {
-            Path scratchDir = crawlController.getScratchDir().getFile().toPath();
-            Path profileDir = scratchDir.resolve("profile-" + id);
-            Files.createDirectories(profileDir);
+            BrowserProcess process;
+            int proxyPort;
+            String profileDir;
+            if (sshUri == null) {
+                Path scratchDir = crawlController.getScratchDir().getFile().toPath();
+                Path localProfileDir = scratchDir.resolve("profile-" + id);
+                Files.createDirectories(localProfileDir);
+                Files.writeString(localProfileDir.resolve("user.js"), USER_JS);
+                process = BrowserProcess.launchLocal(executable, options, localProfileDir);
+                proxyPort = proxy.getPort();
+                profileDir = localProfileDir.toString();
+            } else {
+                var sshProcess = SshBrowserProcess.launch("ssh", sshUri, executable, options, proxy.getPort(),
+                        USER_JS);
+                process = sshProcess;
+                proxyPort = sshProcess.proxyPort();
+                profileDir = sshProcess.profileName();
+            }
 
-            // Firefox doesn't seem to allow setting prefs via capabilities with bidi
-            // so drop them in user.js instead
-            Files.writeString(profileDir.resolve("user.js"), """
-            // send localhost requests via the proxy too (for tests and local crawling)
-            user_pref('network.proxy.allow_hijacking_localhost', true);
-
-            // disable downloads by setting to something that can't be created as a directory
-            user_pref('browser.download.dir', '/dev/null');
-            user_pref('browser.download.folderList', 2);
-            """);
-
-            int proxyPort = proxy.getPort();
             var alwaysMatch = Map.of("acceptInsecureCerts", true,
                     "proxy", new Session.ProxyConfiguration("manual",
                             "127.0.0.1:" + proxyPort, "127.0.0.1:" + proxyPort));
@@ -765,7 +804,7 @@ public class BrowserProcessor extends Processor {
             );
             var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
 
-            var driver = new LocalWebDriverBiDi(executable, options, capabilities, profileDir);
+            var driver = new LocalWebDriverBiDi(process, capabilities);
             try {
                 driver.session().subscribe(List.of("browsingContext.contextCreated",
                         "network.beforeRequestSent"), null);

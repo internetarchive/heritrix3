@@ -327,6 +327,12 @@ http://example.example/example
    </list>
   </property>
   <property name="concurrency" value="20" />
+  <property name="browsers">
+   <list>
+    <value>local</value>
+    <value>ssh://crawler@browser1.example.org</value>
+   </list>
+  </property>
   <property name="executable" value="firefox" />
   <property name="options">
    <list>
