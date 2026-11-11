@@ -26,7 +26,8 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -45,8 +46,7 @@ import java.util.function.Consumer;
  */
 public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     private final System.Logger logger = System.getLogger(getClass().getName());
-    private final Process process;
-    private final CompletableFuture<String> webSocketUrl = new CompletableFuture<>();
+    private final BrowserProcess process;
     private final WebSocket webSocket;
     private final AtomicLong requestId = new AtomicLong(0);
     private final Map<Long, CompletableFuture<JSONObject>> commands = new ConcurrentHashMap<>();
@@ -56,96 +56,34 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
             .setDaemon(true)
             .build());
     private final String sessionId;
-    private final Thread shutdownHook;
     private final Object sendLock = new Object();
     private CompletableFuture<?> sendChain = CompletableFuture.completedFuture(null);
     private volatile Duration commandTimeout = Duration.ofSeconds(30);
-    private static final int LAUNCH_TIMEOUT_SECONDS = 60;
-    private static final String[] BROWSERS = new String[]{
-            "firefox", "/Applications/Firefox.app/Contents/MacOS/firefox", "chromedriver"};
+    private static final int CONNECT_TIMEOUT_SECONDS = 60;
 
     public LocalWebDriverBiDi(String executable, List<String> options, Session.CapabilitiesRequest capabilities, Path profileDir)
             throws ExecutionException, InterruptedException, IOException {
-        this.process = executable == null ? launchAnyBrowser(options, profileDir) : launchBrowser(executable, options, profileDir);
-        shutdownHook = new Thread(this.process::destroyForcibly);
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
-        var stderrThread = new Thread(this::handleStderr, "LocalWebDriverBiDi-stderr");
-        stderrThread.setDaemon(true);
-        stderrThread.start();
+        this(BrowserProcess.launchLocal(executable, options, profileDir), capabilities);
+    }
+
+    /**
+     * Connects to a launched browser and starts a session. Kills the browser if that fails.
+     */
+    public LocalWebDriverBiDi(BrowserProcess process, Session.CapabilitiesRequest capabilities)
+            throws ExecutionException, InterruptedException, IOException {
+        this.process = process;
         try {
-            String url = webSocketUrl.get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            String url = process.awaitWebSocketUrl();
             webSocket = HttpClient.newHttpClient().newWebSocketBuilder()
                     .buildAsync(URI.create(url + "/session"), new Listener())
-                    .get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            sessionId = session().newAsync(capabilities).get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS).sessionId();
+                    .get(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            sessionId = session().newAsync(capabilities).get(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS).sessionId();
         } catch (TimeoutException e) {
-            destroyProcess();
-            throw new IOException("Browser did not start within " + LAUNCH_TIMEOUT_SECONDS + " seconds", e);
+            process.destroyForcibly();
+            throw new IOException("Browser did not start within " + CONNECT_TIMEOUT_SECONDS + " seconds", e);
         } catch (Exception e) {
-            destroyProcess();
+            process.destroyForcibly();
             throw e;
-        }
-    }
-
-    private void destroyProcess() {
-        process.descendants().forEach(ProcessHandle::destroyForcibly);
-        process.destroyForcibly();
-        try {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        } catch (IllegalStateException ignored) {
-            // JVM is already shutting down
-        }
-    }
-
-    private static Process launchAnyBrowser(List<String> options, Path profileDir) throws IOException {
-        IOException lastException = null;
-        for (String executable : BROWSERS) {
-            try {
-                return launchBrowser(executable, options, profileDir);
-            } catch (IOException e) {
-                lastException = e;
-            }
-        }
-        throw new IOException("Failed to launch any of: " + List.of(BROWSERS), lastException);
-    }
-
-    private static Process launchBrowser(String executable, List<String> options, Path profileDir) throws IOException {
-        var command = new ArrayList<String>();
-        command.add(executable);
-        command.add("--remote-debugging-port=0");
-        if (executable.contains("firefox")) {
-            command.add("--profile");
-            command.add(profileDir.toAbsolutePath().toString());
-        } else {
-            command.add("--user-data-dir=" + profileDir.toAbsolutePath());
-        }
-        command.addAll(options);
-        return new ProcessBuilder(command)
-                .redirectInput(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectErrorStream(true)
-                .start();
-    }
-
-    private void handleStderr() {
-        String firefoxListening = "WebDriver BiDi listening on ";
-        String chromeDriverListening = "ChromeDriver was started successfully on port ";
-        try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                if (line.startsWith(firefoxListening)) {
-                    webSocketUrl.complete(line.substring(firefoxListening.length()));
-                } else if (line.startsWith(chromeDriverListening)) {
-                    webSocketUrl.complete("ws://127.0.0.1:" + line.substring(chromeDriverListening.length(), line.length() - 1));
-                } else if (line.startsWith("DevTools listening on ")) {
-                    webSocketUrl.completeExceptionally(new WebDriverException("Chrome does not directly implement WebDriver BiDi. Please run ChromeDriver instead of running Chrome directly."));
-                } else if (line.contains("Missing response info, network.responseCompleted will be skipped for URL:")) {
-                    continue; // suppress noisy Firefox logs
-                }
-                logger.log(System.Logger.Level.INFO, "Browser: {0}", line);
-            }
-            webSocketUrl.completeExceptionally(new EOFException("EOF waiting for start message"));
-        } catch (Exception e) {
-            webSocketUrl.completeExceptionally(e);
         }
     }
 
@@ -206,8 +144,6 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     }
 
     private void kill() {
-        // ChromeDriver's browser is its child and would survive it, keeping the profile locked
-        process.descendants().forEach(ProcessHandle::destroyForcibly);
         process.destroyForcibly();
         webSocket.abort();
         failPendingCommands(new WebDriverException("Browser stopped responding"));
@@ -279,7 +215,6 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
 
     @Override
     public void close() throws IOException {
-        List<ProcessHandle> descendants = process.descendants().toList();
         try {
             if (isAlive()) {
                 browser().close();
@@ -287,26 +222,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
         } catch (Exception e) {
             logger.log(System.Logger.Level.ERROR, "Error closing browser", e);
         }
-        process.destroy();
-        try {
-            if (!process.waitFor(10, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
-            }
-            // ChromeDriver doesn't wait for the browser it launched to exit
-            CompletableFuture.allOf(descendants.stream().map(ProcessHandle::onExit)
-                    .toArray(CompletableFuture[]::new)).get(10, TimeUnit.SECONDS);
-        } catch (ExecutionException | TimeoutException e) {
-            descendants.forEach(ProcessHandle::destroyForcibly);
-        } catch (InterruptedException e) {
-            process.destroyForcibly();
-            descendants.forEach(ProcessHandle::destroyForcibly);
-            Thread.currentThread().interrupt();
-        }
-        try {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        } catch (IllegalStateException ignored) {
-            // JVM is already shutting down
-        }
+        process.close();
         failPendingCommands(new WebDriverException("WebDriver connection closed"));
         eventExecutor.shutdown();
     }
