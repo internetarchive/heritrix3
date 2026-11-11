@@ -105,7 +105,7 @@ class BrowserProcessorTest {
     @Test
     public void testBrowserRestart() throws IOException, InterruptedException {
         long restartsBefore = browserProcessor.browserRestarts.get();
-        browserProcessor.webdriver.close(); // simulate the browser dying
+        browserProcessor.browser.driver.close(); // simulate the browser dying
 
         CrawlURI crawlURI = newCrawlURI(baseUrl);
         fetcher.process(crawlURI);

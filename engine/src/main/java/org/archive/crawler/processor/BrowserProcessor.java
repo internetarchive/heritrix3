@@ -86,7 +86,7 @@ public class BrowserProcessor extends Processor {
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
-    protected volatile LocalWebDriverBiDi webdriver;
+    protected Browser browser;
     protected final ApplicationEventPublisher eventPublisher;
     protected final Map<String, BrowserPage> pages = new ConcurrentHashMap<>();
     protected final Map<BrowsingContext.Context, String> pageIdsByContext = new ConcurrentHashMap<>();
@@ -97,7 +97,6 @@ public class BrowserProcessor extends Processor {
     protected String executable;
     protected List<String> options = List.of("--headless");
     protected int concurrency = 20;
-    protected Semaphore semaphore;
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -117,13 +116,7 @@ public class BrowserProcessor extends Processor {
                 logger.log(ERROR, "Error stopping proxy server", e);
             }
         }
-        if (webdriver != null) {
-            try {
-                webdriver.close();
-            } catch (Exception e) {
-                logger.log(ERROR, "Error closing WebDriverBiDi", e);
-            }
-        }
+        if (browser != null) browser.close();
     }
 
     @Override
@@ -141,7 +134,7 @@ public class BrowserProcessor extends Processor {
     @Override
     public void innerProcess(CrawlURI curi) {
         try {
-            semaphore.acquire();
+            browser.tabs.acquire();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return;
@@ -149,7 +142,7 @@ public class BrowserProcessor extends Processor {
         try {
             visit(curi);
         } finally {
-            semaphore.release();
+            browser.tabs.release();
         }
     }
 
@@ -179,7 +172,7 @@ public class BrowserProcessor extends Processor {
 
     private void visit(CrawlURI curi) {
         for (int attempt = 0; ; attempt++) {
-            LocalWebDriverBiDi driver = webdriver;
+            LocalWebDriverBiDi driver = browser.driver;
             try {
                 visit(curi, driver);
                 return;
@@ -189,36 +182,11 @@ public class BrowserProcessor extends Processor {
             } catch (WebDriverException e) {
                 if (attempt == 0 && !driver.isAlive()) {
                     logger.log(WARNING, "Browser died while visiting " + curi + ", restarting it", e);
-                    if (restartBrowser(driver)) continue; // retry once with the new browser
+                    if (browser.restart(driver)) continue; // retry once with the new browser
                 }
                 logger.log(WARNING, "WebDriver exception visiting " + curi, e);
                 return;
             }
-        }
-    }
-
-    /**
-     * Replaces a dead browser with a freshly launched one. Threads that lose the race to restart
-     * still return true so they retry against the browser the winner launched.
-     *
-     * @return true if a live browser is now available, false if the restart failed or the
-     *         processor is stopping
-     */
-    private synchronized boolean restartBrowser(LocalWebDriverBiDi deadDriver) {
-        if (!isRunning) return false;
-        if (webdriver != deadDriver) return true; // another thread already restarted it
-        try {
-            deadDriver.close();
-        } catch (Exception e) {
-            logger.log(WARNING, "Error closing dead browser", e);
-        }
-        try {
-            webdriver = createWebDriver();
-            browserRestarts.incrementAndGet();
-            return true;
-        } catch (Exception e) {
-            logger.log(ERROR, "Failed to restart browser", e);
-            return false;
         }
     }
 
@@ -278,7 +246,6 @@ public class BrowserProcessor extends Processor {
         if (isRunning) return;
         super.start();
 
-        semaphore = new Semaphore(concurrency);
         extractorChain.setProcessors(crawlController.getFetchChain().getProcessors().stream()
                 .filter(processor -> processor instanceof Extractor).toList());
         Path scratchDir = crawlController.getScratchDir().getFile().toPath();
@@ -300,55 +267,11 @@ public class BrowserProcessor extends Processor {
             throw new RuntimeException(e);
         }
         try {
-            this.webdriver = createWebDriver();
+            browser = new Browser();
         } catch (Exception e) {
             logger.log(ERROR, "Error starting browser", e);
             throw new RuntimeException(e);
         }
-    }
-
-    private LocalWebDriverBiDi createWebDriver() throws Exception {
-        Path scratchDir = crawlController.getScratchDir().getFile().toPath();
-        Path profileDir = scratchDir.resolve("profile");
-        Files.createDirectories(profileDir);
-
-        // Firefox doesn't seem to allow setting prefs via capabilities with bidi
-        // so drop them in user.js instead
-        Files.writeString(profileDir.resolve("user.js"), """
-        // send localhost requests via the proxy too (for tests and local crawling)
-        user_pref('network.proxy.allow_hijacking_localhost', true);
-
-        // disable downloads by setting to something that can't be created as a directory
-        user_pref('browser.download.dir', '/dev/null');
-        user_pref('browser.download.folderList', 2);
-        """);
-
-        int proxyPort = proxy.getPort();
-        var alwaysMatch = Map.of("acceptInsecureCerts", true,
-                "proxy", new Session.ProxyConfiguration("manual",
-                        "127.0.0.1:" + proxyPort, "127.0.0.1:" + proxyPort));
-
-        List<Map<String,Object>> firstMatch = List.of(
-                Map.of("browserName", "chrome",
-                        "goog:chromeOptions", Map.of(
-                                "args", List.of("headless=new", "user-data-dir=" + profileDir,
-                                        "proxy-bypass-list=<-loopback>"),
-                                "prefs", Map.of("download_restrictions", 3))),
-                // Fallback for other browsers
-                Map.of()
-        );
-        var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
-
-        var driver = new LocalWebDriverBiDi(executable, options, capabilities, profileDir);
-        try {
-            driver.session().subscribe(List.of("browsingContext.contextCreated",
-                    "network.beforeRequestSent"), null);
-            driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
-        } catch (Exception e) {
-            driver.close();
-            throw e;
-        }
-        return driver;
     }
 
     private void handleBeforeRequestSent(LocalWebDriverBiDi driver, Network.BeforeRequestSent event) {
@@ -583,6 +506,95 @@ public class BrowserProcessor extends Processor {
                 page.networkActivity().end();
                 curi.getRecorder().cleanup();
             }
+        }
+    }
+
+    /**
+     * Launches a browser and restarts it if it dies.
+     */
+    protected class Browser {
+        protected final Semaphore tabs = new Semaphore(concurrency);
+        protected volatile LocalWebDriverBiDi driver;
+
+        Browser() throws Exception {
+            driver = createWebDriver();
+        }
+
+        /**
+         * Replaces a dead browser with a freshly launched one. Threads that lose the race to restart
+         * still return true so they retry against the browser the winner launched.
+         *
+         * @return true if a live browser is now available, false if the restart failed or the
+         *         processor is stopping
+         */
+        synchronized boolean restart(LocalWebDriverBiDi deadDriver) {
+            if (!isRunning) return false;
+            if (driver != deadDriver) return true; // another thread already restarted it
+            try {
+                deadDriver.close();
+            } catch (Exception e) {
+                logger.log(WARNING, "Error closing dead browser", e);
+            }
+            try {
+                driver = createWebDriver();
+                browserRestarts.incrementAndGet();
+                return true;
+            } catch (Exception e) {
+                logger.log(ERROR, "Failed to restart browser", e);
+                return false;
+            }
+        }
+
+        synchronized void close() {
+            try {
+                driver.close();
+            } catch (Exception e) {
+                logger.log(ERROR, "Error closing WebDriverBiDi", e);
+            }
+        }
+
+        private LocalWebDriverBiDi createWebDriver() throws Exception {
+            Path scratchDir = crawlController.getScratchDir().getFile().toPath();
+            Path profileDir = scratchDir.resolve("profile");
+            Files.createDirectories(profileDir);
+
+            // Firefox doesn't seem to allow setting prefs via capabilities with bidi
+            // so drop them in user.js instead
+            Files.writeString(profileDir.resolve("user.js"), """
+            // send localhost requests via the proxy too (for tests and local crawling)
+            user_pref('network.proxy.allow_hijacking_localhost', true);
+
+            // disable downloads by setting to something that can't be created as a directory
+            user_pref('browser.download.dir', '/dev/null');
+            user_pref('browser.download.folderList', 2);
+            """);
+
+            int proxyPort = proxy.getPort();
+            var alwaysMatch = Map.of("acceptInsecureCerts", true,
+                    "proxy", new Session.ProxyConfiguration("manual",
+                            "127.0.0.1:" + proxyPort, "127.0.0.1:" + proxyPort));
+
+            List<Map<String,Object>> firstMatch = List.of(
+                    Map.of("browserName", "chrome",
+                            "goog:chromeOptions", Map.of(
+                                    "args", List.of("headless=new", "user-data-dir=" + profileDir,
+                                            "proxy-bypass-list=<-loopback>"),
+                                    "prefs", Map.of("download_restrictions", 3))),
+                    // Fallback for other browsers
+                    Map.of()
+            );
+            var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
+
+            var driver = new LocalWebDriverBiDi(executable, options, capabilities, profileDir);
+            try {
+                driver.session().subscribe(List.of("browsingContext.contextCreated",
+                        "network.beforeRequestSent"), null);
+                driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
+            } catch (Exception e) {
+                driver.close();
+                throw e;
+            }
+            return driver;
         }
     }
 
