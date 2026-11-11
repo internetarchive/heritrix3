@@ -119,6 +119,42 @@ class BrowserProcessorTest {
     }
 
     @Test
+    public void testUnresponsiveBrowserRestart() throws IOException, InterruptedException {
+        var processor = newBrowserProcessor("unresponsive", List.of("local"));
+        processor.start();
+        try {
+            String profileDir = tempDir.resolve("unresponsive/profile-0").toString();
+            ProcessHandle browserProcess = ProcessHandle.current().children()
+                    .filter(p -> p.info().commandLine().orElse("").contains(profileDir))
+                    .findFirst().orElseThrow();
+            processor.setBehaviors(List.of(page -> {
+                if (browserProcess.isAlive()) {
+                    suspend(browserProcess);
+                    page.eval("() => 1");
+                }
+            }));
+
+            CrawlURI crawlURI = visit(processor, null);
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited by the restarted browser");
+            assertEquals(1, processor.pool.get(0).restarts);
+            assertFalse(browserProcess.isAlive(), "suspended browser should have been killed");
+        } finally {
+            processor.stop();
+        }
+    }
+
+    private static void suspend(ProcessHandle process) {
+        var command = new ArrayList<>(List.of("kill", "-STOP", String.valueOf(process.pid())));
+        process.descendants().forEach(p -> command.add(String.valueOf(p.pid())));
+        try {
+            assertEquals(0, new ProcessBuilder(command).start().waitFor());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void testSeveralBrowsers() throws IOException, InterruptedException {
         var processor = newBrowserProcessor("several", List.of("local", "local"));
         processor.setMinBrowsers(2);
