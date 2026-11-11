@@ -30,24 +30,34 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * A running browser (or ChromeDriver) process and the WebDriver BiDi WebSocket URL it reports in its output.
  */
 public class BrowserProcess {
     private static final System.Logger logger = System.getLogger(BrowserProcess.class.getName());
-    private static final int LAUNCH_TIMEOUT_SECONDS = 60;
+    static final int LAUNCH_TIMEOUT_SECONDS = 60;
     private static final String[] BROWSERS = new String[]{
             "firefox", "/Applications/Firefox.app/Contents/MacOS/firefox", "chromedriver"};
-    private final Process process;
+    protected final Process process;
     private final Thread shutdownHook;
+    private final Consumer<String> outputListener;
     private final CompletableFuture<String> webSocketUrl = new CompletableFuture<>();
 
     /**
      * Takes ownership of a started process whose stderr is redirected to its stdout.
      */
     BrowserProcess(Process process) {
+        this(process, line -> {});
+    }
+
+    /**
+     * @param outputListener called with each line of the process's output
+     */
+    BrowserProcess(Process process, Consumer<String> outputListener) {
         this.process = process;
+        this.outputListener = outputListener;
         shutdownHook = new Thread(process::destroyForcibly);
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         var outputThread = new Thread(this::handleOutput, "BrowserProcess-output");
@@ -99,6 +109,7 @@ public class BrowserProcess {
         String chromeDriverListening = "ChromeDriver was started successfully on port ";
         try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                outputListener.accept(line);
                 if (line.startsWith(firefoxListening)) {
                     webSocketUrl.complete(line.substring(firefoxListening.length()));
                 } else if (line.startsWith(chromeDriverListening)) {
