@@ -41,7 +41,6 @@ class BrowserProcessorTest {
     private static String baseUrl;
     private static volatile int serverRequests;
     private static ArrayList<CrawlURI> subrequests;
-    private static CrawlController crawlController;
     private final Set<Recorder> recorders = new HashSet<>();
     @TempDir
     static Path tempDir;
@@ -104,18 +103,40 @@ class BrowserProcessorTest {
 
     @Test
     public void testBrowserRestart() throws IOException, InterruptedException {
-        long restartsBefore = browserProcessor.browserRestarts.get();
-        browserProcessor.browser.driver.close(); // simulate the browser dying
+        int restartsBefore = browserProcessor.pool.get(0).restarts;
+        browserProcessor.pool.get(0).driver.close(); // simulate the browser dying
 
         CrawlURI crawlURI = newCrawlURI(baseUrl);
         fetcher.process(crawlURI);
         assertEquals(200, crawlURI.getFetchStatus());
         browserProcessor.innerProcess(crawlURI);
 
-        assertEquals(restartsBefore + 1, browserProcessor.browserRestarts.get(),
+        assertEquals(restartsBefore + 1, browserProcessor.pool.get(0).restarts,
                 "browser should have been restarted");
         assertTrue(crawlURI.getAnnotations().contains("browser"),
                 "page should have been visited by the restarted browser");
+    }
+
+    @Test
+    public void testSeveralBrowsers() throws IOException, InterruptedException {
+        var processor = newBrowserProcessor("several", List.of("local", "local"));
+        processor.start();
+        try {
+            // queue keys "b" and "a" hash to browsers 0 and 1
+            visit(processor, "b");
+            visit(processor, "a");
+            assertEquals(1, processor.pool.get(0).pagesVisited);
+            assertEquals(1, processor.pool.get(1).pagesVisited);
+
+            processor.pool.get(1).driver.close(); // simulate the browser dying
+            CrawlURI crawlURI = visit(processor, "a");
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited after the restart");
+            assertEquals(0, processor.pool.get(0).restarts);
+            assertEquals(1, processor.pool.get(1).restarts);
+        } finally {
+            processor.stop();
+        }
     }
 
     @Test
@@ -197,6 +218,15 @@ class BrowserProcessorTest {
             assertTrue(response.endsWith("Missing or invalid Heritrix-Request-ID header\n"), response);
         }
         assertEquals(requestsBefore, serverRequests, "request should not have been forwarded");
+    }
+
+    private CrawlURI visit(BrowserProcessor processor, String queueKey) throws IOException, InterruptedException {
+        CrawlURI crawlURI = newCrawlURI(baseUrl);
+        crawlURI.setClassKey(queueKey);
+        fetcher.process(crawlURI);
+        assertEquals(200, crawlURI.getFetchStatus());
+        processor.innerProcess(crawlURI);
+        return crawlURI;
     }
 
     private CrawlURI newCrawlURI(String uri) throws URIException {
@@ -310,13 +340,17 @@ class BrowserProcessorTest {
         fetcher = new FetchHTTP2(new DefaultServerCache(), null);
         fetcher.setUserAgentProvider(new CrawlMetadata());
         fetcher.start();
-        crawlController = new CrawlController();
-        crawlController.getScratchDir().setPath(tempDir.toString());
+        subrequests = new ArrayList<>();
+        browserProcessor = newBrowserProcessor("default", List.of("local"));
+        browserProcessor.start();
+    }
+
+    private static BrowserProcessor newBrowserProcessor(String name, List<String> browsers) {
+        var crawlController = new CrawlController();
+        crawlController.getScratchDir().setPath(tempDir.resolve(name).toString());
         FetchChain fetchChain = new FetchChain();
         fetchChain.setProcessors(List.of());
         crawlController.setFetchChain(fetchChain);
-
-        subrequests = new ArrayList<>();
 
         DispositionChain dispositionChain = new DispositionChain();
         dispositionChain.setProcessors(List.of(new Processor() {
@@ -331,9 +365,10 @@ class BrowserProcessorTest {
             }
         }));
         crawlController.setDispositionChain(dispositionChain);
-        browserProcessor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
-        browserProcessor.setExecutable(System.getProperty("browserExecutable"));
-        browserProcessor.start();
+        var processor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
+        processor.setBrowsers(browsers);
+        processor.setExecutable(System.getProperty("browserExecutable"));
+        return processor;
     }
 
     @AfterAll

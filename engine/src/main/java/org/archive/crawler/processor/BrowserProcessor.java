@@ -62,7 +62,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
@@ -86,17 +86,18 @@ public class BrowserProcessor extends Processor {
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
-    protected Browser browser;
+    protected final List<Browser> pool = new CopyOnWriteArrayList<>();
+    private final Object tabsLock = new Object();
     protected final ApplicationEventPublisher eventPublisher;
     protected final Map<String, BrowserPage> pages = new ConcurrentHashMap<>();
     protected final Map<BrowsingContext.Context, String> pageIdsByContext = new ConcurrentHashMap<>();
     protected final ProcessorChain extractorChain = new ProcessorChain();
     protected final AtomicLong subresourcesRecorded = new AtomicLong();
-    protected final AtomicLong browserRestarts = new AtomicLong();
     protected List<Behavior> behaviors;
     protected String executable;
     protected List<String> options = List.of("--headless");
     protected int concurrency = 20;
+    protected List<String> browsers = List.of("local");
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -116,7 +117,12 @@ public class BrowserProcessor extends Processor {
                 logger.log(ERROR, "Error stopping proxy server", e);
             }
         }
-        if (browser != null) browser.close();
+        synchronized (tabsLock) {
+            tabsLock.notifyAll();
+        }
+        for (Browser browser : pool) {
+            browser.close();
+        }
     }
 
     @Override
@@ -134,15 +140,58 @@ public class BrowserProcessor extends Processor {
     @Override
     public void innerProcess(CrawlURI curi) {
         try {
-            browser.tabs.acquire();
+            for (int attempt = 0; ; attempt++) {
+                Browser browser = acquireTabSlot(curi.getClassKey());
+                if (browser == null) return; // stopping
+                LocalWebDriverBiDi driver = browser.driver;
+                try {
+                    visit(curi, driver);
+                    return;
+                } catch (WebDriverException e) {
+                    if (attempt == 0 && !driver.isAlive()) {
+                        logger.log(WARNING, "Browser died while visiting " + curi + ", restarting it", e);
+                        if (browser.restart(driver)) continue; // retry once with the new browser
+                    }
+                    logger.log(WARNING, "WebDriver exception visiting " + curi, e);
+                    return;
+                } finally {
+                    releaseTabSlot(browser);
+                }
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return;
         }
-        try {
-            visit(curi);
-        } finally {
-            browser.tabs.release();
+    }
+
+    /**
+     * Waits for a browser with a free tab slot, preferring the one the queue key hashes to so that a site
+     * keeps the same browser's cookies and cache.
+     *
+     * @return the browser, or null if the processor is stopping
+     */
+    private Browser acquireTabSlot(String queueKey) throws InterruptedException {
+        synchronized (tabsLock) {
+            while (isRunning) {
+                Browser browser = pool.get(Math.floorMod(Objects.hashCode(queueKey), pool.size()));
+                if (browser.openTabs >= concurrency) {
+                    browser = pool.stream().filter(b -> b.openTabs < concurrency)
+                            .min(Comparator.comparingInt(b -> b.openTabs)).orElse(null);
+                }
+                if (browser != null) {
+                    browser.openTabs++;
+                    browser.pagesVisited++;
+                    return browser;
+                }
+                tabsLock.wait();
+            }
+            return null;
+        }
+    }
+
+    private void releaseTabSlot(Browser browser) {
+        synchronized (tabsLock) {
+            browser.openTabs--;
+            tabsLock.notifyAll();
         }
     }
 
@@ -163,31 +212,18 @@ public class BrowserProcessor extends Processor {
         builder.append(super.report());
         builder.append("  Pages visited: ").append(getURICount()).append("\n");
         builder.append("  Subresources recorded: ").append(subresourcesRecorded.get()).append("\n");
-        builder.append("  Browser restarts: ").append(browserRestarts.get()).append("\n");
+        synchronized (tabsLock) {
+            for (Browser browser : pool) {
+                builder.append("  Browser ").append(browser.id).append(": ")
+                        .append(browser.openTabs).append(" open tabs, ")
+                        .append(browser.pagesVisited).append(" pages visited, ")
+                        .append(browser.restarts).append(" restarts\n");
+            }
+        }
         for (var behavior : behaviors) {
             builder.append(behavior.report());
         }
         return builder.toString();
-    }
-
-    private void visit(CrawlURI curi) {
-        for (int attempt = 0; ; attempt++) {
-            LocalWebDriverBiDi driver = browser.driver;
-            try {
-                visit(curi, driver);
-                return;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            } catch (WebDriverException e) {
-                if (attempt == 0 && !driver.isAlive()) {
-                    logger.log(WARNING, "Browser died while visiting " + curi + ", restarting it", e);
-                    if (browser.restart(driver)) continue; // retry once with the new browser
-                }
-                logger.log(WARNING, "WebDriver exception visiting " + curi, e);
-                return;
-            }
-        }
     }
 
     private void visit(CrawlURI curi, LocalWebDriverBiDi driver) throws InterruptedException {
@@ -244,6 +280,12 @@ public class BrowserProcessor extends Processor {
 
     public void start() {
         if (isRunning) return;
+        if (browsers.isEmpty()) throw new IllegalArgumentException("browsers must not be empty");
+        for (String browser : browsers) {
+            if (!browser.equals("local")) {
+                throw new IllegalArgumentException("Unsupported browser '" + browser + "': only 'local' is supported");
+            }
+        }
         super.start();
 
         extractorChain.setProcessors(crawlController.getFetchChain().getProcessors().stream()
@@ -266,8 +308,14 @@ public class BrowserProcessor extends Processor {
             logger.log(ERROR, "Error starting proxy server", e);
             throw new RuntimeException(e);
         }
+        pool.clear();
+        for (int i = 0; i < browsers.size(); i++) {
+            pool.add(new Browser(i));
+        }
         try {
-            browser = new Browser();
+            for (Browser browser : pool) {
+                browser.launch();
+            }
         } catch (Exception e) {
             logger.log(ERROR, "Error starting browser", e);
             throw new RuntimeException(e);
@@ -362,10 +410,23 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
-     * Maximum number of web pages that can be open in the browser at once.
+     * Maximum number of web pages that can be open in each browser at once.
      */
     public void setConcurrency(int concurrency) {
         this.concurrency = concurrency;
+    }
+
+    public List<String> getBrowsers() {
+        return browsers;
+    }
+
+    /**
+     * Browsers to open pages in, one per entry. The only supported value is currently {@code local}, which
+     * launches {@link #setExecutable(String) executable} on this machine. Pages from the same queue are opened in
+     * the same browser while it has a free tab, so that a site keeps one browser's cookies and cache.
+     */
+    public void setBrowsers(List<String> browsers) {
+        this.browsers = browsers;
     }
 
     /**
@@ -510,13 +571,21 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
-     * Launches a browser and restarts it if it dies.
+     * Launches a browser and restarts it if it dies. Tracks how many of its
+     * {@link #setConcurrency tab slots} are in use.
      */
     protected class Browser {
-        protected final Semaphore tabs = new Semaphore(concurrency);
+        protected final int id;
         protected volatile LocalWebDriverBiDi driver;
+        protected int openTabs; // guarded by tabsLock
+        protected long pagesVisited; // guarded by tabsLock
+        protected volatile int restarts;
 
-        Browser() throws Exception {
+        Browser(int id) {
+            this.id = id;
+        }
+
+        synchronized void launch() throws Exception {
             driver = createWebDriver();
         }
 
@@ -537,7 +606,7 @@ public class BrowserProcessor extends Processor {
             }
             try {
                 driver = createWebDriver();
-                browserRestarts.incrementAndGet();
+                restarts++;
                 return true;
             } catch (Exception e) {
                 logger.log(ERROR, "Failed to restart browser", e);
@@ -546,6 +615,7 @@ public class BrowserProcessor extends Processor {
         }
 
         synchronized void close() {
+            if (driver == null) return;
             try {
                 driver.close();
             } catch (Exception e) {
@@ -555,7 +625,7 @@ public class BrowserProcessor extends Processor {
 
         private LocalWebDriverBiDi createWebDriver() throws Exception {
             Path scratchDir = crawlController.getScratchDir().getFile().toPath();
-            Path profileDir = scratchDir.resolve("profile");
+            Path profileDir = scratchDir.resolve("profile-" + id);
             Files.createDirectories(profileDir);
 
             // Firefox doesn't seem to allow setting prefs via capabilities with bidi
