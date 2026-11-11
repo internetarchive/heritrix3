@@ -22,6 +22,11 @@ package org.archive.net.webdriver;
 public interface WebDriverBiDi {
     <T extends BiDiModule> T module(Class<T> moduleClass);
 
+    /**
+     * Returns true if the browser is running and the WebDriver connection is still open.
+     */
+    boolean isAlive();
+
     default Browser browser() {
         return module(Browser.class);
     }

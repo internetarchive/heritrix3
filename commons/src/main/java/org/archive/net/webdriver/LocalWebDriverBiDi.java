@@ -175,9 +175,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
         return future;
     }
 
-    /**
-     * Returns true if the browser process is running and the WebDriver connection is still open.
-     */
+    @Override
     public boolean isAlive() {
         return process.isAlive() && !webSocket.isInputClosed() && !webSocket.isOutputClosed();
     }
