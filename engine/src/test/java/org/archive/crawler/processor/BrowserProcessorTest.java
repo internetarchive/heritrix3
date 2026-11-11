@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
@@ -120,6 +121,7 @@ class BrowserProcessorTest {
     @Test
     public void testSeveralBrowsers() throws IOException, InterruptedException {
         var processor = newBrowserProcessor("several", List.of("local", "local"));
+        processor.setMinBrowsers(2);
         processor.start();
         try {
             // queue keys "b" and "a" hash to browsers 0 and 1
@@ -132,11 +134,56 @@ class BrowserProcessorTest {
             CrawlURI crawlURI = visit(processor, "a");
             assertTrue(crawlURI.getAnnotations().contains("browser"),
                     "page should have been visited after the restart");
+            awaitUp(processor, 1);
             assertEquals(0, processor.pool.get(0).restarts);
             assertEquals(1, processor.pool.get(1).restarts);
         } finally {
             processor.stop();
         }
+    }
+
+    @Test
+    public void testStartWithBrowserThatFailsToLaunch() throws IOException, InterruptedException {
+        preventLaunch("one-fails", 1);
+        var processor = newBrowserProcessor("one-fails", List.of("local", "local"));
+        processor.start();
+        try {
+            assertTrue(processor.pool.get(0).up);
+            assertFalse(processor.pool.get(1).up);
+            String report = processor.report();
+            assertTrue(report.contains("Browser 1: down") && report.contains("FileAlreadyExistsException"), report);
+
+            CrawlURI crawlURI = visit(processor, "a"); // hashes to browser 1
+            assertTrue(crawlURI.getAnnotations().contains("browser"));
+            assertEquals(1, processor.pool.get(0).pagesVisited);
+        } finally {
+            processor.stop();
+        }
+    }
+
+    @Test
+    public void testStartFailsIfNoBrowserLaunches() throws IOException {
+        preventLaunch("none-start", 0);
+        preventLaunch("none-start", 1);
+        var processor = newBrowserProcessor("none-start", List.of("local", "local"));
+        assertThrows(IllegalStateException.class, processor::start);
+        assertFalse(processor.isRunning());
+    }
+
+    private static void awaitUp(BrowserProcessor processor, int browserId) throws InterruptedException {
+        synchronized (processor.tabsLock) {
+            while (!processor.pool.get(browserId).up) {
+                processor.tabsLock.wait();
+            }
+        }
+    }
+
+    /**
+     * Puts a file where the browser's profile directory should be so launching it fails.
+     */
+    private static void preventLaunch(String processorName, int browserId) throws IOException {
+        Path scratchDir = Files.createDirectories(tempDir.resolve(processorName));
+        Files.createFile(scratchDir.resolve("profile-" + browserId));
     }
 
     @Test
