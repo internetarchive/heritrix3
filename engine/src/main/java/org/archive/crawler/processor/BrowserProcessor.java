@@ -54,8 +54,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
@@ -116,7 +114,7 @@ public class BrowserProcessor extends Processor {
     protected String executable;
     protected List<String> options = List.of("--headless");
     protected int concurrency = 20;
-    protected List<String> browsers = List.of("local");
+    protected List<?> browsers = List.of("local");
     protected int minBrowsers = 1;
     protected int browserIdleTimeoutSeconds = 300;
 
@@ -315,7 +313,7 @@ public class BrowserProcessor extends Processor {
     public void start() {
         if (isRunning) return;
         if (browsers.isEmpty()) throw new IllegalArgumentException("browsers must not be empty");
-        List<URI> sshUris = browsers.stream().map(BrowserProcessor::parseBrowser).toList();
+        List<BrowserConfig> configs = browsers.stream().map(BrowserProcessor::toConfig).toList();
         if (minBrowsers > browsers.size()) {
             throw new IllegalArgumentException("minBrowsers is " + minBrowsers + " but only " + browsers.size()
                     + " browsers are configured");
@@ -346,7 +344,7 @@ public class BrowserProcessor extends Processor {
                 .setNameFormat("BrowserProcessor-launcher-%d").setDaemon(true).build());
         pool.clear();
         for (int i = 0; i < browsers.size(); i++) {
-            pool.add(new Browser(i, sshUris.get(i)));
+            pool.add(new Browser(i, configs.get(i)));
         }
         CompletableFuture.allOf(pool.stream()
                 .map(browser -> CompletableFuture.runAsync(browser::launch, launcher))
@@ -364,20 +362,12 @@ public class BrowserProcessor extends Processor {
         }
     }
 
-    /**
-     * Returns the ssh URI of a {@link #setBrowsers browsers} entry, or null for a local browser.
-     */
-    private static URI parseBrowser(String browser) {
-        if (browser.equals("local")) return null;
-        try {
-            URI uri = new URI(browser);
-            SshBrowserProcess.checkUri(uri);
-            return uri;
-        } catch (URISyntaxException | IllegalArgumentException e) {
-            // fall through
+    private static BrowserConfig toConfig(Object browser) {
+        BrowserConfig config = browser instanceof String string ? BrowserConfig.parse(string) : (BrowserConfig) browser;
+        if (config instanceof SshBrowser ssh && ssh.uri() == null) {
+            throw new IllegalArgumentException("SshBrowser uri must be set");
         }
-        throw new IllegalArgumentException("Unsupported browser '" + browser +
-                "': expected 'local' or 'ssh://[user@]host[:port]'");
+        return config;
     }
 
     private void handleBeforeRequestSent(WebDriverBiDi driver, Network.BeforeRequestSent event) {
@@ -499,13 +489,17 @@ public class BrowserProcessor extends Processor {
         this.browserIdleTimeoutSeconds = browserIdleTimeoutSeconds;
     }
 
-    public List<String> getBrowsers() {
+    public List<?> getBrowsers() {
         return browsers;
     }
 
     /**
      * Browsers to open pages in, one per entry. Pages from the same queue are opened in the same browser while it
      * has a free tab, so that a site keeps one browser's cookies and cache.
+     * <p>
+     * Each entry is a string or a {@link LocalBrowser} or {@link SshBrowser} bean. A bean can override
+     * {@code concurrency}, {@code executable} and {@code options} for that browser. The strings are shorthand for a
+     * bean with nothing overridden:
      * <ul>
      * <li>{@code local} launches {@link #setExecutable(String) executable} on this machine.</li>
      * <li>{@code ssh://[user@]host[:port]} launches it on another machine using the ssh command, which carries the
@@ -517,7 +511,7 @@ public class BrowserProcessor extends Processor {
      * the same port number here.</li>
      * </ul>
      */
-    public void setBrowsers(List<String> browsers) {
+    public void setBrowsers(List<?> browsers) {
         this.browsers = browsers;
     }
 
@@ -671,7 +665,7 @@ public class BrowserProcessor extends Processor {
         private static final long MAX_RETRY_DELAY_SECONDS = 600;
         protected enum State { UP, IDLE, WAKING, DOWN }
         protected final int id;
-        private final URI sshUri; // null for a local browser
+        private final BrowserConfig config;
         protected volatile LocalWebDriverBiDi driver;
         protected volatile State state = State.DOWN;
         protected volatile String lastFailure;
@@ -681,13 +675,25 @@ public class BrowserProcessor extends Processor {
         private volatile long idleSince;
         private long retryDelaySeconds = INITIAL_RETRY_DELAY_SECONDS; // guarded by this
 
-        Browser(int id, URI sshUri) {
+        Browser(int id, BrowserConfig config) {
             this.id = id;
-            this.sshUri = sshUri;
+            this.config = config;
+        }
+
+        int concurrency() {
+            return config.getConcurrency() != null ? config.getConcurrency() : concurrency;
+        }
+
+        private String executable() {
+            return config.getExecutable() != null ? config.getExecutable() : executable;
+        }
+
+        private List<String> options() {
+            return config.getOptions() != null ? config.getOptions() : options;
         }
 
         private boolean hasFreeTabSlot() {
-            return state == State.UP && openTabs < concurrency;
+            return state == State.UP && openTabs < concurrency();
         }
 
         /**
@@ -773,16 +779,16 @@ public class BrowserProcessor extends Processor {
             BrowserProcess process;
             int proxyPort;
             String profileDir;
-            if (sshUri == null) {
+            if (!(config instanceof SshBrowser ssh)) {
                 Path scratchDir = crawlController.getScratchDir().getFile().toPath();
                 Path localProfileDir = scratchDir.resolve("profile-" + id);
                 Files.createDirectories(localProfileDir);
                 Files.writeString(localProfileDir.resolve("user.js"), USER_JS);
-                process = BrowserProcess.launchLocal(executable, options, localProfileDir);
+                process = BrowserProcess.launchLocal(executable(), options(), localProfileDir);
                 proxyPort = proxy.getPort();
                 profileDir = localProfileDir.toString();
             } else {
-                var sshProcess = SshBrowserProcess.launch("ssh", sshUri, executable, options, proxy.getPort(),
+                var sshProcess = SshBrowserProcess.launch("ssh", ssh.uri(), executable(), options(), proxy.getPort(),
                         USER_JS);
                 process = sshProcess;
                 proxyPort = sshProcess.proxyPort();
