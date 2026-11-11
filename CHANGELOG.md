@@ -4,6 +4,12 @@
 
 [Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.18.0...HEAD)
 
+### Security
+
+* **BrowserProcessor:** The recording proxy now listens on the loopback interface only and rejects requests that
+  don't belong to a page the crawler has open. Previously anyone who could reach the crawler's host could use it as
+  an open forward proxy.
+
 ## [3.18.0](https://github.com/internetarchive/heritrix3/releases/tag/3.18.0)  (2026-10-06)
 
 [Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.18.0/heritrix-3.18.0-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.18.0/heritrix-3.18.0-dist.tar.gz))
