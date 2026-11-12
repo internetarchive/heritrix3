@@ -86,6 +86,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     }
 
     private void destroyProcess() {
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
         process.destroyForcibly();
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
