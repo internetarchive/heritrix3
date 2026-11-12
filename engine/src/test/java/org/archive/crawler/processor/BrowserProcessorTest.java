@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -124,10 +125,7 @@ class BrowserProcessorTest {
         var processor = newBrowserProcessor("unresponsive", List.of("local"));
         processor.start();
         try {
-            String profileDir = tempDir.resolve("unresponsive/profile-0").toString();
-            ProcessHandle browserProcess = ProcessHandle.current().children()
-                    .filter(p -> p.info().commandLine().orElse("").contains(profileDir))
-                    .findFirst().orElseThrow();
+            ProcessHandle browserProcess = browserProcess("unresponsive", 0);
             processor.setBehaviors(List.of(page -> {
                 if (browserProcess.isAlive()) {
                     processor.pool.get(0).driver.setCommandTimeout(Duration.ofSeconds(2));
@@ -144,6 +142,32 @@ class BrowserProcessorTest {
         } finally {
             processor.stop();
         }
+    }
+
+    @Test
+    public void testIdleBrowserIsClosedAndRelaunched() throws Exception {
+        var processor = newBrowserProcessor("idle", List.of("local"));
+        processor.setBrowserIdleTimeoutSeconds(1);
+        processor.start();
+        try {
+            browserProcess("idle", 0).onExit().get(10, TimeUnit.SECONDS);
+            assertEquals(BrowserProcessor.Browser.State.IDLE, processor.pool.get(0).state);
+
+            CrawlURI crawlURI = visit(processor, null);
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited by the relaunched browser");
+            assertEquals(0, processor.pool.get(0).restarts);
+            assertNull(processor.pool.get(0).lastFailure);
+        } finally {
+            processor.stop();
+        }
+    }
+
+    private static ProcessHandle browserProcess(String processorName, int browserId) {
+        String profileDir = tempDir.resolve(processorName + "/profile-" + browserId).toString();
+        return ProcessHandle.current().children()
+                .filter(p -> p.info().commandLine().orElse("").contains(profileDir))
+                .findFirst().orElseThrow();
     }
 
     private static void suspend(ProcessHandle process) {

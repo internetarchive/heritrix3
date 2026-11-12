@@ -106,6 +106,7 @@ public class BrowserProcessor extends Processor {
     protected int concurrency = 20;
     protected List<String> browsers = List.of("local");
     protected int minBrowsers = 1;
+    protected int browserIdleTimeoutSeconds = 300;
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -184,11 +185,15 @@ public class BrowserProcessor extends Processor {
         synchronized (tabsLock) {
             while (isRunning) {
                 Browser browser = pool.get(Math.floorMod(Objects.hashCode(queueKey), pool.size()));
-                if (!browser.hasFreeTabSlot()) {
+                if (browser.state == Browser.State.IDLE) browser.wake();
+                if (browser.state != Browser.State.WAKING && !browser.hasFreeTabSlot()) {
                     browser = pool.stream().filter(Browser::hasFreeTabSlot)
                             .min(Comparator.comparingInt(b -> b.openTabs)).orElse(null);
+                    if (browser == null) {
+                        pool.stream().filter(b -> b.state == Browser.State.IDLE).findFirst().ifPresent(Browser::wake);
+                    }
                 }
-                if (browser != null) {
+                if (browser != null && browser.hasFreeTabSlot()) {
                     browser.openTabs++;
                     browser.pagesVisited++;
                     return browser;
@@ -202,6 +207,7 @@ public class BrowserProcessor extends Processor {
     private void releaseTabSlot(Browser browser) {
         synchronized (tabsLock) {
             browser.openTabs--;
+            if (browser.openTabs == 0) browser.idleSince = System.nanoTime();
             tabsLock.notifyAll();
         }
     }
@@ -343,6 +349,11 @@ public class BrowserProcessor extends Processor {
             throw new IllegalStateException("Only " + up + " of " + pool.size() + " browsers started but minBrowsers is "
                     + minBrowsers + ", see the log for the errors");
         }
+        if (browserIdleTimeoutSeconds > 0) {
+            long checkSeconds = Math.min(browserIdleTimeoutSeconds, 60);
+            launcher.scheduleWithFixedDelay(() -> pool.forEach(Browser::closeIfIdle),
+                    checkSeconds, checkSeconds, TimeUnit.SECONDS);
+        }
     }
 
     private void handleBeforeRequestSent(LocalWebDriverBiDi driver, Network.BeforeRequestSent event) {
@@ -449,6 +460,18 @@ public class BrowserProcessor extends Processor {
      */
     public void setMinBrowsers(int minBrowsers) {
         this.minBrowsers = minBrowsers;
+    }
+
+    public int getBrowserIdleTimeoutSeconds() {
+        return browserIdleTimeoutSeconds;
+    }
+
+    /**
+     * Closes a browser that has had no open pages for at least this many seconds, and launches it again when a
+     * page needs it. Zero keeps browsers open until the processor stops.
+     */
+    public void setBrowserIdleTimeoutSeconds(int browserIdleTimeoutSeconds) {
+        this.browserIdleTimeoutSeconds = browserIdleTimeoutSeconds;
     }
 
     public List<String> getBrowsers() {
@@ -612,7 +635,7 @@ public class BrowserProcessor extends Processor {
     protected class Browser {
         private static final long INITIAL_RETRY_DELAY_SECONDS = 30;
         private static final long MAX_RETRY_DELAY_SECONDS = 600;
-        protected enum State { UP, DOWN }
+        protected enum State { UP, IDLE, WAKING, DOWN }
         protected final int id;
         protected volatile LocalWebDriverBiDi driver;
         protected volatile State state = State.DOWN;
@@ -620,6 +643,7 @@ public class BrowserProcessor extends Processor {
         protected volatile int restarts;
         protected int openTabs; // guarded by tabsLock
         protected long pagesVisited; // guarded by tabsLock
+        private volatile long idleSince;
         private long retryDelaySeconds = INITIAL_RETRY_DELAY_SECONDS; // guarded by this
 
         Browser(int id) {
@@ -640,10 +664,14 @@ public class BrowserProcessor extends Processor {
             } catch (Exception e) {
                 synchronized (this) {
                     if (!isRunning) return;
+                    state = State.DOWN;
                     lastFailure = e.toString();
                     logger.log(ERROR, "Failed to launch browser " + id + ", retrying in " + retryDelaySeconds + "s", e);
                     schedule(this::launch, retryDelaySeconds);
                     retryDelaySeconds = Math.min(retryDelaySeconds * 2, MAX_RETRY_DELAY_SECONDS);
+                }
+                synchronized (tabsLock) {
+                    tabsLock.notifyAll();
                 }
                 return;
             }
@@ -653,6 +681,7 @@ public class BrowserProcessor extends Processor {
                     return;
                 }
                 driver = newDriver;
+                idleSince = System.nanoTime();
                 state = State.UP;
                 lastFailure = null;
                 retryDelaySeconds = INITIAL_RETRY_DELAY_SECONDS;
@@ -675,6 +704,28 @@ public class BrowserProcessor extends Processor {
                 closeQuietly(deadDriver);
                 launch();
             }, 0);
+        }
+
+        /**
+         * Launches the browser again after it was closed for being idle.
+         */
+        synchronized void wake() {
+            if (state != State.IDLE) return;
+            state = State.WAKING;
+            schedule(this::launch, 0);
+        }
+
+        void closeIfIdle() {
+            LocalWebDriverBiDi idleDriver;
+            synchronized (tabsLock) {
+                synchronized (this) {
+                    if (state != State.UP || openTabs > 0 || System.nanoTime() - idleSince
+                            < TimeUnit.SECONDS.toNanos(browserIdleTimeoutSeconds)) return;
+                    state = State.IDLE;
+                    idleDriver = driver;
+                }
+            }
+            closeQuietly(idleDriver);
         }
 
         synchronized void close() {
