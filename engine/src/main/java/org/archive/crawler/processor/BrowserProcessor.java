@@ -125,6 +125,9 @@ public class BrowserProcessor extends Processor {
     protected List<?> browsers = List.of("local");
     protected int minBrowsers = 1;
     protected int browserIdleTimeoutSeconds = 300;
+    protected String proxyBindAddress = "127.0.0.1";
+    protected int proxyPort = 0;
+    protected List<String> proxyAllowedAddresses = List.of();
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -348,8 +351,8 @@ public class BrowserProcessor extends Processor {
             throw new UncheckedIOException(e);
         }
         if (proxy == null) {
-            proxy = new MitmProxy(this::handleProxyRequest,
-                    scratchDir.resolve("proxy.keystore").toString());
+            proxy = new MitmProxy(this::handleProxyRequest, scratchDir.resolve("proxy.keystore").toString(),
+                    proxyBindAddress, proxyPort, proxyAllowedAddresses);
         }
         try {
             proxy.start();
@@ -536,6 +539,43 @@ public class BrowserProcessor extends Processor {
      */
     public void setBrowsers(List<?> browsers) {
         this.browsers = browsers;
+    }
+
+    public String getProxyBindAddress() {
+        return proxyBindAddress;
+    }
+
+    /**
+     * Address the recording proxy listens on. Browsers on other machines that connect to the proxy directly, rather
+     * than through ssh, need it to listen on an address they can reach, such as 0.0.0.0 for all. It also listens on
+     * loopback for the other browsers.
+     */
+    public void setProxyBindAddress(String proxyBindAddress) {
+        this.proxyBindAddress = proxyBindAddress;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    /**
+     * Port the recording proxy listens on, or 0 for any free port.
+     */
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public List<String> getProxyAllowedAddresses() {
+        return proxyAllowedAddresses;
+    }
+
+    /**
+     * Machines allowed to use the recording proxy besides this one, as IP addresses ({@code 192.168.1.20}), CIDR
+     * ranges ({@code 192.168.1.0/24}) or address ranges ({@code 192.168.1.20-192.168.1.29}). Requests from anywhere
+     * else are refused.
+     */
+    public void setProxyAllowedAddresses(List<String> proxyAllowedAddresses) {
+        this.proxyAllowedAddresses = proxyAllowedAddresses;
     }
 
     /**
