@@ -92,6 +92,8 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 public class BrowserProcessor extends Processor {
     private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
+    private static final String PROXY_PROBE_URL = "https://heritrix-proxy-probe.invalid/";
+    private static final long PROXY_PROBE_TIMEOUT_SECONDS = 10;
     private static final Map<String,Object> FIREFOX_PREFS = Map.of(
             // send localhost requests via the proxy too (for tests and local crawling)
             "network.proxy.allow_hijacking_localhost", true,
@@ -116,6 +118,7 @@ public class BrowserProcessor extends Processor {
     protected final ApplicationEventPublisher eventPublisher;
     protected final Map<String, BrowserPage> pages = new ConcurrentHashMap<>();
     protected final Map<BrowsingContext.Context, String> pageIdsByContext = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> proxyProbes = new ConcurrentHashMap<>();
     protected final ProcessorChain extractorChain = new ProcessorChain();
     protected final AtomicLong subresourcesRecorded = new AtomicLong();
     protected List<Behavior> behaviors;
@@ -281,9 +284,7 @@ public class BrowserProcessor extends Processor {
                     new CompletableFuture<>(), uriErrorLoggerModule);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
-            driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
-                    List.of(new Network.UrlPatternPattern("pattern", "http"),
-                            new Network.UrlPatternPattern("pattern", "https")));
+            interceptRequests(driver, tab);
             BrowsingContext.NavigateResult navigation;
 
             try {
@@ -394,6 +395,12 @@ public class BrowserProcessor extends Processor {
         return config;
     }
 
+    private static void interceptRequests(WebDriverBiDi driver, BrowsingContext.Context tab) {
+        driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
+                List.of(new Network.UrlPatternPattern("pattern", "http"),
+                        new Network.UrlPatternPattern("pattern", "https")));
+    }
+
     private void handleDownloadWillBegin(BrowsingContext.DownloadWillBegin event) {
         String pageId = pageIdsByContext.get(event.context());
         BrowserPage page = pageId == null ? null : pages.get(pageId);
@@ -425,6 +432,12 @@ public class BrowserProcessor extends Processor {
     private void handleProxyRequest(MitmProxy.Request proxyRequest) throws IOException {
         logger.log(System.Logger.Level.DEBUG, "Handling proxy request {0}", proxyRequest);
         String pageId = proxyRequest.request().getHeaders().get(PAGE_ID_HEADER);
+        CompletableFuture<Void> probe = pageId == null ? null : proxyProbes.get(pageId);
+        if (probe != null) {
+            proxyRequest.sendResponse(200, Map.of("Content-Type", "text/plain"), new ByteArrayInputStream(new byte[0]));
+            probe.complete(null);
+            return;
+        }
         BrowserPage page = pageId == null ? null : pages.get(pageId);
         if (page == null) {
             String message = "Missing or invalid " + PAGE_ID_HEADER + " header\n";
@@ -865,6 +878,7 @@ public class BrowserProcessor extends Processor {
                         "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
                 driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
                 driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
+                probeProxy(driver);
             } catch (Exception e) {
                 driver.close();
                 throw e;
@@ -874,6 +888,46 @@ public class BrowserProcessor extends Processor {
 
         private String gridProxyAddress() {
             return (proxyHost.contains(":") ? "[" + proxyHost + "]" : proxyHost) + ":" + proxy.getPort();
+        }
+
+        /**
+         * Checks that the browser can reach the recording proxy by loading a page through it with a page ID, as
+         * {@link #visit} does. The proxy answers the page itself.
+         */
+        private void probeProxy(AbstractWebDriverBiDi driver) throws Exception {
+            String probeId = UUID.randomUUID().toString();
+            var reached = new CompletableFuture<Void>();
+            proxyProbes.put(probeId, reached);
+            var tab = driver.browsingContext().create(BrowsingContext.CreateType.tab).context();
+            try {
+                pageIdsByContext.put(tab, probeId);
+                interceptRequests(driver, tab);
+                driver.browsingContext().navigate(tab, PROXY_PROBE_URL, BrowsingContext.ReadinessState.none);
+                reached.get(PROXY_PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (TimeoutException | WebDriverException e) {
+                String proxyAddress = config instanceof GridBrowser ? gridProxyAddress() : "127.0.0.1:" + proxy.getPort();
+                String message = "Browser " + id + " did not reach the recording proxy at " + proxyAddress;
+                if (config instanceof SshBrowser) {
+                    message += " through ssh";
+                }
+                if (e instanceof TimeoutException) {
+                    message += " within " + PROXY_PROBE_TIMEOUT_SECONDS + " seconds";
+                } else {
+                    message += ": " + e.getMessage();
+                }
+                if (config instanceof GridBrowser) {
+                    message += ". Check proxyBindAddress, proxyHost and proxyAllowedAddresses.";
+                }
+                throw new IOException(message, e);
+            } finally {
+                proxyProbes.remove(probeId);
+                pageIdsByContext.remove(tab);
+                try {
+                    driver.browsingContext().close(tab);
+                } catch (WebDriverException e) {
+                    logger.log(WARNING, "Error closing the proxy probe tab of browser " + id, e);
+                }
+            }
         }
 
         private Session.CapabilitiesRequest gridCapabilities() {
