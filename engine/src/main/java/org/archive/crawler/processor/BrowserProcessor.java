@@ -99,6 +99,9 @@ public class BrowserProcessor extends Processor {
             // disable downloads by setting to something that can't be created as a directory
             user_pref('browser.download.dir', '/dev/null');
             user_pref('browser.download.folderList', 2);
+
+            // Firefox 153 ESR on Linux kills tabs' content processes mid-load with site isolation on
+            user_pref('fission.autostart', false);
             """;
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
