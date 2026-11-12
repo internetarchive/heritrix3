@@ -200,10 +200,11 @@ public abstract class AbstractWebDriverBiDi implements WebDriverBiDi, Closeable 
     }
 
     /**
-     * Fails any commands still waiting for a reply. Subclasses call this after ending the browser.
+     * Disconnects and fails any commands still waiting for a reply. Subclasses call this after ending the browser.
      */
     @Override
     public void close() throws IOException {
+        if (webSocket != null) webSocket.abort();
         failPendingCommands(new WebDriverException("WebDriver connection closed"));
         eventExecutor.shutdown();
     }
