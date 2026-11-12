@@ -75,7 +75,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
             webSocket = HttpClient.newHttpClient().newWebSocketBuilder()
                     .buildAsync(URI.create(url + "/session"), new Listener())
                     .get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            sessionId = session().new_(capabilities).sessionId();
+            sessionId = session().newAsync(capabilities).get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS).sessionId();
         } catch (TimeoutException e) {
             destroyProcess();
             throw new IOException("Browser did not start within " + LAUNCH_TIMEOUT_SECONDS + " seconds", e);
