@@ -65,6 +65,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -264,7 +265,8 @@ public class BrowserProcessor extends Processor {
         try {
             String userAgent = curi.getUserAgent();
             if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
-            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), driver, tab, fetcher.getProxy(), userAgent);
+            BrowserPage page = new BrowserPage(curi, new IdleBarrier(), driver, tab, fetcher.getProxy(), userAgent,
+                    new CompletableFuture<>());
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
@@ -278,7 +280,14 @@ public class BrowserProcessor extends Processor {
                 if ("net::ERR_ABORTED".equals(e.getMessage())) return; // Chrome: probably download started
                 throw e;
             }
-            if (navigation.url().equals("about:blank")) return; // Firefox: probably download started
+            if (navigation.url().equals("about:blank")) {
+                try {
+                    page.downloadStarted().get(1, TimeUnit.SECONDS);
+                    return; // Firefox: download started
+                } catch (ExecutionException | TimeoutException e) {
+                    throw new WebDriverException("Navigation ended at about:blank, the tab may have crashed");
+                }
+            }
 
             logger.log(System.Logger.Level.DEBUG, "Navigated to {0}", navigation);
 
@@ -368,6 +377,12 @@ public class BrowserProcessor extends Processor {
             throw new IllegalArgumentException("SshBrowser uri must be set");
         }
         return config;
+    }
+
+    private void handleDownloadWillBegin(BrowsingContext.DownloadWillBegin event) {
+        String pageId = pageIdsByContext.get(event.context());
+        BrowserPage page = pageId == null ? null : pages.get(pageId);
+        if (page != null) page.downloadStarted().complete(null);
     }
 
     private void handleBeforeRequestSent(WebDriverBiDi driver, Network.BeforeRequestSent event) {
@@ -813,8 +828,9 @@ public class BrowserProcessor extends Processor {
             var driver = new LocalWebDriverBiDi(process, capabilities);
             try {
                 driver.session().subscribe(List.of("browsingContext.contextCreated",
-                        "network.beforeRequestSent"), null);
+                        "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
                 driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
+                driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
             } catch (Exception e) {
                 driver.close();
                 throw e;
@@ -848,7 +864,8 @@ public class BrowserProcessor extends Processor {
             WebDriverBiDi webdriver,
             BrowsingContext.Context context,
             ProxyConfiguration.Proxy proxy,
-            String userAgent
+            String userAgent,
+            CompletableFuture<Void> downloadStarted
     ) implements Page {
 
         /**
