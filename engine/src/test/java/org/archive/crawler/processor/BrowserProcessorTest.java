@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
@@ -129,6 +130,7 @@ class BrowserProcessorTest {
                     .findFirst().orElseThrow();
             processor.setBehaviors(List.of(page -> {
                 if (browserProcess.isAlive()) {
+                    processor.pool.get(0).driver.setCommandTimeout(Duration.ofSeconds(2));
                     suspend(browserProcess);
                     page.eval("() => 1");
                 }
