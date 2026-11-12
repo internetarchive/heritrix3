@@ -73,6 +73,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -91,19 +92,20 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 public class BrowserProcessor extends Processor {
     private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
+    private static final Map<String,Object> FIREFOX_PREFS = Map.of(
+            // send localhost requests via the proxy too (for tests and local crawling)
+            "network.proxy.allow_hijacking_localhost", true,
+            // disable downloads by setting to something that can't be created as a directory
+            "browser.download.dir", "/dev/null",
+            "browser.download.folderList", 2,
+            // Firefox 153 ESR on Linux kills tabs' content processes mid-load with site isolation on
+            "fission.autostart", false);
     // Firefox doesn't seem to allow setting prefs via capabilities with bidi
     // so drop them in user.js instead
-    private static final String USER_JS = """
-            // send localhost requests via the proxy too (for tests and local crawling)
-            user_pref('network.proxy.allow_hijacking_localhost', true);
-
-            // disable downloads by setting to something that can't be created as a directory
-            user_pref('browser.download.dir', '/dev/null');
-            user_pref('browser.download.folderList', 2);
-
-            // Firefox 153 ESR on Linux kills tabs' content processes mid-load with site isolation on
-            user_pref('fission.autostart', false);
-            """;
+    private static final String USER_JS = FIREFOX_PREFS.entrySet().stream()
+            .map(pref -> "user_pref(" + JSONObject.quote(pref.getKey()) + ", "
+                    + JSONObject.valueToString(pref.getValue()) + ");\n")
+            .collect(Collectors.joining());
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
