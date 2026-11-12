@@ -24,10 +24,11 @@ import org.json.JSONPropertyName;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 // https://w3c.github.io/webdriver-bidi/#module-session
 public interface Session extends BiDiModule {
-    NewResult new_(CapabilitiesRequest capabilities);
+    CompletableFuture<NewResult> newAsync(CapabilitiesRequest capabilities);
 
     void subscribe(List<String> events, List<BrowsingContext.Context> contexts);
 

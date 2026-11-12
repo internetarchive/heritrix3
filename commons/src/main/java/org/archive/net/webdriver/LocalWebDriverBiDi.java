@@ -75,7 +75,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
             webSocket = HttpClient.newHttpClient().newWebSocketBuilder()
                     .buildAsync(URI.create(url + "/session"), new Listener())
                     .get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            sessionId = session().new_(capabilities).sessionId();
+            sessionId = session().newAsync(capabilities).get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS).sessionId();
         } catch (TimeoutException e) {
             destroyProcess();
             throw new IOException("Browser did not start within " + LAUNCH_TIMEOUT_SECONDS + " seconds", e);
@@ -86,6 +86,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     }
 
     private void destroyProcess() {
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
         process.destroyForcibly();
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
@@ -242,6 +243,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
 
     @Override
     public void close() throws IOException {
+        List<ProcessHandle> descendants = process.descendants().toList();
         try {
             if (isAlive()) {
                 browser().close();
@@ -254,8 +256,14 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
             if (!process.waitFor(10, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
             }
+            // ChromeDriver doesn't wait for the browser it launched to exit
+            CompletableFuture.allOf(descendants.stream().map(ProcessHandle::onExit)
+                    .toArray(CompletableFuture[]::new)).get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException | TimeoutException e) {
+            descendants.forEach(ProcessHandle::destroyForcibly);
         } catch (InterruptedException e) {
             process.destroyForcibly();
+            descendants.forEach(ProcessHandle::destroyForcibly);
             Thread.currentThread().interrupt();
         }
         try {
