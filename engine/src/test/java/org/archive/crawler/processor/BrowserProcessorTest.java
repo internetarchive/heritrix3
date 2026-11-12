@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
@@ -38,6 +39,7 @@ class BrowserProcessorTest {
     private static FetchHTTP2 fetcher;
     private static BrowserProcessor browserProcessor;
     private static String baseUrl;
+    private static volatile int serverRequests;
     private static ArrayList<CrawlURI> subrequests;
     private static CrawlController crawlController;
     private final Set<Recorder> recorders = new HashSet<>();
@@ -185,6 +187,18 @@ class BrowserProcessorTest {
         }
     }
 
+    @Test
+    public void testProxyRejectsRequestWithoutPage() throws IOException {
+        int requestsBefore = serverRequests;
+        try (var socket = new Socket(InetAddress.getLoopbackAddress(), browserProcessor.proxy.getPort())) {
+            socket.getOutputStream().write(("GET " + baseUrl + " HTTP/1.0\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+            String response = new String(socket.getInputStream().readAllBytes(), StandardCharsets.US_ASCII);
+            assertTrue(response.startsWith("HTTP/1.1 403 "), response);
+            assertTrue(response.endsWith("Missing or invalid Heritrix-Request-ID header\n"), response);
+        }
+        assertEquals(requestsBefore, serverRequests, "request should not have been forwarded");
+    }
+
     private CrawlURI newCrawlURI(String uri) throws URIException {
         CrawlURI curi = new CrawlURI(UURIFactory.getInstance(uri));
         Recorder recorder = new Recorder(tempDir.toFile(), "fetcher");
@@ -216,6 +230,7 @@ class BrowserProcessorTest {
         httpServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), -1);
         httpServer.createContext("/", exchange -> {
             logger.log(DEBUG, "Server received request: {0} {1}",  exchange.getRequestMethod(), exchange.getRequestURI());
+            serverRequests++;
             String userAgent = exchange.getRequestHeaders().getFirst("User-Agent");
             if (userAgent != null) exchange.getResponseHeaders().add("Reflected-User-Agent", userAgent);
             String contentType = "text/html";

@@ -50,7 +50,7 @@ import static org.eclipse.jetty.http.HttpHeader.ACCEPT_ENCODING;
 public class MitmProxy {
     private static final String UPSTREAM_PROXY = MitmProxy.class.getName() + ".upstreamProxy";
     private final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory();
-    private final Server server = new Server(0);
+    private final Server server = new Server(new InetSocketAddress("127.0.0.1", 0));
     private final RequestHandler requestHandler;
 
     public MitmProxy(RequestHandler requestHandler, String keystorePath) {

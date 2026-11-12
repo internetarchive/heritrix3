@@ -50,8 +50,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -375,14 +375,14 @@ public class BrowserProcessor extends Processor {
 
     private void handleProxyRequest(MitmProxy.Request proxyRequest) throws IOException {
         logger.log(System.Logger.Level.DEBUG, "Handling proxy request {0}", proxyRequest);
-        if (proxyRequest.url().startsWith("https://firefox.settings.services.mozilla.com/")) {
-            proxyRequest.sendResponse(403, Map.of(), InputStream.nullInputStream());
+        String pageId = proxyRequest.request().getHeaders().get(PAGE_ID_HEADER);
+        BrowserPage page = pageId == null ? null : pages.get(pageId);
+        if (page == null) {
+            String message = "Missing or invalid " + PAGE_ID_HEADER + " header\n";
+            proxyRequest.sendResponse(403, Map.of("Content-Type", "text/plain"),
+                    new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
             return;
         }
-        String pageId = proxyRequest.request().getHeaders().get(PAGE_ID_HEADER);
-        if (pageId == null) return;
-        BrowserPage page = pages.get(pageId);
-        if (page == null) return;
         CrawlURI curi = page.curi();
 
         // FIXME: more accurate to annotate with another header indicating this is the main request?
