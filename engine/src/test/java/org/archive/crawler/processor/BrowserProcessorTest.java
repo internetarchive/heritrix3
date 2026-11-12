@@ -186,8 +186,8 @@ class BrowserProcessorTest {
         var processor = newBrowserProcessor("one-fails", List.of("local", "local"));
         processor.start();
         try {
-            assertTrue(processor.pool.get(0).up);
-            assertFalse(processor.pool.get(1).up);
+            assertEquals(BrowserProcessor.Browser.State.UP, processor.pool.get(0).state);
+            assertEquals(BrowserProcessor.Browser.State.DOWN, processor.pool.get(1).state);
             String report = processor.report();
             assertTrue(report.contains("Browser 1: down") && report.contains("FileAlreadyExistsException"), report);
 
@@ -210,7 +210,7 @@ class BrowserProcessorTest {
 
     private static void awaitUp(BrowserProcessor processor, int browserId) throws InterruptedException {
         synchronized (processor.tabsLock) {
-            while (!processor.pool.get(browserId).up) {
+            while (processor.pool.get(browserId).state != BrowserProcessor.Browser.State.UP) {
                 processor.tabsLock.wait();
             }
         }

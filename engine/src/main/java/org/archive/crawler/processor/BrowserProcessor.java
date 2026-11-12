@@ -226,7 +226,7 @@ public class BrowserProcessor extends Processor {
         synchronized (tabsLock) {
             for (Browser browser : pool) {
                 builder.append("  Browser ").append(browser.id).append(": ")
-                        .append(browser.up ? "up, " : "down, ")
+                        .append(browser.state.name().toLowerCase()).append(", ")
                         .append(browser.openTabs).append(" open tabs, ")
                         .append(browser.pagesVisited).append(" pages visited, ")
                         .append(browser.restarts).append(" restarts");
@@ -337,7 +337,7 @@ public class BrowserProcessor extends Processor {
         CompletableFuture.allOf(pool.stream()
                 .map(browser -> CompletableFuture.runAsync(browser::launch, launcher))
                 .toArray(CompletableFuture[]::new)).join();
-        long up = pool.stream().filter(browser -> browser.up).count();
+        long up = pool.stream().filter(browser -> browser.state == Browser.State.UP).count();
         if (up < minBrowsers) {
             stop();
             throw new IllegalStateException("Only " + up + " of " + pool.size() + " browsers started but minBrowsers is "
@@ -612,9 +612,10 @@ public class BrowserProcessor extends Processor {
     protected class Browser {
         private static final long INITIAL_RETRY_DELAY_SECONDS = 30;
         private static final long MAX_RETRY_DELAY_SECONDS = 600;
+        protected enum State { UP, DOWN }
         protected final int id;
         protected volatile LocalWebDriverBiDi driver;
-        protected volatile boolean up;
+        protected volatile State state = State.DOWN;
         protected volatile String lastFailure;
         protected volatile int restarts;
         protected int openTabs; // guarded by tabsLock
@@ -626,7 +627,7 @@ public class BrowserProcessor extends Processor {
         }
 
         private boolean hasFreeTabSlot() {
-            return up && openTabs < concurrency;
+            return state == State.UP && openTabs < concurrency;
         }
 
         /**
@@ -652,7 +653,7 @@ public class BrowserProcessor extends Processor {
                     return;
                 }
                 driver = newDriver;
-                up = true;
+                state = State.UP;
                 lastFailure = null;
                 retryDelaySeconds = INITIAL_RETRY_DELAY_SECONDS;
             }
@@ -666,8 +667,8 @@ public class BrowserProcessor extends Processor {
          */
         void restart(LocalWebDriverBiDi deadDriver) {
             synchronized (this) {
-                if (driver != deadDriver || !up) return;
-                up = false;
+                if (driver != deadDriver || state != State.UP) return;
+                state = State.DOWN;
                 restarts++;
             }
             schedule(() -> {
@@ -677,7 +678,7 @@ public class BrowserProcessor extends Processor {
         }
 
         synchronized void close() {
-            up = false;
+            state = State.DOWN;
             if (driver != null) closeQuietly(driver);
         }
 
