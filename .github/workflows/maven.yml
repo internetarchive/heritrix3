@@ -70,7 +70,7 @@ jobs:
       run: ${{ matrix.executable }} --version
     - name: Run browser tests
       run: >-
-        mvn -B -pl commons,engine -am test -Dtest=BrowserProcessorTest -Dsurefire.failIfNoSpecifiedTests=false
+        mvn -B -pl docgen,commons,engine -am test -Dtest=BrowserProcessorTest -Dsurefire.failIfNoSpecifiedTests=false
         -DrunBrowserTests=true -DbrowserExecutable=${{ matrix.executable }}
       env:
         MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 -Dmaven.wagon.http.retryHandler.count=3
