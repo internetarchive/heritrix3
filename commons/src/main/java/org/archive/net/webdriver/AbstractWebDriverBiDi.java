@@ -1,0 +1,265 @@
+/*
+ *  This file is part of the Heritrix web crawler (crawler.archive.org).
+ *
+ *  Licensed to the Internet Archive (IA) by one or more individual
+ *  contributors.
+ *
+ *  The IA licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.archive.net.webdriver;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+import org.json.JSONWriter;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.reflect.*;
+import java.net.URI;
+import java.net.http.WebSocket;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
+/**
+ * Client for the BiDirectional WebDriver Protocol for remotely controlling browsers. Subclasses
+ * {@link #connect connect} the WebSocket and own whatever is on the other end of it.
+ *
+ * @see <a href="https://www.w3.org/TR/webdriver-bidi/>WebDriver BiDi specification</a>
+ */
+public abstract class AbstractWebDriverBiDi implements WebDriverBiDi, Closeable {
+    protected final System.Logger logger = System.getLogger(getClass().getName());
+    private WebSocket webSocket;
+    private final AtomicLong requestId = new AtomicLong(0);
+    private final Map<Long, CompletableFuture<JSONObject>> commands = new ConcurrentHashMap<>();
+    private final Map<String, Consumer<JSONObject>> eventHandlers = new ConcurrentHashMap<>();
+    private final ExecutorService eventExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+            .setNameFormat("ClientBiDi-event-%d")
+            .setDaemon(true)
+            .build());
+    private String sessionId;
+    private final Object sendLock = new Object();
+    private CompletableFuture<?> sendChain = CompletableFuture.completedFuture(null);
+    private volatile Duration commandTimeout = Duration.ofSeconds(30);
+    protected static final int CONNECT_TIMEOUT_SECONDS = 60;
+
+    protected void connect(WebSocket.Builder builder, URI url)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        webSocket = builder.buildAsync(url, new Listener()).get(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    protected void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public CompletableFuture<JSONObject> send(String method, Map<String, Object> params) {
+        long id = requestId.incrementAndGet();
+        var command = new JSONObject();
+        command.put("id", id);
+        command.put("method", method);
+        if (sessionId != null) command.put("sessionId", sessionId);
+        command.put("params", BiDiJson.toJson(params));
+        String message = JSONWriter.valueToString(command);
+        logger.log(System.Logger.Level.TRACE, "BiDi SEND {0}", message);
+        CompletableFuture<JSONObject> future = new CompletableFuture<>();
+        commands.put(id, future);
+        // The JDK WebSocket only permits one outstanding send at a time, so queue sends one after
+        // another. If a send fails (e.g. connection lost) fail the command immediately rather than
+        // leaving it to time out.
+        synchronized (sendLock) {
+            sendChain = sendChain.handle((ignored, error) -> webSocket.sendText(message, true))
+                    .thenCompose(sendFuture -> sendFuture)
+                    .whenComplete((ignored, error) -> {
+                        if (error != null) {
+                            commands.remove(id);
+                            future.completeExceptionally(error instanceof WebDriverException ? error :
+                                    new WebDriverException("Failed to send " + method + " command", error));
+                        }
+                    });
+        }
+        return future;
+    }
+
+    /**
+     * How long to wait for the reply to a command before throwing {@link WebDriverTimeoutException}.
+     * Commands that return a {@link CompletableFuture} aren't affected.
+     */
+    public void setCommandTimeout(Duration commandTimeout) {
+        this.commandTimeout = commandTimeout;
+    }
+
+    @Override
+    public boolean isAlive() {
+        return !webSocket.isInputClosed() && !webSocket.isOutputClosed();
+    }
+
+    private boolean isResponsive() {
+        try {
+            // not session.status, as ChromeDriver answers that itself without asking the browser
+            browsingContext().getTreeAsync(0).get(5, TimeUnit.SECONDS);
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        } catch (ExecutionException e) {
+            return true; // it answered, even if with an error
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return true;
+        }
+    }
+
+    /**
+     * Ends the browser without waiting, as it has stopped responding.
+     */
+    protected abstract void destroy();
+
+    private void kill() {
+        destroy();
+        webSocket.abort();
+        failPendingCommands(new WebDriverException("Browser stopped responding"));
+    }
+
+    private void failPendingCommands(Throwable failure) {
+        for (Long id : commands.keySet()) {
+            var future = commands.remove(id);
+            if (future != null) future.completeExceptionally(failure);
+        }
+    }
+
+    public <T extends BiDiEvent> void on(Class<T> eventClass, Consumer<T> handler) {
+        String eventName = StringUtils.uncapitalize(eventClass.getEnclosingClass().getSimpleName()) + "." +
+                StringUtils.uncapitalize(eventClass.getSimpleName());
+        eventHandlers.put(eventName, node -> {
+            handler.accept(BiDiJson.fromJson(node, eventClass));
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends BiDiModule> T module(Class<T> moduleClass) {
+        String prefix = moduleClass.getSimpleName().substring(0, 1).toLowerCase(Locale.ROOT)
+                + moduleClass.getSimpleName().substring(1) + ".";
+        return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{moduleClass},
+                (proxy, method, args) -> {
+                    if (method.isDefault()) return InvocationHandler.invokeDefault(proxy, method, args);
+                    return switch (method.getName()) {
+                        case "equals" -> proxy == args[0];
+                        case "hashCode" -> System.identityHashCode(proxy);
+                        case "toString" -> moduleClass.getName();
+                        default -> {
+                            var map = new LinkedHashMap<String, Object>();
+                            if (args != null) {
+                                for (int i = 0; i < args.length; i++) {
+                                    map.put(method.getParameters()[i].getName(), args[i]);
+                                }
+                            }
+                            String methodName = method.getName();
+                            if (methodName.endsWith("_")) methodName = methodName.substring(0, methodName.length() - 1);
+                            if (methodName.endsWith("Async"))
+                                methodName = methodName.substring(0, methodName.length() - 5);
+                            var future = send(prefix + methodName, map);
+                            if (method.getReturnType() == CompletableFuture.class &&
+                                    method.getGenericReturnType() instanceof ParameterizedType parameterizedType &&
+                                    parameterizedType.getActualTypeArguments()[0] instanceof Class<?> typeClass) {
+                                yield future.thenApply(result -> BiDiJson.fromJson(result, typeClass));
+                            } else {
+                                Duration timeout = commandTimeout;
+                                try {
+                                    yield BiDiJson.fromJson(future.get(timeout.toMillis(), TimeUnit.MILLISECONDS),
+                                            method.getReturnType());
+                                } catch (ExecutionException e) {
+                                    if (e.getCause() instanceof RuntimeException re) throw re;
+                                    throw e;
+                                } catch (TimeoutException e) {
+                                    if (isAlive() && !isResponsive()) {
+                                        logger.log(System.Logger.Level.WARNING, "Browser stopped responding, killing it");
+                                        kill();
+                                    }
+                                    throw new WebDriverTimeoutException(prefix + methodName + " took more than " + timeout.toSeconds() + " seconds");
+                                }
+                            }
+                        }
+                    };
+                });
+    }
+
+    /**
+     * Fails any commands still waiting for a reply. Subclasses call this after ending the browser.
+     */
+    @Override
+    public void close() throws IOException {
+        failPendingCommands(new WebDriverException("WebDriver connection closed"));
+        eventExecutor.shutdown();
+    }
+
+    private class Listener implements WebSocket.Listener {
+        StringBuffer buffer = new StringBuffer();
+
+        @Override
+        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            webSocket.request(1L);
+            buffer.append(data);
+            if (!last) {
+                return null;
+            }
+            data = buffer;
+            buffer = new StringBuffer();
+            logger.log(System.Logger.Level.TRACE, "BiDi RECV {0}", data);
+            try {
+                var message = new JSONObject(new JSONTokener(new CharSequenceReader(data)));
+                switch (message.getString("type")) {
+                    case "success" -> {
+                        var future = commands.remove(message.getLong("id"));
+                        if (future != null) future.complete(message.getJSONObject("result"));
+                    }
+                    case "error" -> {
+                        var future = commands.remove(message.getLong("id"));
+                        if (future != null)
+                            future.completeExceptionally(new WebDriverException(message.getString("message")));
+                    }
+                    case "event" -> {
+                        var handler = eventHandlers.get(message.getString("method"));
+                        if (handler != null) {
+                            JSONObject params = message.getJSONObject("params");
+                            eventExecutor.execute(() -> handler.accept(params));
+                        }
+                    }
+                    default ->
+                            throw new UnsupportedOperationException("Unsupported message type: " + message.getString("type"));
+                }
+            } catch (Exception e) {
+                logger.log(System.Logger.Level.ERROR, "Error handling message", e);
+                webSocket.abort();
+            }
+            return null;
+        }
+
+        @Override
+        public void onError(WebSocket webSocket, Throwable error) {
+            logger.log(System.Logger.Level.ERROR, "WebSocket error", error);
+            failPendingCommands(new WebDriverException("WebDriver connection error: " + error));
+        }
+
+        @Override
+        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+            failPendingCommands(new WebDriverException("WebDriver connection closed: " + statusCode + " " + reason));
+            return null;
+        }
+    }
+}
