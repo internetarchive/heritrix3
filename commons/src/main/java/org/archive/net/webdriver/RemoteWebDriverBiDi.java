@@ -29,7 +29,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -40,6 +42,7 @@ public class RemoteWebDriverBiDi extends AbstractWebDriverBiDi {
     // Selenium Grid queues new session requests for up to 300 seconds by default.
     // We should outwait it, as a session it creates after we've given up would be orphaned.
     private static final Duration NEW_SESSION_TIMEOUT = Duration.ofMinutes(10);
+    private static final long KEEPALIVE_SECONDS = 60;
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build();
     private final String authorization;
     private final URI sessionUrl;
@@ -73,6 +76,19 @@ public class RemoteWebDriverBiDi extends AbstractWebDriverBiDi {
             deleteSession();
             throw e;
         }
+        keepAlive();
+    }
+
+    /**
+     * Sends a cheap command every minute until closed, as Selenium Grid ends a session after 300 seconds without
+     * traffic by default.
+     */
+    private void keepAlive() {
+        CompletableFuture.delayedExecutor(KEEPALIVE_SECONDS, TimeUnit.SECONDS).execute(() -> {
+            if (!isAlive()) return;
+            browsingContext().getTreeAsync(0);
+            keepAlive();
+        });
     }
 
     /**
