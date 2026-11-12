@@ -128,6 +128,7 @@ public class BrowserProcessor extends Processor {
     protected String proxyBindAddress = "127.0.0.1";
     protected int proxyPort = 0;
     protected List<String> proxyAllowedAddresses = List.of();
+    protected String proxyHost = "127.0.0.1";
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -175,7 +176,7 @@ public class BrowserProcessor extends Processor {
             for (int attempt = 0; ; attempt++) {
                 Browser browser = acquireTabSlot(curi.getClassKey());
                 if (browser == null) return; // stopping
-                LocalWebDriverBiDi driver = browser.driver;
+                AbstractWebDriverBiDi driver = browser.driver;
                 try {
                     visit(curi, driver);
                     return;
@@ -387,6 +388,9 @@ public class BrowserProcessor extends Processor {
         if (config instanceof SshBrowser ssh && ssh.uri() == null) {
             throw new IllegalArgumentException("SshBrowser uri must be set");
         }
+        if (config instanceof GridBrowser grid && grid.uri() == null) {
+            throw new IllegalArgumentException("GridBrowser uri must be set");
+        }
         return config;
     }
 
@@ -523,9 +527,9 @@ public class BrowserProcessor extends Processor {
      * Browsers to open pages in, one per entry. Pages from the same queue are opened in the same browser while it
      * has a free tab, so that a site keeps one browser's cookies and cache.
      * <p>
-     * Each entry is a string or a {@link LocalBrowser} or {@link SshBrowser} bean. A bean can override
-     * {@code concurrency}, {@code executable} and {@code options} for that browser. The strings are shorthand for a
-     * bean with nothing overridden:
+     * Each entry is a string or a {@link LocalBrowser}, {@link SshBrowser} or {@link GridBrowser} bean. A bean can
+     * override {@code concurrency}, {@code executable} and {@code options} for that browser. The strings are shorthand
+     * for a bean with nothing overridden:
      * <ul>
      * <li>{@code local} launches {@link #setExecutable(String) executable} on this machine.</li>
      * <li>{@code ssh://[user@]host[:port]} launches it on another machine using the ssh command, which carries the
@@ -535,6 +539,8 @@ public class BrowserProcessor extends Processor {
      * ~/.ssh/config apply. The browser gets a fresh profile directory under ~/.cache/heritrix-browser on the remote
      * machine, removed when it exits. The remote machine can't be this one, as the WebDriver BiDi port is forwarded to
      * the same port number here.</li>
+     * <li>{@code http://host:port} opens a session on a WebDriver server such as a Selenium Grid, as described under
+     * {@link GridBrowser}.</li>
      * </ul>
      */
     public void setBrowsers(List<?> browsers) {
@@ -563,6 +569,18 @@ public class BrowserProcessor extends Processor {
      */
     public void setProxyPort(int proxyPort) {
         this.proxyPort = proxyPort;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    /**
+     * Host name or address that Grid browsers use to reach the recording proxy, typically this machine's address
+     * on the Grid's network.
+     */
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
     }
 
     public List<String> getProxyAllowedAddresses() {
@@ -729,7 +747,7 @@ public class BrowserProcessor extends Processor {
         protected enum State { UP, IDLE, WAKING, DOWN }
         protected final int id;
         private final BrowserConfig config;
-        protected volatile LocalWebDriverBiDi driver;
+        protected volatile AbstractWebDriverBiDi driver;
         protected volatile State state = State.DOWN;
         protected volatile String lastFailure;
         protected volatile int restarts;
@@ -763,7 +781,7 @@ public class BrowserProcessor extends Processor {
          * Launches the browser, or if that fails schedules another attempt after a delay.
          */
         void launch() {
-            LocalWebDriverBiDi newDriver;
+            AbstractWebDriverBiDi newDriver;
             try {
                 newDriver = createWebDriver();
             } catch (Exception e) {
@@ -799,7 +817,7 @@ public class BrowserProcessor extends Processor {
         /**
          * Marks the browser down and launches a replacement, unless another thread already has.
          */
-        void restart(LocalWebDriverBiDi deadDriver) {
+        void restart(AbstractWebDriverBiDi deadDriver) {
             synchronized (this) {
                 if (driver != deadDriver || state != State.UP) return;
                 state = State.DOWN;
@@ -821,7 +839,7 @@ public class BrowserProcessor extends Processor {
         }
 
         void closeIfIdle() {
-            LocalWebDriverBiDi idleDriver;
+            AbstractWebDriverBiDi idleDriver;
             synchronized (tabsLock) {
                 synchronized (this) {
                     if (state != State.UP || openTabs > 0 || System.nanoTime() - idleSince
@@ -838,8 +856,10 @@ public class BrowserProcessor extends Processor {
             if (driver != null) closeQuietly(driver);
         }
 
-        private LocalWebDriverBiDi createWebDriver() throws Exception {
-            LocalWebDriverBiDi driver = launchWebDriver();
+        private AbstractWebDriverBiDi createWebDriver() throws Exception {
+            AbstractWebDriverBiDi driver = config instanceof GridBrowser grid
+                    ? new RemoteWebDriverBiDi(grid.uri(), grid.getUsername(), grid.getPassword(), gridCapabilities())
+                    : launchWebDriver();
             try {
                 driver.session().subscribe(List.of("browsingContext.contextCreated",
                         "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
@@ -850,6 +870,27 @@ public class BrowserProcessor extends Processor {
                 throw e;
             }
             return driver;
+        }
+
+        private String gridProxyAddress() {
+            return (proxyHost.contains(":") ? "[" + proxyHost + "]" : proxyHost) + ":" + proxy.getPort();
+        }
+
+        private Session.CapabilitiesRequest gridCapabilities() {
+            String proxyAddress = gridProxyAddress();
+            Map<String,Object> alwaysMatch = Map.of("acceptInsecureCerts", true,
+                    "proxy", new Session.ProxyConfiguration("manual", proxyAddress, proxyAddress));
+            var chromeArgs = new ArrayList<>(options());
+            chromeArgs.add("proxy-bypass-list=<-loopback>");
+            List<Map<String,Object>> firstMatch = List.of(
+                    Map.of("browserName", "chrome",
+                            "goog:chromeOptions", Map.of(
+                                    "args", chromeArgs,
+                                    "prefs", Map.of("download_restrictions", 3))),
+                    // no catch-all, as Grid may prefer it over the others
+                    Map.of("browserName", "firefox",
+                            "moz:firefoxOptions", Map.of("args", options(), "prefs", FIREFOX_PREFS)));
+            return new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
         }
 
         private LocalWebDriverBiDi launchWebDriver() throws Exception {
@@ -897,7 +938,7 @@ public class BrowserProcessor extends Processor {
         }
     }
 
-    private static void closeQuietly(LocalWebDriverBiDi driver) {
+    private static void closeQuietly(AbstractWebDriverBiDi driver) {
         try {
             driver.close();
         } catch (Exception e) {

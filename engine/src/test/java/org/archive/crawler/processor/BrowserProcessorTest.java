@@ -253,9 +253,44 @@ class BrowserProcessorTest {
 
     @Test
     public void testRejectsUnsupportedBrowser() {
-        for (String browser : List.of("remote", "ssh:host", "http://host")) {
+        for (String browser : List.of("remote", "ssh:host", "ftp://user:secret@host", "http://user:secret@host/ x")) {
             var processor = newBrowserProcessor("unsupported", List.of(browser));
-            assertThrows(IllegalArgumentException.class, processor::start, browser);
+            var e = assertThrows(IllegalArgumentException.class, processor::start, browser);
+            assertFalse(e.getMessage().contains("secret"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGridCredentialsInUri() {
+        var grid = new GridBrowser();
+        grid.setUri("https://us%40er:p%3Ass:word@grid:4444/wd/hub");
+        assertEquals("us@er", grid.getUsername());
+        assertEquals("p:ss:word", grid.getPassword());
+        assertEquals("https://grid:4444/wd/hub", grid.getUri());
+    }
+
+    /**
+     * Run with e.g. {@code -DgridUrl=http://localhost:4444 -DgridProxyHost=host.docker.internal}, and
+     * {@code -DgridAllowedAddresses=} the Grid nodes' addresses unless their requests arrive from loopback.
+     */
+    @Test
+    @EnabledIfSystemProperty(named = "gridUrl", matches = ".+")
+    public void testGrid() throws IOException, InterruptedException {
+        var processor = newBrowserProcessor("grid", List.of(System.getProperty("gridUrl")));
+        processor.setProxyBindAddress("0.0.0.0");
+        processor.setProxyHost(System.getProperty("gridProxyHost"));
+        String allowedAddresses = System.getProperty("gridAllowedAddresses");
+        if (allowedAddresses != null) processor.setProxyAllowedAddresses(List.of(allowedAddresses.split(",")));
+        processor.start();
+        try {
+            CrawlURI crawlURI = visit(processor, null);
+            assertTrue(crawlURI.getAnnotations().contains("browser"));
+            assertEquals("/link", crawlURI.getOutLinks().iterator().next().getUURI().getPath());
+            var paths = new HashSet<String>();
+            for (CrawlURI curi : subrequests) paths.add(curi.getUURI().getPath());
+            assertTrue(paths.containsAll(Set.of("/style.css", "/gzip", "/post-json")), paths.toString());
+        } finally {
+            processor.stop();
         }
     }
 

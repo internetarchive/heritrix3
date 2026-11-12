@@ -304,8 +304,12 @@ http://example.example/example
         browsers = [
                 'local',
                 'ssh://crawler@browser1.example.org',
-                new SshBrowser(uri: 'ssh://crawler@browser2.example.org', concurrency: 40)
+                new SshBrowser(uri: 'ssh://crawler@browser2.example.org', concurrency: 40),
+                new GridBrowser(uri: 'https://grid.example.org', username: 'heritrix', password: 'secret')
         ]
+        proxyBindAddress = '0.0.0.0'
+        proxyHost = 'crawler.example.org'
+        proxyAllowedAddresses = ['192.168.1.0/24']
         executable = 'firefox'
         options = ['-headless']
     }
