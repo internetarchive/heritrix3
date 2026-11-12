@@ -839,6 +839,20 @@ public class BrowserProcessor extends Processor {
         }
 
         private LocalWebDriverBiDi createWebDriver() throws Exception {
+            LocalWebDriverBiDi driver = launchWebDriver();
+            try {
+                driver.session().subscribe(List.of("browsingContext.contextCreated",
+                        "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
+                driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
+                driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
+            } catch (Exception e) {
+                driver.close();
+                throw e;
+            }
+            return driver;
+        }
+
+        private LocalWebDriverBiDi launchWebDriver() throws Exception {
             BrowserProcess process;
             int proxyPort;
             String profileDir;
@@ -871,19 +885,7 @@ public class BrowserProcessor extends Processor {
                     // Fallback for other browsers
                     Map.of()
             );
-            var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
-
-            var driver = new LocalWebDriverBiDi(process, capabilities);
-            try {
-                driver.session().subscribe(List.of("browsingContext.contextCreated",
-                        "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
-                driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
-                driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
-            } catch (Exception e) {
-                driver.close();
-                throw e;
-            }
-            return driver;
+            return new LocalWebDriverBiDi(process, new Session.CapabilitiesRequest(alwaysMatch, firstMatch));
         }
     }
 
