@@ -332,7 +332,8 @@ class BrowserProcessorTest {
         }));
         crawlController.setDispositionChain(dispositionChain);
         browserProcessor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
-            browserProcessor.start();
+        browserProcessor.setExecutable(System.getProperty("browserExecutable"));
+        browserProcessor.start();
     }
 
     @AfterAll

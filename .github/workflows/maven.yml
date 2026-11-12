@@ -31,12 +31,46 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
-    - name: Show Firefox version
-      run: firefox --version
     - name: Build with Maven
-      run: mvn -B package --file pom.xml -DrunBrowserTests=true
+      run: mvn -B package --file pom.xml
       env:
         # Apparently Azure kills idle http connections after 4 minutes which can cause the build to fail
         # with a timeout error. Limit the connection ttl to 2 minutes to workaround this as per
         # https://github.com/actions/virtual-environments/issues/1499
+        MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 -Dmaven.wagon.http.retryHandler.count=3
+
+  browser-tests:
+    name: browser-tests (${{ matrix.browser }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: firefox
+            executable: firefox
+          - browser: chrome
+            executable: $CHROMEWEBDRIVER/chromedriver
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up JDK 21
+      uses: actions/setup-java@v6.1.0
+      with:
+        java-version: 21
+        distribution: 'temurin'
+    - name: Cache local Maven repository
+      uses: actions/cache@v6
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Show browser version
+      run: ${{ matrix.executable }} --version
+    - name: Run browser tests
+      run: >-
+        mvn -B -pl commons,engine -am test -Dtest=BrowserProcessorTest -Dsurefire.failIfNoSpecifiedTests=false
+        -DrunBrowserTests=true -DbrowserExecutable=${{ matrix.executable }}
+      env:
         MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 -Dmaven.wagon.http.retryHandler.count=3
