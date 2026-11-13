@@ -291,12 +291,10 @@ http://example.example/example
     extractorJs(ExtractorJS)
     extractorSwf(ExtractorSWF)
     /*
-    scrollDownBehavior(ScrollDownBehavior)
-    extractLinksBehavior(ExtractLinksBehavior)
     browser(BrowserProcessor) {
         behaviors = [
-                ref('scrollDownBehavior'),
-                ref('extractLinksBehavior')
+                new ScrollDownBehavior(),
+                new ExtractLinksBehavior()
         ]
         concurrency = 20
         browsers = [

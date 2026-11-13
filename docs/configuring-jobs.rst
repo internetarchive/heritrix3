@@ -979,12 +979,10 @@ default profile includes it as a commented-out ``browser`` bean:
 
    .. code-block:: groovy
 
-       scrollDownBehavior(ScrollDownBehavior)
-       extractLinksBehavior(ExtractLinksBehavior)
        browser(BrowserProcessor) {
            behaviors = [
-                   ref('scrollDownBehavior'),
-                   ref('extractLinksBehavior')
+                   new ScrollDownBehavior(),
+                   new ExtractLinksBehavior()
            ]
            concurrency = 20
            executable = 'firefox'
@@ -1036,14 +1034,10 @@ Behaviors run in the order they're listed:
 
    .. code-block:: groovy
 
-       scrollDownBehavior(ScrollDownBehavior)
-       paginationBehavior(PaginationBehavior) {
-           selector = 'a.next-page'
-       }
        browser(BrowserProcessor) {
            behaviors = [
-                   ref('scrollDownBehavior'),
-                   ref('paginationBehavior')
+                   new ScrollDownBehavior(),
+                   new PaginationBehavior(selector: 'a.next-page')
            ]
        }
 
