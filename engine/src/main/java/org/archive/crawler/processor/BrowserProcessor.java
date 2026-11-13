@@ -43,6 +43,7 @@ import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.net.MitmProxy;
 import org.archive.net.webdriver.*;
 import org.archive.spring.KeyedProperties;
+import org.archive.url.URIException;
 import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.client.ProxyConfiguration;
@@ -106,6 +107,7 @@ public class BrowserProcessor extends Processor {
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
+    protected final UriErrorLoggerModule uriErrorLoggerModule;
     protected final List<Browser> pool = new CopyOnWriteArrayList<>();
     protected ScheduledExecutorService launcher;
     protected final Object tabsLock = new Object();
@@ -127,7 +129,8 @@ public class BrowserProcessor extends Processor {
         this.crawlController = crawlController;
         this.fetcher = fetcher;
         this.eventPublisher = eventPublisher;
-        this.behaviors = List.of(new ScrollDownBehavior(), new ExtractLinksBehavior(uriErrorLoggerModule));
+        this.uriErrorLoggerModule = uriErrorLoggerModule;
+        this.behaviors = List.of(new ScrollDownBehavior(), new ExtractLinksBehavior());
     }
 
     public synchronized void stop() {
@@ -269,7 +272,7 @@ public class BrowserProcessor extends Processor {
             String userAgent = curi.getUserAgent();
             if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
             BrowserPage page = new BrowserPage(curi, new IdleBarrier(), driver, tab, fetcher.getProxy(), userAgent,
-                    new CompletableFuture<>());
+                    new CompletableFuture<>(), uriErrorLoggerModule);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
@@ -868,7 +871,8 @@ public class BrowserProcessor extends Processor {
             BrowsingContext.Context context,
             ProxyConfiguration.Proxy proxy,
             String userAgent,
-            CompletableFuture<Void> downloadStarted
+            CompletableFuture<Void> downloadStarted,
+            UriErrorLoggerModule uriErrorLoggerModule
     ) implements Page {
 
         /**
@@ -901,6 +905,11 @@ public class BrowserProcessor extends Processor {
         @Override
         public <T> T evalPromise(String script, Object... args) {
             return callFunction(script, true, args);
+        }
+
+        @Override
+        public void logUriError(URIException e, String link) {
+            if (uriErrorLoggerModule != null) uriErrorLoggerModule.logUriError(e, curi.getUURI(), link);
         }
     }
 }
