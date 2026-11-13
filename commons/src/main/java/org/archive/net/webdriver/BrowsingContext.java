@@ -45,6 +45,9 @@ public interface BrowsingContext extends BiDiModule {
     record Info(Context context, String url) {
     }
 
+    record DownloadWillBegin(Context context, String url) implements BiDiEvent {
+    }
+
     record Load(Context context, Navigation navigation, long timestamp, String url) implements BiDiEvent {
     }
 

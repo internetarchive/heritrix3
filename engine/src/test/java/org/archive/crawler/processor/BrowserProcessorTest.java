@@ -232,6 +232,33 @@ class BrowserProcessorTest {
         assertFalse(processor.isRunning());
     }
 
+    @Test
+    public void testBrowserBeanOverrides() {
+        var failing = new LocalBrowser();
+        failing.setExecutable("/nonexistent/firefox");
+        var narrow = new LocalBrowser();
+        narrow.setConcurrency(1);
+        var processor = newBrowserProcessor("overrides", List.of(failing, narrow, "local"));
+        processor.start();
+        try {
+            assertEquals(BrowserProcessor.Browser.State.DOWN, processor.pool.get(0).state);
+            assertTrue(processor.pool.get(0).lastFailure.contains("/nonexistent/firefox"),
+                    processor.pool.get(0).lastFailure);
+            assertEquals(1, processor.pool.get(1).concurrency());
+            assertEquals(processor.getConcurrency(), processor.pool.get(2).concurrency());
+        } finally {
+            processor.stop();
+        }
+    }
+
+    @Test
+    public void testRejectsUnsupportedBrowser() {
+        for (String browser : List.of("remote", "ssh:host", "http://host")) {
+            var processor = newBrowserProcessor("unsupported", List.of(browser));
+            assertThrows(IllegalArgumentException.class, processor::start, browser);
+        }
+    }
+
     private static void awaitUp(BrowserProcessor processor, int browserId) throws InterruptedException {
         synchronized (processor.tabsLock) {
             while (processor.pool.get(browserId).state != BrowserProcessor.Browser.State.UP) {
@@ -454,7 +481,7 @@ class BrowserProcessorTest {
         browserProcessor.start();
     }
 
-    private static BrowserProcessor newBrowserProcessor(String name, List<String> browsers) {
+    private static BrowserProcessor newBrowserProcessor(String name, List<?> browsers) {
         var crawlController = new CrawlController();
         crawlController.getScratchDir().setPath(tempDir.resolve(name).toString());
         FetchChain fetchChain = new FetchChain();

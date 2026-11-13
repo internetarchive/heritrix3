@@ -546,6 +546,16 @@ BrowserProcessor
 
 .. bean-doc:: org.archive.crawler.processor.BrowserProcessor
 
+LocalBrowser
+~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.processor.LocalBrowser
+
+SshBrowser
+~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.processor.SshBrowser
+
 ExtractLinksBehavior
 ~~~~~~~~~~~~~~~~~~~~
 

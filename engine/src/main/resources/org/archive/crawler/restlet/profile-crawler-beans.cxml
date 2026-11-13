@@ -327,6 +327,16 @@ http://example.example/example
    </list>
   </property>
   <property name="concurrency" value="20" />
+  <property name="browsers">
+   <list>
+    <value>local</value>
+    <value>ssh://crawler@browser1.example.org</value>
+    <bean class="org.archive.crawler.processor.SshBrowser">
+     <property name="uri" value="ssh://crawler@browser2.example.org" />
+     <property name="concurrency" value="40" />
+    </bean>
+   </list>
+  </property>
   <property name="executable" value="firefox" />
   <property name="options">
    <list>
