@@ -937,6 +937,195 @@ the whois fetcher will attempt to resolve ``whois:archive.org`` and ``whois:207.
 At this time, whois functionality is experimental.  The fetchWhois bean is commented out in the default profile.
 
 
+Browser-based Crawling
+----------------------
+
+Heritrix can load the pages it fetches in a web browser to capture resources that can only be discovered by executing
+JavaScript. The browser is controlled using the standard `WebDriver BiDi <https://developer.mozilla.org/en-US/docs/Web/WebDriver/Reference/BiDi>`_
+protocol, supported by Firefox natively and Chrome via `ChromeDriver <https://developer.chrome.com/docs/chromedriver>`_.
+
+The browser makes its own requests for a page's images, scripts and other resources, so they aren't subject to the crawl
+scope, robots.txt or the frontier's politeness delays. Responses are captured by a proxy server in Heritrix, passed
+through the extractors in the fetch chain and then the disposition chain, which writes them to WARC. Links extracted
+from them are scoped and queued as usual.
+
+Enabling BrowserProcessor
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pages are loaded in the browser by ``BrowserProcessor``, which runs in the fetch chain after the link extractors. The
+default profile includes it as a commented-out ``browser`` bean:
+
+.. tab:: XML
+
+   .. code-block:: xml
+
+       <bean id="browser" class="org.archive.crawler.processor.BrowserProcessor">
+         <property name="behaviors">
+           <list>
+             <bean class="org.archive.modules.behaviors.ScrollDownBehavior" />
+             <bean class="org.archive.modules.behaviors.ExtractLinksBehavior" />
+           </list>
+         </property>
+         <property name="concurrency" value="20" />
+         <property name="executable" value="firefox" />
+         <property name="options">
+           <list>
+             <value>-headless</value>
+           </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       scrollDownBehavior(ScrollDownBehavior)
+       extractLinksBehavior(ExtractLinksBehavior)
+       browser(BrowserProcessor) {
+           behaviors = [
+                   ref('scrollDownBehavior'),
+                   ref('extractLinksBehavior')
+           ]
+           concurrency = 20
+           executable = 'firefox'
+           options = ['-headless']
+       }
+
+To enable it:
+
+1. Uncomment the ``browser`` bean, and the reference to it at the end of the fetch chain.
+2. Replace ``FetchHTTP`` with ``FetchHTTP2`` (see `HTTP/2`_). ``BrowserProcessor`` uses it to record the browser's
+   requests and for settings such as the user agent.
+3. Install Firefox, or Chrome and a matching version of ChromeDriver.
+
+``executable`` sets the browser to launch. If it isn't set, ``BrowserProcessor`` looks for ``firefox`` and then
+``chromedriver``. ``options`` sets extra command-line arguments for the browser, by default ``--headless``.
+
+Each page open in a browser occupies a toe thread until the browser is done with it, so set ``maxToeThreads`` to at
+least the total ``concurrency`` of all browsers, plus some threads for fetching other URIs.
+
+Configuring behaviors
+~~~~~~~~~~~~~~~~~~~~~
+
+After the page finishes loading, ``BrowserProcessor`` can run a set of behaviors.
+
+- ``ExtractLinksBehavior`` finds links in the page and queues them. This differs from ``ExtractorHTML`` in that it can
+  see links that were dynamically added to the page by JavaScript.
+- ``ScrollDownBehavior`` scrolls down to the bottom of the page so that lazy-loaded content loads.
+- ``PaginationBehavior`` repeatedly clicks a "next page" button, found with the CSS selector set by ``selector``, and
+  extracts links after each click. Use it instead of ``ExtractLinksBehavior``.
+
+Behaviors run in the order they're listed:
+
+.. tab:: XML
+
+   .. code-block:: xml
+
+       <bean id="browser" class="org.archive.crawler.processor.BrowserProcessor">
+         <property name="behaviors">
+           <list>
+             <bean class="org.archive.modules.behaviors.ScrollDownBehavior" />
+             <bean class="org.archive.modules.behaviors.PaginationBehavior">
+               <property name="selector" value="a.next-page" />
+             </bean>
+           </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       scrollDownBehavior(ScrollDownBehavior)
+       paginationBehavior(PaginationBehavior) {
+           selector = 'a.next-page'
+       }
+       browser(BrowserProcessor) {
+           behaviors = [
+                   ref('scrollDownBehavior'),
+                   ref('paginationBehavior')
+           ]
+       }
+
+Running browsers on other machines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As browsing is resource intensive, it can be helpful to spread the load across multiple servers.
+``BrowserProcessor`` can be configured to launch browsers on remote machines using SSH.
+
+To set up a remote machine:
+
+1. Create a user for the browser to run as. It must have a POSIX-compatible shell (such as bash).
+2. Install Firefox, or Chrome and a matching version of ChromeDriver, so it's on the ``PATH``.
+
+On the machine Heritrix runs on:
+
+1. Create an SSH key pair for the user Heritrix runs as:
+
+   .. code-block:: bash
+
+       ssh-keygen -t ed25519 -N ''
+
+2. Copy the public key to ``~/.ssh/authorized_keys`` on the remote machine:
+
+   .. code-block:: bash
+
+       ssh-copy-id crawler@browser1.example.org
+
+3. Connect once and accept the host key, then check that connecting works without any prompts:
+
+   .. code-block:: bash
+
+       ssh -o BatchMode=yes crawler@browser1.example.org firefox --version
+
+Add the machine to the ``browsers`` list in the ``BrowserProcessor`` bean:
+
+.. tab:: XML
+
+   .. code-block:: xml
+
+       <property name="browsers">
+         <list>
+           <value>local</value>
+           <value>ssh://crawler@browser1.example.org</value>
+           <bean class="org.archive.crawler.processor.SshBrowser">
+             <property name="uri" value="ssh://crawler@browser2.example.org" />
+             <property name="concurrency" value="40" />
+             <property name="executable" value="/opt/firefox/firefox" />
+           </bean>
+         </list>
+       </property>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       browsers = [
+               'local',
+               'ssh://crawler@browser1.example.org',
+               new SshBrowser(uri: 'ssh://crawler@browser2.example.org', concurrency: 40,
+                       executable: '/opt/firefox/firefox')
+       ]
+
+Monitoring the browsers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``BrowserProcessor`` entry in the processors report (``processors-report.txt``) shows how each browser is doing::
+
+    Processor: org.archive.crawler.processor.BrowserProcessor
+      Pages visited: 846
+      Subresources recorded: 24318
+      Browser 0: up, 3 open tabs, 312 pages visited, 0 restarts
+      Browser 1: idle, 0 open tabs, 297 pages visited, 2 restarts
+      Browser 2: down, 0 open tabs, 238 pages visited, 1 restarts, last failure: java.io.IOException: ssh did not report the port forwarded to the proxy
+      Behavior: org.archive.modules.behaviors.ScrollDownBehavior
+      Behavior: org.archive.modules.behaviors.ExtractLinksBehavior
+        Links extracted: 41275
+
+A browser is *up* when it's running, and *idle* when it has been closed after ``browserIdleTimeoutSeconds`` with no
+open pages. It's launched again when a page needs it, and is *waking* while it starts. A browser that failed to
+launch or crashed is *down*, and is retried in the background.
+
 Modifying a Running Job
 -----------------------
 
