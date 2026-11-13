@@ -19,6 +19,9 @@
 
 package org.archive.net.webdriver;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 // https://w3c.github.io/webdriver-bidi/#module-browsingContext
 public interface BrowsingContext extends BiDiModule {
     CreateResult create(CreateType type);
@@ -27,11 +30,19 @@ public interface BrowsingContext extends BiDiModule {
 
     void close(Context context);
 
+    CompletableFuture<GetTreeResult> getTreeAsync(long maxDepth);
+
     enum CreateType {tab, window}
 
     enum ReadinessState {none, interactive, complete}
 
     record CreateResult(Context context) {
+    }
+
+    record GetTreeResult(List<Info> contexts) {
+    }
+
+    record Info(Context context, String url) {
     }
 
     record Load(Context context, Navigation navigation, long timestamp, String url) implements BiDiEvent {

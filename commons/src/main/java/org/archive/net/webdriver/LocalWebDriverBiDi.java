@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,6 +59,7 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     private final Thread shutdownHook;
     private final Object sendLock = new Object();
     private CompletableFuture<?> sendChain = CompletableFuture.completedFuture(null);
+    private volatile Duration commandTimeout = Duration.ofSeconds(30);
     private static final int LAUNCH_TIMEOUT_SECONDS = 60;
     private static final String[] BROWSERS = new String[]{
             "firefox", "/Applications/Firefox.app/Contents/MacOS/firefox", "chromedriver"};
@@ -176,10 +178,39 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
     }
 
     /**
-     * Returns true if the browser process is running and the WebDriver connection is still open.
+     * How long to wait for the reply to a command before throwing {@link WebDriverTimeoutException}.
+     * Commands that return a {@link CompletableFuture} aren't affected.
      */
+    public void setCommandTimeout(Duration commandTimeout) {
+        this.commandTimeout = commandTimeout;
+    }
+
+    @Override
     public boolean isAlive() {
         return process.isAlive() && !webSocket.isInputClosed() && !webSocket.isOutputClosed();
+    }
+
+    private boolean isResponsive() {
+        try {
+            // not session.status, as ChromeDriver answers that itself without asking the browser
+            browsingContext().getTreeAsync(0).get(5, TimeUnit.SECONDS);
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        } catch (ExecutionException e) {
+            return true; // it answered, even if with an error
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return true;
+        }
+    }
+
+    private void kill() {
+        // ChromeDriver's browser is its child and would survive it, keeping the profile locked
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
+        process.destroyForcibly();
+        webSocket.abort();
+        failPendingCommands(new WebDriverException("Browser stopped responding"));
     }
 
     private void failPendingCommands(Throwable failure) {
@@ -226,14 +257,19 @@ public class LocalWebDriverBiDi implements WebDriverBiDi, Closeable {
                                     parameterizedType.getActualTypeArguments()[0] instanceof Class<?> typeClass) {
                                 yield future.thenApply(result -> BiDiJson.fromJson(result, typeClass));
                             } else {
-                                int timeout = 30;
+                                Duration timeout = commandTimeout;
                                 try {
-                                    yield BiDiJson.fromJson(future.get(timeout, TimeUnit.SECONDS), method.getReturnType());
+                                    yield BiDiJson.fromJson(future.get(timeout.toMillis(), TimeUnit.MILLISECONDS),
+                                            method.getReturnType());
                                 } catch (ExecutionException e) {
                                     if (e.getCause() instanceof RuntimeException re) throw re;
                                     throw e;
                                 } catch (TimeoutException e) {
-                                    throw new WebDriverTimeoutException(prefix + methodName + " took more than " + timeout + " seconds");
+                                    if (isAlive() && !isResponsive()) {
+                                        logger.log(System.Logger.Level.WARNING, "Browser stopped responding, killing it");
+                                        kill();
+                                    }
+                                    throw new WebDriverTimeoutException(prefix + methodName + " took more than " + timeout.toSeconds() + " seconds");
                                 }
                             }
                         }

@@ -22,8 +22,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -41,7 +44,6 @@ class BrowserProcessorTest {
     private static String baseUrl;
     private static volatile int serverRequests;
     private static ArrayList<CrawlURI> subrequests;
-    private static CrawlController crawlController;
     private final Set<Recorder> recorders = new HashSet<>();
     @TempDir
     static Path tempDir;
@@ -104,18 +106,146 @@ class BrowserProcessorTest {
 
     @Test
     public void testBrowserRestart() throws IOException, InterruptedException {
-        long restartsBefore = browserProcessor.browserRestarts.get();
-        browserProcessor.webdriver.close(); // simulate the browser dying
+        int restartsBefore = browserProcessor.pool.get(0).restarts;
+        browserProcessor.pool.get(0).driver.close(); // simulate the browser dying
 
         CrawlURI crawlURI = newCrawlURI(baseUrl);
         fetcher.process(crawlURI);
         assertEquals(200, crawlURI.getFetchStatus());
         browserProcessor.innerProcess(crawlURI);
 
-        assertEquals(restartsBefore + 1, browserProcessor.browserRestarts.get(),
+        assertEquals(restartsBefore + 1, browserProcessor.pool.get(0).restarts,
                 "browser should have been restarted");
         assertTrue(crawlURI.getAnnotations().contains("browser"),
                 "page should have been visited by the restarted browser");
+    }
+
+    @Test
+    public void testUnresponsiveBrowserRestart() throws IOException, InterruptedException {
+        var processor = newBrowserProcessor("unresponsive", List.of("local"));
+        processor.start();
+        try {
+            ProcessHandle browserProcess = browserProcess("unresponsive", 0);
+            processor.setBehaviors(List.of(page -> {
+                if (browserProcess.isAlive()) {
+                    processor.pool.get(0).driver.setCommandTimeout(Duration.ofSeconds(2));
+                    suspend(browserProcess);
+                    page.eval("() => 1");
+                }
+            }));
+
+            CrawlURI crawlURI = visit(processor, null);
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited by the restarted browser");
+            assertEquals(1, processor.pool.get(0).restarts);
+            assertFalse(browserProcess.isAlive(), "suspended browser should have been killed");
+        } finally {
+            processor.stop();
+        }
+    }
+
+    @Test
+    public void testIdleBrowserIsClosedAndRelaunched() throws Exception {
+        var processor = newBrowserProcessor("idle", List.of("local"));
+        processor.setBrowserIdleTimeoutSeconds(1);
+        processor.start();
+        try {
+            browserProcess("idle", 0).onExit().get(10, TimeUnit.SECONDS);
+            assertEquals(BrowserProcessor.Browser.State.IDLE, processor.pool.get(0).state);
+
+            CrawlURI crawlURI = visit(processor, null);
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited by the relaunched browser");
+            assertEquals(0, processor.pool.get(0).restarts);
+            assertNull(processor.pool.get(0).lastFailure);
+        } finally {
+            processor.stop();
+        }
+    }
+
+    private static ProcessHandle browserProcess(String processorName, int browserId) {
+        String profileDir = tempDir.resolve(processorName + "/profile-" + browserId).toString();
+        return ProcessHandle.current().children()
+                .filter(p -> p.info().commandLine().orElse("").contains(profileDir))
+                .findFirst().orElseThrow();
+    }
+
+    private static void suspend(ProcessHandle process) {
+        var command = new ArrayList<>(List.of("kill", "-STOP", String.valueOf(process.pid())));
+        process.descendants().forEach(p -> command.add(String.valueOf(p.pid())));
+        try {
+            assertEquals(0, new ProcessBuilder(command).start().waitFor());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testSeveralBrowsers() throws IOException, InterruptedException {
+        var processor = newBrowserProcessor("several", List.of("local", "local"));
+        processor.setMinBrowsers(2);
+        processor.start();
+        try {
+            // queue keys "b" and "a" hash to browsers 0 and 1
+            visit(processor, "b");
+            visit(processor, "a");
+            assertEquals(1, processor.pool.get(0).pagesVisited);
+            assertEquals(1, processor.pool.get(1).pagesVisited);
+
+            processor.pool.get(1).driver.close(); // simulate the browser dying
+            CrawlURI crawlURI = visit(processor, "a");
+            assertTrue(crawlURI.getAnnotations().contains("browser"),
+                    "page should have been visited after the restart");
+            awaitUp(processor, 1);
+            assertEquals(0, processor.pool.get(0).restarts);
+            assertEquals(1, processor.pool.get(1).restarts);
+        } finally {
+            processor.stop();
+        }
+    }
+
+    @Test
+    public void testStartWithBrowserThatFailsToLaunch() throws IOException, InterruptedException {
+        preventLaunch("one-fails", 1);
+        var processor = newBrowserProcessor("one-fails", List.of("local", "local"));
+        processor.start();
+        try {
+            assertEquals(BrowserProcessor.Browser.State.UP, processor.pool.get(0).state);
+            assertEquals(BrowserProcessor.Browser.State.DOWN, processor.pool.get(1).state);
+            String report = processor.report();
+            assertTrue(report.contains("Browser 1: down") && report.contains("FileAlreadyExistsException"), report);
+
+            CrawlURI crawlURI = visit(processor, "a"); // hashes to browser 1
+            assertTrue(crawlURI.getAnnotations().contains("browser"));
+            assertEquals(1, processor.pool.get(0).pagesVisited);
+        } finally {
+            processor.stop();
+        }
+    }
+
+    @Test
+    public void testStartFailsIfNoBrowserLaunches() throws IOException {
+        preventLaunch("none-start", 0);
+        preventLaunch("none-start", 1);
+        var processor = newBrowserProcessor("none-start", List.of("local", "local"));
+        assertThrows(IllegalStateException.class, processor::start);
+        assertFalse(processor.isRunning());
+    }
+
+    private static void awaitUp(BrowserProcessor processor, int browserId) throws InterruptedException {
+        synchronized (processor.tabsLock) {
+            while (processor.pool.get(browserId).state != BrowserProcessor.Browser.State.UP) {
+                processor.tabsLock.wait();
+            }
+        }
+    }
+
+    /**
+     * Puts a file where the browser's profile directory should be so launching it fails.
+     */
+    private static void preventLaunch(String processorName, int browserId) throws IOException {
+        Path scratchDir = Files.createDirectories(tempDir.resolve(processorName));
+        Files.createFile(scratchDir.resolve("profile-" + browserId));
     }
 
     @Test
@@ -197,6 +327,15 @@ class BrowserProcessorTest {
             assertTrue(response.endsWith("Missing or invalid Heritrix-Request-ID header\n"), response);
         }
         assertEquals(requestsBefore, serverRequests, "request should not have been forwarded");
+    }
+
+    private CrawlURI visit(BrowserProcessor processor, String queueKey) throws IOException, InterruptedException {
+        CrawlURI crawlURI = newCrawlURI(baseUrl);
+        crawlURI.setClassKey(queueKey);
+        fetcher.process(crawlURI);
+        assertEquals(200, crawlURI.getFetchStatus());
+        processor.innerProcess(crawlURI);
+        return crawlURI;
     }
 
     private CrawlURI newCrawlURI(String uri) throws URIException {
@@ -310,13 +449,17 @@ class BrowserProcessorTest {
         fetcher = new FetchHTTP2(new DefaultServerCache(), null);
         fetcher.setUserAgentProvider(new CrawlMetadata());
         fetcher.start();
-        crawlController = new CrawlController();
-        crawlController.getScratchDir().setPath(tempDir.toString());
+        subrequests = new ArrayList<>();
+        browserProcessor = newBrowserProcessor("default", List.of("local"));
+        browserProcessor.start();
+    }
+
+    private static BrowserProcessor newBrowserProcessor(String name, List<String> browsers) {
+        var crawlController = new CrawlController();
+        crawlController.getScratchDir().setPath(tempDir.resolve(name).toString());
         FetchChain fetchChain = new FetchChain();
         fetchChain.setProcessors(List.of());
         crawlController.setFetchChain(fetchChain);
-
-        subrequests = new ArrayList<>();
 
         DispositionChain dispositionChain = new DispositionChain();
         dispositionChain.setProcessors(List.of(new Processor() {
@@ -331,9 +474,10 @@ class BrowserProcessorTest {
             }
         }));
         crawlController.setDispositionChain(dispositionChain);
-        browserProcessor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
-        browserProcessor.setExecutable(System.getProperty("browserExecutable"));
-        browserProcessor.start();
+        var processor = new BrowserProcessor(fetcher, crawlController, event -> {}, null);
+        processor.setBrowsers(browsers);
+        processor.setExecutable(System.getProperty("browserExecutable"));
+        return processor;
     }
 
     @AfterAll
