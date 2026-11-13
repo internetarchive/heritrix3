@@ -23,7 +23,6 @@ import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
-import org.archive.modules.extractor.UriErrorLoggerModule;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 
@@ -35,11 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ExtractLinksBehavior implements Behavior {
     private final AtomicLong numberOfLinksExtracted = new AtomicLong(0);
-    private final UriErrorLoggerModule loggerModule;
-
-    public ExtractLinksBehavior(UriErrorLoggerModule loggerModule) {
-        this.loggerModule = loggerModule;
-    }
 
     public void run(Page page) {
         List<String> urls = page.eval(/* language=JavaScript */ """
@@ -63,7 +57,7 @@ public class ExtractLinksBehavior implements Behavior {
                 page.curi().getOutLinks().add(link);
                 numberOfLinksExtracted.incrementAndGet();
             } catch (URIException e) {
-                loggerModule.logUriError(e, page.curi().getUURI(), url);
+                page.logUriError(e, url);
             }
         }
     }

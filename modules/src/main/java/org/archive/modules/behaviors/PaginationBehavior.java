@@ -19,8 +19,6 @@
 
 package org.archive.modules.behaviors;
 
-import org.archive.modules.extractor.UriErrorLoggerModule;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -28,15 +26,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * extracting links after each click. Use as a replacement for ExtractLinksBehavior.
  */
 public class PaginationBehavior implements Behavior {
-    private final ExtractLinksBehavior extractLinks;
+    private final ExtractLinksBehavior extractLinks = new ExtractLinksBehavior();
     private final AtomicLong pagesClicked = new AtomicLong();
     private String selector = "button[title=\"Next\"]";
     private int maxPages = 100;
     private long loadTimeout = 5000;
-
-    public PaginationBehavior(UriErrorLoggerModule loggerModule) {
-        this.extractLinks = new ExtractLinksBehavior(loggerModule);
-    }
 
     /**
      * CSS selector for the next-page button.

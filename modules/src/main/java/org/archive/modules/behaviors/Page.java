@@ -20,6 +20,7 @@
 package org.archive.modules.behaviors;
 
 import org.archive.modules.CrawlURI;
+import org.archive.url.URIException;
 
 /**
  * Represents a {@link CrawlURI} loaded as web page that a @{@link Behavior} can
@@ -31,4 +32,9 @@ public interface Page {
     <T> T eval(String script, Object... args);
 
     <T> T evalPromise(String script, Object... args);
+
+    /**
+     * Logs a link found on the page that couldn't be parsed.
+     */
+    void logUriError(URIException e, String link);
 }

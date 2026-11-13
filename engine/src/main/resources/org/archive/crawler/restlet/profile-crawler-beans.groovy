@@ -15,10 +15,12 @@ import org.archive.crawler.frontier.*
 import org.archive.crawler.monitor.DiskSpaceMonitor
 import org.archive.crawler.postprocessor.*
 import org.archive.crawler.prefetch.*
+import org.archive.crawler.processor.*
 import org.archive.crawler.reporting.*
 import org.archive.crawler.spring.*
 import org.archive.crawler.util.BdbUriUniqFilter
 import org.archive.modules.*
+import org.archive.modules.behaviors.*
 import org.archive.modules.canonicalize.*
 import org.archive.modules.deciderules.surt.SurtPrefixedDecideRule
 import org.archive.modules.extractor.*
@@ -288,6 +290,22 @@ http://example.example/example
     extractorCss(ExtractorCSS)
     extractorJs(ExtractorJS)
     extractorSwf(ExtractorSWF)
+    /*
+    browser(BrowserProcessor) {
+        behaviors = [
+                new ScrollDownBehavior(),
+                new ExtractLinksBehavior()
+        ]
+        concurrency = 20
+        browsers = [
+                'local',
+                'ssh://crawler@browser1.example.org',
+                new SshBrowser(uri: 'ssh://crawler@browser2.example.org', concurrency: 40)
+        ]
+        executable = 'firefox'
+        options = ['-headless']
+    }
+    */
     // now, processors are assembled into ordered FetchChain bean
     fetchProcessors(FetchChain) {
         processors = [
@@ -317,7 +335,9 @@ http://example.example/example
                 // ...extract outlinks from Javascript content...
                 ref('extractorJs'),
                 // ...extract outlinks from Flash content...
-                ref('extractorSwf')
+                ref('extractorSwf'),
+                // ...visit in a web browser...
+                // ref('browser')
         ]
     }
 

@@ -86,7 +86,7 @@ class BrowserProcessorTest {
     @Test
     public void testPaginationBehavior() throws IOException, InterruptedException {
         var defaultBehaviors = browserProcessor.getBehaviors();
-        browserProcessor.setBehaviors(List.of(new PaginationBehavior(null)));
+        browserProcessor.setBehaviors(List.of(new PaginationBehavior()));
         try {
             CrawlURI crawlURI = newCrawlURI(baseUrl + "paginated");
             fetcher.process(crawlURI);
