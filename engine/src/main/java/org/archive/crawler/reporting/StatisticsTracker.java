@@ -833,20 +833,24 @@ public class StatisticsTracker
     
     protected void manageSourceStats(CrawlURI curi, boolean isCrawlOK) {
         ServerCache sc = serverCache;
-        if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
-            boolean tally = false;
-            SourceTagsReport str = getReport(SourceTagsReport.class);
-            if (str != null && str.isIncludeResCode()) {
-                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName(), String.valueOf(curi.getFetchStatus()));
-                tally = isCrawlOK;
+        try {
+            if (getTrackSources() && curi.getData().containsKey(A_SOURCE_TAG)) {
+                boolean tally = false;
+                SourceTagsReport str = getReport(SourceTagsReport.class);
+                if (str != null && str.isIncludeResCode()) {
+                    saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName(), String.valueOf(curi.getFetchStatus()));
+                    tally = isCrawlOK;
+                }
+                if (isCrawlOK) {
+                    saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName());
+                    tally = true;
+                }
+                if (tally) {
+                    tallySourceStats(curi);
+                }
             }
-            if (isCrawlOK) {
-                saveSourceStats(curi.getSourceTag(), sc.getHostFor(curi.getUURI()).getHostName());
-                tally = true;
-            }
-            if (tally) {
-                tallySourceStats(curi);
-            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "unable to tally host stats for " + curi + " for SourceTags", e);
         }
     }
     
