@@ -270,9 +270,9 @@ http://example.example/example
         // digestAlgorithm = 'sha1'
     }
     botBlockDetector(BotBlockDetector)
-    soft404Detector(Soft404Detector) {
-        skipExtraction = false
-    }
+    // soft404Detector(Soft404Detector) {
+    //     skipExtraction = false
+    // }
     extractorHttp(ExtractorHTTP)
     extractorRobotsTxt(ExtractorRobotsTxt)
     extractorSitemap(ExtractorSitemap)
@@ -306,7 +306,7 @@ http://example.example/example
                 // ...annotate responses from bot-blocking services...
                 ref('botBlockDetector'),
                 // ...annotate soft 404s (optionally skipping extraction for them)...
-                ref('soft404Detector'),
+                // ref('soft404Detector'),
                 // ...extract outlinks from HTTP headers...
                 ref('extractorHttp'),
                 // ...extract sitemap urls from robots.txt...

@@ -291,9 +291,9 @@ http://example.example/example
  </bean>
  <bean id="botBlockDetector" class="org.archive.modules.processor.BotBlockDetector">
  </bean>
- <bean id="soft404Detector" class="org.archive.modules.processor.Soft404Detector">
+ <!-- <bean id="soft404Detector" class="org.archive.modules.processor.Soft404Detector">
   <property name="skipExtraction" value="false" />
- </bean>
+ </bean> -->
  <bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
  </bean>
  <bean id="extractorRobotsTxt" class="org.archive.modules.extractor.ExtractorRobotsTxt">
@@ -352,7 +352,7 @@ http://example.example/example
     <!-- ...annotate responses from bot-blocking services... -->
     <ref bean="botBlockDetector"/>
     <!-- ...annotate soft 404s (optionally skipping extraction for them)... -->
-    <ref bean="soft404Detector"/>
+    <!-- <ref bean="soft404Detector"/> -->
     <!-- ...extract outlinks from HTTP headers... -->
     <ref bean="extractorHttp"/>
     <!-- ...extract sitemap urls from robots.txt... -->
