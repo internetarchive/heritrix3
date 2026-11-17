@@ -203,6 +203,18 @@ class Soft404DetectorTest {
     }
 
     @Test
+    void metaRefreshToDifferentTargetIsNotSoft404() throws Exception {
+        CrawlURI probe = probe();
+        recordResponse(probe, metaRefresh("/"));
+        detector.process(probe);
+
+        CrawlURI page = curi("https://example.com/go/annual-report", 200);
+        recordResponse(page, metaRefresh("https://partner.example.org/reports/annual-report"));
+        assertEquals(ProcessResult.PROCEED, detector.process(page));
+        assertFalse(page.getAnnotations().contains(Soft404Detector.ANNOTATION));
+    }
+
+    @Test
     void detectsSoft404EchoingPercentEncodedUrl() throws Exception {
         // e.g. www.meetup.com: <a href="/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2F...">
         CrawlURI probe = probe();
@@ -286,6 +298,13 @@ class Soft404DetectorTest {
     }
 
     @Test
+    void normalizeKeepsTextWithoutWhitespace() {
+        assertNotEquals(
+                Soft404Detector.normalize("<p>お探しのページは見つかりませんでした（404）</p>", List.of()),
+                Soft404Detector.normalize("<p>2024年度の予算案が閣議決定されました。</p>", List.of()));
+    }
+
+    @Test
     void checkpointRoundTripPreservesCounts() throws Exception {
         String body = "<html><title>Not here</title></html>";
         CrawlURI probe = probe();
@@ -320,6 +339,11 @@ class Soft404DetectorTest {
         probe.setFetchType(CrawlURI.FetchType.HTTP_GET);
         probe.setContentType("text/html");
         return probe;
+    }
+
+    private static String metaRefresh(String target) {
+        return "<html><head><meta http-equiv=\"refresh\" content=\"0;url=" + target + "\">"
+                + "<title>Redirecting</title></head><body>Redirecting...</body></html>";
     }
 
     private static String loginLink(CrawlURI curi) {

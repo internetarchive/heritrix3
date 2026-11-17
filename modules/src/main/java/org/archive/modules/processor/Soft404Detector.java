@@ -290,8 +290,8 @@ public class Soft404Detector extends Processor {
     }
 
     /**
-     * Removes the given echoes, replaces each token (a run of characters other than whitespace,
-     * quotes and angle brackets) containing a digit with "0", and collapses whitespace.
+     * Removes the given echoes, replaces each token (a run of ASCII letters, digits and
+     * {@code ._~+/%-}) containing a digit with "0", and collapses whitespace.
      */
     static String normalize(String content, List<String> echoes) {
         for (String echo : echoes) {
@@ -305,15 +305,14 @@ public class Soft404Detector extends Processor {
             if (Character.isWhitespace(c)) {
                 while (i < n && Character.isWhitespace(content.charAt(i))) i++;
                 sb.append(' ');
-            } else if (isTokenDelimiter(c)) {
+            } else if (!isTokenChar(c)) {
                 sb.append(c);
                 i++;
             } else {
                 int start = i;
                 boolean hasDigit = false;
-                while (i < n && !Character.isWhitespace(content.charAt(i))
-                        && !isTokenDelimiter(content.charAt(i))) {
-                    if (Character.isDigit(content.charAt(i))) hasDigit = true;
+                while (i < n && isTokenChar(content.charAt(i))) {
+                    if (content.charAt(i) <= '9' && content.charAt(i) >= '0') hasDigit = true;
                     i++;
                 }
                 if (hasDigit) {
@@ -326,8 +325,9 @@ public class Soft404Detector extends Processor {
         return sb.toString();
     }
 
-    private static boolean isTokenDelimiter(char c) {
-        return c == '"' || c == '\'' || c == '<' || c == '>';
+    private static boolean isTokenChar(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+                || "._~+/%-".indexOf(c) >= 0;
     }
 
     public String getProbePath() {
