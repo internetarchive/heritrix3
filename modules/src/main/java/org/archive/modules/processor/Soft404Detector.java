@@ -174,8 +174,10 @@ public class Soft404Detector extends Processor {
     protected void scheduleProbe(CrawlURI curi, CrawlServer server) {
         int status = curi.getFetchStatus();
         if (status < 200 || status >= 400) return;
-        // Don't probe servers that are only being fetched from for embeds (e.g. CDNs).
-        if (Hop.EMBED.getHopString().equals(curi.getLastHop())) return;
+        // Only probe servers reached as seeds or by following links, not e.g. CDNs or other
+        // sites that a crawled site redirects to.
+        String hop = curi.getLastHop();
+        if (!hop.isEmpty() && !hop.equals(Hop.NAVLINK.getHopString())) return;
         if (!server.startSoft404Probe()) return;
         server.makeDirty();
         try {

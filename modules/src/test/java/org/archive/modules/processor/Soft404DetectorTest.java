@@ -35,6 +35,8 @@ import org.archive.util.Recorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -190,15 +192,18 @@ class Soft404DetectorTest {
         assertFalse(server().isSoft404ProbeScheduled());
     }
 
-    @Test
-    void doesNotProbeFromEmbeds() throws Exception {
-        CrawlURI image = new CrawlURI(UURIFactory.getInstance("https://example.com/logo.png"),
-                "LE", UURIFactory.getInstance("https://other.example/"), LinkContext.EMBED_MISC);
-        image.setFetchStatus(200);
-        image.setFetchType(CrawlURI.FetchType.HTTP_GET);
-        detector.process(image);
+    @ParameterizedTest
+    @ValueSource(strings = {"LE", "LR", "LX"})
+    void onlyProbesFromSeedsAndNavlinks(String pathFromSeed) throws Exception {
+        CrawlURI page = new CrawlURI(UURIFactory.getInstance("https://example.com/page"),
+                pathFromSeed, UURIFactory.getInstance("https://other.example/"),
+                LinkContext.NAVLINK_MISC);
+        page.setFetchStatus(200);
+        page.setFetchType(CrawlURI.FetchType.HTTP_GET);
+        page.setContentType("text/html");
+        detector.process(page);
 
-        assertTrue(image.getOutLinks().isEmpty());
+        assertTrue(page.getOutLinks().isEmpty());
         assertFalse(server().isSoft404ProbeScheduled());
     }
 
