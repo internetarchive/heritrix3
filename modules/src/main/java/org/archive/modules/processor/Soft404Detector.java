@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.archive.url.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
@@ -264,16 +265,19 @@ public class Soft404Detector extends Processor {
     static List<String> echoesOf(UURI uuri) {
         Set<String> forms = new LinkedHashSet<>();
         try {
-            for (String form : new String[]{uuri.getEscapedPathQuery(), uuri.getPathQuery(),
+            for (String path : new String[]{uuri.getEscapedPathQuery(), uuri.getPathQuery(),
                     uuri.getEscapedPath(), uuri.getPath()}) {
-                if (form == null) continue;
-                // percent-encoded, e.g. in a return URL parameter
-                String encoded = URLEncoder.encode(form, UTF_8);
-                if (encoded.length() >= MIN_ECHO_LENGTH) forms.add(encoded);
-                if (form.startsWith("/")) form = form.substring(1);
-                if (form.length() < MIN_ECHO_LENGTH) continue;
-                forms.add(form);
-                forms.add(form.replace("/", "\\/")); // JSON
+                if (path == null) continue;
+                // also without a trailing slash, e.g. in a canonical link
+                for (String form : List.of(path, StringUtils.removeEnd(path, "/"))) {
+                    // percent-encoded, e.g. in a return URL parameter
+                    String encoded = URLEncoder.encode(form, UTF_8);
+                    if (encoded.length() >= MIN_ECHO_LENGTH) forms.add(encoded);
+                    if (form.startsWith("/")) form = form.substring(1);
+                    if (form.length() < MIN_ECHO_LENGTH) continue;
+                    forms.add(form);
+                    forms.add(form.replace("/", "\\/")); // JSON
+                }
             }
         } catch (URIException e) {
             // ignore; use whatever forms we have

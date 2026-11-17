@@ -234,6 +234,19 @@ class Soft404DetectorTest {
     }
 
     @Test
+    void detectsSoft404WithCanonicalLinkWithoutTrailingSlash() throws Exception {
+        CrawlURI probe = probe();
+        recordResponse(probe, canonicalLink(probe.getUURI().getPath()));
+        detector.process(probe);
+
+        CrawlURI page = curi("https://example.com/shop/en/en/", 200);
+        recordResponse(page, canonicalLink("/shop/en/en"));
+        detector.process(page);
+
+        assertTrue(page.getAnnotations().contains(Soft404Detector.ANNOTATION));
+    }
+
+    @Test
     void detectsSoft404EchoingPercentEncodedUrl() throws Exception {
         // e.g. www.meetup.com: <a href="/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2F...">
         CrawlURI probe = probe();
@@ -376,6 +389,11 @@ class Soft404DetectorTest {
         }
         return sb.append("</head><body><h1>Sorry, we couldn't find that page</h1></body></html>")
                 .toString();
+    }
+
+    private static String canonicalLink(String path) {
+        return "<html><head><link rel=\"canonical\" href=\"https://example.com" + path + "\">"
+                + "<title>Not found</title></head><body><a href=\"en/\">English</a></body></html>";
     }
 
     private static String loginLink(CrawlURI curi) {
