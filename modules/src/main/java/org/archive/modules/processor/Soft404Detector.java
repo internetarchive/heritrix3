@@ -194,6 +194,8 @@ public class Soft404Detector extends Processor {
 
     protected void recordProbeResult(CrawlURI curi, CrawlServer server) {
         curi.getAnnotations().add(PROBE_ANNOTATION);
+        // a probe redirected from another server counts as this server's probe
+        if (server.startSoft404Probe()) server.makeDirty();
         if (curi.getFetchStatus() != 200 || curi.getContentLength() <= 0 || !isHtml(curi)) return;
         if (!server.setSoft404FingerprintIfAbsent(fingerprint(curi))) return;
         server.makeDirty();

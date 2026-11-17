@@ -208,6 +208,17 @@ class Soft404DetectorTest {
     }
 
     @Test
+    void redirectedProbeCountsAsTargetServersProbe() throws Exception {
+        CrawlURI redirected = curi("https://www.example.com" + detector.getProbePath(), 200);
+        recordResponse(redirected, "<html><title>Not here</title></html>");
+        detector.process(redirected);
+
+        CrawlServer www = serverCache.getServerFor("www.example.com:443");
+        assertNotNull(www.getSoft404Fingerprint());
+        assertTrue(www.isSoft404ProbeScheduled());
+    }
+
+    @Test
     void metaRefreshToDifferentTargetIsNotSoft404() throws Exception {
         CrawlURI probe = probe();
         recordResponse(probe, metaRefresh("/"));
