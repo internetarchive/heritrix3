@@ -159,7 +159,7 @@ class Soft404DetectorTest {
         CrawlURI probe = probe();
         recordResponse(probe, "<html><title>Not here</title></html>");
         detector.process(probe);
-        CrawlServer.Soft404Fingerprint fingerprint = server().getSoft404Fingerprint();
+        Long fingerprint = server().getSoft404Fingerprint();
 
         CrawlURI redirected = curi("https://example.com" + detector.getProbePath(), 200);
         recordResponse(redirected, "<html><title>Something else</title></html>");
@@ -212,6 +212,20 @@ class Soft404DetectorTest {
         recordResponse(page, metaRefresh("https://partner.example.org/reports/annual-report"));
         assertEquals(ProcessResult.PROCEED, detector.process(page));
         assertFalse(page.getAnnotations().contains(Soft404Detector.ANNOTATION));
+    }
+
+    @Test
+    void detectsSoft404EchoingPathManyTimes() throws Exception {
+        // the probe path is longer than the page's, so their raw lengths differ a lot
+        CrawlURI probe = probe();
+        recordResponse(probe, hreflangLinks(probe.getUURI().getPath()));
+        detector.process(probe);
+
+        CrawlURI page = curi("https://example.com/blog/en/about", 200);
+        recordResponse(page, hreflangLinks(page.getUURI().getPath()));
+        detector.process(page);
+
+        assertTrue(page.getAnnotations().contains(Soft404Detector.ANNOTATION));
     }
 
     @Test
@@ -344,6 +358,19 @@ class Soft404DetectorTest {
     private static String metaRefresh(String target) {
         return "<html><head><meta http-equiv=\"refresh\" content=\"0;url=" + target + "\">"
                 + "<title>Redirecting</title></head><body>Redirecting...</body></html>";
+    }
+
+    private static String hreflangLinks(String path) {
+        StringBuilder sb = new StringBuilder("<html><head><title>Not found</title>");
+        for (String lang : List.of("de", "fr", "es", "it", "nl", "pt", "pl", "sv", "da", "fi",
+                "no", "cs", "hu", "ro", "el", "tr", "ja", "ko", "zh", "ru", "uk", "bg", "hr", "sk",
+                "sl", "lt", "lv", "et", "he", "ar")) {
+            sb.append("<link rel=\"alternate\" hreflang=\"").append(lang)
+                    .append("\" href=\"https://example.com/").append(lang).append(path)
+                    .append("\">\n");
+        }
+        return sb.append("</head><body><h1>Sorry, we couldn't find that page</h1></body></html>")
+                .toString();
     }
 
     private static String loginLink(CrawlURI curi) {

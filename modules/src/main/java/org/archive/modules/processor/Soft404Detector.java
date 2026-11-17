@@ -40,7 +40,6 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.net.CrawlServer;
-import org.archive.modules.net.CrawlServer.Soft404Fingerprint;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -159,12 +158,14 @@ public class Soft404Detector extends Processor {
             int status = curi.getFetchStatus();
             return status >= 300 && status < 400 ? ProcessResult.PROCEED : ProcessResult.FINISH;
         }
-        Soft404Fingerprint fingerprint = server.getSoft404Fingerprint();
+        Long fingerprint = server.getSoft404Fingerprint();
         if (fingerprint == null) {
             scheduleProbe(curi, server);
             return ProcessResult.PROCEED;
         }
-        if (isExempt(curi) || !matchesProbe(curi, fingerprint)) return ProcessResult.PROCEED;
+        if (isExempt(curi) || curi.getFetchStatus() != 200 || fingerprint(curi) != fingerprint) {
+            return ProcessResult.PROCEED;
+        }
         curi.getAnnotations().add(ANNOTATION);
         soft404sDetected.incrementAndGet();
         return getSkipExtraction() ? ProcessResult.FINISH : ProcessResult.PROCEED;
@@ -191,21 +192,12 @@ public class Soft404Detector extends Processor {
     protected void recordProbeResult(CrawlURI curi, CrawlServer server) {
         curi.getAnnotations().add(PROBE_ANNOTATION);
         if (curi.getFetchStatus() != 200 || curi.getContentLength() <= 0 || !isHtml(curi)) return;
-        // The probe may be redirected to another server that has already recorded its own.
-        if (!server.setSoft404FingerprintIfAbsent(new Soft404Fingerprint(fingerprint(curi),
-                curi.getContentLength()))) return;
+        if (!server.setSoft404FingerprintIfAbsent(fingerprint(curi))) return;
         server.makeDirty();
         serversWithSoft404s.incrementAndGet();
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("Soft 404s detected on " + server);
         }
-    }
-
-    protected boolean matchesProbe(CrawlURI curi, Soft404Fingerprint probe) {
-        if (curi.getFetchStatus() != 200) return false;
-        long tolerance = Math.max(1024, probe.contentLength() / 10);
-        if (Math.abs(curi.getContentLength() - probe.contentLength()) > tolerance) return false;
-        return fingerprint(curi) == probe.hash();
     }
 
     protected boolean isProbe(CrawlURI curi) {

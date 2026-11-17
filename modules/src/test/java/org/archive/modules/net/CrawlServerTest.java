@@ -42,10 +42,8 @@ public class CrawlServerTest {
     @Test
     public void testKryoRoundTripKeepsSoft404Fingerprint() {
         CrawlServer server = new CrawlServer("example.com:443");
-        CrawlServer.Soft404Fingerprint fingerprint =
-                new CrawlServer.Soft404Fingerprint(42, 1234);
         server.startSoft404Probe();
-        server.setSoft404FingerprintIfAbsent(fingerprint);
+        server.setSoft404FingerprintIfAbsent(42);
 
         KryoBinding<CrawlServer> binding = new KryoBinding<>(CrawlServer.class);
         DatabaseEntry entry = new DatabaseEntry();
@@ -53,7 +51,7 @@ public class CrawlServerTest {
         CrawlServer restored = binding.entryToObject(entry);
 
         assertTrue(restored.isSoft404ProbeScheduled());
-        assertEquals(fingerprint, restored.getSoft404Fingerprint());
+        assertEquals(42L, restored.getSoft404Fingerprint());
     }
 
     @Test
