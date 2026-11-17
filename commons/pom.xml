@@ -75,7 +75,7 @@
 		<dependency>
 			<groupId>dnsjava</groupId>
 			<artifactId>dnsjava</artifactId>
-			<version>3.7.0</version>
+			<version>3.7.1</version>
 			<scope>compile</scope>
 		</dependency>
 		<!--
