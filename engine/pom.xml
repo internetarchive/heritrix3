@@ -138,6 +138,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
+			<artifactId>codemirror__streamparser</artifactId>
+			<version>6.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars.npm</groupId>
 			<artifactId>codemirror__state</artifactId>
 			<version>6.7.6</version>
 		</dependency>
