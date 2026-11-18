@@ -23,6 +23,10 @@ package org.archive.crawler.postprocessor;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_PREREQUISITE_UNSCHEDULABLE_FAILURE;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.archive.url.URIException;
 import org.archive.crawler.framework.Frontier;
 import org.archive.crawler.reporting.CrawlerLoggerModule;
@@ -217,6 +221,25 @@ public class CandidatesProcessor extends Processor {
         }        
     }
     
+    /**
+     * Removes outlinks that duplicate the URI of an embed outlink, so that a
+     * resource the page needs is scheduled as an embed even when it was
+     * first discovered via another kind of hop.
+     */
+    static void dropNonEmbedDuplicates(Collection<CrawlURI> outlinks) {
+        Set<String> embeds = new HashSet<>();
+        for (CrawlURI link : outlinks) {
+            if (isEmbed(link)) {
+                embeds.add(link.getURI());
+            }
+        }
+        outlinks.removeIf(link -> !isEmbed(link) && embeds.contains(link.getURI()));
+    }
+
+    private static boolean isEmbed(CrawlURI link) {
+        return Hop.EMBED.getHopString().equals(link.getLastHop());
+    }
+
     private boolean domainIsNotTLD(CrawlURI candidate) {
     	try {
     		return !ArchiveUtils.isTld(candidate.getBaseURI().getHost());
@@ -252,6 +275,8 @@ public class CandidatesProcessor extends Processor {
             curi.getOutLinks().clear();
             return;
         }
+
+        dropNonEmbedDuplicates(curi.getOutLinks());
 
         // (3) Handle outlinks (usual bulk of discoveries) 
         for (CrawlURI candidate: curi.getOutLinks()) {
