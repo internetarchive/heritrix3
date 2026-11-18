@@ -19,6 +19,7 @@
             @codemirror/lint
             @codemirror/search
             @codemirror/state
+            @codemirror/streamparser
             @codemirror/view
             crelt index.js
             @lezer/common
