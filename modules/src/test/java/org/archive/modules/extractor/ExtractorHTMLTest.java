@@ -818,6 +818,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "<link href=/empty-rel rel=>" +
                 "<link href=/just-spaces rel='   '>" +
                 "<link href=/canonical rel=canonical>" +
+                "<link href=/next-page rel=prefetch>" +
+                "<link href=/prerendered rel=prerender>" +
                 "<link href=/unknown rel=unknown>";
 
         List<String> expectedLinks = Arrays.asList(
@@ -826,6 +828,8 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "E https://www.example.org/style.css",
                 "E https://www.example.org/style2.css",
                 "L https://www.example.org/canonical",
+                "L https://www.example.org/next-page",
+                "L https://www.example.org/prerendered",
                 "L https://www.example.org/unknown"
         );
 
