@@ -81,6 +81,11 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     protected int http3Port;
     protected long http3Expiry;
 
+    /** Soft 404 detection state, maintained by Soft404Detector. */
+    protected boolean soft404ProbeScheduled;
+    /** Non-null only if the probe found a soft 404. */
+    protected Long soft404Fingerprint;
+
     /**
      * Creates a new CrawlServer object.
      *
@@ -252,6 +257,39 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 	public synchronized boolean isValidRobots() {
 		return validRobots;
 	}
+
+    /**
+     * Marks the soft 404 probe as scheduled, unless it already was.
+     * @return true if the caller should schedule a probe
+     */
+    public synchronized boolean startSoft404Probe() {
+        if (soft404ProbeScheduled) return false;
+        soft404ProbeScheduled = true;
+        return true;
+    }
+
+    public synchronized boolean isSoft404ProbeScheduled() {
+        return soft404ProbeScheduled;
+    }
+
+    /**
+     * @return the fingerprint of the page returned with a success status for a nonexistent URL,
+     *         or null if there is none
+     */
+    public synchronized Long getSoft404Fingerprint() {
+        return soft404Fingerprint;
+    }
+
+    /**
+     * Records the fingerprint of the page returned with a success status for a nonexistent URL,
+     * unless one was already recorded.
+     * @return true if the fingerprint was recorded
+     */
+    public synchronized boolean setSoft404FingerprintIfAbsent(long fingerprint) {
+        if (soft404Fingerprint != null) return false;
+        soft404Fingerprint = fingerprint;
+        return true;
+    }
 
     public synchronized void clearAltSvc() {
         http3Port = 0;
