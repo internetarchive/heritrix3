@@ -812,6 +812,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "<link href='/style.css' rel=stylesheet>" +
                 "<link rel='my stylesheet rocks' href=/style2.css>" +
                 "<link rel=icon href=/icon.ico>" +
+                "<link rel=preload href=/font.woff2 as=font>" +
                 "<link href='http://dns-prefetch.example.com/' rel=dns-prefetch>" +
                 "<link href=/without-rel>" +
                 "<link href=/empty-rel rel=>" +
@@ -820,6 +821,7 @@ public class ExtractorHTMLTest extends StringExtractorTestBase {
                 "<link href=/unknown rel=unknown>";
 
         List<String> expectedLinks = Arrays.asList(
+                "E https://www.example.org/font.woff2",
                 "E https://www.example.org/icon.ico",
                 "E https://www.example.org/style.css",
                 "E https://www.example.org/style2.css",

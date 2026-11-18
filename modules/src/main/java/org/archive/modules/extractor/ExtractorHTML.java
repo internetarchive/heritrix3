@@ -773,6 +773,7 @@ public class ExtractorHTML extends ContentExtractor implements InitializingBean 
             switch (linkType) {
                 case "icon":
                 case "stylesheet":
+                case "preload":
                 case "modulepreload":
                 case "prefetch":
                 case "prerender":
