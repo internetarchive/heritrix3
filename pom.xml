@@ -135,6 +135,11 @@ http://maven.apache.org/guides/mini/guide-m1-m2.html
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+			<dependency>
+				<groupId>org.json</groupId>
+				<artifactId>json</artifactId>
+				<version>20260814</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
