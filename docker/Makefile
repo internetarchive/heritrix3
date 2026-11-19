@@ -1,10 +1,10 @@
 # makefile to build and publish images
 # You can override version and repo
-#  make image version=3.4.0-20210923 repo=iipc/
+#  make image version=3.19.0 repo=iipc/
 
-.PHONY: all image-all-version run run-contrib image-all image image-contrib publish-all publish publish-contrib clean-all clean clean-contrib
+.PHONY: all run run-contrib image-all image image-contrib publish-all publish publish-contrib clean-all clean clean-contrib
 
-version ?= 3.4.0-20210923
+version ?= 3.19.0
 repo = 
 #pwd ?= $(shell pwd)
 
@@ -23,7 +23,7 @@ image:
 	docker tag heritrix:$(version) $(repo)heritrix:$(version)-jre
 
 image-contrib:
-	docker build --build-arg version=$(version) --build-arg java=8-jre -t heritrix:$(version)-contrib -f Dockerfile.contrib .
+	docker build --build-arg version=$(version) --target contrib -t heritrix:$(version)-contrib .
 	docker tag heritrix:$(version)-contrib $(repo)heritrix:contrib
 	docker tag heritrix:$(version)-contrib $(repo)heritrix:$(version)-contrib
 	docker tag heritrix:$(version)-contrib $(repo)heritrix:$(version)-contrib-jre
@@ -53,21 +53,6 @@ clean-contrib:
 	docker image rm $(repo)heritrix:$(version)-contrib
 	docker image rm $(repo)heritrix:$(version)-contrib-jre
 	docker image rm heritrix:$(version)-contrib || true
-
-# ------------------------------------
-
-image-all-version:
-	@echo "following (lower) version do not support the -r switch"
-	$(MAKE) image version=3.4.0-20200518 repo=$(repo)
-	$(MAKE) image version=3.4.0-20210527 repo=$(repo)
-	$(MAKE) image version=3.4.0-20210617 repo=$(repo)
-	$(MAKE) image version=3.4.0-20210618 repo=$(repo)
-	$(MAKE) image version=3.4.0-20210621 repo=$(repo)
-	@echo "following ones support the -r switch (run single job cli option)"
-	$(MAKE) image version=3.4.0-20210803 repo=$(repo)
-	# current ones
-	$(MAKE) image-contrib version=3.4.0-20210923 repo=$(repo)
-	$(MAKE) image version=3.4.0-20210923 repo=$(repo)
 
 # ------------------------------------
 
