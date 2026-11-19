@@ -1,14 +1,106 @@
 # Changelog
 
-## [Unreleased](https://github.com/internetarchive/heritrix3/tree/HEAD)
+## [3.19.0](https://github.com/internetarchive/heritrix3/releases/tag/3.19.0)  (2026-11-19)
 
-[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.18.0...HEAD)
+[Download distribution zip](https://github.com/internetarchive/heritrix3/releases/download/3.19.0/heritrix-3.19.0-dist.zip) (or [tar.gz](https://github.com/internetarchive/heritrix3/releases/download/3.19.0/heritrix-3.19.0-dist.tar.gz))
+
+[Full Changelog](https://github.com/internetarchive/heritrix3/compare/3.18.0...3.19.0) | [Javadoc](https://www.javadoc.io/doc/org.archive.heritrix/heritrix-engine/3.19.0/index.html) | [Maven Central](https://search.maven.org/artifact/org.archive.heritrix/heritrix/3.19.0/pom)
 
 ### Security
 
 * **BrowserProcessor:** The recording proxy now listens on the loopback interface only and rejects requests that
   don't belong to a page the crawler has open. Previously anyone who could reach the crawler's host could use it as
-  an open forward proxy.
+  an open forward proxy. [#816](https://github.com/internetarchive/heritrix3/pull/816)
+
+### New features
+
+* **BrowserProcessor:**
+  * Added support for running several browsers, listed in the new `browsers` property. Pages from the same site are
+    visited in the same browser where possible. Browsers are launched in parallel, the crawl starts once
+    `minBrowsers` of them are up, failed launches are retried with backoff, and a browser that crashes or hangs is
+    restarted and its page retried once. The processor report now shows the status of each browser. Note that
+    `concurrency` now limits open pages per browser rather than in total. [#817](https://github.com/internetarchive/heritrix3/pull/817)
+  * Browsers can be launched on other machines over SSH, e.g. `ssh://user@browser2.example.org`. The SSH connection
+    carries both the WebDriver BiDi connection and the browser's traffic to the recording proxy. Use `LocalBrowser`
+    or `SshBrowser` beans to set `concurrency`, `executable` and options per browser. [#819](https://github.com/internetarchive/heritrix3/pull/819)
+  * Browser-based crawling is now documented, and the Groovy default profile includes a commented-out
+    BrowserProcessor bean. [#820](https://github.com/internetarchive/heritrix3/pull/820)
+* **ExtractorSVG:** New extractor for links in SVG images, including `<image>`, `<use>`, `<script>`, `<a>`,
+  `<?xml-stylesheet?>`, `url()` in presentation attributes and `<style>`, and HTML inside `<foreignObject>`. Added to
+  the default profiles. [#812](https://github.com/internetarchive/heritrix3/pull/812)
+* **Soft404Detector:** New processor that probes each server for a random path and annotates later responses
+  matching the probe's content as `soft404`. With `skipExtraction` enabled the rest of the fetch chain is skipped for
+  them, preventing endless loops of fake URLs on sites that return 200 for nonexistent pages. Included but commented
+  out in the default profiles. [#814](https://github.com/internetarchive/heritrix3/pull/814)
+* **ExtractorHTML:** Now extracts `<video poster>` and `<link imagesrcset>` as embeds, `formaction` on buttons and
+  inputs (subject to `ignoreFormActionUrls` and `extractOnlyFormGets`), and links inside `<iframe srcdoc>`.
+  Hrefs on inline SVG elements like `<image>` and `<use>` are now embeds. [#804](https://github.com/internetarchive/heritrix3/pull/804) [#812](https://github.com/internetarchive/heritrix3/pull/812)
+* **ExtractorJS:** ES module imports (`import ... from "x"`, `export ... from "x"`, `import("x")`) are now resolved
+  relative to the script's own URL rather than the page that included it, and extracted as embeds. [#808](https://github.com/internetarchive/heritrix3/pull/808)
+* **BotBlockDetector:** Added detection of Azure WAF and Vercel. [#784](https://github.com/internetarchive/heritrix3/pull/784)
+* **AMQPPublishProcessor:** Added a `persistentMessages` option to publish messages as persistent. [#781](https://github.com/internetarchive/heritrix3/pull/781)
+
+### Bug fixes
+
+* **ToeThread:** A thread that died while finishing a URI could keep holding the disposition lock, stalling the whole
+  crawl at the next checkpoint. [#783](https://github.com/internetarchive/heritrix3/pull/783)
+* **StatisticsTracker:** A URI with a host like `0.0.0.0` no longer kills a ToeThread, which left the job stuck in
+  EMPTY. [#821](https://github.com/internetarchive/heritrix3/pull/821)
+* **FetchHTTP:** Responses rejected by `shouldFetchBodyRule` now get the new fetch status `S_MIDFETCH_ABORTED`
+  (`-5005`) instead of being counted as successful fetches in crawl statistics and reports. [#792](https://github.com/internetarchive/heritrix3/pull/792)
+* **FetchHTTP2:** An `Alt-Svc` header without an `ma` parameter now defaults to a 24 hour max age, so HTTP/3 is
+  actually used for such servers. [#803](https://github.com/internetarchive/heritrix3/pull/803)
+* **ExtractorHTML:** 
+  - `<link rel=preload>` is now treated as an embed and `rel=prefetch` and `rel=prerender` as
+  navlinks. When a page links to the same URL both as an embed and otherwise, the embed is what gets scheduled.
+  [#825](https://github.com/internetarchive/heritrix3/pull/825)
+  - A `>` inside a quoted attribute value no longer ends the tag, and JerichoExtractorHTML no longer
+  treats markup inside attribute values as tags. [#804](https://github.com/internetarchive/heritrix3/pull/804)
+* **ExtractorCSS:** Same-document references like `url(#gradient)` are now ignored. [#812](https://github.com/internetarchive/heritrix3/pull/812)
+* **AMQPUrlReceiver / AMQPProducer:** Improved recovery from dropped connections and broker-side consumer cancels,
+  added a liveness check, and stopped leaking connections and channels. The consumer prefetch is now 100.
+  [#781](https://github.com/internetarchive/heritrix3/pull/781)
+* **SourceTags report:** Fixed slow job teardown when `includeResCode` is enabled. [#788](https://github.com/internetarchive/heritrix3/pull/788)
+* **Web UI:** Job directory files are no longer cached by the browser for 10 minutes, which could cause the config
+  editor to show and save over a stale `crawler-beans.cxml`. [#782](https://github.com/internetarchive/heritrix3/pull/782)
+* **BrowserProcessor:** Firefox site isolation is turned off, as it was killing tabs mid-load, and a crashed tab is no
+  longer mistaken for a download. [#819](https://github.com/internetarchive/heritrix3/pull/819)
+
+### Documentation
+
+* Added 24 missing processors to the bean reference. [#815](https://github.com/internetarchive/heritrix3/pull/815)
+* Fixed factual errors in the user documentation. [#787](https://github.com/internetarchive/heritrix3/pull/787)
+
+### Dependency upgrades
+
+* **amqp-client**: 5.36.0 → 5.37.1
+* **codemirror__autocomplete**: 6.20.3 → 6.20.4
+* **codemirror__commands**: 6.11.0 → 6.11.1
+* **codemirror__language**: 6.12.4 → 6.13.1
+* **codemirror__legacy-modes**: 6.5.1 → 6.5.5
+* **codemirror__search**: 6.5.11 → 6.7.2
+* **codemirror__state**: 6.7.4 → 6.7.6
+* **codemirror__streamparser**: 6.0.0 (new)
+* **codemirror__view**: 6.43.11 → 6.43.15
+* **commons-codec**: 1.22.1 → 1.23.0
+* **dnsjava**: 3.6.5 → 3.7.1
+* **gson**: 2.14.0 → 2.15.0
+* **jackson-bom**: 2.22.3 → 2.23.0
+* **jetty** (jetty-bom, jetty-ee10-bom): 12.0.39 → 12.0.41
+* **jsch**: 2.28.7 → 2.28.8
+* **json**: 20250517 → 20260814
+* **kafka-clients**: 4.3.1 → 4.4.0
+* **kryo**: 5.6.2 → 5.7.1
+* **lezer__common**: 1.5.2 → 1.5.5
+* **lezer__highlight**: 1.2.3 → 1.2.5
+* **lezer__lr**: 1.4.10 → 1.4.12
+* **lz4-java**: 1.12.0 → 1.14.1
+* **mina-core**: 2.2.9 → 2.2.10
+* **restlet**: 2.6.0 → 2.6.1
+* **snappy-java**: 1.1.10.7 → 1.1.10.12
+* **spring**: 7.0.9 → 7.0.10
+* **style-mod**: 4.1.3 → 4.1.4
+* **webarchive-commons**: 3.0.5 → 3.0.6
 
 ## [3.18.0](https://github.com/internetarchive/heritrix3/releases/tag/3.18.0)  (2026-10-06)
 
