@@ -40,6 +40,7 @@ public class BrowserProcess {
     static final int LAUNCH_TIMEOUT_SECONDS = 60;
     private static final String[] BROWSERS = new String[]{
             "firefox", "/Applications/Firefox.app/Contents/MacOS/firefox", "chromedriver"};
+    private static final Object CHROMEDRIVER_LAUNCH_LOCK = new Object();
     protected final Process process;
     private final Thread shutdownHook;
     private final Consumer<String> outputListener;
@@ -70,20 +71,36 @@ public class BrowserProcess {
      */
     public static BrowserProcess launchLocal(String executable, List<String> options, Path profileDir)
             throws IOException {
-        return new BrowserProcess(executable == null ? launchAnyBrowser(options, profileDir)
-                : launchBrowser(executable, options, profileDir));
-    }
-
-    private static Process launchAnyBrowser(List<String> options, Path profileDir) throws IOException {
+        if (executable != null) return launch(executable, options, profileDir);
         IOException lastException = null;
-        for (String executable : BROWSERS) {
+        for (String candidate : BROWSERS) {
             try {
-                return launchBrowser(executable, options, profileDir);
+                return launch(candidate, options, profileDir);
             } catch (IOException e) {
                 lastException = e;
             }
         }
         throw new IOException("Failed to launch any of: " + List.of(BROWSERS), lastException);
+    }
+
+    private static BrowserProcess launch(String executable, List<String> options, Path profileDir)
+            throws IOException {
+        if (!executable.contains("chromedriver")) {
+            return new BrowserProcess(launchBrowser(executable, options, profileDir));
+        }
+        // ChromeDriver with --port=0 picks a free port before binding it, so two launched at once
+        // can pick the same one. Hold the lock until it reports the port it's listening on.
+        synchronized (CHROMEDRIVER_LAUNCH_LOCK) {
+            var browser = new BrowserProcess(launchBrowser(executable, options, profileDir));
+            try {
+                browser.webSocketUrl.get(LAUNCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException | TimeoutException e) {
+                // reported by awaitWebSocketUrl()
+            }
+            return browser;
+        }
     }
 
     private static Process launchBrowser(String executable, List<String> options, Path profileDir) throws IOException {
