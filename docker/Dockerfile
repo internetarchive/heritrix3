@@ -17,11 +17,13 @@ ADD --chmod=755 https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
 RUN mv /tmp/yt-dlp-${TARGETARCH} /yt-dlp
 
 FROM eclipse-temurin:${java} AS base
+ARG java
 ARG version
 ARG userid=1001
 LABEL org.opencontainers.image.title="Heritrix" \
       org.opencontainers.image.version="${version}" \
-      org.opencontainers.image.source="https://github.com/internetarchive/heritrix3"
+      org.opencontainers.image.source="https://github.com/internetarchive/heritrix3" \
+      org.opencontainers.image.base.name="docker.io/library/eclipse-temurin:${java}"
 RUN groupadd --gid ${userid} heritrix && \
     useradd --system --uid ${userid} --gid heritrix heritrix
 COPY --chmod=755 entrypoint.sh /opt/entrypoint.sh

@@ -1,18 +1,126 @@
-name: Docker Image CI
+name: Docker images
+
+# Builds and pushes iipc/heritrix images from the release dist tarballs:
+# - when a release is published
+# - daily, if the base image has changed since the latest release was pushed
+# - on demand
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Heritrix version (default latest release)
+        required: false
 
 permissions:
   contents: read
 
-on: workflow_dispatch
+concurrency: docker-images
+
+env:
+  IMAGE: iipc/heritrix
 
 jobs:
-
-  build:
-
+  prepare:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.vars.outputs.version }}
+      latest: ${{ steps.vars.outputs.latest }}
+      base: ${{ steps.vars.outputs.base }}
+      build: ${{ steps.vars.outputs.build }}
     steps:
     - uses: actions/checkout@v7
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag heritrix:$(date +%s)
-      working-directory: docker
+    - id: vars
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        latest_release=$(gh release view --json tagName --jq .tagName)
+        version=${RELEASE_TAG:-${INPUT_VERSION:-$latest_release}}
+        tag=$(sed -n 's/^ARG java=//p' docker/Dockerfile)
+        digest=sha256:$(skopeo inspect --raw "docker://docker.io/library/eclipse-temurin:$tag" | sha256sum | cut -d' ' -f1)
+        base=$tag@$digest
+        build=true
+        if [ "$GITHUB_EVENT_NAME" = schedule ]; then
+          published=$(skopeo inspect --override-os linux --override-arch amd64 "docker://docker.io/$IMAGE:$version" 2>/dev/null |
+            jq -r '.Labels["org.opencontainers.image.base.name"] // ""' || true)
+          if [ "$published" = "docker.io/library/eclipse-temurin:$base" ]; then build=false; fi
+        fi
+        echo "version $version, base $base, published base ${published:-n/a}, build $build"
+        { echo "version=$version"
+          echo "latest=$([ "$version" = "$latest_release" ] && echo true || echo false)"
+          echo "base=$base"
+          echo "build=$build"; } >> "$GITHUB_OUTPUT"
+    - name: Wait for dist tarballs on the release
+      if: steps.vars.outputs.build == 'true'
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ steps.vars.outputs.version }}
+      run: |
+        for _ in $(seq 60); do
+          assets=$(gh release view "$VERSION" --json assets --jq '.assets[].name')
+          if grep -qx "heritrix-$VERSION-dist.tar.gz" <<< "$assets" &&
+             grep -qx "heritrix-contrib-$VERSION-dist.tar.gz" <<< "$assets"; then exit 0; fi
+          sleep 20
+        done
+        echo "dist tarballs not attached to release $VERSION" >&2
+        exit 1
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: heritrix
+            suffix: ''
+            alias: latest
+          - target: contrib
+            suffix: -contrib
+            alias: contrib
+    steps:
+    - uses: actions/checkout@v7
+    - uses: docker/setup-qemu-action@v4
+    - uses: docker/setup-buildx-action@v4
+    - name: Build for smoke test
+      uses: docker/build-push-action@v7
+      with:
+        context: docker
+        target: ${{ matrix.target }}
+        build-args: |
+          version=${{ needs.prepare.outputs.version }}
+          java=${{ needs.prepare.outputs.base }}
+        load: true
+        tags: heritrix-test
+    - name: Smoke test
+      run: |
+        docker run -d --name heritrix -e USERNAME=admin -e PASSWORD=admin -p 8443:8443 heritrix-test
+        for _ in $(seq 60); do
+          if curl -sfk --digest -u admin:admin -o /dev/null https://localhost:8443/engine; then exit 0; fi
+          sleep 2
+        done
+        docker logs heritrix
+        exit 1
+    - uses: docker/login-action@v4
+      with:
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v7
+      with:
+        context: docker
+        target: ${{ matrix.target }}
+        build-args: |
+          version=${{ needs.prepare.outputs.version }}
+          java=${{ needs.prepare.outputs.base }}
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ env.IMAGE }}:${{ needs.prepare.outputs.version }}${{ matrix.suffix }}
+          ${{ needs.prepare.outputs.latest == 'true' && format('{0}:{1}', env.IMAGE, matrix.alias) || '' }}
