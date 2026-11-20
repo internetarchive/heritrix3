@@ -52,10 +52,14 @@ class MitmProxyTest {
 
     @Test
     public void testAllowedAddresses(@TempDir Path tempDir) throws Exception {
-        InetAddress lanAddress = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(address -> address instanceof Inet4Address && !address.isLoopbackAddress())
-                .findFirst().orElse(null);
+        // skip interfaces that are down, such as an idle Docker bridge, whose NAT rules rewrite the source address
+        InetAddress lanAddress = null;
+        for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (!networkInterface.isUp() || networkInterface.isLoopback()) continue;
+            for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
+                if (address instanceof Inet4Address && lanAddress == null) lanAddress = address;
+            }
+        }
         Assumptions.assumeTrue(lanAddress != null, "needs a non-loopback IPv4 address");
         MitmProxy.RequestHandler handler = request -> request.sendResponse(200, Map.of(),
                 new ByteArrayInputStream("ok".getBytes(US_ASCII)));
