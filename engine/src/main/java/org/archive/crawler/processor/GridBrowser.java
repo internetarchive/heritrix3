@@ -21,6 +21,7 @@ package org.archive.crawler.processor;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * A browser session of a {@link BrowserProcessor} on a WebDriver server that supports WebDriver BiDi, such as a
@@ -42,6 +43,7 @@ public class GridBrowser extends BrowserConfig {
     private URI uri;
     private String username;
     private String password;
+    private String browserName;
 
     public String getUri() {
         return uri == null ? null : uri.toString();
@@ -108,5 +110,21 @@ public class GridBrowser extends BrowserConfig {
      */
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getBrowserName() {
+        return browserName;
+    }
+
+    /**
+     * {@code chrome}, {@code firefox} or {@code MicrosoftEdge} to ask the Grid for that browser only. By default the
+     * Grid chooses between Chrome and Firefox.
+     */
+    public void setBrowserName(String browserName) {
+        if (browserName != null && !List.of("chrome", "firefox", "MicrosoftEdge").contains(browserName)) {
+            throw new IllegalArgumentException("Expected browserName chrome, firefox or MicrosoftEdge but got '"
+                    + browserName + "'");
+        }
+        this.browserName = browserName;
     }
 }

@@ -936,14 +936,25 @@ public class BrowserProcessor extends Processor {
                     "proxy", new Session.ProxyConfiguration("manual", proxyAddress, proxyAddress));
             var chromeArgs = new ArrayList<>(options());
             chromeArgs.add("proxy-bypass-list=<-loopback>");
-            List<Map<String,Object>> firstMatch = List.of(
-                    Map.of("browserName", "chrome",
-                            "goog:chromeOptions", Map.of(
-                                    "args", chromeArgs,
-                                    "prefs", Map.of("download_restrictions", 3))),
-                    // no catch-all, as Grid may prefer it over the others
-                    Map.of("browserName", "firefox",
-                            "moz:firefoxOptions", Map.of("args", options(), "prefs", FIREFOX_PREFS)));
+            String browserName = ((GridBrowser) config).getBrowserName();
+            // no catch-all, as Grid may prefer it over the others
+            var firstMatch = new ArrayList<Map<String,Object>>();
+            if (browserName == null || browserName.equals("chrome")) {
+                firstMatch.add(Map.of("browserName", "chrome",
+                        "goog:chromeOptions", Map.of(
+                                "args", chromeArgs,
+                                "prefs", Map.of("download_restrictions", 3))));
+            }
+            if ("MicrosoftEdge".equals(browserName)) {
+                firstMatch.add(Map.of("browserName", "MicrosoftEdge",
+                        "ms:edgeOptions", Map.of(
+                                "args", chromeArgs,
+                                "prefs", Map.of("download_restrictions", 3))));
+            }
+            if (browserName == null || browserName.equals("firefox")) {
+                firstMatch.add(Map.of("browserName", "firefox",
+                        "moz:firefoxOptions", Map.of("args", options(), "prefs", FIREFOX_PREFS)));
+            }
             return new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
         }
 

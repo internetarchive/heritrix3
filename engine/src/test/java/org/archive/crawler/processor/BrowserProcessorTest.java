@@ -272,11 +272,15 @@ class BrowserProcessorTest {
     /**
      * Run with e.g. {@code -DgridUrl=http://localhost:4444 -DgridProxyHost=host.docker.internal}, and
      * {@code -DgridAllowedAddresses=} the Grid nodes' addresses unless their requests arrive from loopback.
+     * {@code -DgridBrowserName=chrome} or {@code firefox} asks for that browser.
      */
     @Test
     @EnabledIfSystemProperty(named = "gridUrl", matches = ".+")
     public void testGrid() throws IOException, InterruptedException {
-        var processor = newBrowserProcessor("grid", List.of(System.getProperty("gridUrl")));
+        var grid = new GridBrowser();
+        grid.setUri(System.getProperty("gridUrl"));
+        grid.setBrowserName(System.getProperty("gridBrowserName"));
+        var processor = newBrowserProcessor("grid", List.of(grid));
         processor.setProxyBindAddress("0.0.0.0");
         processor.setProxyHost(System.getProperty("gridProxyHost"));
         String allowedAddresses = System.getProperty("gridAllowedAddresses");
