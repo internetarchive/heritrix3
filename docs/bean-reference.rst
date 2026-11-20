@@ -556,6 +556,11 @@ SshBrowser
 
 .. bean-doc:: org.archive.crawler.processor.SshBrowser
 
+GridBrowser
+~~~~~~~~~~~
+
+.. bean-doc:: org.archive.crawler.processor.GridBrowser
+
 ExtractLinksBehavior
 ~~~~~~~~~~~~~~~~~~~~
 
