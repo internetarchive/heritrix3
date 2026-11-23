@@ -73,6 +73,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -91,19 +92,22 @@ import static org.archive.modules.fetcher.FetchErrors.TIMER_TRUNC;
 public class BrowserProcessor extends Processor {
     private static final System.Logger logger = System.getLogger(BrowserProcessor.class.getName());
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
+    private static final String PROXY_PROBE_URL = "https://heritrix-proxy-probe.invalid/";
+    private static final long PROXY_PROBE_TIMEOUT_SECONDS = 10;
+    private static final Map<String,Object> FIREFOX_PREFS = Map.of(
+            // send localhost requests via the proxy too (for tests and local crawling)
+            "network.proxy.allow_hijacking_localhost", true,
+            // disable downloads by setting to something that can't be created as a directory
+            "browser.download.dir", "/dev/null",
+            "browser.download.folderList", 2,
+            // Firefox 153 ESR on Linux kills tabs' content processes mid-load with site isolation on
+            "fission.autostart", false);
     // Firefox doesn't seem to allow setting prefs via capabilities with bidi
     // so drop them in user.js instead
-    private static final String USER_JS = """
-            // send localhost requests via the proxy too (for tests and local crawling)
-            user_pref('network.proxy.allow_hijacking_localhost', true);
-
-            // disable downloads by setting to something that can't be created as a directory
-            user_pref('browser.download.dir', '/dev/null');
-            user_pref('browser.download.folderList', 2);
-
-            // Firefox 153 ESR on Linux kills tabs' content processes mid-load with site isolation on
-            user_pref('fission.autostart', false);
-            """;
+    private static final String USER_JS = FIREFOX_PREFS.entrySet().stream()
+            .map(pref -> "user_pref(" + JSONObject.quote(pref.getKey()) + ", "
+                    + JSONObject.valueToString(pref.getValue()) + ");\n")
+            .collect(Collectors.joining());
     protected final CrawlController crawlController;
     protected MitmProxy proxy;
     protected final FetchHTTP2 fetcher;
@@ -114,6 +118,7 @@ public class BrowserProcessor extends Processor {
     protected final ApplicationEventPublisher eventPublisher;
     protected final Map<String, BrowserPage> pages = new ConcurrentHashMap<>();
     protected final Map<BrowsingContext.Context, String> pageIdsByContext = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> proxyProbes = new ConcurrentHashMap<>();
     protected final ProcessorChain extractorChain = new ProcessorChain();
     protected final AtomicLong subresourcesRecorded = new AtomicLong();
     protected List<Behavior> behaviors;
@@ -123,6 +128,10 @@ public class BrowserProcessor extends Processor {
     protected List<?> browsers = List.of("local");
     protected int minBrowsers = 1;
     protected int browserIdleTimeoutSeconds = 300;
+    protected String proxyBindAddress = "127.0.0.1";
+    protected int proxyPort = 0;
+    protected List<String> proxyAllowedAddresses = List.of();
+    protected String proxyHost = "127.0.0.1";
 
     public BrowserProcessor(FetchHTTP2 fetcher, CrawlController crawlController, ApplicationEventPublisher eventPublisher,
                             UriErrorLoggerModule uriErrorLoggerModule) {
@@ -170,7 +179,7 @@ public class BrowserProcessor extends Processor {
             for (int attempt = 0; ; attempt++) {
                 Browser browser = acquireTabSlot(curi.getClassKey());
                 if (browser == null) return; // stopping
-                LocalWebDriverBiDi driver = browser.driver;
+                AbstractWebDriverBiDi driver = browser.driver;
                 try {
                     visit(curi, driver);
                     return;
@@ -275,9 +284,7 @@ public class BrowserProcessor extends Processor {
                     new CompletableFuture<>(), uriErrorLoggerModule);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
-            driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
-                    List.of(new Network.UrlPatternPattern("pattern", "http"),
-                            new Network.UrlPatternPattern("pattern", "https")));
+            interceptRequests(driver, tab);
             BrowsingContext.NavigateResult navigation;
 
             try {
@@ -346,8 +353,8 @@ public class BrowserProcessor extends Processor {
             throw new UncheckedIOException(e);
         }
         if (proxy == null) {
-            proxy = new MitmProxy(this::handleProxyRequest,
-                    scratchDir.resolve("proxy.keystore").toString());
+            proxy = new MitmProxy(this::handleProxyRequest, scratchDir.resolve("proxy.keystore").toString(),
+                    proxyBindAddress, proxyPort, proxyAllowedAddresses);
         }
         try {
             proxy.start();
@@ -382,7 +389,16 @@ public class BrowserProcessor extends Processor {
         if (config instanceof SshBrowser ssh && ssh.uri() == null) {
             throw new IllegalArgumentException("SshBrowser uri must be set");
         }
+        if (config instanceof GridBrowser grid && grid.uri() == null) {
+            throw new IllegalArgumentException("GridBrowser uri must be set");
+        }
         return config;
+    }
+
+    private static void interceptRequests(WebDriverBiDi driver, BrowsingContext.Context tab) {
+        driver.network().addIntercept(List.of(Network.InterceptPhase.beforeRequestSent), List.of(tab),
+                List.of(new Network.UrlPatternPattern("pattern", "http"),
+                        new Network.UrlPatternPattern("pattern", "https")));
     }
 
     private void handleDownloadWillBegin(BrowsingContext.DownloadWillBegin event) {
@@ -416,6 +432,12 @@ public class BrowserProcessor extends Processor {
     private void handleProxyRequest(MitmProxy.Request proxyRequest) throws IOException {
         logger.log(System.Logger.Level.DEBUG, "Handling proxy request {0}", proxyRequest);
         String pageId = proxyRequest.request().getHeaders().get(PAGE_ID_HEADER);
+        CompletableFuture<Void> probe = pageId == null ? null : proxyProbes.get(pageId);
+        if (probe != null) {
+            proxyRequest.sendResponse(200, Map.of("Content-Type", "text/plain"), new ByteArrayInputStream(new byte[0]));
+            probe.complete(null);
+            return;
+        }
         BrowserPage page = pageId == null ? null : pages.get(pageId);
         if (page == null) {
             String message = "Missing or invalid " + PAGE_ID_HEADER + " header\n";
@@ -518,9 +540,9 @@ public class BrowserProcessor extends Processor {
      * Browsers to open pages in, one per entry. Pages from the same queue are opened in the same browser while it
      * has a free tab, so that a site keeps one browser's cookies and cache.
      * <p>
-     * Each entry is a string or a {@link LocalBrowser} or {@link SshBrowser} bean. A bean can override
-     * {@code concurrency}, {@code executable} and {@code options} for that browser. The strings are shorthand for a
-     * bean with nothing overridden:
+     * Each entry is a string or a {@link LocalBrowser}, {@link SshBrowser} or {@link GridBrowser} bean. A bean can
+     * override {@code concurrency}, {@code executable} and {@code options} for that browser. The strings are shorthand
+     * for a bean with nothing overridden:
      * <ul>
      * <li>{@code local} launches {@link #setExecutable(String) executable} on this machine.</li>
      * <li>{@code ssh://[user@]host[:port]} launches it on another machine using the ssh command, which carries the
@@ -530,10 +552,61 @@ public class BrowserProcessor extends Processor {
      * ~/.ssh/config apply. The browser gets a fresh profile directory under ~/.cache/heritrix-browser on the remote
      * machine, removed when it exits. The remote machine can't be this one, as the WebDriver BiDi port is forwarded to
      * the same port number here.</li>
+     * <li>{@code http://host:port} opens a session on a WebDriver server such as a Selenium Grid, as described under
+     * {@link GridBrowser}.</li>
      * </ul>
      */
     public void setBrowsers(List<?> browsers) {
         this.browsers = browsers;
+    }
+
+    public String getProxyBindAddress() {
+        return proxyBindAddress;
+    }
+
+    /**
+     * Address the recording proxy listens on. Browsers on other machines that connect to the proxy directly, rather
+     * than through ssh, need it to listen on an address they can reach, such as 0.0.0.0 for all. It also listens on
+     * loopback for the other browsers.
+     */
+    public void setProxyBindAddress(String proxyBindAddress) {
+        this.proxyBindAddress = proxyBindAddress;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    /**
+     * Port the recording proxy listens on, or 0 for any free port.
+     */
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    /**
+     * Host name or address that Grid browsers use to reach the recording proxy, typically this machine's address
+     * on the Grid's network.
+     */
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    public List<String> getProxyAllowedAddresses() {
+        return proxyAllowedAddresses;
+    }
+
+    /**
+     * Machines allowed to use the recording proxy besides this one, as IP addresses ({@code 192.168.1.20}), CIDR
+     * ranges ({@code 192.168.1.0/24}) or address ranges ({@code 192.168.1.20-192.168.1.29}). Requests from anywhere
+     * else are refused.
+     */
+    public void setProxyAllowedAddresses(List<String> proxyAllowedAddresses) {
+        this.proxyAllowedAddresses = proxyAllowedAddresses;
     }
 
     /**
@@ -687,7 +760,7 @@ public class BrowserProcessor extends Processor {
         protected enum State { UP, IDLE, WAKING, DOWN }
         protected final int id;
         private final BrowserConfig config;
-        protected volatile LocalWebDriverBiDi driver;
+        protected volatile AbstractWebDriverBiDi driver;
         protected volatile State state = State.DOWN;
         protected volatile String lastFailure;
         protected volatile int restarts;
@@ -721,7 +794,7 @@ public class BrowserProcessor extends Processor {
          * Launches the browser, or if that fails schedules another attempt after a delay.
          */
         void launch() {
-            LocalWebDriverBiDi newDriver;
+            AbstractWebDriverBiDi newDriver;
             try {
                 newDriver = createWebDriver();
             } catch (Exception e) {
@@ -757,7 +830,7 @@ public class BrowserProcessor extends Processor {
         /**
          * Marks the browser down and launches a replacement, unless another thread already has.
          */
-        void restart(LocalWebDriverBiDi deadDriver) {
+        void restart(AbstractWebDriverBiDi deadDriver) {
             synchronized (this) {
                 if (driver != deadDriver || state != State.UP) return;
                 state = State.DOWN;
@@ -779,7 +852,7 @@ public class BrowserProcessor extends Processor {
         }
 
         void closeIfIdle() {
-            LocalWebDriverBiDi idleDriver;
+            AbstractWebDriverBiDi idleDriver;
             synchronized (tabsLock) {
                 synchronized (this) {
                     if (state != State.UP || openTabs > 0 || System.nanoTime() - idleSince
@@ -796,7 +869,96 @@ public class BrowserProcessor extends Processor {
             if (driver != null) closeQuietly(driver);
         }
 
-        private LocalWebDriverBiDi createWebDriver() throws Exception {
+        private AbstractWebDriverBiDi createWebDriver() throws Exception {
+            AbstractWebDriverBiDi driver = config instanceof GridBrowser grid
+                    ? new RemoteWebDriverBiDi(grid.uri(), grid.getUsername(), grid.getPassword(), gridCapabilities())
+                    : launchWebDriver();
+            try {
+                driver.session().subscribe(List.of("browsingContext.contextCreated",
+                        "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
+                driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
+                driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
+                probeProxy(driver);
+            } catch (Exception e) {
+                driver.close();
+                throw e;
+            }
+            return driver;
+        }
+
+        private String gridProxyAddress() {
+            return (proxyHost.contains(":") ? "[" + proxyHost + "]" : proxyHost) + ":" + proxy.getPort();
+        }
+
+        /**
+         * Checks that the browser can reach the recording proxy by loading a page through it with a page ID, as
+         * {@link #visit} does. The proxy answers the page itself.
+         */
+        private void probeProxy(AbstractWebDriverBiDi driver) throws Exception {
+            String probeId = UUID.randomUUID().toString();
+            var reached = new CompletableFuture<Void>();
+            proxyProbes.put(probeId, reached);
+            var tab = driver.browsingContext().create(BrowsingContext.CreateType.tab).context();
+            try {
+                pageIdsByContext.put(tab, probeId);
+                interceptRequests(driver, tab);
+                driver.browsingContext().navigate(tab, PROXY_PROBE_URL, BrowsingContext.ReadinessState.none);
+                reached.get(PROXY_PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (TimeoutException | WebDriverException e) {
+                String proxyAddress = config instanceof GridBrowser ? gridProxyAddress() : "127.0.0.1:" + proxy.getPort();
+                String message = "Browser " + id + " did not reach the recording proxy at " + proxyAddress;
+                if (config instanceof SshBrowser) {
+                    message += " through ssh";
+                }
+                if (e instanceof TimeoutException) {
+                    message += " within " + PROXY_PROBE_TIMEOUT_SECONDS + " seconds";
+                } else {
+                    message += ": " + e.getMessage();
+                }
+                if (config instanceof GridBrowser) {
+                    message += ". Check proxyBindAddress, proxyHost and proxyAllowedAddresses.";
+                }
+                throw new IOException(message, e);
+            } finally {
+                proxyProbes.remove(probeId);
+                pageIdsByContext.remove(tab);
+                try {
+                    driver.browsingContext().close(tab);
+                } catch (WebDriverException e) {
+                    logger.log(WARNING, "Error closing the proxy probe tab of browser " + id, e);
+                }
+            }
+        }
+
+        private Session.CapabilitiesRequest gridCapabilities() {
+            String proxyAddress = gridProxyAddress();
+            Map<String,Object> alwaysMatch = Map.of("acceptInsecureCerts", true,
+                    "proxy", new Session.ProxyConfiguration("manual", proxyAddress, proxyAddress));
+            var chromeArgs = new ArrayList<>(options());
+            chromeArgs.add("proxy-bypass-list=<-loopback>");
+            String browserName = ((GridBrowser) config).getBrowserName();
+            // no catch-all, as Grid may prefer it over the others
+            var firstMatch = new ArrayList<Map<String,Object>>();
+            if (browserName == null || browserName.equals("chrome")) {
+                firstMatch.add(Map.of("browserName", "chrome",
+                        "goog:chromeOptions", Map.of(
+                                "args", chromeArgs,
+                                "prefs", Map.of("download_restrictions", 3))));
+            }
+            if ("MicrosoftEdge".equals(browserName)) {
+                firstMatch.add(Map.of("browserName", "MicrosoftEdge",
+                        "ms:edgeOptions", Map.of(
+                                "args", chromeArgs,
+                                "prefs", Map.of("download_restrictions", 3))));
+            }
+            if (browserName == null || browserName.equals("firefox")) {
+                firstMatch.add(Map.of("browserName", "firefox",
+                        "moz:firefoxOptions", Map.of("args", options(), "prefs", FIREFOX_PREFS)));
+            }
+            return new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
+        }
+
+        private LocalWebDriverBiDi launchWebDriver() throws Exception {
             BrowserProcess process;
             int proxyPort;
             String profileDir;
@@ -829,19 +991,7 @@ public class BrowserProcessor extends Processor {
                     // Fallback for other browsers
                     Map.of()
             );
-            var capabilities = new Session.CapabilitiesRequest(alwaysMatch, firstMatch);
-
-            var driver = new LocalWebDriverBiDi(process, capabilities);
-            try {
-                driver.session().subscribe(List.of("browsingContext.contextCreated",
-                        "browsingContext.downloadWillBegin", "network.beforeRequestSent"), null);
-                driver.on(Network.BeforeRequestSent.class, event -> handleBeforeRequestSent(driver, event));
-                driver.on(BrowsingContext.DownloadWillBegin.class, event -> handleDownloadWillBegin(event));
-            } catch (Exception e) {
-                driver.close();
-                throw e;
-            }
-            return driver;
+            return new LocalWebDriverBiDi(process, new Session.CapabilitiesRequest(alwaysMatch, firstMatch));
         }
     }
 
@@ -853,7 +1003,7 @@ public class BrowserProcessor extends Processor {
         }
     }
 
-    private static void closeQuietly(LocalWebDriverBiDi driver) {
+    private static void closeQuietly(AbstractWebDriverBiDi driver) {
         try {
             driver.close();
         } catch (Exception e) {

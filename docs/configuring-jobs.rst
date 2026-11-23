@@ -1041,8 +1041,8 @@ Behaviors run in the order they're listed:
            ]
        }
 
-Running browsers on other machines
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Running browsers on other machines using SSH
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As browsing is resource intensive, it can be helpful to spread the load across multiple servers.
 ``BrowserProcessor`` can be configured to launch browsers on remote machines using SSH.
@@ -1101,6 +1101,79 @@ Add the machine to the ``browsers`` list in the ``BrowserProcessor`` bean:
                        executable: '/opt/firefox/firefox')
        ]
 
+Using Selenium Grid
+~~~~~~~~~~~~~~~~~~~
+
+``BrowserProcessor`` can also open browsers on a `Selenium Grid <https://www.selenium.dev/documentation/grid/>`_
+(version 4 or later), or another WebDriver server that supports WebDriver BiDi. Each Grid entry in ``browsers`` opens
+one browser on the Grid, which loads up to ``concurrency`` pages at once in separate tabs. To use several of the Grid's
+nodes, list the Grid multiple times.
+
+The browsers on the Grid connect directly to the recording proxy in Heritrix, so it must listen on an address they can
+reach. Set ``proxyBindAddress`` to an address of the machine Heritrix runs on, ``proxyHost`` to the address the Grid's
+browsers should connect to, and ``proxyAllowedAddresses`` to the addresses their connections come from. The proxy
+always accepts connections from the local machine. Setting ``proxyPort`` gives the proxy a fixed port, which can be
+opened in a firewall.
+
+.. tab:: XML
+
+   .. code-block:: xml
+
+       <bean id="browser" class="org.archive.crawler.processor.BrowserProcessor">
+         <property name="browsers">
+           <list>
+             <value>http://grid.example.org:4444</value>
+             <bean class="org.archive.crawler.processor.GridBrowser">
+               <property name="uri" value="http://grid.example.org:4444" />
+               <property name="browserName" value="firefox" />
+               <property name="concurrency" value="40" />
+             </bean>
+           </list>
+         </property>
+         <property name="proxyBindAddress" value="192.168.1.10" />
+         <property name="proxyHost" value="192.168.1.10" />
+         <property name="proxyAllowedAddresses">
+           <list>
+             <value>192.168.1.0/24</value>
+           </list>
+         </property>
+       </bean>
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       browser(BrowserProcessor) {
+           browsers = [
+                   'http://grid.example.org:4444',
+                   new GridBrowser(uri: 'http://grid.example.org:4444', browserName: 'firefox', concurrency: 40)
+           ]
+           proxyBindAddress = '192.168.1.10'
+           proxyHost = '192.168.1.10'
+           proxyAllowedAddresses = ['192.168.1.0/24']
+       }
+
+The Grid chooses between Chrome and Firefox unless ``browserName`` is set to ``chrome``, ``firefox`` or
+``MicrosoftEdge``. A Grid whose browsers run on the same machine as Heritrix can use the default proxy settings.
+
+Anyone who can reach the Grid can drive its browsers, so consider enabling its authentication. Give the username and
+password in the URI, as in ``http://user:password@grid.example.org:4444``, or set the ``username`` and ``password``
+properties of ``GridBrowser``.
+
+The Grid's nodes need their WebDriver drivers (ChromeDriver, geckodriver or msedgedriver) installed in advance as they
+cannot be downloaded through the recording proxy. The official Selenium Docker images already include them.
+You can have Selenium Manager download them on a node with:
+
+.. code-block:: bash
+
+    ~/.cache/selenium/manager/*/selenium-manager --browser chrome
+    ~/.cache/selenium/manager/*/selenium-manager --browser firefox
+    ~/.cache/selenium/manager/*/selenium-manager --browser MicrosoftEdge
+
+On Kubernetes, the `Selenium Grid Helm chart <https://github.com/SeleniumHQ/docker-selenium/tree/trunk/charts/selenium-grid>`_
+can autoscale nodes with KEDA. As idle browsers are closed after ``browserIdleTimeoutSeconds``, ending their sessions,
+nodes can scale down while the crawl is quiet.
+
 Monitoring the browsers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1118,7 +1191,9 @@ The ``BrowserProcessor`` entry in the processors report (``processors-report.txt
 
 A browser is *up* when it's running, and *idle* when it has been closed after ``browserIdleTimeoutSeconds`` with no
 open pages. It's launched again when a page needs it, and is *waking* while it starts. A browser that failed to
-launch or crashed is *down*, and is retried in the background.
+launch or crashed is *down*, and is retried in the background. A browser that can't reach the recording proxy fails to
+launch, with a last failure such as ``Browser 3 did not reach the recording proxy at 192.168.1.10:8443 within 10
+seconds``.
 
 Modifying a Running Job
 -----------------------

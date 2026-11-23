@@ -338,6 +338,18 @@ http://example.example/example
      <property name="uri" value="ssh://crawler@browser2.example.org" />
      <property name="concurrency" value="40" />
     </bean>
+    <bean class="org.archive.crawler.processor.GridBrowser">
+     <property name="uri" value="https://grid.example.org" />
+     <property name="username" value="heritrix" />
+     <property name="password" value="secret" />
+    </bean>
+   </list>
+  </property>
+  <property name="proxyBindAddress" value="0.0.0.0" />
+  <property name="proxyHost" value="crawler.example.org" />
+  <property name="proxyAllowedAddresses">
+   <list>
+    <value>192.168.1.0/24</value>
    </list>
   </property>
   <property name="executable" value="firefox" />

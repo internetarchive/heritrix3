@@ -30,16 +30,20 @@ import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.proxy.ProxyHandler;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.ConnectHandler;
+import org.eclipse.jetty.server.handler.InetAccessHandler;
 import org.eclipse.jetty.util.Callback;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static org.eclipse.jetty.http.HttpHeader.ACCEPT_ENCODING;
@@ -50,11 +54,35 @@ import static org.eclipse.jetty.http.HttpHeader.ACCEPT_ENCODING;
 public class MitmProxy {
     private static final String UPSTREAM_PROXY = MitmProxy.class.getName() + ".upstreamProxy";
     private final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory();
-    private final Server server = new Server(new InetSocketAddress("127.0.0.1", 0));
+    private final Server server;
+    private final InetSocketAddress address;
+    private ServerConnector loopbackConnector;
+    private final InetAccessHandler accessHandler = new InetAccessHandler();
     private final RequestHandler requestHandler;
 
+    /**
+     * Creates a proxy that listens on a free port on 127.0.0.1 and accepts requests only from this machine.
+     */
     public MitmProxy(RequestHandler requestHandler, String keystorePath) {
+        this(requestHandler, keystorePath, "127.0.0.1", 0, List.of());
+    }
+
+    /**
+     * Creates a proxy that listens on the given address and port as well as loopback, and accepts requests from
+     * loopback and the allowed addresses.
+     *
+     * @param host the address to listen on
+     * @param port the port to listen on, or 0 for any free port
+     * @param allowedAddresses addresses that may use the proxy besides loopback, as patterns accepted by Jetty's
+     *                         {@link org.eclipse.jetty.util.InetAddressPattern}. Requests from elsewhere get 403.
+     */
+    public MitmProxy(RequestHandler requestHandler, String keystorePath, String host, int port,
+                     Collection<String> allowedAddresses) {
         this.requestHandler = requestHandler;
+        address = new InetSocketAddress(host, port);
+        server = new Server(address);
+        accessHandler.include("127.0.0.0/8", "::1");
+        allowedAddresses.forEach(accessHandler::include);
         generateKeystore(keystorePath);
         sslConnectionFactory.getSslContextFactory().setKeyStorePath(keystorePath);
         sslConnectionFactory.getSslContextFactory().setKeyStorePassword("password");
@@ -86,14 +114,26 @@ public class MitmProxy {
 
     public void start() throws Exception {
         sslConnectionFactory.start();
-        server.setHandler(new Handler.Sequence(
+        accessHandler.setHandler(new Handler.Sequence(
                 new SslConnectHandler(),
                 new MitmProxyHandler()));
+        server.setHandler(accessHandler);
         server.start();
+        if (!address.getAddress().isLoopbackAddress() && !address.getAddress().isAnyLocalAddress()) {
+            loopbackConnector = new ServerConnector(server);
+            loopbackConnector.setHost(InetAddress.getLoopbackAddress().getHostAddress());
+            loopbackConnector.setPort(getPort());
+            server.addConnector(loopbackConnector);
+            loopbackConnector.start();
+        }
     }
 
     public void stop() throws Exception {
         server.stop();
+        if (loopbackConnector != null) {
+            server.removeConnector(loopbackConnector);
+            loopbackConnector = null;
+        }
         sslConnectionFactory.stop();
     }
 

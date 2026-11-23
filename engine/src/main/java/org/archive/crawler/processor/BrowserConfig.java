@@ -36,13 +36,18 @@ public abstract class BrowserConfig {
      */
     static BrowserConfig parse(String browser) {
         if (browser.equals("local")) return new LocalBrowser();
+        if (browser.startsWith("http:") || browser.startsWith("https:")) {
+            var grid = new GridBrowser();
+            grid.setUri(browser);
+            return grid;
+        }
         try {
             var ssh = new SshBrowser();
             ssh.setUri(browser);
             return ssh;
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unsupported browser '" + browser +
-                    "': expected 'local' or 'ssh://[user@]host[:port]'");
+            throw new IllegalArgumentException("Unsupported browser '" + GridBrowser.redact(browser) +
+                    "': expected 'local', 'ssh://[user@]host[:port]' or 'http[s]://host:port'", e);
         }
     }
 
