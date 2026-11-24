@@ -189,6 +189,10 @@ public class Soft404Detector extends Processor {
             return ProcessResult.PROCEED;
         }
         if (isExempt(curi) || curi.getFetchStatus() != 200) return ProcessResult.PROCEED;
+        // nothing to match against and no probe to start, so no need to hash the content
+        if (!state.hasFingerprints() && !state.canStartProbe(getMaxProbes())) {
+            return ProcessResult.PROCEED;
+        }
 
         String content = readContent(curi);
         long fingerprint = fingerprint(content, echoesOf(curi.getUURI()));
