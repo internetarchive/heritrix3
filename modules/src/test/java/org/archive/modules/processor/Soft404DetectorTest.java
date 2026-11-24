@@ -258,6 +258,22 @@ class Soft404DetectorTest {
     }
 
     @Test
+    void detectsSoft404ReachedByItsOwnRelativeLink() throws Exception {
+        // an app shell served for every path, fetched at one of its own relative links
+        String shell = "<html><head><link rel=\"stylesheet\" href=\"assets/css/styles.css\">"
+                + "</head><body><div id=\"root\"></div></body></html>";
+        CrawlURI probe = probe();
+        recordResponse(probe, shell);
+        detector.process(probe);
+
+        CrawlURI page = curi("https://example.com/assets/css/styles.css", 200);
+        recordResponse(page, shell);
+        detector.process(page);
+
+        assertTrue(page.getAnnotations().contains(Soft404Detector.ANNOTATION));
+    }
+
+    @Test
     void detectsSoft404EchoingPercentEncodedUrl() throws Exception {
         // e.g. www.meetup.com: <a href="/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2F...">
         CrawlURI probe = probe();

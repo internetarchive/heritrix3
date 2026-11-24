@@ -166,7 +166,7 @@ public class Soft404Detector extends Processor {
             scheduleProbe(curi, server);
             return ProcessResult.PROCEED;
         }
-        if (isExempt(curi) || curi.getFetchStatus() != 200 || fingerprint(curi) != fingerprint) {
+        if (isExempt(curi) || curi.getFetchStatus() != 200 || !matches(curi, fingerprint)) {
             return ProcessResult.PROCEED;
         }
         curi.getAnnotations().add(ANNOTATION);
@@ -240,8 +240,22 @@ public class Soft404Detector extends Processor {
     }
 
     static long fingerprint(CrawlURI curi) {
-        String normalized = normalize(readContent(curi), echoesOf(curi.getUURI()));
-        return Hashing.murmur3_128().hashString(normalized, UTF_8).asLong();
+        return fingerprint(readContent(curi), echoesOf(curi.getUURI()));
+    }
+
+    /**
+     * Whether the content matches the given probe fingerprint, either with its echoes of its own
+     * URL removed or as is. The latter catches a page reached by a relative link on a copy of
+     * itself, where the "echo" is part of the page and so also in the probe's content.
+     */
+    static boolean matches(CrawlURI curi, long fingerprint) {
+        String content = readContent(curi);
+        return fingerprint(content, echoesOf(curi.getUURI())) == fingerprint
+                || fingerprint(content, List.of()) == fingerprint;
+    }
+
+    private static long fingerprint(String content, List<String> echoes) {
+        return Hashing.murmur3_128().hashString(normalize(content, echoes), UTF_8).asLong();
     }
 
     /**
