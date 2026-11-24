@@ -21,6 +21,7 @@ package org.archive.modules.processor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -161,7 +162,7 @@ public class Soft404Detector extends Processor {
             int status = curi.getFetchStatus();
             return status >= 300 && status < 400 ? ProcessResult.PROCEED : ProcessResult.FINISH;
         }
-        Long fingerprint = server.getSoft404Fingerprint();
+        Long fingerprint = server.getSoft404State().getFingerprint();
         if (fingerprint == null) {
             scheduleProbe(curi, server);
             return ProcessResult.PROCEED;
@@ -177,7 +178,7 @@ public class Soft404Detector extends Processor {
     protected void scheduleProbe(CrawlURI curi, CrawlServer server) {
         int status = curi.getFetchStatus();
         if (status < 200 || status >= 400) return;
-        if (!server.startSoft404Probe()) return;
+        if (!server.getSoft404State().startProbe()) return;
         server.makeDirty();
         try {
             UURI probeUri = UURIFactory.getInstance(curi.getUURI(), probePath);
@@ -192,10 +193,11 @@ public class Soft404Detector extends Processor {
 
     protected void recordProbeResult(CrawlURI curi, CrawlServer server) {
         curi.getAnnotations().add(PROBE_ANNOTATION);
+        State state = server.getSoft404State();
         // a probe redirected from another server counts as this server's probe
-        if (server.startSoft404Probe()) server.makeDirty();
+        if (state.startProbe()) server.makeDirty();
         if (curi.getFetchStatus() != 200 || curi.getContentLength() <= 0 || !isHtml(curi)) return;
-        if (!server.setSoft404FingerprintIfAbsent(fingerprint(curi))) return;
+        if (!state.setFingerprintIfAbsent(fingerprint(curi))) return;
         server.makeDirty();
         serversWithSoft404s.incrementAndGet();
         if (logger.isLoggable(Level.FINE)) {
@@ -383,5 +385,49 @@ public class Soft404Detector extends Processor {
                "  Probes scheduled: " + probesScheduled.get() + "\n" +
                "  Servers with soft 404s: " + serversWithSoft404s.get() + "\n" +
                "  Soft 404s detected: " + soft404sDetected.get() + "\n";
+    }
+
+    /**
+     * Soft 404 detection state of one server, kept in its {@link CrawlServer}.
+     */
+    public static class State implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private boolean probeScheduled;
+        /** Non-null only if the probe found a soft 404. */
+        private Long fingerprint;
+
+        /**
+         * Marks the probe as scheduled, unless it already was.
+         * @return true if the caller should schedule a probe
+         */
+        public synchronized boolean startProbe() {
+            if (probeScheduled) return false;
+            probeScheduled = true;
+            return true;
+        }
+
+        public synchronized boolean isProbeScheduled() {
+            return probeScheduled;
+        }
+
+        /**
+         * @return the fingerprint of the page returned with a success status for a nonexistent
+         *         URL, or null if there is none
+         */
+        public synchronized Long getFingerprint() {
+            return fingerprint;
+        }
+
+        /**
+         * Records the fingerprint of the page returned with a success status for a nonexistent
+         * URL, unless one was already recorded.
+         * @return true if the fingerprint was recorded
+         */
+        public synchronized boolean setFingerprintIfAbsent(long fingerprint) {
+            if (this.fingerprint != null) return false;
+            this.fingerprint = fingerprint;
+            return true;
+        }
     }
 }
