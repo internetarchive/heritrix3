@@ -71,7 +71,9 @@ import com.google.common.hash.Hashing;
  * <p>
  * Things to be aware of:
  * <ul>
- * <li>Each server gets one extra request, the probe, which is archived like any other.</li>
+ * <li>Each server that returns an HTML page gets one extra request, the probe, which is archived
+ * like any other. This includes servers reached only by embeds or redirects, as soft 404s can
+ * produce endless URLs through those too.</li>
  * <li>Pages fetched before a server's probe completes aren't checked.</li>
  * <li>Seeds and the root URL ("/") are never treated as soft 404s, since many sites serve their
  * home page for missing URLs.</li>
@@ -175,10 +177,6 @@ public class Soft404Detector extends Processor {
     protected void scheduleProbe(CrawlURI curi, CrawlServer server) {
         int status = curi.getFetchStatus();
         if (status < 200 || status >= 400) return;
-        // Only probe servers reached as seeds or by following links, not e.g. CDNs or other
-        // sites that a crawled site redirects to.
-        String hop = curi.getLastHop();
-        if (!hop.isEmpty() && !hop.equals(Hop.NAVLINK.getHopString())) return;
         if (!server.startSoft404Probe()) return;
         server.makeDirty();
         try {

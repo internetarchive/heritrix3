@@ -193,8 +193,8 @@ class Soft404DetectorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"LE", "LR", "LX"})
-    void onlyProbesFromSeedsAndNavlinks(String pathFromSeed) throws Exception {
+    @ValueSource(strings = {"LL", "LE", "LR", "LX"})
+    void probesFromAnyHop(String pathFromSeed) throws Exception {
         CrawlURI page = new CrawlURI(UURIFactory.getInstance("https://example.com/page"),
                 pathFromSeed, UURIFactory.getInstance("https://other.example/"),
                 LinkContext.NAVLINK_MISC);
@@ -203,8 +203,8 @@ class Soft404DetectorTest {
         page.setContentType("text/html");
         detector.process(page);
 
-        assertTrue(page.getOutLinks().isEmpty());
-        assertFalse(server().isSoft404ProbeScheduled());
+        assertEquals(1, page.getOutLinks().size());
+        assertTrue(server().isSoft404ProbeScheduled());
     }
 
     @Test
