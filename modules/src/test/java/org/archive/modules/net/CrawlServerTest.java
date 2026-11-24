@@ -42,8 +42,10 @@ public class CrawlServerTest {
     @Test
     public void testKryoRoundTripKeepsSoft404State() {
         CrawlServer server = new CrawlServer("example.com:443");
-        server.getSoft404State().startProbe();
-        server.getSoft404State().setFingerprintIfAbsent(42);
+        server.getSoft404State().startProbe(3);
+        server.getSoft404State().finishProbe();
+        server.getSoft404State().addRecentPage(7);
+        server.getSoft404State().addFingerprint(42);
 
         KryoBinding<CrawlServer> binding = new KryoBinding<>(CrawlServer.class);
         DatabaseEntry entry = new DatabaseEntry();
@@ -51,7 +53,8 @@ public class CrawlServerTest {
         CrawlServer restored = binding.entryToObject(entry);
 
         assertTrue(restored.getSoft404State().isProbeScheduled());
-        assertEquals(42L, restored.getSoft404State().getFingerprint());
+        assertTrue(restored.getSoft404State().isFingerprint(42));
+        assertTrue(restored.getSoft404State().addRecentPage(7));
     }
 
     @Test

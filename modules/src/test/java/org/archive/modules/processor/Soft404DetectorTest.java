@@ -68,7 +68,7 @@ class Soft404DetectorTest {
         assertEquals("I", probe.getPathFromSeed());
         assertEquals(SchedulingConstants.HIGH, probe.getSchedulingDirective());
         assertTrue(state().isProbeScheduled());
-        assertNull(state().getFingerprint());
+        assertFalse(state().hasFingerprints());
 
         CrawlURI page = curi("https://example.com/page", 200);
         detector.process(page);
@@ -92,7 +92,7 @@ class Soft404DetectorTest {
         recordResponse(probe, "<h1>Not Found</h1>");
         detector.process(probe);
 
-        assertNull(state().getFingerprint());
+        assertFalse(state().hasFingerprints());
         assertTrue(probe.getAnnotations().contains(Soft404Detector.PROBE_ANNOTATION));
 
         CrawlURI page = curi("https://example.com/a/b", 200);
@@ -109,7 +109,7 @@ class Soft404DetectorTest {
         recordResponse(probe, spaShell(probe.getUURI().getPath(),
                 "v1.eyJwcm9qZWN0X2lkIjoibG92cF8xcDNh.ULHj8Snk4GlGG5Teb57oUauBA3QoDzudjWFrtVjiBUg"));
         assertEquals(ProcessResult.FINISH, detector.process(probe));
-        assertNotNull(state().getFingerprint());
+        assertTrue(state().hasFingerprints());
 
         CrawlURI page = curi("https://example.com/_ignition/horizon/api/jobs"
                 + "/_ignition/salt-edge/get-consent", 200);
@@ -156,19 +156,24 @@ class Soft404DetectorTest {
     }
 
     @Test
-    void laterProbeDoesNotReplaceFingerprint() throws Exception {
+    void laterProbeAddsFingerprintWithoutCountingServerAgain() throws Exception {
         // e.g. the http:// server's probe redirected to this server, which also had its own probe
         CrawlURI probe = probe();
         recordResponse(probe, "<html><title>Not here</title></html>");
         detector.process(probe);
-        Long fingerprint = state().getFingerprint();
 
         CrawlURI redirected = curi("https://example.com" + detector.getProbePath(), 200);
         recordResponse(redirected, "<html><title>Something else</title></html>");
         detector.process(redirected);
 
-        assertEquals(fingerprint, state().getFingerprint());
         assertEquals(1, detector.getServersWithSoft404s());
+        for (String body : List.of("<html><title>Not here</title></html>",
+                "<html><title>Something else</title></html>")) {
+            CrawlURI page = curi("https://example.com/a/" + body.length(), 200);
+            recordResponse(page, body);
+            detector.process(page);
+            assertTrue(page.getAnnotations().contains(Soft404Detector.ANNOTATION), body);
+        }
     }
 
     @Test
@@ -178,7 +183,7 @@ class Soft404DetectorTest {
         recordResponse(probe, "{\"error\":\"not found\",\"code\":404}");
         assertEquals(ProcessResult.FINISH, detector.process(probe));
 
-        assertNull(state().getFingerprint());
+        assertFalse(state().hasFingerprints());
         assertEquals(0, detector.getServersWithSoft404s());
     }
 
@@ -214,8 +219,79 @@ class Soft404DetectorTest {
         detector.process(redirected);
 
         CrawlServer www = serverCache.getServerFor("www.example.com:443");
-        assertNotNull(www.getSoft404State().getFingerprint());
+        assertTrue(www.getSoft404State().hasFingerprints());
         assertTrue(www.getSoft404State().isProbeScheduled());
+    }
+
+    @Test
+    void reprobesWhenPagesRepeatAfterSoft404Found() throws Exception {
+        // e.g. a login page for missing URLs until a session cookie is set, then an app shell
+        String login = "<html><title>Please log in</title></html>";
+        CrawlURI probe = probe();
+        recordResponse(probe, login);
+        detector.process(probe);
+
+        String shell = "<html><body><div id=\"root\"></div></body></html>";
+        CrawlURI first = curi("https://example.com/favicon.ico", 200);
+        recordResponse(first, shell);
+        detector.process(first);
+        CrawlURI second = curi("https://example.com/a/b/fav.ico", 200);
+        recordResponse(second, shell);
+        detector.process(second);
+        assertFalse(second.getAnnotations().contains(Soft404Detector.ANNOTATION));
+        assertEquals(1, second.getOutLinks().size());
+        CrawlURI reprobe = second.getOutLinks().iterator().next();
+        assertEquals("https://example.com" + detector.getProbePath(), reprobe.getURI());
+        assertTrue(reprobe.forceFetch());
+
+        respond(reprobe, 200, shell);
+
+        for (String body : List.of(shell, login)) {
+            CrawlURI page = curi("https://example.com/a/b/c/" + body.length(), 200);
+            recordResponse(page, body);
+            detector.process(page);
+            assertTrue(page.getAnnotations().contains(Soft404Detector.ANNOTATION), body);
+        }
+        assertEquals(1, detector.getServersWithSoft404s());
+    }
+
+    @Test
+    void doesNotReprobeWhenMaxProbesIsOne() throws Exception {
+        detector.setMaxProbes(1);
+        respond(probe(), 404, "<h1>Not Found</h1>");
+
+        for (String path : List.of("/a/1", "/a/2", "/a/3")) {
+            CrawlURI page = curi("https://example.com" + path, 200);
+            recordResponse(page, "<html><title>Same</title></html>");
+            detector.process(page);
+            assertTrue(page.getOutLinks().isEmpty(), path);
+        }
+    }
+
+    private static final int MAX_PROBES = 3;
+
+    @Test
+    void stateLimitsProbes() {
+        Soft404Detector.State state = new Soft404Detector.State();
+        for (int i = 0; i < MAX_PROBES; i++) {
+            assertTrue(state.canStartProbe(MAX_PROBES));
+            assertTrue(state.startProbe(MAX_PROBES));
+            assertFalse(state.canStartProbe(MAX_PROBES), "one is pending");
+            assertFalse(state.startProbe(MAX_PROBES), "one is pending");
+            state.finishProbe();
+        }
+        assertFalse(state.canStartProbe(MAX_PROBES), "limit reached");
+        assertFalse(state.startProbe(MAX_PROBES), "limit reached");
+    }
+
+    @Test
+    void stateKeepsOnlyRecentPages() {
+        Soft404Detector.State state = new Soft404Detector.State();
+        for (long page = 1; page <= Soft404Detector.State.RECENT_PAGES + 1; page++) {
+            assertFalse(state.addRecentPage(page));
+        }
+        assertFalse(state.addRecentPage(1));
+        assertTrue(state.addRecentPage(Soft404Detector.State.RECENT_PAGES + 1));
     }
 
     @Test
@@ -296,13 +372,13 @@ class Soft404DetectorTest {
                 "https://example.com/kr-ko" + probe.getUURI().getPath() + "/");
         // must proceed so ExtractorHTTP follows the redirect
         assertEquals(ProcessResult.PROCEED, detector.process(probe));
-        assertNull(state().getFingerprint());
+        assertFalse(state().hasFingerprints());
 
         String body = "<html><title>Home</title><a href=\"premium/\">Premium</a></html>";
         CrawlURI target = curi("https://example.com/kr-ko" + probe.getUURI().getPath() + "/", 200);
         recordResponse(target, body);
         assertEquals(ProcessResult.FINISH, detector.process(target));
-        assertNotNull(state().getFingerprint());
+        assertTrue(state().hasFingerprints());
         assertTrue(target.getAnnotations().contains(Soft404Detector.PROBE_ANNOTATION));
 
         CrawlURI page = curi("https://example.com/uk/icantypeanythinghere/", 200);
@@ -388,6 +464,14 @@ class Soft404DetectorTest {
 
     private Soft404Detector.State state() {
         return serverCache.getServerFor("example.com:443").getSoft404State();
+    }
+
+    private void respond(CrawlURI curi, int status, String body) throws Exception {
+        curi.setFetchStatus(status);
+        curi.setFetchType(CrawlURI.FetchType.HTTP_GET);
+        curi.setContentType("text/html");
+        recordResponse(curi, body);
+        detector.process(curi);
     }
 
     private CrawlURI probe() throws Exception {
