@@ -33,12 +33,14 @@ import org.archive.io.warc.WARCWriterPool;
 import org.archive.io.warc.WARCWriterPoolSettings;
 import org.archive.modules.CrawlMetadata;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.index.CaptureIndex;
 import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
 import org.archive.spring.ConfigPath;
 import org.archive.uid.RecordIDGenerator;
 import org.archive.uid.UUIDGenerator;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.anvl.ANVLRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 
 abstract public class BaseWARCWriterProcessor extends WriterPoolProcessor
         implements WARCWriterPoolSettings {
@@ -52,6 +54,19 @@ abstract public class BaseWARCWriterProcessor extends WriterPoolProcessor
         return stats;
     }
 
+
+    protected CaptureIndex captureIndex;
+    public CaptureIndex getCaptureIndex() {
+        return captureIndex;
+    }
+    /**
+     * Index to add the written response and revisit records to. Optional, autowired if the job has
+     * one.
+     */
+    @Autowired(required = false)
+    public void setCaptureIndex(CaptureIndex captureIndex) {
+        this.captureIndex = captureIndex;
+    }
 
     /**
      * Generator for record IDs
@@ -246,6 +261,14 @@ abstract public class BaseWARCWriterProcessor extends WriterPoolProcessor
                      }
                      curi.getContentDigestHistory().put(A_CONTENT_DIGEST_COUNT, oldCount + 1);
                 }
+            }
+        }
+
+        if (captureIndex != null) {
+            try {
+                captureIndex.add(curi, writer.getTmpRecordLog());
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "failed to index " + curi, e);
             }
         }
     }

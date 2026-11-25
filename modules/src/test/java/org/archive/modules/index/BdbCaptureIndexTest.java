@@ -19,9 +19,13 @@
 
 package org.archive.modules.index;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_ID;
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_TYPE;
 import static org.archive.modules.CoreAttributeConstants.LENGTH_TRUNC;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -29,14 +33,29 @@ import java.util.UUID;
 
 import org.archive.bdb.BdbModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
+import org.archive.io.ArchiveRecord;
+import org.archive.io.warc.WARCReaderFactory;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.CrawlURI.FetchType;
+import org.archive.modules.fetcher.FetchHTTP;
+import org.archive.modules.fetcher.FetchHTTPTest;
 import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
+import org.archive.modules.writer.WARCWriterChainProcessor;
+import org.archive.modules.writer.WARCWriterChainProcessorTest;
 import org.archive.net.UURIFactory;
 import org.archive.spring.ConfigPath;
 import org.archive.spring.ConfigPathConfigurer;
 import org.archive.util.Base32;
+import org.archive.util.Recorder;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.Callback;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -172,6 +191,64 @@ public class BdbCaptureIndexTest {
         return new ConfigPathConfigurer() {{
             path = new ConfigPath("job", jobDir);
         }};
+    }
+
+    @Test
+    void indexesRecordsWrittenByWarcWriter() throws Exception {
+        Server server = new Server();
+        var connector = new ServerConnector(server);
+        server.addConnector(connector);
+        server.setHandler(new Handler.Abstract.NonBlocking() {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) {
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain");
+                Content.Sink.write(response, true, "hello", callback);
+                return true;
+            }
+        });
+        server.start();
+        FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
+        WARCWriterChainProcessor writer =
+                WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor(tempDir);
+        writer.setServerCache(fetcher.getServerCache());
+        writer.setCaptureIndex(index);
+        writer.start();
+        try {
+            String url = "http://127.0.0.1:" + connector.getLocalPort() + "/a";
+            CrawlURI curi = new CrawlURI(UURIFactory.getInstance(url));
+            curi.setCanonicalString(url);
+            var recorder = new Recorder(tempDir.toFile(), "rec");
+            Recorder.setHttpRecorder(recorder);
+            curi.setRecorder(recorder);
+            fetcher.process(curi);
+            writer.process(curi);
+
+            Capture capture = index.latest(url);
+            assertEquals(200, capture.status());
+            assertEquals(curi.getContentDigestSchemeString(), capture.digest());
+
+            // read back while the file is still open
+            assertEquals(writer.calcOutputDirs().get(0).toPath(), capture.path().getParent());
+            ArchiveRecord response = readOpenRecord(capture.path(), capture.offset());
+            assertEquals("response", response.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(url, response.getHeader().getUrl());
+            assertEquals("<urn:uuid:" + capture.recordId() + ">",
+                    response.getHeader().getHeaderValue(HEADER_KEY_ID));
+            ArchiveRecord request = readOpenRecord(capture.path(), capture.requestOffset());
+            assertEquals("request", request.getHeader().getHeaderValue(HEADER_KEY_TYPE));
+            assertEquals(capture.offset() + capture.length(), capture.requestOffset());
+        } finally {
+            Recorder.setHttpRecorder(null);
+            writer.stop();
+            fetcher.stop();
+            server.stop();
+        }
+    }
+
+    private static ArchiveRecord readOpenRecord(Path path, long offset) throws IOException {
+        var in = new FileInputStream(path + ".open");
+        in.getChannel().position(offset);
+        return WARCReaderFactory.get(path.toString(), in, false).get();
     }
 
     private static CrawlURI curi(String uri, long time) throws Exception {
