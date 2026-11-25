@@ -25,6 +25,7 @@ import org.archive.modules.canonicalize.*
 import org.archive.modules.deciderules.surt.SurtPrefixedDecideRule
 import org.archive.modules.extractor.*
 import org.archive.modules.fetcher.*
+import org.archive.modules.index.BdbCaptureIndex
 import org.archive.modules.net.BdbServerCache
 import org.archive.modules.processor.BotBlockDetector
 import org.archive.modules.processor.Soft404Detector
@@ -715,6 +716,12 @@ http://example.example/example
     serverCache(BdbServerCache) {
         // bdb = ref('bdb')
     }
+
+    /**
+     * CAPTUREINDEX: index of the responses written to WARC files, which the
+     * browser processor replays subresources from instead of refetching them
+     */
+    // captureIndex(BdbCaptureIndex)
 
     /**
      * CONFIG PATH CONFIGURER: required helper making crawl paths relative

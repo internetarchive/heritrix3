@@ -778,6 +778,10 @@ http://example.example/example
        </property> -->
  </bean>
 
+ <!-- CAPTUREINDEX: index of the responses written to WARC files, which the
+      browser processor replays subresources from instead of refetching them -->
+ <!-- <bean id="captureIndex" class="org.archive.modules.index.BdbCaptureIndex" /> -->
+
  <!-- CONFIG PATH CONFIGURER: required helper making crawl paths relative
       to crawler-beans.cxml file, and tracking crawl files for web UI -->
  <bean id="configPathConfigurer" 
