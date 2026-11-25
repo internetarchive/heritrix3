@@ -1625,6 +1625,9 @@ implements Reporter, Serializable, OverlayContext, Comparable<CrawlURI> {
     public void setCanonicalString(String canonical) {
         this.canonicalString = canonical; 
     }
+    public boolean hasCanonicalString() {
+        return StringUtils.isNotEmpty(canonicalString);
+    }
     public String getCanonicalString() {
         if(StringUtils.isEmpty(canonicalString)){
             logger.warning("canonicalString unset, returning uncanonicalized " + getURI());
