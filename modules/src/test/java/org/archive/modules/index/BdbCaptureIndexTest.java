@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -41,6 +42,7 @@ import org.archive.modules.CrawlURI.FetchType;
 import org.archive.modules.fetcher.FetchHTTP;
 import org.archive.modules.fetcher.FetchHTTPTest;
 import org.archive.modules.revisit.IdenticalPayloadDigestRevisit;
+import org.archive.modules.revisit.RevisitProfile;
 import org.archive.modules.writer.WARCWriterChainProcessor;
 import org.archive.modules.writer.WARCWriterChainProcessorTest;
 import org.archive.net.UURIFactory;
@@ -194,7 +196,7 @@ public class BdbCaptureIndexTest {
     }
 
     @Test
-    void indexesRecordsWrittenByWarcWriter() throws Exception {
+    void indexesAndReadsBackWrittenRecords() throws Exception {
         Server server = new Server();
         var connector = new ServerConnector(server);
         server.addConnector(connector);
@@ -202,12 +204,15 @@ public class BdbCaptureIndexTest {
             @Override
             public boolean handle(Request request, Response response, Callback callback) {
                 response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain");
+                response.getHeaders().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2");
+                response.getHeaders().put(HttpHeader.TRANSFER_ENCODING, "chunked");
                 Content.Sink.write(response, true, "hello", callback);
                 return true;
             }
         });
         server.start();
         FetchHTTP fetcher = FetchHTTPTest.newTestFetchHttp(getClass().getName());
+        fetcher.setUseHTTP11(true);
         WARCWriterChainProcessor writer =
                 WARCWriterChainProcessorTest.makeTestWARCWriterChainProcessor(tempDir);
         writer.setServerCache(fetcher.getServerCache());
@@ -215,13 +220,7 @@ public class BdbCaptureIndexTest {
         writer.start();
         try {
             String url = "http://127.0.0.1:" + connector.getLocalPort() + "/a";
-            CrawlURI curi = new CrawlURI(UURIFactory.getInstance(url));
-            curi.setCanonicalString(url);
-            var recorder = new Recorder(tempDir.toFile(), "rec");
-            Recorder.setHttpRecorder(recorder);
-            curi.setRecorder(recorder);
-            fetcher.process(curi);
-            writer.process(curi);
+            CrawlURI curi = fetchAndWrite(fetcher, writer, url, null);
 
             Capture capture = index.latest(url);
             assertEquals(200, capture.status());
@@ -237,11 +236,47 @@ public class BdbCaptureIndexTest {
             ArchiveRecord request = readOpenRecord(capture.path(), capture.requestOffset());
             assertEquals("request", request.getHeader().getHeaderValue(HEADER_KEY_TYPE));
             assertEquals(capture.offset() + capture.length(), capture.requestOffset());
+            assertResponse(capture);
+
+            fetchAndWrite(fetcher, writer, url,
+                    new IdenticalPayloadDigestRevisit(capture.digest()));
+            Capture revisit = index.latest(url);
+            assertTrue(revisit.revisit());
+            assertEquals(capture.path(), revisit.refersToPath());
+            assertResponse(revisit);
+
+            writer.stop();
+            assertResponse(revisit); // after the file is closed and renamed
         } finally {
             Recorder.setHttpRecorder(null);
             writer.stop();
             fetcher.stop();
             server.stop();
+        }
+    }
+
+    private CrawlURI fetchAndWrite(FetchHTTP fetcher, WARCWriterChainProcessor writer, String url,
+                                   RevisitProfile revisitProfile) throws Exception {
+        CrawlURI curi = new CrawlURI(UURIFactory.getInstance(url));
+        curi.setCanonicalString(url);
+        var recorder = new Recorder(tempDir.toFile(), "rec");
+        Recorder.setHttpRecorder(recorder);
+        curi.setRecorder(recorder);
+        fetcher.process(curi);
+        curi.setRevisitProfile(revisitProfile);
+        writer.process(curi);
+        return curi;
+    }
+
+    private static void assertResponse(Capture capture) throws IOException {
+        try (var response = CapturedResponse.open(capture)) {
+            assertEquals(200, response.status());
+            assertTrue(response.headers().stream().anyMatch(h -> h.getValue().equals("chunked")));
+            assertEquals(List.of("a=1", "b=2"), response.headers().stream()
+                    .filter(h -> h.getName().equalsIgnoreCase("Set-Cookie"))
+                    .map(h -> h.getValue()).toList());
+            assertEquals("hello",
+                    new String(response.body().readAllBytes(), StandardCharsets.UTF_8));
         }
     }
 
