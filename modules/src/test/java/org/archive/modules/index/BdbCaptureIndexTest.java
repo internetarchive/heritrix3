@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -117,6 +118,27 @@ public class BdbCaptureIndexTest {
                 List.of(record(WARCRecordType.response, UUID.randomUUID(), 700, 100)));
 
         assertEquals(3000, index.latest("http://example.org/a").time());
+    }
+
+    @Test
+    void keepsCapturesMadeInTheSameMillisecond() throws Exception {
+        String url = "http://example.org/a";
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                100, 100, "a.warc.gz")));
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                300, 100, "a.warc.gz")));
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                100, 100, "b.warc.gz")));
+
+        List<String> found = new ArrayList<>();
+        Capture after = null;
+        List<Capture> batch;
+        while (!(batch = index.query("http://(org,example,)/a", true, after, 1)).isEmpty()) {
+            after = batch.get(0);
+            found.add(after.path().getFileName() + "@" + after.offset());
+        }
+        assertEquals(List.of("b.warc.gz@100", "a.warc.gz@300", "a.warc.gz@100"), found);
+        assertEquals(DIR.resolve("b.warc.gz"), index.latest(url).path());
     }
 
     @Test

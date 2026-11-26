@@ -189,7 +189,7 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
                 curi.getFetchStatus(), mimeType, digest, recordId(record), revisit, truncated,
                 record.getWARCPath(), record.getWARCFileOffset(), record.getRecordLength(),
                 requestOffset, refersToPath, refersToOffset);
-        captures.put(null, key(urlKey, capture.time()), encode(capture));
+        captures.put(null, key(capture), encode(capture));
     }
 
     @Override
@@ -206,8 +206,8 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
         }
         DatabaseEntry key = new DatabaseEntry(prefix);
         if (after != null) {
-            var last = key(after.urlKey(), after.time());
-            // Composite keys end with a fixed-width timestamp. An extra byte seeks past it.
+            var last = key(after);
+            // Composite keys end with fixed-width fields. An extra byte seeks past them.
             key.setData(Arrays.copyOf(last.getData(), last.getSize() + 1));
         }
         var value = new DatabaseEntry();
@@ -242,9 +242,11 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
         return SURT.fromURI(canonicalUri, true);
     }
 
-    private static DatabaseEntry key(String urlKey, long time) {
-        // negated so that the newest capture of each URL sorts first
-        var out = new TupleOutput().writeString(urlKey).writeLong(-time);
+    private DatabaseEntry key(Capture c) {
+        // Negated so that the newest capture of each URL sorts first. The file and offset keep
+        // captures made in the same millisecond apart.
+        var out = new TupleOutput().writeString(c.urlKey()).writeLong(-c.time())
+                .writeInt(-fileId(c.path())).writeLong(-c.offset());
         return new DatabaseEntry(out.getBufferBytes(), 0, out.getBufferLength());
     }
 
