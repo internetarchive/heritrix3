@@ -13,6 +13,11 @@ ActionDirectory
 
 .. bean-doc:: org.archive.crawler.framework.ActionDirectory
 
+BdbCaptureIndex
+~~~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.index.BdbCaptureIndex
+
 BdbCookieStore
 ~~~~~~~~~~~~~~
 

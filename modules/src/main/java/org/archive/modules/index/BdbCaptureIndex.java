@@ -59,7 +59,9 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.OperationStatus;
 
 /**
- * A {@link CaptureIndex} stored in BDB. Every capture is kept, newest first for each URL.
+ * Index of the responses written to WARC files during the crawl. When a job has one, the WARC
+ * writer adds to it and BrowserProcessor replays subresources from it instead of fetching them
+ * again. It's stored in the job's BDB environment and keeps every capture.
  */
 public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
     private static final int VERSION = 1;
