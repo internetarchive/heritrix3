@@ -949,6 +949,11 @@ scope, robots.txt or the frontier's politeness delays. Responses are captured by
 through the extractors in the fetch chain and then the disposition chain, which writes them to WARC. Links extracted
 from them are scoped and queued as usual.
 
+Browsers often request only part of a resource, such as a video or audio file, with a Range header. If the requested
+part starts at the beginning, Heritrix fetches and records the whole resource and sends the browser the part it asked
+for. Otherwise, for example when seeking in a video, the part is fetched for the browser without being recorded and the
+whole resource is queued in the frontier instead.
+
 Enabling BrowserProcessor
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
