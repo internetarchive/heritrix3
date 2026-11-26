@@ -19,6 +19,8 @@
 
 package org.archive.modules.index;
 
+import static org.archive.util.ArchiveUtils.get14DigitDate;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -44,4 +46,28 @@ public record Capture(String urlKey, long time, String url, int status, String m
                       String digest, UUID recordId, boolean revisit, boolean truncated, Path path,
                       long offset, long length, long requestOffset, Path refersToPath,
                       long refersToOffset) {
+    /**
+     * Formats this capture as a CDX line with the fields {@code N b a m s k r M S V g}. The WARC
+     * file is given relative to the job directory if it's inside it.
+     */
+    public String toCdxLine(Path jobDir) {
+        Path file = path.toAbsolutePath().normalize();
+        if (file.startsWith(jobDir)) file = jobDir.relativize(file);
+        return String.join(" ",
+                escape(urlKey),
+                get14DigitDate(time),
+                escape(url),
+                escape(mimeType),
+                String.valueOf(status),
+                digest == null ? "-" : escape(digest),
+                "-", // redirect
+                "-", // robots
+                String.valueOf(length),
+                String.valueOf(offset),
+                escape(file.toString()));
+    }
+
+    private static String escape(String s) {
+        return s.replace(" ", "%20").replace("\n", "%0A");
+    }
 }

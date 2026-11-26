@@ -126,6 +126,7 @@ public class EngineApplication extends Application {
         jobdir.setListingAllowed(true);
         jobdir.setModifiable(true);
         jobdir.setEditFilter(JobResource.EDIT_FILTER);
+        router.attach("/engine/job/{job}/cdx", CdxResource.class);
         router.attach("/engine/job/{job}/jobdir",jobdir);
         router.attach("/engine/job/{job}",JobResource.class);
         router.attach("/engine/job/{job}/report/{reportClass}",ReportGenResource.class);
