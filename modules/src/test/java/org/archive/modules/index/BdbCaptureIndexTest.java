@@ -120,6 +120,33 @@ public class BdbCaptureIndexTest {
     }
 
     @Test
+    void pagesExactAndPrefixQueriesInIndexOrder() throws Exception {
+        String url = "http://example.org/a";
+        String key = "http://(org,example,)/a";
+        var response = List.of(record(WARCRecordType.response, UUID.randomUUID(), 100, 100));
+        int batchSize = 512;
+        int count = batchSize + 1;
+        for (int time = 1; time <= count; time++) {
+            index.add(curi(url, time), response);
+        }
+        index.add(curi(url + "b", 1), response);
+        index.add(curi("http://other.org/", 1), response);
+
+        var first = index.query(key, true, null, batchSize);
+        assertEquals(count - 1, first.size());
+        for (int i = 0; i < first.size(); i++) assertEquals(count - i, first.get(i).time());
+        Capture after = first.get(first.size() - 1);
+        var last = index.query(key, true, after, batchSize);
+        assertEquals(1, last.size());
+        assertEquals(1, last.get(0).time());
+        assertTrue(index.query(key, true, last.get(0), batchSize).isEmpty());
+        assertEquals(List.of(url, url + "b"), index.query(key, false, after, batchSize)
+                .stream().map(Capture::url).toList());
+        assertEquals(3, index.query("", false, after, batchSize).size());
+        assertTrue(index.query(key + "/missing", true, null, batchSize).isEmpty());
+    }
+
+    @Test
     void skipsNonGetAndUncanonicalized() throws Exception {
         CrawlURI post = curi("http://example.org/post", 1000);
         post.setFetchType(FetchType.HTTP_POST);

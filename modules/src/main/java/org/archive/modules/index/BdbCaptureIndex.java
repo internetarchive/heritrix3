@@ -26,8 +26,10 @@ import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILEN
 import static org.archive.modules.recrawl.RecrawlAttributeConstants.A_WARC_FILE_OFFSET;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,6 +53,7 @@ import com.sleepycat.bind.tuple.StringBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.Cursor;
+import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.OperationStatus;
@@ -190,6 +193,32 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
     @Override
     public Capture latest(String canonicalUri) {
         return find(urlKey(canonicalUri), c -> true);
+    }
+
+    @Override
+    public List<Capture> query(String urlKey, boolean exact, Capture after, int limit) {
+        byte[] prefix = new TupleOutput().writeString(urlKey).toByteArray();
+        if (!exact) {
+            // Omit the tuple string terminator to include longer URL keys.
+            prefix = Arrays.copyOf(prefix, prefix.length - 1);
+        }
+        DatabaseEntry key = new DatabaseEntry(prefix);
+        if (after != null) {
+            var last = key(after.urlKey(), after.time());
+            // Composite keys end with a fixed-width timestamp. An extra byte seeks past it.
+            key.setData(Arrays.copyOf(last.getData(), last.getSize() + 1));
+        }
+        var value = new DatabaseEntry();
+        List<Capture> batch = new ArrayList<>();
+        try (Cursor cursor = captures.openCursor(null, CursorConfig.READ_COMMITTED)) {
+            OperationStatus status = cursor.getSearchKeyRange(key, value, null);
+            while (status == OperationStatus.SUCCESS && startsWith(key, prefix)) {
+                batch.add(decode(key, value));
+                if (batch.size() == limit) break;
+                status = cursor.getNext(key, value, null);
+            }
+        }
+        return batch;
     }
 
     private Capture find(String urlKey, Predicate<Capture> predicate) {

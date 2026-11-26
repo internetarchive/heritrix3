@@ -19,6 +19,8 @@
 
 package org.archive.modules.index;
 
+import java.util.List;
+
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.modules.CrawlURI;
 
@@ -42,4 +44,15 @@ public interface CaptureIndex {
      * @param canonicalUri the URL as canonicalized by the frontier
      */
     Capture latest(String canonicalUri);
+
+    /**
+     * Returns captures in index order: by URL key, then newest first. Call again with the last
+     * capture returned as {@code after} to get the next batch.
+     *
+     * @param urlKey the URL key to match
+     * @param exact  whether the URL key must match exactly rather than as a prefix
+     * @param after  the capture to start after, or null to start at the beginning
+     * @param limit  the maximum number of captures to return
+     */
+    List<Capture> query(String urlKey, boolean exact, Capture after, int limit);
 }
