@@ -184,6 +184,15 @@ public class BdbCaptureIndexTest {
     }
 
     @Test
+    void skipsPartialContent() throws Exception {
+        CrawlURI partial = curi("http://example.org/video", 1000);
+        partial.setFetchStatus(206);
+        index.add(partial, List.of(record(WARCRecordType.response, UUID.randomUUID(), 100, 100)));
+
+        assertNull(index.latest("http://example.org/video"));
+    }
+
+    @Test
     void resolvesRevisitRefersTo() throws Exception {
         CrawlURI truncated = curi("http://example.org/a", 1000);
         truncated.getAnnotations().add(LENGTH_TRUNC);

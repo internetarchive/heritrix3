@@ -146,7 +146,8 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
 
     @Override
     public void add(CrawlURI curi, Iterable<WARCRecordInfo> records) {
-        if (curi.getFetchType() != FetchType.HTTP_GET || !curi.hasCanonicalString()) return;
+        if (curi.getFetchType() != FetchType.HTTP_GET || !curi.hasCanonicalString()
+                || curi.getFetchStatus() == 206) return;
 
         WARCRecordInfo record = null;
         long requestOffset = -1;
