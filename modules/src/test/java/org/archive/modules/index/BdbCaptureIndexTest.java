@@ -98,8 +98,9 @@ public class BdbCaptureIndexTest {
                 record(WARCRecordType.metadata, UUID.randomUUID(), 500, 200)));
 
         Capture capture = index.latest("http://example.org/a");
-        assertEquals(new Capture(1000, 200, "text/html", DIGEST, responseId, false, false,
-                DIR.resolve("test.warc.gz"), 100, 250, 350, null, -1), capture);
+        assertEquals(new Capture("http://(org,example,)/a", 1000, "http://example.org/a", 200,
+                "text/html", DIGEST, responseId, false, false, DIR.resolve("test.warc.gz"), 100,
+                250, 350, null, -1), capture);
         assertNull(index.latest("http://example.org/b"));
         assertNull(index.latest("http://example.org/"));
     }

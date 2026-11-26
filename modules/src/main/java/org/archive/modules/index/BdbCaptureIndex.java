@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.archive.bdb.BdbModule;
 import org.archive.format.warc.WARCConstants.WARCRecordType;
 import org.archive.io.warc.WARCRecordInfo;
@@ -178,9 +179,9 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
         Collection<String> annotations = curi.getAnnotations();
         boolean truncated = annotations.contains(LENGTH_TRUNC) || annotations.contains(TIMER_TRUNC)
                 || annotations.contains(HEADER_TRUNC);
-
-        var capture = new Capture(curi.getFetchBeginTime(), curi.getFetchStatus(),
-                curi.getContentType(), digest, recordId(record), revisit, truncated,
+        String mimeType = StringUtils.substringBefore(curi.getContentType(), ";").trim();
+        var capture = new Capture(urlKey, curi.getFetchBeginTime(), curi.getUURI().toCustomString(),
+                curi.getFetchStatus(), mimeType, digest, recordId(record), revisit, truncated,
                 record.getWARCPath(), record.getWARCFileOffset(), record.getRecordLength(),
                 requestOffset, refersToPath, refersToOffset);
         captures.put(null, key(urlKey, capture.time()), encode(capture));
@@ -235,6 +236,7 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
         out.writePackedInt(fileId(c.path()));
         out.writePackedLong(c.offset());
         out.writePackedLong(c.length());
+        out.writeString(c.url());
         out.writeString(c.mimeType());
         if ((flags & HAS_REQUEST) != 0) {
             out.writePackedLong(c.requestOffset());
@@ -248,7 +250,7 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
 
     private Capture decode(DatabaseEntry key, DatabaseEntry value) {
         var keyIn = new TupleInput(key.getData(), key.getOffset(), key.getSize());
-        keyIn.readString();
+        String urlKey = keyIn.readString();
         long time = -keyIn.readLong();
 
         var in = new TupleInput(value.getData(), value.getOffset(), value.getSize());
@@ -263,6 +265,7 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
         Path path = filePaths.get(in.readPackedInt());
         long offset = in.readPackedLong();
         long length = in.readPackedLong();
+        String url = in.readString();
         String mimeType = in.readString();
         long requestOffset = (flags & HAS_REQUEST) != 0 ? in.readPackedLong() : -1;
         Path refersToPath = null;
@@ -271,9 +274,9 @@ public class BdbCaptureIndex implements CaptureIndex, Lifecycle {
             refersToPath = filePaths.get(in.readPackedInt());
             refersToOffset = in.readPackedLong();
         }
-        return new Capture(time, status, mimeType, digest, recordId, (flags & REVISIT) != 0,
-                (flags & TRUNCATED) != 0, path, offset, length, requestOffset, refersToPath,
-                refersToOffset);
+        return new Capture(urlKey, time, url, status, mimeType, digest, recordId,
+                (flags & REVISIT) != 0, (flags & TRUNCATED) != 0, path, offset, length,
+                requestOffset, refersToPath, refersToOffset);
     }
 
     private int fileId(Path path) {

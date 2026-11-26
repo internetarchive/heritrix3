@@ -25,20 +25,23 @@ import java.util.UUID;
 /**
  * A response or revisit record written to a WARC file, as stored in a {@link CaptureIndex}.
  *
- * @param time             fetch start time in milliseconds
- * @param digest           payload digest, e.g. {@code sha1:BASE32}. For a revisit, the digest of
- *                         the payload it refers to.
- * @param recordId         the record's WARC-Record-ID
- * @param length           length of the record in the file, compressed if the file is
- * @param requestOffset    offset of the matching request record in the same file, or -1 if none
- *                         was written
- * @param path             the file holding the record, without any {@code .open} suffix
- * @param refersToPath     for a revisit, the file holding the record it refers to, or null if it's
- *                         not known
- * @param refersToOffset   for a revisit, the offset of the record it refers to, or -1 if it's not
- *                         known
+ * @param urlKey         SURT form of the canonicalized URL
+ * @param time           fetch start time in milliseconds
+ * @param url            the URL that was captured
+ * @param digest         payload digest, e.g. {@code sha1:BASE32}. For a revisit, the digest of the
+ *                       payload it refers to.
+ * @param recordId       the record's WARC-Record-ID
+ * @param path           the file holding the record, without any {@code .open} suffix
+ * @param length         length of the record in the file, compressed if the file is
+ * @param requestOffset  offset of the matching request record in the same file, or -1 if none was
+ *                       written
+ * @param refersToPath   for a revisit, the file holding the record it refers to, or null if it's
+ *                       not known
+ * @param refersToOffset for a revisit, the offset of the record it refers to, or -1 if it's not
+ *                       known
  */
-public record Capture(long time, int status, String mimeType, String digest, UUID recordId,
-                      boolean revisit, boolean truncated, Path path, long offset, long length,
-                      long requestOffset, Path refersToPath, long refersToOffset) {
+public record Capture(String urlKey, long time, String url, int status, String mimeType,
+                      String digest, UUID recordId, boolean revisit, boolean truncated, Path path,
+                      long offset, long length, long requestOffset, Path refersToPath,
+                      long refersToOffset) {
 }
