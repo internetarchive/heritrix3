@@ -264,7 +264,11 @@ public class BdbCaptureIndexTest {
             public boolean handle(Request request, Response response, Callback callback) {
                 response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain");
                 response.getHeaders().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2");
-                response.getHeaders().put(HttpHeader.TRANSFER_ENCODING, "chunked");
+                if (request.getHttpURI().getPath().equals("/sized")) {
+                    response.getHeaders().put(HttpHeader.CONTENT_LENGTH, 5);
+                } else {
+                    response.getHeaders().put(HttpHeader.TRANSFER_ENCODING, "chunked");
+                }
                 Content.Sink.write(response, true, "hello", callback);
                 return true;
             }
@@ -304,6 +308,14 @@ public class BdbCaptureIndexTest {
             assertEquals(capture.path(), revisit.refersToPath());
             assertResponse(revisit);
 
+            String sizedUrl = "http://127.0.0.1:" + connector.getLocalPort() + "/sized";
+            fetchAndWrite(fetcher, writer, sizedUrl, null);
+            try (var sized = CapturedResponse.open(index.latest(sizedUrl))) {
+                assertEquals(5, sized.bodyLength());
+                assertEquals("hello",
+                        new String(sized.body().readAllBytes(), StandardCharsets.UTF_8));
+            }
+
             writer.stop();
             assertResponse(revisit); // after the file is closed and renamed
         } finally {
@@ -331,6 +343,7 @@ public class BdbCaptureIndexTest {
         try (var response = CapturedResponse.open(capture)) {
             assertEquals(200, response.status());
             assertTrue(response.headers().stream().anyMatch(h -> h.getValue().equals("chunked")));
+            assertEquals(-1, response.bodyLength());
             assertEquals(List.of("a=1", "b=2"), response.headers().stream()
                     .filter(h -> h.getName().equalsIgnoreCase("Set-Cookie"))
                     .map(h -> h.getValue()).toList());
