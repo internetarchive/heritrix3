@@ -38,6 +38,7 @@ import org.archive.bdb.AutoKryo;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.credential.Credential;
 import org.archive.modules.fetcher.FetchStats;
+import org.archive.modules.processor.Soft404Detector;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.util.IdentityCacheable;
@@ -81,10 +82,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
     protected int http3Port;
     protected long http3Expiry;
 
-    /** Soft 404 detection state, maintained by Soft404Detector. */
-    protected boolean soft404ProbeScheduled;
-    /** Non-null only if the probe found a soft 404. */
-    protected Long soft404Fingerprint;
+    protected Soft404Detector.State soft404State;
 
     /**
      * Creates a new CrawlServer object.
@@ -259,36 +257,11 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
 	}
 
     /**
-     * Marks the soft 404 probe as scheduled, unless it already was.
-     * @return true if the caller should schedule a probe
+     * Soft 404 detection state, maintained by Soft404Detector. Created when first requested.
      */
-    public synchronized boolean startSoft404Probe() {
-        if (soft404ProbeScheduled) return false;
-        soft404ProbeScheduled = true;
-        return true;
-    }
-
-    public synchronized boolean isSoft404ProbeScheduled() {
-        return soft404ProbeScheduled;
-    }
-
-    /**
-     * @return the fingerprint of the page returned with a success status for a nonexistent URL,
-     *         or null if there is none
-     */
-    public synchronized Long getSoft404Fingerprint() {
-        return soft404Fingerprint;
-    }
-
-    /**
-     * Records the fingerprint of the page returned with a success status for a nonexistent URL,
-     * unless one was already recorded.
-     * @return true if the fingerprint was recorded
-     */
-    public synchronized boolean setSoft404FingerprintIfAbsent(long fingerprint) {
-        if (soft404Fingerprint != null) return false;
-        soft404Fingerprint = fingerprint;
-        return true;
+    public synchronized Soft404Detector.State getSoft404State() {
+        if (soft404State == null) soft404State = new Soft404Detector.State();
+        return soft404State;
     }
 
     public synchronized void clearAltSvc() {
@@ -400,6 +373,7 @@ public class CrawlServer implements Serializable, FetchStats.HasFetchStats, Iden
         kryo.register(CrawlServer.class);
         kryo.autoregister(FetchStats.class); 
         kryo.autoregister(Robotstxt.class);
+        kryo.autoregister(Soft404Detector.State.class);
     }
     
     //

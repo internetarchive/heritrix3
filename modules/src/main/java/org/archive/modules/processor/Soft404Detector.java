@@ -21,8 +21,10 @@ package org.archive.modules.processor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -62,6 +64,11 @@ import com.google.common.hash.Hashing;
  * typically change from request to request, such as nonces, timestamps and the page's own URL, are
  * ignored when comparing content.
  * <p>
+ * What a server returns for missing URLs can change during a crawl, for example once it has set a
+ * session cookie. So if a page has the same content as another recent page from the server, the
+ * server is probed again, up to {@code maxProbes} probes in all (2 by default). Pages matching any
+ * probe fingerprint are treated as soft 404s.
+ * <p>
  * Soft 404s are annotated "soft404" in the crawl log, and the probe "soft404:probe". If
  * {@code skipExtraction} is enabled (the default) the rest of the fetch chain is skipped for
  * them, so neither the link extractors nor the browser processor see them, which stops the series
@@ -71,7 +78,10 @@ import com.google.common.hash.Hashing;
  * <p>
  * Things to be aware of:
  * <ul>
- * <li>Each server gets one extra request, the probe, which is archived like any other.</li>
+ * <li>Each server that returns an HTML page gets one extra request, the probe, or up to
+ * {@code maxProbes} with re-probes. Probes are archived like any other request. This includes
+ * servers reached only by embeds or redirects, as soft 404s can produce endless URLs through those
+ * too.</li>
  * <li>Pages fetched before a server's probe completes aren't checked.</li>
  * <li>Seeds and the root URL ("/") are never treated as soft 404s, since many sites serve their
  * home page for missing URLs.</li>
@@ -119,6 +129,19 @@ public class Soft404Detector extends Processor {
         kp.put("skipExtraction", skipExtraction);
     }
 
+    {
+        setMaxProbes(2);
+    }
+    public int getMaxProbes() {
+        return (Integer) kp.get("maxProbes");
+    }
+    /**
+     * Maximum number of probes per server.
+     */
+    public void setMaxProbes(int maxProbes) {
+        kp.put("maxProbes", maxProbes);
+    }
+
     protected ServerCache serverCache;
 
     public ServerCache getServerCache() {
@@ -151,40 +174,63 @@ public class Soft404Detector extends Processor {
     protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
         CrawlServer server = serverCache.getServerFor(curi.getUURI());
         if (server == null) return ProcessResult.PROCEED;
+        State state = server.getSoft404State();
+        server.makeDirty(); // as the state may change below
 
         if (isProbe(curi)) {
-            recordProbeResult(curi, server);
+            recordProbeResult(curi, state);
             // A redirected probe must continue so its Location gets extracted. Otherwise there's
             // nothing worth extracting from a made-up URL.
             int status = curi.getFetchStatus();
             return status >= 300 && status < 400 ? ProcessResult.PROCEED : ProcessResult.FINISH;
         }
-        Long fingerprint = server.getSoft404Fingerprint();
-        if (fingerprint == null) {
-            scheduleProbe(curi, server);
+        if (!state.isProbeScheduled()) {
+            scheduleProbe(curi, state, false);
             return ProcessResult.PROCEED;
         }
-        if (isExempt(curi) || curi.getFetchStatus() != 200 || fingerprint(curi) != fingerprint) {
+        if (isExempt(curi) || curi.getFetchStatus() != 200) return ProcessResult.PROCEED;
+        // nothing to match against and no probe to start, so no need to hash the content
+        if (!state.hasFingerprints() && !state.canStartProbe(getMaxProbes())) {
             return ProcessResult.PROCEED;
         }
-        curi.getAnnotations().add(ANNOTATION);
-        soft404sDetected.incrementAndGet();
-        return getSkipExtraction() ? ProcessResult.FINISH : ProcessResult.PROCEED;
+
+        String content = readContent(curi);
+        long fingerprint = fingerprint(content, echoesOf(curi.getUURI()));
+        if (matchesProbe(content, fingerprint, state)) {
+            curi.getAnnotations().add(ANNOTATION);
+            soft404sDetected.incrementAndGet();
+            return getSkipExtraction() ? ProcessResult.FINISH : ProcessResult.PROCEED;
+        }
+        // If the same page is served for several URLs, probe again in case it's a soft 404 that
+        // the earlier probes missed, e.g. because they ran before a session cookie was set.
+        if (state.canStartProbe(getMaxProbes()) && state.addRecentPage(fingerprint)) {
+            scheduleProbe(curi, state, true);
+        }
+        return ProcessResult.PROCEED;
     }
 
-    protected void scheduleProbe(CrawlURI curi, CrawlServer server) {
+    /**
+     * Whether the content matches what a probe got, either with its echoes of its own URL removed
+     * (giving the given fingerprint) or as is. The latter catches a page reached by a relative
+     * link on a copy of itself, where the "echo" is part of the page and so also in the probe's
+     * content.
+     */
+    private static boolean matchesProbe(String content, long fingerprint, State state) {
+        if (!state.hasFingerprints()) return false;
+        return state.isFingerprint(fingerprint)
+                || state.isFingerprint(fingerprint(content, List.of()));
+    }
+
+    protected void scheduleProbe(CrawlURI curi, State state, boolean reprobe) {
         int status = curi.getFetchStatus();
         if (status < 200 || status >= 400) return;
-        // Only probe servers reached as seeds or by following links, not e.g. CDNs or other
-        // sites that a crawled site redirects to.
-        String hop = curi.getLastHop();
-        if (!hop.isEmpty() && !hop.equals(Hop.NAVLINK.getHopString())) return;
-        if (!server.startSoft404Probe()) return;
-        server.makeDirty();
+        if (!state.startProbe(getMaxProbes())) return;
         try {
             UURI probeUri = UURIFactory.getInstance(curi.getUURI(), probePath);
             CrawlURI probe = curi.createCrawlURI(probeUri, LinkContext.INFERRED_MISC, Hop.INFERRED);
             probe.setSchedulingDirective(SchedulingConstants.HIGH);
+            // re-probes reuse the probe URL, so must bypass the already-seen check
+            probe.setForceFetch(reprobe);
             curi.getOutLinks().add(probe);
             probesScheduled.incrementAndGet();
         } catch (URIException e) {
@@ -192,16 +238,14 @@ public class Soft404Detector extends Processor {
         }
     }
 
-    protected void recordProbeResult(CrawlURI curi, CrawlServer server) {
+    protected void recordProbeResult(CrawlURI curi, State state) {
         curi.getAnnotations().add(PROBE_ANNOTATION);
-        // a probe redirected from another server counts as this server's probe
-        if (server.startSoft404Probe()) server.makeDirty();
+        state.finishProbe();
         if (curi.getFetchStatus() != 200 || curi.getContentLength() <= 0 || !isHtml(curi)) return;
-        if (!server.setSoft404FingerprintIfAbsent(fingerprint(curi))) return;
-        server.makeDirty();
+        if (!state.addFingerprint(fingerprint(curi))) return;
         serversWithSoft404s.incrementAndGet();
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Soft 404s detected on " + server);
+            logger.fine("Soft 404s detected by " + curi);
         }
     }
 
@@ -242,8 +286,11 @@ public class Soft404Detector extends Processor {
     }
 
     static long fingerprint(CrawlURI curi) {
-        String normalized = normalize(readContent(curi), echoesOf(curi.getUURI()));
-        return Hashing.murmur3_128().hashString(normalized, UTF_8).asLong();
+        return fingerprint(readContent(curi), echoesOf(curi.getUURI()));
+    }
+
+    private static long fingerprint(String content, List<String> echoes) {
+        return Hashing.murmur3_128().hashString(normalize(content, echoes), UTF_8).asLong();
     }
 
     /**
@@ -371,5 +418,97 @@ public class Soft404Detector extends Processor {
                "  Probes scheduled: " + probesScheduled.get() + "\n" +
                "  Servers with soft 404s: " + serversWithSoft404s.get() + "\n" +
                "  Soft 404s detected: " + soft404sDetected.get() + "\n";
+    }
+
+    /**
+     * Soft 404 detection state of one server, kept in its {@link CrawlServer}.
+     */
+    public static class State implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        /** Number of recent page fingerprints kept to spot repeated pages. */
+        static final int RECENT_PAGES = 8;
+
+        private int probeCount;
+        private boolean probePending;
+        /** Fingerprints of soft 404 pages that probes found, or null if none did. */
+        private long[] fingerprints;
+        /** Fingerprints of recent pages, oldest first, or null if none are being kept. */
+        private long[] recentPages;
+
+        /**
+         * Marks a probe as scheduled, unless one is pending or maxProbes have already been
+         * scheduled.
+         * @return true if the caller should schedule a probe
+         */
+        public synchronized boolean startProbe(int maxProbes) {
+            if (!canStartProbe(maxProbes)) return false;
+            probeCount++;
+            probePending = true;
+            recentPages = null;
+            return true;
+        }
+
+        public synchronized boolean canStartProbe(int maxProbes) {
+            return !probePending && probeCount < maxProbes;
+        }
+
+        /**
+         * Marks the pending probe as done, or records a probe of this server that was scheduled
+         * elsewhere, e.g. one redirected from another server.
+         */
+        public synchronized void finishProbe() {
+            probeCount = Math.max(probeCount, 1);
+            probePending = false;
+        }
+
+        public synchronized boolean isProbeScheduled() {
+            return probeCount > 0;
+        }
+
+        public synchronized boolean hasFingerprints() {
+            return fingerprints != null;
+        }
+
+        /**
+         * Whether a probe got a page with this fingerprint with a success status for a
+         * nonexistent URL.
+         */
+        public synchronized boolean isFingerprint(long fingerprint) {
+            return fingerprints != null && contains(fingerprints, fingerprint);
+        }
+
+        /**
+         * Records the fingerprint of a page a probe got with a success status for a nonexistent
+         * URL.
+         * @return true if it's the first one recorded
+         */
+        public synchronized boolean addFingerprint(long fingerprint) {
+            if (isFingerprint(fingerprint)) return false;
+            long[] old = fingerprints == null ? new long[0] : fingerprints;
+            fingerprints = Arrays.copyOf(old, old.length + 1);
+            fingerprints[old.length] = fingerprint;
+            return old.length == 0;
+        }
+
+        /**
+         * Records the fingerprint of a page, keeping only the most recent RECENT_PAGES.
+         * @return true if one of the kept pages already had this fingerprint
+         */
+        public synchronized boolean addRecentPage(long fingerprint) {
+            long[] pages = recentPages == null ? new long[0] : recentPages;
+            if (contains(pages, fingerprint)) return true;
+            int keep = Math.min(pages.length, RECENT_PAGES - 1);
+            recentPages = Arrays.copyOfRange(pages, pages.length - keep, pages.length + 1);
+            recentPages[keep] = fingerprint;
+            return false;
+        }
+
+        private static boolean contains(long[] values, long value) {
+            for (long v : values) {
+                if (v == value) return true;
+            }
+            return false;
+        }
     }
 }
