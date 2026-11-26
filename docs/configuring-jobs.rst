@@ -1174,6 +1174,8 @@ On Kubernetes, the `Selenium Grid Helm chart <https://github.com/SeleniumHQ/dock
 can autoscale nodes with KEDA. As idle browsers are closed after ``browserIdleTimeoutSeconds``, ending their sessions,
 nodes can scale down while the crawl is quiet.
 
+.. _replaying-subresources:
+
 Replaying subresources
 ~~~~~~~~~~~~~~~~~~~~~~
 
