@@ -19,6 +19,7 @@
 
 package org.archive.crawler.processor;
 
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
@@ -53,6 +54,7 @@ import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.client.Result;
+import org.eclipse.jetty.http.ByteRange;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.json.JSONException;
@@ -62,6 +64,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -472,7 +475,8 @@ public class BrowserProcessor extends Processor {
             // FIXME: this probably doesn't handle duplicate headers (e.g. Set-Cookie) properly
             var headers = (Map<String,String>)curi.getData().get(A_HTTP_RESPONSE_HEADERS);
             proxyRequest.sendResponse(curi.getFetchStatus(), headers, curi.getRecorder().getContentReplayInputStream());
-        } else if (!replay(page, proxyRequest)) {
+        } else if (!replay(page, proxyRequest,
+                requestedRange(proxyRequest, Long.MAX_VALUE) != null)) {
             // Record exchange as a subresource
             proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
             proxyRequest.setUpstreamProxy(page.proxy);
@@ -480,11 +484,26 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
-     * Responds with a recent capture of the requested subresource, if there is one.
+     * The single range a GET request asks for in a resource of the given length.
      *
+     * @return the range, or null if there isn't one or it's unsatisfiable
+     */
+    private static ByteRange requestedRange(MitmProxy.Request proxyRequest, long length) {
+        if (!proxyRequest.request().getMethod().equals("GET")) return null;
+        List<ByteRange> ranges = ByteRange.parse(
+                proxyRequest.request().getHeaders().getValuesList(HttpHeader.RANGE), length);
+        return ranges.size() == 1 ? ranges.get(0) : null;
+    }
+
+    /**
+     * Responds with a recent capture of the requested subresource, if there is one, or the
+     * requested range of it.
+     *
+     * @param ranged whether the request asks for a single range
      * @return false if the subresource needs to be fetched
      */
-    private boolean replay(BrowserPage page, MitmProxy.Request proxyRequest) throws IOException {
+    private boolean replay(BrowserPage page, MitmProxy.Request proxyRequest, boolean ranged)
+            throws IOException {
         if (captureIndex == null || replayMaxAgeSeconds <= 0
                 || !proxyRequest.request().getMethod().equals("GET")) {
             return false;
@@ -509,11 +528,40 @@ public class BrowserProcessor extends Processor {
             response.headers().forEach(h -> headers.add(h.getName(), h.getValue()));
             String location = headers.get(HttpHeader.LOCATION);
             if (location != null && isRedirectTo(curi, canonical, location)) return false;
-            proxyRequest.sendResponse(response.status(), headers.remove(NOT_REPLAYED_HEADERS),
-                    response.body());
+            headers.remove(NOT_REPLAYED_HEADERS);
+            long length = response.bodyLength();
+            String ifRange = proxyRequest.request().getHeaders().get(HttpHeader.IF_RANGE);
+            if (ranged && response.status() == 200 && length >= 0
+                    && !headers.contains(HttpHeader.CONTENT_ENCODING)
+                    && MitmProxy.ifRangeMatches(ifRange, headers.get(HttpHeader.ETAG),
+                            headers.get(HttpHeader.LAST_MODIFIED))) {
+                sendRange(proxyRequest, headers, response.body(), length,
+                        requestedRange(proxyRequest, length));
+            } else {
+                proxyRequest.sendResponse(response.status(), headers, response.body());
+            }
         }
         subresourcesReplayed.incrementAndGet();
         return true;
+    }
+
+    /**
+     * Sends a range of a body as a 206 Partial Content, or a 416 Range Not Satisfiable if the
+     * range is null.
+     */
+    private static void sendRange(MitmProxy.Request proxyRequest, HttpFields.Mutable headers,
+                                  InputStream body, long length, ByteRange range)
+            throws IOException {
+        if (range == null) {
+            String contentRange = ByteRange.toNonSatisfiableHeaderValue(length);
+            proxyRequest.sendResponse(416, HttpFields.build()
+                    .put(HttpHeader.CONTENT_RANGE, contentRange), InputStream.nullInputStream());
+            return;
+        }
+        body.skipNBytes(range.first());
+        headers.put(HttpHeader.CONTENT_RANGE, range.toHeaderValue(length))
+                .put(HttpHeader.CONTENT_LENGTH, range.getLength());
+        proxyRequest.sendResponse(206, headers, ByteStreams.limit(body, range.getLength()));
     }
 
     /**
