@@ -138,7 +138,7 @@ http://example.example/example
      * important because last decision returned other than 'NONE' wins.
      */
     scope(DecideRuleSequence) {
-        logToFile = false
+        // logToFile = false
         rules = [
                 // Begin by REJECTing all...
                 new RejectDecideRule(),
@@ -163,7 +163,7 @@ http://example.example/example
                 // ...and REJECT those from a configurable (initially empty) set of URI regexes...
                 new MatchesListRegexDecideRule(
                         decision: 'REJECT',
-                        // listLogicalOr: false,
+                        // listLogicalOr: true,
                         // regexList: [],
                 ),
                 // ...and REJECT those with suspicious repeating path-segments...
@@ -607,7 +607,7 @@ http://example.example/example
     /**
      * COST ASSIGNMENT POLICY
      */
-    costAssignmentPolicy(UnitCostAssignmentPolicy)
+    // costAssignmentPolicy(UnitCostAssignmentPolicy)
 
     /**
      * CREDENTIAL STORE: HTTP authentication or FORM POST credentials
@@ -720,7 +720,7 @@ http://example.example/example
 
     /**
      * CONFIG PATH CONFIGURER: required helper making crawl paths relative
-     * to crawler-beans.cxml file, and tracking crawl files for web U
+     * to crawler-beans.cxml file, and tracking crawl files for web UI
      */
     configPathConfigurer(ConfigPathConfigurer)
 }
