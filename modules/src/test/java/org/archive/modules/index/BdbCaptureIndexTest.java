@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -120,6 +121,27 @@ public class BdbCaptureIndexTest {
     }
 
     @Test
+    void keepsCapturesMadeInTheSameMillisecond() throws Exception {
+        String url = "http://example.org/a";
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                100, 100, "a.warc.gz")));
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                300, 100, "a.warc.gz")));
+        index.add(curi(url, 1000), List.of(record(WARCRecordType.response, UUID.randomUUID(),
+                100, 100, "b.warc.gz")));
+
+        List<String> found = new ArrayList<>();
+        Capture after = null;
+        List<Capture> batch;
+        while (!(batch = index.query("http://(org,example,)/a", true, after, 1)).isEmpty()) {
+            after = batch.get(0);
+            found.add(after.path().getFileName() + "@" + after.offset());
+        }
+        assertEquals(List.of("b.warc.gz@100", "a.warc.gz@300", "a.warc.gz@100"), found);
+        assertEquals(DIR.resolve("b.warc.gz"), index.latest(url).path());
+    }
+
+    @Test
     void pagesExactAndPrefixQueriesInIndexOrder() throws Exception {
         String url = "http://example.org/a";
         String key = "http://(org,example,)/a";
@@ -159,6 +181,15 @@ public class BdbCaptureIndexTest {
 
         assertNull(index.latest("http://example.org/post"));
         assertNull(index.latest("http://example.org/raw"));
+    }
+
+    @Test
+    void skipsPartialContent() throws Exception {
+        CrawlURI partial = curi("http://example.org/video", 1000);
+        partial.setFetchStatus(206);
+        index.add(partial, List.of(record(WARCRecordType.response, UUID.randomUUID(), 100, 100)));
+
+        assertNull(index.latest("http://example.org/video"));
     }
 
     @Test
@@ -233,7 +264,11 @@ public class BdbCaptureIndexTest {
             public boolean handle(Request request, Response response, Callback callback) {
                 response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain");
                 response.getHeaders().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2");
-                response.getHeaders().put(HttpHeader.TRANSFER_ENCODING, "chunked");
+                if (request.getHttpURI().getPath().equals("/sized")) {
+                    response.getHeaders().put(HttpHeader.CONTENT_LENGTH, 5);
+                } else {
+                    response.getHeaders().put(HttpHeader.TRANSFER_ENCODING, "chunked");
+                }
                 Content.Sink.write(response, true, "hello", callback);
                 return true;
             }
@@ -273,6 +308,14 @@ public class BdbCaptureIndexTest {
             assertEquals(capture.path(), revisit.refersToPath());
             assertResponse(revisit);
 
+            String sizedUrl = "http://127.0.0.1:" + connector.getLocalPort() + "/sized";
+            fetchAndWrite(fetcher, writer, sizedUrl, null);
+            try (var sized = CapturedResponse.open(index.latest(sizedUrl))) {
+                assertEquals(5, sized.bodyLength());
+                assertEquals("hello",
+                        new String(sized.body().readAllBytes(), StandardCharsets.UTF_8));
+            }
+
             writer.stop();
             assertResponse(revisit); // after the file is closed and renamed
         } finally {
@@ -300,6 +343,7 @@ public class BdbCaptureIndexTest {
         try (var response = CapturedResponse.open(capture)) {
             assertEquals(200, response.status());
             assertTrue(response.headers().stream().anyMatch(h -> h.getValue().equals("chunked")));
+            assertEquals(-1, response.bodyLength());
             assertEquals(List.of("a=1", "b=2"), response.headers().stream()
                     .filter(h -> h.getName().equalsIgnoreCase("Set-Cookie"))
                     .map(h -> h.getValue()).toList());

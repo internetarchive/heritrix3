@@ -19,6 +19,7 @@
 
 package org.archive.crawler.processor;
 
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
@@ -53,6 +54,7 @@ import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.client.Result;
+import org.eclipse.jetty.http.ByteRange;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.json.JSONException;
@@ -62,6 +64,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -296,11 +299,12 @@ public class BrowserProcessor extends Processor {
     private void visit(CrawlURI curi, WebDriverBiDi driver) throws InterruptedException {
         String pageId = UUID.randomUUID().toString();
         var tab = driver.browsingContext().create(BrowsingContext.CreateType.tab).context();
+        Set<String> unrecordedSubresources = ConcurrentHashMap.newKeySet();
         try {
             String userAgent = curi.getUserAgent();
             if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
             BrowserPage page = new BrowserPage(curi, new IdleBarrier(), driver, tab, fetcher.getProxy(), userAgent,
-                    new CompletableFuture<>(), uriErrorLoggerModule);
+                    new CompletableFuture<>(), uriErrorLoggerModule, unrecordedSubresources);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             interceptRequests(driver, tab);
@@ -347,6 +351,16 @@ public class BrowserProcessor extends Processor {
                 driver.browsingContext().close(tab);
             } catch (WebDriverException e) {
                 logger.log(WARNING, "Error closing tab for " + curi, e);
+            }
+            for (String url : unrecordedSubresources) {
+                try {
+                    curi.getOutLinks().add(
+                            curi.createCrawlURI(url, LinkContext.EMBED_MISC, Hop.EMBED));
+                } catch (URIException e) {
+                    if (uriErrorLoggerModule != null) {
+                        uriErrorLoggerModule.logUriError(e, curi.getUURI(), url);
+                    }
+                }
             }
         }
     }
@@ -472,19 +486,47 @@ public class BrowserProcessor extends Processor {
             // FIXME: this probably doesn't handle duplicate headers (e.g. Set-Cookie) properly
             var headers = (Map<String,String>)curi.getData().get(A_HTTP_RESPONSE_HEADERS);
             proxyRequest.sendResponse(curi.getFetchStatus(), headers, curi.getRecorder().getContentReplayInputStream());
-        } else if (!replay(page, proxyRequest)) {
-            // Record exchange as a subresource
-            proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
+        } else {
+            ByteRange range = requestedRange(proxyRequest, Long.MAX_VALUE);
+            if (replay(page, proxyRequest, range != null)) return;
+            if (range != null && range.first() != 0) {
+                // fetching the whole resource could delay the browser, so leave it to the frontier
+                page.unrecordedSubresources().add(proxyRequest.url());
+                proxyRequest.setListener(new UnrecordedExchange());
+            } else {
+                // Record the whole exchange as a subresource
+                if (range != null) {
+                    // the browser may stop reading its range before the recording finishes
+                    page.unrecordedSubresources().add(proxyRequest.url());
+                    proxyRequest.serveRequestedRange();
+                }
+                proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
+            }
             proxyRequest.setUpstreamProxy(page.proxy);
         }
     }
 
     /**
-     * Responds with a recent capture of the requested subresource, if there is one.
+     * The single range a GET request asks for in a resource of the given length.
      *
+     * @return the range, or null if there isn't one or it's unsatisfiable
+     */
+    private static ByteRange requestedRange(MitmProxy.Request proxyRequest, long length) {
+        if (!proxyRequest.request().getMethod().equals("GET")) return null;
+        List<ByteRange> ranges = ByteRange.parse(
+                proxyRequest.request().getHeaders().getValuesList(HttpHeader.RANGE), length);
+        return ranges.size() == 1 ? ranges.get(0) : null;
+    }
+
+    /**
+     * Responds with a recent capture of the requested subresource, if there is one, or the
+     * requested range of it.
+     *
+     * @param ranged whether the request asks for a single range
      * @return false if the subresource needs to be fetched
      */
-    private boolean replay(BrowserPage page, MitmProxy.Request proxyRequest) throws IOException {
+    private boolean replay(BrowserPage page, MitmProxy.Request proxyRequest, boolean ranged)
+            throws IOException {
         if (captureIndex == null || replayMaxAgeSeconds <= 0
                 || !proxyRequest.request().getMethod().equals("GET")) {
             return false;
@@ -509,11 +551,40 @@ public class BrowserProcessor extends Processor {
             response.headers().forEach(h -> headers.add(h.getName(), h.getValue()));
             String location = headers.get(HttpHeader.LOCATION);
             if (location != null && isRedirectTo(curi, canonical, location)) return false;
-            proxyRequest.sendResponse(response.status(), headers.remove(NOT_REPLAYED_HEADERS),
-                    response.body());
+            headers.remove(NOT_REPLAYED_HEADERS);
+            long length = response.bodyLength();
+            String ifRange = proxyRequest.request().getHeaders().get(HttpHeader.IF_RANGE);
+            if (ranged && response.status() == 200 && length >= 0
+                    && !headers.contains(HttpHeader.CONTENT_ENCODING)
+                    && MitmProxy.ifRangeMatches(ifRange, headers.get(HttpHeader.ETAG),
+                            headers.get(HttpHeader.LAST_MODIFIED))) {
+                sendRange(proxyRequest, headers, response.body(), length,
+                        requestedRange(proxyRequest, length));
+            } else {
+                proxyRequest.sendResponse(response.status(), headers, response.body());
+            }
         }
         subresourcesReplayed.incrementAndGet();
         return true;
+    }
+
+    /**
+     * Sends a range of a body as a 206 Partial Content, or a 416 Range Not Satisfiable if the
+     * range is null.
+     */
+    private static void sendRange(MitmProxy.Request proxyRequest, HttpFields.Mutable headers,
+                                  InputStream body, long length, ByteRange range)
+            throws IOException {
+        if (range == null) {
+            String contentRange = ByteRange.toNonSatisfiableHeaderValue(length);
+            proxyRequest.sendResponse(416, HttpFields.build()
+                    .put(HttpHeader.CONTENT_RANGE, contentRange), InputStream.nullInputStream());
+            return;
+        }
+        body.skipNBytes(range.first());
+        headers.put(HttpHeader.CONTENT_RANGE, range.toHeaderValue(length))
+                .put(HttpHeader.CONTENT_LENGTH, range.getLength());
+        proxyRequest.sendResponse(206, headers, ByteStreams.limit(body, range.getLength()));
     }
 
     /**
@@ -720,12 +791,14 @@ public class BrowserProcessor extends Processor {
         private final WritableByteChannel requestRecorder;
         private final WritableByteChannel responseRecorder;
         private final BrowserPage page;
+        private final String url;
         private String method;
         private boolean recordingFailed;
         private boolean truncated;
 
         public SubresourceRecorder(BrowserPage page, String url) throws IOException {
             this.page = page;
+            this.url = url;
             this.curi = page.curi().createCrawlURI(url, LinkContext.EMBED_MISC, Hop.EMBED);
             String requestId = UUID.randomUUID().toString();
             Recorder recorder = new Recorder(crawlController.getScratchDir().getFile(),
@@ -743,7 +816,8 @@ public class BrowserProcessor extends Processor {
 
         @Override
         public void onBegin(org.eclipse.jetty.client.Request request) {
-            request.headers(headers -> headers.remove(PAGE_ID_HEADER));
+            request.headers(headers -> headers.remove(PAGE_ID_HEADER).remove(HttpHeader.RANGE)
+                    .remove(HttpHeader.IF_RANGE));
         }
 
         @Override
@@ -835,6 +909,7 @@ public class BrowserProcessor extends Processor {
                 }
 
                 if (curi.isSuccess()) {
+                    page.unrecordedSubresources().remove(url);
                     eventPublisher.publishEvent(new CrawlURIDispositionEvent(this, curi, SUCCEEDED));
                 } else {
                     eventPublisher.publishEvent(new CrawlURIDispositionEvent(this, curi, FAILED));
@@ -851,6 +926,36 @@ public class BrowserProcessor extends Processor {
                 page.networkActivity().end();
                 curi.getRecorder().cleanup();
             }
+        }
+    }
+
+    /**
+     * Forwards an exchange without recording it.
+     */
+    private static class UnrecordedExchange implements MitmProxy.ExchangeListener {
+        @Override
+        public void onBegin(org.eclipse.jetty.client.Request request) {
+            request.headers(headers -> headers.remove(PAGE_ID_HEADER));
+        }
+
+        @Override
+        public void onHeaders(org.eclipse.jetty.client.Request request) {
+        }
+
+        @Override
+        public void onContent(org.eclipse.jetty.client.Request request, ByteBuffer content) {
+        }
+
+        @Override
+        public void onHeaders(org.eclipse.jetty.client.Response response) {
+        }
+
+        @Override
+        public void onContent(org.eclipse.jetty.client.Response response, ByteBuffer content) {
+        }
+
+        @Override
+        public void onComplete(Result result) {
         }
     }
 
@@ -1126,7 +1231,8 @@ public class BrowserProcessor extends Processor {
             ProxyConfiguration.Proxy proxy,
             String userAgent,
             CompletableFuture<Void> downloadStarted,
-            UriErrorLoggerModule uriErrorLoggerModule
+            UriErrorLoggerModule uriErrorLoggerModule,
+            Set<String> unrecordedSubresources
     ) implements Page {
 
         /**

@@ -20,12 +20,15 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MitmProxyTest {
+    @TempDir
+    static Path tempDir; // shared, so the keystore is only generated once
+
     /**
      * Browsers will send requests with characters like '|' and '[' in the query string. java.net.URI disallows these
      * so this tests to make sure the proxy handles them OK.
      */
     @Test
-    public void testProxyingDisallowedCharacters(@TempDir Path tempDir) throws Exception {
+    public void testProxyingDisallowedCharacters() throws Exception {
         var server = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
         server.setHandler(new Handler.Abstract() {
             @Override
@@ -52,7 +55,7 @@ class MitmProxyTest {
     }
 
     @Test
-    public void testAllowedAddresses(@TempDir Path tempDir) throws Exception {
+    public void testAllowedAddresses() throws Exception {
         // skip interfaces that are down, such as an idle Docker bridge, whose NAT rules rewrite the source address
         InetAddress lanAddress = null;
         for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
@@ -93,7 +96,7 @@ class MitmProxyTest {
     }
 
     @Test
-    public void testRepeatedResponseHeaders(@TempDir Path tempDir) throws Exception {
+    public void testRepeatedResponseHeaders() throws Exception {
         MitmProxy.RequestHandler handler = request -> request.sendResponse(200,
                 HttpFields.build().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2"),
                 new ByteArrayInputStream("ok".getBytes(US_ASCII)));
@@ -105,6 +108,67 @@ class MitmProxyTest {
         } finally {
             proxy.stop();
         }
+    }
+
+    @Test
+    public void testResponseRange() throws Exception {
+        var server = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
+        server.setHandler(new Handler.Abstract() {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) {
+                if (request.getHttpURI().getPath().equals("/sized")) {
+                    response.getHeaders().put("Content-Length", 11);
+                }
+                response.write(false, ByteBuffer.wrap("Hello ".getBytes(US_ASCII)), Callback.NOOP);
+                response.write(true, ByteBuffer.wrap("World".getBytes(US_ASCII)), callback);
+                return true;
+            }
+        });
+        server.start();
+        var proxy = new MitmProxy(MitmProxy.Request::serveRequestedRange,
+                tempDir.resolve("proxy.keystore").toString());
+        proxy.start();
+        try {
+            String base = "http://" + Inet4Address.getLoopbackAddress().getHostAddress() + ":"
+                          + ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+            String response = sendRequest(proxy.getPort(), base + "/sized", "bytes=4-7");
+            assertStatus(206, response);
+            assertTrue(response.contains("\r\nContent-Range: bytes 4-7/11\r\n"), response);
+            assertTrue(response.contains("\r\nContent-Length: 4\r\n"), response);
+            assertTrue(response.endsWith("\r\n\r\no Wo"), response);
+
+            response = sendRequest(proxy.getPort(), base + "/unsized", "bytes=4-7");
+            assertStatus(200, response);
+            assertTrue(response.endsWith("Hello World"), response);
+
+            response = sendRequest(proxy.getPort(), base + "/sized", "bytes=20-");
+            assertStatus(200, response);
+            assertTrue(response.endsWith("Hello World"), response);
+        } finally {
+            proxy.stop();
+            server.stop();
+        }
+    }
+
+    private static String sendRequest(int port, String url, String range) throws IOException {
+        try (var socket = new Socket(Inet4Address.getLoopbackAddress(), port)) {
+            String request = "GET " + url + " HTTP/1.0\r\nRange: " + range + "\r\n\r\n";
+            socket.getOutputStream().write(request.getBytes(US_ASCII));
+            return new String(socket.getInputStream().readAllBytes(), US_ASCII);
+        }
+    }
+
+    @Test
+    public void testIfRangeMatches() {
+        assertTrue(MitmProxy.ifRangeMatches(null, null, null));
+        assertTrue(MitmProxy.ifRangeMatches("\"abc\"", "\"abc\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("\"abc\"", "\"def\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("\"abc\"", "W/\"abc\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("W/\"abc\"", "W/\"abc\"", null));
+        String date = "Wed, 21 Oct 2015 07:28:00 GMT";
+        assertTrue(MitmProxy.ifRangeMatches(date, "\"abc\"", date));
+        assertFalse(MitmProxy.ifRangeMatches(date, null, "Thu, 22 Oct 2015 07:28:00 GMT"));
+        assertFalse(MitmProxy.ifRangeMatches(date, null, null));
     }
 
     private static void assertStatus(int status, String response) {

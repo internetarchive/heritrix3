@@ -48,6 +48,7 @@ class BrowserProcessorTest {
     private static String baseUrl;
     private static volatile int serverRequests;
     private static ArrayList<CrawlURI> subrequests;
+    private static final List<String> rangeHeaders = Collections.synchronizedList(new ArrayList<>());
     private final Set<Recorder> recorders = new HashSet<>();
     @TempDir
     static Path tempDir;
@@ -103,6 +104,42 @@ class BrowserProcessorTest {
             }
             assertEquals(Set.of("/item1", "/item2", "/item3"), paths,
                     "should have extracted the links from every page of the pagination");
+        } finally {
+            browserProcessor.setBehaviors(defaultBehaviors);
+        }
+    }
+
+    @Test
+    public void testRangeRequests() throws IOException, InterruptedException {
+        var defaultBehaviors = browserProcessor.getBehaviors();
+        var results = new ArrayList<Object>();
+        browserProcessor.setBehaviors(List.of(page -> results.add(page.evalPromise("""
+                async () => {
+                    const responses = [];
+                    for (const range of ['bytes=0-3', 'bytes=6-']) {
+                        const r = await fetch('/range.bin', {headers: {Range: range}, cache: 'no-store'});
+                        responses.push(r.status + ' ' + r.headers.get('Content-Range') + ' ' + await r.text());
+                    }
+                    return responses;
+                }"""))));
+        rangeHeaders.clear();
+        try {
+            CrawlURI crawlURI = newCrawlURI(baseUrl + "paginated");
+            fetcher.process(crawlURI);
+            assertEquals(200, crawlURI.getFetchStatus());
+            browserProcessor.innerProcess(crawlURI);
+
+            assertEquals(List.of(List.of("206 bytes 0-3/10 0123", "206 bytes 6-9/10 6789")), results);
+            assertEquals(List.of("null", "bytes=6-"), rangeHeaders,
+                    "a range from the start should be fetched whole, others passed through");
+            List<CrawlURI> recorded = subrequests.stream()
+                    .filter(curi -> curi.getURI().equals(baseUrl + "range.bin")).toList();
+            assertEquals(1, recorded.size(), "only the whole resource should be recorded");
+            assertEquals(200, recorded.get(0).getFetchStatus());
+            assertEquals(10, recorded.get(0).getContentLength());
+            assertTrue(crawlURI.getOutLinks().stream()
+                            .anyMatch(link -> link.getURI().equals(baseUrl + "range.bin")),
+                    "the passed through resource should be queued");
         } finally {
             browserProcessor.setBehaviors(defaultBehaviors);
         }
@@ -330,26 +367,36 @@ class BrowserProcessorTest {
         var results = new ArrayList<List<Object>>();
         processor.setBehaviors(List.of(page -> results.add(List.of(
                 page.eval("() => getComputedStyle(document.body).color"),
-                page.evalPromise("() => fetch('/gzip').then(r => r.text())")))));
+                page.evalPromise("() => fetch('/gzip').then(r => r.text())"),
+                page.evalPromise("""
+                        async () => {
+                            await fetch('/range.bin', {headers: {Range: 'bytes=0-'}}).then(r => r.text());
+                            const r = await fetch('/range.bin', {headers: {Range: 'bytes=2-4'}, cache: 'no-store'});
+                            return r.status + ' ' + r.headers.get('Content-Range') + ' ' + await r.text();
+                        }""")))));
         processor.start();
         try {
             visit(processor, "b"); // browser 0
             Set<String> recordedPaths = new HashSet<>();
             for (CrawlURI curi : subrequests) recordedPaths.add(curi.getUURI().getPath());
-            assertTrue(recordedPaths.containsAll(Set.of("/style.css", "/gzip")),
+            assertTrue(recordedPaths.containsAll(Set.of("/style.css", "/gzip", "/range.bin")),
                     recordedPaths.toString());
             long replayedBefore = processor.subresourcesReplayed.get();
 
             subrequests.clear();
+            rangeHeaders.clear();
             visit(processor, "a"); // browser 1
             Set<String> fetchedPaths = new HashSet<>();
             for (CrawlURI curi : subrequests) fetchedPaths.add(curi.getUURI().getPath());
             assertFalse(fetchedPaths.contains("/style.css"), fetchedPaths.toString());
             assertFalse(fetchedPaths.contains("/gzip"), fetchedPaths.toString());
+            assertFalse(fetchedPaths.contains("/range.bin"), fetchedPaths.toString());
+            assertEquals(List.of(), rangeHeaders, "range requests should be replayed");
             assertTrue(fetchedPaths.contains("/post-json"), "POST requests shouldn't be replayed");
             assertTrue(processor.subresourcesReplayed.get() >= replayedBefore + 2);
             assertEquals(results.get(0), results.get(1), "replayed page should look the same");
-            assertEquals(List.of("rgb(255, 0, 0)", "/*hello world*/"), results.get(1));
+            assertEquals(List.of("rgb(255, 0, 0)", "/*hello world*/", "206 bytes 2-4/10 234"),
+                    results.get(1));
         } finally {
             processor.stop();
             writer.stop();
@@ -546,6 +593,25 @@ class BrowserProcessorTest {
                 case "/large.bin" -> {
                     body = "x".repeat(100_000);
                     contentType = "application/octet-stream";
+                }
+                case "/range.bin" -> {
+                    String range = exchange.getRequestHeaders().getFirst("Range");
+                    rangeHeaders.add(String.valueOf(range));
+                    byte[] bytes = "0123456789".getBytes();
+                    int first = 0;
+                    int last = bytes.length - 1;
+                    if (range != null) {
+                        String[] positions = range.substring("bytes=".length()).split("-", -1);
+                        first = Integer.parseInt(positions[0]);
+                        if (!positions[1].isEmpty()) last = Integer.parseInt(positions[1]);
+                        exchange.getResponseHeaders().add("Content-Range",
+                                "bytes " + first + "-" + last + "/" + bytes.length);
+                    }
+                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                    exchange.sendResponseHeaders(range == null ? 200 : 206, last - first + 1);
+                    exchange.getResponseBody().write(bytes, first, last - first + 1);
+                    exchange.close();
+                    return;
                 }
                 case "/gzip" -> {
                     exchange.getResponseHeaders().add("Content-Encoding", "gzip");

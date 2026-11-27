@@ -40,9 +40,11 @@ import org.archive.io.warc.WARCReaderFactory;
 /**
  * The HTTP response of a {@link Capture}, read back from its WARC file. The headers are as
  * recorded. The body is as recorded with any chunked transfer coding removed, so a recorded
- * Transfer-Encoding header no longer applies to it.
+ * Transfer-Encoding header no longer applies to it. The body's length is -1 if it isn't known
+ * without reading it, as for a chunked body.
  */
-public record CapturedResponse(int status, List<HttpHeader> headers, InputStream body)
+public record CapturedResponse(int status, List<HttpHeader> headers, InputStream body,
+                               long bodyLength)
         implements Closeable {
 
     /**
@@ -62,7 +64,8 @@ public record CapturedResponse(int status, List<HttpHeader> headers, InputStream
         CapturedResponse original = open(capture.refersToPath(), capture.refersToOffset());
         if (capture.status() == 304) return original;
         try (CapturedResponse revisit = open(capture.path(), capture.offset())) {
-            return new CapturedResponse(revisit.status(), revisit.headers(), original.body());
+            return new CapturedResponse(revisit.status(), revisit.headers(), original.body(),
+                    original.bodyLength());
         } catch (IOException | RuntimeException e) {
             original.close();
             throw e;
@@ -97,8 +100,10 @@ public record CapturedResponse(int status, List<HttpHeader> headers, InputStream
                     }
                 }
             };
+            long bodyLength = chunked ? -1
+                    : record.getHeader().getContentLength() - record.getContentHeadersLength();
             return new CapturedResponse(record.getStatusCode(),
-                    Arrays.asList(record.getContentHeaders()), body);
+                    Arrays.asList(record.getContentHeaders()), body, bodyLength);
         } catch (IOException | RuntimeException e) {
             file.close();
             throw e;
