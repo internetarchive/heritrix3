@@ -475,9 +475,11 @@ public class BrowserProcessor extends Processor {
             // FIXME: this probably doesn't handle duplicate headers (e.g. Set-Cookie) properly
             var headers = (Map<String,String>)curi.getData().get(A_HTTP_RESPONSE_HEADERS);
             proxyRequest.sendResponse(curi.getFetchStatus(), headers, curi.getRecorder().getContentReplayInputStream());
-        } else if (!replay(page, proxyRequest,
-                requestedRange(proxyRequest, Long.MAX_VALUE) != null)) {
-            // Record exchange as a subresource
+        } else {
+            ByteRange range = requestedRange(proxyRequest, Long.MAX_VALUE);
+            if (replay(page, proxyRequest, range != null)) return;
+            // Record the whole exchange as a subresource
+            if (range != null) proxyRequest.serveRequestedRange();
             proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
             proxyRequest.setUpstreamProxy(page.proxy);
         }
@@ -791,7 +793,8 @@ public class BrowserProcessor extends Processor {
 
         @Override
         public void onBegin(org.eclipse.jetty.client.Request request) {
-            request.headers(headers -> headers.remove(PAGE_ID_HEADER));
+            request.headers(headers -> headers.remove(PAGE_ID_HEADER).remove(HttpHeader.RANGE)
+                    .remove(HttpHeader.IF_RANGE));
         }
 
         @Override
