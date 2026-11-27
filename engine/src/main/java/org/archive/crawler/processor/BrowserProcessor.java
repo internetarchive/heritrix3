@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier;
+import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.io.RecorderLengthExceededException;
 import org.archive.io.RecorderTimeoutException;
 import org.archive.io.RecordingInputStream;
@@ -40,7 +41,11 @@ import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.extractor.UriErrorLoggerModule;
 import org.archive.modules.fetcher.FetchHTTP2;
 import org.archive.modules.fetcher.FetchStatusCodes;
+import org.archive.modules.index.Capture;
+import org.archive.modules.index.CaptureIndex;
+import org.archive.modules.index.CapturedResponse;
 import org.archive.net.MitmProxy;
+import org.archive.net.UURIFactory;
 import org.archive.net.webdriver.*;
 import org.archive.spring.KeyedProperties;
 import org.archive.url.URIException;
@@ -48,8 +53,11 @@ import org.archive.util.IdleBarrier;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.client.ProxyConfiguration;
 import org.eclipse.jetty.client.Result;
+import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.http.HttpHeader;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.ByteArrayInputStream;
@@ -94,6 +102,10 @@ public class BrowserProcessor extends Processor {
     protected static final String PAGE_ID_HEADER = "Heritrix-Request-ID";
     private static final String PROXY_PROBE_URL = "https://heritrix-proxy-probe.invalid/";
     private static final long PROXY_PROBE_TIMEOUT_SECONDS = 10;
+    private static final EnumSet<HttpHeader> NOT_REPLAYED_HEADERS = EnumSet.of(
+            HttpHeader.CONNECTION, HttpHeader.KEEP_ALIVE, HttpHeader.PROXY_CONNECTION,
+            HttpHeader.TE, HttpHeader.TRAILER, HttpHeader.TRANSFER_ENCODING, HttpHeader.UPGRADE,
+            HttpHeader.CONTENT_LENGTH);
     private static final Map<String,Object> FIREFOX_PREFS = Map.of(
             // send localhost requests via the proxy too (for tests and local crawling)
             "network.proxy.allow_hijacking_localhost", true,
@@ -121,6 +133,9 @@ public class BrowserProcessor extends Processor {
     protected final Map<String, CompletableFuture<Void>> proxyProbes = new ConcurrentHashMap<>();
     protected final ProcessorChain extractorChain = new ProcessorChain();
     protected final AtomicLong subresourcesRecorded = new AtomicLong();
+    protected final AtomicLong subresourcesReplayed = new AtomicLong();
+    protected CaptureIndex captureIndex;
+    protected long replayMaxAgeSeconds = 24 * 60 * 60;
     protected List<Behavior> behaviors;
     protected String executable;
     protected List<String> options = List.of("--headless");
@@ -240,13 +255,16 @@ public class BrowserProcessor extends Processor {
 
     @Override
     protected JSONObject toCheckpointJson() throws JSONException {
-        return super.toCheckpointJson().put("subresourcesRecorded", subresourcesRecorded.get());
+        return super.toCheckpointJson()
+                .put("subresourcesRecorded", subresourcesRecorded.get())
+                .put("subresourcesReplayed", subresourcesReplayed.get());
     }
 
     @Override
     protected void fromCheckpointJson(JSONObject json) throws JSONException {
         super.fromCheckpointJson(json);
         subresourcesRecorded.set(json.getLong("subresourcesRecorded"));
+        subresourcesReplayed.set(json.optLong("subresourcesReplayed"));
     }
 
     @Override
@@ -255,6 +273,7 @@ public class BrowserProcessor extends Processor {
         builder.append(super.report());
         builder.append("  Pages visited: ").append(getURICount()).append("\n");
         builder.append("  Subresources recorded: ").append(subresourcesRecorded.get()).append("\n");
+        builder.append("  Subresources replayed: ").append(subresourcesReplayed.get()).append("\n");
         synchronized (tabsLock) {
             for (Browser browser : pool) {
                 builder.append("  Browser ").append(browser.id).append(": ")
@@ -453,11 +472,69 @@ public class BrowserProcessor extends Processor {
             // FIXME: this probably doesn't handle duplicate headers (e.g. Set-Cookie) properly
             var headers = (Map<String,String>)curi.getData().get(A_HTTP_RESPONSE_HEADERS);
             proxyRequest.sendResponse(curi.getFetchStatus(), headers, curi.getRecorder().getContentReplayInputStream());
-        } else {
+        } else if (!replay(page, proxyRequest)) {
             // Record exchange as a subresource
             proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
             proxyRequest.setUpstreamProxy(page.proxy);
         }
+    }
+
+    /**
+     * Responds with a recent capture of the requested subresource, if there is one.
+     *
+     * @return false if the subresource needs to be fetched
+     */
+    private boolean replay(BrowserPage page, MitmProxy.Request proxyRequest) throws IOException {
+        if (captureIndex == null || replayMaxAgeSeconds <= 0
+                || !proxyRequest.request().getMethod().equals("GET")) {
+            return false;
+        }
+        CrawlURI curi = page.curi().createCrawlURI(proxyRequest.url(), LinkContext.EMBED_MISC,
+                Hop.EMBED);
+        String canonical = canonicalize(curi.getURI());
+        Capture capture = captureIndex.latest(canonical);
+        if (capture == null || capture.truncated()
+                || capture.time() < System.currentTimeMillis() - replayMaxAgeSeconds * 1000) {
+            return false;
+        }
+        CapturedResponse response;
+        try {
+            response = CapturedResponse.open(capture);
+        } catch (IOException e) {
+            logger.log(WARNING, "Error reading capture of " + curi + ", fetching it instead", e);
+            return false;
+        }
+        try (response) {
+            HttpFields.Mutable headers = HttpFields.build();
+            response.headers().forEach(h -> headers.add(h.getName(), h.getValue()));
+            String location = headers.get(HttpHeader.LOCATION);
+            if (location != null && isRedirectTo(curi, canonical, location)) return false;
+            proxyRequest.sendResponse(response.status(), headers.remove(NOT_REPLAYED_HEADERS),
+                    response.body());
+        }
+        subresourcesReplayed.incrementAndGet();
+        return true;
+    }
+
+    /**
+     * Whether a redirect leads back to a URL the frontier considers the same, such as
+     * www.example.com to example.com. Replaying one would send the browser round in a loop.
+     */
+    private boolean isRedirectTo(CrawlURI curi, String canonical, String location) {
+        try {
+            String target = UURIFactory.getInstance(curi.getUURI(), location).toString();
+            return canonicalize(target).equals(canonical);
+        } catch (URIException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Canonicalizes a URL with the frontier's canonicalization policy.
+     */
+    private String canonicalize(String uri) {
+        if (!(crawlController.getFrontier() instanceof AbstractFrontier frontier)) return uri;
+        return frontier.getFrontierPreparer().getCanonicalizationPolicy().canonicalize(uri);
     }
 
     /**
@@ -530,6 +607,32 @@ public class BrowserProcessor extends Processor {
      */
     public void setBrowserIdleTimeoutSeconds(int browserIdleTimeoutSeconds) {
         this.browserIdleTimeoutSeconds = browserIdleTimeoutSeconds;
+    }
+
+    public CaptureIndex getCaptureIndex() {
+        return captureIndex;
+    }
+
+    /**
+     * Index of captures written to WARC files. When set, a GET subresource that was captured within
+     * {@link #setReplayMaxAgeSeconds(long) replayMaxAgeSeconds} is served to the browser from the
+     * WARC file instead of being fetched again. Replayed subresources aren't logged or written
+     * again. Autowired if the job has one, which the WARC writer also adds to.
+     */
+    @Autowired(required = false)
+    public void setCaptureIndex(CaptureIndex captureIndex) {
+        this.captureIndex = captureIndex;
+    }
+
+    public long getReplayMaxAgeSeconds() {
+        return replayMaxAgeSeconds;
+    }
+
+    /**
+     * Oldest capture to replay, in seconds. 0 disables replay.
+     */
+    public void setReplayMaxAgeSeconds(long replayMaxAgeSeconds) {
+        this.replayMaxAgeSeconds = replayMaxAgeSeconds;
     }
 
     public List<?> getBrowsers() {
@@ -711,8 +814,9 @@ public class BrowserProcessor extends Processor {
                     curi.getOverlayNames(); // for sideeffect of creating the overlayNames list
 
                     Frontier frontier = crawlController.getFrontier();
-                    if ("GET".equals(method) && frontier != null) {
-                        frontier.considerIncluded(curi);
+                    if ("GET".equals(method)) {
+                        curi.setCanonicalString(canonicalize(curi.getURI()));
+                        if (frontier != null) frontier.considerIncluded(curi);
                     }
 
                     KeyedProperties.loadOverridesFrom(curi);

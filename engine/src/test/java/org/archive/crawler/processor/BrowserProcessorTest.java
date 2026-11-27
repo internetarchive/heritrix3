@@ -1,12 +1,16 @@
 package org.archive.crawler.processor;
 
 import com.sun.net.httpserver.HttpServer;
+import org.archive.bdb.BdbModule;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.*;
 import org.archive.modules.behaviors.PaginationBehavior;
 import org.archive.modules.fetcher.DefaultServerCache;
 import org.archive.modules.fetcher.FetchHTTP2;
+import org.archive.modules.index.BdbCaptureIndex;
+import org.archive.modules.writer.WARCWriterChainProcessor;
 import org.archive.net.UURIFactory;
+import org.archive.spring.ConfigPath;
 import org.archive.url.URIException;
 import org.archive.util.Recorder;
 import org.eclipse.jetty.proxy.ProxyHandler;
@@ -295,6 +299,62 @@ class BrowserProcessorTest {
             assertTrue(paths.containsAll(Set.of("/style.css", "/gzip", "/post-json")), paths.toString());
         } finally {
             processor.stop();
+        }
+    }
+
+    @Test
+    public void testReplayFromCaptureIndex() throws Exception {
+        var bdb = new BdbModule();
+        bdb.setDir(new ConfigPath("bdb", tempDir.resolve("replay-bdb").toString()));
+        bdb.start();
+        var index = new BdbCaptureIndex();
+        index.setBdbModule(bdb);
+        index.start();
+        var writer = new WARCWriterChainProcessor();
+        writer.setDirectory(new ConfigPath("warcs", tempDir.resolve("replay-warcs").toString()));
+        writer.setServerCache(new DefaultServerCache());
+        var metadata = new CrawlMetadata();
+        metadata.afterPropertiesSet();
+        writer.setMetadataProvider(metadata);
+        writer.setCaptureIndex(index);
+        writer.start();
+
+        // two browsers, so the second page is loaded with a cold cache
+        var processor = newBrowserProcessor("replay", List.of("local", "local"));
+        processor.setMinBrowsers(2);
+        processor.setCaptureIndex(index);
+        var dispositionChain = processor.crawlController.getDispositionChain();
+        var dispositionProcessors = new ArrayList<Processor>(List.of(writer));
+        dispositionProcessors.addAll(dispositionChain.getProcessors());
+        dispositionChain.setProcessors(dispositionProcessors);
+        var results = new ArrayList<List<Object>>();
+        processor.setBehaviors(List.of(page -> results.add(List.of(
+                page.eval("() => getComputedStyle(document.body).color"),
+                page.evalPromise("() => fetch('/gzip').then(r => r.text())")))));
+        processor.start();
+        try {
+            visit(processor, "b"); // browser 0
+            Set<String> recordedPaths = new HashSet<>();
+            for (CrawlURI curi : subrequests) recordedPaths.add(curi.getUURI().getPath());
+            assertTrue(recordedPaths.containsAll(Set.of("/style.css", "/gzip")),
+                    recordedPaths.toString());
+            long replayedBefore = processor.subresourcesReplayed.get();
+
+            subrequests.clear();
+            visit(processor, "a"); // browser 1
+            Set<String> fetchedPaths = new HashSet<>();
+            for (CrawlURI curi : subrequests) fetchedPaths.add(curi.getUURI().getPath());
+            assertFalse(fetchedPaths.contains("/style.css"), fetchedPaths.toString());
+            assertFalse(fetchedPaths.contains("/gzip"), fetchedPaths.toString());
+            assertTrue(fetchedPaths.contains("/post-json"), "POST requests shouldn't be replayed");
+            assertTrue(processor.subresourcesReplayed.get() >= replayedBefore + 2);
+            assertEquals(results.get(0), results.get(1), "replayed page should look the same");
+            assertEquals(List.of("rgb(255, 0, 0)", "/*hello world*/"), results.get(1));
+        } finally {
+            processor.stop();
+            writer.stop();
+            index.stop();
+            bdb.close();
         }
     }
 

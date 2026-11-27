@@ -126,6 +126,7 @@ public class EngineApplication extends Application {
         jobdir.setListingAllowed(true);
         jobdir.setModifiable(true);
         jobdir.setEditFilter(JobResource.EDIT_FILTER);
+        router.attach("/engine/job/{job}/cdx", CdxResource.class);
         router.attach("/engine/job/{job}/jobdir",jobdir);
         router.attach("/engine/job/{job}",JobResource.class);
         router.attach("/engine/job/{job}/report/{reportClass}",ReportGenResource.class);
@@ -168,10 +169,13 @@ public class EngineApplication extends Application {
         public Representation toRepresentation(Status status, Request request, Response response) {
             StringWriter st = new StringWriter();
             PrintWriter pw = new PrintWriter(st);
+            String description = customDescription(status);
             if(status.getCode()==404){
-                pw.append("<h1>Page not found</h1>\n");
-                pw.append("The page you are looking for does not exist.  "+
-                        "You may be able to recover by going " +
+                pw.append("<h1>Not found</h1>\n");
+                pw.append("<p>" + (description == null
+                        ? "The page you are looking for does not exist."
+                        : StringEscapeUtils.escapeHtml4(description)) + "</p>\n");
+                pw.append("You may be able to recover by going " +
                 "<a href='javascript:history.back();void(0);'>back</a>.\n");
             }
             else{
@@ -180,6 +184,9 @@ public class EngineApplication extends Application {
                         "You may be able to recover and try something " +
                         "else by going " +
                 "<a href='javascript:history.back();void(0);'>back</a>.\n");
+                if (description != null) {
+                    pw.append("<p>" + StringEscapeUtils.escapeHtml4(description) + "</p>\n");
+                }
                 if(status.getThrowable()!=null) {
                     pw.append("<h2>Cause: "+
                             StringEscapeUtils.escapeHtml4(status.getThrowable().toString())+"</h2>\n");
@@ -191,6 +198,18 @@ public class EngineApplication extends Application {
             }
             pw.flush();
             return new StringRepresentation(st.toString(),MediaType.TEXT_HTML);
+        }
+
+        /**
+         * Returns the status description if it's more specific than the default for its code.
+         */
+        private String customDescription(Status status) {
+            String description = status.getDescription();
+            if (description == null
+                    || description.equals(Status.valueOf(status.getCode()).getDescription())) {
+                return null;
+            }
+            return description;
         }
 
     }

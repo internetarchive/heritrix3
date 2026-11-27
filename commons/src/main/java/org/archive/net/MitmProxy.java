@@ -23,6 +23,7 @@ import org.archive.util.KeyTool;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.io.Content;
@@ -147,8 +148,15 @@ public class MitmProxy {
         }
 
         public void sendResponse(int status, Map<String,String> headers, InputStream body) throws IOException {
+            HttpFields.Mutable fields = HttpFields.build();
+            headers.forEach(fields::put);
+            sendResponse(status, fields, body);
+        }
+
+        public void sendResponse(int status, HttpFields headers, InputStream body)
+                throws IOException {
             response.setStatus(status);
-            headers.forEach((k,v) -> response.getHeaders().put(k, v));
+            response.getHeaders().add(headers);
             body.transferTo(Content.Sink.asOutputStream(response));
             callback().succeeded();
         }

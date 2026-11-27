@@ -1,5 +1,6 @@
 package org.archive.net;
 
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.util.Callback;
 import org.junit.jupiter.api.Test;
@@ -86,6 +87,21 @@ class MitmProxyTest {
         proxy.start(); // again, as when a job is relaunched
         try {
             assertStatus(200, sendRequest(InetAddress.getLoopbackAddress(), proxy.getPort()));
+        } finally {
+            proxy.stop();
+        }
+    }
+
+    @Test
+    public void testRepeatedResponseHeaders(@TempDir Path tempDir) throws Exception {
+        MitmProxy.RequestHandler handler = request -> request.sendResponse(200,
+                HttpFields.build().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2"),
+                new ByteArrayInputStream("ok".getBytes(US_ASCII)));
+        var proxy = new MitmProxy(handler, tempDir.resolve("proxy.keystore").toString());
+        proxy.start();
+        try {
+            String response = sendRequest(InetAddress.getLoopbackAddress(), proxy.getPort());
+            assertTrue(response.contains("\r\nSet-Cookie: a=1\r\nSet-Cookie: b=2\r\n"), response);
         } finally {
             proxy.stop();
         }

@@ -1174,6 +1174,41 @@ On Kubernetes, the `Selenium Grid Helm chart <https://github.com/SeleniumHQ/dock
 can autoscale nodes with KEDA. As idle browsers are closed after ``browserIdleTimeoutSeconds``, ending their sessions,
 nodes can scale down while the crawl is quiet.
 
+.. _replaying-subresources:
+
+Replaying subresources
+~~~~~~~~~~~~~~~~~~~~~~
+
+Pages on the same site usually share stylesheets, scripts, fonts and images. The browser's own cache avoids fetching
+some of them again, but it isn't shared between browsers and is lost when a browser restarts. Heritrix can also keep an
+index of responses written to WARC files and replay recent captures to the browser instead of fetching them again.
+
+To enable this, uncomment the ``captureIndex`` bean in the default profile:
+
+.. tab:: XML
+
+   .. code-block:: xml
+
+       <bean id="captureIndex" class="org.archive.modules.index.BdbCaptureIndex" />
+
+.. tab:: Groovy
+
+   .. code-block:: groovy
+
+       captureIndex(BdbCaptureIndex)
+
+The WARC writer and ``BrowserProcessor`` pick up the index automatically. As responses are written to WARC files, the
+writer adds them to the index. When a browser requests a subresource that was captured within ``replayMaxAgeSeconds``
+(one day by default), ``BrowserProcessor`` reads the response back from its WARC file and serves it to the browser
+instead of fetching it again. Replayed subresources aren't logged, run through link extractors or written to WARC
+again, since that already happened when they were first captured. Set ``replayMaxAgeSeconds`` on ``BrowserProcessor``
+to 0 to turn replay off.
+
+Don't move or delete WARC files while their captures may still be replayed. If a capture can't be read back, the
+subresource is fetched as usual.
+
+The index is stored in the job's BDB state and keeps an entry for every response written during the crawl.
+
 Monitoring the browsers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1182,6 +1217,7 @@ The ``BrowserProcessor`` entry in the processors report (``processors-report.txt
     Processor: org.archive.crawler.processor.BrowserProcessor
       Pages visited: 846
       Subresources recorded: 24318
+      Subresources replayed: 9152
       Browser 0: up, 3 open tabs, 312 pages visited, 0 restarts
       Browser 1: idle, 0 open tabs, 297 pages visited, 2 restarts
       Browser 2: down, 0 open tabs, 238 pages visited, 1 restarts, last failure: java.io.IOException: ssh did not report the port forwarded to the proxy

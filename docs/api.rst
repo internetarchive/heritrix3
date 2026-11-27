@@ -722,6 +722,52 @@ Execute Script in Job
 
        curl -v -d "engine=beanshell&script=System.out.println%28%22test%22%29%3B" -k -u admin:admin --anyauth --location -H "Accept: application/json" https://localhost:8443/engine/job/myjob/script
 
+Query Captures
+~~~~~~~~~~~~~~
+
+.. http:get:: https://(heritrixhost):8443/engine/job/(jobname)/cdx
+
+   Lists captures in a running job's capture index as CDX lines. The job must
+   be configured with a capture index (see :ref:`replaying-subresources`).
+
+   Captures are sorted by URL key (the canonicalized URL in SURT form), then
+   newest first. The response begins with a ``CDX N b a m s k r M S V g``
+   header line, followed by one line per capture with its URL key, timestamp,
+   original URL, MIME type, status code, content digest, ``- -`` (unused
+   redirect and meta fields), record length, record offset and WARC file path
+   (relative to the job directory when inside it).
+
+   Note: Heritrix's SURT format (which keeps the scheme and parentheses, as in
+   ``https://(org,example,)/``), newest-first sort order and the crawl's
+   canonicalization rules differ from those used by replay tools such as pywb,
+   so this output can't be used directly as a ``.cdx`` index file for them.
+
+   :query url: the URL to look up. Ending it with ``*`` matches all URLs with
+     that prefix, and starting the host with ``*.`` matches that domain and
+     its subdomains. If no scheme is given, both ``http`` and ``https`` URLs
+     are matched. Lookups apply the crawl's canonicalization rules. If omitted,
+     every capture is listed.
+
+   :statuscode 200: returns the matching captures, or only the CDX header line
+     if none match
+   :statuscode 400: the ``url`` parameter is blank or invalid
+   :statuscode 404: the job doesn't exist, isn't running or has no capture
+     index
+
+   **Example:**
+
+   .. code:: bash
+
+       curl -k -u admin:admin --anyauth --location -G --data-urlencode "url=*.example.org" https://localhost:8443/engine/job/myjob/cdx
+
+   Response:
+
+   .. code:: text
+
+       CDX N b a m s k r M S V g
+      https://(org,example,)/ 20261126031522 https://example.org/ text/html 200 sha1:G7HRM4BJTBH3ZYDQXAPOGQBZ6LY5HHQV - - 5402 1874 warcs/WEB-20261126031500123-00000-4106~crawler~8443.warc.gz
+      https://(org,example,)/style.css 20261126031523 https://example.org/style.css text/css 200 sha1:UEPLXDOVRE4XCJYQWKQXWQNE6VV4QR4H - - 1290 9212 warcs/WEB-20261126031500123-00000-4106~crawler~8443.warc.gz
+
 Submitting a CXML Job Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
