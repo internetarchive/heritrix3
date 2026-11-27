@@ -299,11 +299,12 @@ public class BrowserProcessor extends Processor {
     private void visit(CrawlURI curi, WebDriverBiDi driver) throws InterruptedException {
         String pageId = UUID.randomUUID().toString();
         var tab = driver.browsingContext().create(BrowsingContext.CreateType.tab).context();
+        Set<String> unrecordedSubresources = ConcurrentHashMap.newKeySet();
         try {
             String userAgent = curi.getUserAgent();
             if (userAgent == null) userAgent = fetcher.getUserAgentProvider().getUserAgent();
             BrowserPage page = new BrowserPage(curi, new IdleBarrier(), driver, tab, fetcher.getProxy(), userAgent,
-                    new CompletableFuture<>(), uriErrorLoggerModule);
+                    new CompletableFuture<>(), uriErrorLoggerModule, unrecordedSubresources);
             pages.put(pageId, page);
             pageIdsByContext.put(tab, pageId);
             interceptRequests(driver, tab);
@@ -350,6 +351,16 @@ public class BrowserProcessor extends Processor {
                 driver.browsingContext().close(tab);
             } catch (WebDriverException e) {
                 logger.log(WARNING, "Error closing tab for " + curi, e);
+            }
+            for (String url : unrecordedSubresources) {
+                try {
+                    curi.getOutLinks().add(
+                            curi.createCrawlURI(url, LinkContext.EMBED_MISC, Hop.EMBED));
+                } catch (URIException e) {
+                    if (uriErrorLoggerModule != null) {
+                        uriErrorLoggerModule.logUriError(e, curi.getUURI(), url);
+                    }
+                }
             }
         }
     }
@@ -478,9 +489,15 @@ public class BrowserProcessor extends Processor {
         } else {
             ByteRange range = requestedRange(proxyRequest, Long.MAX_VALUE);
             if (replay(page, proxyRequest, range != null)) return;
-            // Record the whole exchange as a subresource
-            if (range != null) proxyRequest.serveRequestedRange();
-            proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
+            if (range != null && range.first() != 0) {
+                // fetching the whole resource could delay the browser, so leave it to the frontier
+                page.unrecordedSubresources().add(proxyRequest.url());
+                proxyRequest.setListener(new UnrecordedExchange());
+            } else {
+                // Record the whole exchange as a subresource
+                if (range != null) proxyRequest.serveRequestedRange();
+                proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
+            }
             proxyRequest.setUpstreamProxy(page.proxy);
         }
     }
@@ -906,6 +923,36 @@ public class BrowserProcessor extends Processor {
     }
 
     /**
+     * Forwards an exchange without recording it.
+     */
+    private static class UnrecordedExchange implements MitmProxy.ExchangeListener {
+        @Override
+        public void onBegin(org.eclipse.jetty.client.Request request) {
+            request.headers(headers -> headers.remove(PAGE_ID_HEADER));
+        }
+
+        @Override
+        public void onHeaders(org.eclipse.jetty.client.Request request) {
+        }
+
+        @Override
+        public void onContent(org.eclipse.jetty.client.Request request, ByteBuffer content) {
+        }
+
+        @Override
+        public void onHeaders(org.eclipse.jetty.client.Response response) {
+        }
+
+        @Override
+        public void onContent(org.eclipse.jetty.client.Response response, ByteBuffer content) {
+        }
+
+        @Override
+        public void onComplete(Result result) {
+        }
+    }
+
+    /**
      * Launches a browser and restarts it if it dies. Tracks how many of its
      * {@link #setConcurrency tab slots} are in use.
      */
@@ -1177,7 +1224,8 @@ public class BrowserProcessor extends Processor {
             ProxyConfiguration.Proxy proxy,
             String userAgent,
             CompletableFuture<Void> downloadStarted,
-            UriErrorLoggerModule uriErrorLoggerModule
+            UriErrorLoggerModule uriErrorLoggerModule,
+            Set<String> unrecordedSubresources
     ) implements Page {
 
         /**
