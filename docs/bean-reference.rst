@@ -413,6 +413,11 @@ ExtractorCSS
 
 .. bean-doc:: org.archive.modules.extractor.ExtractorCSS
 
+ExtractorDASH
+~~~~~~~~~~~~~
+
+.. bean-doc:: org.archive.modules.extractor.ExtractorDASH
+
 ExtractorDOC
 ~~~~~~~~~~~~
 

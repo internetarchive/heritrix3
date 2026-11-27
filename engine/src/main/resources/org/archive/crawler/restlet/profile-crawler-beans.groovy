@@ -279,6 +279,9 @@ http://example.example/example
     extractorHttp(ExtractorHTTP)
     extractorRobotsTxt(ExtractorRobotsTxt)
     extractorSitemap(ExtractorSitemap)
+    extractorDash(ExtractorDASH) {
+        // maxUrlsPerManifest = 6000
+    }
     extractorSvg(ExtractorSVG)
     extractorHtml(ExtractorHTML) {
         // extractJavascript = true
@@ -337,6 +340,8 @@ http://example.example/example
                 ref('extractorRobotsTxt'),
                 // ...extract links from sitemaps...
                 ref('extractorSitemap'),
+                // ...extract media segments from MPEG-DASH manifests...
+                ref('extractorDash'),
                 // ...extract outlinks from SVG content...
                 ref('extractorSvg'),
                 // ...extract outlinks from HTML content...
