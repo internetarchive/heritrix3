@@ -20,12 +20,15 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MitmProxyTest {
+    @TempDir
+    static Path tempDir; // shared, so the keystore is only generated once
+
     /**
      * Browsers will send requests with characters like '|' and '[' in the query string. java.net.URI disallows these
      * so this tests to make sure the proxy handles them OK.
      */
     @Test
-    public void testProxyingDisallowedCharacters(@TempDir Path tempDir) throws Exception {
+    public void testProxyingDisallowedCharacters() throws Exception {
         var server = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
         server.setHandler(new Handler.Abstract() {
             @Override
@@ -52,7 +55,7 @@ class MitmProxyTest {
     }
 
     @Test
-    public void testAllowedAddresses(@TempDir Path tempDir) throws Exception {
+    public void testAllowedAddresses() throws Exception {
         // skip interfaces that are down, such as an idle Docker bridge, whose NAT rules rewrite the source address
         InetAddress lanAddress = null;
         for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
@@ -93,7 +96,7 @@ class MitmProxyTest {
     }
 
     @Test
-    public void testRepeatedResponseHeaders(@TempDir Path tempDir) throws Exception {
+    public void testRepeatedResponseHeaders() throws Exception {
         MitmProxy.RequestHandler handler = request -> request.sendResponse(200,
                 HttpFields.build().add("Set-Cookie", "a=1").add("Set-Cookie", "b=2"),
                 new ByteArrayInputStream("ok".getBytes(US_ASCII)));
@@ -108,7 +111,7 @@ class MitmProxyTest {
     }
 
     @Test
-    public void testResponseRange(@TempDir Path tempDir) throws Exception {
+    public void testResponseRange() throws Exception {
         var server = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
         server.setHandler(new Handler.Abstract() {
             @Override
