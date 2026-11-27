@@ -107,6 +107,67 @@ class MitmProxyTest {
         }
     }
 
+    @Test
+    public void testResponseRange(@TempDir Path tempDir) throws Exception {
+        var server = new Server(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0));
+        server.setHandler(new Handler.Abstract() {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) {
+                if (request.getHttpURI().getPath().equals("/sized")) {
+                    response.getHeaders().put("Content-Length", 11);
+                }
+                response.write(false, ByteBuffer.wrap("Hello ".getBytes(US_ASCII)), Callback.NOOP);
+                response.write(true, ByteBuffer.wrap("World".getBytes(US_ASCII)), callback);
+                return true;
+            }
+        });
+        server.start();
+        var proxy = new MitmProxy(MitmProxy.Request::serveRequestedRange,
+                tempDir.resolve("proxy.keystore").toString());
+        proxy.start();
+        try {
+            String base = "http://" + Inet4Address.getLoopbackAddress().getHostAddress() + ":"
+                          + ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+            String response = sendRequest(proxy.getPort(), base + "/sized", "bytes=4-7");
+            assertStatus(206, response);
+            assertTrue(response.contains("\r\nContent-Range: bytes 4-7/11\r\n"), response);
+            assertTrue(response.contains("\r\nContent-Length: 4\r\n"), response);
+            assertTrue(response.endsWith("\r\n\r\no Wo"), response);
+
+            response = sendRequest(proxy.getPort(), base + "/unsized", "bytes=4-7");
+            assertStatus(200, response);
+            assertTrue(response.endsWith("Hello World"), response);
+
+            response = sendRequest(proxy.getPort(), base + "/sized", "bytes=20-");
+            assertStatus(200, response);
+            assertTrue(response.endsWith("Hello World"), response);
+        } finally {
+            proxy.stop();
+            server.stop();
+        }
+    }
+
+    private static String sendRequest(int port, String url, String range) throws IOException {
+        try (var socket = new Socket(Inet4Address.getLoopbackAddress(), port)) {
+            String request = "GET " + url + " HTTP/1.0\r\nRange: " + range + "\r\n\r\n";
+            socket.getOutputStream().write(request.getBytes(US_ASCII));
+            return new String(socket.getInputStream().readAllBytes(), US_ASCII);
+        }
+    }
+
+    @Test
+    public void testIfRangeMatches() {
+        assertTrue(MitmProxy.ifRangeMatches(null, null, null));
+        assertTrue(MitmProxy.ifRangeMatches("\"abc\"", "\"abc\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("\"abc\"", "\"def\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("\"abc\"", "W/\"abc\"", null));
+        assertFalse(MitmProxy.ifRangeMatches("W/\"abc\"", "W/\"abc\"", null));
+        String date = "Wed, 21 Oct 2015 07:28:00 GMT";
+        assertTrue(MitmProxy.ifRangeMatches(date, "\"abc\"", date));
+        assertFalse(MitmProxy.ifRangeMatches(date, null, "Thu, 22 Oct 2015 07:28:00 GMT"));
+        assertFalse(MitmProxy.ifRangeMatches(date, null, null));
+    }
+
     private static void assertStatus(int status, String response) {
         assertTrue(response.startsWith("HTTP/1.1 " + status + " "), "Unexpected response: " + response);
     }

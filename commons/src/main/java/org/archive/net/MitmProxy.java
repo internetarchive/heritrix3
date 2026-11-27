@@ -23,6 +23,7 @@ import org.archive.util.KeyTool;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.http.ByteRange;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpURI;
@@ -40,6 +41,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -54,6 +56,8 @@ import static org.eclipse.jetty.http.HttpHeader.ACCEPT_ENCODING;
  */
 public class MitmProxy {
     private static final String UPSTREAM_PROXY = MitmProxy.class.getName() + ".upstreamProxy";
+    private static final String SERVE_REQUESTED_RANGE =
+            MitmProxy.class.getName() + ".serveRequestedRange";
     private final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory();
     private final Server server;
     private final InetSocketAddress address;
@@ -164,6 +168,28 @@ public class MitmProxy {
         public void setUpstreamProxy(ProxyConfiguration.Proxy proxy) {
             request.setAttribute(UPSTREAM_PROXY, proxy);
         }
+
+        /**
+         * Sends the client only the single range its Range header asks for, as a 206 Partial
+         * Content, if the upstream response is a 200 with a Content-Length and no
+         * Content-Encoding that the client's If-Range header, if any, matches. Otherwise sends
+         * the whole response. The upstream request should be made without the Range and If-Range
+         * headers.
+         */
+        public void serveRequestedRange() {
+            request.setAttribute(SERVE_REQUESTED_RANGE, true);
+        }
+    }
+
+    /**
+     * Whether an If-Range header allows a range to be served from a representation with the given
+     * validators. An absent If-Range always does.
+     */
+    public static boolean ifRangeMatches(String ifRange, String etag, String lastModified) {
+        if (ifRange == null) return true;
+        if (ifRange.startsWith("\"")) return ifRange.equals(etag);
+        if (ifRange.startsWith("W/")) return false;
+        return ifRange.equals(lastModified);
     }
 
     public interface RequestHandler {
@@ -298,11 +324,88 @@ public class MitmProxy {
             }
         }
 
+        @Override
+        protected org.eclipse.jetty.client.Response.CompleteListener newServerToProxyResponseListener(
+                org.eclipse.jetty.server.Request clientToProxyRequest,
+                org.eclipse.jetty.client.Request proxyToServerRequest,
+                Response proxyToClientResponse, Callback proxyToClientCallback) {
+            if (clientToProxyRequest.getAttribute(SERVE_REQUESTED_RANGE) != null) {
+                return new RangeResponseListener(clientToProxyRequest, proxyToServerRequest,
+                        proxyToClientResponse, proxyToClientCallback);
+            }
+            return super.newServerToProxyResponseListener(clientToProxyRequest,
+                    proxyToServerRequest, proxyToClientResponse, proxyToClientCallback);
+        }
+
         private void addUpstreamProxyIfAbsent(ProxyConfiguration.Proxy proxy) {
             for (var existingProxy : getHttpClient().getProxyConfiguration().getProxies()) {
                 if (existingProxy == proxy) return;
             }
             getHttpClient().getProxyConfiguration().addProxy(proxy);
+        }
+
+        /**
+         * Forwards only a range of the response body to the client.
+         */
+        private class RangeResponseListener extends ProxyResponseListener {
+            private final List<String> rangeHeaders;
+            private final String ifRange;
+            private final Response proxyToClientResponse;
+            private ByteRange range;
+            private long position;
+
+            RangeResponseListener(org.eclipse.jetty.server.Request clientToProxyRequest,
+                                  org.eclipse.jetty.client.Request proxyToServerRequest,
+                                  Response proxyToClientResponse, Callback proxyToClientCallback) {
+                super(clientToProxyRequest, proxyToServerRequest, proxyToClientResponse,
+                        proxyToClientCallback);
+                this.rangeHeaders =
+                        clientToProxyRequest.getHeaders().getValuesList(HttpHeader.RANGE);
+                this.ifRange = clientToProxyRequest.getHeaders().get(HttpHeader.IF_RANGE);
+                this.proxyToClientResponse = proxyToClientResponse;
+            }
+
+            @Override
+            public void onHeaders(org.eclipse.jetty.client.Response serverToProxyResponse) {
+                super.onHeaders(serverToProxyResponse);
+                HttpFields headers = serverToProxyResponse.getHeaders();
+                long length = headers.getLongField(HttpHeader.CONTENT_LENGTH);
+                if (serverToProxyResponse.getStatus() != 200 || length < 0
+                        || headers.contains(HttpHeader.CONTENT_ENCODING)
+                        || !ifRangeMatches(ifRange, headers.get(HttpHeader.ETAG),
+                                headers.get(HttpHeader.LAST_MODIFIED))) {
+                    return;
+                }
+                List<ByteRange> ranges = ByteRange.parse(rangeHeaders, length);
+                if (ranges.size() != 1) return;
+                range = ranges.get(0);
+                proxyToClientResponse.setStatus(206);
+                proxyToClientResponse.getHeaders()
+                        .put(HttpHeader.CONTENT_RANGE, range.toHeaderValue(length))
+                        .put(HttpHeader.CONTENT_LENGTH, range.getLength());
+            }
+
+            @Override
+            public void onContent(org.eclipse.jetty.client.Response serverToProxyResponse,
+                                  Content.Chunk chunk, Runnable demander) {
+                if (range == null) {
+                    super.onContent(serverToProxyResponse, chunk, demander);
+                    return;
+                }
+                ByteBuffer buffer = chunk.getByteBuffer();
+                long chunkStart = position;
+                position += buffer.remaining();
+                long from = Math.max(range.first(), chunkStart);
+                long to = Math.min(range.last() + 1, position);
+                if (from >= to) {
+                    demander.run();
+                    return;
+                }
+                ByteBuffer slice = buffer.slice(buffer.position() + (int) (from - chunkStart),
+                        (int) (to - from));
+                super.onContent(serverToProxyResponse, Content.Chunk.asChunk(slice, false, chunk),
+                        demander);
+            }
         }
 
         private class RecordingProxyRequestContent extends ProxyRequestContent {
