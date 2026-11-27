@@ -93,7 +93,7 @@ public class ExtractorSVG extends ContentExtractor {
     private static final XMLInputFactory INPUT_FACTORY = newInputFactory();
     private static final XMLOutputFactory OUTPUT_FACTORY = XMLOutputFactory.newFactory();
 
-    private static XMLInputFactory newInputFactory() {
+    static XMLInputFactory newInputFactory() {
         XMLInputFactory factory = XMLInputFactory.newFactory();
         factory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
         factory.setProperty(XMLInputFactory.IS_COALESCING, true);
