@@ -67,7 +67,7 @@
 					<#if job.hasApplicationContext>
 					<a href="script">Scripting Console</a>
 					<#else>
-					<a href="#" style="color:#444">Scripting Console</a>
+					<a style="color:#444">Scripting Console</a>
 					</#if>
 					</li>
 					<li class="divider"></li>
@@ -75,7 +75,7 @@
 					<#if job.hasApplicationContext>
 					<a href="beans"}>Browse Beans</a>
 					<#else>
-					<a href="#" style="color:#444">Browse Beans</a>
+					<a style="color:#444">Browse Beans</a>
 					</#if>
 		  			</li>
 					<li class="divider"></li>
