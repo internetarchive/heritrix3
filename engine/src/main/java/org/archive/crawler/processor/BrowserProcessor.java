@@ -495,7 +495,11 @@ public class BrowserProcessor extends Processor {
                 proxyRequest.setListener(new UnrecordedExchange());
             } else {
                 // Record the whole exchange as a subresource
-                if (range != null) proxyRequest.serveRequestedRange();
+                if (range != null) {
+                    // the browser may stop reading its range before the recording finishes
+                    page.unrecordedSubresources().add(proxyRequest.url());
+                    proxyRequest.serveRequestedRange();
+                }
                 proxyRequest.setListener(new SubresourceRecorder(page, proxyRequest.url()));
             }
             proxyRequest.setUpstreamProxy(page.proxy);
@@ -787,12 +791,14 @@ public class BrowserProcessor extends Processor {
         private final WritableByteChannel requestRecorder;
         private final WritableByteChannel responseRecorder;
         private final BrowserPage page;
+        private final String url;
         private String method;
         private boolean recordingFailed;
         private boolean truncated;
 
         public SubresourceRecorder(BrowserPage page, String url) throws IOException {
             this.page = page;
+            this.url = url;
             this.curi = page.curi().createCrawlURI(url, LinkContext.EMBED_MISC, Hop.EMBED);
             String requestId = UUID.randomUUID().toString();
             Recorder recorder = new Recorder(crawlController.getScratchDir().getFile(),
@@ -903,6 +909,7 @@ public class BrowserProcessor extends Processor {
                 }
 
                 if (curi.isSuccess()) {
+                    page.unrecordedSubresources().remove(url);
                     eventPublisher.publishEvent(new CrawlURIDispositionEvent(this, curi, SUCCEEDED));
                 } else {
                     eventPublisher.publishEvent(new CrawlURIDispositionEvent(this, curi, FAILED));
