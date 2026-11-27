@@ -43,7 +43,9 @@ them unless the change affects the browser integration or you're asked to.
   would make the code easier to read.
 - When updating the default profile make sure to apply the changes to both XML (profile-crawler-beans.cxml) and 
   Groovy (profile-crawler-beans.groovy). Don't reference Github issues in profile comments.
-- Write commit messages that describe the existing code in the present tense and the change in the imperative.
+- In commit messages, use the imperative for the change itself ("Add X"), the present tense for
+  code the commit leaves as it is ("the XML profile has X"), and the past tense for code and
+  behaviour the commit changes or removes ("the Groovy profile omitted X, so it rejected Y").
 - Keep commits small and self-contained, with few comments.
 - When a change is primarily related to a single class, prefix the commit message with the class name.
 - Don't update CHANGELOG.md. It's written at release time.
