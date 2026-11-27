@@ -301,6 +301,9 @@ http://example.example/example
  <bean id="extractorSitemap" class="org.archive.modules.extractor.ExtractorSitemap">
  </bean>
  
+ <bean id="extractorDash" class="org.archive.modules.extractor.ExtractorDASH">
+  <!-- <property name="maxUrlsPerManifest" value="6000" /> -->
+ </bean>
  <bean id="extractorSvg" class="org.archive.modules.extractor.ExtractorSVG">
  </bean>
  <bean id="extractorHtml" class="org.archive.modules.extractor.ExtractorHTML">
@@ -383,6 +386,8 @@ http://example.example/example
     <ref bean="extractorRobotsTxt"/>
     <!-- ...extract links from sitemaps... -->
     <ref bean="extractorSitemap"/>
+    <!-- ...extract media segments from MPEG-DASH manifests... -->
+    <ref bean="extractorDash"/>
     <!-- ...extract outlinks from SVG content... -->
     <ref bean="extractorSvg"/>
     <!-- ...extract outlinks from HTML content... -->
